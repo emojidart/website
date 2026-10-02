@@ -31,7 +31,14 @@ export const publicRoutes = [
   "/sponsoring",
   "/steeldart-competition-regelwerk",
   "/summer-special",
-    "/chat-app",
+
+  // Öffentliche Bereiche müssen auch für eingeloggte Gäste erreichbar bleiben.
+  // pathMatches() gibt automatisch alle Unterseiten frei.
+  "/turniere",
+  "/lion-cup",
+  "/members-champion-cup",
+
+  "/chat-app",
 ]
 
 export const guestRoutes = [

@@ -36,7 +36,7 @@ type UserProfileLite = {
 }
 
 const containerVariants = {
-  hidden: { opacity: 0 },
+  hidden: { opacity: 1 },
   visible: {
     opacity: 1,
     transition: { staggerChildren: 0.08, delayChildren: 0.05 },
@@ -44,7 +44,7 @@ const containerVariants = {
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 1, y: 0 },
   visible: { opacity: 1, y: 0 },
 }
 
@@ -147,14 +147,24 @@ export default function KontoLoeschenPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
+      <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
         <Header />
 
-        <main className="pt-12 sm:pt-14">
-          <div className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8">
+        {/* Stabiler Hintergrund wie im Member-Profil – ohne Fade/Flackern */}
+        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
+          <div
+            className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
+            style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
+        </div>
+
+        <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
+          <div className="w-full">
             <div className="flex items-center justify-center min-h-[60vh] gap-3">
-              <Loader2 className="h-7 w-7 animate-spin text-orange-600" />
-              <span className="text-base font-medium text-gray-700">
+              <Loader2 className="h-7 w-7 animate-spin text-orange-300" />
+              <span className="text-base font-medium text-white/55">
                 Lade…
               </span>
             </div>
@@ -167,44 +177,55 @@ export default function KontoLoeschenPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
       <Header />
 
-      <main className="pt-12 sm:pt-14">
+      {/* Stabiler Hintergrund wie im Member-Profil – ohne Fade/Flackern */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
+      </div>
+
+      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <motion.div
-          className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
+          className="w-full"
           variants={containerVariants}
-          initial="hidden"
+          initial={false}
           animate="visible"
         >
           {/* Header Card */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)]">
-              <div className="h-1.5 bg-gradient-to-r from-orange-500 to-orange-600" />
-              <div className="flex items-start gap-3 p-4 sm:p-5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50">
-                  <ShieldAlert className="h-5 w-5 text-orange-600" />
+            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(239,68,68,.06)_78%,transparent)]" />
+              <div className="relative flex items-start gap-4 p-4 sm:p-6 lg:p-8 xl:p-9">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-red-400/20 bg-red-400/10">
+                  <ShieldAlert className="h-5 w-5 text-orange-300" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-lg font-black text-slate-950 sm:text-xl">Konto löschen</h1>
-                  <p className="mt-1 text-sm font-medium text-slate-600">Antrag auf Löschung deines EMD VereinsApp-Kontos.</p>
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-400/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-red-200"><span className="h-2 w-2 rounded-full bg-red-400" />Konto · Datenschutz</div>
+                  <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Konto löschen</h1>
+                  <p className="mt-2 text-sm font-medium text-white/55">Antrag auf Löschung deines EMD VereinsApp-Kontos.</p>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          <Card className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)]">
+          <Card className="rounded-[24px] border border-white/10 bg-black/35 shadow-[0_24px_80px_-54px_rgba(0,0,0,.95)] backdrop-blur-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-black">
-                <AlertTriangle className="w-5 h-5 text-orange-600" />
+                <AlertTriangle className="w-5 h-5 text-orange-300" />
                 Löschanfrage
               </CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-6">
               {ok && (
-                <Alert className="border-green-200 bg-green-50">
-                  <CheckCircle2 className="h-4 w-4 text-green-700" />
+                <Alert className="border-emerald-400/25 bg-emerald-400/10 text-emerald-100">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-300" />
                   <AlertTitle>Anfrage gesendet</AlertTitle>
                   <AlertDescription>
                     Wir melden uns bei Rückfragen.
@@ -217,7 +238,7 @@ export default function KontoLoeschenPage() {
                 onValueChange={(v) => setReasonId(v as ReasonId)}
               >
                 {REASONS.map((r) => (
-                  <div key={r.id} className="flex items-center gap-2">
+                  <div key={r.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3">
                     <RadioGroupItem value={r.id} id={r.id} />
                     <Label htmlFor={r.id}>{r.label}</Label>
                   </div>
@@ -229,6 +250,7 @@ export default function KontoLoeschenPage() {
                   value={otherReason}
                   onChange={(e) => setOtherReason(e.target.value)}
                   placeholder="Bitte kurz beschreiben"
+                  className="min-h-[110px] rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30"
                 />
               )}
 
@@ -236,6 +258,7 @@ export default function KontoLoeschenPage() {
                 placeholder="Kontakt E-Mail (optional)"
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
+                className="h-11 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30"
               />
 
               <div className="space-y-3">
@@ -262,7 +285,7 @@ export default function KontoLoeschenPage() {
                 <Button
                   onClick={submitRequest}
                   disabled={disabled}
-                  className="bg-orange-600 hover:bg-orange-700"
+                  className="h-11 rounded-xl bg-orange-500 font-black text-white hover:bg-orange-600"
                 >
                   {submitting && (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -272,6 +295,7 @@ export default function KontoLoeschenPage() {
 
                 <Button
                   variant="outline"
+                  className="h-11 rounded-xl border-white/10 bg-white/5 font-black text-white hover:bg-white/10"
                   onClick={() => router.push("/member-profile-app")}
                 >
                   Abbrechen

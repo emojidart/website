@@ -720,7 +720,7 @@ export default function TeamScanSheetTestPage() {
     <div className="min-h-screen bg-slate-50 pb-24">
       <Header variant="app" title="Statistikblatt" subtitle="Statistikblatt scannen" backHref="/team-print-sheet" />
       <main className="w-full pt-14 sm:pt-16">
-        <div className="mx-auto w-full max-w-[1500px] px-3 py-4 sm:px-5 lg:px-8">
+        <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-4 sm:px-5 lg:px-8">
           <section className="overflow-hidden rounded-[26px] bg-slate-950 p-5 text-white shadow-xl sm:p-7">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-500/15"><ScanLine className="h-6 w-6 text-orange-400" /></div>

@@ -53,16 +53,16 @@ export function StatisticsSection({
     <div className="space-y-4 sm:space-y-5">
       <Tabs defaultValue="by-match" className="w-full">
         {/* cleaner tabs (app style like your dashboard tabs) */}
-        <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-100/80 p-1.5 shadow-none sm:mb-5">
+        <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-white/[0.08] bg-black/25 p-1.5 shadow-none sm:mb-5">
           <TabsTrigger
             value="by-match"
-            className="h-10 rounded-xl px-3 text-xs font-black text-slate-500 shadow-none data-[state=active]:bg-slate-950 data-[state=active]:text-white data-[state=active]:shadow-sm sm:text-sm"
+            className="h-10 rounded-xl px-3 text-xs font-black text-white/40 shadow-none data-[state=active]:bg-orange-500/[0.08]0 data-[state=active]:text-white data-[state=active]:shadow-sm sm:text-sm"
           >
             Nach Spielen
           </TabsTrigger>
           <TabsTrigger
             value="overall"
-            className="h-10 rounded-xl px-3 text-xs font-black text-slate-500 shadow-none data-[state=active]:bg-slate-950 data-[state=active]:text-white data-[state=active]:shadow-sm sm:text-sm"
+            className="h-10 rounded-xl px-3 text-xs font-black text-white/40 shadow-none data-[state=active]:bg-orange-500/[0.08]0 data-[state=active]:text-white data-[state=active]:shadow-sm sm:text-sm"
           >
             Gesamt
           </TabsTrigger>
@@ -70,28 +70,28 @@ export function StatisticsSection({
 
         {/* OVERALL */}
         <TabsContent value="overall" className="space-y-4 sm:space-y-6">
-          <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[28px]">
-            <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
-              <CardTitle className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
-                <Trophy className="h-5 w-5 text-orange-600" />
+          <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] sm:rounded-[28px]">
+            <CardHeader className="border-b border-white/[0.07] px-4 py-5 sm:px-6 sm:py-6">
+              <CardTitle className="flex items-center gap-2 text-xl font-black tracking-tight text-white sm:text-2xl">
+                <Trophy className="h-5 w-5 text-orange-300" />
                 Gesamtstatistik
               </CardTitle>
-              <p className="text-sm text-slate-500">Alle Statistiken</p>
+              <p className="text-sm text-white/40">Alle Statistiken</p>
             </CardHeader>
 
             <CardContent className="px-3 py-4 sm:px-6 sm:py-6">
               {legStatsLoading ? (
                 <div className="py-10 text-center">
                   <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
-                  <p className="mt-3 text-sm text-slate-500">Lade Gesamtstatistiken...</p>
+                  <p className="mt-3 text-sm text-white/40">Lade Gesamtstatistiken...</p>
                 </div>
               ) : realLegStatistics.length === 0 ? (
                 <div className="py-10 text-center">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
-                    <Trophy className="h-6 w-6 text-orange-600" />
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/[0.08]0/[0.08] border border-orange-300/[0.16]">
+                    <Trophy className="h-6 w-6 text-orange-300" />
                   </div>
-                  <p className="font-semibold text-slate-950">Keine Gesamtstatistiken gefunden.</p>
-                  <p className="mt-1 text-sm text-slate-500">Sobald echte Daten vorhanden sind, erscheinen sie hier.</p>
+                  <p className="font-semibold text-white">Keine Gesamtstatistiken gefunden.</p>
+                  <p className="mt-1 text-sm text-white/40">Sobald echte Daten vorhanden sind, erscheinen sie hier.</p>
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
@@ -196,9 +196,9 @@ export function StatisticsSection({
                         <div
                           key={stats.player_id}
                           className={[
-                            "rounded-[20px] border bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.55)] sm:rounded-[22px]",
+                            "rounded-[20px] border bg-[#090c11] shadow-none sm:rounded-[22px]",
                             "p-3 sm:p-4",
-                            isTop ? "border-orange-200" : "border-slate-200",
+                            isTop ? "border-orange-300/[0.16]" : "border-white/[0.08]",
                           ].join(" ")}
                         >
                           {/* header row */}
@@ -206,24 +206,24 @@ export function StatisticsSection({
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 {isTop ? (
-                                  <span className="inline-flex items-center gap-1 rounded-xl border border-orange-200 bg-orange-50 px-2 py-1">
-                                    <Crown className="h-4 w-4 text-orange-600" />
-                                    <span className="text-xs font-bold text-orange-700">#{index + 1}</span>
+                                  <span className="inline-flex items-center gap-1 rounded-xl border border-orange-300/[0.16] bg-orange-500/[0.08] px-2 py-1">
+                                    <Crown className="h-4 w-4 text-orange-300" />
+                                    <span className="text-xs font-bold text-orange-200">#{index + 1}</span>
                                   </span>
                                 ) : null}
-                                <h3 className="break-words text-[15px] font-black leading-snug text-slate-950 sm:text-base">
+                                <h3 className="break-words text-[15px] font-black leading-snug text-white sm:text-base">
                                   {stats.player_name}
                                 </h3>
                               </div>
-                              <div className="mt-1 text-xs text-slate-500">
+                              <div className="mt-1 text-xs text-white/40">
                                 Gewinnquote:{" "}
-                                <span className="font-semibold text-slate-800">{stats.win_percentage.toFixed(1)}%</span>
+                                <span className="font-semibold text-white/75">{stats.win_percentage.toFixed(1)}%</span>
                               </div>
                             </div>
 
                             <div className="flex flex-wrap gap-2 justify-end">
-                              <Badge className="rounded-full bg-slate-950 px-2.5 text-[11px] font-black text-white shadow-none">{stats.total_wins} Wins</Badge>
-                              <Badge variant="outline" className="text-[11px] border-slate-200">
+                              <Badge className="rounded-full bg-[#090c11]/[0.06] px-2.5 text-[11px] font-black text-white shadow-none">{stats.total_wins} Wins</Badge>
+                              <Badge variant="outline" className="rounded-full border-white/[0.10] bg-white/[0.035] text-[11px] text-white/55">
                                 {stats.total_legs} Legs
                               </Badge>
                             </div>
@@ -231,36 +231,36 @@ export function StatisticsSection({
 
                           {/* main stats chips */}
                           <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-2 py-3 text-center">
-                              <div className="text-lg font-black tracking-tight text-slate-950">{stats.total_180}</div>
-                              <div className="text-[10px] text-slate-500">180</div>
+                            <div className="rounded-2xl border border-white/[0.08] bg-[#090c11]/[0.035] px-2 py-3 text-center">
+                              <div className="text-lg font-black tracking-tight text-white">{stats.total_180}</div>
+                              <div className="text-[10px] text-white/40">180</div>
                             </div>
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-2 py-3 text-center">
-                              <div className="text-lg font-black tracking-tight text-slate-950">{stats.total_171}</div>
-                              <div className="text-[10px] text-slate-500">171</div>
+                            <div className="rounded-2xl border border-white/[0.08] bg-[#090c11]/[0.035] px-2 py-3 text-center">
+                              <div className="text-lg font-black tracking-tight text-white">{stats.total_171}</div>
+                              <div className="text-[10px] text-white/40">171</div>
                             </div>
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-2 py-3 text-center">
-                              <div className="text-lg font-black tracking-tight text-slate-950">{stats.total_20}</div>
-                              <div className="text-[10px] text-slate-500">20</div>
+                            <div className="rounded-2xl border border-white/[0.08] bg-[#090c11]/[0.035] px-2 py-3 text-center">
+                              <div className="text-lg font-black tracking-tight text-white">{stats.total_20}</div>
+                              <div className="text-[10px] text-white/40">20</div>
                             </div>
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-2 py-3 text-center">
-                              <div className="text-lg font-black tracking-tight text-slate-950">{stats.total_19}</div>
-                              <div className="text-[10px] text-slate-500">19</div>
+                            <div className="rounded-2xl border border-white/[0.08] bg-[#090c11]/[0.035] px-2 py-3 text-center">
+                              <div className="text-lg font-black tracking-tight text-white">{stats.total_19}</div>
+                              <div className="text-[10px] text-white/40">19</div>
                             </div>
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-2 py-3 text-center">
-                              <div className="text-lg font-black tracking-tight text-slate-950">{stats.total_18}</div>
-                              <div className="text-[10px] text-slate-500">18</div>
+                            <div className="rounded-2xl border border-white/[0.08] bg-[#090c11]/[0.035] px-2 py-3 text-center">
+                              <div className="text-lg font-black tracking-tight text-white">{stats.total_18}</div>
+                              <div className="text-[10px] text-white/40">18</div>
                             </div>
-                            <div className="rounded-xl border border-red-200 bg-red-50 px-2 py-2 text-center">
-                              <div className="text-lg font-extrabold text-red-700">
+                            <div className="rounded-xl border border-red-300/[0.20] bg-red-500/[0.07] px-2 py-2 text-center">
+                              <div className="text-lg font-extrabold text-red-200">
                                 {stats.total_under_26 + stats.total_under_30 + stats.total_semperit}
                               </div>
-                              <div className="text-[10px] text-red-700/80">Under-Würfe</div>
+                              <div className="text-[10px] text-red-200/70">Under-Würfe</div>
                             </div>
                           </div>
 
                           {/* details (compact) */}
-                          <div className="mt-3 rounded-[18px] border border-slate-200 bg-slate-50/70 p-3">
+                          <div className="mt-3 rounded-[18px] border border-white/[0.08] bg-[#090c11]/[0.035] p-3">
                             <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4 xl:grid-cols-8">
                               {[
                                 ["17", stats.total_17],
@@ -272,28 +272,28 @@ export function StatisticsSection({
                                 ["95+", stats.total_95_plus],
                                 ["Bull", stats.total_bull],
                               ].map(([label, val]) => (
-                                <div key={String(label)} className="rounded-xl border border-slate-200 bg-white px-2 py-2.5">
-                                  <div className="text-sm font-bold text-slate-950">{val as any}</div>
-                                  <div className="text-[10px] text-slate-500">{label as any}</div>
+                                <div key={String(label)} className="rounded-xl border border-white/[0.08] bg-black/25 px-2 py-2.5">
+                                  <div className="text-sm font-bold text-white">{val as any}</div>
+                                  <div className="text-[10px] text-white/40">{label as any}</div>
                                 </div>
                               ))}
                             </div>
 
                             {stats.total_under_26 > 0 || stats.total_under_30 > 0 || stats.total_semperit > 0 ? (
-                              <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-2">
-                                <div className="text-[11px] font-bold text-red-700 mb-1">Under-Würfe</div>
+                              <div className="mt-3 rounded-xl border border-red-300/[0.20] bg-red-500/[0.07] p-2">
+                                <div className="text-[11px] font-bold text-red-200 mb-1">Under-Würfe</div>
                                 <div className="grid grid-cols-3 gap-2 text-[11px]">
-                                  <div className="flex items-center justify-between rounded-lg bg-white border border-red-200 px-2 py-1">
-                                    <span className="text-red-700">U26</span>
-                                    <span className="font-bold text-red-700">{stats.total_under_26}</span>
+                                  <div className="flex items-center justify-between rounded-lg bg-[#090c11] border border-red-300/[0.20] px-2 py-1">
+                                    <span className="text-red-200">U26</span>
+                                    <span className="font-bold text-red-200">{stats.total_under_26}</span>
                                   </div>
-                                  <div className="flex items-center justify-between rounded-lg bg-white border border-red-200 px-2 py-1">
-                                    <span className="text-red-700">U30</span>
-                                    <span className="font-bold text-red-700">{stats.total_under_30}</span>
+                                  <div className="flex items-center justify-between rounded-lg bg-[#090c11] border border-red-300/[0.20] px-2 py-1">
+                                    <span className="text-red-200">U30</span>
+                                    <span className="font-bold text-red-200">{stats.total_under_30}</span>
                                   </div>
-                                  <div className="flex items-center justify-between rounded-lg bg-white border border-red-200 px-2 py-1">
-                                    <span className="text-red-700">Semp</span>
-                                    <span className="font-bold text-red-700">{stats.total_semperit}</span>
+                                  <div className="flex items-center justify-between rounded-lg bg-[#090c11] border border-red-300/[0.20] px-2 py-1">
+                                    <span className="text-red-200">Semp</span>
+                                    <span className="font-bold text-red-200">{stats.total_semperit}</span>
                                   </div>
                                 </div>
                               </div>
@@ -311,28 +311,28 @@ export function StatisticsSection({
 
         {/* BY MATCH */}
         <TabsContent value="by-match">
-          <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[28px]">
-            <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
-              <CardTitle className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
-                <TrendingUp className="h-5 w-5 text-orange-600" />
+          <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] sm:rounded-[28px]">
+            <CardHeader className="border-b border-white/[0.07] px-4 py-5 sm:px-6 sm:py-6">
+              <CardTitle className="flex items-center gap-2 text-xl font-black tracking-tight text-white sm:text-2xl">
+                <TrendingUp className="h-5 w-5 text-orange-300" />
                 Statistiken nach Spiel
               </CardTitle>
-              <p className="text-sm text-slate-500">Detailliert sortiert nach Match</p>
+              <p className="text-sm text-white/40">Detailliert sortiert nach Match</p>
             </CardHeader>
 
             <CardContent className="px-3 py-4 sm:px-6 sm:py-6">
               {legStatsLoading ? (
                 <div className="py-10 text-center">
                   <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
-                  <p className="mt-3 text-sm text-slate-500">Lade Spielstatistiken...</p>
+                  <p className="mt-3 text-sm text-white/40">Lade Spielstatistiken...</p>
                 </div>
               ) : realLegStatistics.length === 0 ? (
                 <div className="py-10 text-center">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
-                    <TrendingUp className="h-6 w-6 text-orange-600" />
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/[0.08]0/[0.08] border border-orange-300/[0.16]">
+                    <TrendingUp className="h-6 w-6 text-orange-300" />
                   </div>
-                  <p className="font-semibold text-slate-950">Keine Statistiken verfügbar</p>
-                  <p className="mt-1 text-sm text-slate-500">Sobald echte Daten vorhanden sind, erscheinen sie hier.</p>
+                  <p className="font-semibold text-white">Keine Statistiken verfügbar</p>
+                  <p className="mt-1 text-sm text-white/40">Sobald echte Daten vorhanden sind, erscheinen sie hier.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -446,20 +446,20 @@ export function StatisticsSection({
                         return (
                           <div
                             key={matchKey}
-                            className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)]"
+                            className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-black/25 shadow-none"
                           >
-                            <div className="border-b border-slate-100 bg-slate-50/60 p-4 sm:px-5">
+                            <div className="border-b border-white/[0.07] bg-[#090c11]/[0.03] p-4 sm:px-5">
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <div className="break-words text-sm font-black leading-snug text-slate-950 sm:text-base">
+                                  <div className="break-words text-sm font-black leading-snug text-white sm:text-base">
                                     {match
                                       ? `${getTeamDisplayName(match, true)} vs ${getTeamDisplayName(match, false)}`
                                       : `Spiel ${matchKey}`}
                                   </div>
-                                  <div className="mt-1 text-xs text-slate-500">{matchDate}</div>
+                                  <div className="mt-1 text-xs text-white/40">{matchDate}</div>
                                 </div>
 
-                                <Badge variant="outline" className="text-[11px] border-slate-200">
+                                <Badge variant="outline" className="rounded-full border-white/[0.10] bg-white/[0.035] text-[11px] text-white/55">
                                   Match
                                 </Badge>
                               </div>
@@ -474,22 +474,22 @@ export function StatisticsSection({
                                     <div
                                       key={`${matchKey}-${player.player_id}`}
                                       className={[
-                                        "rounded-[18px] border bg-white shadow-[0_10px_30px_-26px_rgba(15,23,42,0.4)]",
+                                        "rounded-[18px] border bg-[#090c11] shadow-none",
                                         "p-3",
-                                        isTop ? "border-orange-200" : "border-slate-200",
+                                        isTop ? "border-orange-300/[0.16]" : "border-white/[0.08]",
                                       ].join(" ")}
                                     >
                                       <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
                                           <div className="flex items-center gap-2">
-                                            {isTop ? <Crown className="h-4 w-4 text-orange-600" /> : null}
-                                            <div className="break-words text-sm font-black leading-snug text-slate-950">
+                                            {isTop ? <Crown className="h-4 w-4 text-orange-300" /> : null}
+                                            <div className="break-words text-sm font-black leading-snug text-white">
                                               {player.player_name}
                                             </div>
                                           </div>
-                                          <div className="mt-1 text-xs text-slate-500">
+                                          <div className="mt-1 text-xs text-white/40">
                                             Gewinnquote:{" "}
-                                            <span className="font-semibold text-slate-800">
+                                            <span className="font-semibold text-white/75">
                                               {player.total_legs > 0
                                                 ? `${((player.total_wins / player.total_legs) * 100).toFixed(1)}%`
                                                 : "0%"}
@@ -498,10 +498,10 @@ export function StatisticsSection({
                                         </div>
 
                                         <div className="flex gap-2 flex-shrink-0">
-                                          <Badge className="rounded-full bg-slate-950 px-2.5 text-[11px] font-black text-white shadow-none">
+                                          <Badge className="rounded-full bg-[#090c11]/[0.06] px-2.5 text-[11px] font-black text-white shadow-none">
                                             {player.total_wins} Wins
                                           </Badge>
-                                          <Badge variant="outline" className="text-[11px] border-slate-200">
+                                          <Badge variant="outline" className="rounded-full border-white/[0.10] bg-white/[0.035] text-[11px] text-white/55">
                                             {player.total_legs} Legs
                                           </Badge>
                                         </div>
@@ -520,29 +520,29 @@ export function StatisticsSection({
                                         ].map(([label, val]) => (
                                           <div
                                             key={String(label)}
-                                            className="rounded-xl border border-slate-200 bg-slate-50/70 px-2 py-2.5 text-center"
+                                            className="rounded-xl border border-white/[0.08] bg-[#090c11]/[0.035] px-2 py-2.5 text-center"
                                           >
-                                            <div className="text-sm font-bold text-slate-950">{val as any}</div>
-                                            <div className="text-[10px] text-slate-500">{label as any}</div>
+                                            <div className="text-sm font-bold text-white">{val as any}</div>
+                                            <div className="text-[10px] text-white/40">{label as any}</div>
                                           </div>
                                         ))}
                                       </div>
 
                                       {player.total_under_26 > 0 || player.total_under_30 > 0 || player.total_semperit > 0 ? (
-                                        <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3">
-                                          <div className="text-[11px] font-bold text-red-700 mb-2">Under-Würfe</div>
+                                        <div className="mt-3 rounded-2xl border border-red-300/[0.20] bg-red-500/[0.07] p-3">
+                                          <div className="text-[11px] font-bold text-red-200 mb-2">Under-Würfe</div>
                                           <div className="grid grid-cols-3 gap-2">
-                                            <div className="flex items-center justify-between rounded-xl bg-white border border-red-200 px-2 py-2">
-                                              <span className="text-[11px] text-red-700">U26</span>
-                                              <span className="text-[11px] font-bold text-red-700">{player.total_under_26}</span>
+                                            <div className="flex items-center justify-between rounded-xl bg-[#090c11] border border-red-300/[0.20] px-2 py-2">
+                                              <span className="text-[11px] text-red-200">U26</span>
+                                              <span className="text-[11px] font-bold text-red-200">{player.total_under_26}</span>
                                             </div>
-                                            <div className="flex items-center justify-between rounded-xl bg-white border border-red-200 px-2 py-2">
-                                              <span className="text-[11px] text-red-700">U30</span>
-                                              <span className="text-[11px] font-bold text-red-700">{player.total_under_30}</span>
+                                            <div className="flex items-center justify-between rounded-xl bg-[#090c11] border border-red-300/[0.20] px-2 py-2">
+                                              <span className="text-[11px] text-red-200">U30</span>
+                                              <span className="text-[11px] font-bold text-red-200">{player.total_under_30}</span>
                                             </div>
-                                            <div className="flex items-center justify-between rounded-xl bg-white border border-red-200 px-2 py-2">
-                                              <span className="text-[11px] text-red-700">Semp</span>
-                                              <span className="text-[11px] font-bold text-red-700">{player.total_semperit}</span>
+                                            <div className="flex items-center justify-between rounded-xl bg-[#090c11] border border-red-300/[0.20] px-2 py-2">
+                                              <span className="text-[11px] text-red-200">Semp</span>
+                                              <span className="text-[11px] font-bold text-red-200">{player.total_semperit}</span>
                                             </div>
                                           </div>
                                         </div>
@@ -558,10 +558,10 @@ export function StatisticsSection({
                                         ].map(([label, val]) => (
                                           <div
                                             key={String(label)}
-                                            className="rounded-2xl border border-slate-200 bg-slate-50/70 px-2 py-3 text-center"
+                                            className="rounded-2xl border border-white/[0.08] bg-[#090c11]/[0.035] px-2 py-3 text-center"
                                           >
-                                            <div className="text-sm font-bold text-slate-950">{val as any}</div>
-                                            <div className="text-[10px] text-slate-500">{label as any}</div>
+                                            <div className="text-sm font-bold text-white">{val as any}</div>
+                                            <div className="text-[10px] text-white/40">{label as any}</div>
                                           </div>
                                         ))}
                                       </div>

@@ -482,20 +482,7 @@ export default function MatchPostponePage() {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
-        <Header />
-        <main className="pt-12 sm:pt-14">
-          <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8">
-            <div className="flex items-center justify-center min-h-[60vh] gap-3">
-              <Loader2 className="h-7 w-7 animate-spin text-orange-600" />
-              <span className="text-base font-medium text-gray-700">Lade…</span>
-            </div>
-          </div>
-        </main>
-        <MobileBottomNav />
-      </div>
-    )
+    return <div className="min-h-[1px]" aria-hidden="true" />
   }
 
   const homeName = getTeamDisplayName(match, true)
@@ -508,44 +495,44 @@ export default function MatchPostponePage() {
   const oldTime = hhmm(match?.match_time)
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-transparent pb-24 text-white">
       <Header />
 
-      <main className="pt-12 sm:pt-14">
+      <main className="pt-16 sm:pt-20">
         <motion.div
-          className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-8"
+          className="mx-auto w-full max-w-none px-3 py-4 sm:px-5 sm:py-6 lg:px-8 xl:px-10 2xl:px-12"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           {/* Top Card */}
           <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-              <div className="p-4 sm:p-5 flex items-start gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                  <CalendarClock className="w-5 h-5 text-orange-600" />
+            <div className="overflow-hidden rounded-[28px] border border-orange-300/[0.10] bg-black/35 shadow-[0_28px_80px_-50px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+              <div className="h-1 bg-gradient-to-r from-orange-500 via-orange-400 to-sky-500/70" />
+              <div className="relative flex items-start gap-3 p-4 sm:p-5 lg:p-6">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-500/12 shadow-[0_0_24px_rgba(249,115,22,.08)]">
+                  <CalendarClock className="h-5 w-5 text-orange-300" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg font-black">Spiel verschieben</h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {homeName} <span className="text-gray-400">vs</span> {awayName}
+                  <h1 className="text-base font-black tracking-tight text-white sm:text-lg lg:text-xl">Spiel verschieben</h1>
+                  <p className="mt-1 break-words text-sm font-medium text-white/60">
+                    {homeName} <span className="text-white/30">vs</span> {awayName}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Aktuell: <span className="font-semibold text-gray-800">{oldDate}</span>
-                    {oldTime ? <span className="text-gray-500"> · {oldTime} Uhr</span> : null}
+                  <p className="mt-1 text-xs font-medium text-white/40">
+                    Aktuell: <span className="font-semibold text-white/80">{oldDate}</span>
+                    {oldTime ? <span className="text-white/40"> · {oldTime} Uhr</span> : null}
                   </p>
 
                   {/* Heim/Auswärts Badge */}
                   <div className="mt-2 flex flex-wrap gap-2">
                     {isHomeGame ? (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black border border-green-200 bg-green-50 text-green-800">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/15 bg-emerald-500/[0.08] px-2.5 py-1 text-xs font-black text-emerald-200">
                         <Home className="h-3.5 w-3.5" />
                         Heimspiel
                       </span>
                     ) : null}
                     {isAwayGame ? (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black border border-blue-200 bg-blue-50 text-blue-800">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-sky-300/15 bg-sky-500/[0.08] px-2.5 py-1 text-xs font-black text-sky-200">
                         <Bus className="h-3.5 w-3.5" />
                         Auswärtsspiel
                       </span>
@@ -561,7 +548,7 @@ export default function MatchPostponePage() {
             <Button
               variant="outline"
               onClick={() => router.push(backHref)}
-              className="w-full h-10 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black"
+              className="h-11 w-full rounded-2xl border-white/[0.10] bg-white/[0.035] font-black text-white/80 hover:border-orange-300/20 hover:bg-white/[0.06] hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {backLabel}
@@ -570,10 +557,10 @@ export default function MatchPostponePage() {
 
           {/* Hinweis */}
           <motion.div variants={itemVariants} className="mb-5">
-            <Alert className="rounded-2xl border-orange-200 bg-orange-50/70">
-              <ShieldAlert className="h-4 w-4 text-orange-700" />
-              <AlertTitle className="text-orange-900 font-black">Hinweis</AlertTitle>
-              <AlertDescription className="text-orange-900/80">
+            <Alert className="rounded-[24px] border-orange-300/15 bg-orange-500/[0.055] text-white backdrop-blur-xl">
+              <ShieldAlert className="h-4 w-4 text-orange-300" />
+              <AlertTitle className="font-black text-orange-200">Hinweis</AlertTitle>
+              <AlertDescription className="text-orange-100/70">
                 Bitte trage einen echten Grund ein (z.B. „2 Spieler krank“).
               </AlertDescription>
             </Alert>
@@ -581,20 +568,20 @@ export default function MatchPostponePage() {
 
           {/* Planung / Heimspiele + interne Events + Urlaube + Lion Cup */}
           <motion.div variants={itemVariants} className="mb-5">
-            <Alert className="rounded-2xl border-gray-200 bg-white">
-              <ListChecks className="h-4 w-4 text-gray-800" />
-              <AlertTitle className="text-gray-900 font-black">
+            <Alert className="rounded-[26px] border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+              <ListChecks className="h-4 w-4 text-white/65" />
+              <AlertTitle className="font-black text-white">
                 Planung am {postponeData.newDate ? formatMatchDate(postponeData.newDate) : "…"}
               </AlertTitle>
 
-              <AlertDescription className="text-gray-700">
+              <AlertDescription className="text-white/65">
                 {dayLoading ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Lade Spiele/Events am Tag…
                   </span>
                 ) : dayError ? (
-                  <span className="text-orange-700">{dayError}</span>
+                  <span className="text-orange-300">{dayError}</span>
                 ) : (
                   <>
                     {/* Heimspiele Summary */}
@@ -602,7 +589,7 @@ export default function MatchPostponePage() {
                       <span className="font-bold">{homeGamesCount}</span>{" "}
                       {homeGamesCount === 1 ? "Heimspiel" : "Heimspiele"} an diesem Tag.
                       {isAwayGame ? (
-                        <span className="block mt-1 text-blue-800">
+                        <span className="mt-1 block text-sky-300">
                           Dieses Spiel ist <span className="font-bold">auswärts</span>
                         </span>
                       ) : null}
@@ -623,31 +610,31 @@ export default function MatchPostponePage() {
                               <div
                                 key={m.id}
                                 className={cn(
-                                  "flex items-center justify-between rounded-xl border px-3 py-2 text-sm",
-                                  isThis ? "border-orange-200 bg-orange-50/60" : "border-gray-200 bg-gray-50/50",
+                                  "flex items-center justify-between rounded-xl border px-3 py-2 text-sm backdrop-blur-xl",
+                                  isThis ? "border-orange-300/20 bg-orange-500/[0.07]" : "border-white/[0.08] bg-white/[0.03]",
                                 )}
                               >
                                 <div className="min-w-0">
-                                  <div className="font-black text-gray-900 truncate">
-                                    {h} <span className="text-gray-400">vs</span> {a}
+                                  <div className="truncate font-black text-white/90">
+                                    {h} <span className="text-white/30">vs</span> {a}
                                     {isThis ? (
-                                      <span className="ml-2 text-xs font-black text-orange-700">(dieses Spiel)</span>
+                                      <span className="ml-2 text-xs font-black text-orange-300">(dieses Spiel)</span>
                                     ) : null}
                                   </div>
-                                  <div className="text-xs text-gray-600 truncate">{m.venue || "—"}</div>
+                                  <div className="truncate text-xs text-white/45">{m.venue || "—"}</div>
                                 </div>
-                                <div className="ml-3 font-black text-gray-900 tabular-nums">{t}</div>
+                                <div className="ml-3 tabular-nums font-black text-white/85">{t}</div>
                               </div>
                             )
                           })}
                       </div>
                     ) : (
-                      <div className="mt-2 text-sm text-gray-600">Keine Heimspiele an diesem Datum gefunden.</div>
+                      <div className="mt-2 text-sm text-white/45">Keine Heimspiele an diesem Datum gefunden.</div>
                     )}
 
                     {/* Interne Events Summary */}
                     <div className="mt-4 flex items-center gap-2">
-                      <PartyPopper className="h-4 w-4 text-gray-800" />
+                      <PartyPopper className="h-4 w-4 text-white/65" />
                       <div>
                         <span className="font-bold">{internalEventsCount}</span>{" "}
                         {internalEventsCount === 1 ? "internes Event" : "Events"} an diesem Tag.
@@ -665,26 +652,26 @@ export default function MatchPostponePage() {
                             return (
                               <div
                                 key={ev.id}
-                                className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm"
+                                className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm backdrop-blur-xl"
                               >
                                 <div className="min-w-0">
-                                  <div className="font-black text-gray-900 truncate">{ev.name}</div>
-                                  <div className="text-xs text-gray-600 truncate">
+                                  <div className="truncate font-black text-white/90">{ev.name}</div>
+                                  <div className="truncate text-xs text-white/45">
                                     {ev.event_type ? ev.event_type : "event"}
                                   </div>
                                 </div>
-                                <div className="ml-3 font-black text-gray-900 tabular-nums">{t}</div>
+                                <div className="ml-3 tabular-nums font-black text-white/85">{t}</div>
                               </div>
                             )
                           })}
                       </div>
                     ) : (
-                      <div className="mt-2 text-sm text-gray-600"></div>
+                      <div className="mt-2 text-sm text-white/45"></div>
                     )}
 
                     {/* Urlaube Summary */}
                     <div className="mt-4 flex items-center gap-2">
-                      <Palmtree className="h-4 w-4 text-gray-800" />
+                      <Palmtree className="h-4 w-4 text-white/65" />
                       <div>
                         <span className="font-bold">{vacationsCount}</span>{" "}
                         {vacationsCount === 1 ? "Urlaub" : "Urlaube"} an diesem Tag.
@@ -705,13 +692,13 @@ export default function MatchPostponePage() {
                             return (
                               <div
                                 key={v.id}
-                                className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm"
+                                className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm backdrop-blur-xl"
                               >
                                 <div className="min-w-0">
-                                  <div className="font-black text-gray-900 truncate">{v.user_name}</div>
-                                  <div className="text-xs text-gray-600 truncate">
+                                  <div className="truncate font-black text-white/90">{v.user_name}</div>
+                                  <div className="truncate text-xs text-white/45">
                                     {range}
-                                    {v.note ? <span className="text-gray-500"> · {v.note}</span> : null}
+                                    {v.note ? <span className="text-white/40"> · {v.note}</span> : null}
                                   </div>
                                 </div>
                               </div>
@@ -719,12 +706,12 @@ export default function MatchPostponePage() {
                           })}
                       </div>
                     ) : (
-                      <div className="mt-2 text-sm text-gray-600"></div>
+                      <div className="mt-2 text-sm text-white/45"></div>
                     )}
 
                     {/* Lion Cup Summary */}
                     <div className="mt-4 flex items-center gap-2">
-                      <Trophy className="h-4 w-4 text-gray-800" />
+                      <Trophy className="h-4 w-4 text-white/65" />
                       <div>
                         <span className="font-bold">{lionCupCount}</span>{" "}
                         {lionCupCount === 1 ? "Lion Cup Termin" : "Lion Cup Termine"} an diesem Tag.
@@ -745,31 +732,31 @@ export default function MatchPostponePage() {
                               <div
                                 key={ev.id}
                                 className={cn(
-                                  "flex items-center justify-between rounded-xl border px-3 py-2 text-sm",
-                                  showRescheduled ? "border-orange-200 bg-orange-50/50" : "border-gray-200 bg-gray-50/50",
+                                  "flex items-center justify-between rounded-xl border px-3 py-2 text-sm backdrop-blur-xl",
+                                  showRescheduled ? "border-orange-300/20 bg-orange-500/[0.07]" : "border-white/[0.08] bg-white/[0.03]",
                                 )}
                               >
                                 <div className="min-w-0">
-                                  <div className="font-black text-gray-900 truncate">
+                                  <div className="truncate font-black text-white/90">
                                     {title}
                                     {showRescheduled ? (
-                                      <span className="ml-2 text-xs font-black text-orange-700">(verschoben)</span>
+                                      <span className="ml-2 text-xs font-black text-orange-300">(verschoben)</span>
                                     ) : null}
                                   </div>
-                                  <div className="text-xs text-gray-600 truncate">
+                                  <div className="truncate text-xs text-white/45">
                                     {ev.location ? ev.location : "—"}
                                     {showRescheduled && ev.reschedule_reason ? (
-                                      <span className="text-gray-500"> · {ev.reschedule_reason}</span>
+                                      <span className="text-white/40"> · {ev.reschedule_reason}</span>
                                     ) : null}
                                   </div>
                                 </div>
-                                <div className="ml-3 font-black text-gray-900 tabular-nums">{t}</div>
+                                <div className="ml-3 tabular-nums font-black text-white/85">{t}</div>
                               </div>
                             )
                           })}
                       </div>
                     ) : (
-                      <div className="mt-2 text-sm text-gray-600"></div>
+                      <div className="mt-2 text-sm text-white/45"></div>
                     )}
                   </>
                 )}
@@ -779,15 +766,15 @@ export default function MatchPostponePage() {
 
           {/* Form Card */}
           <motion.div variants={itemVariants}>
-            <Card className="rounded-2xl border border-gray-200 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm sm:text-base font-black">
-                  <AlertTriangle className="w-5 h-5 text-orange-600" />
+            <Card className="rounded-[28px] border border-white/[0.08] bg-black/30 text-white shadow-[0_26px_80px_-50px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+              <CardHeader className="pb-2 sm:px-5 lg:px-6">
+                <CardTitle className="flex items-center gap-2 text-sm font-black text-white sm:text-base">
+                  <AlertTriangle className="h-5 w-5 text-orange-300" />
                   Neuer Termin
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="space-y-5">
+              <CardContent className="space-y-5 sm:px-5 lg:px-6">
                 {error ? (
                   <Alert variant="destructive" className="rounded-2xl">
                     <AlertTriangle className="h-4 w-4" />
@@ -797,17 +784,17 @@ export default function MatchPostponePage() {
                 ) : null}
 
                 {ok ? (
-                  <Alert className="rounded-2xl border-green-200 bg-green-50">
-                    <CheckCircle2 className="h-4 w-4 text-green-700" />
-                    <AlertTitle className="text-green-900 font-black">Gespeichert</AlertTitle>
-                    <AlertDescription className="text-green-900/80">
+                  <Alert className="rounded-2xl border-emerald-300/15 bg-emerald-500/[0.055] text-white">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+                    <AlertTitle className="font-black text-emerald-200">Gespeichert</AlertTitle>
+                    <AlertDescription className="text-emerald-100/70">
                       Das Spiel wurde verschoben. Du kannst jetzt zurück zum Dashboard.
                     </AlertDescription>
 
                     <div className="mt-3">
                       <Button
                         onClick={() => router.push(backHref)}
-                        className="h-10 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black"
+                        className="h-11 rounded-2xl bg-orange-500 font-black text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white"
                       >
                         Zurück
                       </Button>
@@ -819,28 +806,28 @@ export default function MatchPostponePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="newDate" className="text-sm font-bold">
-                      Neues Datum <span className="text-orange-700">*</span>
+                      Neues Datum <span className="text-orange-300">*</span>
                     </Label>
                     <Input
                       id="newDate"
                       type="date"
                       value={postponeData.newDate}
                       onChange={(e) => setPostponeData((p) => ({ ...p, newDate: e.target.value }))}
-                      className="h-11 rounded-2xl"
+                      className="h-11 rounded-2xl border-white/[0.10] bg-white/[0.04] text-white [color-scheme:dark] placeholder:text-white/30 focus-visible:border-orange-300/30 focus-visible:ring-orange-400/15"
                       disabled={ok}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="newTime" className="text-sm font-bold">
-                      Neue Uhrzeit <span className="text-orange-700">*</span>
+                      Neue Uhrzeit <span className="text-orange-300">*</span>
                     </Label>
                     <Input
                       id="newTime"
                       type="time"
                       value={postponeData.newTime}
                       onChange={(e) => setPostponeData((p) => ({ ...p, newTime: e.target.value }))}
-                      className="h-11 rounded-2xl"
+                      className="h-11 rounded-2xl border-white/[0.10] bg-white/[0.04] text-white [color-scheme:dark] placeholder:text-white/30 focus-visible:border-orange-300/30 focus-visible:ring-orange-400/15"
                       disabled={ok}
                     />
                   </div>
@@ -849,7 +836,7 @@ export default function MatchPostponePage() {
                 {/* Grund */}
                 <div className="space-y-2">
                   <Label htmlFor="reason" className="text-sm font-bold">
-                    Grund <span className="text-orange-700">*</span>
+                    Grund <span className="text-orange-300">*</span>
                   </Label>
                   <Textarea
                     id="reason"
@@ -857,17 +844,17 @@ export default function MatchPostponePage() {
                     onChange={(e) => setPostponeData((p) => ({ ...p, reason: e.target.value }))}
                     placeholder='z.B. "2 Spieler krank", "Termin-Kollision"'
                     className={cn(
-                      "min-h-[110px] rounded-2xl",
+                      "min-h-[110px] rounded-2xl border-white/[0.10] bg-white/[0.04] text-white placeholder:text-white/30 focus-visible:border-orange-300/30 focus-visible:ring-orange-400/15",
                       postponeData.reason.trim().length > 0 && postponeData.reason.trim().length < 3
                         ? "border-orange-300"
                         : "",
                     )}
                     disabled={ok}
                   />
-                  <p className="text-xs text-gray-500">Mindestens 3 Zeichen.</p>
+                  <p className="text-xs text-white/35">Mindestens 3 Zeichen.</p>
                 </div>
 
-                <Separator />
+                <Separator className="bg-white/[0.08]" />
 
                 {/* Actions */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -876,8 +863,8 @@ export default function MatchPostponePage() {
                     disabled={disabled || ok || !canEdit}
                     className={cn(
                       "h-11 rounded-2xl font-black",
-                      "bg-orange-600 hover:bg-orange-700 text-white",
-                      "disabled:opacity-60 disabled:hover:bg-orange-600",
+                      "bg-orange-500 text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white",
+                      "disabled:opacity-45 disabled:hover:bg-orange-500",
                     )}
                   >
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
@@ -887,7 +874,7 @@ export default function MatchPostponePage() {
                   <Button
                     variant="outline"
                     onClick={() => router.push(backHref)}
-                    className="h-11 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black"
+                    className="h-11 rounded-2xl border-white/[0.10] bg-white/[0.035] font-black text-white/75 hover:bg-white/[0.06] hover:text-white"
                     disabled={submitting}
                   >
                     Abbrechen
@@ -895,7 +882,7 @@ export default function MatchPostponePage() {
                 </div>
 
                 {!canEdit ? (
-                  <p className="text-xs text-orange-700">Du hast keine Berechtigung, dieses Spiel zu verschieben.</p>
+                  <p className="text-xs text-orange-300">Du hast keine Berechtigung, dieses Spiel zu verschieben.</p>
                 ) : null}
               </CardContent>
             </Card>

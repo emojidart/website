@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import {
-  ArrowLeft,
   CalendarDays,
   CheckCircle2,
   FileImage,
@@ -280,12 +279,12 @@ export default function BearbeitenPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f5f6f8]">
-        <Header />
+      <div className="min-h-screen bg-[#050608]">
+        <Header variant="app" title="Veranstaltung bearbeiten" subtitle="DACH Turniere" backHref="/dach-veranstaltungen/meine" />
         <main className="flex min-h-[70vh] items-center justify-center px-4 pt-20">
-          <div className="flex flex-col items-center gap-3 text-slate-500">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-100 bg-white shadow-none">
-              <Loader2 className="h-7 w-7 animate-spin text-orange-600" />
+          <div className="flex flex-col items-center gap-3 text-white/35">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-black/25 shadow-none">
+              <Loader2 className="h-7 w-7 animate-spin text-orange-200" />
             </div>
             <p className="text-sm font-semibold">
               Veranstaltung wird geladen …
@@ -299,19 +298,19 @@ export default function BearbeitenPage() {
 
   if (!form) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <Header />
+      <div className="min-h-screen bg-[#050608]">
+        <Header variant="app" title="Veranstaltung bearbeiten" subtitle="DACH Turniere" backHref="/dach-veranstaltungen/meine" />
         <main className="px-4 pb-28 pt-24">
-          <Card className="mx-auto max-w-lg overflow-hidden rounded-[28px] border-slate-200 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] shadow-slate-200/60">
-            <div className="h-1.5 bg-gradient-to-r from-orange-500 to-amber-400" />
+          <Card className="mx-auto max-w-lg overflow-hidden rounded-[28px] border-white/[0.08] shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] shadow-none">
+            <div className="h-1.5 bg-gradient-to-r from-orange-500 to-sky-400" />
             <CardContent className="p-8 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50">
-                <ShieldAlert className="h-8 w-8 text-orange-600" />
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/[0.08]">
+                <ShieldAlert className="h-8 w-8 text-orange-200" />
               </div>
-              <h1 className="mt-5 text-2xl font-black text-slate-950">
+              <h1 className="mt-5 text-2xl font-black text-white">
                 Bearbeitung nicht möglich
               </h1>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{message}</p>
+              <p className="mt-2 text-sm leading-6 text-white/50">{message}</p>
               <Button
                 className="mt-6 h-11 rounded-xl px-6"
                 onClick={() => router.push("/dach-veranstaltungen/meine")}
@@ -327,41 +326,44 @@ export default function BearbeitenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.08),_transparent_30%),linear-gradient(to_bottom,_#f8fafc,_#ffffff)] pb-32 text-slate-950">
-      <Header />
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-32 text-white">
+      <Header variant="app" title="Veranstaltung bearbeiten" subtitle="DACH Turniere" backHref="/dach-veranstaltungen/meine" />
 
-      <main className="w-full max-w-none px-2 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
-        <Button
-          variant="ghost"
-          onClick={() => router.push("/dach-veranstaltungen/meine")}
-          className="mb-4 -ml-2 rounded-xl text-slate-600 hover:bg-white hover:text-slate-950"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Meine Veranstaltungen
-        </Button>
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.70),rgba(3,5,9,.94)_46%,rgba(2,4,7,.985))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(14,165,233,.13),transparent_26%),radial-gradient(circle_at_88%_28%,rgba(249,115,22,.12),transparent_28%)]" />
+      </div>
 
-        <section className="relative mb-6 overflow-hidden rounded-[28px] bg-slate-950 px-6 py-7 text-white shadow-2xl shadow-slate-300/60 sm:px-8 sm:py-9">
-          <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-orange-500/20 blur-3xl" />
-          <div className="absolute -bottom-24 left-1/3 h-44 w-44 rounded-full bg-amber-300/10 blur-3xl" />
+
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
+
+        <section className="relative mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/35 p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-7 lg:p-8">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/[0.13] blur-[70px]" />
+          <div className="pointer-events-none absolute -bottom-20 left-[38%] h-48 w-48 rounded-full bg-sky-500/[0.08] blur-[65px]" />
+
           <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 backdrop-blur">
-                <CalendarDays className="h-7 w-7 text-orange-300" />
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08] text-orange-100">
+                <CalendarDays className="h-7 w-7" />
               </div>
               <div>
-                <div className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">
+                <div className="text-[10px] font-black uppercase tracking-[0.20em] text-orange-200/65">
                   Veranstaltung bearbeiten
                 </div>
-                <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+                <h1 className="mt-1.5 text-3xl font-black tracking-[-0.035em] text-white sm:text-4xl">
                   {form.name || "Veranstaltung ändern"}
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                  Änderungen werden nach dem Speichern erneut zur Prüfung
-                  eingereicht.
+                <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/45">
+                  Änderungen werden nach dem Speichern erneut zur Prüfung eingereicht.
                 </p>
               </div>
             </div>
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-xs font-bold text-amber-100">
+
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-300/[0.16] bg-amber-500/[0.08] px-4 py-2 text-xs font-bold text-amber-100">
               <Info className="h-4 w-4" />
               Aktueller Status:{" "}
               {form.event_status === "approved"
@@ -618,19 +620,19 @@ export default function BearbeitenPage() {
                 value={form.details}
                 onChange={(e) => setField("details", e.target.value)}
                 placeholder="Modus, Preisgeld, Einlass, Anmeldung und weitere Hinweise …"
-                className="min-h-[170px] resize-y rounded-2xl border-slate-200 bg-slate-50/60 px-4 py-3 focus-visible:border-orange-400 focus-visible:ring-orange-200"
+                className="min-h-[170px] resize-y rounded-2xl border-white/[0.08] bg-[#050608]/60 px-4 py-3 focus-visible:border-orange-400 focus-visible:ring-orange-200"
               />
             </Field>
 
             <Field label="Neuen Flyer auswählen (optional)">
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 transition hover:border-orange-300 hover:bg-orange-50/30">
+              <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#050608] p-4 transition hover:border-orange-300 hover:bg-orange-500/[0.07]">
                 <Input
                   type="file"
                   accept="image/*,application/pdf"
                   onChange={(e) => setFlyer(e.target.files?.[0] || null)}
-                  className="border-0 bg-transparent p-0 shadow-none file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
+                  className="border-0 bg-transparent p-0 shadow-none file:mr-4 file:rounded-xl file:border-0 file:bg-orange-500 file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
                 />
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-white/35">
                   {flyer
                     ? `Ausgewählt: ${flyer.name}`
                     : form.photo_url
@@ -642,21 +644,21 @@ export default function BearbeitenPage() {
           </ModernSection>
 
           {message ? (
-            <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+            <div className="flex items-start gap-3 rounded-2xl border border-red-300/[0.16] bg-red-500/[0.08] p-4 text-sm font-semibold text-red-200">
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
               <span>{message}</span>
             </div>
           ) : null}
 
-          <div className="sticky bottom-20 z-20 rounded-[1.6rem] border border-slate-200/80 bg-white/90 p-3 shadow-2xl shadow-slate-300/60 backdrop-blur-xl sm:bottom-5">
+          <div className="sticky bottom-20 z-20 rounded-[22px] border border-white/[0.08] bg-[#070a0f]/90 p-3 shadow-[0_22px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:bottom-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="hidden items-center gap-2 px-2 text-sm text-slate-500 sm:flex">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <div className="hidden items-center gap-2 px-2 text-sm text-white/35 sm:flex">
+                <CheckCircle2 className="h-4 w-4 text-emerald-200" />
                 Nach dem Speichern erfolgt eine neue Freigabeprüfung.
               </div>
               <Button
                 disabled={saving}
-                className="h-12 w-full rounded-2xl bg-orange-600 px-7 text-base font-black shadow-lg shadow-orange-200 hover:bg-orange-700 sm:w-auto"
+                className="h-12 w-full rounded-2xl bg-orange-500 px-7 text-base font-black text-white shadow-[0_18px_46px_-26px_rgba(249,115,22,.5)] transition hover:bg-orange-400 sm:w-auto"
               >
                 {saving ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -676,14 +678,19 @@ export default function BearbeitenPage() {
         .modern-input {
           height: 3rem;
           border-radius: 1rem;
-          border-color: rgb(226 232 240);
-          background: rgba(248, 250, 252, 0.72);
+          border-color: rgba(255, 255, 255, 0.09);
+          background: rgba(8, 12, 18, 0.95);
+          color: white;
           padding-left: 1rem;
           padding-right: 1rem;
+          box-shadow: none;
+        }
+        .modern-input::placeholder {
+          color: rgba(255, 255, 255, 0.25);
         }
         .modern-input:focus-visible {
-          border-color: rgb(251 146 60);
-          box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.16);
+          border-color: rgba(253, 186, 116, 0.35);
+          box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.10);
         }
       `}</style>
 
@@ -706,21 +713,21 @@ function ModernSection({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="overflow-hidden rounded-[28px] border-slate-200 bg-white/95 shadow-lg shadow-slate-200/50">
+    <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
       <CardContent className="p-0">
-        <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-5 sm:px-7">
+        <div className="border-b border-white/[0.07] bg-white/[0.025] px-5 py-5 sm:px-7">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 ring-1 ring-orange-100">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08] text-orange-100">
               {icon}
             </div>
             <div>
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-200">
                 {eyebrow}
               </div>
-              <h2 className="mt-1 text-xl font-black text-slate-950">
+              <h2 className="mt-1 text-xl font-black text-white">
                 {title}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">{description}</p>
+              <p className="mt-1 text-sm text-white/35">{description}</p>
             </div>
           </div>
         </div>
@@ -739,7 +746,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-2">
-      <span className="block text-xs font-black uppercase tracking-[0.08em] text-slate-600">
+      <span className="block text-xs font-black uppercase tracking-[0.08em] text-white/50">
         {label}
       </span>
       {children}

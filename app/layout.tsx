@@ -9,6 +9,7 @@ import PushInit from "./PushInit"
 import AppPlatformClass from "./AppPlatformClass"
 import SupabaseSessionGuard from "@/components/SupabaseSessionGuard"
 import { AppRouteGuard } from "@/components/auth/app-route-guard"
+import AppThemeShell from "@/components/AppThemeShell"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -34,13 +35,13 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#d97706",
+  themeColor: "#050608",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased bg-[#050608] text-white`}>
         {/* killt alte PWA Service Worker */}
         <KillServiceWorker />
 
@@ -55,7 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PushSubscriptionRepair />
           <PushInit />
 
-          <AppRouteGuard>{children}</AppRouteGuard>
+          <AppRouteGuard><AppThemeShell>{children}</AppThemeShell></AppRouteGuard>
         </div>
       </body>
     </html>

@@ -225,10 +225,15 @@ export default function NeuesInseratPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] pb-32"><Header />
-      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
-        <Button variant="outline" onClick={() => router.push("/dartboerse")} className="mb-4 rounded-xl"><ArrowLeft className="mr-2 h-4 w-4" />Zur Dartbörse</Button>
-        <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 p-4 text-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] sm:p-6 lg:p-8 xl:rounded-[30px] xl:p-9"><div className="text-sm font-black uppercase tracking-[0.18em] text-orange-300">Neues Angebot</div><h1 className="mt-2 text-3xl font-black sm:text-4xl">Dartartikel verkaufen</h1><p className="mt-2 text-slate-300">Mit guten Bildern und einer ehrlichen Beschreibung findest du schneller einen Käufer.</p></section>
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white pb-32"><Header />
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.95)_48%,rgba(2,4,7,.99))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.10),transparent_26%)]" />
+      </div>
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-24 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
+        <Button variant="outline" onClick={() => router.push("/dartboerse")} className="mb-4 h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white/65 hover:bg-white/[0.09] hover:text-white"><ArrowLeft className="mr-2 h-4 w-4" />Zur Dartbörse</Button>
+        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/92 p-4 text-white shadow-[0_28px_90px_-50px_rgba(0,0,0,.98)] backdrop-blur-xl sm:p-6 lg:p-7 xl:p-9"><div className="text-sm font-black uppercase tracking-[0.18em] text-orange-300">Neues Angebot</div><h1 className="mt-2 text-3xl font-black sm:text-4xl">Dartartikel verkaufen</h1><p className="mt-2 text-white/42">Mit guten Bildern und einer ehrlichen Beschreibung findest du schneller einen Käufer.</p></section>
 
         <form onSubmit={submit} className="mt-4 grid items-start gap-4 xl:grid-cols-2 xl:gap-5">
           <Section title="Artikel" icon={<Package className="h-5 w-5" />}>
@@ -241,15 +246,15 @@ export default function NeuesInseratPage() {
           <Section title="Bilder verwalten" icon={<ImagePlus className="h-5 w-5" />}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-600">
+                <p className="text-sm font-semibold text-white/48">
                   Bis zu fünf Bilder, jeweils maximal 8 MB. Das erste Bild wird als Titelbild verwendet.
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-white/35">
                   Erlaubt sind JPG, PNG und WebP.
                 </p>
               </div>
 
-              <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
+              <span className="w-fit rounded-full bg-white/[0.05] px-3 py-1 text-xs font-black text-white/60">
                 {images.length}/5 Bilder
               </span>
             </div>
@@ -259,9 +264,9 @@ export default function NeuesInseratPage() {
                 {imagePreviews.map((preview, imageIndex) => (
                   <div
                     key={`${preview.file.name}-${imageIndex}`}
-                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                    className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#10141b] shadow-sm"
                   >
-                    <div className="relative aspect-square overflow-hidden bg-slate-100">
+                    <div className="relative aspect-square overflow-hidden bg-white/[0.05]">
                       <img
                         src={preview.url}
                         alt={`Bild ${imageIndex + 1}`}
@@ -269,7 +274,7 @@ export default function NeuesInseratPage() {
                       />
 
                       {imageIndex === 0 ? (
-                        <span className="absolute left-2 top-2 rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-black text-white shadow">
+                        <span className="absolute left-2 top-2 rounded-full bg-orange-500/[0.08]0 px-2.5 py-1 text-[10px] font-black text-white shadow">
                           TITELBILD
                         </span>
                       ) : null}
@@ -296,7 +301,7 @@ export default function NeuesInseratPage() {
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
 
-                      <span className="text-xs font-black text-slate-500">
+                      <span className="text-xs font-black text-white/35">
                         {imageIndex + 1}
                       </span>
 
@@ -317,14 +322,14 @@ export default function NeuesInseratPage() {
             ) : null}
 
             {images.length < 5 ? (
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-orange-300 bg-orange-50 px-4 py-8 text-center transition hover:bg-orange-100">
-                <ImagePlus className="h-9 w-9 text-orange-600" />
-                <span className="mt-3 font-black text-orange-900">
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-orange-300 bg-orange-500/[0.08] px-4 py-8 text-center transition hover:bg-orange-500/[0.12]">
+                <ImagePlus className="h-9 w-9 text-orange-300" />
+                <span className="mt-3 font-black text-orange-100">
                   {images.length
                     ? "Weitere Bilder hinzufügen"
                     : "Bilder auswählen"}
                 </span>
-                <span className="mt-1 text-xs text-orange-700">
+                <span className="mt-1 text-xs text-orange-300">
                   JPG, PNG oder WebP
                 </span>
 
@@ -340,7 +345,7 @@ export default function NeuesInseratPage() {
                 />
               </label>
             ) : (
-              <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800">
+              <div className="rounded-2xl border border-emerald-300/20 bg-emerald-500/[0.08] p-4 text-sm font-bold text-emerald-200">
                 <CheckCircle2 className="mr-2 inline h-4 w-4" />
                 Maximale Anzahl von fünf Bildern erreicht.
               </div>
@@ -349,36 +354,36 @@ export default function NeuesInseratPage() {
 
           <Section title="Standort und Übergabe" icon={<MapPin className="h-5 w-5" />}>
             <div className="grid gap-4 sm:grid-cols-3"><Field label="Land"><Select value={form.countryCode} onValueChange={(value) => setField("countryCode", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="AT">Österreich</SelectItem><SelectItem value="DE">Deutschland</SelectItem><SelectItem value="CH">Schweiz</SelectItem></SelectContent></Select></Field><Field label="PLZ"><Input value={form.postalCode} onChange={(e) => setField("postalCode", e.target.value.replace(/\D/g, ""))} /></Field><Field label="Ort *"><Input value={form.city} onChange={(e) => setField("city", e.target.value)} required /></Field></div>
-            <div className="grid gap-3 sm:grid-cols-2"><label className={`cursor-pointer rounded-2xl border p-4 font-bold ${form.shipping ? "border-orange-300 bg-orange-50" : "border-slate-200 bg-white"}`}><input type="checkbox" className="mr-2" checked={form.shipping} onChange={(e) => setField("shipping", e.target.checked)} />Versand möglich</label><label className={`cursor-pointer rounded-2xl border p-4 font-bold ${form.pickup ? "border-orange-300 bg-orange-50" : "border-slate-200 bg-white"}`}><input type="checkbox" className="mr-2" checked={form.pickup} onChange={(e) => setField("pickup", e.target.checked)} />Abholung möglich</label></div>
+            <div className="grid gap-3 sm:grid-cols-2"><label className={`cursor-pointer rounded-2xl border p-4 font-bold ${form.shipping ? "border-orange-300 bg-orange-500/[0.08]" : "border-white/[0.08] bg-[#10141b]"}`}><input type="checkbox" className="mr-2" checked={form.shipping} onChange={(e) => setField("shipping", e.target.checked)} />Versand möglich</label><label className={`cursor-pointer rounded-2xl border p-4 font-bold ${form.pickup ? "border-orange-300 bg-orange-500/[0.08]" : "border-white/[0.08] bg-[#10141b]"}`}><input type="checkbox" className="mr-2" checked={form.pickup} onChange={(e) => setField("pickup", e.target.checked)} />Abholung möglich</label></div>
           </Section>
 
           <Section title="Verkäufer" icon={<UserRound className="h-5 w-5" />}>
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+            <div className="rounded-2xl border border-sky-300/20 bg-sky-500/[0.08] p-4 text-sm text-sky-100">
               Name und E-Mail werden automatisch aus deinem freigeschalteten Profil übernommen und können hier nicht geändert werden.
             </div>
             <Field label="Name">
-              <Input value={form.sellerName} readOnly className="cursor-not-allowed bg-slate-100 text-slate-700" />
+              <Input value={form.sellerName} readOnly className="cursor-not-allowed bg-white/[0.05] text-white/60" />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="E-Mail">
-                <Input type="email" value={form.sellerEmail} readOnly className="cursor-not-allowed bg-slate-100 text-slate-700" />
+                <Input type="email" value={form.sellerEmail} readOnly className="cursor-not-allowed bg-white/[0.05] text-white/60" />
               </Field>
               <Field label="Telefon (optional)">
                 <Input value={form.sellerPhone} onChange={(e) => setField("sellerPhone", e.target.value)} />
               </Field>
             </div>
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="rounded-2xl border border-amber-300/20 bg-amber-500/[0.08] p-4 text-sm text-amber-100">
               <ShieldAlert className="mr-2 inline h-4 w-4" />
               Teile keine Zahlungsdaten oder Ausweiskopien in der Beschreibung.
             </div>
           </Section>
 
-          {message ? <div className={`rounded-2xl border p-4 text-sm font-bold ${success ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-700"}`}>{success ? <CheckCircle2 className="mr-2 inline h-5 w-5" /> : <ShieldAlert className="mr-2 inline h-5 w-5" />}{message}</div> : null}
-          <Button disabled={saving} className="h-13 w-full rounded-2xl bg-orange-500 text-base font-black hover:bg-orange-600">{saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}{saving ? "Wird eingereicht …" : "Inserat zur Freigabe einreichen"}</Button>
+          {message ? <div className={`rounded-2xl border p-4 text-sm font-bold ${success ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-200" : "border-rose-300/20 bg-rose-500/[0.08] text-rose-300"}`}>{success ? <CheckCircle2 className="mr-2 inline h-5 w-5" /> : <ShieldAlert className="mr-2 inline h-5 w-5" />}{message}</div> : null}
+          <Button disabled={saving} className="h-13 w-full rounded-2xl border border-orange-300/20 bg-orange-500 font-black text-white/[0.08]0 text-base font-black hover:bg-orange-600">{saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}{saving ? "Wird eingereicht …" : "Inserat zur Freigabe einreichen"}</Button>
         </form>
       </main><MobileBottomNav /></div>
   )
 }
 
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) { return <Card className="rounded-[24px] border-slate-200 shadow-sm"><CardContent className="space-y-4 p-5 sm:p-6"><div className="flex items-center gap-2 text-lg font-black"><span className="text-orange-600">{icon}</span>{title}</div>{children}</CardContent></Card> }
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-600">{label}</span>{children}</label> }
+function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) { return <Card className="rounded-[24px] border-white/[0.08] shadow-sm"><CardContent className="space-y-4 p-5 sm:p-6"><div className="flex items-center gap-2 text-lg font-black"><span className="text-orange-300">{icon}</span>{title}</div>{children}</CardContent></Card> }
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-xs font-black uppercase tracking-wide text-white/48">{label}</span>{children}</label> }

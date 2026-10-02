@@ -36,7 +36,6 @@ import {
   MessageCircle,
   Send,
   Clock,
-  ArrowLeft,
 } from "lucide-react"
 
 type AvailabilityStatus = "yes" | "maybe" | "no"
@@ -146,6 +145,13 @@ function formatTime(timeString: string | null) {
   return `${parts[0]}:${parts[1]}`
 }
 
+function normalizeDartType(value: string | null | undefined) {
+  const v = String(value ?? "").toLowerCase().replace(/[\s_-]+/g, "")
+  if (v.includes("edart")) return "edart" as const
+  if (v.includes("steel")) return "steeldart" as const
+  return "" as const
+}
+
 function statusBadge(s: AvailabilityStatus | "none") {
   if (s === "yes") return <Badge className="bg-green-600 text-white">Ja</Badge>
   if (s === "maybe") return <Badge className="bg-yellow-600 text-white">Nur wenn Not am Mann</Badge>
@@ -191,43 +197,43 @@ function isMatchLocked(match: Match) {
 
 function InfoCallout() {
   return (
-    <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_16px_50px_-38px_rgba(15,23,42,0.45)] sm:rounded-[26px]">
-      <div className="border-b border-slate-100 px-4 py-4 sm:px-5">
+    <div className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/30 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[28px]">
+      <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
-            <MessageCircle className="h-5 w-5 text-orange-600" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08] shadow-[0_0_18px_rgba(249,115,22,.07)]">
+            <MessageCircle className="h-5 w-5 text-orange-300" />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">So funktioniert’s</div>
-            <h2 className="mt-0.5 text-lg font-black tracking-tight text-slate-950 sm:text-xl">Deine Verfügbarkeit</h2>
+            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-xs">So funktioniert’s</div>
+            <h2 className="mt-0.5 text-lg font-black tracking-tight text-white sm:text-xl">Deine Verfügbarkeit</h2>
           </div>
         </div>
-        <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-slate-600">
+        <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-white/50">
           Gib pro Spiel kurz an, ob du dabei bist. Captain und Co-Captain sehen sofort, mit wem sie für die Aufstellung planen können.
         </p>
       </div>
 
       <div className="grid gap-2.5 p-3.5 sm:grid-cols-3 sm:p-4">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3.5">
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-300/15 bg-emerald-500/[0.055] p-3.5 shadow-[0_0_24px_rgba(16,185,129,.045)]">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            <div className="text-sm font-black text-slate-950">Ja</div>
+            <div className="text-sm font-black text-white">Ja</div>
           </div>
-          <div className="mt-2 text-xs font-medium leading-5 text-slate-600">Du bist sicher dabei.</div>
+          <div className="mt-2 text-xs font-medium leading-5 text-white/45">Du bist sicher dabei.</div>
         </div>
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5">
+        <div className="relative overflow-hidden rounded-2xl border border-amber-300/15 bg-amber-500/[0.055] p-3.5 shadow-[0_0_24px_rgba(245,158,11,.045)]">
           <div className="flex items-center gap-2">
             <HelpCircle className="h-4 w-4 text-amber-600" />
-            <div className="text-sm font-black text-slate-950">Nur wenn nötig</div>
+            <div className="text-sm font-black text-white">Nur wenn nötig</div>
           </div>
-          <div className="mt-2 text-xs font-medium leading-5 text-slate-600">Du kannst einspringen, wenn jemand gebraucht wird.</div>
+          <div className="mt-2 text-xs font-medium leading-5 text-white/45">Du kannst einspringen, wenn jemand gebraucht wird.</div>
         </div>
-        <div className="rounded-2xl border border-red-200 bg-red-50/70 p-3.5">
+        <div className="relative overflow-hidden rounded-2xl border border-red-300/15 bg-red-500/[0.055] p-3.5 shadow-[0_0_24px_rgba(244,63,94,.045)]">
           <div className="flex items-center gap-2">
             <XCircle className="h-4 w-4 text-red-600" />
-            <div className="text-sm font-black text-slate-950">Nein</div>
+            <div className="text-sm font-black text-white">Nein</div>
           </div>
-          <div className="mt-2 text-xs font-medium leading-5 text-slate-600">Du bist für dieses Spiel nicht verfügbar.</div>
+          <div className="mt-2 text-xs font-medium leading-5 text-white/45">Du bist für dieses Spiel nicht verfügbar.</div>
         </div>
       </div>
     </div>
@@ -246,6 +252,7 @@ function MemberAvailabilityInner() {
   const [activeTab, setActiveTab] = useState<"upcoming" | "completed">("upcoming")
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [modalTab, setModalTab] = useState<"availability" | "lineup" | "chat">("availability")
   const [dialogMatch, setDialogMatch] = useState<Match | null>(null)
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
 
@@ -405,6 +412,7 @@ function MemberAvailabilityInner() {
   }
 
   async function openMatchDialog(match: Match) {
+    setModalTab("availability")
     setDialogMatch(match)
     const myTeams = myTeamsForMatch(match)
     const defaultTeamId = myTeams[0]?.team_id ?? null
@@ -549,9 +557,7 @@ function MemberAvailabilityInner() {
   function getRequiredLeagueModuleForMatch(match: Match | null, teamId: string | null) {
     if (!teamId) return null
     const myTeam = teamMemberships.find((membership) => membership.team_id === teamId)
-    const teamDartType = String(myTeam?.teams?.dart_type || "").toLowerCase()
-    const matchDartType = String(match?.dart_type || "").toLowerCase()
-    const dartType = teamDartType || matchDartType
+    const dartType = normalizeDartType(myTeam?.teams?.dart_type || match?.dart_type)
 
     if (dartType === "edart") return "edart_league"
     if (dartType === "steeldart") return "steeldart_league"
@@ -857,8 +863,13 @@ function MemberAvailabilityInner() {
     setLineupError(null)
 
     const startersNow = effectiveLineup.filter((p) => !p.is_substitute).length
-    if (startersNow === 0) {
-      setLineupError("Du musst mindestens 1 Stammspieler auswählen, bevor du bestätigen kannst.")
+    const selectedTeam = teamMemberships.find((membership) => membership.team_id === selectedTeamId)
+    const lineupDartType = normalizeDartType(selectedTeam?.teams?.dart_type || dialogMatch.dart_type)
+    const requiredStarters = lineupDartType === "edart" ? 4 : lineupDartType === "steeldart" ? 3 : 1
+
+    if (startersNow < requiredStarters) {
+      const label = lineupDartType === "edart" ? "E-Dart" : lineupDartType === "steeldart" ? "Steeldart" : "Diese Liga"
+      setLineupError(`${label} benötigt mindestens ${requiredStarters} Starter. Aktuell sind ${startersNow} eingetragen.`)
       return
     }
 
@@ -1046,41 +1057,67 @@ function MemberAvailabilityInner() {
     lineupHeader.current_version !== null &&
     lineupHeader.confirmed_version < lineupHeader.current_version
 
+  const selectedLineupDartType = normalizeDartType(
+    teamMemberships.find((membership) => membership.team_id === selectedTeamId)?.teams?.dart_type ||
+      dialogMatch?.dart_type,
+  )
+
+  const requiredStartersForDialog =
+    selectedLineupDartType === "edart" ? 4 : selectedLineupDartType === "steeldart" ? 3 : 1
+
+  const lineupHasEnoughStarters = startersCount >= requiredStartersForDialog
+
+  const availabilitySummary = useMemo(() => {
+    let yes = 0
+    let maybe = 0
+    let no = 0
+    let none = 0
+
+    for (const player of displayPlayers) {
+      const status = availabilityByPlayer.get(player.id)?.status ?? "none"
+      if (status === "yes") yes += 1
+      else if (status === "maybe") maybe += 1
+      else if (status === "no") no += 1
+      else none += 1
+    }
+
+    return { yes, maybe, no, none }
+  }, [displayPlayers, availabilityByPlayer])
+
   if (authLoading || loading) {
-    return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
-        <Header variant="app" title="Zusagen & Aufstellung" subtitle="Übersicht" backHref="/member-profile-app" />
-        <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="flex flex-col items-center gap-5 rounded-[28px] border border-slate-200 bg-white px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
-            <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
-            <div className="text-center">
-              <p className="text-lg font-bold text-slate-950">Aufstellung wird geladen</p>
-              <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
-            </div>
-          </div>
-        </div>
-      </main>
-    )
+    return <div className="min-h-[1px]" aria-hidden="true" />
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] text-slate-950 font-sans flex flex-col overflow-x-hidden">
-      <Header variant="app" title="Zusagen & Aufstellung" subtitle="Übersicht" backHref="/member-profile-app" />
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] font-sans text-white">
+      <Header variant="app" title="Zusagen & Aufstellung" subtitle="Ligazentrale" backHref="/member-league-app" />
 
-      <main className="w-full pt-14 sm:pt-16">
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.36]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.66),rgba(3,5,9,.92)_46%,rgba(2,4,7,.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_7%_18%,rgba(249,115,22,.20),transparent_28%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.12),transparent_29%),radial-gradient(circle_at_50%_86%,rgba(99,102,241,.07),transparent_25%)]" />
+        <div className="absolute inset-0 opacity-[0.028] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:68px_68px]" />
+      </div>
+
+      <main className="relative z-10 w-full pt-14 sm:pt-16">
         <MembershipAccessGate
           required={["edart_league", "steeldart_league"]}
           requireAll={false}
           title="Zusagen & Aufstellung nicht freigeschaltet"
           description="Für diesen Bereich brauchst du ein aktives E-Dart- oder Steeldart-Ligapaket bzw. eine gültige Testfreischaltung."
         >
-          <div className="w-full max-w-none overflow-x-hidden px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
-            <section className="relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px]">
+          <div className="mx-auto w-full max-w-[var(--emd-content-max)] overflow-x-hidden px-3 py-4 pb-24 sm:px-5 sm:py-5 sm:pb-10 lg:px-7 xl:px-8">
+            <section className="relative mb-4 overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/30 shadow-[0_32px_110px_-52px_rgba(0,0,0,.98)] backdrop-blur-2xl sm:mb-5">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(249,115,22,.18),transparent_30%),radial-gradient(circle_at_90%_0%,rgba(14,165,233,.10),transparent_28%)]" />
+              <div className="pointer-events-none absolute inset-x-[8%] bottom-0 h-px bg-gradient-to-r from-transparent via-orange-300/30 to-transparent" />
               <div className="relative p-4 sm:p-6 lg:p-8">
-                <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+                <div className="flex flex-col gap-6">
                   <div className="min-w-0">
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] text-orange-400">
+                      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08] text-orange-300 shadow-[0_0_24px_rgba(249,115,22,.09)]">
                         <ClipboardList className="h-6 w-6" />
                       </div>
                       <div className="min-w-0">
@@ -1089,15 +1126,6 @@ function MemberAvailabilityInner() {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => router.push("/member-profile-app")}
-                    className="h-11 rounded-xl border-white/10 bg-white/10 px-4 font-black text-white hover:bg-white/15 hover:text-white"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Zurück zum Profil
-                  </Button>
                 </div>
               </div>
             </section>
@@ -1106,21 +1134,21 @@ function MemberAvailabilityInner() {
               <InfoCallout />
             </div>
 
-            <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-              <CardHeader className="border-b border-slate-100 px-4 py-5">
-                <CardTitle className="flex items-center gap-2 text-xl font-black">
-                  <Calendar className="h-5 w-5 text-orange-600" />
+            <Card className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+              <CardHeader className="border-b border-white/[0.07] px-4 py-5">
+                <CardTitle className="flex items-center gap-2 text-xl font-black text-white">
+                  <Calendar className="h-5 w-5 text-orange-300" />
                   Spiele
                 </CardTitle>
               </CardHeader>
 
               <CardContent className="px-3 py-4 sm:px-6 sm:py-6">
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-                  <TabsList className="mb-5 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-100/80 p-1.5">
-                    <TabsTrigger value="upcoming" className="h-10 rounded-xl font-black">
+                  <TabsList className="mb-5 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1.5 backdrop-blur-xl">
+                    <TabsTrigger value="upcoming" className="h-10 rounded-xl font-black text-white/50 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_22px_rgba(249,115,22,.14)]">
                       Kommende ({upcomingMatches.length})
                     </TabsTrigger>
-                    <TabsTrigger value="completed" className="h-10 rounded-xl font-black">
+                    <TabsTrigger value="completed" className="h-10 rounded-xl font-black text-white/50 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_22px_rgba(249,115,22,.14)]">
                       Abgeschlossen ({completedMatches.length})
                     </TabsTrigger>
                   </TabsList>
@@ -1128,29 +1156,29 @@ function MemberAvailabilityInner() {
                   <TabsContent value="upcoming">
                     <div className="grid gap-3">
                       {upcomingMatches.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">Keine kommenden Spiele.</div>
+                        <div className="text-sm text-white/40">Keine kommenden Spiele.</div>
                       ) : (
                         upcomingMatches.map((m) => {
                           const locked = isMatchLocked(m)
                           return (
-                            <Card key={m.id} className={`rounded-[20px] border border-slate-200 ${locked ? "ring-1 ring-red-200 bg-red-50/20" : ""}`}>
+                            <Card key={m.id} className={`relative overflow-hidden rounded-[22px] border border-orange-300/[0.10] bg-white/[0.035] text-white shadow-[0_0_26px_rgba(249,115,22,.05)] transition active:scale-[0.992] sm:border-white/[0.08] sm:shadow-none ${locked ? "ring-1 ring-red-300/20 bg-red-500/[0.04]" : ""}`}>
                               <CardContent className="p-3.5 sm:p-5">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                   <div>
-                                    <div className="text-base font-black">
+                                    <div className="text-base font-black text-white">
                                       {getTeamDisplayName(m, true)} vs {getTeamDisplayName(m, false)}
                                     </div>
-                                    <div className="mt-2 text-sm text-slate-600">
+                                    <div className="mt-2 text-sm text-white/50">
                                       {formatDate(m.match_date)} {m.match_time ? `• ${formatTime(m.match_time)}` : ""} • {m.venue || "—"}
                                     </div>
                                     {locked ? (
-                                      <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                                      <div className="mt-3 rounded-xl border border-red-300/15 bg-red-500/[0.07] p-3 text-sm text-red-200">
                                         Ab Spielbeginn sind Zusagen & Aufstellung gesperrt.
                                       </div>
                                     ) : null}
                                   </div>
 
-                                  <Button size="sm" onClick={() => openMatchDialog(m)} className="h-11 rounded-xl bg-slate-950 font-black text-white">
+                                  <Button size="sm" onClick={() => openMatchDialog(m)} className="h-11 rounded-xl border border-orange-300/20 bg-orange-500 font-black text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-400 active:scale-[0.985]">
                                     <Eye className="h-4 w-4 mr-2" />
                                     Öffnen
                                   </Button>
@@ -1166,18 +1194,18 @@ function MemberAvailabilityInner() {
                   <TabsContent value="completed">
                     <div className="grid gap-3">
                       {completedMatches.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">Keine abgeschlossenen Spiele.</div>
+                        <div className="text-sm text-white/40">Keine abgeschlossenen Spiele.</div>
                       ) : (
                         completedMatches
                           .slice()
                           .sort((a, b) => +new Date(b.match_date) - +new Date(a.match_date))
                           .map((m) => (
-                            <Card key={m.id} className="rounded-[20px] border border-slate-200">
+                            <Card key={m.id} className="rounded-[22px] border border-white/[0.08] bg-white/[0.03] text-white transition active:scale-[0.994]">
                               <CardContent className="p-4 sm:p-5">
-                                <div className="font-semibold">
+                                <div className="font-semibold text-white">
                                   {getTeamDisplayName(m, true)} vs {getTeamDisplayName(m, false)}
                                 </div>
-                                <div className="mt-2 text-sm text-slate-500">
+                                <div className="mt-2 text-sm text-white/40">
                                   {formatDate(m.match_date)} {m.match_time ? `• ${formatTime(m.match_time)}` : ""} • Ergebnis:{" "}
                                   {m.home_score ?? "-"}:{m.away_score ?? "-"}
                                 </div>
@@ -1192,357 +1220,229 @@ function MemberAvailabilityInner() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogContent className="h-[calc(100dvh-12px)] w-[calc(100vw-12px)] max-w-none overflow-y-auto overflow-x-hidden rounded-[24px] border border-slate-200 bg-[#f6f7f9] p-0 sm:h-auto sm:max-h-[90vh] sm:w-[94vw] sm:max-w-[820px] lg:max-w-[980px]">
-                <DialogHeader className="sticky top-0 z-20 border-b border-white/10 bg-slate-950 px-4 py-4 text-white">
-                  <DialogTitle className="text-lg font-black text-white">Spiel – Zusage & Aufstellung</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-4 p-3 sm:p-5">
-                  {dialogMatch ? (
-                    <>
-                      {dialogIsLocked ? (
-                        <div className="rounded-2xl border border-red-200 bg-red-50 p-3.5 text-sm text-red-800">
-                          <Clock className="inline h-4 w-4 mr-2" />
-                          Ab Spielbeginn sind Zusage und Aufstellung gesperrt.
+              <DialogContent className="h-[100dvh] w-screen max-w-none overflow-hidden rounded-none border-0 bg-[#070a0f] p-0 text-white shadow-none sm:h-[min(720px,calc(100dvh-120px))] sm:w-[min(820px,calc(100vw-64px))] sm:max-w-[820px] sm:rounded-[24px] sm:border sm:border-white/[0.10] sm:shadow-[0_28px_100px_-40px_rgba(0,0,0,.98)]">
+                {dialogMatch ? (
+                  <div className="flex h-full min-h-0 flex-col">
+                    <DialogHeader className="relative shrink-0 border-b border-white/[0.08] bg-[#080b11] px-4 py-3 pr-12 text-left sm:px-5 sm:py-3.5">
+                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(249,115,22,.12),transparent_34%),radial-gradient(circle_at_92%_0%,rgba(14,165,233,.06),transparent_28%)]" />
+                      <div className="relative min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className="border border-orange-300/15 bg-orange-500/10 text-orange-200 hover:bg-orange-500/10">Spieltag {dialogMatch.week_number}</Badge>
+                          <Badge variant="outline" className="border-white/10 bg-white/[0.035] text-white/60">
+                            {selectedLineupDartType === "edart" ? "E-Dart" : selectedLineupDartType === "steeldart" ? "Steeldart" : dialogMatch.dart_type}
+                          </Badge>
+                          {dialogIsLocked ? (
+                            <Badge className="border border-red-300/15 bg-red-500/10 text-red-200 hover:bg-red-500/10">Gesperrt</Badge>
+                          ) : lineupIsConfirmed && lineupHasEnoughStarters ? (
+                            <Badge className="border border-emerald-300/15 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/10">Aufstellung bestätigt</Badge>
+                          ) : lineupIsStale ? (
+                            <Badge className="border border-amber-300/15 bg-amber-500/10 text-amber-200 hover:bg-amber-500/10">Bestätigung veraltet</Badge>
+                          ) : (
+                            <Badge className="border border-white/10 bg-white/[0.035] text-white/55 hover:bg-white/[0.035]">Aufstellung offen</Badge>
+                          )}
                         </div>
-                      ) : null}
 
-                      <Card className="rounded-[22px] border border-slate-200 bg-white">
-                        <CardContent className="p-4">
-                          <div className="text-lg font-black">
-                            {getTeamDisplayName(dialogMatch, true)} vs {getTeamDisplayName(dialogMatch, false)}
-                          </div>
-                          <div className="text-sm text-slate-600 mt-1">
-                            {formatDate(dialogMatch.match_date)}{" "}
-                            {dialogMatch.match_time ? `• ${formatTime(dialogMatch.match_time)}` : ""} • {dialogMatch.venue || "—"}
-                          </div>
+                        <DialogTitle className="mt-2 truncate text-lg font-black tracking-tight text-white sm:text-xl">
+                          {getTeamDisplayName(dialogMatch, true)} <span className="text-white/25">vs.</span> {getTeamDisplayName(dialogMatch, false)}
+                        </DialogTitle>
 
-                          {myTeamsForMatch(dialogMatch).length > 1 ? (
-                            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                              {myTeamsForMatch(dialogMatch).map((t) => (
-                                <Button
-                                  key={t.team_id}
-                                  size="sm"
-                                  variant={selectedTeamId === t.team_id ? "default" : "outline"}
-                                  onClick={async () => {
-                                    setSelectedTeamId(t.team_id)
-                                    await loadMatchData(dialogMatch.id, t.team_id, dialogMatch)
-                                  }}
-                                >
-                                  {t.teams?.name ?? "Team"} {leadershipIcon(t.role)}
-                                </Button>
-                              ))}
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-white/45 sm:text-sm">
+                          <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-orange-300/70" />{formatDate(dialogMatch.match_date)}</span>
+                          {dialogMatch.match_time ? <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-orange-300/70" />{formatTime(dialogMatch.match_time)} Uhr</span> : null}
+                          <span className="inline-flex min-w-0 items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0 text-orange-300/70" /><span className="max-w-[68vw] truncate sm:max-w-[420px]">{dialogMatch.venue || "Kein Spielort"}</span></span>
+                        </div>
 
-                      <Card className="rounded-[22px] border border-slate-200 bg-white">
-                        <CardHeader>
-                          <CardTitle className="text-base">Deine Zusage</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          {lineupError ? (
-                            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                              {lineupError}
-                            </div>
-                          ) : null}
-
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                            <Button disabled={dialogIsLocked} onClick={() => setAvailabilityStatus("yes")} variant={myStatus === "yes" ? "default" : "outline"}>
-                              Ja
-                            </Button>
-                            <Button disabled={dialogIsLocked} onClick={() => setAvailabilityStatus("maybe")} variant={myStatus === "maybe" ? "default" : "outline"}>
-                              Nur wenn Not am Mann
-                            </Button>
-                            <Button disabled={dialogIsLocked} onClick={() => setAvailabilityStatus("no")} variant={myStatus === "no" ? "default" : "outline"}>
-                              Nein
-                            </Button>
-                          </div>
-
-                          <Textarea
-                            value={myNote}
-                            onChange={(e) => setMyNote(e.target.value)}
-                            placeholder="z.B. komme 5 min später"
-                            disabled={dialogIsLocked}
-                          />
-                          <Button variant="secondary" onClick={saveNote} disabled={dialogIsLocked}>Notiz speichern</Button>
-
-                          {isCaptainOrCoForTeam && !dialogIsLocked ? (
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5">
-                              <div className="text-xs text-slate-600">
-                                Offene Rückmeldungen: <span className="font-medium">{noAnswerPlayerIds.length}</span>
-                              </div>
+                        {myTeamsForMatch(dialogMatch).length > 1 ? (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {myTeamsForMatch(dialogMatch).map((t) => (
                               <Button
-                                className="mt-2"
+                                key={t.team_id}
                                 size="sm"
                                 variant="outline"
-                                onClick={sendAvailabilityReminderToAll}
-                                disabled={remindAllSending || noAnswerPlayerIds.length === 0}
+                                className={`h-8 rounded-xl border-white/10 px-3 text-xs ${selectedTeamId === t.team_id ? "border-orange-300/25 bg-orange-500/15 text-orange-100" : "bg-white/[0.03] text-white/55"}`}
+                                onClick={async () => {
+                                  setSelectedTeamId(t.team_id)
+                                  await loadMatchData(dialogMatch.id, t.team_id, dialogMatch)
+                                }}
                               >
-                                {remindAllSending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                                Erinnern (alle ohne Antwort)
+                                {t.teams?.name ?? "Team"} {leadershipIcon(t.role)}
                               </Button>
-                              {remindAllResult ? <span className="ml-2 text-xs">{remindAllResult}</span> : null}
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
-
-                      <Card className="rounded-[22px] border border-slate-200 bg-white">
-                        <CardHeader><CardTitle className="text-base">Team-Zusagen</CardTitle></CardHeader>
-                        <CardContent className="space-y-2.5">
-                          {displayPlayers.map((p) => {
-                            const a = availabilityByPlayer.get(p.id)
-                            const s = a?.status ?? "none"
-                            const entry = effectiveLineup.find((x) => x.player_id === p.id)
-                            const inLineup = Boolean(entry)
-
-                            return (
-                              <div key={p.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                  <div className="font-black">{p.name}</div>
-                                  {a?.note ? <div className="text-xs text-slate-500 mt-1">{a.note}</div> : null}
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-2">
-                                  {statusBadge(s as any)}
-
-                                  {isCaptainOrCoForTeam && !dialogIsLocked && s === "none" && p.id !== profile?.player_id ? (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      disabled={!!remindSending[p.id]}
-                                      onClick={() => sendAvailabilityReminder(p.id)}
-                                    >
-                                      {remindSending[p.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : "Erinnern"}
-                                    </Button>
-                                  ) : null}
-
-                                  {remindOk[p.id] ? <span className="text-xs text-green-700">gesendet ✅</span> : null}
-
-                                  {isCaptainOrCoForTeam ? (
-                                    <div className="flex flex-wrap gap-1">
-                                      {!inLineup ? (
-                                        <>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)}
-                                            onClick={() => setLineupPlayer(p.id, "starter")}
-                                          >
-                                            Fix
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)}
-                                            onClick={() => setLineupPlayer(p.id, "substitute")}
-                                          >
-                                            Ersatz
-                                          </Button>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)}
-                                            onClick={() => setLineupPlayer(p.id, "remove")}
-                                          >
-                                            Raus
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            disabled={savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)}
-                                            onClick={() => setLineupPlayer(p.id, entry?.is_substitute ? "starter" : "substitute")}
-                                          >
-                                            {entry?.is_substitute ? "Als Fix" : "Als Ersatz"}
-                                          </Button>
-                                        </>
-                                      )}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </CardContent>
-                      </Card>
-
-                      <Card className="rounded-[22px] border border-slate-200 bg-white">
-                        <CardHeader className="bg-slate-950 text-white">
-                          <CardTitle className="text-xl font-black text-white">Aufstellung</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 p-4">
-                          <div className="grid gap-3 lg:grid-cols-2">
-                            <section className="rounded-[20px] border border-slate-200 bg-slate-50/60 p-3">
-                              <div className="font-black mb-2">Stammspieler ({starters.length})</div>
-                              <div className="grid gap-2">
-                                {starters.map((lp) => {
-                                  const p = displayPlayers.find((x) => x.id === lp.player_id)
-                                  return (
-                                    <div key={lp.player_id} className="rounded-2xl border border-slate-200 bg-white px-3.5 py-3">
-                                      <div className="font-black">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            </section>
-
-                            <section className="rounded-[20px] border border-slate-200 bg-slate-50/60 p-3">
-                              <div className="font-black mb-2">Ersatzspieler ({substitutes.length})</div>
-                              <div className="grid gap-2">
-                                {substitutes.map((lp) => {
-                                  const p = displayPlayers.find((x) => x.id === lp.player_id)
-                                  return (
-                                    <div key={lp.player_id} className="rounded-2xl border border-slate-200 bg-white px-3.5 py-3">
-                                      <div className="font-black">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            </section>
+                            ))}
                           </div>
+                        ) : null}
+                      </div>
+                    </DialogHeader>
 
-                          {isCaptainOrCoForTeam && !dialogIsLocked && (lineupIsConfirmed || lineupIsStale) && !lineupEditMode ? (
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setLineupEditMode(true)
-                                setDraftLineup(lineupPlayers)
-                                setDraftDirty(false)
-                                setLineupError(null)
-                              }}
-                            >
-                              Bearbeiten
-                            </Button>
-                          ) : null}
+                    <Tabs value={modalTab} onValueChange={(v) => setModalTab(v as "availability" | "lineup" | "chat")} className="flex min-h-0 flex-1 flex-col">
+                      <div className="shrink-0 border-b border-white/[0.07] bg-[#070a0f] px-3 py-2 sm:px-4">
+                        <TabsList className="grid h-11 w-full grid-cols-3 gap-1 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1">
+                          <TabsTrigger value="availability" className="rounded-xl text-xs font-black text-white/45 data-[state=active]:bg-orange-500 data-[state=active]:text-white sm:text-sm">Zusage</TabsTrigger>
+                          <TabsTrigger value="lineup" className="rounded-xl text-xs font-black text-white/45 data-[state=active]:bg-orange-500 data-[state=active]:text-white sm:text-sm">
+                            Aufstellung <span className="ml-1 opacity-70">{startersCount}/{requiredStartersForDialog}</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="chat" className="rounded-xl text-xs font-black text-white/45 data-[state=active]:bg-orange-500 data-[state=active]:text-white sm:text-sm">Chat</TabsTrigger>
+                        </TabsList>
+                      </div>
 
-                          {isCaptainOrCoForTeam && !dialogIsLocked && lineupEditMode ? (
-                            <div className="grid grid-cols-2 gap-2">
-                              <Button
-                                variant="outline"
-                                onClick={() => {
-                                  setDraftLineup(lineupPlayers)
-                                  setDraftDirty(false)
-                                  setLineupError(null)
-                                  setLineupEditMode(false)
-                                }}
-                              >
-                                Abbrechen
-                              </Button>
-
-                              <Button
-                                variant="outline"
-                                onClick={() => {
-                                  setDraftLineup(lineupPlayers)
-                                  setDraftDirty(false)
-                                  setLineupError(null)
-                                }}
-                              >
-                                Verwerfen
-                              </Button>
-
-                              <Button
-                                onClick={confirmLineup}
-                                disabled={confirmingLineup || dialogIsLocked || startersCount === 0}
-                                className="col-span-2 bg-orange-500 text-white hover:bg-orange-600"
-                              >
-                                {confirmingLineup ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                                Änderungen bestätigen
-                              </Button>
+                      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        <div className="p-3 pb-24 sm:p-4 sm:pb-5">
+                          {dialogIsLocked ? (
+                            <div className="mb-3 flex items-start gap-3 rounded-2xl border border-red-300/15 bg-red-500/[0.07] p-3 text-sm text-red-100">
+                              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-red-300" />
+                              <div><span className="font-black">Spiel bereits gestartet.</span> Zusage und Aufstellung sind gesperrt.</div>
                             </div>
                           ) : null}
 
-                          {!lineupEditMode && !lineupIsConfirmed && isCaptainOrCoForTeam && !dialogIsLocked ? (
-                            <Button
-                              onClick={confirmLineup}
-                              disabled={confirmingLineup || startersCount === 0}
-                              className="bg-orange-500 text-white hover:bg-orange-600"
-                            >
-                              Aufstellung bestätigen
-                            </Button>
+                          {lineupError ? (
+                            <div className="mb-3 rounded-2xl border border-red-300/15 bg-red-500/[0.07] p-3 text-sm font-semibold text-red-200">{lineupError}</div>
                           ) : null}
-                        </CardContent>
-                      </Card>
 
-                      <Card className="rounded-[22px] border border-slate-200 bg-white">
-                        <CardHeader>
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <MessageCircle className="h-4 w-4 text-orange-600" />
-                            Spiel-Chat
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          {!activeRoomId ? (
-                            <div className="text-sm text-muted-foreground">Kein Chat verfügbar.</div>
-                          ) : (
-                            <>
-                              <ScrollArea className="h-[320px] rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
-                                {chatLoading ? (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
-                                    Lade Chat…
-                                  </div>
-                                ) : chatMessages.length === 0 ? (
-                                  <div className="text-sm text-muted-foreground">Noch keine Nachrichten.</div>
-                                ) : (
-                                  <div className="space-y-3">
-                                    {chatMessages.map((m) => {
-                                      const isMine = m.user_id === profile?.id
-                                      const name = m.sender?.name ?? `User ${m.user_id.slice(0, 8)}`
-                                      const photo = m.sender?.photo_url ?? null
+                          <TabsContent value="availability" className="m-0 space-y-3">
+                            <Card className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-white/[0.035] text-white shadow-none">
+                              <CardHeader className="border-b border-white/[0.07] px-4 py-3">
+                                <div className="flex items-center justify-between gap-3">
+                                  <CardTitle className="text-base font-black text-white">Deine Zusage</CardTitle>
+                                  {statusBadge(myStatus as any)}
+                                </div>
+                              </CardHeader>
+                              <CardContent className="space-y-3 p-4">
+                                <div className="grid grid-cols-3 gap-2">
+                                  <Button disabled={dialogIsLocked} onClick={() => setAvailabilityStatus("yes")} variant="outline" className={`h-12 rounded-xl border px-1 text-xs font-black sm:text-sm ${myStatus === "yes" ? "border-emerald-300/30 bg-emerald-500/15 text-emerald-200" : "border-white/10 bg-white/[0.025] text-white/55"}`}><CheckCircle2 className="mr-1 h-4 w-4" />Ja</Button>
+                                  <Button disabled={dialogIsLocked} onClick={() => setAvailabilityStatus("maybe")} variant="outline" className={`h-12 rounded-xl border px-1 text-[11px] font-black sm:text-sm ${myStatus === "maybe" ? "border-amber-300/30 bg-amber-500/15 text-amber-200" : "border-white/10 bg-white/[0.025] text-white/55"}`}><HelpCircle className="mr-1 h-4 w-4 shrink-0" />Wenn nötig</Button>
+                                  <Button disabled={dialogIsLocked} onClick={() => setAvailabilityStatus("no")} variant="outline" className={`h-12 rounded-xl border px-1 text-xs font-black sm:text-sm ${myStatus === "no" ? "border-red-300/30 bg-red-500/15 text-red-200" : "border-white/10 bg-white/[0.025] text-white/55"}`}><XCircle className="mr-1 h-4 w-4" />Nein</Button>
+                                </div>
 
-                                      return (
-                                        <div key={m.id} className={`flex gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}>
-                                          <Avatar className="w-8 h-8">
-                                            <AvatarImage src={photo || "/placeholder.svg"} alt={name} />
-                                            <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
-                                          </Avatar>
-                                          <div className="max-w-[80%]">
-                                            <div className="text-xs font-medium mb-1">{isMine ? "Du" : name}</div>
-                                            <div className={`rounded-2xl px-3 py-2 text-sm break-words ${isMine ? "bg-orange-600 text-white" : "bg-muted"}`}>
-                                              {m.message}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )
-                                    })}
-                                    <div ref={chatEndRef} />
-                                  </div>
-                                )}
-                              </ScrollArea>
+                                <div className="flex gap-2">
+                                  <Textarea value={myNote} onChange={(e) => setMyNote(e.target.value)} placeholder="Notiz, z.B. komme 5 Min. später" disabled={dialogIsLocked} className="min-h-[44px] resize-none rounded-xl border-white/10 bg-black/20 text-white placeholder:text-white/25" />
+                                  <Button variant="outline" onClick={saveNote} disabled={dialogIsLocked} className="h-auto min-w-[84px] rounded-xl border-white/10 bg-white/[0.035] text-xs font-black text-white/65">Speichern</Button>
+                                </div>
+                              </CardContent>
+                            </Card>
 
-                              <div className="flex gap-2">
-                                <Input
-                                  value={chatText}
-                                  onChange={(e) => setChatText(e.target.value)}
-                                  placeholder="Nachricht ans Team…"
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" && !e.shiftKey) {
-                                      e.preventDefault()
-                                      void sendChatMessage()
-                                    }
-                                  }}
-                                  disabled={chatSending}
-                                />
-                                <Button onClick={sendChatMessage} disabled={!chatText.trim() || chatSending}>
-                                  {chatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            <div className="grid grid-cols-4 gap-2">
+                              <div className="rounded-2xl border border-emerald-300/10 bg-emerald-500/[0.05] p-2.5 text-center"><div className="text-lg font-black text-emerald-300">{availabilitySummary.yes}</div><div className="text-[9px] font-black uppercase tracking-wide text-white/30">Ja</div></div>
+                              <div className="rounded-2xl border border-amber-300/10 bg-amber-500/[0.05] p-2.5 text-center"><div className="text-lg font-black text-amber-300">{availabilitySummary.maybe}</div><div className="text-[9px] font-black uppercase tracking-wide text-white/30">Wenn nötig</div></div>
+                              <div className="rounded-2xl border border-red-300/10 bg-red-500/[0.05] p-2.5 text-center"><div className="text-lg font-black text-red-300">{availabilitySummary.no}</div><div className="text-[9px] font-black uppercase tracking-wide text-white/30">Nein</div></div>
+                              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-2.5 text-center"><div className="text-lg font-black text-white/75">{availabilitySummary.none}</div><div className="text-[9px] font-black uppercase tracking-wide text-white/30">Offen</div></div>
+                            </div>
+
+                            {isCaptainOrCoForTeam && !dialogIsLocked ? (
+                              <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3">
+                                <div><div className="text-sm font-black text-white">Offene Rückmeldungen</div><div className="text-xs text-white/35">{noAnswerPlayerIds.length} Spieler ohne Antwort</div></div>
+                                <Button size="sm" variant="outline" onClick={sendAvailabilityReminderToAll} disabled={remindAllSending || noAnswerPlayerIds.length === 0} className="rounded-xl border-white/10 bg-white/[0.035] text-xs font-black text-white/65">
+                                  {remindAllSending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}Alle erinnern
                                 </Button>
                               </div>
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </>
-                  ) : null}
-                </div>
+                            ) : null}
 
-                <DialogFooter className="sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 px-3 py-3">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Schließen</Button>
-                </DialogFooter>
+                            <Card className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] text-white shadow-none">
+                              <CardHeader className="px-4 py-3"><CardTitle className="text-base font-black text-white">Team-Rückmeldungen</CardTitle></CardHeader>
+                              <CardContent className="grid gap-2 p-3 pt-0 sm:grid-cols-2">
+                                {displayPlayers.map((p) => {
+                                  const a = availabilityByPlayer.get(p.id)
+                                  const s = a?.status ?? "none"
+                                  return (
+                                    <div key={p.id} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-black/20 p-3">
+                                      <div className="min-w-0"><div className="truncate text-sm font-black text-white">{p.name}</div>{a?.note ? <div className="mt-0.5 truncate text-[11px] text-white/35">{a.note}</div> : null}</div>
+                                      <div className="flex shrink-0 items-center gap-2">{statusBadge(s as any)}{isCaptainOrCoForTeam && !dialogIsLocked && s === "none" && p.id !== profile?.player_id ? <Button size="sm" variant="ghost" disabled={!!remindSending[p.id]} onClick={() => sendAvailabilityReminder(p.id)} className="h-8 rounded-lg px-2 text-[11px] font-black text-orange-300 hover:bg-orange-500/10">{remindSending[p.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Erinnern"}</Button> : null}</div>
+                                    </div>
+                                  )
+                                })}
+                              </CardContent>
+                            </Card>
+                          </TabsContent>
+
+                          <TabsContent value="lineup" className="m-0 space-y-3">
+                            <div className={`rounded-[22px] border p-4 ${lineupHasEnoughStarters ? "border-emerald-300/15 bg-emerald-500/[0.05]" : "border-amber-300/15 bg-amber-500/[0.05]"}`}>
+                              <div className="flex items-center justify-between gap-4">
+                                <div><div className="text-xs font-black uppercase tracking-[0.14em] text-white/30">Starter</div><div className="mt-1 text-sm font-bold text-white/65">{selectedLineupDartType === "edart" ? "E-Dart benötigt 4" : selectedLineupDartType === "steeldart" ? "Steeldart benötigt 3" : "Aufstellung"}</div></div>
+                                <div className={`text-3xl font-black ${lineupHasEnoughStarters ? "text-emerald-300" : "text-amber-300"}`}>{startersCount}<span className="text-lg text-white/25">/{requiredStartersForDialog}</span></div>
+                              </div>
+                              {!lineupHasEnoughStarters ? <div className="mt-2 text-xs font-semibold text-amber-200/80">Es fehlen noch {Math.max(0, requiredStartersForDialog - startersCount)} Starter.</div> : null}
+                            </div>
+
+                            {isCaptainOrCoForTeam ? (
+                              <Card className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] text-white shadow-none">
+                                <CardHeader className="px-4 py-3"><CardTitle className="text-base font-black text-white">Spieler auswählen</CardTitle></CardHeader>
+                                <CardContent className="grid gap-2 p-3 pt-0 sm:grid-cols-2">
+                                  {displayPlayers.map((p) => {
+                                    const entry = effectiveLineup.find((x) => x.player_id === p.id)
+                                    const inLineup = Boolean(entry)
+                                    const disabled = savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)
+                                    return (
+                                      <div key={p.id} className={`rounded-2xl border p-3 ${inLineup ? "border-orange-300/15 bg-orange-500/[0.05]" : "border-white/[0.07] bg-black/20"}`}>
+                                        <div className="mb-2 flex items-center justify-between gap-2"><div className="min-w-0 truncate text-sm font-black text-white">{p.name}</div>{entry ? <Badge className={entry.is_substitute ? "bg-sky-500/10 text-sky-200" : "bg-orange-500/10 text-orange-200"}>{entry.is_substitute ? "Ersatz" : "Starter"}</Badge> : null}</div>
+                                        {!inLineup ? (
+                                          <div className="grid grid-cols-2 gap-2"><Button size="sm" variant="outline" disabled={disabled} onClick={() => setLineupPlayer(p.id, "starter")} className="rounded-xl border-white/10 bg-white/[0.03] text-xs font-black text-white/65">Starter</Button><Button size="sm" variant="outline" disabled={disabled} onClick={() => setLineupPlayer(p.id, "substitute")} className="rounded-xl border-white/10 bg-white/[0.03] text-xs font-black text-white/65">Ersatz</Button></div>
+                                        ) : (
+                                          <div className="grid grid-cols-2 gap-2"><Button size="sm" variant="outline" disabled={disabled} onClick={() => setLineupPlayer(p.id, "remove")} className="rounded-xl border-white/10 bg-white/[0.03] text-xs font-black text-red-200/80">Raus</Button><Button size="sm" variant="outline" disabled={disabled} onClick={() => setLineupPlayer(p.id, entry?.is_substitute ? "starter" : "substitute")} className="rounded-xl border-white/10 bg-white/[0.03] text-xs font-black text-white/65">{entry?.is_substitute ? "Als Starter" : "Als Ersatz"}</Button></div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </CardContent>
+                              </Card>
+                            ) : null}
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <section className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-3"><div className="mb-2 text-sm font-black text-white">Starter ({starters.length})</div><div className="space-y-2">{starters.length === 0 ? <div className="rounded-xl border border-dashed border-white/10 p-3 text-center text-xs text-white/30">Noch keine Starter</div> : starters.map((lp) => { const p = displayPlayers.find((x) => x.id === lp.player_id); return <div key={lp.player_id} className="rounded-xl border border-white/[0.07] bg-black/20 px-3 py-2.5 text-sm font-black text-white">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div> })}</div></section>
+                              <section className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-3"><div className="mb-2 text-sm font-black text-white">Ersatz ({substitutes.length})</div><div className="space-y-2">{substitutes.length === 0 ? <div className="rounded-xl border border-dashed border-white/10 p-3 text-center text-xs text-white/30">Kein Ersatz</div> : substitutes.map((lp) => { const p = displayPlayers.find((x) => x.id === lp.player_id); return <div key={lp.player_id} className="rounded-xl border border-white/[0.07] bg-black/20 px-3 py-2.5 text-sm font-black text-white">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div> })}</div></section>
+                            </div>
+
+                            {isCaptainOrCoForTeam && !dialogIsLocked && (lineupIsConfirmed || lineupIsStale) && !lineupEditMode ? <Button variant="outline" onClick={() => { setLineupEditMode(true); setDraftLineup(lineupPlayers); setDraftDirty(false); setLineupError(null) }} className="h-11 w-full rounded-xl border-white/10 bg-white/[0.035] font-black text-white/70">Aufstellung bearbeiten</Button> : null}
+
+                            {isCaptainOrCoForTeam && !dialogIsLocked && lineupEditMode ? (
+                              <div className="space-y-2 rounded-2xl border border-orange-300/10 bg-orange-500/[0.035] p-3">
+                                <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={() => { setDraftLineup(lineupPlayers); setDraftDirty(false); setLineupError(null); setLineupEditMode(false) }} className="rounded-xl border-white/10 bg-white/[0.03] text-white/60">Abbrechen</Button><Button variant="outline" onClick={() => { setDraftLineup(lineupPlayers); setDraftDirty(false); setLineupError(null) }} className="rounded-xl border-white/10 bg-white/[0.03] text-white/60">Verwerfen</Button></div>
+                                <Button
+                                  onClick={confirmLineup}
+                                  disabled={confirmingLineup || dialogIsLocked || !lineupHasEnoughStarters}
+                                  className={`h-12 w-full rounded-xl border font-black transition-all duration-200 ${
+                                    lineupHasEnoughStarters && !dialogIsLocked && !confirmingLineup
+                                      ? "border-orange-200/70 bg-orange-500 text-white ring-2 ring-orange-400/35 shadow-[0_0_18px_rgba(249,115,22,.55),0_0_38px_rgba(249,115,22,.32),0_10px_28px_-12px_rgba(249,115,22,.95)] hover:bg-orange-400 hover:ring-orange-300/50 hover:shadow-[0_0_24px_rgba(249,115,22,.70),0_0_48px_rgba(249,115,22,.40),0_12px_30px_-12px_rgba(249,115,22,1)] active:scale-[0.985]"
+                                      : "border-white/[0.06] bg-white/[0.045] text-white/25 shadow-none"
+                                  }`}
+                                >
+                                  {confirmingLineup ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className={`mr-2 h-4 w-4 ${lineupHasEnoughStarters ? "drop-shadow-[0_0_7px_rgba(255,255,255,.55)]" : ""}`} />
+                                  )}
+                                  Änderungen bestätigen
+                                </Button>
+                              </div>
+                            ) : null}
+
+                            {!lineupEditMode && !lineupIsConfirmed && isCaptainOrCoForTeam && !dialogIsLocked ? <Button onClick={confirmLineup} disabled={confirmingLineup || !lineupHasEnoughStarters} className="h-12 w-full rounded-xl border border-orange-300/30 bg-orange-500 font-black text-white shadow-[0_0_24px_rgba(249,115,22,.28),0_8px_24px_-12px_rgba(249,115,22,.9)] transition hover:bg-orange-400 hover:shadow-[0_0_30px_rgba(249,115,22,.38),0_10px_28px_-12px_rgba(249,115,22,1)] active:scale-[0.99] disabled:border-white/5 disabled:bg-white/[0.06] disabled:text-white/25 disabled:shadow-none">{confirmingLineup ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}Aufstellung bestätigen</Button> : null}
+                          </TabsContent>
+
+                          <TabsContent value="chat" className="m-0">
+                            <Card className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] text-white shadow-none">
+                              <CardHeader className="border-b border-white/[0.07] px-4 py-3"><CardTitle className="flex items-center gap-2 text-base font-black text-white"><MessageCircle className="h-4 w-4 text-orange-300" />Spiel-Chat</CardTitle></CardHeader>
+                              <CardContent className="p-3 sm:p-4">
+                                {!activeRoomId ? <div className="text-sm text-white/40">Kein Chat verfügbar.</div> : (
+                                  <div className="space-y-3">
+                                    <div className="max-h-[calc(100dvh-300px)] min-h-[280px] overflow-y-auto rounded-2xl border border-white/[0.07] bg-black/20 p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:max-h-[46vh]">
+                                      {chatLoading ? <div className="flex items-center gap-2 text-sm text-white/40"><Loader2 className="h-4 w-4 animate-spin text-orange-400" />Lade Chat…</div> : chatMessages.length === 0 ? <div className="flex min-h-[260px] items-center justify-center text-center text-sm text-white/30">Noch keine Nachrichten.</div> : <div className="space-y-3">{chatMessages.map((m) => { const isMine = m.user_id === profile?.id; const name = m.sender?.name ?? `User ${m.user_id.slice(0, 8)}`; const photo = m.sender?.photo_url ?? null; return <div key={m.id} className={`flex gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}><Avatar className="h-8 w-8 shrink-0 border border-white/10"><AvatarImage src={photo || "/placeholder.svg"} alt={name} /><AvatarFallback className="bg-white/[0.05] text-xs text-white/60">{name.charAt(0).toUpperCase()}</AvatarFallback></Avatar><div className="max-w-[82%]"><div className={`mb-1 text-[10px] font-bold text-white/30 ${isMine ? "text-right" : "text-left"}`}>{isMine ? "Du" : name}</div><div className={`break-words rounded-2xl px-3 py-2 text-sm ${isMine ? "rounded-tr-md bg-orange-500 text-white" : "rounded-tl-md border border-white/[0.06] bg-white/[0.045] text-white/80"}`}>{m.message}</div></div></div> })}<div ref={chatEndRef} /></div>}
+                                    </div>
+                                    <div className="flex gap-2"><Input value={chatText} onChange={(e) => setChatText(e.target.value)} placeholder="Nachricht ans Team…" onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendChatMessage() } }} disabled={chatSending} className="h-11 rounded-xl border-white/10 bg-black/25 text-white placeholder:text-white/25" /><Button onClick={sendChatMessage} disabled={!chatText.trim() || chatSending} className="h-11 w-11 shrink-0 rounded-xl bg-orange-500 p-0 text-white hover:bg-orange-400">{chatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button></div>
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </TabsContent>
+                        </div>
+                      </div>
+                    </Tabs>
+
+                    <DialogFooter className="shrink-0 border-t border-white/[0.08] bg-[#080b11] px-3 py-2.5 sm:px-5">
+                      <div className="flex w-full items-center justify-between gap-3">
+                        <div className="hidden text-xs font-semibold text-white/30 sm:block">{lineupIsConfirmed && lineupHasEnoughStarters ? "Aufstellung bestätigt." : isCaptainOrCoForTeam ? "Aufstellung vor Spielbeginn bestätigen." : "Zusage bis Spielbeginn änderbar."}</div>
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="ml-auto h-9 rounded-xl border-white/10 bg-white/[0.035] px-5 font-black text-white/65">Schließen</Button>
+                      </div>
+                    </DialogFooter>
+                  </div>
+                ) : null}
               </DialogContent>
             </Dialog>
 
@@ -1551,7 +1451,7 @@ function MemberAvailabilityInner() {
                 <DialogHeader>
                   <DialogTitle className="text-base">Erinnerung bereits gesendet</DialogTitle>
                 </DialogHeader>
-                <div className="text-sm text-slate-600">
+                <div className="text-sm text-white/55">
                   Dieser Spieler wurde bereits erinnert.
                   <br />
                   <span className="font-medium">

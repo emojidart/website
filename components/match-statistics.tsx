@@ -213,6 +213,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
         )
       `)
       .eq("team_id", myTeamId)
+      .is("left_at", null)
       .order("club_players(name)")
 
     if (!error && data) {

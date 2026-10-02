@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ClubPlayerTeamManagement } from "@/components/vereinsverwaltung/ClubPlayerTeamManagement"
+import { ClubPlayerTeamManagement } from "@/app/admin/_komponenten/vereinsverwaltung/verwaltung"
 import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
 

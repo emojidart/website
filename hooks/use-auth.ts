@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { supabase } from "@/lib/supabase"
 import type { Session, User } from "@supabase/supabase-js"
 
@@ -25,6 +25,7 @@ export function useAuth(): AuthState {
   const [isAdmin, setIsAdmin] = useState(false)
   const [adminLoading, setAdminLoading] = useState(true)
   const [clubRoles, setClubRoles] = useState<string[]>([])
+  const adminCheckUserIdRef = useRef<string | null>(null)
 
   // <CHANGE> Function to check admin status + club roles
   const checkAdminStatus = async (userId: string) => {
@@ -92,9 +93,18 @@ export function useAuth(): AuthState {
       setLoading(false)
 
       if (nextSession?.user) {
-        setAdminLoading(true)
-        void checkAdminStatus(nextSession.user.id)
+        const userId = nextSession.user.id
+
+        // Adminstatus nur beim ersten Laden oder bei echtem Benutzerwechsel neu prüfen.
+        // TOKEN_REFRESHED / Browser-Tab-Wechsel darf die komplette Admin-Seite
+        // nicht wieder auf den Berechtigungs-Ladescreen setzen.
+        if (adminCheckUserIdRef.current !== userId) {
+          adminCheckUserIdRef.current = userId
+          setAdminLoading(true)
+          void checkAdminStatus(userId)
+        }
       } else {
+        adminCheckUserIdRef.current = null
         setIsAdmin(false)
         setClubRoles([])
         setAdminLoading(false)

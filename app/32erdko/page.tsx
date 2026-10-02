@@ -3,7 +3,7 @@ import { Header } from "@/components/header"
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-950">
+    <div className="min-h-screen bg-[#050608] text-white">
       <Header />
       <main className="w-full pt-[64px]">
         <TournamentBracket32er />

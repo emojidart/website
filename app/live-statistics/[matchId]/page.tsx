@@ -194,44 +194,24 @@ export default function LiveStatisticsPage() {
   // ✅ Props stabil
   const initialPlayers = useMemo(() => players, [players])
 
-  const headerSubtitle = myTeam ? `${myTeam.name} vs ${opponentName}` : "Live Statistik wird geladen…"
+  const headerSubtitle = myTeam ? `${myTeam.name} vs ${opponentName}` : "Live-Statistik"
 
  
   if (authLoading || loading || !playersReady) {
-    return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <Header variant="app" title="Live-Statistik" subtitle={headerSubtitle} backHref="/member-dashboard-app" />
-
-        <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
-              </div>
-
-              <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">Live Statistik wird geladen</p>
-                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    )
+    return <div className="min-h-[1px]" aria-hidden="true" />
   }
 
   if (error || !match || !myTeam) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-transparent text-white flex flex-col">
         <Header variant="app" title="Live-Statistik" subtitle="Fehler" backHref="/member-dashboard-app" />
 
         <main className="flex-grow flex items-center justify-center p-4">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Fehler</h1>
-            <p className="text-gray-600 mb-4">{error || "Daten nicht gefunden"}</p>
-            <Button onClick={() => router.push("/member-dashboard-app")} className="bg-orange-600 hover:bg-orange-700">
+            <h1 className="text-2xl font-black text-white mb-2">Fehler</h1>
+            <p className="text-white/50 mb-4">{error || "Daten nicht gefunden"}</p>
+            <Button onClick={() => router.push("/member-dashboard-app")} className="bg-orange-500 font-black text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white">
               Zurück zum Dashboard
             </Button>
           </div>
@@ -241,7 +221,7 @@ export default function LiveStatisticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-transparent text-white flex flex-col">
       <Header
         variant="app"
         title="Live-Statistik"
@@ -249,14 +229,14 @@ export default function LiveStatisticsPage() {
         backHref="/member-dashboard-app"
       />
 
-      <main className="container mx-auto px-4 py-6 max-w-6xl">
-        <Card className="shadow-xl border-0 bg-white mb-6">
+      <main className="w-full max-w-none px-3 pb-24 pt-16 sm:px-5 sm:pt-20 lg:px-8 xl:px-10 2xl:px-12">
+        <Card className="relative mb-4 w-full overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:mb-5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl lg:text-2xl font-bold">
-              <Target className="h-6 w-6 text-orange-600" />
+            <CardTitle className="flex min-w-0 flex-wrap items-center gap-2 text-lg font-black leading-tight tracking-tight text-white sm:text-xl lg:text-2xl">
+              <Target className="h-6 w-6 text-orange-300" />
               Live – {myTeam.name} vs {opponentName}
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-1 break-words text-xs font-medium leading-5 text-white/45 sm:text-sm">
               {formatDate(match.match_date)}
               {match.match_time ? ` • ${match.match_time}` : ""}
               {match.venue ? ` • ${match.venue}` : ""}

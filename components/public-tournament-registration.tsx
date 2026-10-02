@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { CheckCircle2, Mail, Phone, UserRound, Users } from "lucide-react"
+import { CheckCircle2, Coins, Mail, Phone, UserRound, Users, WalletCards } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,8 @@ type Info = {
   event: any
   participantCount: number
   participants: { id: string; name: string }[]
+  registrationSource?: "central" | "legacy-external"
+  centralEventId?: string | null
 }
 
 type PrefillType = "guest" | "member" | null
@@ -29,6 +31,8 @@ export function PublicTournamentRegistration({ eventId }: Props) {
   const [phone, setPhone] = useState("")
   const [message, setMessage] = useState("")
   const [success, setSuccess] = useState(false)
+  const [creditBalance, setCreditBalance] = useState(0)
+  const [paymentMode, setPaymentMode] = useState<"on_site" | "credit">("on_site")
 
   async function load() {
     setLoading(true)
@@ -50,6 +54,8 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
       if (!user) {
         setPrefillType(null)
+        setCreditBalance(0)
+        setPaymentMode("on_site")
         return
       }
 
@@ -110,6 +116,20 @@ export function PublicTournamentRegistration({ eventId }: Props) {
         : (memberProfile as any)?.club_players
 
       const linkedName = String(linkedPlayer?.name || "").trim()
+      const linkedClubPlayerId = linkedPlayer?.id ? String(linkedPlayer.id) : null
+
+      if (linkedClubPlayerId) {
+        const { data: creditRow } = await supabase
+          .from("player_credits")
+          .select("credit_balance")
+          .eq("player_id", linkedClubPlayerId)
+          .maybeSingle()
+
+        const balance = Number(creditRow?.credit_balance || 0)
+        setCreditBalance(Number.isFinite(balance) ? balance : 0)
+      } else {
+        setCreditBalance(0)
+      }
 
       if (linkedName || user.email) {
         setFullName((old) => old || linkedName)
@@ -133,10 +153,60 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    if (!info) return
+
     setSaving(true)
     setMessage("")
     setSuccess(false)
 
+    const entryFee = Math.max(0, Number(info.event?.entry_fee || 0))
+
+    // Eingeloggte Vereinsmitglieder + internes EMD-Turnier:
+    // Zahlung/Anmeldung atomar direkt im zentralen Turniersystem.
+    if (
+      prefillType === "member" &&
+      info.registrationSource === "central" &&
+      info.centralEventId
+    ) {
+      const selectedPayment =
+        entryFee <= 0 ? "on_site" : paymentMode
+
+      const { data, error } = await supabase.rpc(
+        "central_tournament_register_member",
+        {
+          p_event_id: info.centralEventId,
+          p_payment_method: selectedPayment,
+        },
+      )
+
+      if (error) {
+        setMessage(error.message || "Anmeldung fehlgeschlagen.")
+        setSaving(false)
+        return
+      }
+
+      const result = data as any
+      if (result?.payment_method === "credit" && result?.balance_after != null) {
+        setCreditBalance(Number(result.balance_after))
+      }
+
+      setSuccess(true)
+      setMessage(
+        result?.payment_method === "credit"
+          ? `Du bist angemeldet. ${entryFee.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} wurden von deinem Guthaben abgezogen.`
+          : entryFee > 0
+            ? `Du bist angemeldet. Das Startgeld von ${entryFee.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} wird vor Ort bezahlt.`
+            : "Du bist angemeldet.",
+      )
+
+      await load()
+      setSaving(false)
+      return
+    }
+
+    // Gäste / öffentliche Anmeldung:
+    // Anmeldung landet bei internen EMD-Turnieren ebenfalls zentral,
+    // Startgeld wird dynamisch als Zahlung vor Ort gespeichert.
     const r = await fetch("/api/public-tournament-registration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -153,7 +223,9 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
     setSuccess(true)
     setMessage(
-      "Du bist angemeldet. Die Bestätigung mit persönlichem Abmeldelink wurde per E-Mail gesendet.",
+      entryFee > 0
+        ? `Du bist angemeldet. Das Startgeld von ${entryFee.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} wird vor Ort bezahlt.`
+        : "Du bist angemeldet.",
     )
     await load()
     setSaving(false)
@@ -174,6 +246,13 @@ export function PublicTournamentRegistration({ eventId }: Props) {
   const full = Boolean(
     info.event.max_participants && info.participantCount >= info.event.max_participants,
   )
+
+  const entryFee = Math.max(0, Number(info.event?.entry_fee || 0))
+  const isCentralMember =
+    prefillType === "member" &&
+    info.registrationSource === "central" &&
+    Boolean(info.centralEventId)
+  const canUseCredit = isCentralMember && entryFee > 0 && creditBalance >= entryFee
 
   return (
     <div className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
@@ -274,6 +353,68 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                 </div>
               </div>
 
+              <div className="sm:col-span-2 rounded-2xl border border-orange-200 bg-orange-50/70 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 font-black text-slate-900">
+                    <WalletCards className="h-4 w-4 text-orange-600" />
+                    Startgeld
+                  </div>
+                  <div className="text-lg font-black text-slate-900">
+                    {entryFee > 0
+                      ? entryFee.toLocaleString("de-AT", { style: "currency", currency: "EUR" })
+                      : "Kostenlos"}
+                  </div>
+                </div>
+
+                {entryFee > 0 ? (
+                  isCentralMember ? (
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMode("on_site")}
+                        className={`rounded-xl border px-3 py-3 text-left transition ${
+                          paymentMode === "on_site"
+                            ? "border-orange-400 bg-white shadow-sm"
+                            : "border-slate-200 bg-white/70 hover:bg-white"
+                        }`}
+                      >
+                        <div className="font-black text-slate-900">Vor Ort bezahlen</div>
+                        <div className="mt-1 text-xs font-semibold text-slate-500">
+                          Anmeldung jetzt, Zahlung beim Turnier.
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={!canUseCredit}
+                        onClick={() => setPaymentMode("credit")}
+                        className={`rounded-xl border px-3 py-3 text-left transition ${
+                          paymentMode === "credit"
+                            ? "border-emerald-400 bg-emerald-50 shadow-sm"
+                            : "border-slate-200 bg-white/70"
+                        } ${!canUseCredit ? "cursor-not-allowed opacity-45" : "hover:bg-emerald-50"}`}
+                      >
+                        <div className="flex items-center gap-2 font-black text-slate-900">
+                          <Coins className="h-4 w-4 text-emerald-600" />
+                          Vom Guthaben
+                        </div>
+                        <div className="mt-1 text-xs font-semibold text-slate-500">
+                          Verfügbar: {creditBalance.toLocaleString("de-AT", { style: "currency", currency: "EUR" })}
+                        </div>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-xs font-semibold text-slate-600">
+                      Das Startgeld wird vor Ort bezahlt.
+                    </div>
+                  )
+                ) : (
+                  <div className="mt-2 text-xs font-semibold text-emerald-700">
+                    Für dieses Turnier ist kein Startgeld hinterlegt.
+                  </div>
+                )}
+              </div>
+
               {message ? (
                 <div
                   className={`sm:col-span-2 rounded-xl border p-3 text-sm font-semibold ${
@@ -295,7 +436,11 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                   ? "Kontodaten werden geladen…"
                   : saving
                     ? "Wird angemeldet…"
-                    : "Verbindlich anmelden"}
+                    : entryFee <= 0
+                      ? "Kostenlos anmelden"
+                      : isCentralMember && paymentMode === "credit"
+                        ? `Anmelden & ${entryFee.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} abbuchen`
+                        : "Verbindlich anmelden"}
               </Button>
             </form>
           )}

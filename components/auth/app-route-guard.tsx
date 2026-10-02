@@ -76,11 +76,22 @@ function isTerminalPath(pathname: string) {
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="flex flex-col items-center gap-3 text-center">
-        <div className="h-10 w-10 rounded-full border-4 border-orange-500 border-t-transparent animate-spin" />
-        <div className="text-sm font-bold text-gray-600">
-          Zugriff wird geprüft...
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050608] px-4 text-white">
+      <div
+        className="pointer-events-none absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.22]"
+        style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.80),rgba(3,5,9,.96))]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_82%_72%,rgba(14,165,233,.10),transparent_30%)]" />
+
+      <div className="relative flex flex-col items-center gap-4 rounded-[24px] border border-white/[0.08] bg-black/30 px-6 py-5 text-center shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+        <div className="relative flex h-12 w-12 items-center justify-center">
+          <div className="absolute inset-0 rounded-full bg-orange-500/15 blur-xl" />
+          <div className="relative h-9 w-9 animate-spin rounded-full border-[3px] border-white/10 border-t-orange-400 border-r-orange-300/60" />
+        </div>
+        <div>
+          <div className="text-sm font-black text-white/85">Zugriff wird geprüft...</div>
+          <div className="mt-1 text-xs font-semibold text-white/35">Einen Moment bitte</div>
         </div>
       </div>
     </div>
@@ -105,6 +116,14 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         // IMPORTANT: only /terminal and /terminal/* bypass this global guard.
         // The normal site keeps all existing auth/access checks unchanged.
         if (isTerminalPath(pathname)) {
+          if (mounted) setChecking(false)
+          return
+        }
+
+        // Login-Seiten besitzen ihren eigenen Auth-/Ladezustand.
+        // Der globale Guard darf hier keinen zweiten Vollbild-Loader
+        // dazwischenschalten und keine laufende Login-Prüfung übermalen.
+        if (pathname === MEMBER_LOGIN_ROUTE || pathname === GUEST_LOGIN_ROUTE) {
           if (mounted) setChecking(false)
           return
         }
@@ -219,85 +238,10 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
           return
         }
 
-        // Die Grundmitgliedschaft wird nur dann verpflichtend geprüft,
-        // wenn ein aufgenommenes Vereinsmitglied sein Mitgliederprofil öffnet.
-        // Andere geschützte Seiten werden durch diese Membership-Prüfung
-        // nicht automatisch auf /member-membership umgeleitet.
-        const shouldRequireBaseMembership =
-          !userProfile.is_guest &&
-          pathname === "/member-profile-app" &&
-          !pathIsMembershipPayment
-
-        if (shouldRequireBaseMembership) {
-          const currentPlayerId = userProfile.player_id
-          let hasActiveBaseMembership = false
-
-          if (currentPlayerId) {
-            const today = new Date().toISOString().split("T")[0]
-
-            const [
-              { data: baseModules, error: baseModuleError },
-              { data: activeMemberships, error: membershipError },
-              { data: activeBaseTrials, error: baseTrialError },
-            ] =
-              await Promise.all([
-                supabase
-                  .from("membership_modules")
-                  .select("id")
-                  .eq("is_required_base", true)
-                  .eq("is_active", true),
-                supabase
-                  .from("member_memberships")
-                  .select("id")
-                  .eq("player_id", currentPlayerId)
-                  .eq("status", "active"),
-                supabase
-                  .from("membership_trials")
-                  .select("id")
-                  .eq("player_id", currentPlayerId)
-                  .eq("module_code", "base_membership")
-                  .eq("status", "active")
-                  .lte("starts_on", today)
-                  .gte("ends_on", today)
-                  .limit(1),
-              ])
-
-            if (baseTrialError) {
-              console.error("[AppRouteGuard] Test-Grundmitgliedschaft konnte nicht geprüft werden:", baseTrialError)
-            } else {
-              hasActiveBaseMembership = (activeBaseTrials || []).length > 0
-            }
-
-            if (!hasActiveBaseMembership && baseModuleError) {
-              console.error("[AppRouteGuard] Grundmodul konnte nicht geprüft werden:", baseModuleError)
-            } else if (!hasActiveBaseMembership && membershipError) {
-              console.error("[AppRouteGuard] Mitgliedschaft konnte nicht geprüft werden:", membershipError)
-            } else if (!hasActiveBaseMembership) {
-              const baseModuleIds = (baseModules || []).map((row: any) => String(row.id))
-              const membershipIds = (activeMemberships || []).map((row: any) => String(row.id))
-
-              if (baseModuleIds.length > 0 && membershipIds.length > 0) {
-                const { data: baseRows, error: baseRowsError } = await supabase
-                  .from("member_membership_modules")
-                  .select("membership_id,module_id")
-                  .in("membership_id", membershipIds)
-                  .in("module_id", baseModuleIds)
-                  .limit(1)
-
-                if (baseRowsError) {
-                  console.error("[AppRouteGuard] Grundmitgliedschaft konnte nicht geprüft werden:", baseRowsError)
-                } else {
-                  hasActiveBaseMembership = (baseRows || []).length > 0
-                }
-              }
-            }
-          }
-
-          if (!hasActiveBaseMembership) {
-            router.replace(`${MEMBER_MEMBERSHIP_ROUTE}?required=base`)
-            return
-          }
-        }
+        // Mitglieds-/Modulberechtigungen werden nicht global erzwungen.
+        // Der Route Guard entscheidet nur zwischen Gast, Mitglied, gesperrt
+        // und nicht angemeldet. Modulspezifische Freigaben bleiben in den
+        // jeweiligen Membership-Gates/Hooks.
 
         // Mitglieder dürfen ebenfalls alle Dartbörsen- und
         // DACH-Veranstaltungsseiten verwenden. /member-membership ist bewusst
@@ -329,7 +273,11 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
 
   // Never show the global white access-check screen inside the Club Terminal.
   // All other routes still use the original LoadingScreen and guard behavior.
-  if (isTerminalPath(pathname)) {
+  if (
+    isTerminalPath(pathname) ||
+    pathname === MEMBER_LOGIN_ROUTE ||
+    pathname === GUEST_LOGIN_ROUTE
+  ) {
     return <>{children}</>
   }
 

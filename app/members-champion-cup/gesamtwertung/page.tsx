@@ -1,0 +1,683 @@
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
+import { motion } from "framer-motion"
+import Image from "@/components/image"
+import { Header } from "@/components/header"
+import {
+  MembersCupBackground,
+  membersCupContainerVariants,
+  membersCupItemVariants,
+} from "@/app/members-champion-cup/_komponenten/members-cup-design"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { supabase } from "@/lib/supabase"
+import {
+  Activity,
+  Award,
+  Calendar,
+  ChevronDown,
+  Crown,
+  Loader2,
+  Medal,
+  Search,
+  Sparkles,
+  Star,
+  Target,
+  Trophy,
+  Users,
+  X,
+} from "lucide-react"
+
+type MembersCupResultRow = {
+  id: string
+  round_robin_id: string
+  tournament_name: string
+  team_id: string
+  team_name: string
+  player_id: string
+  player_name: string
+  placement: number
+  points: number
+  created_at: string
+}
+
+type PlayerStanding = {
+  player_id: string
+  player_name: string
+  total_points: number
+  tournaments_played: number
+  wins: number
+  podiums: number
+  best_placement: number
+  average_points: number
+  profile_picture_url?: string
+  results: MembersCupResultRow[]
+}
+
+type TournamentHistory = {
+  round_robin_id: string
+  tournament_name: string
+  created_at: string
+  results: MembersCupResultRow[]
+}
+
+const POINT_SYSTEM = [
+  { place: "1. Platz", points: 100, badge: "🥇" },
+  { place: "2. Platz", points: 95, badge: "🥈" },
+  { place: "3. Platz", points: 85, badge: "🥉" },
+  { place: "4. Platz", points: 70, badge: "4" },
+  { place: "alle 5. Platzierten", points: 50, badge: "5" },
+  { place: "alle 7. Platzierten", points: 35, badge: "7" },
+  { place: "alle 9. Platzierten", points: 25, badge: "9" },
+  { place: "alle 13. Platzierten", points: 15, badge: "13" },
+  { place: "alle 17. Platzierten", points: 10, badge: "17" },
+]
+
+function shortName(name: string) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return parts[0] || "—"
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0).toUpperCase()}.`
+}
+
+function formatDate(dateString?: string) {
+  if (!dateString) return "—"
+  const dt = new Date(dateString)
+  if (Number.isNaN(dt.getTime())) return "—"
+  return dt.toLocaleDateString("de-AT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
+
+function getPlacementIcon(placement: number) {
+  if (placement === 1) return "🥇"
+  if (placement === 2) return "🥈"
+  if (placement === 3) return "🥉"
+  return String(placement)
+}
+
+function getRankBadgeClass(rank: number) {
+  const base = "inline-flex items-center justify-center w-10 h-10 rounded-2xl font-black text-sm shrink-0"
+  if (rank === 1) return `${base} bg-gradient-to-br from-yellow-300 to-yellow-600 text-white shadow-lg shadow-yellow-200`
+  if (rank === 2) return `${base} bg-gradient-to-br from-gray-300 to-gray-500 text-white shadow-lg shadow-gray-200`
+  if (rank === 3) return `${base} bg-gradient-to-br from-amber-400 to-amber-700 text-white shadow-lg shadow-amber-200`
+  return `${base} bg-white text-white/70 border border-gray-200`
+}
+
+function getRankIcon(rank: number) {
+  if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />
+  if (rank === 2) return <Medal className="h-5 w-5 text-gray-400" />
+  if (rank === 3) return <Award className="h-5 w-5 text-amber-600" />
+  return null
+}
+
+function PlayerRow({ player, rank, onClick }: { player: PlayerStanding; rank: number; onClick: () => void }) {
+  return (
+    <motion.button
+      variants={membersCupItemVariants}
+      type="button"
+      onClick={onClick}
+      className={`w-full rounded-2xl border bg-black/30 p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl ${
+        rank <= 3 ? "border-amber-400/20 bg-gradient-to-r from-amber-500/10 to-black/10" : "border-gray-200"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={getRankBadgeClass(rank)}>{rank}</div>
+          {getRankIcon(rank)}
+
+          <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-gray-200 bg-orange-500/10 shrink-0">
+            <Image
+              src={player.profile_picture_url || "/placeholder-user.jpg"}
+              alt={player.player_name}
+              width={48}
+              height={48}
+              className="object-cover"
+              unoptimized
+            />
+          </div>
+
+          <div className="min-w-0">
+            <div className="truncate font-black text-white">{player.player_name}</div>
+            <div className="mt-0.5 text-xs font-bold text-white/40">
+              {player.tournaments_played} Antritt{player.tournaments_played === 1 ? "" : "e"} · Ø {player.average_points.toFixed(1)} Punkte
+            </div>
+          </div>
+        </div>
+
+        <div className="text-right shrink-0">
+          <div className="flex items-center justify-end gap-1 text-2xl font-black text-orange-300">
+            {player.total_points}
+            <Trophy className="h-5 w-5 text-orange-500" />
+          </div>
+          <div className="text-[11px] font-bold text-white/40">Punkte</div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 text-center">
+        <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-2">
+          <div className="text-[10px] font-bold text-emerald-300">Siege</div>
+          <div className="text-sm font-black text-emerald-100">{player.wins}</div>
+        </div>
+        <div className="rounded-xl border border-amber-400/20 bg-amber-500/10 p-2">
+          <div className="text-[10px] font-bold text-amber-300">Podium</div>
+          <div className="text-sm font-black text-amber-100">{player.podiums}</div>
+        </div>
+        <div className="rounded-xl border border-sky-400/20 bg-sky-500/10 p-2">
+          <div className="text-[10px] font-bold text-sky-300">Bestplatz</div>
+          <div className="text-sm font-black text-sky-100">{player.best_placement}.</div>
+        </div>
+        <div className="rounded-xl border border-violet-400/20 bg-violet-500/10 p-2">
+          <div className="text-[10px] font-bold text-violet-300">Schnitt</div>
+          <div className="text-sm font-black text-violet-100">{player.average_points.toFixed(1)}</div>
+        </div>
+      </div>
+    </motion.button>
+  )
+}
+
+function PodiumCard({ player, rank }: { player?: PlayerStanding; rank: number }) {
+  const title = rank === 1 ? "Champion" : rank === 2 ? "Verfolger" : "Podium"
+  const gradient = rank === 1 ? "from-yellow-400 to-orange-500" : rank === 2 ? "from-gray-300 to-gray-500" : "from-amber-400 to-orange-700"
+
+  return (
+    <motion.div
+      variants={membersCupItemVariants}
+      className={`relative overflow-hidden rounded-3xl border border-white bg-black/30 p-5 shadow-xl ${rank === 1 ? "lg:scale-105" : ""}`}
+    >
+      <div className={`absolute inset-x-0 top-0 h-2 bg-gradient-to-r ${gradient}`} />
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs font-black uppercase tracking-wide text-white/40">{title}</div>
+          <div className="mt-1 flex items-center gap-2 text-lg font-black text-white">
+            {rank === 1 ? <Crown className="h-5 w-5 text-yellow-500" /> : rank === 2 ? <Medal className="h-5 w-5 text-gray-400" /> : <Award className="h-5 w-5 text-amber-600" />}
+            Platz {rank}
+          </div>
+        </div>
+        <div className={getRankBadgeClass(rank)}>{rank}</div>
+      </div>
+
+      {player ? (
+        <div className="mt-5 flex items-center gap-4">
+          <div className="relative h-16 w-16 overflow-hidden rounded-3xl border border-gray-200 bg-orange-500/10 shrink-0">
+            <Image
+              src={player.profile_picture_url || "/placeholder-user.jpg"}
+              alt={player.player_name}
+              width={64}
+              height={64}
+              className="object-cover"
+              unoptimized
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-xl font-black text-white">{player.player_name}</div>
+            <div className="mt-1 text-sm font-bold text-white/40">
+              {player.tournaments_played} Antritte · {player.wins} Siege
+            </div>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-500/10 px-4 py-2 text-sm font-black text-orange-300">
+              <Trophy className="h-4 w-4" /> {player.total_points} Punkte
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-5 rounded-2xl border border-dashed border-gray-200 bg-white/5 p-5 text-center text-sm font-bold text-white/40">
+          Noch kein Spieler vorhanden
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+function TournamentCard({ tournament }: { tournament: TournamentHistory }) {
+  const [open, setOpen] = useState(false)
+  const teamWinners = tournament.results.filter((r) => r.placement === 1)
+  const winnerText = teamWinners[0]?.team_name || "Noch kein Sieger"
+
+  return (
+    <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 p-4 text-left"
+      >
+        <div className="min-w-0">
+          <div className="truncate font-black text-white">{tournament.tournament_name}</div>
+          <div className="mt-1 text-xs font-bold text-white/40">
+            {formatDate(tournament.created_at)} · Siegerteam: {winnerText}
+          </div>
+        </div>
+        <ChevronDown className={`h-5 w-5 text-orange-600 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open ? (
+        <div className="space-y-2 border-t border-white/10 p-3">
+          {tournament.results
+            .slice()
+            .sort((a, b) => a.placement - b.placement || a.player_name.localeCompare(b.player_name))
+            .map((entry) => (
+              <div key={entry.id} className="rounded-xl border border-orange-100 bg-orange-500/10 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-300/20 bg-black/30 font-black">
+                      {getPlacementIcon(entry.placement)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate font-black text-white">{entry.player_name}</div>
+                      <div className="truncate text-[11px] font-bold text-white/40">Team: {entry.team_name}</div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-xl font-black text-orange-300">{entry.points}</div>
+                    <div className="text-[10px] font-bold text-white/40">Punkte</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      ) : null}
+    </motion.div>
+  )
+}
+
+function DetailView({ player, tournaments, onClose }: { player: PlayerStanding; tournaments: TournamentHistory[]; onClose: () => void }) {
+  const playerTournaments = tournaments
+    .map((tournament) => ({
+      ...tournament,
+      playerEntry: tournament.results.find((result) => result.player_id === player.player_id),
+    }))
+    .filter((item) => item.playerEntry)
+
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-[#050608] text-white pb-24 md:pb-0">
+      <Header variant="app" title="Gesamtwertung" subtitle="Members Champion Cup" backHref="/" />
+      <MembersCupBackground />
+      <main className="relative z-10 pt-12 sm:pt-14">
+        <motion.div
+          className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-4 sm:space-y-5 px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
+          variants={membersCupContainerVariants}
+          initial={false}
+          animate="visible"
+        >
+          <motion.div variants={membersCupItemVariants}>
+            <button type="button" onClick={onClose} className="inline-flex items-center gap-2 font-black text-orange-300 hover:text-orange-200">
+              <X className="h-5 w-5" /> Detail schließen
+            </button>
+          </motion.div>
+
+          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-3xl border border-white/10 bg-black/30 shadow-sm">
+            <div className="h-2 bg-gradient-to-r from-orange-500 to-yellow-500" />
+            <div className="p-5">
+              <div className="flex items-start gap-4">
+                <div className="relative h-20 w-20 overflow-hidden rounded-3xl border border-gray-200 bg-orange-500/10 shrink-0">
+                  <Image
+                    src={player.profile_picture_url || "/placeholder-user.jpg"}
+                    alt={player.player_name}
+                    width={80}
+                    height={80}
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="truncate text-2xl font-black text-white">{player.player_name}</h1>
+                  <p className="mt-1 text-sm font-bold text-white/55">Members Champion Cup Detailansicht</p>
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-500/10 px-4 py-2 text-sm font-black text-orange-300">
+                    <Trophy className="h-4 w-4" /> {player.total_points} Punkte
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5 text-center">
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-3">
+                  <div className="text-[11px] font-bold text-white/55">Antritte</div>
+                  <div className="text-xl font-black text-white">{player.tournaments_played}</div>
+                </div>
+                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
+                  <div className="text-[11px] font-bold text-emerald-300">Siege</div>
+                  <div className="text-xl font-black text-emerald-100">{player.wins}</div>
+                </div>
+                <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-3">
+                  <div className="text-[11px] font-bold text-amber-300">Podium</div>
+                  <div className="text-xl font-black text-amber-100">{player.podiums}</div>
+                </div>
+                <div className="rounded-2xl border border-sky-400/20 bg-sky-500/10 p-3">
+                  <div className="text-[11px] font-bold text-sky-300">Bestplatz</div>
+                  <div className="text-xl font-black text-sky-100">{player.best_placement}.</div>
+                </div>
+                <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-3 col-span-2 sm:col-span-1">
+                  <div className="text-[11px] font-bold text-violet-300">Schnitt</div>
+                  <div className="text-xl font-black text-violet-100">{player.average_points.toFixed(1)}</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div variants={membersCupItemVariants} className="space-y-3">
+            <h2 className="flex items-center gap-2 font-black text-white">
+              <Calendar className="h-5 w-5 text-orange-600" /> Spieler-Historie
+            </h2>
+            {playerTournaments.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-8 text-center font-bold text-white/40">Keine Teilnahmen gefunden.</div>
+            ) : (
+              playerTournaments.map((tournament: any) => (
+                <div key={tournament.round_robin_id} className="rounded-2xl border border-white/10 bg-black/30 p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-black text-white">{tournament.tournament_name}</div>
+                      <div className="mt-1 text-xs font-bold text-white/40">{formatDate(tournament.created_at)}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xl font-black text-orange-300">{tournament.playerEntry.points}</div>
+                      <div className="text-[10px] font-bold text-white/40">Platz {tournament.playerEntry.placement}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 rounded-xl border border-orange-100 bg-orange-500/10 px-3 py-2 text-xs font-bold text-white/70">
+                    Team: {tournament.playerEntry.team_name}
+                  </div>
+                </div>
+              ))
+            )}
+          </motion.div>
+        </motion.div>
+      </main>
+      <MobileBottomNav />
+    </div>
+  )
+}
+
+export default function MembersChampionCupGesamtwertungPage() {
+  const [loading, setLoading] = useState(true)
+  const [results, setResults] = useState<MembersCupResultRow[]>([])
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
+  const [query, setQuery] = useState("")
+  const [profilePictures, setProfilePictures] = useState<Map<string, string>>(new Map())
+
+  useEffect(() => {
+    fetchAll()
+  }, [])
+
+  const fetchAll = async () => {
+    try {
+      setLoading(true)
+
+      const { data, error } = await supabase
+        .from("members_cup_results")
+        .select("id,round_robin_id,tournament_name,team_id,team_name,player_id,player_name,placement,points,created_at")
+        .order("created_at", { ascending: true })
+        .order("placement", { ascending: true })
+
+      if (error) throw error
+
+      const mapped = ((data || []) as any[]).map((row) => ({
+        id: String(row.id),
+        round_robin_id: String(row.round_robin_id),
+        tournament_name: String(row.tournament_name || "Members Champion Cup"),
+        team_id: String(row.team_id || ""),
+        team_name: String(row.team_name || ""),
+        player_id: String(row.player_id || ""),
+        player_name: String(row.player_name || ""),
+        placement: Number(row.placement || 0),
+        points: Number(row.points || 0),
+        created_at: String(row.created_at || ""),
+      }))
+
+      setResults(mapped)
+
+      const { data: profiles } = await supabase.from("spieldatenbank").select("id,name,profile_picture_url")
+      const picMap = new Map<string, string>()
+      ;(profiles || []).forEach((profile: any) => {
+        if (profile?.id && profile?.profile_picture_url) picMap.set(String(profile.id), String(profile.profile_picture_url))
+        if (profile?.name && profile?.profile_picture_url) picMap.set(String(profile.name).toLowerCase(), String(profile.profile_picture_url))
+      })
+      setProfilePictures(picMap)
+    } catch (error) {
+      console.error("Members Cup Gesamtwertung error:", error)
+      setResults([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const standings = useMemo(() => {
+    const map = new Map<string, PlayerStanding>()
+
+    results.forEach((row) => {
+      const key = row.player_id || row.player_name
+      const existing = map.get(key)
+      const profile_picture_url = profilePictures.get(row.player_id) || profilePictures.get(row.player_name.toLowerCase())
+
+      if (!existing) {
+        map.set(key, {
+          player_id: row.player_id,
+          player_name: row.player_name,
+          total_points: row.points,
+          tournaments_played: 1,
+          wins: row.placement === 1 ? 1 : 0,
+          podiums: row.placement <= 3 ? 1 : 0,
+          best_placement: row.placement,
+          average_points: row.points,
+          profile_picture_url,
+          results: [row],
+        })
+        return
+      }
+
+      existing.total_points += row.points
+      existing.tournaments_played += 1
+      existing.wins += row.placement === 1 ? 1 : 0
+      existing.podiums += row.placement <= 3 ? 1 : 0
+      existing.best_placement = Math.min(existing.best_placement, row.placement)
+      existing.average_points = existing.total_points / existing.tournaments_played
+      existing.results.push(row)
+      if (!existing.profile_picture_url && profile_picture_url) existing.profile_picture_url = profile_picture_url
+    })
+
+    return Array.from(map.values()).sort((a, b) => {
+      if (b.total_points !== a.total_points) return b.total_points - a.total_points
+      if (b.wins !== a.wins) return b.wins - a.wins
+      if (b.podiums !== a.podiums) return b.podiums - a.podiums
+      if (a.best_placement !== b.best_placement) return a.best_placement - b.best_placement
+      return a.player_name.localeCompare(b.player_name)
+    })
+  }, [results, profilePictures])
+
+  const tournaments = useMemo(() => {
+    const map = new Map<string, TournamentHistory>()
+
+    results.forEach((row) => {
+      if (!map.has(row.round_robin_id)) {
+        map.set(row.round_robin_id, {
+          round_robin_id: row.round_robin_id,
+          tournament_name: row.tournament_name,
+          created_at: row.created_at,
+          results: [],
+        })
+      }
+      map.get(row.round_robin_id)!.results.push(row)
+    })
+
+    return Array.from(map.values())
+      .map((tournament) => ({
+        ...tournament,
+        results: tournament.results.sort((a, b) => a.placement - b.placement || a.player_name.localeCompare(b.player_name)),
+      }))
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [results])
+
+  const filteredStandings = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return standings
+    return standings.filter((player) => player.player_name.toLowerCase().includes(q))
+  }, [standings, query])
+
+  const selectedPlayer = selectedPlayerId ? standings.find((player) => player.player_id === selectedPlayerId) : null
+
+  const totalPlayers = standings.length
+  const completedTournaments = tournaments.length
+  const totalPoints = standings.reduce((sum, player) => sum + player.total_points, 0)
+  const totalAppearances = standings.reduce((sum, player) => sum + player.tournaments_played, 0)
+  const topThree = standings.slice(0, 3)
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex flex-col bg-white/5 text-white pb-24 overflow-x-hidden">
+        <Header />
+        <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12">
+          <div className="flex flex-col items-center gap-5 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-gray-200">
+            <Loader2 className="h-12 w-12 animate-spin text-orange-600" />
+            <div className="text-center">
+              <p className="text-lg font-bold text-white">Members Champion Cup wird geladen</p>
+              <p className="text-sm text-white/40 mt-1">Bitte kurz warten…</p>
+            </div>
+          </div>
+        </div>
+        <MobileBottomNav />
+      </main>
+    )
+  }
+
+  if (selectedPlayer) {
+    return <DetailView player={selectedPlayer} tournaments={tournaments} onClose={() => setSelectedPlayerId(null)} />
+  }
+
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-[#050608] text-white pb-24 md:pb-0">
+      <Header />
+
+      <main className="relative z-10 pt-12 sm:pt-14">
+        <motion.div
+          className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-4 sm:space-y-5 px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
+          variants={membersCupContainerVariants}
+          initial={false}
+          animate="visible"
+        >
+          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-[26px] border border-white/10 bg-black/30 shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+            <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
+              <div className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left sm:gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
+                  <Crown className="h-7 w-7 text-orange-300" />
+                </div>
+                <div className="mt-3 min-w-0 flex-1 sm:mt-0">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-black text-orange-950">
+                    <Sparkles className="h-3.5 w-3.5" /> MEMBERS CHAMPIONS CUP 2026/27
+                  </div>
+                  <h1 className="mt-2 text-2xl font-black sm:text-3xl lg:text-4xl">EMD MEMBERS CHAMPION CUP</h1>
+                  <p className="mt-1 text-sm font-semibold text-orange-100 sm:text-base">
+                    Offizielle Gesamtwertung · Doppel wird gespielt · Einzelwertung zählt
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchAll}
+                  className="mt-4 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15 sm:mt-0"
+                >
+                  Aktualisieren
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 p-4 sm:p-5 lg:grid-cols-4 lg:p-6">
+              <div className="rounded-2xl border border-slate-200 bg-white/5 p-4">
+                <div className="text-xs font-bold text-white/40">Spieler</div>
+                <div className="mt-1 text-2xl font-black text-white sm:text-3xl">{totalPlayers}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white/5 p-4">
+                <div className="text-xs font-bold text-white/40">Spieltage</div>
+                <div className="mt-1 text-2xl font-black text-white sm:text-3xl">{completedTournaments}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white/5 p-4">
+                <div className="text-xs font-bold text-white/40">Antritte</div>
+                <div className="mt-1 text-2xl font-black text-white sm:text-3xl">{totalAppearances}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white/5 p-4">
+                <div className="text-xs font-bold text-white/40">Punkte</div>
+                <div className="mt-1 text-2xl font-black text-white sm:text-3xl">{totalPoints}</div>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <PodiumCard player={topThree[1]} rank={2} />
+            <PodiumCard player={topThree[0]} rank={1} />
+            <PodiumCard player={topThree[2]} rank={3} />
+          </div>
+
+          <motion.div variants={membersCupItemVariants} className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4">
+            <div className="flex items-start gap-3">
+              <Star className="mt-0.5 h-5 w-5 text-amber-300 shrink-0" />
+              <div>
+                <h2 className="font-black text-white">Punktesystem</h2>
+                <p className="mt-1 text-sm font-bold text-white/70">
+                  Beide Doppelspieler erhalten jeweils die vollen Platzierungspunkte für ihr Team.
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-9">
+                  {POINT_SYSTEM.map((item) => (
+                    <div key={item.place} className="rounded-2xl border border-amber-400/20 bg-black/30 p-3 text-center shadow-sm">
+                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 font-black text-yellow-800">
+                        {item.badge}
+                      </div>
+                      <div className="mt-2 text-[10px] font-black text-white/40 min-h-[24px]">{item.place}</div>
+                      <div className="mt-1 text-lg font-black text-orange-300">{item.points}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div variants={membersCupItemVariants} className="rounded-2xl border border-white/10 bg-black/30 p-3 shadow-sm">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/5 px-4 py-3">
+              <Search className="h-5 w-5 text-gray-400" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Spieler suchen…"
+                className="w-full bg-transparent text-sm font-bold outline-none placeholder:text-gray-400"
+              />
+            </div>
+          </motion.div>
+
+          <motion.div variants={membersCupContainerVariants} className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 font-black text-white">
+                <Trophy className="h-5 w-5 text-orange-600" /> Gesamtwertung
+              </h2>
+              <div className="text-xs font-bold text-white/40">{filteredStandings.length} Spieler</div>
+            </div>
+
+            {filteredStandings.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-10 text-center font-bold text-white/40">
+                Noch keine Members-Cup-Daten vorhanden.
+              </div>
+            ) : (
+              filteredStandings.map((player, index) => (
+                <PlayerRow
+                  key={player.player_id || player.player_name}
+                  player={player}
+                  rank={index + 1}
+                  onClick={() => setSelectedPlayerId(player.player_id)}
+                />
+              ))
+            )}
+          </motion.div>
+
+          <motion.div variants={membersCupItemVariants} className="space-y-3">
+            <h2 className="flex items-center gap-2 font-black text-white">
+              <Calendar className="h-5 w-5 text-orange-600" /> Turnier-Historie
+            </h2>
+            {tournaments.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-10 text-center font-bold text-white/40">
+                Noch keine gespeicherten Turniere vorhanden.
+              </div>
+            ) : (
+              tournaments.map((tournament) => <TournamentCard key={tournament.round_robin_id} tournament={tournament} />)
+            )}
+          </motion.div>
+        </motion.div>
+      </main>
+
+      <MobileBottomNav />
+    </div>
+  )
+}

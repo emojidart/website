@@ -161,25 +161,33 @@ export default function NachrichtenPage() {
   }, [prepared, query]);
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] pb-24">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white">
       <Header />
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.95)_48%,rgba(2,4,7,.99))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.10),transparent_26%)]" />
+      </div>
 
-      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
-        <Button asChild variant="outline" className="mb-4 rounded-xl">
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-24 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
+        <Button asChild variant="outline" className="mb-4 h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white/65 hover:bg-white/[0.06]/[0.09] hover:text-white">
           <Link href="/dartboerse">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Zur Dartbörse
           </Link>
         </Button>
 
-        <div className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 p-4 text-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] sm:p-6 lg:p-8 xl:rounded-[30px]">
+        <div className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/92 p-4 text-white shadow-[0_28px_90px_-50px_rgba(0,0,0,.98)] backdrop-blur-xl sm:p-6 lg:p-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-xs font-black uppercase tracking-widest text-orange-300">
                 Dartbörse
               </div>
               <h1 className="mt-1 text-3xl font-black">Meine Nachrichten</h1>
-              <p className="mt-2 text-slate-300">
+              <p className="mt-2 text-white/42">
                 Fragen, Preisangebote und Gegenangebote direkt klären.
               </p>
             </div>
@@ -188,13 +196,13 @@ export default function NachrichtenPage() {
               <div className="relative">
                 <MessageCircle className="h-7 w-7 text-orange-300" />
                 {totalUnread > 0 ? (
-                  <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-black text-white ring-2 ring-slate-900">
+                  <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-500/[0.08]0 px-1.5 text-[10px] font-black text-white ring-2 ring-slate-900">
                     {totalUnread > 99 ? "99+" : totalUnread}
                   </span>
                 ) : null}
               </div>
               <div>
-                <div className="text-xs font-bold uppercase text-slate-300">
+                <div className="text-xs font-bold uppercase text-white/42">
                   Neue Nachrichten
                 </div>
                 <div className="text-xl font-black">{totalUnread}</div>
@@ -204,33 +212,33 @@ export default function NachrichtenPage() {
         </div>
 
         <div className="relative mt-5">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/28" />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Name, Angebot oder Nachricht suchen …"
-            className="h-12 rounded-[18px] border-slate-200 bg-white pl-11 shadow-none"
+            className="h-12 rounded-[18px] border-[#2a323d] bg-[#0d1117] pl-11 text-white placeholder:text-white/22 shadow-none focus:border-orange-400/40 focus:ring-2 focus:ring-orange-400/10"
           />
         </div>
 
         {error ? (
-          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 font-bold text-red-700">
+          <div className="mt-5 rounded-[18px] border border-rose-300/20 bg-rose-500/10 p-4 font-bold text-rose-100">
             {error}
           </div>
         ) : null}
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-9 w-9 animate-spin text-orange-600" />
+            <Loader2 className="h-9 w-9 animate-spin text-orange-300" />
           </div>
         ) : filtered.length === 0 ? (
-          <Card className="mt-5 rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+          <Card className="mt-5 rounded-[24px] border border-white/[0.08] bg-[#0b0f15]/92 shadow-[0_20px_70px_-52px_rgba(0,0,0,.95)]">
             <CardContent className="p-12 text-center">
-              <Inbox className="mx-auto h-12 w-12 text-slate-300" />
+              <Inbox className="mx-auto h-12 w-12 text-white/42" />
               <h2 className="mt-4 text-xl font-black">
                 {query ? "Keine passende Unterhaltung" : "Noch keine Nachrichten"}
               </h2>
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-white/38">
                 {query
                   ? "Ändere den Suchbegriff."
                   : "Öffne ein Inserat und nutze „Direktnachricht senden“."}
@@ -243,18 +251,18 @@ export default function NachrichtenPage() {
               <Link
                 key={item.id}
                 href={`/dartboerse/nachrichten/${item.id}`}
-                className={`block rounded-[24px] border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                className={`block rounded-[22px] border bg-[#10141b] p-5 shadow-none transition hover:-translate-y-0.5 hover:bg-[#121821] ${
                   unread > 0
-                    ? "border-orange-300 ring-2 ring-orange-100"
-                    : "border-slate-200"
+                    ? "border-orange-300 ring-2 ring-orange-300/15"
+                    : "border-white/[0.08]"
                 }`}
               >
                 <div className="flex items-start gap-4">
                   <div
                     className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl font-black ${
                       unread > 0
-                        ? "bg-orange-500 text-white"
-                        : "bg-slate-100 text-slate-500"
+                        ? "bg-orange-500/[0.08]0 text-white"
+                        : "bg-white/[0.05] text-white/38"
                     }`}
                   >
                     {initials(otherName) || <UserRound className="h-5 w-5" />}
@@ -263,28 +271,28 @@ export default function NachrichtenPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-base font-black text-slate-950">
+                        <div className="truncate text-base font-black text-white">
                           {otherName}
                         </div>
-                        <div className="truncate text-sm font-bold text-slate-500">
+                        <div className="truncate text-sm font-bold text-white/38">
                           {item.listing?.title || "Gelöschtes Angebot"}
                         </div>
                       </div>
 
                       {unread > 0 ? (
-                        <span className="shrink-0 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-black text-white">
+                        <span className="shrink-0 rounded-full bg-orange-500/[0.08]0 px-2.5 py-1 text-xs font-black text-white">
                           {unread > 99 ? "99+" : unread} neu
                         </span>
                       ) : (
-                        <Mail className="h-5 w-5 shrink-0 text-slate-300" />
+                        <Mail className="h-5 w-5 shrink-0 text-white/42" />
                       )}
                     </div>
 
                     <div
                       className={`mt-2 line-clamp-2 text-sm ${
                         unread > 0
-                          ? "font-semibold text-slate-900"
-                          : "text-slate-600"
+                          ? "font-semibold text-white"
+                          : "text-white/50"
                       }`}
                     >
                       {last
@@ -292,7 +300,7 @@ export default function NachrichtenPage() {
                         : "Unterhaltung wurde gestartet."}
                     </div>
 
-                    <div className="mt-2 text-xs font-bold text-slate-400">
+                    <div className="mt-2 text-xs font-bold text-white/28">
                       {last
                         ? new Date(last.created_at).toLocaleString("de-AT")
                         : ""}

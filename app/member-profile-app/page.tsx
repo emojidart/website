@@ -3,6 +3,7 @@
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import type React from "react"
+import PatternPad from "@/components/terminal/PatternPad"
 
 import { Button } from "@/components/ui/button"
 import { Loader2, Pencil} from "lucide-react"
@@ -329,6 +330,19 @@ export default function MemberProfileAppPage() {
   const router = useRouter()
 
   const [profile, setProfile] = useState<UserProfileWithLastSeen | null>(null)
+  const [photoDecision, setPhotoDecision] = useState<{
+    id: string
+    status: "approved" | "rejected"
+    admin_note: string | null
+    reviewed_at: string | null
+  } | null>(null)
+  const [nameDecision, setNameDecision] = useState<{
+    id: string
+    status: "approved" | "rejected"
+    requested_name: string | null
+    admin_note: string | null
+    reviewed_at: string | null
+  } | null>(null)
 const [teamMemberships, setTeamMemberships] = useState<TeamMembership[]>([])
 const [loading, setLoading] = useState(true)
 const [error, setError] = useState<string | null>(null)
@@ -344,6 +358,11 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
   const [isTerminalPinDialogOpen, setIsTerminalPinDialogOpen] = useState(false)
   const [terminalPin, setTerminalPin] = useState("")
   const [terminalPinConfirm, setTerminalPinConfirm] = useState("")
+  const [terminalPattern, setTerminalPattern] = useState<number[]>([])
+  const [terminalPatternConfirm, setTerminalPatternConfirm] = useState<number[]>([])
+  const [terminalAuthMethod, setTerminalAuthMethod] = useState<"pin" | "pattern">("pin")
+  const [savedTerminalAuthMethod, setSavedTerminalAuthMethod] = useState<"pin" | "pattern" | null>(null)
+  const [terminalAuthStatusLoading, setTerminalAuthStatusLoading] = useState(false)
   const [terminalPinSaving, setTerminalPinSaving] = useState(false)
   const [terminalPinMessage, setTerminalPinMessage] = useState("")
 
@@ -507,6 +526,7 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
   const [countdown, setCountdown] = useState<string>("")
 
   const [chatRooms, setChatRooms] = useState<Array<{ id: string; name: string }>>([])
+  const [leagueMailboxUnread, setLeagueMailboxUnread] = useState(0)
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
@@ -533,6 +553,91 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
+
+  useEffect(() => {
+    if (!session?.user) return
+    void loadTerminalAuthStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id])
+
+  const loadTerminalAuthStatus = async () => {
+    try {
+      setTerminalAuthStatusLoading(true)
+      const { data, error } = await supabase.rpc("terminal_get_my_auth_method")
+      if (error) throw error
+      const method = data === "pattern" ? "pattern" : data === "pin" ? "pin" : null
+      setSavedTerminalAuthMethod(method)
+      if (method) setTerminalAuthMethod(method)
+    } catch (error) {
+      console.error("Terminal auth status error:", error)
+      setSavedTerminalAuthMethod(null)
+    } finally {
+      setTerminalAuthStatusLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    void loadProfileChangeDecisions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id])
+
+  const loadProfileChangeDecisions = async () => {
+    if (!session?.user?.id) return
+
+    try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+      const [{ data: photoData, error: photoError }, { data: nameData, error: nameError }] = await Promise.all([
+        supabase
+          .from("profile_change_requests")
+          .select("id,status,admin_note,reviewed_at")
+          .eq("user_id", session.user.id)
+          .eq("request_type", "photo")
+          .in("status", ["approved", "rejected"])
+          .is("user_acknowledged_at", null)
+          .gte("reviewed_at", sevenDaysAgo)
+          .order("reviewed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("profile_change_requests")
+          .select("id,status,requested_name,admin_note,reviewed_at")
+          .eq("user_id", session.user.id)
+          .eq("request_type", "name")
+          .in("status", ["approved", "rejected"])
+          .is("user_acknowledged_at", null)
+          .gte("reviewed_at", sevenDaysAgo)
+          .order("reviewed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ])
+
+      if (photoError) throw photoError
+      if (nameError) throw nameError
+
+      setPhotoDecision((photoData as any) || null)
+      setNameDecision((nameData as any) || null)
+    } catch (error) {
+      console.error("Profile change decision load error:", error)
+      setPhotoDecision(null)
+      setNameDecision(null)
+    }
+  }
+
+  const acknowledgeProfileDecision = async (requestId: string, kind: "photo" | "name") => {
+    try {
+      const { error } = await supabase.rpc("acknowledge_profile_change_request", {
+        p_request_id: requestId,
+      })
+      if (error) throw error
+
+      if (kind === "photo") setPhotoDecision(null)
+      else setNameDecision(null)
+    } catch (error) {
+      console.error("Profile decision acknowledge error:", error)
+    }
+  }
 
   useEffect(() => {
     const rooms = (teamMemberships || [])
@@ -673,6 +778,66 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
   }
 
   const totalUnread = Object.values(unreadCounts).reduce((sum, n) => sum + (n || 0), 0)
+
+  const fetchLeagueMailboxUnread = async () => {
+    if (!session?.user?.id) {
+      setLeagueMailboxUnread(0)
+      return
+    }
+
+    try {
+      const { data: participantRows, error: participantError } = await supabase
+        .from("league_mail_participants")
+        .select("thread_id,last_read_at")
+        .eq("user_id", session.user.id)
+
+      if (participantError) throw participantError
+
+      const rows = participantRows || []
+      const ids = rows.map((row: any) => row.thread_id).filter(Boolean)
+
+      if (ids.length === 0) {
+        setLeagueMailboxUnread(0)
+        return
+      }
+
+      const { data: threadRows, error: threadError } = await supabase
+        .from("league_mail_threads")
+        .select("id,last_message_at")
+        .in("id", ids)
+
+      if (threadError) throw threadError
+
+      const readMap = new Map(rows.map((row: any) => [row.thread_id, row.last_read_at]))
+      const count = (threadRows || []).filter((thread: any) => {
+        const lastRead = readMap.get(thread.id)
+        if (!lastRead) return true
+        return new Date(thread.last_message_at).getTime() > new Date(String(lastRead)).getTime()
+      }).length
+
+      setLeagueMailboxUnread(count)
+    } catch (error) {
+      console.error("League mailbox unread count error:", error)
+      setLeagueMailboxUnread(0)
+    }
+  }
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    void fetchLeagueMailboxUnread()
+
+    const channel = supabase
+      .channel(`member_profile_league_mail_${session.user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "league_mail_threads" }, () => void fetchLeagueMailboxUnread())
+      .on("postgres_changes", { event: "*", schema: "public", table: "league_mail_messages" }, () => void fetchLeagueMailboxUnread())
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id])
+
 
   type AvailabilityStatus = "yes" | "maybe" | "no"
 
@@ -1108,90 +1273,106 @@ const fetchProfile = async () => {
     router.push("/")
   }
 
-  const saveTerminalPin = async () => {
+  const saveTerminalAuth = async () => {
     setTerminalPinMessage("")
 
-    if (!/^\d{4}$/.test(terminalPin)) {
-      setTerminalPinMessage("Bitte genau 4 Ziffern eingeben.")
-      return
-    }
-
-    if (terminalPin !== terminalPinConfirm) {
-      setTerminalPinMessage("Die beiden PINs stimmen nicht überein.")
-      return
+    let secret = ""
+    if (terminalAuthMethod === "pin") {
+      if (!/^\d{4}$/.test(terminalPin)) {
+        setTerminalPinMessage("Bitte genau 4 Ziffern eingeben.")
+        return
+      }
+      if (terminalPin !== terminalPinConfirm) {
+        setTerminalPinMessage("Die beiden PINs stimmen nicht überein.")
+        return
+      }
+      secret = terminalPin
+    } else {
+      if (terminalPattern.length < 4) {
+        setTerminalPinMessage("Das Muster muss mindestens 4 Punkte enthalten.")
+        return
+      }
+      if (terminalPattern.join("-") !== terminalPatternConfirm.join("-")) {
+        setTerminalPinMessage("Die beiden Muster stimmen nicht überein.")
+        return
+      }
+      secret = terminalPattern.join("-")
     }
 
     try {
       setTerminalPinSaving(true)
-
-      const { error } = await supabase.rpc("terminal_set_my_pin", {
-        p_pin: terminalPin,
+      const { error } = await supabase.rpc("terminal_set_my_auth", {
+        p_method: terminalAuthMethod,
+        p_secret: secret,
       })
+      if (error) throw error
 
-      if (error) {
-        const message = String(error.message || "").toLowerCase()
-        if (message.includes("already in use")) {
-          setTerminalPinMessage("Diese PIN wird bereits verwendet. Bitte wähle eine andere.")
-        } else {
-          setTerminalPinMessage("PIN konnte nicht gespeichert werden.")
-        }
-        return
-      }
-
-      setTerminalPinMessage("Terminal-PIN wurde gespeichert.")
+      setTerminalPinMessage(
+        terminalAuthMethod === "pattern"
+          ? "Terminal-Muster wurde gespeichert."
+          : "Terminal-PIN wurde gespeichert.",
+      )
+      setSavedTerminalAuthMethod(terminalAuthMethod)
       setTerminalPin("")
       setTerminalPinConfirm("")
+      setTerminalPattern([])
+      setTerminalPatternConfirm([])
 
       window.setTimeout(() => {
         setIsTerminalPinDialogOpen(false)
         setTerminalPinMessage("")
       }, 1200)
     } catch (error) {
-      console.error("Terminal PIN save error:", error)
-      setTerminalPinMessage("PIN konnte nicht gespeichert werden.")
+      console.error("Terminal auth save error:", error)
+      setTerminalPinMessage("Terminal-Anmeldung konnte nicht gespeichert werden.")
     } finally {
       setTerminalPinSaving(false)
     }
   }
 
   const handlePhotoUpload = async () => {
-    if (!photoFile || !(profile as any)?.club_players?.id) return
+    if (!photoFile || !session?.user?.id || !(profile as any)?.club_players?.id) return
 
     setPhotoUploading(true)
     setPhotoMessage("")
 
     try {
-      const fileExtension = photoFile.name.split(".").pop()
-      const sanitizedPlayerName = (profile as any).club_players.name.replace(/[^a-zA-Z0-9_.-]/g, "").replace(/\s/g, "_")
-      const filePath = `player-avatars/${sanitizedPlayerName}-${Date.now()}.${fileExtension}`
+      const rawExt = (photoFile.name.split(".").pop() || "jpg").toLowerCase()
+      const fileExtension = ["jpg", "jpeg", "png", "webp"].includes(rawExt) ? rawExt : "jpg"
+      const safeOriginalName = photoFile.name.replace(/[^a-zA-Z0-9_.-]/g, "_")
+      const filePath = `${session.user.id}/${Date.now()}-${safeOriginalName}`
 
-      const { error: uploadError } = await supabase.storage.from("player-avatars").upload(filePath, photoFile, {
-        cacheControl: "3600",
-        upsert: false,
-      })
+      const { error: uploadError } = await supabase.storage
+        .from("profile-change-requests")
+        .upload(filePath, photoFile, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: photoFile.type || `image/${fileExtension}`,
+        })
+
       if (uploadError) throw uploadError
 
-      const { data: publicUrlData } = supabase.storage.from("player-avatars").getPublicUrl(filePath)
+      const { error: requestError } = await supabase.rpc("submit_member_photo_change_request", {
+        p_upload_path: filePath,
+        p_original_filename: photoFile.name,
+      })
 
-      const { error: updateError } = await supabase.from("club_players").update({ photo_url: publicUrlData.publicUrl }).eq("id", (profile as any).club_players.id)
+      if (requestError) throw requestError
 
-      if (updateError) throw updateError
-
-      setProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              club_players: (prev as any).club_players ? { ...(prev as any).club_players, photo_url: publicUrlData.publicUrl } : null,
-            }
-          : null,
+      setPhotoMessage(
+        "Anfrage gesendet. Dein aktuelles Profilbild bleibt unverändert, bis der Vorstand das neue Foto bearbeitet und freigibt.",
       )
-
-      setPhotoMessage("Foto erfolgreich hochgeladen!")
-      setIsPhotoDialogOpen(false)
+      setPhotoDecision(null)
       setPhotoFile(null)
       setPhotoPreview(null)
+
+      window.setTimeout(() => {
+        setIsPhotoDialogOpen(false)
+        setPhotoMessage("")
+      }, 2200)
     } catch (error: any) {
-      setPhotoMessage(`Fehler beim Hochladen: ${error.message}`)
+      console.error("Profile photo request error:", error)
+      setPhotoMessage(`Fehler: ${error?.message || "Anfrage konnte nicht gesendet werden."}`)
     } finally {
       setPhotoUploading(false)
     }
@@ -1230,45 +1411,17 @@ const fetchProfile = async () => {
   }
 
   const hasClubRole = userPagePermissions.some((p) => p.allowed)
+  const hasLeagueAccess = hasModule("edart_league") || hasModule("steeldart_league")
 
   const navigationGroups = [
     {
-      title: "Spielen & Teams",
-      description: "Alles rund um Liga, Teams und Ergebnisse",
+      title: "Verein & Service",
+      description: "Kalender, Bonuspunkte, Börse und Hilfe",
       items: [
-        { title: "Dashboard", description: "Ergebnisse & Spielpläne", icon: BarChart3, href: "/member-dashboard-app" },
-        { title: "Zusagen & Aufstellung", description: "Für kommende Spiele zu- oder absagen", icon: CheckCircle, href: "/member-availability" },
-        { title: "Meine Teams", description: "Teams & Mitspieler", icon: Users, href: "/meine-teams-app" },
-        { title: "Liga Tabellen", description: "Aktuelle Ligastände", icon: Table, href: "/member-league-app" },
-        { title: "Spieler Statistiken", description: "Deine Liga-Leistung", icon: BarChart3, href: "/member-statistics-app" },
-        { title: "Turnierstatistiken", description: "Summer Special, DKO & Kratzer", icon: Trophy, href: "/member-tournament-statistics-app" },
-      ],
-    },
-    {
-      title: "Training & Community",
-      description: "Trainieren, spielen und mit anderen austauschen",
-      items: [
-        { title: "Trainingstreff", description: "Gemeinsame Trainings & Treffen", icon: Calendar, href: "/training_event" },
-        { title: "Mein Training", description: "Übungen & Trainingsplan", icon: Dumbbell, href: "/training-app" },
-        { title: "Team Chat", description: "Mit deinem Team schreiben", icon: MessageCircle, href: "/chat-app" },
-        { title: "Match Galerie", description: "Spielfotos ansehen", icon: Camera, href: "/match-galerie" },
-      ],
-    },
-    {
-      title: "Verein & Extras",
-      description: "Mitgliedschaft, Termine und weitere Bereiche",
-      items: [
-        { title: "Meine Mitgliedskarte", description: "QR-Code, Guthaben & Historie", icon: CreditCard, href: "/member-card" },
         { title: "Vereinskalender", description: "Termine & Veranstaltungen", icon: Calendar, href: "/vereinskalender-app" },
-        { title: "DACH Turniere", description: "Turniere in AT, DE & CH", icon: Trophy, href: "/dach-veranstaltungen" },
-        { title: "Interne Spiele", description: "Spielplan, Aufstellung & Live-Ergebnisse", icon: Trophy, href: "/internal-matches" },
         { title: "Dartbörse", description: "Darts & Zubehör", icon: ShoppingBag, href: "/dartboerse" },
         { title: "Meine Bonuspunkte", description: "Punkte & Rang ansehen", icon: Sparkles, href: "/meine-bonus-punkte" },
-        { title: "Bonusgeld", description: "Belohnungen ansehen", icon: Euro, href: "/member-bonus-app" },
-        { title: "Meine Mitgliedschaft", description: "Paket & Zahlungsweise", icon: Euro, href: "/member-membership" },
-        { title: "Vereinsunterlagen", description: "Bestätigungen & PDF-Akten", icon: FileText, href: "#vereinsunterlagen" },
         { title: "Support", description: "Hilfe & Anfragen", icon: HelpCircle, href: "/support-app" },
-        { title: "Statistikblätter drucken", description: "Nur für Teamleitung", icon: Printer, href: "/team-print-sheet", requiresLeadership: true },
       ],
     },
   ]
@@ -1426,31 +1579,47 @@ if (error || !profile) {
   const hasMultipleTeams = teamMemberships.length > 1
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
       <Header />
 
-      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 lg:pb-12">
-        {/* Hero */}
-        <section className="relative mt-2 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mt-4 sm:rounded-[28px] xl:rounded-[30px]">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
-          <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
+      {/* High-End 2026 background */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
+        <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:68px_68px]" />
+      </div>
+
+      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+        {/* HERO */}
+        <section className="relative overflow-hidden rounded-[28px] border border-white/[0.09] bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
+          <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-500/15 blur-[110px]" />
+          <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
 
           <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
               <div className="min-w-0">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
-                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                  Mitgliederbereich
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55 backdrop-blur-xl">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-50" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-400" />
+                  </span>
+                  Mein EMD · Mitgliederbereich
                 </div>
 
-                <div className="flex items-center gap-4 sm:gap-5">
+                <div className="flex items-center gap-4 sm:gap-6">
                   <div className="relative shrink-0">
-                    <Avatar className="h-16 w-16 border border-white/15 shadow-2xl sm:h-20 sm:w-20">
+                    <div className="absolute inset-[-6px] rounded-full bg-[conic-gradient(from_90deg,rgba(249,115,22,.85),rgba(255,255,255,.12),rgba(14,165,233,.7),rgba(249,115,22,.85))] opacity-70 blur-[1px]" />
+                    <Avatar className="relative h-[76px] w-[76px] border-2 border-[#080b10] shadow-[0_16px_50px_rgba(0,0,0,.55)] sm:h-24 sm:w-24">
                       <AvatarImage
                         src={profile.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=dart player avatar"}
                         alt={profile.club_players?.name || "Spieler"}
                       />
-                      <AvatarFallback className="bg-orange-500 text-xl font-black text-white sm:text-2xl">
+                      <AvatarFallback className="bg-orange-500 text-2xl font-black text-white sm:text-3xl">
                         {(profile.club_players?.name || "U")
                           .split(" ")
                           .map((n) => n[0])
@@ -1461,35 +1630,36 @@ if (error || !profile) {
                     <button
                       type="button"
                       onClick={() => setIsPhotoDialogOpen(true)}
-                      className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white text-slate-950 shadow-lg transition hover:scale-105"
-                      aria-label="Profilfoto ändern"
+                      className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-[#11151c] text-white shadow-xl transition duration-300 hover:scale-105 hover:bg-orange-500"
+                      aria-label="Profilfoto-Änderung anfragen"
                     >
-                      <Camera className="h-3.5 w-3.5" />
+                      <Camera className="h-4 w-4" />
                     </button>
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-white/55">Willkommen zurück</p>
-                    <h1 className="mt-1 truncate text-2xl font-black tracking-[-0.03em] text-white sm:text-4xl">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/35">Willkommen zurück</p>
+                    <h1 className="mt-1 truncate text-[clamp(1.8rem,5vw,3.4rem)] font-black leading-none tracking-[-0.055em] text-white">
                       {profile.club_players?.name || "Vereinsmitglied"}
                     </h1>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white/60">
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
                       {teamMemberships.length > 0 ? (
                         teamMemberships.slice(0, 3).map((membership: any) => (
                           <span
                             key={membership.id}
-                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs font-semibold text-white/75"
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.055] px-2.5 py-1.5 text-[11px] font-bold text-white/70"
                           >
                             <span className="truncate">{membership.teams?.name || "Team"}</span>
-                            <span className="text-white/30">·</span>
+                            <span className="text-white/25">·</span>
                             <span className="shrink-0 text-orange-300">{getRoleLabel(membership.role)}</span>
                           </span>
                         ))
                       ) : (
-                        <span>Emoj!´s Dartverein</span>
+                        <span className="text-sm font-semibold text-white/45">Emoj!´s Dartverein</span>
                       )}
                       {teamMemberships.length > 3 ? (
-                        <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-white/55">
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-bold text-white/45">
                           +{teamMemberships.length - 3} weitere
                         </span>
                       ) : null}
@@ -1498,18 +1668,12 @@ if (error || !profile) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
-                <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
-                  <Link href="/profil-daten-app">
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Profil
-                  </Link>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:max-w-[620px] xl:justify-end">
+                <Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
+                  <Link href="/profil-daten-app"><Pencil className="mr-2 h-4 w-4" />Profil</Link>
                 </Button>
-                <Button asChild className="h-10 rounded-xl bg-orange-500 text-white hover:bg-orange-600">
-                  <Link href="/member-card">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Mitgliedskarte
-                  </Link>
+                <Button asChild className="h-11 rounded-2xl border border-orange-400/30 bg-orange-500 px-4 font-black text-white shadow-[0_0_30px_rgba(249,115,22,.17)] hover:bg-orange-400">
+                  <Link href="/member-card"><CreditCard className="mr-2 h-4 w-4" />Mitgliedskarte</Link>
                 </Button>
                 <Button
                   type="button"
@@ -1517,135 +1681,241 @@ if (error || !profile) {
                   onClick={() => {
                     setTerminalPin("")
                     setTerminalPinConfirm("")
+                    setTerminalPattern([])
+                    setTerminalPatternConfirm([])
                     setTerminalPinMessage("")
+                    if (savedTerminalAuthMethod) setTerminalAuthMethod(savedTerminalAuthMethod)
                     setIsTerminalPinDialogOpen(true)
                   }}
-                  className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                  className={`h-11 rounded-2xl px-4 font-black ${
+                    savedTerminalAuthMethod
+                      ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-100 hover:bg-emerald-500/[0.13] hover:text-white"
+                      : "border-white/10 bg-white/[0.045] text-white hover:bg-white/[0.09]"
+                  }`}
                 >
                   <KeyRound className="mr-2 h-4 w-4" />
-                  Terminal-PIN
+                  {terminalAuthStatusLoading
+                    ? "Terminal-Anmeldung"
+                    : savedTerminalAuthMethod === "pattern"
+                      ? "Muster aktiv · ändern"
+                      : savedTerminalAuthMethod === "pin"
+                        ? "PIN aktiv · ändern"
+                        : "Terminal-Anmeldung einrichten"}
                 </Button>
-                <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+                <Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
                   <Link href="/member-membership">Mitgliedschaft</Link>
                 </Button>
-                <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
-                  <Link href="/chat-app">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Chat
-                  </Link>
+                <Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
+                  <Link href="/chat-app"><MessageCircle className="mr-2 h-4 w-4" />Chat</Link>
                 </Button>
-                <Button asChild variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
-                  <Link href="/member-availability">
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Aufstellung
-                  </Link>
+                <Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
+                  <Link href="/member-availability"><CheckCircle className="mr-2 h-4 w-4" />Aufstellung</Link>
                 </Button>
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-3 gap-2 sm:mt-6 sm:gap-3">
-              <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
-                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">Teams</div>
-                <div className="mt-2 flex items-end justify-between gap-3">
-                  <div className="text-2xl font-black text-white">{teamMemberships.length}</div>
-                  <Users className="h-5 w-5 text-orange-400" />
-                </div>
-              </div>
-              <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
-                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40 sm:text-[11px] sm:tracking-[0.16em]">
-                  Nächstes Spiel
-                </div>
-                <div className="mt-2 flex items-end justify-between gap-2">
-                  <div className="whitespace-nowrap text-[11px] font-black leading-none text-white sm:text-sm">
-                    {nextMatchSummary ? formatCompactDate((nextMatchSummary.match as any).match_date) : "Noch offen"}
+            <div className="mt-6 grid grid-cols-3 gap-2.5 sm:mt-8 sm:gap-3">
+              {[
+                { label: "Teams", value: teamMemberships.length, icon: Users },
+                { label: "Nächstes Spiel", value: nextMatchSummary ? formatCompactDate((nextMatchSummary.match as any).match_date) : "Offen", icon: Calendar },
+                { label: "Team-Chat", value: totalUnread, icon: MessageCircle },
+              ].map((item) => {
+                const Icon = item.icon
+                return (
+                  <div key={item.label} className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-white/[0.05] p-3.5 shadow-[0_0_24px_rgba(249,115,22,.055)] backdrop-blur-xl sm:border-white/[0.08] sm:bg-white/[0.045] sm:shadow-none sm:p-4">
+                    <div className="pointer-events-none absolute inset-0 opacity-100 transition duration-500 bg-[radial-gradient(circle_at_15%_100%,rgba(249,115,22,.10),transparent_42%),radial-gradient(circle_at_92%_0%,rgba(14,165,233,.055),transparent_38%)] sm:opacity-0 sm:bg-[linear-gradient(130deg,rgba(249,115,22,.08),transparent_52%)] group-hover:opacity-100" />
+                    <div className="relative text-[9px] font-black uppercase tracking-[0.16em] text-white/35 sm:text-[10px]">{item.label}</div>
+                    <div className="relative mt-2.5 flex items-end justify-between gap-2">
+                      <div className="truncate text-lg font-black tracking-tight text-white sm:text-2xl">{item.value}</div>
+                      <Icon className="h-4 w-4 shrink-0 text-orange-400 sm:h-5 sm:w-5" />
+                    </div>
                   </div>
-                  <Calendar className="hidden h-5 w-5 shrink-0 text-orange-400 sm:block" />
-                </div>
-              </div>
-              <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-sm sm:p-4">
-                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">Team-Chat</div>
-                <div className="mt-2 flex items-end justify-between gap-3">
-                  <div className="text-2xl font-black text-white">{totalUnread}</div>
-                  <MessageCircle className="h-5 w-5 text-orange-400" />
-                </div>
-              </div>
+                )
+              })}
             </div>
           </div>
         </section>
 
-        {/* Hinweise */}
+        {(photoDecision || nameDecision) ? (
+          <section className="mt-4 grid gap-3">
+            {nameDecision ? (
+              <div className={`overflow-hidden rounded-[24px] border p-4 backdrop-blur-xl sm:p-5 ${
+                nameDecision.status === "approved"
+                  ? "border-emerald-300/20 bg-emerald-500/[0.08]"
+                  : "border-red-300/20 bg-red-500/[0.08]"
+              }`}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                      nameDecision.status === "approved"
+                        ? "bg-emerald-500/15 text-emerald-200"
+                        : "bg-red-500/15 text-red-200"
+                    }`}>
+                      {nameDecision.status === "approved" ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : (
+                        <X className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div>
+                      <div className={`text-[10px] font-black uppercase tracking-[0.18em] ${
+                        nameDecision.status === "approved" ? "text-emerald-200/60" : "text-red-200/60"
+                      }`}>
+                        Namensänderung
+                      </div>
+                      <div className="mt-1 text-lg font-black text-white">
+                        {nameDecision.status === "approved"
+                          ? "Deine Namensänderung wurde übernommen."
+                          : "Deine Namensänderung wurde nicht übernommen."}
+                      </div>
+                      {nameDecision.requested_name ? (
+                        <div className="mt-1 text-sm font-semibold text-white/45">
+                          Angefragter Name: {nameDecision.requested_name}
+                        </div>
+                      ) : null}
+                      {nameDecision.admin_note ? (
+                        <div className="mt-2 text-sm font-semibold leading-6 text-white/55">
+                          Hinweis: {nameDecision.admin_note}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void acknowledgeProfileDecision(nameDecision.id, "name")}
+                    className="shrink-0 rounded-xl border-white/10 bg-white/[0.05] font-black text-white/75 hover:bg-white/[0.09] hover:text-white"
+                  >
+                    Verstanden
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            {photoDecision ? (
+              <div className={`overflow-hidden rounded-[24px] border p-4 backdrop-blur-xl sm:p-5 ${
+                photoDecision.status === "approved"
+                  ? "border-emerald-300/20 bg-emerald-500/[0.08]"
+                  : "border-red-300/20 bg-red-500/[0.08]"
+              }`}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                      photoDecision.status === "approved"
+                        ? "bg-emerald-500/15 text-emerald-200"
+                        : "bg-red-500/15 text-red-200"
+                    }`}>
+                      {photoDecision.status === "approved" ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : (
+                        <X className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div>
+                      <div className={`text-[10px] font-black uppercase tracking-[0.18em] ${
+                        photoDecision.status === "approved" ? "text-emerald-200/60" : "text-red-200/60"
+                      }`}>
+                        Profilbild-Anfrage
+                      </div>
+                      <div className="mt-1 text-lg font-black text-white">
+                        {photoDecision.status === "approved"
+                          ? "Dein neues Profilbild wurde übernommen."
+                          : "Deine Profilbild-Änderung wurde nicht übernommen."}
+                      </div>
+                      {photoDecision.admin_note ? (
+                        <div className="mt-2 text-sm font-semibold leading-6 text-white/55">
+                          Hinweis: {photoDecision.admin_note}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void acknowledgeProfileDecision(photoDecision.id, "photo")}
+                    className="shrink-0 rounded-xl border-white/10 bg-white/[0.05] font-black text-white/75 hover:bg-white/[0.09] hover:text-white"
+                  >
+                    Verstanden
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+        {/* Alerts */}
         {!membershipAccessLoading && (showNormalMembershipExpiry || expiringTrials.length > 0) ? (
-          <div className="mt-4 space-y-2.5">
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {showNormalMembershipExpiry && normalMembershipEndsOn ? (
-              <div className="flex flex-col gap-3 rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-[22px] border border-amber-300/15 bg-amber-300/[0.07] px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-300/10 text-amber-200">
                     <AlertTriangle className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <div className="font-black text-slate-950">Mitgliedschaft läuft bald aus</div>
-                    <div className="mt-0.5 text-sm text-slate-600">
-                      Freigeschaltet bis {formatShortDateAT(normalMembershipEndsOn)}.
-                    </div>
+                    <div className="font-black text-white">Mitgliedschaft läuft bald aus</div>
+                    <div className="mt-0.5 text-sm text-white/50">Freigeschaltet bis {formatShortDateAT(normalMembershipEndsOn)}.</div>
                   </div>
                 </div>
-                <Button asChild size="sm" variant="outline" className="rounded-xl border-amber-200 bg-white">
+                <Button asChild size="sm" variant="outline" className="rounded-xl border-white/10 bg-white/[0.05] text-white hover:bg-white/10 hover:text-white">
                   <Link href="/member-membership">Ansehen</Link>
                 </Button>
               </div>
             ) : null}
 
             {expiringTrials.map((trial: any) => (
-              <div key={trial.id} className="flex flex-col gap-3 rounded-2xl border border-violet-200/80 bg-violet-50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div key={trial.id} className="flex flex-col gap-3 rounded-[22px] border border-violet-300/15 bg-violet-400/[0.07] px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-violet-300/20 bg-violet-300/10 text-violet-200">
                     <Gift className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <div className="font-black text-slate-950">Testphase: {trialModuleLabel(trial.module_code)}</div>
-                    <div className="mt-0.5 text-sm text-slate-600">Kostenlos bis {formatShortDateAT(trial.ends_on)}.</div>
+                    <div className="font-black text-white">Testphase: {trialModuleLabel(trial.module_code)}</div>
+                    <div className="mt-0.5 text-sm text-white/50">Kostenlos bis {formatShortDateAT(trial.ends_on)}.</div>
                   </div>
                 </div>
-                <div className="text-xs font-black text-violet-700">Noch {trial.daysLeft} Tage</div>
+                <div className="text-xs font-black uppercase tracking-wide text-violet-200">Noch {trial.daysLeft} Tage</div>
               </div>
             ))}
           </div>
         ) : null}
 
-        <section id="vereinsunterlagen" className="mt-4 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)]">
-          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        {/* Documents */}
+        <section id="vereinsunterlagen" className="mt-4 overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+          <div className="flex flex-col gap-3 border-b border-white/[0.07] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div>
-              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                <FileCheck2 className="h-4 w-4" /> Vereinsunterlagen
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/35">
+                <FileCheck2 className="h-4 w-4 text-orange-400" /> Vereinsunterlagen
               </div>
-              <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 sm:text-xl">Meine Dokumente & Bestätigungen</h2>
+              <h2 className="mt-1 text-lg font-black tracking-tight text-white sm:text-xl">Meine Dokumente & Bestätigungen</h2>
             </div>
             {memberDocsEnabled && requiredMemberDocs.length > 0 ? (
-              <Badge className={memberDocsCurrent ? "w-fit bg-green-600 text-white" : "w-fit bg-amber-600 text-white"}>
+              <Badge className={memberDocsCurrent ? "w-fit border border-emerald-300/20 bg-emerald-500/15 text-emerald-200" : "w-fit border border-amber-300/20 bg-amber-500/15 text-amber-200"}>
                 {memberDocsCurrent ? "Aktuell vollständig" : "Bestätigung offen"}
               </Badge>
             ) : (
-              <Badge variant="outline" className="w-fit">Noch nicht freigeschaltet</Badge>
+              <Badge variant="outline" className="w-fit border-white/10 bg-white/[0.04] text-white/45">Noch nicht freigeschaltet</Badge>
             )}
           </div>
 
           <div className="space-y-4 p-4 sm:p-5">
             {memberDocsLoading ? (
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-600"><Loader2 className="h-4 w-4 animate-spin" /> Unterlagen werden geladen…</div>
+              <div className="flex items-center gap-2 text-sm font-semibold text-white/55"><Loader2 className="h-4 w-4 animate-spin text-orange-400" /> Unterlagen werden geladen…</div>
             ) : !memberDocsEnabled ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                <div className="font-black text-slate-900">Aktuell keine Vereinsunterlagen zur digitalen Bestätigung freigeschaltet.</div>
-                <div className="mt-1 text-sm font-semibold text-slate-600">Sobald die Vereinsleitung die finalen Dokumente freigibt, erscheinen sie automatisch hier.</div>
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-5">
+                <div className="font-black text-white">Aktuell keine Vereinsunterlagen zur digitalen Bestätigung freigeschaltet.</div>
+                <div className="mt-1 text-sm font-semibold text-white/45">Sobald die Vereinsleitung die finalen Dokumente freigibt, erscheinen sie automatisch hier.</div>
               </div>
             ) : visibleMemberDocs.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-600">Aktuell sind keine aktiven Dokumente hinterlegt.</div>
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-5 text-sm font-semibold text-white/50">Aktuell sind keine aktiven Dokumente hinterlegt.</div>
             ) : (
-              <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="font-black text-slate-900">{visibleMemberDocs.length} Dokument{visibleMemberDocs.length === 1 ? "" : "e"} freigeschaltet</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-600">{memberDocsCurrent ? "Du hast die aktuell erforderlichen Versionen bereits bestätigt." : "Bitte lies und bestätige die aktuell erforderlichen Unterlagen."}</div>
+                  <div className="font-black text-white">{visibleMemberDocs.length} Dokument{visibleMemberDocs.length === 1 ? "" : "e"} freigeschaltet</div>
+                  <div className="mt-1 text-sm font-semibold text-white/50">{memberDocsCurrent ? "Du hast die aktuell erforderlichen Versionen bereits bestätigt." : "Bitte lies und bestätige die aktuell erforderlichen Unterlagen."}</div>
                 </div>
-                <Button type="button" onClick={() => setMemberDocsModalOpen(true)} className="rounded-xl bg-orange-600 text-white hover:bg-orange-700">
+                <Button type="button" onClick={() => setMemberDocsModalOpen(true)} className="rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400">
                   <FileText className="mr-2 h-4 w-4" /> {memberDocsCurrent ? "Unterlagen ansehen" : "Jetzt bestätigen"}
                 </Button>
               </div>
@@ -1653,35 +1923,35 @@ if (error || !profile) {
 
             {(joinArchives.length > 0 || memberDocAcceptances.some((r) => r.archive_file_name)) ? (
               <div>
-                <div className="mb-2 text-sm font-black text-slate-900">Meine PDF-Akten</div>
+                <div className="mb-2 text-sm font-black text-white/80">Meine PDF-Akten</div>
                 <div className="grid gap-2 md:grid-cols-2">
                   {joinArchives.map((row) => (
-                    <button key={row.id} type="button" onClick={() => void downloadJoinArchiveForMember(row)} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:bg-slate-50">
-                      <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.stage === "approved" ? "Aufnahmebestätigung" : "Beitrittsanfrage"}</div><div className="text-xs font-semibold text-slate-500">{formatDate(row.generated_at)}</div></div>
-                      {memberArchiveLoading === `join:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 text-slate-500" />}
+                    <button key={row.id} type="button" onClick={() => void downloadJoinArchiveForMember(row)} className="group flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-left transition hover:border-orange-400/25 hover:bg-white/[0.065]">
+                      <div className="min-w-0"><div className="truncate text-sm font-black text-white">{row.stage === "approved" ? "Aufnahmebestätigung" : "Beitrittsanfrage"}</div><div className="text-xs font-semibold text-white/35">{formatDate(row.generated_at)}</div></div>
+                      {memberArchiveLoading === `join:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin text-orange-400" /> : <Download className="h-4 w-4 text-white/35 transition group-hover:text-orange-300" />}
                     </button>
                   ))}
                   {memberDocAcceptances.filter((r) => r.archive_file_name).map((row) => (
-                    <button key={row.id} type="button" onClick={() => void downloadMemberAcceptance(row)} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:bg-slate-50">
-                      <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">Vereinsunterlagen bestätigt</div><div className="text-xs font-semibold text-slate-500">{formatDate(row.created_at)}</div></div>
-                      {memberArchiveLoading === `member:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 text-slate-500" />}
+                    <button key={row.id} type="button" onClick={() => void downloadMemberAcceptance(row)} className="group flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-left transition hover:border-orange-400/25 hover:bg-white/[0.065]">
+                      <div className="min-w-0"><div className="truncate text-sm font-black text-white">Vereinsunterlagen bestätigt</div><div className="text-xs font-semibold text-white/35">{formatDate(row.created_at)}</div></div>
+                      {memberArchiveLoading === `member:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin text-orange-400" /> : <Download className="h-4 w-4 text-white/35 transition group-hover:text-orange-300" />}
                     </button>
                   ))}
                 </div>
               </div>
             ) : null}
 
-            {memberDocsMessage ? <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">{memberDocsMessage}</div> : null}
+            {memberDocsMessage ? <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm font-bold text-white/60">{memberDocsMessage}</div> : null}
           </div>
         </section>
 
-        {/* Hauptbereich */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
-          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)]">
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
+        {/* Main dashboard */}
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(310px,0.72fr)]">
+          <section className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+            <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-4 sm:px-5">
               <div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Nächstes Spiel</div>
-                <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 sm:text-xl">
+                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">Nächstes Spiel</div>
+                <h2 className="mt-1 text-lg font-black tracking-tight text-white sm:text-xl">
                   {nextMatchSummary ? "Dein nächster Termin" : "Aktuell kein Spiel geplant"}
                 </h2>
               </div>
@@ -1689,97 +1959,89 @@ if (error || !profile) {
                 size="sm"
                 disabled={!nextMatchSummary}
                 onClick={() => nextMatchSummary && router.push(`/member-availability?matchId=${(nextMatchSummary.match as any).id}`)}
-                className="rounded-xl bg-slate-950 px-3.5 text-white hover:bg-slate-800"
+                className="rounded-xl border border-white/10 bg-white/[0.06] px-3.5 font-black text-white hover:bg-orange-500 disabled:opacity-30"
               >
-                Öffnen
-                <ArrowRight className="ml-1.5 h-4 w-4" />
+                Öffnen <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </div>
 
             <div className="p-4 sm:p-5">
               {!nextMatchSummary ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-white/40">
                   Sobald ein neues Ligaspiel feststeht, erscheint es hier.
                 </div>
               ) : (
                 <>
-                  <div className="rounded-2xl bg-slate-950 px-4 py-5 text-white sm:px-5">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="relative overflow-hidden rounded-[22px] border border-white/[0.09] bg-[#080b10] px-4 py-5 text-white sm:px-5">
+                    <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-orange-500/15 blur-[70px]" />
+                    <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-sky-500/10 blur-[80px]" />
+                    <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                       <div className="min-w-0">
-                        <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">Begegnung</div>
-                        <div className="mt-2 text-xl font-black tracking-tight sm:text-2xl">
+                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30">Begegnung</div>
+                        <div className="mt-2 text-xl font-black tracking-[-0.03em] sm:text-2xl">
                           {getTeamDisplayName(nextMatchSummary.match, true)}
-                          <span className="mx-2 font-medium text-white/30">vs</span>
+                          <span className="mx-2 font-medium text-white/20">vs</span>
                           {getTeamDisplayName(nextMatchSummary.match, false)}
                         </div>
                       </div>
-                      <div className="shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">Start in</div>
-                        <div className="mt-0.5 whitespace-nowrap text-sm font-black text-orange-300">
-                          {countdown || "—"}
-                        </div>
+                      <div className="shrink-0 rounded-2xl border border-orange-300/15 bg-orange-500/[0.08] px-3.5 py-2.5">
+                        <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/30">Start in</div>
+                        <div className="mt-0.5 whitespace-nowrap text-sm font-black text-orange-300">{countdown || "—"}</div>
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
-                        <Calendar className="h-4 w-4 text-orange-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Termin</div>
-                        <div className="text-sm font-bold leading-snug text-slate-800">
-                          {formatDate((nextMatchSummary.match as any).match_date)}
-                          {(nextMatchSummary.match as any).match_time ? ` · ${formatTime((nextMatchSummary.match as any).match_time)}` : ""}
+                    {[
+                      { label: "Termin", icon: Calendar, value: `${formatDate((nextMatchSummary.match as any).match_date)}${(nextMatchSummary.match as any).match_time ? ` · ${formatTime((nextMatchSummary.match as any).match_time)}` : ""}` },
+                      { label: "Ort", icon: MapPin, value: (nextMatchSummary.match as any).venue || "Noch offen" },
+                    ].map((item) => {
+                      const Icon = item.icon
+                      return (
+                        <div key={item.label} className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3.5 py-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]">
+                            <Icon className="h-4 w-4 text-orange-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/30">{item.label}</div>
+                            <div className="truncate text-sm font-bold text-white/75">{item.value}</div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
-                        <MapPin className="h-4 w-4 text-orange-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Ort</div>
-                        <div className="truncate text-sm font-bold text-slate-800">{(nextMatchSummary.match as any).venue || "Noch offen"}</div>
-                      </div>
-                    </div>
+                      )
+                    })}
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {[
-                      { label: "Zusagen", value: nextMatchSummary.counts.yes, dot: "bg-emerald-500" },
-                      { label: "Vielleicht", value: nextMatchSummary.counts.maybe, dot: "bg-amber-500" },
-                      { label: "Absagen", value: nextMatchSummary.counts.no, dot: "bg-rose-500" },
-                      { label: "Offen", value: nextMatchSummary.counts.none, dot: "bg-slate-300" },
+                      { label: "Zusagen", value: nextMatchSummary.counts.yes, dot: "bg-emerald-400" },
+                      { label: "Vielleicht", value: nextMatchSummary.counts.maybe, dot: "bg-amber-400" },
+                      { label: "Absagen", value: nextMatchSummary.counts.no, dot: "bg-rose-400" },
+                      { label: "Offen", value: nextMatchSummary.counts.none, dot: "bg-white/25" },
                     ].map((item) => (
-                      <div key={item.label} className="rounded-2xl border border-slate-200 bg-white px-3 py-3.5">
-                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                          <span className={`h-2 w-2 rounded-full ${item.dot}`} />
-                          {item.label}
+                      <div key={item.label} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 py-3.5">
+                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.14em] text-white/30">
+                          <span className={`h-2 w-2 rounded-full ${item.dot}`} />{item.label}
                         </div>
-                        <div className="mt-2 text-2xl font-black tracking-tight text-slate-950">{item.value}</div>
+                        <div className="mt-2 text-2xl font-black tracking-tight text-white">{item.value}</div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Dein Status</div>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/30">Dein Status</div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
                         {statusBadge(nextMatchSummary.myStatus)}
                         {nextMatchSummary.myLineup === "starter" ? (
                           <Badge className="rounded-full bg-orange-500 text-white">Stamm</Badge>
                         ) : nextMatchSummary.myLineup === "substitute" ? (
-                          <Badge variant="secondary" className="rounded-full">Ersatz</Badge>
+                          <Badge className="rounded-full border border-white/10 bg-white/[0.06] text-white/70">Ersatz</Badge>
                         ) : (
-                          <Badge variant="outline" className="rounded-full bg-white">Noch nicht aufgestellt</Badge>
+                          <Badge className="rounded-full border border-white/10 bg-transparent text-white/45">Noch nicht aufgestellt</Badge>
                         )}
                       </div>
                     </div>
-                    <p className="max-w-md text-sm leading-relaxed text-slate-600">
-                      {getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}
-                    </p>
+                    <p className="max-w-md text-sm leading-relaxed text-white/50">{getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}</p>
                   </div>
                 </>
               )}
@@ -1787,25 +2049,28 @@ if (error || !profile) {
           </section>
 
           <aside className="space-y-4">
-            <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_14px_38px_-28px_rgba(15,23,42,0.28)] sm:p-5">
-              <div className="flex items-center justify-between">
+            <section className="relative overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 p-4 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:p-5">
+              <div className="pointer-events-none absolute right-[-50px] top-[-50px] h-36 w-36 rounded-full bg-sky-500/10 blur-[55px]" />
+              <div className="relative flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Auf einen Blick</div>
-                  <h2 className="mt-1 text-lg font-black text-slate-950">Liga-Statistik</h2>
+                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30">Performance</div>
+                  <h2 className="mt-1 text-lg font-black text-white">Liga-Statistik</h2>
                 </div>
-                <BarChart3 className="h-5 w-5 text-orange-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
+                  <BarChart3 className="h-5 w-5 text-orange-400" />
+                </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="relative mt-4 grid grid-cols-2 gap-2">
                 {[
                   { label: "Legs gewonnen", value: statistics.legsWon },
                   { label: "Siegquote", value: `${statistics.winPercentage}%` },
                   { label: "Leg-Bilanz", value: `${statistics.legsWon}:${statistics.legsLost}` },
                   { label: "180er", value: statistics.total180s },
                 ].map((stat) => (
-                  <div key={stat.label} className="rounded-2xl bg-slate-50 px-3 py-3.5 ring-1 ring-slate-100">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{stat.label}</div>
-                    <div className="mt-1.5 text-xl font-black tracking-tight text-slate-950">{stat.value}</div>
+                  <div key={stat.label} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 py-3.5">
+                    <div className="text-[9px] font-black uppercase tracking-[0.13em] text-white/28">{stat.label}</div>
+                    <div className="mt-1.5 text-xl font-black tracking-tight text-white">{stat.value}</div>
                   </div>
                 ))}
               </div>
@@ -1815,16 +2080,37 @@ if (error || !profile) {
               <button
                 type="button"
                 onClick={() => router.push('/chat-app')}
-                className="group w-full rounded-[24px] border border-orange-200 bg-orange-50 p-4 text-left transition hover:border-orange-300 hover:bg-orange-100/70 sm:p-5"
+                className="group relative w-full overflow-hidden rounded-[26px] border border-orange-300/15 bg-orange-500/[0.075] p-4 text-left backdrop-blur-xl transition duration-300 hover:border-orange-300/30 hover:bg-orange-500/[0.12] sm:p-5"
               >
-                <div className="flex items-center justify-between gap-4">
+                <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-orange-500/20 blur-[45px]" />
+                <div className="relative flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-orange-600">Team-Chat</div>
-                    <div className="mt-1 text-lg font-black text-slate-950">{totalUnread} neue Nachricht{totalUnread === 1 ? '' : 'en'}</div>
-                    <div className="mt-1 text-sm text-slate-600">Direkt zu deinen Team-Chats</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/75">Team-Chat</div>
+                    <div className="mt-1 text-lg font-black text-white">{totalUnread} neue Nachricht{totalUnread === 1 ? '' : 'en'}</div>
+                    <div className="mt-1 text-sm text-white/45">Direkt zu deinen Team-Chats</div>
                   </div>
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-orange-300 transition group-hover:scale-105 group-hover:bg-orange-500 group-hover:text-white">
                     <MessageCircle className="h-5 w-5" />
+                  </div>
+                </div>
+              </button>
+            ) : null}
+
+            {leagueMailboxUnread > 0 ? (
+              <button
+                type="button"
+                onClick={() => router.push('/league-mailbox')}
+                className="group relative w-full overflow-hidden rounded-[26px] border border-sky-300/15 bg-sky-500/[0.075] p-4 text-left backdrop-blur-xl transition duration-300 hover:border-sky-300/30 hover:bg-sky-500/[0.12] sm:p-5"
+              >
+                <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-sky-500/20 blur-[45px]" />
+                <div className="relative flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-300/75">Liga-Postfach</div>
+                    <div className="mt-1 text-lg font-black text-white">{leagueMailboxUnread} neue Nachricht{leagueMailboxUnread === 1 ? '' : 'en'}</div>
+                    <div className="mt-1 text-sm text-white/45">Private Liga-Fälle und Hinweise öffnen</div>
+                  </div>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-sky-300 transition group-hover:scale-105 group-hover:bg-sky-500 group-hover:text-white">
+                    <Inbox className="h-5 w-5" />
                   </div>
                 </div>
               </button>
@@ -1836,32 +2122,271 @@ if (error || !profile) {
           <button
             type="button"
             onClick={() => router.push('/admin')}
-            className="group mt-4 flex w-full items-center justify-between gap-4 overflow-hidden rounded-[24px] border border-slate-800 bg-slate-950 px-4 py-4 text-left text-white shadow-[0_18px_42px_-30px_rgba(15,23,42,0.7)] transition hover:-translate-y-0.5 sm:px-5"
+            className="group relative mt-4 flex w-full items-center justify-between gap-4 overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#080b10]/90 px-4 py-4 text-left text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] transition duration-300 hover:border-orange-400/25 sm:px-5"
           >
-            <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Vereinsbereich</div>
+            <div className="pointer-events-none absolute right-[10%] top-[-80px] h-44 w-44 rounded-full bg-orange-500/10 blur-[60px]" />
+            <div className="relative min-w-0">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/28">Vereinsbereich</div>
               <div className="mt-1 text-lg font-black">Admin & Verwaltung</div>
-              <div className="mt-0.5 text-sm text-white/55">Beiträge, Teams und Organisation</div>
+              <div className="mt-0.5 text-sm text-white/42">Beiträge, Teams und Organisation</div>
             </div>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 transition group-hover:bg-orange-500">
-              <ArrowRight className="h-4 w-4" />
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.05] transition group-hover:bg-orange-500">
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </div>
           </button>
         ) : null}
 
-        {/* Bereiche */}
-        <div className="mt-7 space-y-7 sm:mt-8">
+        {/* Zentrale Bereiche */}
+        <section className="mt-5">
+          <div className="mb-3 px-1">
+            <div className="text-[9px] font-black uppercase tracking-[0.22em] text-orange-300/55">Bereiche</div>
+            <h2 className="mt-1 text-xl font-black tracking-[-0.025em] text-white">Deine Bereiche</h2>
+            <p className="mt-1 text-sm text-white/38">Liga, Turniere und Training zentral gebündelt.</p>
+          </div>
+        {/* Ligabereich – zentraler Einstieg */}
+        <button
+          type="button"
+          disabled={!hasLeagueAccess}
+          onClick={() => {
+            if (!hasLeagueAccess) return
+            router.push("/member-league-app")
+          }}
+          aria-disabled={!hasLeagueAccess}
+          className={[
+            "group relative mt-4 block min-h-[190px] w-full overflow-hidden rounded-[28px] border text-left backdrop-blur-xl transition duration-300 sm:min-h-[220px]",
+            hasLeagueAccess
+              ? "cursor-pointer border-orange-300/[0.14] bg-black/35 shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)] hover:-translate-y-0.5 hover:border-orange-300/30 hover:shadow-[0_30px_85px_-42px_rgba(249,115,22,.22)] active:scale-[0.995]"
+              : "cursor-not-allowed border-white/[0.06] bg-black/30 opacity-55 grayscale",
+          ].join(" ")}
+        >
+          <div
+            className={[
+              "pointer-events-none absolute inset-0 bg-cover bg-center transition duration-700",
+              hasLeagueAccess ? "group-hover:scale-[1.025]" : "",
+            ].join(" ")}
+            style={{ backgroundImage: "url('/league/spielplan.png')" }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,9,.97)_0%,rgba(4,6,9,.84)_42%,rgba(4,6,9,.42)_72%,rgba(4,6,9,.60)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.10),rgba(4,6,9,.18)_48%,rgba(4,6,9,.72))]" />
+          <div className="pointer-events-none absolute -left-12 bottom-[-50px] h-40 w-40 rounded-full bg-orange-500/[0.16] blur-[55px]" />
+          <div className="pointer-events-none absolute right-[18%] top-[-70px] h-44 w-44 rounded-full bg-sky-500/[0.10] blur-[65px]" />
+
+          <div className="relative flex min-h-[190px] flex-col justify-between p-5 sm:min-h-[220px] sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className={[
+                  "flex h-12 w-12 items-center justify-center rounded-2xl border",
+                  hasLeagueAccess
+                    ? "border-orange-300/[0.18] bg-orange-500/[0.10] text-orange-200 shadow-[0_0_24px_rgba(249,115,22,.10)]"
+                    : "border-white/[0.08] bg-white/[0.04] text-white/35",
+                ].join(" ")}
+              >
+                <Trophy className="h-6 w-6" />
+              </div>
+
+              {hasLeagueAccess ? (
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-black/40 text-white/70 transition duration-300 group-hover:border-orange-300/35 group-hover:bg-orange-500 group-hover:text-white">
+                  <ArrowRight className="h-5 w-5 transition duration-300 group-hover:translate-x-0.5" />
+                </div>
+              ) : (
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 text-white/30">
+                  <LockKeyhole className="h-5 w-5" />
+                </div>
+              )}
+            </div>
+
+            <div className="max-w-2xl">
+              <div
+                className={[
+                  "text-[10px] font-black uppercase tracking-[0.22em]",
+                  hasLeagueAccess ? "text-orange-300/70" : "text-white/30",
+                ].join(" ")}
+              >
+                Liga
+              </div>
+
+              <h2 className="mt-1.5 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
+                Ligabereich Sportdarts
+              </h2>
+
+              {hasLeagueAccess ? (
+                <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/50 sm:text-base">
+                  Sportdarts: Zusagen, Spielplan, Teams, Tabellen, Live-Spiele, Ergebnisse und Statistik.
+                </p>
+              ) : (
+                <div className="mt-2 max-w-xl">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-black/35 px-3 py-1.5 text-[11px] font-black text-white/45">
+                    <LockKeyhole className="h-3.5 w-3.5" />
+                    Kein Liga-Paket aktiv
+                  </div>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-white/35 sm:text-base">
+                    Für den Sportdarts-Ligabereich benötigst du ein E-Dart- oder Steeldart-Liga-Paket.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </button>
+        {hasLeagueAccess ? (
+
+          <button
+            type="button"
+            onClick={() => router.push("/league-mailbox")}
+            className="group relative mt-3 block w-full overflow-hidden rounded-[24px] border border-sky-300/[0.12] bg-sky-500/[0.055] p-4 text-left backdrop-blur-xl transition duration-300 hover:border-sky-300/25 hover:bg-sky-500/[0.09] sm:p-5"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-300/[0.14] bg-sky-500/[0.08] text-sky-200">
+                  <Inbox className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-300/60">Liga-Kommunikation</div>
+                  <div className="mt-0.5 text-lg font-black text-white">Liga-Postfach</div>
+                  <div className="mt-0.5 text-sm font-semibold text-white/38">Nachrichten und Rückmeldungen direkt mit der Ligaverwaltung.</div>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {leagueMailboxUnread > 0 ? (
+                  <span className="rounded-full bg-orange-500 px-2.5 py-1 text-xs font-black text-white">{leagueMailboxUnread}</span>
+                ) : null}
+                <ArrowRight className="h-5 w-5 text-white/35 transition group-hover:translate-x-1 group-hover:text-sky-300" />
+              </div>
+            </div>
+          </button>
+        ) : null}
+
+        {/* Ligabereich Intern – vorbereitet, aktuell bewusst deaktiviert */}
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          onClick={() => router.push("/internal-matches")}
+          className="group relative mt-3 block min-h-[178px] w-full cursor-not-allowed overflow-hidden rounded-[28px] border border-white/[0.06] bg-black/30 text-left opacity-55 grayscale shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:min-h-[205px]"
+        >
+          <div
+            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.42]"
+            style={{ backgroundImage: "url('/league/meine-spiele.png')" }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,9,.98)_0%,rgba(4,6,9,.91)_46%,rgba(4,6,9,.72)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.25),rgba(4,6,9,.78))]" />
+
+          <div className="relative flex min-h-[178px] flex-col justify-between p-5 sm:min-h-[205px] sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-white/35">
+                <Trophy className="h-6 w-6" />
+              </div>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 text-white/30">
+                <LockKeyhole className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-black/35 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white/38">
+                <Clock className="h-3.5 w-3.5" />
+                Demnächst verfügbar
+              </div>
+              <h2 className="mt-2 text-2xl font-black tracking-[-0.035em] text-white/70 sm:text-3xl">
+                Ligabereich Intern
+              </h2>
+              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/32 sm:text-base">
+                Interne Spiele, Aufstellungen und Live-Ergebnisse werden hier gebündelt.
+              </p>
+            </div>
+          </div>
+        </button>
+        {/* Turnierbereich – zentraler Einstieg */}
+        <button
+          type="button"
+          onClick={() => router.push("/member-tournament-app")}
+          className="group relative mt-3 block min-h-[178px] w-full overflow-hidden rounded-[28px] border border-sky-300/[0.12] bg-black/35 text-left shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-sky-300/28 hover:shadow-[0_30px_85px_-42px_rgba(14,165,233,.20)] active:scale-[0.995] sm:min-h-[205px]"
+        >
+          <div
+            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.88] transition duration-700 group-hover:scale-[1.025]"
+            style={{ backgroundImage: "url('/league/ergebnisse.png')" }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,9,.97)_0%,rgba(4,6,9,.86)_43%,rgba(4,6,9,.48)_73%,rgba(4,6,9,.66)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.08),rgba(4,6,9,.20)_50%,rgba(4,6,9,.76))]" />
+          <div className="pointer-events-none absolute -left-10 bottom-[-55px] h-40 w-40 rounded-full bg-orange-500/[0.14] blur-[55px]" />
+          <div className="pointer-events-none absolute right-[14%] top-[-65px] h-44 w-44 rounded-full bg-sky-500/[0.14] blur-[65px]" />
+
+          <div className="relative flex min-h-[178px] flex-col justify-between p-5 sm:min-h-[205px] sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-300/[0.16] bg-sky-500/[0.09] text-sky-100 shadow-[0_0_24px_rgba(14,165,233,.10)]">
+                <Trophy className="h-6 w-6" />
+              </div>
+
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-black/40 text-white/70 transition duration-300 group-hover:border-sky-300/35 group-hover:bg-sky-500 group-hover:text-white">
+                <ArrowRight className="h-5 w-5 transition duration-300 group-hover:translate-x-0.5" />
+              </div>
+            </div>
+
+            <div className="max-w-2xl">
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-200/65">
+                Turniere
+              </div>
+              <h2 className="mt-1.5 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
+                Turnierbereich
+              </h2>
+              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/50 sm:text-base">
+                Turnierstatistiken, DACH-Turniere und weitere Turnierfunktionen zentral an einem Ort.
+              </p>
+            </div>
+          </div>
+        </button>
+
+        {/* Trainingsbereich */}
+        <button
+          type="button"
+          onClick={() => router.push("/member-training-app")}
+          className="group relative mt-3 block min-h-[178px] w-full overflow-hidden rounded-[28px] border border-emerald-300/[0.11] bg-black/35 text-left shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-emerald-300/28 hover:shadow-[0_30px_85px_-42px_rgba(16,185,129,.16)] active:scale-[0.995] sm:min-h-[205px]"
+        >
+          <div
+            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.72] transition duration-700 group-hover:scale-[1.025]"
+            style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,9,.97)_0%,rgba(4,6,9,.86)_45%,rgba(4,6,9,.58)_76%,rgba(4,6,9,.72)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.12),rgba(4,6,9,.22)_50%,rgba(4,6,9,.78))]" />
+          <div className="pointer-events-none absolute -left-12 bottom-[-55px] h-40 w-40 rounded-full bg-emerald-500/[0.12] blur-[55px]" />
+          <div className="pointer-events-none absolute right-[16%] top-[-65px] h-44 w-44 rounded-full bg-sky-500/[0.09] blur-[65px]" />
+
+          <div className="relative flex min-h-[178px] flex-col justify-between p-5 sm:min-h-[205px] sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-300/[0.16] bg-emerald-500/[0.08] text-emerald-100 shadow-[0_0_24px_rgba(16,185,129,.08)]">
+                <Dumbbell className="h-6 w-6" />
+              </div>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-black/40 text-white/70 transition duration-300 group-hover:border-emerald-300/35 group-hover:bg-emerald-500 group-hover:text-white">
+                <ArrowRight className="h-5 w-5 transition duration-300 group-hover:translate-x-0.5" />
+              </div>
+            </div>
+
+            <div className="max-w-2xl">
+              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-200/60">
+                Training
+              </div>
+              <h2 className="mt-1.5 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
+                Trainingsbereich
+              </h2>
+              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/50 sm:text-base">
+                Training, Fortschritt, Trainingstreffs und Zusagen zentral an einem Ort.
+              </p>
+            </div>
+          </div>
+        </button>
+
+        </section>
+
+        {/* Navigation */}
+        <div className="mt-8 space-y-8">
           {navigationGroups.map((group) => {
             const visibleItems = group.items.filter((item: any) => !item.requiresLeadership || isLeadershipRole())
             if (visibleItems.length === 0) return null
 
             return (
               <section key={group.title}>
-                <div className="mb-3 flex items-end justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-black tracking-tight text-slate-950">{group.title}</h2>
-                    <p className="mt-0.5 text-sm text-slate-500">{group.description}</p>
-                  </div>
+                <div className="mb-3 px-1">
+                  <div className="text-[9px] font-black uppercase tracking-[0.22em] text-orange-300/55">Mein EMD</div>
+                  <h2 className="mt-1 text-xl font-black tracking-[-0.025em] text-white">{group.title}</h2>
+                  <p className="mt-1 text-sm text-white/38">{group.description}</p>
                 </div>
 
                 <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -1872,17 +2397,24 @@ if (error || !profile) {
                         key={item.href}
                         type="button"
                         onClick={() => router.push(item.href)}
-                        className="group flex min-h-[104px] w-full items-center gap-3.5 rounded-[20px] border border-slate-200 bg-white p-3.5 text-left shadow-[0_12px_30px_-28px_rgba(15,23,42,0.35)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_-28px_rgba(15,23,42,0.38)] sm:p-4"
+                        className="group relative flex min-h-[112px] w-full items-center gap-3.5 overflow-hidden rounded-[22px] border border-orange-300/[0.10] bg-black/30 p-3.5 text-left shadow-[0_0_28px_rgba(249,115,22,.065),0_18px_45px_-38px_rgba(0,0,0,.92)] backdrop-blur-xl transition duration-300 active:scale-[0.985] active:border-orange-300/25 active:bg-white/[0.055] hover:-translate-y-0.5 hover:border-orange-400/25 hover:bg-white/[0.05] sm:border-white/[0.075] sm:bg-black/25 sm:shadow-[0_18px_45px_-38px_rgba(0,0,0,.9)] sm:p-4"
                       >
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-100 transition group-hover:bg-orange-50 group-hover:ring-orange-100">
-                          <Icon className="h-5 w-5 text-slate-500 transition group-hover:text-orange-600" />
+                        <div className="pointer-events-none absolute inset-0 sm:hidden">
+                          <div className="absolute -left-10 bottom-[-42px] h-28 w-28 rounded-full bg-orange-500/[0.13] blur-[34px]" />
+                          <div className="absolute -right-10 top-[-44px] h-24 w-24 rounded-full bg-sky-400/[0.075] blur-[30px]" />
+                          <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-orange-200/15 to-transparent" />
+                        </div>
+                        <div className="pointer-events-none absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-transparent via-orange-400/35 to-transparent transition duration-300 sm:via-orange-400/0 group-hover:via-orange-400/80" />
+                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.13] bg-orange-500/[0.055] shadow-[0_0_18px_rgba(249,115,22,.07)] transition duration-300 sm:border-white/[0.075] sm:bg-white/[0.035] sm:shadow-none group-hover:border-orange-400/20 group-hover:bg-orange-500/[0.1]">
+                          <div className="pointer-events-none absolute inset-[7px] rounded-xl bg-orange-400/[0.035] blur-[8px] sm:hidden" />
+                          <Icon className="relative h-5 w-5 text-orange-200/70 transition duration-300 sm:text-white/45 group-hover:text-orange-300" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <div className="truncate text-sm font-black text-slate-950">{item.title}</div>
-                            <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-600" />
+                            <div className="truncate text-sm font-black text-white/90">{item.title}</div>
+                            <ArrowRight className="h-4 w-4 shrink-0 text-white/18 transition duration-300 group-hover:translate-x-1 group-hover:text-orange-300" />
                           </div>
-                          <div className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500 sm:text-sm">{item.description}</div>
+                          <div className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/35 sm:text-sm">{item.description}</div>
                         </div>
                       </button>
                     )
@@ -1893,42 +2425,35 @@ if (error || !profile) {
           })}
         </div>
 
-        {/* Teams */}
         {hasMultipleTeams ? (
-          <section className="mt-7 rounded-[24px] border border-slate-200 bg-white p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Deine Teams</div>
-                <div className="mt-1 text-lg font-black text-slate-950">{teamMemberships.length} aktive Teams</div>
-              </div>
-            </div>
+          <section className="mt-8 rounded-[24px] border border-white/[0.08] bg-black/25 p-4 backdrop-blur-xl sm:p-5">
+            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/28">Deine Teams</div>
+            <div className="mt-1 text-lg font-black text-white">{teamMemberships.length} aktive Teams</div>
             <div className="mt-4 flex flex-wrap gap-2">
               {teamMemberships.map((membership: any) => (
-                <div key={membership.id} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                <div key={membership.id} className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm">
                   {getRoleIcon(membership.role)}
-                  <span className="font-bold text-slate-800">{membership.teams?.name || 'Team'}</span>
-                  <span className="text-slate-400">·</span>
-                  <span className="text-slate-500">{getRoleLabel(membership.role)}</span>
+                  <span className="font-bold text-white/75">{membership.teams?.name || 'Team'}</span>
+                  <span className="text-white/20">·</span>
+                  <span className="text-white/40">{getRoleLabel(membership.role)}</span>
                 </div>
               ))}
             </div>
           </section>
         ) : null}
 
-        {/* Konto */}
-        <section className="mt-7 flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <section className="mt-8 flex flex-col gap-3 rounded-[24px] border border-white/[0.08] bg-black/25 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Konto</div>
-            <div className="mt-1 text-base font-black text-slate-950">Kontoeinstellungen</div>
-            <div className="mt-0.5 text-sm text-slate-500">Profil verwalten oder eine Löschanfrage stellen.</div>
+            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/28">Konto</div>
+            <div className="mt-1 text-base font-black text-white">Kontoeinstellungen</div>
+            <div className="mt-0.5 text-sm text-white/38">Profil verwalten oder eine Löschanfrage stellen.</div>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Button asChild variant="outline" className="rounded-xl">
+            <Button asChild variant="outline" className="rounded-xl border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white">
               <Link href="/profil-daten-app">Profil bearbeiten</Link>
             </Button>
-            <Button variant="outline" onClick={() => router.push('/konto-loeschen')} className="rounded-xl border-red-200 text-red-700 hover:bg-red-50">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Löschen
+            <Button variant="outline" onClick={() => router.push('/konto-loeschen')} className="rounded-xl border-red-300/15 bg-red-500/[0.05] text-red-300 hover:bg-red-500/[0.12] hover:text-red-200">
+              <Trash2 className="mr-2 h-4 w-4" />Löschen
             </Button>
           </div>
         </section>
@@ -1936,10 +2461,9 @@ if (error || !profile) {
         <button
           type="button"
           onClick={handleLogout}
-          className="mx-auto mt-6 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-400 transition hover:bg-white hover:text-red-600"
+          className="mx-auto mt-7 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-white/30 transition hover:bg-white/[0.04] hover:text-red-300"
         >
-          <LogOut className="h-4 w-4" />
-          Abmelden
+          <LogOut className="h-4 w-4" />Abmelden
         </button>
       </main>
 
@@ -2039,12 +2563,12 @@ if (error || !profile) {
       ) : null}
 
       {isPhotoDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-          <div className="w-full rounded-t-[28px] border border-slate-200 bg-white p-5 shadow-2xl sm:max-w-md sm:rounded-[28px] sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-0 backdrop-blur-md sm:items-center sm:p-4">
+          <div className="w-full rounded-t-[28px] border border-white/10 bg-[#0b0f15] p-5 text-white shadow-[0_30px_100px_rgba(0,0,0,.75)] sm:max-w-md sm:rounded-[28px] sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Profil</div>
-                <h3 className="mt-1 text-xl font-black tracking-tight text-slate-950">Profilfoto ändern</h3>
+                <div className="text-[11px] font-black uppercase tracking-[0.16em] text-orange-300/70">Profil</div>
+                <h3 className="mt-1 text-xl font-black tracking-tight text-white">Profilfoto-Änderung anfragen</h3>
               </div>
               <button
                 type="button"
@@ -2054,35 +2578,47 @@ if (error || !profile) {
                   setPhotoPreview(null)
                   setPhotoMessage("")
                 }}
-                className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-600"
+                className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-sm font-black text-white/75 transition hover:bg-white/[0.10] hover:text-white"
               >
                 Schließen
               </button>
             </div>
 
             <div className="mt-5 space-y-4">
-              <label className="block cursor-pointer rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center transition hover:border-orange-300 hover:bg-orange-50/40">
-                <input type="file" accept="image/*" onChange={handlePhotoFileChange} className="hidden" />
-                <Upload className="mx-auto h-5 w-5 text-orange-600" />
-                <div className="mt-2 text-sm font-black text-slate-800">Foto auswählen</div>
-                <div className="mt-0.5 text-xs text-slate-500">JPG, PNG oder WEBP</div>
+              <div className="rounded-2xl border border-orange-300/25 bg-orange-500/[0.10] px-4 py-3 text-sm font-bold leading-6 text-orange-100">
+                Profilbilder werden bei Vereinsmitgliedern nicht direkt geändert. Sende uns dein neues Foto – der Vorstand bearbeitet es einheitlich und übernimmt es anschließend ins Profil.
+              </div>
+
+              <label className="block cursor-pointer rounded-2xl border border-dashed border-white/15 bg-white/[0.035] p-5 text-center transition hover:border-orange-300/35 hover:bg-orange-500/[0.06]">
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoFileChange} className="hidden" />
+                <Upload className="mx-auto h-6 w-6 text-orange-300" />
+                <div className="mt-2 text-sm font-black text-white">Foto auswählen</div>
+                <div className="mt-1 text-xs font-semibold text-white/45">JPG, PNG oder WEBP</div>
               </label>
 
               {photoPreview && (
-                <div className="rounded-2xl bg-slate-50 p-4 text-center">
-                  <img src={photoPreview || "/placeholder.svg"} alt="Vorschau" className="mx-auto h-28 w-28 rounded-full object-cover ring-4 ring-white shadow-lg" />
+                <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center">
+                  <img src={photoPreview || "/placeholder.svg"} alt="Vorschau" className="mx-auto h-28 w-28 rounded-full object-cover ring-4 ring-white/10 shadow-lg" />
                 </div>
               )}
 
               {photoMessage && (
-                <p className={`rounded-xl px-3 py-2 text-sm font-semibold ${photoMessage.includes("Fehler") ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>{photoMessage}</p>
+                <p className={`rounded-xl border px-3 py-2 text-sm font-bold ${
+                  photoMessage.includes("Fehler")
+                    ? "border-red-300/20 bg-red-500/[0.08] text-red-100"
+                    : "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-100"
+                }`}>{photoMessage}</p>
               )}
 
-              <Button onClick={handlePhotoUpload} disabled={!photoFile || photoUploading} className="h-11 w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800">
+              <Button
+                onClick={handlePhotoUpload}
+                disabled={!photoFile || photoUploading}
+                className="h-12 w-full rounded-xl bg-orange-500 font-black text-white shadow-[0_10px_30px_rgba(249,115,22,.18)] hover:bg-orange-400 disabled:border disabled:border-white/10 disabled:bg-white/[0.04] disabled:text-white/25"
+              >
                 {photoUploading ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Wird hochgeladen...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Anfrage wird gesendet...</>
                 ) : (
-                  <><Upload className="mr-2 h-4 w-4" />Foto speichern</>
+                  <><Upload className="mr-2 h-4 w-4" />Änderung anfragen</>
                 )}
               </Button>
             </div>
@@ -2092,72 +2628,135 @@ if (error || !profile) {
 
       {isTerminalPinDialogOpen ? (
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           onMouseDown={() => !terminalPinSaving && setIsTerminalPinDialogOpen(false)}
         >
           <div
-            className="w-full max-w-md overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl"
+            className="w-full max-w-xl overflow-hidden rounded-[30px] border border-white/10 bg-[#080c12] shadow-[0_35px_120px_rgba(0,0,0,.75)]"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="border-b border-slate-100 bg-slate-950 p-5 text-white">
+            <div className="border-b border-white/[0.08] bg-[#070b11] p-5 sm:p-6">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
-                  <KeyRound className="h-5 w-5 text-orange-400" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-500/10">
+                  <KeyRound className="h-5 w-5 text-orange-300" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">Club Terminal</div>
-                  <div className="text-xl font-black">Terminal-PIN festlegen</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">Club Terminal</div>
+                  <div className="mt-0.5 text-xl font-black text-white">
+                    {savedTerminalAuthMethod ? "Terminal-Anmeldung ändern" : "Terminal-Anmeldung festlegen"}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-5">
-              <p className="text-sm leading-6 text-slate-600">
-                Lege eine persönliche 4-stellige PIN fest. Damit kannst du dich am EMD Club Terminal schnell anmelden.
+            <div className="p-5 sm:p-6">
+              <p className="text-sm font-semibold leading-6 text-white/48">
+                Wähle PIN oder Entsperrmuster. Am Terminal suchst du zuerst deinen Namen und bestätigst danach mit deiner gewählten Methode.
               </p>
 
-              <div className="mt-5 space-y-3">
-                <div>
-                  <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500">
-                    Neue PIN
-                  </label>
+              {savedTerminalAuthMethod ? (
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-300/15 bg-emerald-500/[0.07] px-4 py-3">
+                  <div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-200/55">Derzeit aktiv</div>
+                    <div className="mt-1 text-sm font-black text-emerald-100">
+                      {savedTerminalAuthMethod === "pattern" ? "Entsperrmuster" : "4-stellige PIN"}
+                    </div>
+                  </div>
+                  <div className="rounded-full border border-emerald-300/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-200">
+                    Aktiv
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-amber-300/15 bg-amber-500/[0.06] px-4 py-3 text-sm font-bold text-amber-100/75">
+                  Noch keine Terminal-Anmeldung eingerichtet.
+                </div>
+              )}
+
+              <div className="mt-5 grid grid-cols-2 gap-2 rounded-2xl border border-white/[0.08] bg-black/30 p-1.5">
+                <button
+                  type="button"
+                  onClick={() => setTerminalAuthMethod("pin")}
+                  className={`relative min-h-[52px] rounded-xl px-3 text-sm font-black transition ${
+                    terminalAuthMethod === "pin"
+                      ? "border border-orange-300/35 bg-orange-500 text-white shadow-[0_8px_30px_rgba(249,115,22,.24)]"
+                      : "border border-transparent bg-white/[0.035] text-white/45 hover:bg-white/[0.06] hover:text-white/70"
+                  }`}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <KeyRound className="h-4 w-4" />
+                    4-stellige PIN
+                  </span>
+                  {terminalAuthMethod === "pin" ? (
+                    <span className="absolute right-2 top-2 rounded-full bg-black/25 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] text-white/90">
+                      Aktiv
+                    </span>
+                  ) : null}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTerminalAuthMethod("pattern")}
+                  className={`relative min-h-[52px] rounded-xl px-3 text-sm font-black transition ${
+                    terminalAuthMethod === "pattern"
+                      ? "border border-orange-300/35 bg-orange-500 text-white shadow-[0_8px_30px_rgba(249,115,22,.24)]"
+                      : "border border-transparent bg-white/[0.035] text-white/45 hover:bg-white/[0.06] hover:text-white/70"
+                  }`}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Entsperrmuster
+                  </span>
+                  {terminalAuthMethod === "pattern" ? (
+                    <span className="absolute right-2 top-2 rounded-full bg-black/25 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] text-white/90">
+                      Aktiv
+                    </span>
+                  ) : null}
+                </button>
+              </div>
+
+              <div className="mt-3 text-center text-[11px] font-bold text-white/30">
+                Aktuell ausgewählt: <span className="text-orange-300">{terminalAuthMethod === "pin" ? "4-stellige PIN" : "Entsperrmuster"}</span>
+              </div>
+
+              {terminalAuthMethod === "pin" ? (
+                <div className="mt-5 space-y-3">
                   <input
                     type="password"
                     inputMode="numeric"
                     maxLength={4}
                     value={terminalPin}
                     onChange={(e) => setTerminalPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-center text-2xl font-black tracking-[0.5em] text-slate-950 outline-none focus:border-orange-400"
+                    className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.035] px-4 text-center text-2xl font-black tracking-[0.5em] text-white outline-none placeholder:text-white/25 focus:border-orange-300/45 focus:bg-orange-500/[0.04]"
                     placeholder="••••"
                     autoComplete="new-password"
                   />
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-slate-500">
-                    PIN wiederholen
-                  </label>
                   <input
                     type="password"
                     inputMode="numeric"
                     maxLength={4}
                     value={terminalPinConfirm}
                     onChange={(e) => setTerminalPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") void saveTerminalPin()
-                    }}
-                    className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-center text-2xl font-black tracking-[0.5em] text-slate-950 outline-none focus:border-orange-400"
-                    placeholder="••••"
+                    className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.035] px-4 text-center text-lg font-black tracking-[0.28em] text-white outline-none placeholder:tracking-[0.18em] placeholder:text-white/25 focus:border-orange-300/45 focus:bg-orange-500/[0.04]"
+                    placeholder="PIN WIEDERHOLEN"
                     autoComplete="new-password"
                   />
                 </div>
-              </div>
+              ) : (
+                <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <div className="mb-2 text-center text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Muster</div>
+                    <PatternPad value={terminalPattern} onChange={setTerminalPattern} tone="dark" size="sm" />
+                  </div>
+                  <div>
+                    <div className="mb-2 text-center text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Wiederholen</div>
+                    <PatternPad value={terminalPatternConfirm} onChange={setTerminalPatternConfirm} tone="dark" size="sm" />
+                  </div>
+                </div>
+              )}
 
-              <div className="mt-3 min-h-5 text-center text-xs font-bold text-slate-500">
-                {terminalPinMessage}
-              </div>
+              <div className="mt-3 min-h-5 text-center text-xs font-bold text-white/45">{terminalPinMessage}</div>
 
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <Button
@@ -2165,15 +2764,15 @@ if (error || !profile) {
                   variant="outline"
                   disabled={terminalPinSaving}
                   onClick={() => setIsTerminalPinDialogOpen(false)}
-                  className="h-12 rounded-xl"
+                  className="h-12 rounded-xl border-white/10 bg-white/[0.035] font-black text-white/70 hover:bg-white/[0.07] hover:text-white"
                 >
                   Abbrechen
                 </Button>
                 <Button
                   type="button"
-                  disabled={terminalPinSaving || terminalPin.length !== 4 || terminalPinConfirm.length !== 4}
-                  onClick={() => void saveTerminalPin()}
-                  className="h-12 rounded-xl bg-orange-500 font-black text-white hover:bg-orange-600"
+                  disabled={terminalPinSaving}
+                  onClick={() => void saveTerminalAuth()}
+                  className="h-12 rounded-xl bg-orange-500 font-black text-white shadow-[0_10px_30px_rgba(249,115,22,.18)] hover:bg-orange-400"
                 >
                   {terminalPinSaving ? (
                     <>
@@ -2183,15 +2782,11 @@ if (error || !profile) {
                   ) : (
                     <>
                       <KeyRound className="mr-2 h-4 w-4" />
-                      PIN speichern
+                      Speichern
                     </>
                   )}
                 </Button>
               </div>
-
-              <p className="mt-4 text-center text-[11px] leading-5 text-slate-400">
-                Wenn deine gewünschte PIN bereits verwendet wird, musst du eine andere 4-stellige Kombination wählen.
-              </p>
             </div>
           </div>
         </div>

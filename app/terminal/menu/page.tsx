@@ -1,7 +1,7 @@
 "use client"
 
 import TerminalLink from "../_components/TerminalLink"
-import { ArrowLeft, CalendarDays, ChevronRight, Sparkles, Target, Trophy, UserRound } from "lucide-react"
+import { ArrowLeft, CalendarCheck2, CalendarDays, ChevronRight, Sparkles, Target, Trophy, UserRound } from "lucide-react"
 
 const areas = [
   {
@@ -64,7 +64,41 @@ export default function TerminalMainMenuPage() {
         </header>
 
         <section className="flex flex-1 items-center py-8">
-          <div className="grid w-full gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="w-full">
+            <TerminalLink
+              href="/terminal/turnier-anmeldung"
+              label="Turnier-Anmeldung wird geöffnet"
+              className="group relative mb-5 flex min-h-[150px] items-center overflow-hidden rounded-[34px] border border-orange-300/25 bg-black/34 p-6 backdrop-blur-2xl transition duration-300 hover:border-orange-300/45 sm:p-7"
+            >
+              <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-orange-500/16 blur-3xl" />
+              <div className="absolute bottom-[-120px] left-[28%] h-56 w-56 rounded-full bg-cyan-400/8 blur-3xl" />
+
+              <div className="relative flex w-full flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-5">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] border border-orange-300/25 bg-orange-500/10 text-orange-300">
+                    <CalendarCheck2 className="h-8 w-8" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black uppercase tracking-[0.24em] text-orange-300/70">
+                      Direkt am Club-Terminal
+                    </div>
+                    <div className="mt-1 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
+                      Turnier-Anmeldung
+                    </div>
+                    <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-white/45">
+                      Heute & kommende Turniere · Name suchen · mit PIN oder Muster bestätigen
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-orange-300/20 bg-orange-500/10 px-5 py-4 text-xs font-black uppercase tracking-[0.22em] text-orange-300">
+                  Jetzt anmelden
+                  <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                </div>
+              </div>
+            </TerminalLink>
+
+            <div className="grid w-full gap-5 md:grid-cols-2 xl:grid-cols-4">
             {areas.map((area) => {
               const Icon = area.icon
               const orange = area.accent === "orange"
@@ -94,11 +128,12 @@ export default function TerminalMainMenuPage() {
                 </TerminalLink>
               )
             })}
+            </div>
           </div>
         </section>
 
         <footer className="border-t border-white/[0.06] pt-5 text-center text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
-          Liga · Turniere · Veranstaltungen · Persönlicher Bereich
+          Liga · Turniere · Anmeldung · Veranstaltungen · Persönlicher Bereich
         </footer>
       </div>
     </main>

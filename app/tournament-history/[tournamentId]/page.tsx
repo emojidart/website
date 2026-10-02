@@ -86,7 +86,7 @@ type KratzerElimEvent = {
 /* ---------------- motion ---------------- */
 
 const containerVariants = {
-  hidden: { opacity: 0 },
+  hidden: { opacity: 1 },
   visible: {
     opacity: 1,
     transition: { staggerChildren: 0.06, delayChildren: 0.04 },
@@ -94,7 +94,7 @@ const containerVariants = {
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 14 },
+  hidden: { opacity: 1, y: 0 },
   visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 14 } },
 }
 
@@ -129,7 +129,7 @@ const statusChip = (status?: string | null) => {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-black ${
-        isDone ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-gray-200 bg-gray-50 text-gray-800"
+        isDone ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" : "border-white/10 bg-white/5 text-white/85"
       }`}
     >
       <CheckCircle2 className="h-3.5 w-3.5" />
@@ -147,16 +147,16 @@ function Chip({
 }) {
   const cls =
     tone === "orange"
-      ? "bg-orange-50 text-orange-900 border-orange-200"
+      ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
       : tone === "blue"
-        ? "bg-blue-50 text-blue-900 border-blue-200"
+        ? "bg-sky-400/10 text-sky-200 border-sky-400/25"
         : tone === "emerald"
-          ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+          ? "bg-emerald-400/10 text-emerald-900 border-emerald-400/25"
           : tone === "amber"
-            ? "bg-amber-50 text-amber-900 border-amber-200"
+            ? "bg-amber-400/10 text-amber-200 border-amber-400/25"
             : tone === "slate"
-              ? "bg-slate-50 text-slate-800 border-slate-200"
-              : "bg-gray-50 text-gray-800 border-gray-200"
+              ? "bg-white/5 text-white/85 border-white/10"
+              : "bg-white/5 text-white/85 border-white/10"
 
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
@@ -167,7 +167,7 @@ function Chip({
 
 export default function TournamentHistoryDetailPage() {
   const router = useRouter()
-  const params = useParams()
+const params = useParams()
   const searchParams = useSearchParams()
 
   const tournamentId = String((params as any).tournamentId)
@@ -433,25 +433,35 @@ export default function TournamentHistoryDetailPage() {
   }, [matches])
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-20 text-slate-950">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
       <Header />
 
-      {/* fixed header offset */}
-      <main className="pt-14 sm:pt-16">
+      {/* Same visual background as Member Profile – loaded hidden first to prevent image flash */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
+        <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:68px_68px]" />
+      </div>
+
+      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <motion.div
-          className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
+          className="w-full"
           variants={containerVariants}
-          initial="hidden"
+          initial={false}
           animate="visible"
         >
           {/* Top back bar (Kontakt-Style sticky feel) */}
           <motion.div variants={itemVariants} className="mb-4">
-            <div className="flex items-center justify-between gap-2 rounded-[18px] border border-slate-200 bg-white px-3 py-2 shadow-[0_12px_36px_-32px_rgba(15,23,42,0.4)]">
+            <div className="flex items-center justify-between gap-2 rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 shadow-[0_12px_36px_-32px_rgba(15,23,42,0.4)]">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => router.push("/tournament-history")}
-                className="h-10 gap-2 rounded-xl border-slate-200 bg-white font-bold hover:bg-slate-50"
+                className="h-10 gap-2 rounded-xl border-white/10 bg-white/5 font-bold hover:bg-white/10"
                 type="button"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -467,11 +477,13 @@ export default function TournamentHistoryDetailPage() {
 
           {/* App-Header Card (Kontakt look) */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
-              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
+              <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-400/15 blur-[110px]" />
+              <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
               <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
                     <Trophy className="h-6 w-6 text-orange-400" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -488,11 +500,11 @@ export default function TournamentHistoryDetailPage() {
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/70">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/70">
                         <Users className="h-3.5 w-3.5 text-orange-300" />
                         {participants} Teilnehmer
                       </span>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/70">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/70">
                         <Clock className="h-3.5 w-3.5 text-orange-300" />
                         Update: {formatDateTime(lastUpdate)}
                       </span>
@@ -509,14 +521,14 @@ export default function TournamentHistoryDetailPage() {
             </motion.div>
           ) : error ? (
             <motion.div variants={itemVariants}>
-              <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white">
-                <CardContent className="p-5 text-red-600 font-semibold">{error}</CardContent>
+              <Card className="rounded-2xl border border-white/10 shadow-sm bg-white/5">
+                <CardContent className="p-5 text-red-400 font-semibold">{error}</CardContent>
               </Card>
             </motion.div>
           ) : (
             <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,.85fr)_minmax(0,1.65fr)] xl:gap-5">
               {/* Resultate/Rangliste */}
-              <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm sm:text-base font-black">
                     {isKratzer ? "Resultate" : "Rangliste"}
@@ -525,7 +537,7 @@ export default function TournamentHistoryDetailPage() {
 
                 <CardContent className="pt-0 pb-5">
                   {rankings.length === 0 ? (
-                    <div className="text-sm text-gray-600">Keine Daten.</div>
+                    <div className="text-sm text-white/58">Keine Daten.</div>
                   ) : (
                     <div className="space-y-2">
                       {rankings
@@ -534,11 +546,11 @@ export default function TournamentHistoryDetailPage() {
                         .map((r) => (
                           <div
                             key={`${r.player_name}-${r.placement}`}
-                            className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.35)]"
+                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 shadow-[0_18px_50px_-38px_rgba(0,0,0,.9)] backdrop-blur-xl"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <div className="font-black text-gray-900 truncate">{r.player_name}</div>
+                                <div className="font-black text-white truncate">{r.player_name}</div>
 
                                 {isKratzer ? (
                                   <div className="mt-2 flex flex-wrap gap-2 text-xs">
@@ -579,14 +591,14 @@ export default function TournamentHistoryDetailPage() {
               </Card>
 
               {/* Matches / Info */}
-              <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm sm:text-base font-black">{isKratzer ? "Info" : "Matches"}</CardTitle>
                 </CardHeader>
 
                 <CardContent className="pt-0 pb-5">
                   {isKratzer ? (
-                    <div className="space-y-5 text-sm text-gray-700">
+                    <div className="space-y-5 text-sm text-white/70">
                       <div className="flex flex-wrap gap-2">
                         <Chip tone="orange">
                           <Trophy className="w-3.5 h-3.5" />
@@ -607,20 +619,20 @@ export default function TournamentHistoryDetailPage() {
                         ) : null}
                       </div>
 
-                      <div className="pt-2 border-t border-gray-200">
-                        <h3 className="font-black text-gray-900 mb-2">Spielverlauf</h3>
+                      <div className="pt-2 border-t border-white/10">
+                        <h3 className="font-black text-white mb-2">Spielverlauf</h3>
 
                         {kratzerElimTimeline.length === 0 ? (
-                          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-gray-700">
+                          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white/70">
                             Kein Verlauf gefunden (results_data leer oder ohne eliminationRound).
                           </div>
                         ) : (
                           <div className="space-y-2">
                             {kratzerElimTimeline.map((e, idx) => (
-                              <div key={`${e.round}-${e.name}-${idx}`} className="rounded-2xl border border-gray-200 p-3">
+                              <div key={`${e.round}-${e.name}-${idx}`} className="rounded-2xl border border-white/10 p-3">
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="min-w-0">
-                                    <div className="font-black text-gray-900 truncate">{e.name}</div>
+                                    <div className="font-black text-white truncate">{e.name}</div>
                                     <div className="mt-2 flex flex-wrap gap-2 text-xs">
                                       <Chip tone="gray">Round {e.round}</Chip>
                                       {e.ligastatus ? (
@@ -638,11 +650,11 @@ export default function TournamentHistoryDetailPage() {
                             ))}
 
                             {winner ? (
-                              <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3">
+                              <div className="rounded-2xl border border-orange-400/25 bg-orange-400/10 p-3">
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="min-w-0">
-                                    <div className="font-black text-gray-900 truncate">{winner}</div>
-                                    <div className="mt-1 text-xs text-gray-600">Turnier gewonnen</div>
+                                    <div className="font-black text-white truncate">{winner}</div>
+                                    <div className="mt-1 text-xs text-white/58">Turnier gewonnen</div>
                                   </div>
                                   <Chip tone="orange">
                                     <Trophy className="w-3.5 h-3.5" />
@@ -656,7 +668,7 @@ export default function TournamentHistoryDetailPage() {
                       </div>
                     </div>
                   ) : filteredMatches.length === 0 ? (
-                    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-gray-700">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white/70">
                       Keine Matchdaten gefunden.
                     </div>
                   ) : (
@@ -671,40 +683,40 @@ export default function TournamentHistoryDetailPage() {
                         return (
                           <div
                             key={m.match_id}
-                            className="rounded-[18px] border border-slate-200 bg-white p-3 sm:p-4 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.35)]"
+                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 sm:p-4 shadow-[0_18px_50px_-38px_rgba(0,0,0,.9)] backdrop-blur-xl"
                           >
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                                  <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-black text-gray-700">
+                                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-black text-white/70">
                                     Match {m.match_id}
                                   </span>
 
                                   {m.machine_number ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-black text-gray-700">
-                                      <Tv className="h-3.5 w-3.5 text-gray-600" />
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-black text-white/70">
+                                      <Tv className="h-3.5 w-3.5 text-white/58" />
                                       Board {m.machine_number}
                                     </span>
                                   ) : null}
 
                                   {finished ? (
-                                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-800">
+                                    <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-black text-emerald-300">
                                       Fertig
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-black text-gray-700">
+                                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-black text-white/70">
                                       Offen
                                     </span>
                                   )}
                                 </div>
 
-                                <div className="text-sm sm:text-base font-black text-gray-900 truncate">
-                                  {p1} <span className="text-gray-400 font-normal">vs</span> {p2}
+                                <div className="text-sm sm:text-base font-black text-white truncate">
+                                  {p1} <span className="text-white/35 font-normal">vs</span> {p2}
                                 </div>
                               </div>
 
                               <div className="flex items-center justify-between sm:justify-end gap-3">
-                                <div className="text-lg font-black tabular-nums text-gray-900">
+                                <div className="text-lg font-black tabular-nums text-white">
                                   {s1}:{s2}
                                 </div>
 
@@ -720,7 +732,7 @@ export default function TournamentHistoryDetailPage() {
                             </div>
 
                             {m.updated_at ? (
-                              <div className="mt-2 text-[11px] text-gray-500 flex items-center gap-2">
+                              <div className="mt-2 text-[11px] text-white/45 flex items-center gap-2">
                                 <Calendar className="h-3.5 w-3.5" />
                                 Letztes Update: <span className="font-semibold">{formatDateTime(m.updated_at)}</span>
                               </div>
@@ -737,7 +749,7 @@ export default function TournamentHistoryDetailPage() {
         </motion.div>
       </main>
 
-      <MobileBottomNav />
+      <div className="relative z-20"><MobileBottomNav /></div>
     </div>
   )
 }

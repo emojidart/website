@@ -7,6 +7,19 @@ import type { Team, TeamMember } from "@/components/vereinsverwaltung/types"
 
 type MessageType = "success" | "error" | "info"
 
+export type TeamAssignmentMode = "additional" | "transfer"
+
+export type TeamAssignmentHistoryEntry = {
+  id: string
+  team_id: string
+  team_name: string
+  dart_type: string | null
+  role: string | null
+  joined_at: string | null
+  left_at: string | null
+  created_at: string | null
+}
+
 export function useTeamMembers(user: User | null, onDataSaved: () => void) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
 
@@ -20,6 +33,9 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
 
   const [currentSelectedPlayerTeam, setCurrentSelectedPlayerTeam] = useState<Team | null>(null)
   const [currentSelectedPlayerRole, setCurrentSelectedPlayerRole] = useState<string | null>(null)
+
+  const [assignmentHistory, setAssignmentHistory] = useState<TeamAssignmentHistoryEntry[]>([])
+  const [assignmentHistoryLoading, setAssignmentHistoryLoading] = useState(false)
 
   const fetchTeamMembers = async () => {
     const { data, error } = await supabase
@@ -49,6 +65,70 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const fetchAssignmentHistory = async (playerId = selectedPlayerId) => {
+    if (!playerId) {
+      setAssignmentHistory([])
+      return
+    }
+
+    setAssignmentHistoryLoading(true)
+
+    try {
+      const { data: membershipRows, error: membershipError } = await supabase
+        .from("team_members")
+        .select("id, team_id, role, joined_at, left_at, created_at")
+        .eq("player_id", playerId)
+        .order("joined_at", { ascending: false, nullsFirst: false })
+
+      if (membershipError) throw membershipError
+
+      const teamIds = Array.from(
+        new Set((membershipRows || []).map((row: any) => row.team_id).filter(Boolean)),
+      )
+
+      let teamMap = new Map<string, { name: string; dart_type: string | null }>()
+
+      if (teamIds.length > 0) {
+        const { data: teamRows, error: teamError } = await supabase
+          .from("teams")
+          .select("id, name, dart_type")
+          .in("id", teamIds)
+
+        if (teamError) throw teamError
+
+        teamMap = new Map(
+          (teamRows || []).map((team: any) => [
+            team.id,
+            { name: team.name ?? "Unbekannte Mannschaft", dart_type: team.dart_type ?? null },
+          ]),
+        )
+      }
+
+      setAssignmentHistory(
+        (membershipRows || []).map((row: any) => ({
+          id: row.id,
+          team_id: row.team_id,
+          team_name: teamMap.get(row.team_id)?.name ?? "Unbekannte Mannschaft",
+          dart_type: teamMap.get(row.team_id)?.dart_type ?? null,
+          role: row.role ?? null,
+          joined_at: row.joined_at ?? row.created_at ?? null,
+          left_at: row.left_at ?? null,
+          created_at: row.created_at ?? null,
+        })),
+      )
+    } catch (error) {
+      console.error("Fehler beim Laden der Mannschaftshistorie:", error)
+      setAssignmentHistory([])
+    } finally {
+      setAssignmentHistoryLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void fetchAssignmentHistory(selectedPlayerId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlayerId])
+
   const syncSelectedPlayerMeta = (teams: Team[]) => {
     if (selectedPlayerId) {
       const playerCurrent = teamMembers.find((m) => m.player_id === selectedPlayerId)
@@ -72,9 +152,9 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
     }
   }
 
-  const assignPlayerToTeam = async () => {
+  const assignPlayerToTeam = async (mode: TeamAssignmentMode = "additional") => {
     setAssignmentLoading(true)
-    setAssignmentMessage("Operation wird ausgeführt...")
+    setAssignmentMessage(mode === "transfer" ? "Mannschaftswechsel wird gespeichert..." : "Zuordnung wird gespeichert...")
     setAssignmentMessageType("info")
 
     if (!user) {
@@ -83,6 +163,7 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
       setAssignmentLoading(false)
       return
     }
+
     if (!selectedPlayerId || !selectedTeamId) {
       setAssignmentMessage("Bitte Spieler und Mannschaft auswählen.")
       setAssignmentMessageType("error")
@@ -90,17 +171,75 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
       return
     }
 
+    const nowIso = new Date().toISOString()
+
     try {
-      const { data: existingAssignment, error: checkError } = await supabase
-        .from("team_members")
-        .select("id, role, left_at")
-        .eq("player_id", selectedPlayerId)
-        .eq("team_id", selectedTeamId)
+      const { data: targetTeam, error: targetTeamError } = await supabase
+        .from("teams")
+        .select("id, name, dart_type")
+        .eq("id", selectedTeamId)
         .single()
 
-      if (checkError && checkError.code !== "PGRST116") {
-        throw checkError
+      if (targetTeamError) throw targetTeamError
+      if (!targetTeam?.dart_type) throw new Error("Bei der Ziel-Mannschaft ist keine Dartart hinterlegt.")
+
+      const { data: activeAssignments, error: activeAssignmentsError } = await supabase
+        .from("team_members")
+        .select("id, team_id, role, joined_at, left_at")
+        .eq("player_id", selectedPlayerId)
+        .is("left_at", null)
+
+      if (activeAssignmentsError) throw activeAssignmentsError
+
+      const activeTeamIds = Array.from(
+        new Set((activeAssignments || []).map((row: any) => row.team_id).filter(Boolean)),
+      )
+
+      const teamIdsToLoad = Array.from(new Set([...activeTeamIds, selectedTeamId]))
+      const { data: relevantTeams, error: relevantTeamsError } = await supabase
+        .from("teams")
+        .select("id, name, dart_type")
+        .in("id", teamIdsToLoad)
+
+      if (relevantTeamsError) throw relevantTeamsError
+
+      const relevantTeamMap = new Map(
+        (relevantTeams || []).map((team: any) => [
+          team.id,
+          { name: team.name ?? "Unbekannte Mannschaft", dart_type: team.dart_type ?? null },
+        ]),
+      )
+
+      const sameDartTypeAssignments = (activeAssignments || []).filter((assignment: any) => {
+        if (assignment.team_id === selectedTeamId) return false
+        return relevantTeamMap.get(assignment.team_id)?.dart_type === targetTeam.dart_type
+      })
+
+      if (mode === "additional" && sameDartTypeAssignments.length > 0) {
+        const currentTeamNames = sameDartTypeAssignments
+          .map((assignment: any) => relevantTeamMap.get(assignment.team_id)?.name)
+          .filter(Boolean)
+          .join(", ")
+
+        throw new Error(
+          `Der Spieler ist in dieser Dartart bereits bei ${currentTeamNames || "einer anderen Mannschaft"} aktiv. Bitte „Mannschaft wechseln“ verwenden.`,
+        )
       }
+
+      const { data: existingAssignment, error: checkError } = await supabase
+        .from("team_members")
+        .select("id, role, left_at, joined_at")
+        .eq("player_id", selectedPlayerId)
+        .eq("team_id", selectedTeamId)
+        .maybeSingle()
+
+      if (checkError) throw checkError
+
+      let targetAction:
+        | { kind: "none" }
+        | { kind: "insert"; id: string }
+        | { kind: "reactivate"; id: string; previousLeftAt: string | null; previousRole: string | null; previousJoinedAt: string | null }
+        | { kind: "role"; id: string; previousRole: string | null } = { kind: "none" }
 
       if (existingAssignment) {
         if (existingAssignment.left_at) {
@@ -109,33 +248,20 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
             .update({
               left_at: null,
               role: selectedRole,
-              joined_at: new Date().toISOString(),
+              joined_at: nowIso,
             })
             .eq("id", existingAssignment.id)
 
           if (reactivateError) throw reactivateError
 
-          const { error: movementError } = await supabase.from("player_movements").insert([
-            {
-              player_id: selectedPlayerId,
-              team_id: selectedTeamId,
-              from_team_id: null,
-              movement_type: "reactivation",
-              user_id: user.id,
-            },
-          ])
-          if (movementError) console.error("Fehler beim Protokollieren der Reaktivierung:", movementError)
-
-          setAssignmentMessage("Spieler wurde wieder aktiviert und zugewiesen!")
-          setAssignmentMessageType("success")
-        } else {
-          if (existingAssignment.role === selectedRole) {
-            setAssignmentMessage("Dieser Spieler ist bereits in dieser Mannschaft mit dieser Rolle.")
-            setAssignmentMessageType("error")
-            setAssignmentLoading(false)
-            return
+          targetAction = {
+            kind: "reactivate",
+            id: existingAssignment.id,
+            previousLeftAt: existingAssignment.left_at,
+            previousRole: existingAssignment.role ?? null,
+            previousJoinedAt: existingAssignment.joined_at ?? null,
           }
-
+        } else if (existingAssignment.role !== selectedRole) {
           const { error: updateRoleError } = await supabase
             .from("team_members")
             .update({ role: selectedRole })
@@ -143,45 +269,127 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
 
           if (updateRoleError) throw updateRoleError
 
-          setAssignmentMessage("Spielerrolle erfolgreich aktualisiert!")
-          setAssignmentMessageType("success")
+          targetAction = {
+            kind: "role",
+            id: existingAssignment.id,
+            previousRole: existingAssignment.role ?? null,
+          }
+        } else if (mode === "additional") {
+          setAssignmentMessage("Dieser Spieler ist bereits in dieser Mannschaft mit dieser Rolle.")
+          setAssignmentMessageType("error")
+          setAssignmentLoading(false)
+          return
         }
+      } else {
+        const { data: insertedAssignment, error: insertError } = await supabase
+          .from("team_members")
+          .insert([
+            {
+              player_id: selectedPlayerId,
+              team_id: selectedTeamId,
+              role: selectedRole,
+            },
+          ])
+          .select("id")
+          .single()
 
-        setSelectedPlayerId("")
-        setSelectedTeamId("")
-        setSelectedRole("Player")
-        await fetchTeamMembers()
-        onDataSaved()
-        return
+        if (insertError) throw insertError
+        if (!insertedAssignment?.id) throw new Error("Die neue Mannschaftszuordnung konnte nicht bestätigt werden.")
+
+        targetAction = { kind: "insert", id: insertedAssignment.id }
       }
 
-      const { error: insertError } = await supabase.from("team_members").insert([
-        {
-          player_id: selectedPlayerId,
-          team_id: selectedTeamId,
-          role: selectedRole,
-        },
-      ])
-      if (insertError) throw insertError
+      if (mode === "transfer" && sameDartTypeAssignments.length > 0) {
+        const sourceIds = sameDartTypeAssignments.map((assignment: any) => assignment.id)
 
-      const { error: movementError } = await supabase.from("player_movements").insert([
-        {
+        const { error: closeSourceError } = await supabase
+          .from("team_members")
+          .update({ left_at: nowIso })
+          .in("id", sourceIds)
+          .is("left_at", null)
+
+        if (closeSourceError) {
+          if (targetAction.kind === "insert") {
+            await supabase.from("team_members").delete().eq("id", targetAction.id)
+          } else if (targetAction.kind === "reactivate") {
+            await supabase
+              .from("team_members")
+              .update({
+                left_at: targetAction.previousLeftAt,
+                role: targetAction.previousRole,
+                joined_at: targetAction.previousJoinedAt,
+              })
+              .eq("id", targetAction.id)
+          } else if (targetAction.kind === "role") {
+            await supabase
+              .from("team_members")
+              .update({ role: targetAction.previousRole })
+              .eq("id", targetAction.id)
+          }
+
+          throw closeSourceError
+        }
+
+        const movementRows = sameDartTypeAssignments.map((source: any) => ({
           player_id: selectedPlayerId,
           team_id: selectedTeamId,
-          from_team_id: null,
-          movement_type: "new_addition",
+          from_team_id: source.team_id,
+          movement_type: "team_transfer",
           user_id: user.id,
-        },
-      ])
-      if (movementError) console.error("Fehler beim Protokollieren der Spielerbewegung:", movementError)
+          movement_date: nowIso,
+        }))
 
-      setAssignmentMessage("Spieler erfolgreich zu weiterem Team hinzugefügt!")
-      setAssignmentMessageType("success")
+        const { error: movementError } = await supabase.from("player_movements").insert(movementRows)
+        if (movementError) console.error("Fehler beim Protokollieren des Mannschaftswechsels:", movementError)
 
-      setSelectedPlayerId("")
+        const sourceNames = sameDartTypeAssignments
+          .map((source: any) => relevantTeamMap.get(source.team_id)?.name)
+          .filter(Boolean)
+          .join(", ")
+
+        setAssignmentMessage(
+          `Mannschaftswechsel gespeichert: ${sourceNames || "bisherige Mannschaft"} → ${targetTeam.name}.`,
+        )
+        setAssignmentMessageType("success")
+      } else {
+        const movementType =
+          targetAction.kind === "reactivate"
+            ? "reactivation"
+            : targetAction.kind === "role"
+              ? "role_update"
+              : targetAction.kind === "none"
+                ? "team_addition"
+                : "new_addition"
+
+        if (targetAction.kind !== "none") {
+          const { error: movementError } = await supabase.from("player_movements").insert([
+            {
+              player_id: selectedPlayerId,
+              team_id: selectedTeamId,
+              from_team_id: null,
+              movement_type: movementType,
+              user_id: user.id,
+              movement_date: nowIso,
+            },
+          ])
+
+          if (movementError) console.error("Fehler beim Protokollieren der Spielerbewegung:", movementError)
+        }
+
+        setAssignmentMessage(
+          targetAction.kind === "role"
+            ? "Spielerrolle erfolgreich aktualisiert."
+            : targetAction.kind === "reactivate"
+              ? "Mannschaftszuordnung wurde wieder aktiviert."
+              : "Spieler erfolgreich zu zusätzlicher Mannschaft hinzugefügt.",
+        )
+        setAssignmentMessageType("success")
+      }
+
       setSelectedTeamId("")
       setSelectedRole("Player")
       await fetchTeamMembers()
+      await fetchAssignmentHistory(selectedPlayerId)
       onDataSaved()
     } catch (error: any) {
       console.error("Fehler bei der Mannschaftszuweisung:", error)
@@ -213,24 +421,48 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
   }
 
   const removeTeamMember = async (memberId: string) => {
-    // ✅ confirm entfernt, weil du ein eigenes Modal im UI verwendest
-
     setAssignmentLoading(true)
-    setAssignmentMessage("Mitglied wird entfernt...")
+    setAssignmentMessage("Mitglied wird aus der Mannschaft entfernt...")
     setAssignmentMessageType("info")
 
+    const nowIso = new Date().toISOString()
+
     try {
+      const { data: membership, error: membershipError } = await supabase
+        .from("team_members")
+        .select("id, player_id, team_id")
+        .eq("id", memberId)
+        .single()
+
+      if (membershipError) throw membershipError
+
       const { error } = await supabase
         .from("team_members")
-        .update({ left_at: new Date().toISOString() })
+        .update({ left_at: nowIso })
         .eq("id", memberId)
         .is("left_at", null)
 
       if (error) throw error
 
-      setAssignmentMessage("Mitglied erfolgreich entfernt!")
+      if (membership?.player_id && membership?.team_id && user?.id) {
+        const { error: movementError } = await supabase.from("player_movements").insert([
+          {
+            player_id: membership.player_id,
+            team_id: membership.team_id,
+            from_team_id: membership.team_id,
+            movement_type: "team_removed",
+            user_id: user.id,
+            movement_date: nowIso,
+          },
+        ])
+
+        if (movementError) console.error("Fehler beim Protokollieren der Entfernung:", movementError)
+      }
+
+      setAssignmentMessage("Mannschaftszuordnung wurde beendet und in der Historie gespeichert.")
       setAssignmentMessageType("success")
       await fetchTeamMembers()
+      if (membership?.player_id) await fetchAssignmentHistory(membership.player_id)
       onDataSaved()
     } catch (error: any) {
       setAssignmentMessage(`Fehler beim Entfernen des Mitglieds: ${error.message}`)
@@ -260,6 +492,10 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
     currentSelectedPlayerTeam,
     currentSelectedPlayerRole,
     syncSelectedPlayerMeta,
+
+    assignmentHistory,
+    assignmentHistoryLoading,
+    fetchAssignmentHistory,
 
     assignPlayerToTeam,
     removeTeamMember,

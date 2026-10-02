@@ -69,11 +69,11 @@ type Conversation = {
 }
 
 const offerStatus: Record<OfferStatus, { label: string; className: string }> = {
-  pending: { label: "Offen", className: "bg-amber-100 text-amber-800" },
-  accepted: { label: "Angenommen", className: "bg-green-100 text-green-800" },
-  rejected: { label: "Abgelehnt", className: "bg-red-100 text-red-800" },
-  countered: { label: "Gegenangebot", className: "bg-blue-100 text-blue-800" },
-  withdrawn: { label: "Zurückgezogen", className: "bg-slate-200 text-slate-700" },
+  pending: { label: "Offen", className: "border border-amber-300/20 bg-amber-500/[0.08]0/10 text-amber-200" },
+  accepted: { label: "Angenommen", className: "border border-emerald-300/20 bg-emerald-500/10 text-emerald-200" },
+  rejected: { label: "Abgelehnt", className: "border border-rose-300/20 bg-rose-500/10 text-rose-200" },
+  countered: { label: "Gegenangebot", className: "border border-sky-300/20 bg-sky-500/10 text-sky-200" },
+  withdrawn: { label: "Zurückgezogen", className: "border border-white/[0.08] bg-white/[0.05] text-white/50" },
 }
 
 function money(value: number | null | undefined) {
@@ -308,18 +308,26 @@ export default function UnterhaltungPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] pb-24">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white">
       <Header />
-      <main className="mx-auto max-w-3xl px-4 pt-20">
-        <Button asChild variant="outline" className="mb-4 rounded-xl">
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.95)_48%,rgba(2,4,7,.99))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.10),transparent_26%)]" />
+      </div>
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pt-20 sm:px-5 lg:px-7 xl:px-8">
+        <Button asChild variant="outline" className="mb-4 h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white/65 hover:bg-white/[0.06]/[0.09] hover:text-white">
           <Link href="/dartboerse/nachrichten">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Nachrichten
           </Link>
         </Button>
 
-        <div className="overflow-hidden rounded-[28px] border border border-slate-200 bg-white shadow-none">
-          <div className="border-b bg-slate-950 p-5 text-white">
+        <div className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/94 shadow-[0_28px_90px_-55px_rgba(0,0,0,.98)] backdrop-blur-xl">
+          <div className="border-b border-white/[0.08] bg-black/25 p-5 text-white">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="text-xs font-black uppercase text-orange-300">
@@ -328,7 +336,7 @@ export default function UnterhaltungPage() {
                 <h1 className="mt-1 truncate text-xl font-black">
                   {conversation?.listing?.title || "Dartbörse"}
                 </h1>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/42">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 font-bold text-white">
                     <UserRound className="h-3.5 w-3.5" />
                     Unterhaltung mit {counterpartName || "Nutzer"}
@@ -338,7 +346,7 @@ export default function UnterhaltungPage() {
                     <span>· Inserat: {money(conversation.listing.price)}</span>
                   ) : null}
                   {conversation?.listing?.status === "reserved" ? (
-                    <span className="rounded-full bg-amber-500 px-2 py-1 font-black text-white">
+                    <span className="rounded-full bg-amber-500/[0.08]0 px-2 py-1 font-black text-white">
                       RESERVIERT
                     </span>
                   ) : null}
@@ -349,7 +357,7 @@ export default function UnterhaltungPage() {
                 <Button
                   type="button"
                   onClick={() => openOffer()}
-                  className="shrink-0 rounded-xl bg-orange-500 hover:bg-orange-600"
+                  className="shrink-0 rounded-xl bg-orange-500/[0.08]0 hover:bg-orange-600"
                 >
                   <HandCoins className="mr-2 h-4 w-4" />
                   Preis anbieten
@@ -360,13 +368,13 @@ export default function UnterhaltungPage() {
 
           {loading ? (
             <div className="flex justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-orange-300" />
             </div>
           ) : (
             <>
-              <div className="h-[55vh] space-y-3 overflow-y-auto bg-[#f5f6f8] p-4 sm:p-6">
+              <div className="h-[55vh] space-y-3 overflow-y-auto bg-[#07090c] p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:p-6">
                 {feed.length === 0 ? (
-                  <div className="py-16 text-center text-sm text-slate-500">
+                  <div className="py-16 text-center text-sm text-white/38">
                     Schreibe eine Nachricht oder gib direkt ein Preisangebot ab.
                   </div>
                 ) : null}
@@ -380,19 +388,19 @@ export default function UnterhaltungPage() {
                         <div
                           className={`max-w-[85%] rounded-[18px] px-4 py-3 text-sm shadow-sm ${
                             own
-                              ? "rounded-br-md bg-orange-500 text-white"
-                              : "rounded-bl-md border bg-white text-slate-800"
+                              ? "rounded-br-md bg-orange-500/[0.08]0 text-white"
+                              : "rounded-bl-md border bg-white text-white/75"
                           }`}
                         >
                           <div
                             className={`mb-1 text-[11px] font-black ${
-                              own ? "text-orange-100" : "text-slate-500"
+                              own ? "text-orange-100" : "text-white/38"
                             }`}
                           >
                             {own ? "Du" : counterpartName || "Nutzer"}
                           </div>
                           <p className="whitespace-pre-wrap break-words">{message.message}</p>
-                          <div className={`mt-1 text-[10px] ${own ? "text-orange-100" : "text-slate-400"}`}>
+                          <div className={`mt-1 text-[10px] ${own ? "text-orange-100" : "text-white/28"}`}>
                             {new Date(message.created_at).toLocaleString("de-AT")}
                           </div>
                         </div>
@@ -408,9 +416,9 @@ export default function UnterhaltungPage() {
 
                   return (
                     <div key={`o-${offer.id}`} className={`flex ${own ? "justify-end" : "justify-start"}`}>
-                      <div className="w-full max-w-md overflow-hidden rounded-[18px] border border-orange-200 border border-slate-200 bg-white shadow-none">
-                        <div className="flex items-center justify-between gap-3 bg-orange-50 px-4 py-3">
-                          <div className="flex items-center gap-2 font-black text-orange-900">
+                      <div className="w-full max-w-md overflow-hidden rounded-[18px] border border-orange-300/15 bg-[#10141b] shadow-none">
+                        <div className="flex items-center justify-between gap-3 border-b border-orange-300/10 bg-orange-500/[0.08]0/[0.08] px-4 py-3">
+                          <div className="flex items-center gap-2 font-black text-orange-100">
                             <BadgeEuro className="h-5 w-5" />
                             {offer.parent_offer_id ? "Gegenangebot" : "Preisangebot"}
                           </div>
@@ -420,13 +428,13 @@ export default function UnterhaltungPage() {
                         </div>
 
                         <div className="p-4">
-                          <div className="text-xs font-bold uppercase text-slate-500">
+                          <div className="text-xs font-bold uppercase text-white/38">
                             {own
                               ? `${ownName} bietet`
                               : `${counterpartName || "Nutzer"} bietet dir`}
                           </div>
-                          <div className="mt-1 text-3xl font-black text-slate-950">{money(Number(offer.amount))}</div>
-                          <div className="mt-2 text-xs text-slate-400">
+                          <div className="mt-1 text-3xl font-black text-white">{money(Number(offer.amount))}</div>
+                          <div className="mt-2 text-xs text-white/28">
                             {new Date(offer.created_at).toLocaleString("de-AT")}
                           </div>
 
@@ -436,7 +444,7 @@ export default function UnterhaltungPage() {
                                 size="sm"
                                 disabled={busyOfferId === offer.id}
                                 onClick={() => void respondToOffer(offer, "accept")}
-                                className="rounded-xl bg-green-600 hover:bg-green-700"
+                                className="rounded-xl border border-emerald-300/20 bg-emerald-500 font-black text-white hover:bg-emerald-400"
                               >
                                 <Check className="mr-1 h-4 w-4" />
                                 Annehmen
@@ -456,7 +464,7 @@ export default function UnterhaltungPage() {
                                 variant="outline"
                                 disabled={busyOfferId === offer.id}
                                 onClick={() => void respondToOffer(offer, "reject")}
-                                className="rounded-xl border-red-200 text-red-700"
+                                className="rounded-xl border-rose-300/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15"
                               >
                                 <X className="mr-1 h-4 w-4" />
                                 Ablehnen
@@ -470,7 +478,7 @@ export default function UnterhaltungPage() {
                               variant="ghost"
                               disabled={busyOfferId === offer.id}
                               onClick={() => void respondToOffer(offer, "withdraw")}
-                              className="mt-3 rounded-xl text-red-600"
+                              className="mt-3 rounded-xl text-rose-300 hover:bg-rose-500/10"
                             >
                               Angebot zurückziehen
                             </Button>
@@ -483,22 +491,22 @@ export default function UnterhaltungPage() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="border-t p-4">
+              <div className="border-t border-white/[0.08] bg-[#0b0f15] p-4">
                 {offerOpen ? (
-                  <div className="mb-4 rounded-[18px] border border-orange-200 bg-orange-50 p-4">
+                  <div className="mb-4 rounded-[18px] border border-orange-300/20 bg-orange-500/[0.08]0/[0.08] p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <div className="font-black text-slate-900">
+                        <div className="font-black text-white">
                           {counterFor ? "Gegenangebot senden" : "Preis anbieten"}
                         </div>
-                        <p className="mt-1 text-xs text-slate-600">
+                        <p className="mt-1 text-xs text-white/50">
                           Nach der Annahme wird das Inserat automatisch reserviert.
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setOfferOpen(false)}
-                        className="rounded-full p-2 hover:bg-white"
+                        className="rounded-full p-2 hover:bg-white/[0.06]"
                         aria-label="Preisangebot schließen"
                       >
                         <X className="h-4 w-4" />
@@ -506,20 +514,20 @@ export default function UnterhaltungPage() {
                     </div>
                     <div className="mt-3 flex gap-2">
                       <div className="relative flex-1">
-                        <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/28" />
                         <Input
                           value={offerAmount}
                           onChange={(e) => setOfferAmount(e.target.value)}
                           inputMode="decimal"
                           placeholder="z. B. 45,00"
-                          className="h-11 rounded-xl bg-white pl-9"
+                          className="h-11 rounded-xl border-[#2a323d] bg-[#0d1117] pl-9 text-white placeholder:text-white/22"
                         />
                       </div>
                       <Button
                         type="button"
                         onClick={() => void submitOffer()}
                         disabled={savingOffer || !offerAmount.trim()}
-                        className="rounded-xl bg-orange-500 hover:bg-orange-600"
+                        className="rounded-xl border border-orange-300/20 bg-orange-500/[0.08]0 font-black text-white hover:bg-orange-400"
                       >
                         {savingOffer ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <HandCoins className="mr-2 h-4 w-4" />}
                         Senden
@@ -533,7 +541,7 @@ export default function UnterhaltungPage() {
                   onChange={(e) => setText(e.target.value)}
                   maxLength={2000}
                   placeholder="Nachricht schreiben …"
-                  className="min-h-[90px] rounded-[18px]"
+                  className="min-h-[90px] rounded-[18px] border-[#2a323d] bg-[#0d1117] text-white placeholder:text-white/22 focus:border-orange-400/40 focus:ring-2 focus:ring-orange-400/10"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()
@@ -542,7 +550,7 @@ export default function UnterhaltungPage() {
                   }}
                 />
 
-                {error ? <p className="mt-2 text-sm font-bold text-red-600">{error}</p> : null}
+                {error ? <p className="mt-2 text-sm font-bold text-rose-300">{error}</p> : null}
 
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <Button
@@ -557,11 +565,11 @@ export default function UnterhaltungPage() {
                   </Button>
 
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-slate-400">{text.length}/2000</span>
+                    <span className="text-xs text-white/28">{text.length}/2000</span>
                     <Button
                       onClick={() => void send()}
                       disabled={sending || !text.trim()}
-                      className="rounded-xl bg-orange-500 hover:bg-orange-600"
+                      className="rounded-xl border border-orange-300/20 bg-orange-500/[0.08]0 font-black text-white hover:bg-orange-400"
                     >
                       {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                       Senden

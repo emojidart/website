@@ -56,41 +56,42 @@ select {
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --emd-content-max: 1680px;
+  --background: oklch(0.055 0.012 255);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.075 0.012 255);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.07 0.012 255);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.705 0.213 47.6);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.16 0.012 255);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.14 0.01 255);
+  --muted-foreground: oklch(0.72 0 0);
+  --accent: oklch(0.18 0.012 255);
+  --accent-foreground: oklch(0.985 0 0);
 
   /* 🔴 DESTRUCTIVE FIX */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
 
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.72 0.16 55);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar: oklch(0.07 0.012 255);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.705 0.213 47.6);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-accent: oklch(0.16 0.012 255);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.708 0 0);
 }
 
@@ -434,4 +435,699 @@ select {
   .page-shell {
     max-width: 90rem; /* 1440px */
   }
+}
+
+
+/* =========================================================
+   EMD APP – PREMIUM TERMINAL INSPIRED THEME
+   Scope: .emd-app-theme-shell
+   Das bestehende /terminal wird durch AppThemeShell ausgenommen.
+   ========================================================= */
+
+.emd-app-theme-shell {
+  min-height: 100dvh;
+  position: relative;
+  isolation: isolate;
+  color: rgba(255,255,255,.94);
+  background-color: #050608;
+  background-image:
+    linear-gradient(180deg, rgba(2,4,8,.73), rgba(3,5,9,.90)),
+    radial-gradient(circle at 13% 15%, rgba(249,115,22,.18), transparent 29%),
+    radial-gradient(circle at 88% 30%, rgba(14,165,233,.15), transparent 29%),
+    url('/terminal/hero-startscreen.png');
+  background-size: cover, cover, cover, cover;
+  background-position: center, center, center, 66% 50%;
+  background-attachment: fixed;
+}
+
+.emd-app-theme-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(2,4,8,.10), transparent 35%, rgba(2,4,8,.15)),
+    radial-gradient(circle at 15% 86%, rgba(249,115,22,.09), transparent 24%),
+    radial-gradient(circle at 80% 16%, rgba(34,211,238,.07), transparent 22%);
+}
+
+/* Verhindert, dass alte weiße Seitenwurzeln den Hintergrund überdecken. */
+.emd-app-theme-shell > :is(div,main) {
+  background-color: transparent !important;
+}
+
+/* Header / Bottom Navigation */
+.emd-app-theme-shell header,
+.emd-app-theme-shell nav {
+  background: rgba(5,8,13,.88) !important;
+  border-color: rgba(255,255,255,.09) !important;
+  color: rgba(255,255,255,.94) !important;
+  backdrop-filter: blur(22px) saturate(1.15);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  box-shadow: 0 14px 45px -32px rgba(0,0,0,.95);
+}
+
+/* Grundkarten / Panels */
+.emd-app-theme-shell .bg-white {
+  background-color: rgba(7,12,20,.86) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.emd-app-theme-shell :is(.bg-slate-50,.bg-gray-50,.bg-slate-50\/70,.bg-gray-50\/70) {
+  background-color: rgba(255,255,255,.045) !important;
+}
+
+.emd-app-theme-shell :is(.bg-orange-50,.bg-orange-100) {
+  background-color: rgba(249,115,22,.095) !important;
+}
+
+.emd-app-theme-shell :is(.bg-amber-50,.bg-amber-100) {
+  background-color: rgba(245,158,11,.09) !important;
+}
+
+.emd-app-theme-shell :is(.bg-sky-50,.bg-cyan-50,.bg-blue-50) {
+  background-color: rgba(14,165,233,.09) !important;
+}
+
+.emd-app-theme-shell :is(.bg-emerald-50,.bg-green-50) {
+  background-color: rgba(16,185,129,.09) !important;
+}
+
+.emd-app-theme-shell :is(.bg-rose-50,.bg-red-50) {
+  background-color: rgba(244,63,94,.085) !important;
+}
+
+/* Textkontrast */
+.emd-app-theme-shell :is(
+  .text-slate-950,.text-slate-900,.text-slate-800,
+  .text-gray-950,.text-gray-900,.text-gray-800
+) {
+  color: rgba(255,255,255,.95) !important;
+}
+
+.emd-app-theme-shell :is(
+  .text-slate-700,.text-slate-600,
+  .text-gray-700,.text-gray-600
+) {
+  color: rgba(255,255,255,.69) !important;
+}
+
+.emd-app-theme-shell :is(
+  .text-slate-500,.text-slate-400,
+  .text-gray-500,.text-gray-400
+) {
+  color: rgba(255,255,255,.48) !important;
+}
+
+.emd-app-theme-shell :is(.text-orange-700,.text-orange-800,.text-orange-900) {
+  color: rgb(253 186 116) !important;
+}
+
+.emd-app-theme-shell .text-orange-600 {
+  color: rgb(251 146 60) !important;
+}
+
+.emd-app-theme-shell :is(.text-sky-700,.text-sky-800,.text-blue-800) {
+  color: rgb(125 211 252) !important;
+}
+
+.emd-app-theme-shell :is(.text-emerald-700,.text-emerald-800,.text-green-800) {
+  color: rgb(110 231 183) !important;
+}
+
+.emd-app-theme-shell :is(.text-amber-700,.text-amber-800,.text-amber-900) {
+  color: rgb(253 230 138) !important;
+}
+
+.emd-app-theme-shell :is(.text-rose-700,.text-rose-800,.text-red-700,.text-red-800) {
+  color: rgb(253 164 175) !important;
+}
+
+/* Borders / Rings */
+.emd-app-theme-shell :is(
+  .border-slate-100,.border-slate-200,.border-slate-300,
+  .border-gray-100,.border-gray-200,.border-gray-300
+) {
+  border-color: rgba(255,255,255,.10) !important;
+}
+
+.emd-app-theme-shell :is(.ring-slate-100,.ring-gray-200) {
+  --tw-ring-color: rgba(255,255,255,.10) !important;
+}
+
+.emd-app-theme-shell :is(.border-orange-200,.border-orange-300) {
+  border-color: rgba(251,146,60,.26) !important;
+}
+
+.emd-app-theme-shell :is(.border-amber-200,.border-amber-300) {
+  border-color: rgba(251,191,36,.24) !important;
+}
+
+.emd-app-theme-shell :is(.border-sky-200,.border-cyan-200,.border-blue-100) {
+  border-color: rgba(56,189,248,.24) !important;
+}
+
+.emd-app-theme-shell :is(.border-emerald-200,.border-green-200) {
+  border-color: rgba(52,211,153,.24) !important;
+}
+
+.emd-app-theme-shell :is(.border-rose-200,.border-red-200) {
+  border-color: rgba(251,113,133,.24) !important;
+}
+
+/* Cards bekommen einheitliche Tiefe, ohne Layout oder Logik zu ändern. */
+.emd-app-theme-shell :is(
+  [class*="rounded-2xl"][class*="border"],
+  [class*="rounded-3xl"][class*="border"],
+  [class*="rounded-[24px]"][class*="border"],
+  [class*="rounded-[26px]"][class*="border"],
+  [class*="rounded-[30px]"][class*="border"]
+) {
+  box-shadow: 0 22px 64px -46px rgba(0,0,0,.95);
+}
+
+/* Inputs */
+.emd-app-theme-shell :is(input,textarea,select) {
+  background: rgba(7,12,20,.88) !important;
+  color: rgba(255,255,255,.94) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+.emd-app-theme-shell :is(input,textarea)::placeholder {
+  color: rgba(255,255,255,.35) !important;
+}
+
+/* Buttons – optisch sauber, Funktionen bleiben unverändert. */
+.emd-app-theme-shell :is(button,a,[role="button"]) {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform .17s cubic-bezier(.16,1,.3,1),
+    filter .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease,
+    background-color .18s ease;
+}
+
+.emd-app-theme-shell :is(button,a,[role="button"]):active {
+  transform: scale(.972);
+  filter: brightness(1.13) saturate(1.08);
+}
+
+@media (hover:hover) {
+  .emd-app-theme-shell :is(button,a,[role="button"]):hover {
+    filter: brightness(1.06);
+  }
+}
+
+/* Exakte Touch-Animation am Finger/Mauszeiger */
+.emd-app-touch-fx {
+  position: fixed !important;
+  z-index: 2147483000 !important;
+  width: 0;
+  height: 0;
+  pointer-events: none !important;
+}
+
+.emd-app-touch-fx__outer,
+.emd-app-touch-fx__inner,
+.emd-app-touch-fx__dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.emd-app-touch-fx__outer {
+  width: 52px;
+  height: 52px;
+  border: 2px solid rgba(253,186,116,.95);
+  background: rgba(249,115,22,.14);
+  box-shadow: 0 0 32px rgba(249,115,22,.72);
+  animation: emdAppTouchOuter .44s ease-out forwards;
+}
+
+.emd-app-touch-fx__inner {
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(207,250,254,.90);
+  background: rgba(255,255,255,.13);
+  box-shadow: 0 0 22px rgba(34,211,238,.58);
+  animation: emdAppTouchInner .40s ease-out forwards;
+}
+
+.emd-app-touch-fx__dot {
+  width: 8px;
+  height: 8px;
+  background: white;
+  box-shadow: 0 0 18px rgba(255,255,255,.98);
+  animation: emdAppTouchDot .34s ease-out forwards;
+}
+
+@keyframes emdAppTouchOuter {
+  0% { opacity: 1; transform: translate(-50%,-50%) scale(.16); }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(2.25); }
+}
+
+@keyframes emdAppTouchInner {
+  0% { opacity: 1; transform: translate(-50%,-50%) scale(.28); }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(2.05); }
+}
+
+@keyframes emdAppTouchDot {
+  0% { opacity: 1; transform: translate(-50%,-50%) scale(.7); }
+  50% { opacity: 1; transform: translate(-50%,-50%) scale(1.45); }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(2); }
+}
+
+/* Footer */
+.emd-app-theme-shell footer {
+  background: rgba(5,8,13,.88) !important;
+  border-color: rgba(255,255,255,.09) !important;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+/* Native App: etwas weniger Hintergrundbewegung/Last */
+html.is-native .emd-app-theme-shell {
+  background-attachment: scroll;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emd-app-touch-fx__outer,
+  .emd-app-touch-fx__inner,
+  .emd-app-touch-fx__dot {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+
+/* =========================================================
+   EMD HOME – TERMINAL INSPIRED PREMIUM STARTSEITE
+   Nur Design. Keine Funktionslogik.
+   ========================================================= */
+
+.emd-home-page {
+  position: relative;
+  min-height: 100dvh;
+  padding-bottom: 110px;
+}
+
+.emd-home-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(1,3,6,.18), rgba(1,3,6,.56)),
+    radial-gradient(circle at 12% 24%, rgba(249,115,22,.08), transparent 28%),
+    radial-gradient(circle at 88% 68%, rgba(14,165,233,.06), transparent 30%);
+}
+
+.emd-home-page > section,
+.emd-home-page > div {
+  position: relative;
+}
+
+/* Hero */
+.emd-home-hero {
+  isolation: isolate;
+  transform: translateZ(0);
+}
+
+.emd-home-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 8% -1px 8%;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(251,146,60,.55), rgba(125,211,252,.24), transparent);
+}
+
+.emd-home-primary-action,
+.emd-home-secondary-action,
+.emd-home-stat-card {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 45px -34px rgba(0,0,0,.9);
+}
+
+.emd-home-primary-action::after,
+.emd-home-secondary-action::after {
+  content: "";
+  position: absolute;
+  top: -120%;
+  left: -45%;
+  width: 32%;
+  height: 340%;
+  pointer-events: none;
+  transform: rotate(20deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent);
+  transition: left .55s cubic-bezier(.16,1,.3,1);
+}
+
+@media (hover:hover) {
+  .emd-home-primary-action:hover,
+  .emd-home-secondary-action:hover {
+    transform: translateY(-2px) scale(1.01);
+    border-color: rgba(253,186,116,.28);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 20px 52px -30px rgba(249,115,22,.32);
+  }
+
+  .emd-home-primary-action:hover::after,
+  .emd-home-secondary-action:hover::after {
+    left: 120%;
+  }
+
+  .emd-home-stat-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(253,186,116,.22);
+    background-color: rgba(10,14,21,.50) !important;
+  }
+}
+
+.emd-home-primary-action:active,
+.emd-home-secondary-action:active {
+  transform: translateY(1px) scale(.965) !important;
+  box-shadow: inset 0 2px 12px rgba(0,0,0,.26), 0 0 0 4px rgba(249,115,22,.08) !important;
+}
+
+/* Alle alten hellen Startseiten-Karten in das gleiche Premium-System ziehen. */
+.emd-home-page :is(.bg-white,.bg-slate-50,.bg-gray-50) {
+  border-color: rgba(255,255,255,.09) !important;
+}
+
+.emd-home-page .bg-white {
+  background: linear-gradient(145deg, rgba(8,12,19,.88), rgba(5,9,15,.80)) !important;
+  backdrop-filter: blur(20px) saturate(1.08);
+  -webkit-backdrop-filter: blur(20px) saturate(1.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025), 0 24px 70px -52px rgba(0,0,0,.98) !important;
+}
+
+.emd-home-page :is(.bg-slate-50,.bg-gray-50,.bg-slate-50\/70,.bg-slate-50\/80) {
+  background-color: rgba(255,255,255,.035) !important;
+}
+
+.emd-home-page :is(.bg-orange-50,.bg-orange-100) {
+  background-color: rgba(249,115,22,.08) !important;
+}
+
+.emd-home-page :is(.bg-amber-50,.bg-amber-100) {
+  background-color: rgba(245,158,11,.075) !important;
+}
+
+.emd-home-page :is(.bg-emerald-50,.bg-green-50) {
+  background-color: rgba(16,185,129,.07) !important;
+}
+
+.emd-home-page :is(.bg-rose-50,.bg-red-50) {
+  background-color: rgba(244,63,94,.07) !important;
+}
+
+/* Kartentitel / Fließtext */
+.emd-home-page :is(.text-gray-950,.text-gray-900,.text-gray-800,.text-slate-950,.text-slate-900,.text-slate-800) {
+  color: rgba(255,255,255,.94) !important;
+}
+
+.emd-home-page :is(.text-gray-700,.text-gray-600,.text-slate-700,.text-slate-600) {
+  color: rgba(255,255,255,.64) !important;
+}
+
+.emd-home-page :is(.text-gray-500,.text-gray-400,.text-slate-500,.text-slate-400) {
+  color: rgba(255,255,255,.43) !important;
+}
+
+.emd-home-page :is(.border-gray-100,.border-gray-200,.border-gray-300,.border-slate-100,.border-slate-200,.border-slate-300) {
+  border-color: rgba(255,255,255,.09) !important;
+}
+
+/* Abschnitts-Karten etwas kräftiger abheben */
+.emd-home-page :is(.rounded-2xl,.rounded-3xl,.rounded-\[22px\],.rounded-\[26px\]) {
+  --emd-card-highlight: rgba(255,255,255,.03);
+}
+
+/* Buttons/Kacheln: Animation bleibt exakt am interaktiven Element. */
+.emd-home-page :is(button,a,[role="button"]):not([data-no-app-touch-fx]) {
+  transform-origin: center;
+  will-change: transform, filter;
+}
+
+.emd-home-page :is(button,a,[role="button"]):not([data-no-app-touch-fx]):active {
+  transform: scale(.965) !important;
+  filter: brightness(1.12) saturate(1.06);
+}
+
+/* Mobile: Hero bleibt groß, aber nicht erschlagend. */
+@media (max-width: 639px) {
+  .emd-home-page {
+    padding-bottom: 96px;
+  }
+
+  .emd-home-hero {
+    border-radius: 26px;
+  }
+
+  .emd-home-stat-card {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emd-home-primary-action::after,
+  .emd-home-secondary-action::after {
+    display: none;
+  }
+}
+
+
+/* =========================================================
+   MOBILE POLISH – Tap-Effekt + horizontale Bereiche
+   ========================================================= */
+
+/* Horizontale Kartenreihen sollen auf Mobile sauber wischen, ohne weißen Scrollbalken. */
+.emd-home-page .overflow-x-auto {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.emd-home-page .overflow-x-auto::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Überschriften der unteren Startseitenbereiche klar vom Hintergrund abheben. */
+.emd-home-page section > .flex.items-center.justify-between.mb-3 {
+  position: relative;
+  z-index: 2;
+  padding: 0 2px;
+  background: transparent !important;
+}
+
+.emd-home-page section > .flex.items-center.justify-between.mb-3 h2 {
+  color: rgba(255,255,255,.98) !important;
+  text-shadow: 0 1px 16px rgba(0,0,0,.72);
+}
+
+.emd-home-page section > .flex.items-center.justify-between.mb-3 p {
+  color: rgba(255,255,255,.58) !important;
+}
+
+/* Helle halbtransparente Alt-Badges dürfen nicht als weiße Balken wirken. */
+.emd-home-page .bg-white\/90 {
+  background: rgba(8,12,19,.86) !important;
+  color: rgba(255,255,255,.92) !important;
+  border-color: rgba(255,255,255,.11) !important;
+}
+
+@media (max-width: 767px) {
+  /* Mobile bewusst klein und dezent. */
+  .emd-app-touch-fx__outer {
+    width: 34px;
+    height: 34px;
+    border-width: 1px;
+    box-shadow: 0 0 18px rgba(249,115,22,.46);
+  }
+
+  .emd-app-touch-fx__inner {
+    width: 18px;
+    height: 18px;
+    box-shadow: 0 0 12px rgba(34,211,238,.38);
+  }
+
+  .emd-app-touch-fx__dot {
+    width: 6px;
+    height: 6px;
+    box-shadow: 0 0 9px rgba(255,255,255,.82);
+  }
+
+  @keyframes emdAppTouchOuter {
+    0% { opacity: .9; transform: translate(-50%,-50%) scale(.35); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1.75); }
+  }
+
+  @keyframes emdAppTouchInner {
+    0% { opacity: .9; transform: translate(-50%,-50%) scale(.45); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1.65); }
+  }
+}
+
+/* =========================================================
+   EMD APP – GLOBAL BUTTON TEXT CONTRAST FIX
+   Verhindert unsichtbare Beschriftungen auf dunklen App-Seiten.
+   Betrifft nur das AppThemeShell, nicht /terminal.
+   ========================================================= */
+
+.emd-app-theme-shell button[class*="bg-white"],
+.emd-app-theme-shell a[class*="bg-white"],
+.emd-app-theme-shell [role="button"][class*="bg-white"],
+.emd-app-theme-shell button[class*="bg-transparent"],
+.emd-app-theme-shell a[class*="bg-transparent"],
+.emd-app-theme-shell [role="button"][class*="bg-transparent"] {
+  color: rgba(255,255,255,.82) !important;
+}
+
+@media (hover:hover) {
+  .emd-app-theme-shell button[class*="bg-white"]:hover,
+  .emd-app-theme-shell a[class*="bg-white"]:hover,
+  .emd-app-theme-shell [role="button"][class*="bg-white"]:hover,
+  .emd-app-theme-shell button[class*="bg-transparent"]:hover,
+  .emd-app-theme-shell a[class*="bg-transparent"]:hover,
+  .emd-app-theme-shell [role="button"][class*="bg-transparent"]:hover {
+    color: #fff !important;
+  }
+}
+
+/* Auch fokussiert/keyboard-bedient immer gut lesbar. */
+.emd-app-theme-shell button[class*="bg-white"]:focus-visible,
+.emd-app-theme-shell a[class*="bg-white"]:focus-visible,
+.emd-app-theme-shell [role="button"][class*="bg-white"]:focus-visible,
+.emd-app-theme-shell button[class*="bg-transparent"]:focus-visible,
+.emd-app-theme-shell a[class*="bg-transparent"]:focus-visible,
+.emd-app-theme-shell [role="button"][class*="bg-transparent"]:focus-visible {
+  color: #fff !important;
+}
+
+/* Typische dunkle Outline-/Ghost-Buttons ohne explizite bg-Klasse absichern. */
+.emd-app-theme-shell button[class*="border-white"][class*="text-white"],
+.emd-app-theme-shell a[class*="border-white"][class*="text-white"],
+.emd-app-theme-shell [role="button"][class*="border-white"][class*="text-white"] {
+  color: rgba(255,255,255,.86) !important;
+}
+
+@media (hover:hover) {
+  .emd-app-theme-shell button[class*="border-white"][class*="text-white"]:hover,
+  .emd-app-theme-shell a[class*="border-white"][class*="text-white"]:hover,
+  .emd-app-theme-shell [role="button"][class*="border-white"][class*="text-white"]:hover {
+    color: #fff !important;
+  }
+}
+
+
+/* =========================================================
+   EMD GLOBAL PORTAL / SHADCN DARK TOKEN FIX
+   Dialoge, Selects, Popovers etc. liegen oft direkt unter body
+   und damit außerhalb von .emd-app-theme-shell.
+   ========================================================= */
+html,
+body,
+.app-root {
+  background-color: #050608 !important;
+  color: rgba(255,255,255,.94);
+}
+
+/* Portaled Shadcn/Radix surfaces */
+body :is(
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"],
+  [data-radix-popper-content-wrapper]
+) {
+  color: rgba(255,255,255,.94);
+}
+
+/* Outline / ghost / secondary controls in portals:
+   never fall back to dark accent-foreground text. */
+body :is(
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"]
+) :is(button,a,[role="button"]) {
+  --accent-foreground: oklch(0.985 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+}
+
+/* Explicitly keep common light/transparent action buttons readable. */
+body :is(
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="popover-content"]
+) :is(button,a,[role="button"])[class*="bg-white"],
+body :is(
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="popover-content"]
+) :is(button,a,[role="button"])[class*="bg-transparent"] {
+  color: rgba(255,255,255,.88) !important;
+}
+
+@media (hover:hover) {
+  body :is(
+    [data-slot="dialog-content"],
+    [data-slot="alert-dialog-content"],
+    [data-slot="popover-content"]
+  ) :is(button,a,[role="button"]):hover {
+    color: #fff !important;
+  }
+}
+
+/* =========================================================
+   EMD DIALOG ACTION BUTTON FIX
+   Radix Dialoge liegen per Portal außerhalb der AppThemeShell.
+   Nur interaktive weiße/outline Buttons werden dunkel gemacht.
+   Bild-/Preview-Flächen bleiben unverändert.
+   ========================================================= */
+
+body [role="dialog"] :is(button,a,[role="button"])[class*="bg-white"],
+body [data-slot="dialog-content"] :is(button,a,[role="button"])[class*="bg-white"],
+body [data-slot="alert-dialog-content"] :is(button,a,[role="button"])[class*="bg-white"] {
+  background-color: rgba(12,17,24,.96) !important;
+  color: rgba(255,255,255,.88) !important;
+  border-color: rgba(255,255,255,.14) !important;
+}
+
+body [role="dialog"] :is(button,a,[role="button"])[class*="bg-background"],
+body [data-slot="dialog-content"] :is(button,a,[role="button"])[class*="bg-background"],
+body [data-slot="alert-dialog-content"] :is(button,a,[role="button"])[class*="bg-background"] {
+  background-color: rgba(12,17,24,.96) !important;
+  color: rgba(255,255,255,.88) !important;
+  border-color: rgba(255,255,255,.14) !important;
+}
+
+@media (hover:hover) {
+  body [role="dialog"] :is(button,a,[role="button"])[class*="bg-white"]:hover,
+  body [data-slot="dialog-content"] :is(button,a,[role="button"])[class*="bg-white"]:hover,
+  body [data-slot="alert-dialog-content"] :is(button,a,[role="button"])[class*="bg-white"]:hover,
+  body [role="dialog"] :is(button,a,[role="button"])[class*="bg-background"]:hover,
+  body [data-slot="dialog-content"] :is(button,a,[role="button"])[class*="bg-background"]:hover,
+  body [data-slot="alert-dialog-content"] :is(button,a,[role="button"])[class*="bg-background"]:hover {
+    background-color: rgba(255,255,255,.075) !important;
+    color: #fff !important;
+    border-color: rgba(249,115,22,.28) !important;
+  }
+}
+
+/* Disabled bleibt lesbar, aber klar deaktiviert. */
+body [role="dialog"] :is(button,a,[role="button"]):disabled,
+body [data-slot="dialog-content"] :is(button,a,[role="button"]):disabled,
+body [data-slot="alert-dialog-content"] :is(button,a,[role="button"]):disabled {
+  opacity: .52;
 }

@@ -220,7 +220,17 @@ function initials(name: string) {
   return (a + b).toUpperCase();
 }
 
-export default function TeamChatPage() {
+type ChatAppClientProps = {
+  backHref?: string;
+  backLabel?: string;
+  contextLabel?: string;
+};
+
+export default function TeamChatPage({
+  backHref = "/member-profile-app",
+  backLabel = "Profil",
+  contextLabel = "EMD Vereinsapp",
+}: ChatAppClientProps) {
   const { session } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -2178,29 +2188,36 @@ export default function TeamChatPage() {
 
   // Modernes Chat-App Design (Orange Theme) – nur Styling, keine Logikänderung
   const WA = {
-    appBg: "bg-[#f3f5f7] text-slate-950",
-    card: "border border-slate-200/90 bg-white shadow-[0_22px_70px_-48px_rgba(15,23,42,0.5)]",
-    header: "bg-white/95 backdrop-blur-xl border-b border-slate-100",
+    appBg:
+      "bg-[#040609] text-white bg-[radial-gradient(circle_at_10%_8%,rgba(249,115,22,.11),transparent_28%),radial-gradient(circle_at_88%_14%,rgba(14,165,233,.065),transparent_25%),linear-gradient(180deg,#05070b,#030508)]",
+    card:
+      "border border-white/[0.075] bg-[#080b10]/94 text-white shadow-[0_30px_100px_-50px_rgba(0,0,0,.99)] backdrop-blur-2xl",
+    header:
+      "border-b border-white/[0.07] bg-[#080b10]/94 backdrop-blur-2xl",
     sidebarItemBase:
-      "w-full justify-start h-auto px-3 py-3 text-left rounded-[18px] hover:bg-slate-50 active:bg-slate-100 transition-all duration-200 border border-transparent focus-visible:ring-2 focus-visible:ring-orange-500/20 overflow-hidden",
+      "w-full justify-start h-auto px-3 py-3 text-left rounded-[18px] transition-all duration-200 border border-transparent focus-visible:ring-2 focus-visible:ring-orange-400/20 overflow-hidden",
     sidebarItemSelected:
-      "bg-slate-950 hover:bg-slate-900 text-white border-slate-950 shadow-[0_10px_28px_-20px_rgba(15,23,42,0.8)]",
-    sidebarItemUnselected: "text-slate-900 hover:border-slate-200",
-    iconBadge: "bg-orange-50 text-orange-700 border-orange-100",
-    iconInSelected: "text-orange-400",
-    iconInUnselected: "text-orange-600",
+      "bg-gradient-to-r from-orange-500/16 to-white/[0.045] text-white border-orange-300/15 shadow-[0_10px_30px_-22px_rgba(249,115,22,.28)] hover:bg-orange-500/[0.18]",
+    sidebarItemUnselected:
+      "text-white/72 hover:text-white hover:border-white/[0.08] hover:bg-white/[0.028]",
+    iconBadge:
+      "border border-orange-300/15 bg-orange-500/[0.09] text-orange-300",
+    iconInSelected: "text-orange-300",
+    iconInUnselected: "text-orange-300",
     unreadBadge:
-      "ml-2 shrink-0 px-2 py-1 text-[11px] font-black min-w-[23px] h-[23px] inline-flex items-center justify-center bg-orange-500 text-white border-0 shadow-sm rounded-full ring-2 ring-white",
-    chatBg: "bg-[#f7f8fa]",
+      "ml-2 shrink-0 px-2 py-1 text-[11px] font-black min-w-[23px] h-[23px] inline-flex items-center justify-center bg-orange-500 text-white border-0 shadow-[0_0_18px_rgba(249,115,22,.18)] rounded-full ring-2 ring-[#090c12]",
+    chatBg:
+      "bg-[radial-gradient(circle_at_72%_0%,rgba(14,165,233,.03),transparent_28%),radial-gradient(circle_at_10%_80%,rgba(249,115,22,.025),transparent_24%),linear-gradient(180deg,rgba(6,9,14,.96),rgba(4,6,9,.99))]",
     bubbleOwn:
-      "bg-slate-950 text-white rounded-[20px] rounded-br-[6px] shadow-[0_8px_24px_-18px_rgba(15,23,42,0.8)]",
+      "bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 text-white rounded-[22px] rounded-br-[7px] border border-orange-300/15 shadow-[0_14px_34px_-18px_rgba(249,115,22,.42)]",
     bubbleOther:
-      "bg-white text-slate-900 border border-slate-200 rounded-[20px] rounded-bl-[6px] shadow-[0_8px_24px_-20px_rgba(15,23,42,0.35)]",
-    composer: "bg-white/95 backdrop-blur-xl border-t border-slate-200/90",
+      "bg-[#0d1118]/92 text-white/90 border border-white/[0.08] rounded-[22px] rounded-bl-[7px] shadow-[0_14px_34px_-24px_rgba(0,0,0,.98)] backdrop-blur-xl",
+    composer:
+      "bg-[#070a0f]/96 backdrop-blur-2xl border-t border-white/[0.075] shadow-[0_-18px_50px_-36px_rgba(0,0,0,.95)]",
     input:
-      "bg-slate-50 border border-slate-200 rounded-[16px] focus-visible:ring-orange-500/20 h-12 px-4 shadow-inner shadow-slate-100/70",
+      "bg-white/[0.045] border border-white/[0.10] text-white placeholder:text-white/30 rounded-[16px] focus-visible:ring-orange-400/15 focus-visible:border-orange-300/20 h-12 px-4 shadow-inner shadow-black/10",
     sendBtn:
-      "bg-orange-500 hover:bg-orange-600 text-white rounded-[16px] shadow-[0_10px_24px_-16px_rgba(249,115,22,0.9)]",
+      "bg-orange-500 hover:bg-orange-500/90 text-white rounded-[16px] shadow-[0_10px_26px_-16px_rgba(249,115,22,.42)]",
   };
 
   const communityUnread =
@@ -2296,9 +2313,9 @@ export default function TeamChatPage() {
         <main className="flex-1 flex items-center justify-center p-4">
           <Card className={`w-full max-w-md ${WA.card}`}>
             <CardContent className="p-6 text-center">
-              <MessageCircle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+              <MessageCircle className="mx-auto mb-4 h-12 w-12 text-orange-300" />
               <h2 className="text-xl font-bold mb-2">Anmeldung erforderlich</h2>
-              <p className="text-muted-foreground mb-4">
+              <p className="mb-4 text-white/45">
                 Bitte melden Sie sich an, um den Chat zu verwenden.
               </p>
               <Button
@@ -2315,22 +2332,29 @@ export default function TeamChatPage() {
   }
 
   return (
-    <div className={`h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
-      {/**/}
-      <main className="flex-1 min-h-0 overflow-hidden p-0 lg:px-4 lg:py-4 xl:px-5 2xl:px-6">
+    <div className={`relative h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.18]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.95)_44%,rgba(2,4,7,.99))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_7%_16%,rgba(249,115,22,.15),transparent_25%),radial-gradient(circle_at_90%_22%,rgba(14,165,233,.09),transparent_26%)]" />
+      </div>
+      <main className="relative z-10 flex-1 min-h-0 overflow-hidden p-0 lg:px-5 lg:py-5 xl:px-6 2xl:px-8">
         <div className="h-full w-full max-w-none">
           <div className="flex flex-col h-full min-h-0">
             {showNoProfile ? (
               <Card className={`${WA.card} shrink-0`}>
                 <CardContent className="p-6 text-center">
-                  <MessageCircle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+                  <MessageCircle className="mx-auto mb-4 h-12 w-12 text-orange-300" />
                   <h2 className="text-xl font-bold mb-2">Profil fehlt</h2>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="mb-4 text-white/45">
                     Für diesen Account gibt es keinen Eintrag in{" "}
                     <code>user_profiles</code>. Bitte melde dich beim Admin.
                   </p>
                   <Button
-                    onClick={() => router.push("/member-profile-app")}
+                    onClick={() => router.push(backHref)}
                     className={WA.sendBtn}
                   >
                     Zurück
@@ -2338,22 +2362,22 @@ export default function TeamChatPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="flex-1 min-h-0 flex gap-4 overflow-hidden">
+              <div className="flex-1 min-h-0 flex gap-4 overflow-hidden lg:gap-5">
                 {/* Chatliste: auf Handy direkt sichtbar, kein Hamburger-Menü */}
                 <div
-                  className={`${mobileChatOpen ? "hidden lg:flex" : "flex"} w-full lg:w-[340px] xl:w-[370px] 2xl:w-[390px] shrink-0 min-h-0`}
+                  className={`${mobileChatOpen ? "hidden lg:flex" : "flex"} w-full lg:w-[350px] xl:w-[380px] 2xl:w-[400px] shrink-0 min-h-0`}
                 >
                   <Card
-                    className={`h-full w-full ${WA.card} flex flex-col min-h-0 overflow-hidden rounded-none lg:rounded-[26px]`}
+                    className={`h-full w-full ${WA.card} flex flex-col min-h-0 overflow-hidden rounded-none lg:rounded-[28px]`}
                   >
-                    <CardHeader className="relative overflow-hidden border-b border-white/10 bg-slate-950 px-4 pb-4 pt-5 text-white shrink-0">
-                      <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-orange-500/20 blur-3xl" />
+                    <CardHeader className="relative shrink-0 overflow-hidden border-b border-white/[0.07] bg-[#080b10]/96 px-4 pb-4 pt-5 text-white backdrop-blur-2xl">
+                      <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-orange-500/[0.16] blur-3xl" />
                       <div className="relative flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-300">
-                            EMD Vereinsapp
+                          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-300/90">
+                            {contextLabel}
                           </p>
-                          <CardTitle className="mt-0.5 text-3xl font-black tracking-[-0.04em] text-white leading-tight">
+                          <CardTitle className="mt-0.5 text-[28px] font-black leading-tight tracking-[-0.04em] text-white sm:text-3xl">
                             Chats
                           </CardTitle>
                         </div>
@@ -2372,19 +2396,19 @@ export default function TeamChatPage() {
                           <Button
                             type="button"
                             variant="ghost"
-                            onClick={() => router.push("/member-profile-app")}
-                            className="h-10 rounded-xl border border-white/10 bg-white/[0.07] px-3 text-white hover:bg-white/15 hover:text-white"
-                            aria-label="Zum Profil"
+                            onClick={() => router.push(backHref)}
+                            className="h-10 rounded-xl border border-white/[0.09] bg-white/[0.045] px-3 text-white/85 hover:border-orange-300/20 hover:bg-white/[0.075] hover:text-white"
+                            aria-label={`Zurück zu ${backLabel}`}
                           >
                             <Home className="mr-2 h-4 w-4" />
-                            Profil
+                            {backLabel}
                           </Button>
                         </div>
                       </div>
 
-                      <div className="relative mt-4 rounded-[18px] border border-white/10 bg-white/[0.06] p-3.5 shadow-none">
+                      <div className="relative mt-4 rounded-[20px] border border-white/[0.08] bg-white/[0.035] p-3.5 shadow-[0_16px_40px_-34px_rgba(0,0,0,.85)]">
                         <div className="flex items-start gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50 text-orange-600">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/[0.10] text-orange-300">
                             <MessageCircle className="h-5 w-5" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -2406,12 +2430,12 @@ export default function TeamChatPage() {
 
                             <div className="mt-3 flex flex-wrap items-center gap-2">
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-[11px] font-extrabold text-white/65">
-                                <Hash className="h-3 w-3 text-orange-600" />
+                                <Hash className="h-3 w-3 text-orange-300" />
                                 <span className="text-white">{visibleRoomCount}</span>
                                 Räume
                               </span>
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-[11px] font-extrabold text-white/65">
-                                <MessageCircle className="h-3 w-3 text-orange-600" />
+                                <MessageCircle className="h-3 w-3 text-orange-300" />
                                 <span className="text-white">{totalUnread}</span>
                                 ungelesen
                               </span>
@@ -2423,17 +2447,17 @@ export default function TeamChatPage() {
 
                     <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
                       <ScrollArea className="h-full">
-                        <div className="space-y-1 border-b border-slate-100 px-3 py-3.5">
+                        <div className="space-y-1 border-b border-white/[0.07] px-3 py-3.5">
                           <div className="px-2 pb-2 flex items-center justify-between">
-                            <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                            <span className="text-[11px] font-black uppercase tracking-[0.16em] text-white/30">
                               Allgemein
                             </span>
                             {totalUnread > 0 ? (
-                              <span className="text-[11px] font-bold text-orange-600">
+                              <span className="text-[11px] font-bold text-orange-300">
                                 {totalUnread > 99 ? "99+" : totalUnread} neu
                               </span>
                             ) : (
-                              <span className="text-[11px] font-bold text-slate-400">
+                              <span className="text-[11px] font-bold text-white/30">
                                 alles gelesen
                               </span>
                             )}
@@ -2460,7 +2484,7 @@ export default function TeamChatPage() {
                                 className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                                   selectedScope === "community"
                                     ? "bg-white/10"
-                                    : "bg-slate-100"
+                                    : "bg-white/[0.045]"
                                 }`}
                               >
                                 <MessageCircle
@@ -2472,7 +2496,7 @@ export default function TeamChatPage() {
                                 <div className="font-medium truncate text-sm">
                                   EMD Community
                                 </div>
-                                <p className="text-xs mt-1 truncate text-slate-500">
+                                <p className="text-xs mt-1 truncate text-white/40">
                                   Gäste & Mitglieder
                                 </p>
                               </div>
@@ -2508,7 +2532,7 @@ export default function TeamChatPage() {
                                 className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                                   selectedScope === "club"
                                     ? "bg-white/20"
-                                    : "bg-orange-100"
+                                    : "bg-orange-500/[0.09]"
                                 }`}
                               >
                                 <Info
@@ -2521,7 +2545,7 @@ export default function TeamChatPage() {
                                   Vereinsinfo
                                 </div>
                                 <p
-                                  className={`text-xs mt-1 truncate text-slate-500`}
+                                  className="mt-1 truncate text-xs text-white/40"
                                 >
                                   {getLastPreviewText(
                                     lastMessagesByRoom[
@@ -2564,7 +2588,7 @@ export default function TeamChatPage() {
                                 className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                                   selectedScope === "freizeit"
                                     ? "bg-white/20"
-                                    : "bg-orange-100"
+                                    : "bg-orange-500/[0.09]"
                                 }`}
                               >
                                 <Coffee
@@ -2577,7 +2601,7 @@ export default function TeamChatPage() {
                                   Freizeit
                                 </div>
                                 <p
-                                  className={`text-xs mt-1 truncate text-slate-500`}
+                                  className="mt-1 truncate text-xs text-white/40"
                                 >
                                   {getLastPreviewText(
                                     lastMessagesByRoom[
@@ -2628,7 +2652,7 @@ export default function TeamChatPage() {
                                   className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                                     selectedScope === "captains"
                                       ? "bg-white/20"
-                                      : "bg-orange-100"
+                                      : "bg-orange-500/[0.09]"
                                   }`}
                                 >
                                   <Users
@@ -2643,8 +2667,8 @@ export default function TeamChatPage() {
                                   <p
                                     className={`text-xs mt-1 truncate ${
                                       selectedScope === "captains"
-                                        ? "text-slate-600"
-                                        : "text-slate-500"
+                                        ? "text-white/50"
+                                        : "text-white/40"
                                     }`}
                                   >
                                     Alle Captain &amp; Co-Captain
@@ -2692,7 +2716,7 @@ export default function TeamChatPage() {
                                   className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                                     selectedScope === "vorstand"
                                       ? "bg-white/20"
-                                      : "bg-orange-100"
+                                      : "bg-orange-500/[0.09]"
                                   }`}
                                 >
                                   <Shield
@@ -2707,8 +2731,8 @@ export default function TeamChatPage() {
                                   <p
                                     className={`text-xs mt-1 truncate ${
                                       selectedScope === "vorstand"
-                                        ? "text-slate-600"
-                                        : "text-slate-500"
+                                        ? "text-white/50"
+                                        : "text-white/40"
                                     }`}
                                   >
                                     Nur Vorstand-Rollen
@@ -2737,29 +2761,29 @@ export default function TeamChatPage() {
                         {roomsLoading ? (
                           <div className="p-4 text-center">
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto" />
-                            <p className="mt-2 text-sm text-muted-foreground">
+                            <p className="mt-2 text-sm text-white/42">
                               Lade Teams...
                             </p>
                           </div>
                         ) : !profile?.player_id ? (
-                          <div className="p-4 text-center text-muted-foreground">
-                            <Hash className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                          <div className="p-4 text-center text-white/42">
+                            <Hash className="h-8 w-8 mx-auto mb-2 text-white/25" />
                             <p className="text-sm">
                               Du bist noch keinem Spieler zugeordnet.
                             </p>
                           </div>
                         ) : chatRooms.length === 0 ? (
-                          <div className="p-4 text-center text-muted-foreground">
-                            <Hash className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                          <div className="p-4 text-center text-white/42">
+                            <Hash className="h-8 w-8 mx-auto mb-2 text-white/25" />
                             <p className="text-sm">Du bist in keinem Team.</p>
                           </div>
                         ) : (
                           <div className="space-y-1 px-3 py-3.5">
                             <div className="px-2 pb-2 flex items-center justify-between">
-                              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-white/30">
                                 Team-Chats
                               </span>
-                              <span className="text-[11px] font-bold text-slate-400">
+                              <span className="text-[11px] font-bold text-white/30">
                                 {chatRooms.length} {chatRooms.length === 1 ? "Team" : "Teams"}
                               </span>
                             </div>
@@ -2803,7 +2827,7 @@ export default function TeamChatPage() {
                                             className={
                                               isSelected
                                                 ? "bg-white/20 text-white"
-                                                : "bg-orange-100 text-orange-700"
+                                                : "bg-orange-500/[0.10] text-orange-300"
                                             }
                                           >
                                             {room.name.charAt(0).toUpperCase()}
@@ -2814,7 +2838,7 @@ export default function TeamChatPage() {
                                           className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                                             isSelected
                                               ? "bg-white/20"
-                                              : "bg-orange-100"
+                                              : "bg-orange-500/[0.09]"
                                           }`}
                                         >
                                           <Hash
@@ -2830,14 +2854,14 @@ export default function TeamChatPage() {
                                           </div>
                                           {room.role ? (
                                             <span
-                                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${"bg-slate-100 text-slate-600"}`}
+                                              className="shrink-0 rounded-full border border-white/[0.07] bg-white/[0.035] px-2 py-0.5 text-[10px] font-bold text-white/40"
                                             >
                                               {room.role}
                                             </span>
                                           ) : null}
                                         </div>
                                         <p
-                                          className={`text-xs mt-1 truncate text-slate-500`}
+                                          className="mt-1 truncate text-xs text-white/40"
                                         >
                                           {getLastPreviewText(
                                             lastMessagesByRoom[
@@ -2898,26 +2922,26 @@ export default function TeamChatPage() {
                                 }
                                 alt={selectedRoomName}
                               />
-                              <AvatarFallback className="bg-orange-100 text-orange-700">
+                              <AvatarFallback className="bg-orange-500/[0.10] text-orange-300">
                                 {(selectedRoomName || "#")
                                   .charAt(0)
                                   .toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                           ) : (
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-orange-500/[0.10] flex items-center justify-center">
                               {selectedScope === "community" ? (
-                                <MessageCircle className="h-5 w-5 text-orange-600" />
+                                <MessageCircle className="h-5 w-5 text-orange-300" />
                               ) : selectedScope === "club" ? (
-                                <Info className="h-5 w-5 text-orange-600" />
+                                <Info className="h-5 w-5 text-orange-300" />
                               ) : selectedScope === "freizeit" ? (
-                                <Coffee className="h-5 w-5 text-orange-600" />
+                                <Coffee className="h-5 w-5 text-orange-300" />
                               ) : selectedScope === "vorstand" ? (
-                                <Shield className="h-5 w-5 text-orange-600" />
+                                <Shield className="h-5 w-5 text-orange-300" />
                               ) : selectedScope === "captains" ? (
-                                <Users className="h-5 w-5 text-orange-600" />
+                                <Users className="h-5 w-5 text-orange-300" />
                               ) : (
-                                <Hash className="h-5 w-5 text-orange-600" />
+                                <Hash className="h-5 w-5 text-orange-300" />
                               )}
                             </div>
                           )}
@@ -2926,10 +2950,10 @@ export default function TeamChatPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <div className="min-w-0">
-                              <CardTitle className="truncate text-base font-black tracking-tight text-slate-950 sm:text-lg">
+                              <CardTitle className="truncate text-base font-black tracking-tight text-white sm:text-lg">
                                 {selectedRoomName}
                               </CardTitle>
-                              <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400">
+                              <p className="mt-0.5 truncate text-[11px] font-medium text-white/30">
                                 {messages.length} {messages.length === 1 ? "Nachricht" : "Nachrichten"}
                               </p>
                             </div>
@@ -2938,11 +2962,11 @@ export default function TeamChatPage() {
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => router.push("/member-profile-app")}
-                              className="hidden h-9 rounded-xl border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50 sm:inline-flex"
+                              onClick={() => router.push(backHref)}
+                              className="hidden h-9 rounded-xl border-white/[0.09] bg-white/[0.035] px-3 text-xs font-bold text-white/70 hover:bg-white/[0.06] hover:text-white sm:inline-flex"
                             >
                               <Home className="mr-1.5 h-3.5 w-3.5" />
-                              Profil
+                              {backLabel}
                             </Button>
                           </div>
 
@@ -2954,16 +2978,16 @@ export default function TeamChatPage() {
                     <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
                       {selectedScope === "team" && !selectedRoom ? (
                         <div
-                          className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}
+                          className={`flex-1 flex items-center justify-center text-white/42 ${WA.chatBg}`}
                         >
                           <div className="text-center">
-                            <Hash className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <Hash className="h-12 w-12 mx-auto mb-4 text-white/25" />
                             <p className="text-sm">
                               Wähle ein Team aus der Seitenleiste
                             </p>
                             <Button
                               variant="outline"
-                              className="mt-4 lg:hidden bg-white hover:bg-orange-50 border-slate-200 rounded-xl"
+                              className="mt-4 rounded-xl border-white/[0.10] bg-white/[0.035] text-white/75 hover:bg-white/[0.06] hover:text-white lg:hidden"
                               size="sm"
                               onClick={() => setMobileChatOpen(false)}
                             >
@@ -2976,10 +3000,10 @@ export default function TeamChatPage() {
                         !canSeeCaptainChat &&
                         !isVorstand ? (
                         <div
-                          className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}
+                          className={`flex-1 flex items-center justify-center text-white/42 ${WA.chatBg}`}
                         >
                           <div className="text-center">
-                            <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <Shield className="h-12 w-12 mx-auto mb-4 text-white/25" />
                             <p className="text-sm">
                               Kein Zugriff auf den Captain-Chat.
                             </p>
@@ -2989,10 +3013,10 @@ export default function TeamChatPage() {
                         !canSeeVorstandChat &&
                         !isVorstand ? (
                         <div
-                          className={`flex-1 flex items-center justify-center text-muted-foreground ${WA.chatBg}`}
+                          className={`flex-1 flex items-center justify-center text-white/42 ${WA.chatBg}`}
                         >
                           <div className="text-center">
-                            <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <Shield className="h-12 w-12 mx-auto mb-4 text-white/25" />
                             <p className="text-sm">
                               Kein Zugriff auf den Vorstand-Chat.
                             </p>
@@ -3001,18 +3025,18 @@ export default function TeamChatPage() {
                       ) : (
                         <>
                           <ScrollArea
-                            className={`flex-1 min-h-0 px-3 py-4 sm:px-5 sm:py-5 lg:px-6 ${WA.chatBg}`}
+                            className={`flex-1 min-h-0 px-3 py-4 sm:px-5 sm:py-5 lg:px-7 xl:px-8 ${WA.chatBg}`}
                           >
                             {loading ? (
                               <div className="text-center py-8">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto" />
-                                <p className="mt-2 text-muted-foreground text-sm">
+                                <p className="mt-2 text-white/42 text-sm">
                                   Lade Chat...
                                 </p>
                               </div>
                             ) : messages.length === 0 ? (
-                              <div className="text-center py-8 text-muted-foreground">
-                                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                              <div className="text-center py-8 text-white/42">
+                                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-white/25" />
                                 <p className="text-sm">
                                   Noch keine Nachrichten.
                                 </p>
@@ -3021,7 +3045,7 @@ export default function TeamChatPage() {
                                 </p>
                               </div>
                             ) : (
-                              <div className="mx-auto w-full max-w-5xl space-y-3">
+                              <div className="mx-auto w-full max-w-6xl space-y-3.5">
                                 {renderedStream.map((item) => {
                                   if (item.type === "date") {
                                     return (
@@ -3029,7 +3053,7 @@ export default function TeamChatPage() {
                                         key={`date-${item.key}`}
                                         className="py-3 flex items-center justify-center"
                                       >
-                                        <div className="rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 shadow-sm">
+                                        <div className="rounded-full border border-white/[0.07] bg-[#0a0d12]/88 px-3 py-1 text-[10px] font-black uppercase tracking-[0.10em] text-white/35 shadow-[0_10px_28px_-22px_rgba(0,0,0,.95)] backdrop-blur-xl">
                                           {item.label}
                                         </div>
                                       </div>
@@ -3062,13 +3086,13 @@ export default function TeamChatPage() {
                                           src={photoUrl || "/placeholder.svg"}
                                           alt={name}
                                         />
-                                        <AvatarFallback className="bg-orange-100 text-orange-700 text-[10px]">
+                                        <AvatarFallback className="bg-orange-500/[0.10] text-orange-300 text-[10px]">
                                           {initials(name)}
                                         </AvatarFallback>
                                       </Avatar>
 
                                       <div
-                                        className={`flex flex-col flex-1 min-w-0 max-w-[calc(100%-40px)] sm:max-w-[68%] lg:max-w-[62%] ${
+                                        className={`flex flex-col flex-1 min-w-0 max-w-[calc(100%-40px)] sm:max-w-[72%] lg:max-w-[68%] xl:max-w-[62%] ${
                                           isOwnMessage
                                             ? "items-end"
                                             : "items-start"
@@ -3078,18 +3102,18 @@ export default function TeamChatPage() {
                                           <div className="w-full mb-1">
                                             <div className="flex flex-col gap-1 sm:grid sm:grid-cols-[1fr_auto] sm:items-center sm:gap-2">
                                               <div className="min-w-0 flex flex-wrap items-center gap-2">
-                                                <span className="text-[13px] font-semibold text-slate-700 break-words">
+                                                <span className="break-words text-[13px] font-black text-white/78">
                                                   {name}
                                                 </span>
 
                                                 {isSenderVorstand && (
-                                                  <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-800 shrink-0">
+                                                  <span className="inline-flex shrink-0 items-center rounded-full border border-orange-300/15 bg-orange-500/[0.09] px-2 py-0.5 text-[10px] font-black text-orange-200">
                                                     🛡️ Vorstand
                                                   </span>
                                                 )}
                                               </div>
 
-                                              <span className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap sm:justify-self-end">
+                                              <span className="text-[11px] text-white/42 flex items-center gap-1 whitespace-nowrap sm:justify-self-end">
                                                 <Clock className="h-3 w-3" />
                                                 {time}
                                               </span>
@@ -3129,7 +3153,7 @@ export default function TeamChatPage() {
                                                       message.attachment_name ||
                                                       "Bild"
                                                     }
-                                                    className="max-w-full rounded-xl border border-black/10 cursor-zoom-in"
+                                                    className="max-w-full cursor-zoom-in rounded-xl border border-white/[0.08]"
                                                   />
                                                 </button>
                                               </div>
@@ -3146,7 +3170,7 @@ export default function TeamChatPage() {
                                                   className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${
                                                     isOwnMessage
                                                       ? "border-white/20 bg-white/10 text-white"
-                                                      : "border-slate-200 bg-slate-50 text-slate-900"
+                                                      : "border-white/[0.08] bg-white/[0.04] text-white/88"
                                                   }`}
                                                 >
                                                   <FileText className="h-4 w-4" />
@@ -3223,7 +3247,7 @@ export default function TeamChatPage() {
                                                             className={`w-full rounded-xl border px-3 py-2 ${
                                                               isOwnMessage
                                                                 ? "border-white/20 bg-white/10"
-                                                                : "border-slate-200 bg-slate-50"
+                                                                : "border-white/[0.08] bg-white/[0.04]"
                                                             }`}
                                                           >
                                                             <button
@@ -3274,7 +3298,7 @@ export default function TeamChatPage() {
                                                               className={`mt-2 text-xs underline decoration-dotted ${
                                                                 isOwnMessage
                                                                   ? "text-white/80"
-                                                                  : "text-slate-500"
+                                                                  : "text-white/40"
                                                               }`}
                                                             >
                                                               Anzeigen, wer
@@ -3286,7 +3310,7 @@ export default function TeamChatPage() {
                                                     </div>
 
                                                     <div
-                                                      className={`text-xs ${isOwnMessage ? "text-white/80" : "text-slate-500"}`}
+                                                      className={`text-xs ${isOwnMessage ? "text-white/80" : "text-white/40"}`}
                                                     >
                                                       {totalVotes} Stimme
                                                       {totalVotes === 1
@@ -3320,7 +3344,7 @@ export default function TeamChatPage() {
                                                   className={`text-[10px] min-w-0 flex items-center gap-1 flex-wrap ${
                                                     isOwnMessage
                                                       ? "text-white/80"
-                                                      : "text-slate-500"
+                                                      : "text-white/40"
                                                   }`}
                                                 >
                                                   {isOwnMessage && (
@@ -3368,7 +3392,7 @@ export default function TeamChatPage() {
                           >
                             <div className="mx-auto w-full max-w-5xl space-y-2">
                               {selectedFiles.length > 0 && (
-                                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                                <div className="rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-white/80">
                                   <div className="mb-2 flex items-center justify-between gap-2">
                                     <span className="text-sm font-medium">
                                       {selectedFiles.length} Datei(en)
@@ -3390,13 +3414,13 @@ export default function TeamChatPage() {
                                     {selectedFiles.map((file, index) => (
                                       <div
                                         key={`${file.name}-${index}`}
-                                        className="shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-2 min-w-[120px]"
+                                        className="min-w-[120px] shrink-0 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-2"
                                       >
                                         <div className="flex items-center gap-2 min-w-0">
                                           {file.type.startsWith("image/") ? (
-                                            <ImageIcon className="h-4 w-4 shrink-0 text-orange-600" />
+                                            <ImageIcon className="h-4 w-4 shrink-0 text-orange-300" />
                                           ) : (
-                                            <FileText className="h-4 w-4 shrink-0 text-orange-600" />
+                                            <FileText className="h-4 w-4 shrink-0 text-orange-300" />
                                           )}
                                           <span className="text-xs truncate">
                                             {file.name}
@@ -3424,7 +3448,7 @@ export default function TeamChatPage() {
                                   size="sm"
                                   onClick={() => setPollDialogOpen(true)}
                                   disabled={sending || !profile?.id}
-                                  className="h-12 w-12 shrink-0 rounded-[16px] border border-slate-200 bg-slate-50 p-0 text-slate-600 hover:bg-slate-100"
+                                  className="h-12 w-12 shrink-0 rounded-[16px] border border-white/[0.09] bg-white/[0.035] p-0 text-white/55 transition-colors hover:border-orange-300/20 hover:bg-orange-500/[0.08] hover:text-orange-200"
                                 >
                                   <BarChart3 className="h-4 w-4" />
                                 </Button>
@@ -3435,7 +3459,7 @@ export default function TeamChatPage() {
                                   size="sm"
                                   onClick={() => fileInputRef.current?.click()}
                                   disabled={sending || !profile?.id}
-                                  className="h-12 w-12 shrink-0 rounded-[16px] border border-slate-200 bg-slate-50 p-0 text-slate-600 hover:bg-slate-100"
+                                  className="h-12 w-12 shrink-0 rounded-[16px] border border-white/[0.09] bg-white/[0.035] p-0 text-white/55 transition-colors hover:border-orange-300/20 hover:bg-orange-500/[0.08] hover:text-orange-200"
                                 >
                                   <Paperclip className="h-4 w-4" />
                                 </Button>
@@ -3491,15 +3515,15 @@ export default function TeamChatPage() {
         open={!!openReadsFor}
         onOpenChange={(o) => setOpenReadsFor(o ? openReadsFor : null)}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-[24px] border border-white/[0.10] bg-[#090c12]/96 text-white shadow-[0_30px_100px_-46px_rgba(0,0,0,.98)] backdrop-blur-2xl">
           <DialogHeader>
-            <DialogTitle>Gelesen von</DialogTitle>
+            <DialogTitle className="text-white">Gelesen von</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-2">
             {openReadsFor &&
             (readNamesByMessage[openReadsFor] || []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Noch niemand.</p>
+              <p className="text-sm text-white/42">Noch niemand.</p>
             ) : (
               (openReadsFor ? readNamesByMessage[openReadsFor] || [] : []).map(
                 (n) => (
@@ -3522,7 +3546,7 @@ export default function TeamChatPage() {
           }
         }}
       >
-        <DialogContent className="max-w-5xl w-[95vw] p-2 sm:p-4">
+        <DialogContent className="w-[95vw] max-w-5xl rounded-[24px] border border-white/[0.10] bg-[#090c12]/96 p-2 text-white shadow-[0_30px_100px_-46px_rgba(0,0,0,.98)] backdrop-blur-2xl sm:p-4">
           <DialogHeader>
             <DialogTitle className="truncate">
               {openImageName || "Bild"}
@@ -3550,7 +3574,7 @@ export default function TeamChatPage() {
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-[24px] border border-white/[0.10] bg-[#090c12]/96 text-white shadow-[0_30px_100px_-46px_rgba(0,0,0,.98)] backdrop-blur-2xl">
           <DialogHeader>
             <DialogTitle className="truncate">
               Stimmen für: {openPollVotesOptionLabel || "Option"}
@@ -3561,7 +3585,7 @@ export default function TeamChatPage() {
             {openPollVotesForOption &&
             (pollVoteNamesByOption[openPollVotesForOption] || []).length ===
               0 ? (
-              <p className="text-sm text-muted-foreground">Noch niemand.</p>
+              <p className="text-sm text-white/42">Noch niemand.</p>
             ) : (
               (openPollVotesForOption
                 ? pollVoteNamesByOption[openPollVotesForOption] || []
@@ -3583,7 +3607,7 @@ export default function TeamChatPage() {
           if (!o) resetPollForm();
         }}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg rounded-[24px] border border-white/[0.10] bg-[#090c12]/96 text-white shadow-[0_30px_100px_-46px_rgba(0,0,0,.98)] backdrop-blur-2xl">
           <DialogHeader>
             <DialogTitle>Abstimmung erstellen</DialogTitle>
           </DialogHeader>
@@ -3595,6 +3619,7 @@ export default function TeamChatPage() {
                 value={pollQuestion}
                 onChange={(e) => setPollQuestion(e.target.value)}
                 placeholder="z. B. Wann trainieren wir?"
+                className="border-white/[0.10] bg-white/[0.04] text-white placeholder:text-white/30"
               />
             </div>
 
@@ -3609,6 +3634,7 @@ export default function TeamChatPage() {
                       updatePollOptionField(index, e.target.value)
                     }
                     placeholder={`Option ${index + 1}`}
+                    className="border-white/[0.10] bg-white/[0.04] text-white placeholder:text-white/30"
                   />
 
                   <Button
@@ -3627,7 +3653,7 @@ export default function TeamChatPage() {
                 variant="outline"
                 onClick={addPollOptionField}
                 disabled={pollOptionsInput.length >= 5}
-                className="w-full"
+                className="w-full border-white/[0.10] bg-white/[0.035] text-white/75 hover:bg-white/[0.06] hover:text-white"
               >
                 Option hinzufügen
               </Button>
@@ -3637,7 +3663,7 @@ export default function TeamChatPage() {
               type="button"
               onClick={sendPoll}
               disabled={pollSending}
-              className="w-full"
+              className="w-full bg-orange-500 font-black text-white hover:bg-orange-500/90"
             >
               {pollSending ? "Erstelle..." : "Abstimmung senden"}
             </Button>

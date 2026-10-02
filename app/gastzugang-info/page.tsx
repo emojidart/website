@@ -46,7 +46,7 @@ const features = [
   },
   {
     title: "Kostenloser Gastzugang",
-    description: "Der Gastzugang ist kostenlos und wird nach kurzer Prüfung freigeschaltet.",
+    description: "Der Gastzugang ist kostenlos und nach Bestätigung deiner E-Mail-Adresse direkt aktiv.",
     icon: Users,
   },
 ]
@@ -80,7 +80,7 @@ export default function GastzugangInfoPage() {
                   </h1>
 
                   <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-orange-100 sm:text-base">
-                    Auch ohne Vereinsmitgliedschaft kannst du einen kostenlosen Gastzugang beantragen
+                    Auch ohne Vereinsmitgliedschaft kannst du kostenlos ein Gastkonto erstellen
                     und ausgewählte Bereiche der EMD VereinsApp nutzen.
                   </p>
                 </div>
@@ -147,7 +147,7 @@ export default function GastzugangInfoPage() {
                     </div>
                     <h2 className="mt-2 text-xl sm:text-2xl font-black">Interesse?</h2>
                     <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-gray-600">
-                      Antrag ausfüllen, Freischaltung abwarten und anschließend mit deinem Gastkonto anmelden.
+                      Registrieren, E-Mail bestätigen und anschließend direkt mit deinem Gastkonto anmelden.
                     </p>
                   </div>
 

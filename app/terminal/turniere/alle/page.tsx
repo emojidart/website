@@ -19,7 +19,6 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 )
 
-const MEMBERS_CHAMPION_SERIES_ID = "baeef5fb-b386-4a75-a1f3-c56090a0ec76"
 
 type Series = {
   id: string
@@ -77,12 +76,14 @@ function timeDE(date: Date) {
 }
 
 function typeLabel(type: string) {
-  if (type === "lion_cup") return "Lion Cup"
-  if (type === "summer_special") return "Summer Special"
-  if (type === "members_cup") return "Members Champions Cup"
-  if (type === "challenge_division") return "Challenge Division"
-  if (type === "buffalo_cup") return "Buffalo Steel Cup"
-  return "Turnierserie"
+  const known: Record<string, string> = {
+    lion_cup: "Lion Cup",
+    summer_special: "Summer Special",
+    members_cup: "Members Champion Cup",
+    challenge_division: "Challenge Division",
+    buffalo_cup: "Buffalo Steel Cup",
+  }
+  return known[type] || String(type || "Turnierserie").replaceAll("_", " ")
 }
 
 export default function TerminalTournamentsPage() {
@@ -96,16 +97,10 @@ export default function TerminalTournamentsPage() {
       const { data: seriesRows } = await supabase
         .from("dko_series")
         .select("id,name,slug,is_active,series_type,startgeld,qualification_requirement,total_tournament_days,halving_active,halving_date,division_active,division_date,created_at")
+        .eq("is_active", true)
         .order("created_at", { ascending: false })
 
-      const raw = (seriesRows || []) as Series[]
-
-      // Alle aktiven Serien anzeigen.
-      // Members Champions Cup zusätzlich absichern, da die bestehende App diese Serie
-      // auch über ihre feste Serien-ID verwendet.
-      const visible = raw.filter(
-        (series) => series.is_active || series.id === MEMBERS_CHAMPION_SERIES_ID,
-      )
+      const visible = (seriesRows || []) as Series[]
 
       const withEvents: SeriesWithEvents[] = []
 
@@ -122,16 +117,6 @@ export default function TerminalTournamentsPage() {
         })
       }
 
-      withEvents.sort((a, b) => {
-        const order: Record<string, number> = {
-          lion_cup: 1,
-          members_cup: 2,
-          summer_special: 3,
-          challenge_division: 4,
-          buffalo_cup: 5,
-        }
-        return (order[a.series_type] || 99) - (order[b.series_type] || 99)
-      })
 
       setSeriesList(withEvents)
       setLoading(false)
@@ -168,10 +153,10 @@ export default function TerminalTournamentsPage() {
               Turniere & Cups
             </div>
             <h1 className="mt-1 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
-              Aktive Serien
+              Aktive Turnierserien
             </h1>
             <div className="mt-1 text-sm font-semibold text-white/38">
-              Alle aktuell laufenden Cups und Vereinsserien
+              Automatisch aus allen aktiven Serien der Turnierzentrale
             </div>
           </div>
         </header>
@@ -179,7 +164,7 @@ export default function TerminalTournamentsPage() {
         {!loading && (
           <section className="mt-7 grid gap-3 sm:grid-cols-3">
             <div className="rounded-[26px] border border-white/10 bg-black/25 p-4 backdrop-blur-xl">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Aktive Serien</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Aktive Turnierserien</div>
               <div className="mt-2 text-3xl font-black">{seriesList.length}</div>
             </div>
             <div className="rounded-[26px] border border-orange-400/18 bg-orange-500/[0.06] p-4 backdrop-blur-xl">
@@ -200,13 +185,13 @@ export default function TerminalTournamentsPage() {
                 <div className="h-full w-1/2 animate-pulse rounded-full bg-orange-400" />
               </div>
               <div className="mt-4 text-sm font-black uppercase tracking-[0.24em] text-white/35">
-                Cups werden geladen
+                Turnierserien werden geladen
               </div>
             </div>
           ) : seriesList.length === 0 ? (
             <div className="rounded-[32px] border border-dashed border-white/10 bg-black/24 p-12 text-center backdrop-blur-xl">
               <Trophy className="mx-auto h-14 w-14 text-white/15" />
-              <div className="mt-4 text-xl font-black text-white/60">Derzeit keine aktive Serie</div>
+              <div className="mt-4 text-xl font-black text-white/60">Derzeit keine aktive Turnierserie</div>
             </div>
           ) : (
             <div className="grid gap-5 lg:grid-cols-2">

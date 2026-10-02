@@ -77,6 +77,12 @@ export default function DartboersePage() {
   const [sort, setSort] = useState("newest")
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [backHref, setBackHref] = useState("/")
+
+  useEffect(() => {
+    const stored = window.sessionStorage.getItem("emd:public-area-origin")
+    if (stored && stored.startsWith("/")) setBackHref(stored)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -177,171 +183,119 @@ export default function DartboersePage() {
   const activeFilters = [category, condition, country, region, shipping].filter((value) => value !== "all").length
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] pb-24 text-slate-950">
-      <Header />
-      <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
-        <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 p-4 text-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] sm:p-6 lg:p-8 xl:rounded-[30px] xl:p-9">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-orange-300">
-                <Tag className="h-3.5 w-3.5" /> Dartbörse DACH
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 font-sans text-white">
+      <Header
+        variant="app"
+        title="Dartbörse DACH"
+        subtitle="Kaufen & verkaufen"
+        backHref={backHref}
+      />
+
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-[64%_50%] bg-no-repeat opacity-[0.32]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.70),rgba(3,5,9,.94)_44%,rgba(2,4,7,.99))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.16),transparent_27%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.11),transparent_28%),radial-gradient(circle_at_52%_82%,rgba(16,185,129,.07),transparent_25%)]" />
+      </div>
+
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-black/30 p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-7 lg:p-8">
+          <div className="pointer-events-none absolute -left-16 bottom-[-70px] h-48 w-48 rounded-full bg-orange-500/[0.08]0/15 blur-[70px]" />
+          <div className="pointer-events-none absolute right-[10%] top-[-80px] h-52 w-52 rounded-full bg-sky-500/12 blur-[75px]" />
+
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+                <Tag className="h-3.5 w-3.5 text-orange-200" />
+                Dartbörse DACH
               </div>
-              <h1 className="mt-4 text-3xl font-black tracking-[-0.04em] sm:text-4xl lg:text-5xl">Dartartikel kaufen und verkaufen</h1>
-              <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-white/55 sm:text-base">Darts, Barrels, Flights, Spitzen, Boards und Zubehör aus Österreich, Deutschland und der Schweiz.</p>
+              <h1 className="mt-4 text-3xl font-black tracking-[-0.045em] text-white sm:text-4xl lg:text-5xl">
+                Darts kaufen & verkaufen
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/48 sm:text-base">
+                Darts, Barrels, Boards und Zubehör aus Österreich, Deutschland und der Schweiz – übersichtlich an einem Ort.
+              </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+
+            <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[520px]">
               {isLoggedIn ? (
                 <>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-12 rounded-[18px] border-white/20 bg-white/10 px-5 font-black text-white backdrop-blur hover:bg-white/20 hover:text-white"
-                  >
-                    <Link href="/dartboerse/meine">
-                      <UserRound className="mr-2 h-5 w-5" />
-                      Meine Angebote
-                    </Link>
+                  <Button asChild variant="outline" className="h-12 rounded-2xl border-white/10 bg-white/5 px-4 font-black text-white/75 hover:border-orange-300/25 hover:bg-orange-500/[0.08]0/10 hover:text-white">
+                    <Link href="/dartboerse/meine"><UserRound className="mr-2 h-4 w-4" />Meine Angebote</Link>
                   </Button>
-
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-12 rounded-[18px] border-white/20 bg-white/10 px-5 font-black text-white backdrop-blur hover:bg-white/20 hover:text-white"
-                  >
-                    <Link href="/dartboerse/nachrichten">
-                      <MessageCircle className="mr-2 h-5 w-5" />
-                      Nachrichten
-                    </Link>
+                  <Button asChild variant="outline" className="h-12 rounded-2xl border-white/10 bg-white/5 px-4 font-black text-white/75 hover:border-sky-300/25 hover:bg-sky-500/10 hover:text-white">
+                    <Link href="/dartboerse/nachrichten"><MessageCircle className="mr-2 h-4 w-4" />Nachrichten</Link>
                   </Button>
                 </>
-              ) : null}
-
-              <Button asChild className="h-12 rounded-2xl bg-orange-500 px-5 font-black hover:bg-orange-500">
-                <Link href="/dartboerse/neu">
-                  <Plus className="mr-2 h-5 w-5" />
-                  Inserat erstellen
-                </Link>
+              ) : <div className="hidden sm:block" />}
+              <Button asChild className="h-12 rounded-2xl border border-orange-300/20 bg-orange-500/[0.08]0 px-4 font-black text-white hover:bg-orange-400">
+                <Link href="/dartboerse/neu"><Plus className="mr-2 h-4 w-4" />Inserat erstellen</Link>
               </Button>
             </div>
           </div>
         </section>
 
-        <section className="sticky top-14 z-20 mt-5 rounded-[1.75rem] border border-slate-200 bg-white/95 p-3 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] shadow-slate-200/50 backdrop-blur sm:p-4">
+        <section className="sticky top-16 z-20 mt-5 rounded-[26px] border border-white/10 bg-[#0b0f15]/92 p-3 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-4">
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nach Darts, Ort, Bundesland oder Zubehör suchen …" className="h-12 rounded-[18px] border-slate-200 bg-[#f5f6f8] pl-12 text-base" />
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/25" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nach Darts, Ort, Bundesland oder Zubehör suchen …" className="h-12 rounded-[18px] border-white/10 bg-white/[0.045] pl-12 text-base text-white placeholder:text-white/25 focus-visible:ring-orange-400/40" />
             </div>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => setFiltersOpen((old) => !old)} className="h-12 flex-1 rounded-2xl lg:flex-none">
+              <Button type="button" variant="outline" onClick={() => setFiltersOpen((old) => !old)} className="h-12 flex-1 rounded-2xl border-white/10 bg-white/[0.045] text-white/75 hover:bg-white/[0.08] hover:text-white lg:flex-none">
                 <SlidersHorizontal className="mr-2 h-4 w-4" /> Filter {activeFilters ? `(${activeFilters})` : ""}
               </Button>
               <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger className="h-12 w-[170px] rounded-2xl"><ArrowUpDown className="mr-2 h-4 w-4" /><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-12 w-[170px] rounded-2xl border-white/10 bg-white/[0.045] text-white"><ArrowUpDown className="mr-2 h-4 w-4" /><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="newest">Neueste zuerst</SelectItem><SelectItem value="price_asc">Preis aufsteigend</SelectItem><SelectItem value="price_desc">Preis absteigend</SelectItem></SelectContent>
               </Select>
             </div>
           </div>
 
           {filtersOpen ? (
-            <div className="mt-3 grid gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2 lg:grid-cols-5">
-              <Select value={category} onValueChange={setCategory}><SelectTrigger className="rounded-xl"><SelectValue placeholder="Kategorie" /></SelectTrigger><SelectContent><SelectItem value="all">Alle Kategorien</SelectItem>{Object.entries(categoryLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select>
-              <Select value={condition} onValueChange={setCondition}><SelectTrigger className="rounded-xl"><SelectValue placeholder="Zustand" /></SelectTrigger><SelectContent><SelectItem value="all">Alle Zustände</SelectItem>{Object.entries(conditionLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select>
-              <Select
-                value={country}
-                onValueChange={(value) => {
-                  setCountry(value)
-                  setRegion("all")
-                }}
-              >
-                <SelectTrigger className="rounded-xl">
-                  <SelectValue placeholder="Land" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Länder</SelectItem>
-                  <SelectItem value="AT">Österreich</SelectItem>
-                  <SelectItem value="DE">Deutschland</SelectItem>
-                  <SelectItem value="CH">Schweiz</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={region}
-                onValueChange={setRegion}
-                disabled={availableRegions.length === 0}
-              >
-                <SelectTrigger className="rounded-xl">
-                  <SelectValue placeholder="Bundesland / Kanton" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Bundesländer / Kantone</SelectItem>
-                  {availableRegions.map((itemRegion) => (
-                    <SelectItem key={itemRegion} value={itemRegion}>
-                      {itemRegion}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={shipping} onValueChange={setShipping}><SelectTrigger className="rounded-xl"><SelectValue placeholder="Übergabe" /></SelectTrigger><SelectContent><SelectItem value="all">Versand oder Abholung</SelectItem><SelectItem value="shipping">Versand möglich</SelectItem><SelectItem value="pickup">Abholung möglich</SelectItem></SelectContent></Select>
+            <div className="mt-3 grid gap-2 border-t border-white/[0.07] pt-3 sm:grid-cols-2 lg:grid-cols-5">
+              <Select value={category} onValueChange={setCategory}><SelectTrigger className="rounded-xl border-white/10 bg-white/[0.045] text-white"><SelectValue placeholder="Kategorie" /></SelectTrigger><SelectContent><SelectItem value="all">Alle Kategorien</SelectItem>{Object.entries(categoryLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select>
+              <Select value={condition} onValueChange={setCondition}><SelectTrigger className="rounded-xl border-white/10 bg-white/[0.045] text-white"><SelectValue placeholder="Zustand" /></SelectTrigger><SelectContent><SelectItem value="all">Alle Zustände</SelectItem>{Object.entries(conditionLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select>
+              <Select value={country} onValueChange={(value) => { setCountry(value); setRegion("all") }}><SelectTrigger className="rounded-xl border-white/10 bg-white/[0.045] text-white"><SelectValue placeholder="Land" /></SelectTrigger><SelectContent><SelectItem value="all">Alle Länder</SelectItem><SelectItem value="AT">Österreich</SelectItem><SelectItem value="DE">Deutschland</SelectItem><SelectItem value="CH">Schweiz</SelectItem></SelectContent></Select>
+              <Select value={region} onValueChange={setRegion} disabled={availableRegions.length === 0}><SelectTrigger className="rounded-xl border-white/10 bg-white/[0.045] text-white"><SelectValue placeholder="Bundesland / Kanton" /></SelectTrigger><SelectContent><SelectItem value="all">Alle Bundesländer / Kantone</SelectItem>{availableRegions.map((itemRegion) => <SelectItem key={itemRegion} value={itemRegion}>{itemRegion}</SelectItem>)}</SelectContent></Select>
+              <Select value={shipping} onValueChange={setShipping}><SelectTrigger className="rounded-xl border-white/10 bg-white/[0.045] text-white"><SelectValue placeholder="Übergabe" /></SelectTrigger><SelectContent><SelectItem value="all">Versand oder Abholung</SelectItem><SelectItem value="shipping">Versand möglich</SelectItem><SelectItem value="pickup">Abholung möglich</SelectItem></SelectContent></Select>
             </div>
           ) : null}
         </section>
 
-        <div className="mt-5 flex items-center justify-between text-sm text-slate-500"><span>{loading ? "Dartbörse wird geladen …" : `${filtered.length} Angebot${filtered.length === 1 ? "" : "e"}`}</span><Link href="/dartboerse/meine" className="font-black text-orange-700 hover:text-orange-800">Meine Angebote</Link></div>
+        <div className="mt-5 flex items-center justify-between text-sm font-semibold text-white/35">
+          <span>{loading ? "Dartbörse wird geladen …" : `${filtered.length} Angebot${filtered.length === 1 ? "" : "e"}`}</span>
+          {isLoggedIn ? <Link href="/dartboerse/meine" className="font-black text-orange-300 transition hover:text-orange-200">Meine Angebote</Link> : null}
+        </div>
 
         {loading ? (
-          <div className="mt-5 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 8 }).map((_, index) => <div key={index} className="h-[430px] animate-pulse rounded-[28px] bg-white shadow-sm" />)}</div>
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-[430px] animate-pulse rounded-[28px] border border-white/[0.06] bg-white/[0.035]" />)}</div>
         ) : filtered.length === 0 ? (
-          <Card className="mt-4 rounded-[24px]"><CardContent className="p-12 text-center"><Box className="mx-auto h-12 w-12 text-slate-300" /><h2 className="mt-4 text-xl font-black">Keine passenden Angebote</h2><p className="mt-2 text-sm text-slate-500">Ändere die Suche oder erstelle selbst das erste Inserat.</p></CardContent></Card>
+          <Card className="mt-4 rounded-[28px] border-white/[0.08] bg-[#0b0f15]/92 text-white"><CardContent className="p-12 text-center"><Box className="mx-auto h-12 w-12 text-white/20" /><h2 className="mt-4 text-xl font-black">Keine passenden Angebote</h2><p className="mt-2 text-sm text-white/35">Ändere die Suche oder erstelle selbst das erste Inserat.</p></CardContent></Card>
         ) : (
-          <div className="mt-5 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((item) => (
               <Link key={item.id} href={`/dartboerse/${item.id}`} className="group">
-                <Card className="h-full overflow-hidden rounded-[28px] border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_80px_-42px_rgba(15,23,42,0.55)] hover:shadow-slate-900/10">
-                  <div className="relative aspect-[16/11] overflow-hidden bg-slate-100">
+                <Card className="h-full overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#0b0f15]/94 text-white shadow-[0_28px_80px_-52px_rgba(0,0,0,.98)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-orange-300/20">
+                  <div className="relative aspect-[16/11] overflow-hidden bg-white/[0.035]">
                     {item.image_url ? (
-                      <Image
-                        src={item.image_url}
-                        alt={item.title}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                        className="object-cover transition duration-500 group-hover:scale-[1.04]"
-                      />
+                      <Image src={item.image_url} alt={item.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover transition duration-700 group-hover:scale-[1.035]" />
                     ) : (
-                      <div className="flex h-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-100 to-slate-200">
-                        <Box className="h-14 w-14 text-slate-300" />
-                        <span className="text-sm font-bold text-slate-400">Kein Bild vorhanden</span>
-                      </div>
+                      <div className="flex h-full flex-col items-center justify-center gap-3 bg-white/[0.025]"><Box className="h-14 w-14 text-white/15" /><span className="text-sm font-bold text-white/25">Kein Bild vorhanden</span></div>
                     )}
-
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/35 to-transparent" />
-
-                    {(item.image_count || 0) > 1 ? (
-                      <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-slate-950/70 px-3 py-1.5 text-xs font-black text-white shadow-lg backdrop-blur-md">
-                        <Images className="h-4 w-4" />
-                        {item.image_count} Bilder
-                      </span>
-                    ) : null}
-                    {item.status !== "approved" ? <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black text-white ${item.status === "sold" ? "bg-slate-900" : "bg-amber-600"}`}>{item.status === "sold" ? "VERKAUFT" : "RESERVIERT"}</span> : null}
-                    <span className="absolute bottom-3 left-3 rounded-full border border-white/40 bg-white/95 px-3 py-1.5 text-xs font-black text-slate-800 shadow-lg backdrop-blur">
-                      {conditionLabels[item.condition]}
-                    </span>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/75 to-transparent" />
+                    {(item.image_count || 0) > 1 ? <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-3 py-1.5 text-xs font-black text-white backdrop-blur-md"><Images className="h-4 w-4" />{item.image_count} Bilder</span> : null}
+                    {item.status !== "approved" ? <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black text-white ${item.status === "sold" ? "bg-slate-900/90" : "bg-amber-600/90"}`}>{item.status === "sold" ? "VERKAUFT" : "RESERVIERT"}</span> : null}
+                    <span className="absolute bottom-3 left-3 rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-xs font-black text-white backdrop-blur">{conditionLabels[item.condition]}</span>
                   </div>
                   <CardContent className="p-5 sm:p-6">
-                    <div className="text-xs font-black uppercase tracking-wide text-orange-700">{categoryLabels[item.category]}</div>
-                    <h2 className="mt-2 line-clamp-2 text-xl font-black leading-snug tracking-tight sm:text-2xl">{item.title}</h2>
-                    <div className="mt-4 text-2xl font-black text-slate-950">{priceLabel(item)}</div>
-                    <div className="mt-3 flex items-start gap-2 text-sm text-slate-500">
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                      <span>
-                        {item.city}
-                        {item.region ? ` · ${item.region}` : ""}
-                        {" · "}
-                        {item.country_code}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-600">{item.shipping_available ? <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1"><Truck className="h-3 w-3" /> Versand</span> : null}{item.pickup_available ? <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1"><PackageCheck className="h-3 w-3" /> Abholung</span> : null}</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300">{categoryLabels[item.category]}</div>
+                    <h2 className="mt-2 line-clamp-2 text-xl font-black leading-snug tracking-[-0.025em] text-white sm:text-2xl">{item.title}</h2>
+                    <div className="mt-4 text-2xl font-black text-white">{priceLabel(item)}</div>
+                    <div className="mt-3 flex items-start gap-2 text-sm font-semibold text-white/38"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-orange-300" /><span>{item.city}{item.region ? ` · ${item.region}` : ""}{" · "}{item.country_code}</span></div>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-white/55">{item.shipping_available ? <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.07] bg-white/[0.04] px-2.5 py-1.5"><Truck className="h-3 w-3" /> Versand</span> : null}{item.pickup_available ? <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.07] bg-white/[0.04] px-2.5 py-1.5"><PackageCheck className="h-3 w-3" /> Abholung</span> : null}</div>
                   </CardContent>
                 </Card>
               </Link>

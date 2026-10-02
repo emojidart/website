@@ -1,0 +1,9 @@
+-- Applied to Supabase project:
+-- - creates public.admin_superusers
+-- - creates public.is_super_admin()
+-- - enables RLS on public.user_page_permissions
+-- - allows users to read only their own page permissions
+-- - allows only the super-admin account to insert/update/delete page permissions
+--
+-- The super-admin account itself was registered directly in Supabase during the migration.
+-- No account identifier is stored in the frontend source code.

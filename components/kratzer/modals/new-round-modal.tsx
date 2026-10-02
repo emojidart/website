@@ -119,7 +119,7 @@ export function NewRoundModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !isRolling && onOpenChange(nextOpen)}>
-      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[640px] rounded-[28px] shadow-2xl">
+      <DialogContent className="overflow-hidden rounded-[28px] border border-white/[0.10] bg-[#080b10] p-0 text-white shadow-[0_30px_100px_-40px_rgba(0,0,0,.98)] sm:max-w-[640px]">
         <div className="bg-gradient-to-br from-slate-950 via-slate-950 to-[#25140d] px-6 pb-7 pt-6 text-white sm:px-8">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-black sm:text-3xl">
@@ -173,10 +173,10 @@ export function NewRoundModal({
           </div>
         </div>
 
-        <div className="bg-white px-6 py-6 sm:px-8">
+        <div className="border-t border-white/[0.06] bg-[#0a0e14] px-6 py-6 sm:px-8">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="modalBoardCount" className="text-sm font-bold text-slate-700">
+              <Label htmlFor="modalBoardCount" className="text-sm font-bold text-white/65">
                 Automaten
               </Label>
               <Input
@@ -187,12 +187,12 @@ export function NewRoundModal({
                 value={settings.boardCount}
                 disabled={isRolling}
                 onChange={(e) => onSettingsChange("boardCount", Number.parseInt(e.target.value))}
-                className="mt-2 h-11 rounded-xl border-slate-200 bg-slate-50/70"
+                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#11161e] font-black text-white placeholder:text-white/25 hover:border-white/[0.16] focus-visible:ring-orange-500/30"
               />
             </div>
 
             <div>
-              <Label htmlFor="modalMaxGroupSize" className="text-sm font-bold text-slate-700">
+              <Label htmlFor="modalMaxGroupSize" className="text-sm font-bold text-white/65">
                 Max. Spieler pro Board
               </Label>
               <Input
@@ -203,18 +203,18 @@ export function NewRoundModal({
                 value={settings.maxGroupSize}
                 disabled={isRolling}
                 onChange={(e) => onSettingsChange("maxGroupSize", Number.parseInt(e.target.value))}
-                className="mt-2 h-11 rounded-xl border-slate-200 bg-slate-50/70"
+                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#11161e] font-black text-white placeholder:text-white/25 hover:border-white/[0.16] focus-visible:ring-orange-500/30"
               />
             </div>
           </div>
 
           {!enoughCapacity ? (
-            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-rose-300/20 bg-rose-500/[0.08] px-4 py-3 text-sm font-bold text-rose-200">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               Zu viele Spieler für die aktuelle Einstellung. Bitte Automaten oder Gruppengröße erhöhen.
             </div>
           ) : (
-            <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-700">
+            <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-300">
               <CircleCheck className="h-4 w-4" />
               Alles bereit für Runde {currentRound + 1}.
             </div>
@@ -225,9 +225,9 @@ export function NewRoundModal({
               {(Object.entries(DICE_GAME_MODES) as Array<[string, GameMode]>).map(([face, mode]) => (
                 <div
                   key={face}
-                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-black text-slate-700"
+                  className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2.5 text-xs font-black text-white/65"
                 >
-                  <span className="text-xl leading-none text-slate-950">{DICE_SYMBOLS[Number(face) as DiceFace]}</span>
+                  <span className="text-xl leading-none text-white">{DICE_SYMBOLS[Number(face) as DiceFace]}</span>
                   <span>{mode}</span>
                 </div>
               ))}
@@ -239,7 +239,7 @@ export function NewRoundModal({
               onClick={() => onOpenChange(false)}
               variant="outline"
               disabled={isRolling}
-              className="h-11 rounded-xl border-slate-200"
+              className="h-11 rounded-xl border-white/[0.10] bg-white/[0.025] text-white/70 hover:border-orange-300/15 hover:bg-white/[0.05] hover:text-white"
             >
               <XCircle className="mr-2 h-4 w-4" />
               Abbrechen
@@ -248,7 +248,7 @@ export function NewRoundModal({
             <Button
               onClick={handleRoundStart}
               disabled={!enoughCapacity || isRolling || Boolean(rolledMode)}
-              className="h-11 rounded-xl bg-orange-600 px-5 font-black text-white hover:bg-orange-700"
+              className="h-11 rounded-xl bg-orange-500 px-5 font-black text-white hover:bg-orange-400"
             >
               {settings.diceModeEnabled ? <Dices className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
               {isRolling

@@ -4,7 +4,7 @@ import PlayerScannerModal from "@/components/player-scanner-modal"
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-950">
+    <div className="min-h-screen bg-[#050608] text-white">
       <Header />
       <PlayerScannerModal tournamentId="1" tournamentType="8er_dko" />
       <main className="w-full pt-[64px]">

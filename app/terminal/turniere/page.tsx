@@ -1,15 +1,14 @@
 "use client"
 
 import TerminalLink from "../_components/TerminalLink"
-import { ArrowLeft, ChevronRight, Euro, ListOrdered, Target, Trophy, Users, Gamepad2 } from "lucide-react"
+import { ArrowLeft, ChevronRight, Euro, ListOrdered, Target, Trophy, Gamepad2 } from "lucide-react"
 
 const tiles = [
-  { title: "Turniermodus", subtitle: "PIN rein · Match laden · Ergebnis speichern", href: "/terminal/turniermodus", icon: Gamepad2, accent: "orange" },
-  { title: "Alle Turniere & Cups", subtitle: "Lion Cup · Members Champions Cup · aktive Serien", href: "/terminal/turniere/alle", icon: Trophy, accent: "orange" },
+  { title: "Turniermodus", subtitle: "Name suchen · bestätigen · Match laden · Ergebnis speichern", href: "/terminal/turniermodus", icon: Gamepad2, accent: "orange" },
+  { title: "Alle Turniere & Serien", subtitle: "Alle aktiven Turnierserien dynamisch aus der Turnierzentrale", href: "/terminal/turniere/alle", icon: Trophy, accent: "orange" },
   { title: "Turnier-Ergebnisse", subtitle: "Alle Resultate der Turniere", href: "/terminal/turniere/ergebnisse", icon: Target, accent: "orange" },
-  { title: "Preisgeld & Cups", subtitle: "Preisfonds, Beiträge und Cup-Auswahl", href: "/terminal/turniere/preisgeld", icon: Euro, accent: "blue" },
-  { title: "Tabellen & Ranglisten", subtitle: "Serienwertungen, Platzierungen und Punkte", href: "/terminal/turniere/ranglisten", icon: ListOrdered, accent: "blue" },
-  { title: "Teilnehmer", subtitle: "Spieler und Teams je Turnier", href: "/terminal/turniere/teilnehmer", icon: Users, accent: "orange" },
+  { title: "Preisgeld", subtitle: "Preisfonds automatisch aus Serienbeitrag und Startgeld", href: "/terminal/turniere/preisgeld", icon: Euro, accent: "blue" },
+  { title: "Tabellen & Ranglisten", subtitle: "Alle aktiven Serienwertungen dynamisch geladen", href: "/terminal/turniere/ranglisten", icon: ListOrdered, accent: "blue" },
 ]
 
 export default function TerminalTournamentMenuPage() {
@@ -24,7 +23,7 @@ export default function TerminalTournamentMenuPage() {
           <div>
             <div className="text-[11px] font-black uppercase tracking-[0.34em] text-orange-300/90">EMD Club Terminal</div>
             <h1 className="mt-1 text-3xl font-black tracking-[-0.05em] sm:text-4xl">Turnierbereich</h1>
-            <div className="mt-1 text-sm font-semibold text-white/38">Turniere, Cups, Ergebnisse und Ranglisten</div>
+            <div className="mt-1 text-sm font-semibold text-white/38">Turniere, Serien, Ergebnisse, Preisgeld und Ranglisten</div>
           </div>
         </header>
 

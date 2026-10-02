@@ -10,7 +10,6 @@ import {
   Users,
   Shield,
   Eye,
-  History,
   Trophy,
   Settings,
   List,
@@ -25,44 +24,50 @@ import {
   PartyPopper,
   Calendar,
   Zap,
-  UserCheck,
   Activity,
   CreditCard,
   Video,
   UserPlus,
+  ImageUp,
+  Inbox,
 } from "lucide-react"
 
 import { AuthSection } from "@/components/auth-section"
 import { PlayerListModal } from "@/components/player-list-modal"
-import { GameHistoryTable } from "@/components/game-history-table"
 import { PlayerRegistration } from "@/components/player-registration"
 import { PlayerManagement } from "@/components/player-management"
-import { ClubPlayerTeamManagement } from "@/components/vereinsverwaltung/ClubPlayerTeamManagement"
+import { ClubPlayerTeamManagement } from "./_komponenten/vereinsverwaltung/verwaltung"
 import SeasonSettingsPage from "@/app/admin/season_settings/page"
-import { AdminPushManagement } from "@/components/admin/admin-push-management"
+import { AdminPushManagement } from "./_komponenten/push-nachrichten"
 import { PlayerRecruitmentForm } from "@/components/player-recruitment-form"
 import { PlayerRecruitmentList } from "@/components/player-recruitment-list"
 import { PlayerApplicationsList } from "@/components/player-applications-list"
-import { EventsManagement } from "@/components/admin/events-management"
+import { EventsManagement } from "./_komponenten/veranstaltungen"
 import { useAuth } from "@/hooks/use-auth"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import Link from "next/link"
 import { UserManagement } from "@/components/user-management"
-import { AdminBonusManagement } from "@/components/admin/bonus/admin-bonus-management"
-import { AdminSpieldatenbankManagement } from "@/components/admin/spieldatenbank/admin-spieldatenbank-management"
-import { LeagueManagement } from "@/components/league-management"
-import { RolePermissionsManager } from "@/components/role-permissions-manager"
-import { AdminMembersLevelManagement } from "@/components/admin/members-champion-cup/admin-members-level-management"
-import { BonusVergabeManagement } from "@/components/admin/bonus-vergabe/bonus-vergabe"
-import { AdminPraemienRedemptions } from "@/components/admin/bonus/admin-praemien-redemptions"
-import { AdminMembershipManagement } from "@/components/admin/membership/admin-membership-management"
-import { AdminApprovalsManagement } from "@/components/admin/admin-freigaben"
-import { AdminClubMeeting } from "@/components/admin/admin-club-meeting"
-import { AdminClubhouseManagement } from "@/components/admin/admin-clubhouse-management"
-import { InternalTournamentEventsAdmin } from "@/components/admin/internal-events/internal-tournament-events-admin"
+import { AdminBonusManagement } from "./_komponenten/bonus/bonussystem"
+import { AdminSpieldatenbankManagement } from "./_komponenten/turniere/spieldatenbank/verwaltung"
+import { LeagueManagement, type LeagueMailboxPrefill } from "@/components/league-management"
+import { RolePermissionsManager } from "./_komponenten/rechteverwaltung"
+import { AdminMembersLevelManagement } from "./_komponenten/turniere/members-cup-einstufung"
+import { BonusVergabeManagement } from "./_komponenten/bonus/bonusvergabe"
+import { AdminPraemienRedemptions } from "./_komponenten/bonus/praemien-ausgabe"
+import { AdminMembershipManagement } from "./_komponenten/mitgliedschaften/verwaltung"
+import { AdminApprovalsManagement } from "./_komponenten/freigaben"
+import { AdminClubMeeting } from "./_komponenten/vereinssitzung"
+import { AdminClubhouseManagement } from "./_komponenten/vereinsheim"
+import { InternalTournamentEventsAdmin } from "./_komponenten/turniere/interne-veranstaltungen"
+import { AdminTournamentCenter } from "./_komponenten/turniere/turnier-zentrale"
 import { PackageCheck } from "lucide-react"
+import { AdminNavigation } from "./_komponenten/navigation"
+import { AdminDashboard } from "./_komponenten/dashboard"
+import { AdminProfileChangeRequests } from "./_komponenten/profil-aenderungen"
+import { AdminLeagueMailbox } from "./_komponenten/ligapostfach"
+import { ADMIN_CATEGORY_LABELS, ADMIN_PAGES } from "./_konfiguration/admin-seiten"
 
 export default function AdminPage() {
   const { session, user, loading: authLoading, authMessage, setAuthMessage, isAdmin, adminLoading } = useAuth()
@@ -81,7 +86,6 @@ export default function AdminPage() {
     | "players"
 
     | "results"
-    | "history"
     | "management"
     | "photos"
     | "recruitment"
@@ -94,14 +98,12 @@ export default function AdminPage() {
     | "player-database"
     | "dart-competition"
     | "leagues"
+    | "league-overdue"
     | "support-tickets"
     | "lion-cup-registrations"
     | "tournament-management"
     | "tournament-series"
     | "events"
-    | "advent-quiz"
-    | "campus-registrations"
-    | "credit-loader"
     | "lion-cup-settings"
     | "role-permissions"
 	  | "member-availability-all"
@@ -116,6 +118,8 @@ export default function AdminPage() {
 | "approvals"
 | "club-meeting"
 | "clubhouse"
+| "profile-changes"
+| "league-mailbox"
   >("dashboard")
 
   // Admin-Ansicht merken: selbst wenn eine Unterkomponente/Browser die Seite neu lädt,
@@ -153,6 +157,8 @@ export default function AdminPage() {
   const [allowedViews, setAllowedViews] = useState<Set<string> | null>(null)
   const [roleLoading, setRoleLoading] = useState(false)
   const [adminProfileFlag, setAdminProfileFlag] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [superAdminLoading, setSuperAdminLoading] = useState(true)
 
   useEffect(() => {
     if (isAdmin) {
@@ -187,6 +193,40 @@ export default function AdminPage() {
   }, [user?.id, isAdmin])
 
   const stableIsAdmin = isAdmin || adminProfileFlag
+
+  useEffect(() => {
+    let cancelled = false
+
+    const run = async () => {
+      if (!user?.id) {
+        if (!cancelled) {
+          setIsSuperAdmin(false)
+          setSuperAdminLoading(false)
+        }
+        return
+      }
+
+      setSuperAdminLoading(true)
+
+      try {
+        const { data, error } = await supabase.rpc("is_super_admin")
+        if (error) throw error
+        if (!cancelled) setIsSuperAdmin(Boolean(data))
+      } catch (error) {
+        console.warn("Super admin check failed:", error)
+        if (!cancelled) setIsSuperAdmin(false)
+      } finally {
+        if (!cancelled) setSuperAdminLoading(false)
+      }
+    }
+
+    void run()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id])
+
   
   
   
@@ -258,10 +298,178 @@ export default function AdminPage() {
   
 
   const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0)
-  const [unreadCampusCount, setUnreadCampusCount] = useState(0)
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0)
   const [pendingGuestRequestsCount, setPendingGuestRequestsCount] = useState(0)
   const [pendingJoinRequestsCount, setPendingJoinRequestsCount] = useState(0)
+  const [overdueLeagueCount, setOverdueLeagueCount] = useState(0)
+  const [pendingProfileChangesCount, setPendingProfileChangesCount] = useState(0)
+  const [openLeagueMailboxCount, setOpenLeagueMailboxCount] = useState(0)
+  const [leagueMailboxPrefill, setLeagueMailboxPrefill] = useState<LeagueMailboxPrefill | null>(null)
+
+  const fetchOpenLeagueMailboxCount = useCallback(async () => {
+    if (!session || !stableIsAdmin) {
+      setOpenLeagueMailboxCount(0)
+      return
+    }
+
+    const { data, error } = await supabase.rpc("league_mail_admin_unread_count")
+
+    if (error) {
+      console.warn("Neue Ligapostfach-Antworten konnten nicht gezählt werden:", error)
+      setOpenLeagueMailboxCount(0)
+      return
+    }
+
+    setOpenLeagueMailboxCount(Number(data || 0))
+  }, [session, stableIsAdmin])
+
+  useEffect(() => {
+    void fetchOpenLeagueMailboxCount()
+    if (!session || !stableIsAdmin) return
+
+    const channel = supabase
+      .channel("admin_league_mailbox_count")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "league_mail_threads" },
+        () => void fetchOpenLeagueMailboxCount(),
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [session, stableIsAdmin, fetchOpenLeagueMailboxCount])
+
+  const fetchPendingProfileChangesCount = useCallback(async () => {
+    if (!session || !stableIsAdmin) {
+      setPendingProfileChangesCount(0)
+      return
+    }
+
+    const { count, error } = await supabase
+      .from("profile_change_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending")
+
+    if (error) {
+      console.warn("Offene Profiländerungen konnten nicht gezählt werden:", error)
+      setPendingProfileChangesCount(0)
+      return
+    }
+
+    setPendingProfileChangesCount(count || 0)
+  }, [session, stableIsAdmin])
+
+  useEffect(() => {
+    void fetchPendingProfileChangesCount()
+    if (!session || !stableIsAdmin) return
+
+    const channel = supabase
+      .channel("admin_profile_change_requests_count")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profile_change_requests" },
+        () => void fetchPendingProfileChangesCount(),
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [session, stableIsAdmin, fetchPendingProfileChangesCount])
+
+  const fetchOverdueLeagueCount = useCallback(async () => {
+    if (!session) {
+      setOverdueLeagueCount(0)
+      return
+    }
+
+    try {
+      // Gleiche Logik wie in der Ligaverwaltung:
+      // aktive Saison, in unserer App noch offen, nicht verschoben und Termin + 24 h überschritten.
+      const { data: activeSeason, error: seasonError } = await supabase
+        .from("seasons")
+        .select("id")
+        .eq("is_active", true)
+        .order("year", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (seasonError) throw seasonError
+      if (!activeSeason?.id) {
+        setOverdueLeagueCount(0)
+        return
+      }
+
+      const { data: rows, error: matchesError } = await supabase
+        .from("matches")
+        .select("id,match_date,match_time,status,home_score,away_score")
+        .eq("season_id", activeSeason.id)
+
+      if (matchesError) throw matchesError
+
+      const now = Date.now()
+      const graceMs = 24 * 60 * 60 * 1000
+
+      const count = (rows || []).filter((match: any) => {
+        // Verschobene Spiele NICHT pauschal ausblenden:
+        // match_date / match_time enthalten bereits den neuen Termin.
+        // Erst wenn dieser neue Termin + 24h vorbei ist, wird es überfällig.
+        if (match.status === "completed") return false
+        if (match.status === "cancelled") return false
+
+        const resultMissing = true
+
+        if (!resultMissing || !match.match_date) return false
+
+        const rawTime = String(match.match_time || "").trim()
+        const time = /^\d{1,2}:\d{2}(?::\d{2})?$/.test(rawTime)
+          ? rawTime.length === 5
+            ? `${rawTime}:00`
+            : rawTime
+          : "23:59:59"
+
+        const base = new Date(`${match.match_date}T${time}`)
+        if (Number.isNaN(base.getTime())) return false
+
+        return now > base.getTime() + graceMs
+      }).length
+
+      setOverdueLeagueCount(count)
+    } catch (error) {
+      console.warn("Überfällige Ligaspiele konnten nicht gezählt werden:", error)
+      setOverdueLeagueCount(0)
+    }
+  }, [session])
+
+  useEffect(() => {
+    void fetchOverdueLeagueCount()
+    if (!session) return
+
+    const channel = supabase
+      .channel("admin_league_overdue_count")
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, () => {
+        void fetchOverdueLeagueCount()
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "seasons" }, () => {
+        void fetchOverdueLeagueCount()
+      })
+      .subscribe()
+
+    const interval = window.setInterval(() => {
+      void fetchOverdueLeagueCount()
+    }, 5 * 60 * 1000)
+
+    const onFocus = () => void fetchOverdueLeagueCount()
+    window.addEventListener("focus", onFocus)
+
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener("focus", onFocus)
+      void supabase.removeChannel(channel)
+    }
+  }, [session, fetchOverdueLeagueCount])
 
 
 const fetchPendingGuestRequestsCount = useCallback(async () => {
@@ -396,7 +604,6 @@ useEffect(() => {
   const fetchUnreadApplicationsCount = useCallback(async () => {
     if (!session) {
       setUnreadApplicationsCount(0)
-      setUnreadCampusCount(0)
       return
     }
 
@@ -412,19 +619,6 @@ useEffect(() => {
     } else {
       setUnreadApplicationsCount(count || 0)
     }
-
-    // Campus Registrierungen
-    const { count: campusCount, error: campusError } = await supabase
-      .from("campus_registrations")
-      .select("*", { count: "exact", head: true })
-      .eq("is_read", false)
-
-    if (campusError) {
-      console.error("Error fetching unread campus registrations count:", campusError)
-      setUnreadCampusCount(0)
-    } else {
-      setUnreadCampusCount(campusCount || 0)
-    }
   }, [session])
 
   useEffect(() => {
@@ -436,9 +630,6 @@ useEffect(() => {
       channel = supabase
         .channel("admin_unread_counts")
         .on("postgres_changes", { event: "*", schema: "public", table: "player_applications" }, () => {
-          fetchUnreadApplicationsCount()
-        })
-        .on("postgres_changes", { event: "*", schema: "public", table: "campus_registrations" }, () => {
           fetchUnreadApplicationsCount()
         })
         .subscribe()
@@ -498,6 +689,16 @@ useEffect(() => {
       return
     }
 
+    if (view === "member-availability-all") {
+      setCurrentView("member-availability-all")
+      return
+    }
+
+    if (view === "league-overdue") {
+      setCurrentView("league-overdue")
+      return
+    }
+
     // Bei datenintensiven Bereichen zuerst sicherstellen, dass die
     // Supabase-Session im Browser wirklich bereit ist.
     if (view === "membership-management" || view === "approvals" || view === "internal-events") {
@@ -509,197 +710,47 @@ useEffect(() => {
   }
 
   const dashboardCards = [
+    ...ADMIN_PAGES
+      .filter((page) => page.showOnDashboard !== false && page.key !== "dashboard" && !["history", "campus-registrations", "credit-loader", "advent-quiz"].includes(page.key))
+      .filter((page) => !page.superAdminOnly || isSuperAdmin)
+      .map((page) => ({
+        title: page.title,
+        description: page.description,
+        icon: page.icon,
+        color: "bg-orange-600",
+        view: page.key as typeof currentView,
+        category:
+          page.category === "league" || page.category === "tournaments"
+            ? ("sport" as const)
+            : ("verein" as const),
+        badge:
+          page.key === "recruitment"
+            ? unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined
+            : page.key === "approvals"
+              ? pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined
+              : page.key === "club"
+                ? pendingGuestRequestsCount + pendingJoinRequestsCount > 0
+                  ? pendingGuestRequestsCount + pendingJoinRequestsCount
+                  : undefined
+                : undefined,
+      })),
     {
-      title: "Benutzerverwaltung",
-      description: "Konten, Rollen und Registrierungen verwalten",
-      icon: Users,
-      color: "bg-blue-500",
-      view: "users" as const,
-      category: "verein" as const,
-    },
-    {
-      title: "Rekrutierung",
-      description: "Spielerbewerbungen & Bedarf verwalten",
-      icon: Mail,
-      color: "bg-indigo-500",
-      view: "recruitment" as const,
-      category: "verein" as const,
-      badge: unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined,
-    },
-  
-	{
-  title: "Bonussystem",
-  description: "Bonusregeln und Punkteverwaltung",
-  icon: Trophy,
-  color: "bg-orange-600",
-  view: "bonus-system" as const,
-  category: "verein" as const,
-},
-{
-  title: "Mitgliedschaften",
-  description: "Pakete, Module und Zahlungsarten verwalten",
-  icon: CreditCard,
-  color: "bg-emerald-600",
-  view: "membership-management" as const,
-  category: "verein" as const,
-},
-{
-  title: "Bonusvergabe",
-  description: "Bonuspunkte an Spieler vergeben",
-  icon: Trophy,
-  color: "bg-amber-600",
-  view: "bonus-vergabe" as const,
-  category: "verein" as const,
-},
-{
-  title: "Prämien-Ausgabe",
-  description: "Eingelöste Prämien prüfen und abschließen",
-  icon: PackageCheck,
-  color: "bg-green-600",
-  view: "praemien-redemptions" as const,
-  category: "verein" as const,
-},
-    {
-      title: "Freigaben",
-      description: "DACH-Turniere & Dartbörse prüfen",
-      icon: Shield,
+      title: "Ligapostfach",
+      description: "Nachrichten, Antworten und Liga-Kommunikation",
+      icon: Inbox,
       color: "bg-orange-600",
-      view: "approvals" as const,
-      category: "verein" as const,
-      badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
+      view: "league-mailbox" as typeof currentView,
+      category: "sport" as const,
+      badge: openLeagueMailboxCount > 0 ? openLeagueMailboxCount : undefined,
     },
     {
-      title: "Veranstaltungen",
-      description: "Turniere, Partys & Events verwalten",
-      icon: PartyPopper,
-      color: "bg-purple-500",
-      view: "events" as const,
-      category: "verein" as const,
-    },
-    {
-      title: "Interne Events & Anmeldungen",
-      description: "Anmeldungen, interne Specials und Captain-Drafts verwalten",
-      icon: UserPlus,
+      title: "Profiländerungen",
+      description: "Namens- und Profilbild-Anfragen prüfen",
+      icon: ImageUp,
       color: "bg-orange-600",
-      view: "internal-events" as const,
-      category: "sport" as const,
-    },
-    {
-      title: "Vereinsheim",
-      description: "Öffnungszeiten & Berechtigungen verwalten",
-      icon: Home,
-      color: "bg-emerald-600",
-      view: "clubhouse" as const,
+      view: "profile-changes" as typeof currentView,
       category: "verein" as const,
-    },
-    {
-      title: "Vereinssitzung",
-      description: "Sitzung vorbereiten, starten & teilen",
-      icon: Video,
-      color: "bg-red-600",
-      view: "club-meeting" as const,
-      category: "verein" as const,
-    },
-	{
-  title: "Push Nachrichten",
-  description: "Push an alle oder ausgewählte Spieler senden",
-  icon: BellRing,
-  color: "bg-orange-500",
-  view: "admin-push" as const,
-  category: "verein" as const,
-},
-    {
-      title: "Vereinsverwaltung",
-      description: "Spieler, Gastzugänge, Beitritte & Vereinsdaten",
-      icon: Users,
-      color: "bg-teal-500",
-      view: "club" as const,
-      category: "verein" as const,
-    badge: pendingGuestRequestsCount + pendingJoinRequestsCount > 0
-      ? pendingGuestRequestsCount + pendingJoinRequestsCount
-      : undefined,
-    },
-    {
-      title: "Support Tickets",
-      description: "Support-Anfragen bearbeiten",
-      icon: HelpCircle,
-      color: "bg-red-500",
-      view: "support-tickets" as const,
-      category: "verein" as const,
-    },
-    {
-      title: "Campus-Registrierungen",
-      description: "EMD-CAMPUS Anmeldungen einsehen",
-      badge: unreadCampusCount > 0 ? unreadCampusCount : undefined,
-      icon: Users,
-      color: "bg-pink-500",
-      view: "campus-registrations" as const,
-      category: "verein" as const,
-    },
-    {
-      title: "Credit-Loader",
-      description: "Gutscheine & Credits verwalten",
-      icon: Zap,
-      color: "bg-violet-500",
-      view: "credit-loader" as const,
-      category: "verein" as const,
-    },
-    {
-      title: "Ligaspiele",
-      description: "Saisons, Spieltage & Liga-Spiele verwalten",
-      icon: Target,
-      color: "bg-green-600",
-      view: "leagues" as const,
-      category: "sport" as const,
-    },
-	    {
-      title: "Aufstellungen & Zusagen",
-      description: "Spielerverfügbarkeiten / Zusagen verwalten",
-      icon: CalendarCheck,
-      color: "bg-emerald-600",
-      view: "member-availability-all" as const,
-      category: "sport" as const,
-    },
-    {
-      title: "Turnier-Zentrale",
-      description: "Turniere, Serien & Spieltage an einem Ort",
-      icon: Trophy,
-      color: "bg-orange-600",
-      view: "tournament-center" as const,
-      category: "sport" as const,
-    },
-	{
-  title: "Members Cup Einstufung",
-  description: "Tabelle 1 / 2 / 3 Spieler verwalten",
-  icon: Trophy,
-  color: "bg-orange-600",
-  view: "members-levels" as const,
-  category: "sport" as const,
-},
-
-    {
-      title: "Lion Cup",
-      description: "Ergebnisse, Historie & Verwaltung",
-      icon: Trophy,
-      color: "bg-yellow-500",
-      view: "dart-competition" as const,
-      category: "sport" as const,
-    },
-    {
-      title: "Spielerdatenbank",
-      description: "Spielerdaten einsehen & verwalten",
-      icon: List,
-      color: "bg-slate-500",
-      view: "player-database" as const,
-      category: "sport" as const,
-    },
-    {
-      title: "Adventskalender Auswertung",
-      description: "Quiz-Antworten & Rangliste ansehen",
-      icon: Calendar,
-      color: "bg-orange-500",
-      view: "advent-quiz" as const,
-      category: "verein" as const,
+      badge: pendingProfileChangesCount > 0 ? pendingProfileChangesCount : undefined,
     },
   ]
 
@@ -723,10 +774,16 @@ useEffect(() => {
 
  const canSeeView = (viewKey: string) => {
   if (viewKey === "dashboard") return true
+  if (viewKey === "role-permissions") return isSuperAdmin
+  if (viewKey === "profile-changes") return stableIsAdmin
+  if (viewKey === "league-mailbox") return stableIsAdmin
   if (stableIsAdmin) return true
   if (viewKey === "approvals") return stableIsAdmin
   if (viewKey === "membership-management") {
     return stableIsAdmin || allowedViews?.has("membership-management") === true || allowedViews?.has("*") === true
+  }
+  if (viewKey === "league-overdue") {
+    return stableIsAdmin || allowedViews?.has("leagues") === true || allowedViews?.has("*") === true
   }
 
   if (allowedViews?.has("*")) return true
@@ -740,7 +797,7 @@ useEffect(() => {
   ) return true
 
   if (
-    (viewKey === "results" || viewKey === "history") &&
+    viewKey === "results" &&
     allowedViews.has("dart-competition")
   ) {
     return true
@@ -749,68 +806,72 @@ useEffect(() => {
   return allowedViews.has(viewKey)
 }
 
-  const navSections = [
-    {
-      label: "Übersicht",
-      items: [{ key: "dashboard", label: "Dashboard", icon: Home }],
-    },
-    {
-  label: "Ligabetrieb",
-  items: [
-    { key: "leagues", label: "Ligaspiele", icon: Target },
-    { key: "member-availability-all", label: "Aufstellungen & Zusagen", icon: CalendarCheck },
-  ],
-},
-    {
-      label: "Turnierbetrieb",
-      items: [
-        { key: "tournament-center", label: "Turnier-Zentrale", icon: Trophy },
-        { key: "dart-competition", label: "Lion Cup", icon: Trophy },
-        { key: "history", label: "Historie", icon: History },
-        { key: "player-database", label: "Spielerdatenbank", icon: List },
-		{ key: "members-levels", label: "Members Cup Einstufung", icon: Trophy },
-        { key: "internal-events", label: "Interne Events & Anmeldungen", icon: UserPlus },
-      ],
-    },
-    {
-  label: "Verein",
-  items: [
-    { key: "users", label: "Benutzerverwaltung", icon: Users },
-    { key: "membership-management", label: "Mitgliedschaften", icon: CreditCard },
-    {
-      key: "recruitment",
-      label: "Rekrutierung",
-      icon: Mail,
-          badge: unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined,
-        },
-		
-        
-        {
-          key: "approvals",
-          label: "Freigaben",
-          icon: Shield,
-          badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
-        },
-        { key: "events", label: "Veranstaltungen", icon: PartyPopper },
-        { key: "clubhouse", label: "Vereinsheim", icon: Home },
-        { key: "club-meeting", label: "Vereinssitzung", icon: Video },
-		{ key: "admin-push", label: "Push Nachrichten", icon: BellRing },
-		{ key: "bonus-system", label: "Bonussystem", icon: Trophy },
-		{ key: "bonus-vergabe", label: "Bonusvergabe", icon: Trophy },
-		{ key: "praemien-redemptions", label: "Prämien-Ausgabe", icon: PackageCheck },
-        { key: "club", label: "Vereinsverwaltung", icon: Users, badge: pendingGuestRequestsCount + pendingJoinRequestsCount > 0 ? pendingGuestRequestsCount + pendingJoinRequestsCount : undefined },
-        { key: "support-tickets", label: "Support Tickets", icon: HelpCircle },
-        {
-          key: "campus-registrations",
-          label: "Campus-Registrierungen",
-          icon: Users,
-          badge: unreadCampusCount > 0 ? unreadCampusCount : undefined,
-        },
-        { key: "credit-loader", label: "Credit-Loader", icon: Zap },
-        { key: "advent-quiz", label: "Adventskalender", icon: Calendar },
-      ],
-    },
-  ] as const
+  const navSections = (
+    ["overview", "league", "tournaments", "club", "communication", "system"] as const
+  )
+    .map((category) => {
+      const items = ADMIN_PAGES
+        .filter(
+          (page) =>
+            page.category === category &&
+            page.showInNavigation !== false &&
+            !["internal-events", "history", "campus-registrations", "credit-loader", "advent-quiz"].includes(page.key) &&
+            (!page.superAdminOnly || isSuperAdmin),
+        )
+        .map((page) => ({
+          key: page.key,
+          label: page.key === "member-availability-all" ? "Aufstellungen & Zusagen" : page.title,
+          icon: page.icon,
+          badge:
+            page.key === "recruitment"
+              ? unreadApplicationsCount > 0 ? unreadApplicationsCount : undefined
+              : page.key === "approvals"
+                ? pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined
+                : page.key === "club"
+                  ? pendingGuestRequestsCount + pendingJoinRequestsCount > 0
+                    ? pendingGuestRequestsCount + pendingJoinRequestsCount
+                    : undefined
+                  : undefined,
+        }))
+
+      if (category === "league") {
+        items.push({
+          key: "league-overdue" as any,
+          label: "Überfällig",
+          icon: BellRing,
+          badge: overdueLeagueCount > 0 ? overdueLeagueCount : undefined,
+        })
+
+        items.push({
+          key: "internal-events" as any,
+          label: "Interner Ligabetrieb",
+          icon: UserPlus,
+          badge: undefined,
+        })
+
+        items.push({
+          key: "league-mailbox" as any,
+          label: "Ligapostfach",
+          icon: Inbox,
+          badge: openLeagueMailboxCount > 0 ? openLeagueMailboxCount : undefined,
+        })
+      }
+
+      if (category === "club") {
+        items.push({
+          key: "profile-changes" as any,
+          label: "Profiländerungen",
+          icon: ImageUp,
+          badge: pendingProfileChangesCount > 0 ? pendingProfileChangesCount : undefined,
+        })
+      }
+
+      return {
+        label: category === "league" ? "SPORTDART" : ADMIN_CATEGORY_LABELS[category],
+        items,
+      }
+    })
+    .filter((section) => section.items.length > 0)
 
   const filteredNavSections = navSections
     .map((section) => ({
@@ -823,15 +884,22 @@ useEffect(() => {
     .filter((section) => section.items.length > 0)
 
  
+
+  useEffect(() => {
+    if (superAdminLoading) return
+    if (currentView === "role-permissions" && !isSuperAdmin) {
+      setCurrentView("dashboard")
+    }
+  }, [currentView, isSuperAdmin, superAdminLoading])
+
   const dashboardByNavSection = {
   "Ligabetrieb": visibleDashboardCards.filter((c) =>
-    ["leagues", "member-availability-all"].includes(c.view)
+    ["leagues", "member-availability-all", "league-mailbox"].includes(c.view)
   ),
   "Turnierbetrieb": visibleDashboardCards.filter((c) =>
     [
   "tournament-center",
   "dart-competition",
-  "history",
   "player-database",
   "members-levels",
   "internal-events"
@@ -848,17 +916,15 @@ useEffect(() => {
     "club-meeting",
     "club",
     "support-tickets",
-    "campus-registrations",
-    "credit-loader",
-    "advent-quiz",
     "admin-push",
     "bonus-system",
     "bonus-vergabe",
     "praemien-redemptions",
+    "profile-changes",
   ].includes(c.view)
 ),
 } as const
-  if (authLoading || adminLoading || !adminViewRestored) {
+  if (authLoading || adminLoading || superAdminLoading || !adminViewRestored) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -881,7 +947,7 @@ if (session && !isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <main className="w-full p-4 md:p-8">
+        <main className="w-full min-w-0 max-w-full overflow-x-hidden px-2 py-4 sm:px-4 md:p-8">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -959,116 +1025,33 @@ if (!hasAnyPermission) {
             />
           </div>
         ) : (
-          <div className="flex min-w-0 max-w-full flex-col gap-6 overflow-hidden lg:flex-row">
-            {/* Sidebar */}
-            <aside className="hidden lg:block w-72 shrink-0">
-              <div className="sticky top-6">
-                <div className="bg-white rounded-xl shadow-md border border-gray-100">
-                  <div className="p-4 border-b border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-semibold text-gray-900">Navigation</div>
-                      <Badge className="bg-gray-100 text-gray-700">Admin</Badge>
-                    </div>
-                    <div className="mt-3">
-                      <input
-                        value={navQuery}
-                        onChange={(e) => setNavQuery(e.target.value)}
-                        placeholder="Suchen..."
-                        className="w-full h-9 rounded-md border border-gray-200 bg-gray-50 px-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-red-200"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-2">
-                    {filteredNavSections.map((section) => (
-                      <div key={section.label} className="mb-2">
-                        <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          {section.label}
-                        </div>
-                        <div className="space-y-1">
-                          {section.items.map((item) => (
-                            <Button
-                              key={item.key}
-                              variant="ghost"
-                              className={
-                                "w-full justify-between px-3 " +
-                                (currentView === (item.key as any)
-                                  ? "bg-red-50 text-red-700 hover:bg-red-50"
-                                  : "text-gray-700 hover:bg-gray-50")
-                              }
-                              onClick={() => void openAdminView(item.key as any)}
-                            >
-                              <span className="flex items-center gap-2">
-                                <item.icon className="h-4 w-4" />
-                                <span className="text-sm">{item.label}</span>
-                              </span>
-                              {item.badge ? (
-                                <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
-                                  {item.badge}
-                                </span>
-                              ) : (
-                                <ChevronRight className="h-4 w-4 text-gray-300" />
-                              )}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="p-3 border-t border-gray-100">
-                    <Button variant="outline" className="w-full bg-transparent" onClick={handleLogout} disabled={loggingOut}>
-                      {loggingOut ? "Abmelden..." : "Abmelden"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </aside>
+          <div className="flex w-full min-w-0 max-w-full flex-col gap-4 overflow-x-hidden lg:flex-row lg:gap-6">
+            <AdminNavigation
+              sections={filteredNavSections}
+              currentView={currentView}
+              query={navQuery}
+              onQueryChange={setNavQuery}
+              onNavigate={(key) => void openAdminView(key as typeof currentView)}
+              onLogout={handleLogout}
+              loggingOut={loggingOut}
+              alignWithBreadcrumb={currentView === "tournament-center"}
+            />
 
             {/* Main content */}
-            <section className="min-w-0 max-w-full flex-1 space-y-6 overflow-hidden">
-              {/* Mobile: immer sichtbare, einfache Bereichsauswahl */}
-              <div className="sticky top-12 z-40 -mx-4 border-y border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:top-14 lg:hidden">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void openAdminView("dashboard")}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700"
-                    aria-label="Admin Übersicht"
-                  >
-                    <Home className="h-4 w-4" />
-                  </button>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
-                      Admin-Bereich
-                    </div>
-                    <select
-                      value={currentView}
-                      onChange={(e) => void openAdminView(e.target.value as typeof currentView)}
-                      className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm font-bold text-gray-900 outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
-                    >
-                      {filteredNavSections.map((section) => (
-                        <optgroup key={section.label} label={section.label}>
-                          {section.items.map((item) => (
-                            <option key={item.key} value={item.key}>
-                              {item.label}{item.badge ? ` (${item.badge})` : ""}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
+            <section className="w-full min-w-0 max-w-full flex-1 space-y-6 overflow-x-hidden lg:w-0">
+              <div className="w-full min-w-0 max-w-full space-y-6 overflow-x-hidden">
                 {currentView !== "dashboard" ? (
-                  <div className="hidden lg:flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                  <div className="emd-admin-breadcrumb hidden lg:flex items-center justify-between rounded-2xl px-4 py-3">
                     <div className="text-sm font-bold text-gray-600">
                       Admin / <span className="text-gray-900">{filteredNavSections.flatMap((section) => section.items).find((item) => item.key === currentView)?.label || "Bereich"}</span>
                     </div>
-                    <Button type="button" variant="outline" size="sm" onClick={() => void openAdminView("dashboard")}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void openAdminView("dashboard")}
+                      className="emd-admin-overview-button rounded-xl"
+                    >
                       <Home className="mr-2 h-4 w-4" />
                       Übersicht
                     </Button>
@@ -1088,224 +1071,39 @@ if (!hasAnyPermission) {
                 )}
 
                 {currentView === "dashboard" && (
-                  <div className="space-y-6">
-                    {pendingGuestRequestsCount + pendingJoinRequestsCount > 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => void openAdminView("club")}
-                        className="flex w-full items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-left shadow-sm transition hover:bg-orange-100"
-                      >
-                        <UserCheck className="mt-0.5 h-5 w-5 shrink-0 text-orange-700" />
-                        <div className="min-w-0 flex-1">
-                          <div className="font-black text-orange-900">
-                            {pendingGuestRequestsCount + pendingJoinRequestsCount} offene Vereinsanfragen
-                          </div>
-                          <div className="mt-1 text-sm font-semibold text-orange-800">
-                            {pendingGuestRequestsCount > 0
-                              ? `${pendingGuestRequestsCount} Gastzugang${pendingGuestRequestsCount === 1 ? "" : "e"}`
-                              : ""}
-                            {pendingGuestRequestsCount > 0 && pendingJoinRequestsCount > 0 ? " · " : ""}
-                            {pendingJoinRequestsCount > 0
-                              ? `${pendingJoinRequestsCount} Beitritt${pendingJoinRequestsCount === 1 ? "" : "e"}`
-                              : ""}
-                            {" "}warten auf deine Entscheidung.
-                          </div>
-                        </div>
-                        <span className="rounded-full bg-orange-600 px-2.5 py-1 text-xs font-black text-white">Prüfen</span>
-                      </button>
-                    ) : null}
-
-                    <div className="hidden md:grid md:grid-cols-3 gap-4">
-                      <Card className="border-0 shadow-md">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ungelesen</div>
-                              <div className="text-2xl font-bold text-gray-900">{unreadApplicationsCount}</div>
-                              <div className="text-sm text-gray-600">Spielerbewerbungen</div>
-                            </div>
-                            <div className="p-3 bg-indigo-50 rounded-xl">
-                              <Mail className="h-5 w-5 text-indigo-600" />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border-0 shadow-md">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ungelesen</div>
-                              <div className="text-2xl font-bold text-gray-900">{unreadCampusCount}</div>
-                              <div className="text-sm text-gray-600">Campus-Registrierungen</div>
-                            </div>
-                            <div className="p-3 bg-pink-50 rounded-xl">
-                              <Users className="h-5 w-5 text-pink-600" />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border-0 shadow-md">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Zugriff</div>
-                              <div className="text-2xl font-bold text-gray-900">{allowedViews?.has("*") ? "Alle" : allowedViews?.size ?? 0}</div>
-                              <div className="text-sm text-gray-600">Freigeschaltete(r) Bereich(e)</div>
-                            </div>
-                            <div className="p-3 bg-gray-100 rounded-xl">
-                              <Eye className="h-5 w-5 text-gray-700" />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                    {/* Handy: keine Kachelwand, sondern klare Bereichsliste */}
-                    <div className="space-y-3 lg:hidden">
-                      {(["Ligabetrieb", "Turnierbetrieb", "Verein"] as const).map((section) => (
-                        <div key={`mobile-${section}`} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                          <div className="border-b border-gray-100 bg-gray-50 px-4 py-3">
-                            <div className="flex items-center gap-2 text-sm font-black text-gray-900">
-                              {section === "Ligabetrieb" ? (
-                                <Target className="h-4 w-4 text-green-600" />
-                              ) : section === "Turnierbetrieb" ? (
-                                <Trophy className="h-4 w-4 text-orange-600" />
-                              ) : (
-                                <Users className="h-4 w-4 text-blue-600" />
-                              )}
-                              {section}
-                            </div>
-                          </div>
-
-                          <div className="divide-y divide-gray-100">
-                            {dashboardByNavSection[section].map((card) => (
-                              <button
-                                key={`mobile-row-${card.view}`}
-                                type="button"
-                                onClick={() => void openAdminView(card.view)}
-                                className="flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50"
-                              >
-                                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${card.color}`}>
-                                  <card.icon className="h-4 w-4 text-white" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="truncate text-sm font-black text-gray-900">{card.title}</div>
-                                  <div className="truncate text-xs font-semibold text-gray-500">{card.description}</div>
-                                </div>
-                                {card.badge ? (
-                                  <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-black text-white">
-                                    {card.badge}
-                                  </span>
-                                ) : null}
-                                <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="hidden lg:grid lg:grid-cols-3 gap-6">
-                      {(["Ligabetrieb", "Turnierbetrieb", "Verein"] as const).map((section) => (
-                        <Card key={section} className="border-0 shadow-md">
-                          <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                              {section === "Ligabetrieb" ? (
-                                <Target className="h-5 w-5" />
-                              ) : section === "Turnierbetrieb" ? (
-                                <Trophy className="h-5 w-5" />
-                              ) : (
-                                <Users className="h-5 w-5" />
-                              )}
-                              <span>{section}</span>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {dashboardByNavSection[section].map((card) => (
-  <button
-    key={`${card.view}-${allowedViews?.size ?? 0}`}
-    onClick={() => void openAdminView(card.view)}
-                                  className="text-left group rounded-xl border border-gray-100 bg-white hover:shadow-lg transition-all duration-200 p-4"
-                                >
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className={`p-3 ${card.color} rounded-xl shadow-sm`}>
-                                      <card.icon className="h-5 w-5 text-white" />
-                                    </div>
-                                    {card.badge ? (
-                                      <span className="text-xs font-semibold bg-orange-500 text-white rounded-full px-2 py-0.5">
-                                        {card.badge}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                  <div className="mt-3 font-semibold text-gray-900 group-hover:text-gray-950">
-                                    {card.title}
-                                  </div>
-                                  <div className="mt-1 text-sm text-gray-600">{card.description}</div>
-                                </button>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {currentView === "tournament-center" && (
-                  <div className="space-y-6">
-                    <Card className="border-0 shadow-md">
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Trophy className="h-5 w-5 text-orange-600" />
-                          <span>Turnier-Zentrale</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="mb-4 text-gray-600">
-                          Einzelturniere, Turnierserien, Spieltage und Members Cup zentral öffnen.
-                        </p>
-                        <Link href="/admin/tournament-center">
-                          <Button className="w-full bg-orange-600 hover:bg-orange-700">
-                            <Trophy className="mr-2 h-4 w-4" />
-                            Turnier-Zentrale öffnen
-                          </Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <AdminDashboard
+                    sections={filteredNavSections}
+                    dashboardCards={visibleDashboardCards}
+                    unreadApplicationsCount={unreadApplicationsCount}
+                    unreadCampusCount={0}
+                    pendingApprovalsCount={pendingApprovalsCount}
+                    pendingGuestRequestsCount={pendingGuestRequestsCount}
+                    pendingJoinRequestsCount={pendingJoinRequestsCount}
+                    onOpen={(key) => void openAdminView(key as typeof currentView)}
+                  />
                 )}
 
                 {currentView === "players" && <PlayerRegistration isVisible={true} user={user} onDataSaved={handleDataSaved} />}
-                {currentView === "history" && <GameHistoryTable />}
                 {currentView === "management" && <PlayerManagement isVisible={true} user={user} onDataSaved={handleDataSaved} />}
                
-                {currentView === "leagues" && <LeagueManagement />}
-				{currentView === "member-availability-all" && (
-  <div className="space-y-6">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <CalendarCheck className="h-5 w-5" />
-          <span>Aufstellungen & Zusagen</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-gray-600 mb-4">
-          Öffnet die Übersicht für Verfügbarkeiten / Zusagen aller Mitglieder.
-        </p>
-
-        <Link href="/admin/member-availability-all">
-          <Button className="w-full">
-            <CalendarCheck className="h-4 w-4 mr-2" />
-            Öffnen
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
-  </div>
-)}
+                {(currentView === "leagues" ||
+                  currentView === "member-availability-all" ||
+                  currentView === "league-overdue") && (
+                  <LeagueManagement
+                    key={`league-management-${currentView}`}
+                    initialTab={
+                      currentView === "member-availability-all"
+                        ? "lineups"
+                        : currentView === "league-overdue"
+                          ? "overdue"
+                          : "overview"
+                    }
+                    onOpenMailbox={(prefill) => {
+                      setLeagueMailboxPrefill(prefill || null)
+                      setCurrentView("league-mailbox")
+                    }}
+                  />
+                )}
 
                 {currentView === "support-tickets" && (
                   <div className="space-y-6">
@@ -1350,6 +1148,20 @@ if (!hasAnyPermission) {
                 )}
 
 
+                {currentView === "profile-changes" && (
+                  <AdminProfileChangeRequests
+                    onPendingCountChange={setPendingProfileChangesCount}
+                  />
+                )}
+
+                {currentView === "league-mailbox" && (
+                  <AdminLeagueMailbox
+                    onOpenCountChange={setOpenLeagueMailboxCount}
+                    prefill={leagueMailboxPrefill}
+                    onPrefillConsumed={() => setLeagueMailboxPrefill(null)}
+                  />
+                )}
+
                 {currentView === "clubhouse" && (
                   <div className="space-y-6">
                     <AdminClubhouseManagement />
@@ -1363,19 +1175,7 @@ if (!hasAnyPermission) {
                 )}
 
                 {currentView === "events" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <PartyPopper className="h-5 w-5" />
-                          <span>Veranstaltungen verwalten</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <EventsManagement user={user} />
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <EventsManagement user={user} />
                 )}
 				
 				{currentView === "admin-push" && (
@@ -1466,19 +1266,7 @@ if (!hasAnyPermission) {
 
 
 {currentView === "internal-events" && (
-  <div className="space-y-6">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <UserPlus className="h-5 w-5" />
-          <span>Interne Events & Anmeldungen</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <InternalTournamentEventsAdmin />
-      </CardContent>
-    </Card>
-  </div>
+  <InternalTournamentEventsAdmin />
 )}
 
 {currentView === "membership-management" && (
@@ -1566,14 +1354,8 @@ if (!hasAnyPermission) {
                   </div>
                 )}
 
-                {currentView === "role-permissions" && (
-                  <div className="space-y-4">
-                    <div>
-                      <h2 className="text-2xl font-bold">Rechteverwaltung</h2>
-                      <p className="text-sm text-muted-foreground">Lege den Seitenzugriff fest. (z.B. Supervisor).</p>
-                    </div>
-                    <RolePermissionsManager />
-                  </div>
+                {currentView === "role-permissions" && isSuperAdmin && (
+                  <RolePermissionsManager />
                 )}
 
                 {currentView === "users" && (
@@ -1604,20 +1386,6 @@ if (!hasAnyPermission) {
                               </div>
                             </div>
                           </Button>
-
-                          <Link href="/admin/admin_qr_codes">
-                            <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-amber-50">
-                                  <UserCheck className="h-5 w-5 text-amber-600" />
-                                </div>
-                                <div className="flex flex-col items-start">
-                                  <span className="font-semibold">Account Anfragen</span>
-                                  <span className="text-xs text-gray-500">QR Codes & Registrierung</span>
-                                </div>
-                              </div>
-                            </Button>
-                          </Link>
 
                           <Link href="/admin/users">
                             <Button variant="outline" className="w-full justify-start bg-transparent h-auto p-4">
@@ -1670,6 +1438,13 @@ if (!hasAnyPermission) {
 
                 {currentView === "club" && <ClubPlayerTeamManagement user={user} onDataSaved={handleDataSaved} />}
 
+                {currentView === "tournament-center" && (
+                  <AdminTournamentCenter
+                    onOpen={(view) => void openAdminView(view as typeof currentView)}
+                    canOpen={canSeeView}
+                  />
+                )}
+
                 {currentView === "tournaments" && (
                   <div className="space-y-6">
                     <Card>
@@ -1704,21 +1479,8 @@ if (!hasAnyPermission) {
                 )}
 
                 {currentView === "player-database" && (
-  <div className="space-y-6">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <List className="h-5 w-5" />
-          <span>Spielerdatenbank</span>
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <AdminSpieldatenbankManagement user={user} />
-      </CardContent>
-    </Card>
-  </div>
-)}
+                  <AdminSpieldatenbankManagement user={user} />
+                )}
 
                 {currentView === "dart-competition" && (
                   <div className="space-y-6">
@@ -1731,20 +1493,6 @@ if (!hasAnyPermission) {
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
-                          <Button
-                            onClick={() => setCurrentView("history")}
-                            variant="outline"
-                            className="w-full justify-start bg-transparent h-auto p-4"
-                          >
-                            <div className="flex flex-col items-start space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <History className="h-4 w-4" />
-                                <span className="font-medium">Spiele Historie</span>
-                              </div>
-                              <span className="text-xs text-gray-500">EMD - LION CUP</span>
-                            </div>
-                          </Button>
-
                           <Button
                             onClick={() => setCurrentView("management")}
                             variant="outline"
@@ -1836,74 +1584,6 @@ if (!hasAnyPermission) {
                           <Button className="w-full">
                             <Trophy className="h-4 w-4 mr-2" />
                             Öffnen
-                          </Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {currentView === "advent-quiz" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Calendar className="h-5 w-5" />
-                          <span>Adventskalender Auswertung</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-600 mb-4">
-                          Hier können Sie alle Quiz-Antworten der Teilnehmer einsehen und die Rangliste verwalten.
-                        </p>
-                        <Link href="/admin/advent-quiz">
-                          <Button className="w-full">
-                            <Calendar className="h-4 w-4 mr-2" />
-                            Zur Adventskalender Auswertung
-                          </Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {currentView === "campus-registrations" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Users className="h-5 w-5" />
-                          <span>Campus-Registrierungen verwalten</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-600 mb-4">Hier können Sie alle EMD-CAMPUS Anmeldungen einsehen und verwalten.</p>
-                        <Link href="/admin/campus-registrations">
-                          <Button className="w-full">
-                            <Users className="h-4 w-4 mr-2" />
-                            Zur Campus-Registrierungen Verwaltung
-                          </Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {currentView === "credit-loader" && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Zap className="h-5 w-5" />
-                          <span>Credit-Loader verwalten</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-600 mb-4">Hier können Sie Gutscheine und Credits verwalten.</p>
-                        <Link href="/admin/credit-loader">
-                          <Button className="w-full">
-                            <Zap className="h-4 w-4 mr-2" />
-                            Zur Credit-Loader Verwaltung
                           </Button>
                         </Link>
                       </CardContent>

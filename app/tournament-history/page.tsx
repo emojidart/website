@@ -46,7 +46,7 @@ type KratzerResultRow = {
 /* ---------------- motion ---------------- */
 
 const containerVariants = {
-  hidden: { opacity: 0 },
+  hidden: { opacity: 1 },
   visible: {
     opacity: 1,
     transition: { staggerChildren: 0.06, delayChildren: 0.04 },
@@ -54,7 +54,7 @@ const containerVariants = {
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 14 },
+  hidden: { opacity: 1, y: 0 },
   visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 14 } },
 }
 
@@ -84,7 +84,7 @@ const typeLabel = (t?: string | null) => {
 }
 
 const statusBadge = () => (
-  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-800">
+  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-black text-emerald-300">
     <CheckCircle2 className="h-3.5 w-3.5" />
     Abgeschlossen
   </span>
@@ -123,16 +123,16 @@ function Chip({
 }) {
   const cls =
     tone === "orange"
-      ? "bg-orange-50 text-orange-900 border-orange-200"
+      ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
       : tone === "blue"
-        ? "bg-blue-50 text-blue-900 border-blue-200"
+        ? "bg-sky-400/10 text-sky-200 border-sky-400/25"
         : tone === "emerald"
-          ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+          ? "bg-emerald-400/10 text-emerald-900 border-emerald-400/25"
           : tone === "amber"
-            ? "bg-amber-50 text-amber-900 border-amber-200"
+            ? "bg-amber-400/10 text-amber-200 border-amber-400/25"
             : tone === "slate"
-              ? "bg-slate-50 text-slate-800 border-slate-200"
-              : "bg-gray-50 text-gray-800 border-gray-200"
+              ? "bg-white/5 text-white/85 border-white/10"
+              : "bg-white/5 text-white/85 border-white/10"
 
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
@@ -143,8 +143,7 @@ function Chip({
 
 export default function TournamentHistoryPage() {
   const router = useRouter()
-
-  const [rows, setRows] = useState<TournamentOverviewRow[]>([])
+const [rows, setRows] = useState<TournamentOverviewRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -287,36 +286,48 @@ export default function TournamentHistoryPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-20 text-slate-950">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
       <Header />
 
-      {/* fixed header offset */}
-      <main className="pt-14 sm:pt-16">
+      {/* Same visual background as Member Profile – loaded hidden first to prevent image flash */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
+        <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:68px_68px]" />
+      </div>
+
+      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <motion.div
-          className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
+          className="w-full"
           variants={containerVariants}
-          initial="hidden"
+          initial={false}
           animate="visible"
         >
           {/* App-Header Card (Kontakt-Style) */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
-              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
+              <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-400/15 blur-[110px]" />
+              <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
               <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
                       <Trophy className="h-6 w-6 text-orange-400" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-white/50">Turniere</p>
+                      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55 backdrop-blur-xl"><span className="h-2 w-2 rounded-full bg-orange-400" />Turniere · Archiv</div>
                       <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Turnier Historie</h1>
                       <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">Alle abgeschlossenen Turniere auf einen Blick</p>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/70">
+                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/70">
                       {loading ? "Lade…" : `${filtered.length} Turnier(e) gefunden`}
                     </span>
                   </div>
@@ -327,37 +338,37 @@ export default function TournamentHistoryPage() {
 
           {/* Filter Card (app look) */}
           <motion.div variants={itemVariants} className="mb-5">
-            <Card className="rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+            <Card className="rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl">
               <CardContent className="p-4 sm:p-5">
                 <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
                   <div className="flex-1 flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
-                      <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                      <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/45" />
                       <Input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
                         placeholder="Suche nach Name, Sieger, Typ…"
-                        className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-9"
+                        className="h-11 rounded-xl border-white/10 bg-white/5 pl-9"
                       />
                       {q ? (
                         <button
                           type="button"
                           onClick={() => setQ("")}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl hover:bg-gray-100"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl hover:bg-white/10"
                           aria-label="Suche leeren"
                         >
-                          <X className="h-4 w-4 text-gray-500" />
+                          <X className="h-4 w-4 text-white/45" />
                         </button>
                       ) : null}
                     </div>
 
                     <div className="flex gap-2 items-center">
-                      <div className="w-11 h-11 rounded-2xl border border-gray-200 bg-white flex items-center justify-center">
-                        <Filter className="h-4 w-4 text-gray-600" />
+                      <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center">
+                        <Filter className="h-4 w-4 text-white/58" />
                       </div>
 
                       <select
-                        className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-100"
+                        className="h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-orange-500/20"
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value as any)}
                         title="Typ"
@@ -376,7 +387,7 @@ export default function TournamentHistoryPage() {
                     <Button
                       variant="outline"
                       onClick={resetFilters}
-                      className="h-11 rounded-xl border-slate-200 bg-white font-black hover:bg-slate-50"
+                      className="h-11 rounded-xl border-white/10 bg-white/5 font-black hover:bg-white/10"
                     >
                       Zurücksetzen
                     </Button>
@@ -392,12 +403,12 @@ export default function TournamentHistoryPage() {
               <div className="w-10 h-10 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
             </motion.div>
           ) : error ? (
-            <motion.div variants={itemVariants} className="text-red-600 font-semibold">
+            <motion.div variants={itemVariants} className="text-red-400 font-semibold">
               {error}
             </motion.div>
           ) : filtered.length === 0 ? (
             <motion.div variants={itemVariants}>
-              <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 text-gray-700">
+              <div className="rounded-2xl border border-white/10 bg-white/5 shadow-sm p-5 text-white/70">
                 Keine abgeschlossenen Turniere gefunden.
               </div>
             </motion.div>
@@ -406,7 +417,7 @@ export default function TournamentHistoryPage() {
               {filtered.map((r) => (
                 <Card
                   key={`${r.tournament_id}_${r.tournament_type}`}
-                  className="cursor-pointer overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_38px_-34px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_20px_60px_-38px_rgba(15,23,42,0.5)]"
+                  className="cursor-pointer overflow-hidden rounded-[20px] border border-white/10 bg-white/5 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-400/35 hover:shadow-[0_28px_80px_-48px_rgba(249,115,22,.18)]"
                   onClick={() => openTournament(r)}
                 >
                   <CardHeader className="pb-2">
@@ -419,7 +430,7 @@ export default function TournamentHistoryPage() {
                   </CardHeader>
 
                   <CardContent className="pt-0 pb-5">
-                    <div className="mt-2 space-y-2 text-sm text-gray-700">
+                    <div className="mt-2 space-y-2 text-sm text-white/70">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-orange-600" />
                         <span className="font-medium">{formatDateTime(r.created_at)}</span>
@@ -428,27 +439,27 @@ export default function TournamentHistoryPage() {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-orange-600" />
                         <span>
-                          Dauer: <span className="font-black text-gray-900">{getDurationLabel(r)}</span>
+                          Dauer: <span className="font-black text-white">{getDurationLabel(r)}</span>
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-orange-600" />
                         <span>
-                          Teilnehmer: <span className="font-black text-gray-900">{r.participants ?? 0}</span>
+                          Teilnehmer: <span className="font-black text-white">{r.participants ?? 0}</span>
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Trophy className="h-4 w-4 text-orange-600" />
                         <span className="line-clamp-1">
-                          Sieger: <span className="font-black text-gray-900">{r.winner || "—"}</span>
+                          Sieger: <span className="font-black text-white">{r.winner || "—"}</span>
                         </span>
                       </div>
                     </div>
 
                     <Button
-                      className="mt-4 h-11 w-full rounded-xl bg-orange-500 font-black hover:bg-orange-600"
+                      className="mt-4 h-11 w-full rounded-xl bg-orange-400 font-black hover:bg-orange-600"
                       onClick={(e) => {
                         e.stopPropagation()
                         openTournament(r)
@@ -465,7 +476,7 @@ export default function TournamentHistoryPage() {
         </motion.div>
       </main>
 
-      <MobileBottomNav />
+      <div className="relative z-20"><MobileBottomNav /></div>
     </div>
   )
 }

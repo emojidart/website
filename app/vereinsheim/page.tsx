@@ -165,126 +165,241 @@ export default function ClubhousePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full overflow-x-hidden bg-slate-50 pb-24">
-      <Header />
+    <div className="relative min-h-[100dvh] w-full overflow-x-hidden bg-[#050608] pb-24 text-white">
+      <Header variant="app" title="Vereinsheim" subtitle="Pfeil OK · Öffentlich" backHref="/" />
+
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[#050608]">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-30"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.96)_48%,rgba(2,4,7,.99))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.16),transparent_25%),radial-gradient(circle_at_90%_24%,rgba(14,165,233,.10),transparent_26%)]" />
+      </div>
+
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
-      <main className="w-full px-3 py-4 sm:px-5 sm:py-6 lg:px-6 xl:px-8">
-        <section className="w-full overflow-hidden rounded-[24px] bg-slate-950 text-white shadow-xl sm:rounded-[30px]">
-          <div className="p-4 sm:p-6 lg:p-8 xl:p-10">
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-orange-300">
-              <DoorOpen className="h-4 w-4" />
-              EMD Vereinsheim
-            </div>
-            <h1 className="mt-3 text-[2rem] font-black leading-tight tracking-tight sm:text-4xl lg:text-5xl">Ist heute offen?</h1>
-            <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-white/55 sm:text-base lg:text-lg">
-              Hier siehst du, ob das Pfeil OK heute geöffnet ist und wann es das nächste Mal offen hat.
-            </p>
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-4 sm:px-5 sm:py-6 lg:px-7 xl:px-8">
+        <section className="overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_30px_90px_-52px_rgba(0,0,0,.95)] backdrop-blur-xl sm:rounded-[32px]">
+          <div className="relative overflow-hidden p-5 sm:p-7 lg:p-9">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(249,115,22,.10),transparent_38%,rgba(14,165,233,.06))]" />
 
-            <div className="mt-5 rounded-[22px] border border-white/10 bg-white/[0.06] p-4 sm:mt-6 sm:rounded-3xl sm:p-6 lg:p-7">
-              {loading ? (
-                <div className="flex items-center gap-3 text-white/70"><Loader2 className="h-5 w-5 animate-spin" /> Status wird geladen…</div>
-              ) : todayRow?.status === "open" ? (
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1.5 text-sm font-black text-emerald-300">
-                    <CheckCircle2 className="h-4 w-4" /> HEUTE GEÖFFNET
+            <div className="relative">
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.20em] text-orange-300">
+                <DoorOpen className="h-4 w-4" />
+                EMD Vereinsheim
+              </div>
+
+              <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+                Ist heute offen?
+              </h1>
+
+              <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-white/55 sm:text-base lg:text-lg">
+                Hier siehst du, ob das Pfeil OK heute geöffnet ist und wann es das nächste Mal offen hat.
+              </p>
+
+              <div className="mt-6 rounded-[24px] border border-white/10 bg-black/30 p-4 backdrop-blur-xl sm:p-6 lg:p-7">
+                {loading ? (
+                  <div className="flex items-center gap-3 text-white/65">
+                    <Loader2 className="h-5 w-5 animate-spin text-orange-300" />
+                    Status wird geladen…
                   </div>
-                  <div className="mt-4 break-words text-2xl font-black leading-tight sm:text-3xl">
-                    {todayRow.opens_at ? `ab ${shortTime(todayRow.opens_at)} Uhr` : "ab sofort"}
-                    {todayRow.closes_at ? ` · bis ca. ${shortTime(todayRow.closes_at)} Uhr` : ""}
+                ) : todayRow?.status === "open" ? (
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-sm font-black text-emerald-300">
+                      <CheckCircle2 className="h-4 w-4" />
+                      HEUTE GEÖFFNET
+                    </div>
+                    <div className="mt-4 break-words text-2xl font-black leading-tight text-white sm:text-3xl">
+                      {todayRow.opens_at ? `ab ${shortTime(todayRow.opens_at)} Uhr` : "ab sofort"}
+                      {todayRow.closes_at ? ` · bis ca. ${shortTime(todayRow.closes_at)} Uhr` : ""}
+                    </div>
+                    {todayRow.note ? (
+                      <p className="mt-2 text-base font-semibold text-white/60">{todayRow.note}</p>
+                    ) : null}
                   </div>
-                  {todayRow.note ? <p className="mt-2 text-base font-semibold text-white/65">{todayRow.note}</p> : null}
-                </div>
-              ) : todayRow?.status === "planned" ? (
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-sky-400/15 px-3 py-1.5 text-sm font-black text-sky-300">
-                    <CalendarDays className="h-4 w-4" /> HEUTE GEPLANT GEÖFFNET
+                ) : todayRow?.status === "planned" ? (
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1.5 text-sm font-black text-sky-300">
+                      <CalendarDays className="h-4 w-4" />
+                      HEUTE GEPLANT GEÖFFNET
+                    </div>
+                    <div className="mt-4 break-words text-2xl font-black leading-tight text-white sm:text-3xl">
+                      {todayRow.opens_at ? `ab ${shortTime(todayRow.opens_at)} Uhr` : "Öffnung geplant"}
+                      {todayRow.closes_at ? ` · bis ca. ${shortTime(todayRow.closes_at)} Uhr` : ""}
+                    </div>
+                    {todayRow.note ? (
+                      <p className="mt-2 text-base font-semibold text-white/60">{todayRow.note}</p>
+                    ) : null}
                   </div>
-                  <div className="mt-4 break-words text-2xl font-black leading-tight sm:text-3xl">
-                    {todayRow.opens_at ? `ab ${shortTime(todayRow.opens_at)} Uhr` : "Öffnung geplant"}
-                    {todayRow.closes_at ? ` · bis ca. ${shortTime(todayRow.closes_at)} Uhr` : ""}
+                ) : todayRow?.status === "closed" ? (
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1.5 text-sm font-black text-red-300">
+                      <XCircle className="h-4 w-4" />
+                      HEUTE GESCHLOSSEN
+                    </div>
+                    {todayRow.note ? (
+                      <p className="mt-4 text-base font-semibold text-white/60">{todayRow.note}</p>
+                    ) : null}
                   </div>
-                  {todayRow.note ? <p className="mt-2 text-base font-semibold text-white/65">{todayRow.note}</p> : null}
-                </div>
-              ) : todayRow?.status === "closed" ? (
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-red-400/15 px-3 py-1.5 text-sm font-black text-red-300">
-                    <XCircle className="h-4 w-4" /> HEUTE GESCHLOSSEN
+                ) : (
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-black text-white/65">
+                      <Clock3 className="h-4 w-4" />
+                      NOCH KEINE INFO
+                    </div>
+                    <div className="mt-4 break-words text-xl font-black leading-tight text-white sm:text-2xl">
+                      Für heute wurde noch keine Öffnung eingetragen.
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-white/45">
+                      Sobald jemand aufsperrt oder eine Öffnung plant, erscheint es hier.
+                    </p>
                   </div>
-                  {todayRow.note ? <p className="mt-4 text-base font-semibold text-white/65">{todayRow.note}</p> : null}
-                </div>
-              ) : (
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm font-black text-white/70">
-                    <Clock3 className="h-4 w-4" /> NOCH KEINE INFO
-                  </div>
-                  <div className="mt-4 break-words text-xl font-black leading-tight sm:text-2xl">Für heute wurde noch keine Öffnung eingetragen.</div>
-                  <p className="mt-2 text-sm font-semibold text-white/50">Sobald jemand aufsperrt oder eine Öffnung plant, erscheint es hier.</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </section>
 
         {canManage ? (
-          <section className="mt-4 w-full sm:mt-5">
-            <Card className="w-full overflow-hidden rounded-[22px] border-orange-200 shadow-sm sm:rounded-3xl">
+          <section className="mt-5">
+            <Card className="overflow-hidden rounded-[26px] border-white/10 bg-black/35 text-white shadow-[0_22px_65px_-48px_rgba(0,0,0,.9)] backdrop-blur-xl">
               <CardContent className="p-4 sm:p-6 lg:p-7">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-100"><LockKeyhole className="h-5 w-5 text-orange-700" /></div>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/10">
+                    <LockKeyhole className="h-5 w-5 text-orange-300" />
+                  </div>
                   <div>
-                    <div className="font-black text-slate-950">Vereinsheim verwalten</div>
-                    <div className="text-sm font-semibold text-slate-500">Nur für freigeschaltete Personen sichtbar.</div>
+                    <div className="font-black text-white">Vereinsheim verwalten</div>
+                    <div className="text-sm font-semibold text-white/45">Nur für freigeschaltete Personen sichtbar.</div>
                   </div>
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <Button disabled={saving} onClick={() => void saveDay("open", { push: true })} className="min-h-14 w-full whitespace-normal rounded-2xl bg-emerald-600 px-4 py-3 text-base font-black leading-tight hover:bg-emerald-700">
-                    <DoorOpen className="mr-2 h-5 w-5" /> Jetzt geöffnet
+                  <Button
+                    disabled={saving}
+                    onClick={() => void saveDay("open", { push: true })}
+                    className="min-h-14 w-full whitespace-normal rounded-2xl bg-emerald-600 px-4 py-3 text-base font-black leading-tight hover:bg-emerald-700"
+                  >
+                    <DoorOpen className="mr-2 h-5 w-5" />
+                    Jetzt geöffnet
                   </Button>
-                  <Button disabled={saving} onClick={() => void saveDay("closed", { push: true })} variant="outline" className="min-h-14 w-full whitespace-normal rounded-2xl border-red-200 px-4 py-3 text-base font-black leading-tight text-red-700 hover:bg-red-50">
-                    <XCircle className="mr-2 h-5 w-5" /> Heute geschlossen
+
+                  <Button
+                    disabled={saving}
+                    onClick={() => void saveDay("closed", { push: true })}
+                    variant="outline"
+                    className="min-h-14 w-full whitespace-normal rounded-2xl border-red-400/20 bg-red-500/5 px-4 py-3 text-base font-black leading-tight text-red-200 hover:bg-red-500/10 hover:text-red-100"
+                  >
+                    <XCircle className="mr-2 h-5 w-5" />
+                    Heute geschlossen
                   </Button>
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div><Label>Datum</Label><Input type="date" min={today} value={planDate} onChange={(e) => setPlanDate(e.target.value)} className="mt-1.5 h-11" /></div>
-                  <div><Label>Von</Label><Input type="time" value={opensAt} onChange={(e) => setOpensAt(e.target.value)} className="mt-1.5 h-11" /></div>
-                  <div><Label>Bis ca.</Label><Input type="time" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} className="mt-1.5 h-11" /></div>
+                  <div>
+                    <Label className="text-white/65">Datum</Label>
+                    <Input
+                      type="date"
+                      min={today}
+                      value={planDate}
+                      onChange={(e) => setPlanDate(e.target.value)}
+                      className="mt-1.5 h-11 border-white/10 bg-white/5 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-white/65">Von</Label>
+                    <Input
+                      type="time"
+                      value={opensAt}
+                      onChange={(e) => setOpensAt(e.target.value)}
+                      className="mt-1.5 h-11 border-white/10 bg-white/5 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-white/65">Bis ca.</Label>
+                    <Input
+                      type="time"
+                      value={closesAt}
+                      onChange={(e) => setClosesAt(e.target.value)}
+                      className="mt-1.5 h-11 border-white/10 bg-white/5 text-white"
+                    />
+                  </div>
                 </div>
-                <div className="mt-4"><Label>Hinweis (optional)</Label><Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="z. B. Heute spontaner Spielabend – jeder ist willkommen 🎯" className="mt-1.5 min-h-20" /></div>
-                <Button disabled={saving || !planDate} onClick={() => void saveDay("planned", { date: planDate })} className="mt-4 min-h-12 w-full whitespace-normal rounded-xl bg-slate-950 px-4 py-3 font-black leading-tight hover:bg-slate-800">
-                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Öffnung planen / speichern
+
+                <div className="mt-4">
+                  <Label className="text-white/65">Hinweis (optional)</Label>
+                  <Textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="z. B. Heute spontaner Spielabend – jeder ist willkommen 🎯"
+                    className="mt-1.5 min-h-20 border-white/10 bg-white/5 text-white placeholder:text-white/25"
+                  />
+                </div>
+
+                <Button
+                  disabled={saving || !planDate}
+                  onClick={() => void saveDay("planned", { date: planDate })}
+                  className="mt-4 min-h-12 w-full whitespace-normal rounded-xl border border-orange-300/15 bg-orange-500/15 px-4 py-3 font-black leading-tight text-white hover:bg-orange-500/20"
+                >
+                  {saving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Öffnung planen / speichern
                 </Button>
-                {message ? <div className="mt-3 rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700">{message}</div> : null}
+
+                {message ? (
+                  <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white/70">
+                    {message}
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
           </section>
         ) : null}
 
-        <section className="mt-6 w-full sm:mt-7">
+        <section className="mt-7">
           <div className="mb-3 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end sm:gap-3">
-            <div><div className="text-xs font-black uppercase tracking-wider text-orange-600">Vorschau</div><h2 className="text-xl font-black text-slate-950">Nächste Öffnungen</h2></div>
-            <Link href="/" className="text-sm font-black text-slate-500 hover:text-slate-900">Zur Startseite</Link>
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-orange-300">Vorschau</div>
+              <h2 className="text-xl font-black text-white">Nächste Öffnungen</h2>
+            </div>
+
+            <Link href="/" className="text-sm font-black text-white/45 transition hover:text-orange-300">
+              Zur Startseite
+            </Link>
           </div>
 
           {upcoming.length ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {upcoming.map((row) => (
-                <div key={row.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="font-black capitalize text-slate-950">{formatDate(row.open_date)}</div>
-                  <div className="mt-1 text-sm font-bold text-slate-600">
-                    {row.opens_at ? `${shortTime(row.opens_at)} Uhr` : "Zeit folgt"}{row.closes_at ? ` – ${shortTime(row.closes_at)} Uhr` : ""}
+                <div
+                  key={row.id}
+                  className="rounded-2xl border border-white/10 bg-black/30 p-4 shadow-sm backdrop-blur-xl"
+                >
+                  <div className="font-black capitalize text-white">{formatDate(row.open_date)}</div>
+                  <div className="mt-1 text-sm font-bold text-white/60">
+                    {row.opens_at ? `${shortTime(row.opens_at)} Uhr` : "Zeit folgt"}
+                    {row.closes_at ? ` – ${shortTime(row.closes_at)} Uhr` : ""}
                   </div>
-                  {row.note ? <div className="mt-2 text-sm font-semibold text-slate-500">{row.note}</div> : null}
+                  {row.note ? (
+                    <div className="mt-2 text-sm font-semibold text-white/45">{row.note}</div>
+                  ) : null}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm font-semibold text-slate-500">Aktuell sind keine weiteren Öffnungen geplant.</div>
+            <div className="rounded-2xl border border-dashed border-white/15 bg-black/25 p-6 text-center text-sm font-semibold text-white/45">
+              Aktuell sind keine weiteren Öffnungen geplant.
+            </div>
           )}
         </section>
       </main>
+
       <MobileBottomNav />
     </div>
   )

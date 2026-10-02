@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +20,11 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import type { SpieldatenbankEntry } from "@/types/tournament"
 import { getKratzerPlayerEligibility } from "@/actions/tournament"
+import {
+  TournamentRegistrationPanel,
+  type TournamentRegistrationAvailablePlayer,
+  type TournamentRegistrationRegisteredPlayer,
+} from "@/components/tournament-registration/tournament-registration-panel"
 
 type TournamentAccessType = "" | "public" | "club_internal" | "club_external"
 
@@ -66,6 +71,28 @@ export function RegistrationTab({
   const [eligibilityByPlayerId, setEligibilityByPlayerId] = useState<Record<string, PlayerEligibility>>({})
   const [eligibilityFilter, setEligibilityFilter] = useState<"all" | "eligible" | "locked">("all")
   const [registeredSearch, setRegisteredSearch] = useState("")
+  const [registrationVisualProgress, setRegistrationVisualProgress] = useState(0)
+  const [showRegistrationSuccessModal, setShowRegistrationSuccessModal] = useState(false)
+  const lastRegistrationTotalRef = useRef(0)
+
+  useEffect(() => {
+    if (!isRegisteringPlayers) {
+      setRegistrationVisualProgress(0)
+      return
+    }
+
+    const total = Math.max(1, lastRegistrationTotalRef.current || selectedPlayersForRegistration.length)
+    setRegistrationVisualProgress(0)
+
+    const interval = window.setInterval(() => {
+      setRegistrationVisualProgress((current) => {
+        const maxBeforeDone = Math.max(0, total - 1)
+        return current >= maxBeforeDone ? current : current + 1
+      })
+    }, 120)
+
+    return () => window.clearInterval(interval)
+  }, [isRegisteringPlayers, selectedPlayersForRegistration.length])
 
   const fetchAvailablePlayers = useCallback(async () => {
     setFetchingAvailablePlayers(true)
@@ -216,38 +243,57 @@ export function RegistrationTab({
   const unpaidPlayersCount = registeredPlayers.length - paidPlayersCount
 
   const handleRegisterAndResetSearch = async () => {
-    await handleRegisterPlayers()
-    setFilterText("")
+    const total = selectedPlayersForRegistration.length
+    if (total <= 0) return
+
+    lastRegistrationTotalRef.current = total
+    setRegistrationVisualProgress(0)
+
+    try {
+      await handleRegisterPlayers()
+      setRegistrationVisualProgress(total)
+      setFilterText("")
+      setShowRegistrationSuccessModal(true)
+    } catch (error) {
+      console.error("Kratzer Registrierung fehlgeschlagen:", error)
+    }
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Teilnahme */}
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_70px_-52px_rgba(15,23,42,0.7)]">
-        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-950 to-[#24150f] px-5 py-5 text-white sm:px-6 lg:px-7">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-300">
-                Teilnahme
-              </div>
-              <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">
-                Wer darf mitspielen?
-              </h2>
-              <p className="mt-1 text-sm text-slate-300">
-                Wähle die passende Teilnahmeart für dieses Turnier.
-              </p>
-            </div>
+  const sharedAvailablePlayers: TournamentRegistrationAvailablePlayer[] = availablePlayers
+    .filter((player) => !registeredPlayers.some((registered) => String(registered.id) === String(player.id)))
+    .map((player) => {
+      const eligibility = getEligibility(player)
+      return {
+        id: String(player.id),
+        name: player.name,
+        meta: player.ligastatus || undefined,
+        secondaryMeta: player.verein || undefined,
+        eligible: eligibility.eligible,
+        eligibilityReason: eligibility.reason,
+      }
+    })
 
-            {tournamentAccessType ? (
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-bold text-slate-100">
-                <CheckCircle2 className="h-4 w-4 text-orange-300" />
-                Teilnahmeart gewählt
-              </div>
-            ) : null}
-          </div>
+  const sharedRegisteredPlayers: TournamentRegistrationRegisteredPlayer[] = registeredPlayers.map((player) => ({
+    id: String(player.id),
+    name: player.name,
+    subtitle: player.ligastatus || undefined,
+    paid: Boolean(player.paid),
+  }))
+
+  const sharedSelectedIds = new Set(selectedPlayersForRegistration.map((player) => String(player.id)))
+
+  return (
+    <div className="space-y-5">
+      {/* Teilnahmeart */}
+      <section className="emd-admin-surface p-5">
+        <div className="mb-4">
+          <h2 className="text-lg font-black text-white">Teilnahme</h2>
+          <p className="mt-1 text-sm text-white/40">
+            Wähle aus, wer an diesem Turnier teilnehmen darf.
+          </p>
         </div>
 
-        <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5 lg:p-6">
+        <div className="grid gap-3 sm:grid-cols-3">
           {[
             {
               value: "public" as const,
@@ -278,327 +324,95 @@ export function RegistrationTab({
                 type="button"
                 disabled={lockedByRegistrations}
                 onClick={() => setTournamentAccessType(option.value)}
-                className={`group relative min-h-[112px] rounded-2xl border p-4 text-left transition-all ${
+                className={`rounded-xl border p-3 text-left transition ${
                   active
-                    ? "border-orange-300 bg-orange-50 shadow-sm ring-1 ring-orange-100"
+                    ? "border-orange-300/30 bg-orange-500/[0.10] shadow-[0_0_0_1px_rgba(249,115,22,.04)]"
                     : lockedByRegistrations
-                      ? "cursor-not-allowed border-slate-200 bg-slate-100 opacity-60"
-                      : "border-slate-200 bg-white hover:border-orange-200 hover:bg-orange-50/40 hover:shadow-sm"
+                      ? "cursor-not-allowed border-white/[0.07] bg-white/[0.02] opacity-45"
+                      : "border-white/[0.08] bg-white/[0.025] hover:border-orange-300/20 hover:bg-orange-500/[0.055]"
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <span
-                    className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${
-                      active ? "bg-orange-600 text-white" : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </span>
-
-                  {active ? (
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-orange-700">
-                      <CheckCircle2 className="h-4 w-4" />
-                    </span>
-                  ) : lockedByRegistrations ? (
-                    <Lock className="h-4 w-4 text-slate-400" />
-                  ) : null}
+                <div className="flex items-center gap-2">
+                  <Icon className={`h-4 w-4 ${active ? "text-orange-300" : "text-white/40"}`} />
+                  <span className="font-bold text-white">{option.title}</span>
+                  {active ? <CheckCircle2 className="ml-auto h-4 w-4 text-orange-300" /> : null}
                 </div>
-
-                <div className="mt-4 font-black text-slate-950">{option.title}</div>
-                <div className="mt-1 text-sm font-medium text-slate-500">{option.description}</div>
+                <div className="mt-1 text-xs text-white/40">{option.description}</div>
               </button>
             )
           })}
         </div>
       </section>
 
-      {/* Registrierung */}
-      <div className="grid gap-6 2xl:grid-cols-2">
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_70px_-52px_rgba(15,23,42,0.7)]">
-          <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/70 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div>
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">
-                Spielerauswahl
+      <TournamentRegistrationPanel
+        availablePlayers={sharedAvailablePlayers}
+        registeredPlayers={sharedRegisteredPlayers}
+        selectedIds={sharedSelectedIds}
+        onToggleSelected={(id) => {
+          const player = availablePlayers.find((candidate) => String(candidate.id) === id)
+          if (player) handleSelectPlayer(player)
+        }}
+        searchTerm={filterText}
+        onSearchTermChange={setFilterText}
+        loading={fetchingAvailablePlayers || loading}
+        eligibilityLoading={eligibilityLoading}
+        canRegister={Boolean(tournamentAccessType)}
+        disabledNotice={
+          tournamentAccessType
+            ? null
+            : "Bitte zuerst oben die Teilnahmeart auswählen."
+        }
+        onRegister={handleRegisterAndResetSearch}
+        isRegistering={isRegisteringPlayers}
+        registrationProgress={
+          isRegisteringPlayers
+            ? {
+                done: registrationVisualProgress,
+                total: Math.max(1, lastRegistrationTotalRef.current),
+              }
+            : null
+        }
+        showEligibilityFilters={true}
+        showPaid={true}
+        paidCount={paidPlayersCount}
+        onTogglePaid={(id, paid) => handleUpdatePlayerPaidStatus(id, !paid)}
+        onMarkAllPaid={handleMarkAllPlayersPaid}
+        markingAllPaid={loading}
+        onClearAll={handleClearRegisteredPlayers}
+        clearAllLabel="Alle Registrierungen löschen"
+      />
+
+      {showRegistrationSuccessModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_100px_-35px_rgba(15,23,42,.65)]">
+            <div className="p-6">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50">
+                <CheckCircle2 className="h-6 w-6 text-emerald-600" />
               </div>
-              <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
-                Spieler hinzufügen
-              </h2>
-            </div>
-            <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-black text-slate-600">
-              {filteredAvailablePlayers.length} verfügbar
-            </span>
-          </div>
 
-          <div className="p-4 sm:p-5 lg:p-6">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                placeholder="Spieler suchen..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                className="h-12 rounded-2xl border-slate-200 bg-slate-50/70 pl-10 text-base shadow-none focus-visible:ring-orange-500"
-              />
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="inline-grid grid-cols-3 rounded-2xl border border-slate-200 bg-slate-100 p-1">
-                {[
-                  { value: "all" as const, label: "Alle" },
-                  { value: "eligible" as const, label: "Berechtigt" },
-                  { value: "locked" as const, label: "Gesperrt" },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setEligibilityFilter(option.value)}
-                    className={`h-9 rounded-xl px-3 text-xs font-black transition ${
-                      eligibilityFilter === option.value
-                        ? "bg-white text-slate-950 shadow-sm"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+              <div className="mt-4 text-center">
+                <h3 className="text-xl font-black tracking-tight text-slate-950">Registrierung abgeschlossen</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {lastRegistrationTotalRef.current === 1
+                    ? "1 Spieler wurde zum Turnier hinzugefügt."
+                    : `${lastRegistrationTotalRef.current || 0} Spieler wurden zum Turnier hinzugefügt.`}
+                </p>
+                <p className="mt-1 text-xs font-medium text-slate-400">
+                  Die Teilnehmerliste wurde aktualisiert.
+                </p>
               </div>
 
               <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleToggleAllEligibleVisible}
-                disabled={!tournamentAccessType || eligibilityLoading || eligibleVisiblePlayers.length === 0}
-                className="h-10 rounded-xl border-slate-200 bg-white px-3 font-bold text-slate-700 hover:border-orange-200 hover:bg-orange-50"
+                onClick={() => setShowRegistrationSuccessModal(false)}
+                className="mt-5 h-11 w-full rounded-xl bg-slate-950 font-bold text-white hover:bg-slate-800"
               >
-                <CheckCircle2 className="mr-2 h-4 w-4 text-orange-600" />
-                {allEligibleVisibleSelected
-                  ? "Auswahl aufheben"
-                  : `Berechtigte auswählen (${eligibleVisiblePlayers.length})`}
+                Schließen
               </Button>
             </div>
-
-            {!tournamentAccessType ? (
-              <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-800">
-                Bitte zuerst oben die Teilnahmeart auswählen.
-              </div>
-            ) : null}
-
-            <div className="mt-4 h-[430px] overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-2.5">
-              {fetchingAvailablePlayers ? (
-                <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-500">
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin text-orange-500" />
-                  Spieler werden geladen...
-                </div>
-              ) : filteredAvailablePlayers.length === 0 ? (
-                <div className="flex h-full items-center justify-center px-6 text-center text-sm font-medium text-slate-500">
-                  Keine passenden Spieler gefunden.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredAvailablePlayers.map((player) => {
-                    const selected = isPlayerSelected(player)
-                    const eligibility = getEligibility(player)
-
-                    return (
-                      <div
-                        key={player.id}
-                        role="button"
-                        tabIndex={eligibility.eligible ? 0 : -1}
-                        aria-disabled={!eligibility.eligible}
-                        onClick={() => {
-                          if (!eligibility.eligible) return
-                          handleSelectPlayer(player)
-                        }}
-                        onKeyDown={(e) => {
-                          if (!eligibility.eligible) return
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault()
-                            handleSelectPlayer(player)
-                          }
-                        }}
-                        className={`w-full rounded-2xl border p-3.5 text-left transition-all ${
-                          !eligibility.eligible
-                            ? "cursor-not-allowed border-slate-200 bg-slate-100/80 opacity-70"
-                            : selected
-                              ? "cursor-pointer border-orange-300 bg-orange-50 shadow-sm ring-1 ring-orange-100"
-                              : "cursor-pointer border-slate-200 bg-white hover:border-orange-200 hover:bg-orange-50/30"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Checkbox
-                            checked={selected}
-                            disabled={!eligibility.eligible}
-                            className="shrink-0 border-slate-300 data-[state=checked]:border-orange-600 data-[state=checked]:bg-orange-600"
-                            onClick={(e) => e.stopPropagation()}
-                            onCheckedChange={() => {
-                              if (!eligibility.eligible) return
-                              handleSelectPlayer(player)
-                            }}
-                          />
-
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate font-bold text-slate-900">{player.name}</div>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-slate-500">
-                              {player.ligastatus ? (
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5">{player.ligastatus}</span>
-                              ) : null}
-                              {player.verein ? <span>{player.verein}</span> : null}
-                              {!eligibility.eligible ? (
-                                <span className="inline-flex items-center gap-1 font-semibold text-slate-500">
-                                  <Lock className="h-3 w-3" />
-                                  {eligibility.reason}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          {!eligibility.eligible ? (
-                            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-500">
-                              <Lock className="h-4 w-4" />
-                            </span>
-                          ) : selected ? (
-                            <span className="hidden rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-black text-orange-700 sm:inline-flex">
-                              Ausgewählt
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            <Button
-              onClick={handleRegisterAndResetSearch}
-              disabled={
-                !tournamentAccessType ||
-                eligibilityLoading ||
-                selectedPlayersForRegistration.length === 0 ||
-                isRegisteringPlayers ||
-                loading
-              }
-              className="mt-4 h-12 w-full rounded-2xl bg-orange-600 font-black text-white shadow-sm hover:bg-orange-700"
-            >
-              {isRegisteringPlayers ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Registriere...
-                </>
-              ) : (
-                <>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Spieler registrieren ({selectedPlayersForRegistration.length})
-                </>
-              )}
-            </Button>
           </div>
-        </section>
+        </div>
+      ) : null}
 
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_22px_70px_-52px_rgba(15,23,42,0.7)]">
-          <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-5 sm:px-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">
-                  Teilnehmer
-                </div>
-                <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
-                  Registrierte Spieler
-                </h2>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-black text-slate-700">
-                  {registeredPlayers.length} Spieler
-                </span>
-                <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700">
-                  {paidPlayersCount} bezahlt
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 sm:p-5 lg:p-6">
-            {registeredPlayers.length === 0 ? (
-              <div className="flex h-[526px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50/60">
-                <div className="max-w-xs text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
-                    <PlusCircle className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div className="mt-4 font-black text-slate-900">Noch keine Spieler registriert</div>
-                  <div className="mt-1 text-sm font-medium text-slate-500">
-                    Wähle links Spieler aus und füge sie dem Turnier hinzu.
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      placeholder="Registrierte Spieler suchen..."
-                      value={registeredSearch}
-                      onChange={(e) => setRegisteredSearch(e.target.value)}
-                      className="h-11 rounded-2xl border-slate-200 bg-slate-50/70 pl-10 shadow-none focus-visible:ring-orange-500"
-                    />
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleMarkAllPlayersPaid}
-                    disabled={unpaidPlayersCount === 0 || loading}
-                    className="h-11 rounded-2xl border-emerald-200 bg-emerald-50 px-4 font-black text-emerald-700 hover:bg-emerald-100"
-                  >
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    Alle bezahlt
-                  </Button>
-                </div>
-
-                <div className="mt-4 h-[430px] overflow-y-auto rounded-2xl border border-slate-200 bg-white">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="sticky top-0 z-10 bg-slate-50 hover:bg-slate-50">
-                        <TableHead className="font-black text-slate-600">Name</TableHead>
-                        <TableHead className="font-black text-slate-600">Ligastatus</TableHead>
-                        <TableHead className="text-center font-black text-slate-600">Bezahlt</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredRegisteredPlayers.map((player) => (
-                        <TableRow key={player.id} className="hover:bg-slate-50/70">
-                          <TableCell className="font-bold text-slate-900">{player.name}</TableCell>
-                          <TableCell className="text-slate-600">{player.ligastatus || "—"}</TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox
-                              checked={player.paid || false}
-                              onCheckedChange={(checked) =>
-                                handleUpdatePlayerPaidStatus(player.id, checked as boolean)
-                              }
-                              className="border-slate-300 data-[state=checked]:border-emerald-600 data-[state=checked]:bg-emerald-600"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <Button
-                  onClick={handleClearRegisteredPlayers}
-                  variant="outline"
-                  className="mt-4 h-12 w-full rounded-2xl border-red-200 bg-red-50 font-black text-red-700 hover:bg-red-100"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Alle Registrierungen löschen
-                </Button>
-              </>
-            )}
-          </div>
-        </section>
-      </div>
     </div>
   )
 }

@@ -18,6 +18,7 @@ import {
 import { supabase } from "@/lib/supabase"
 import TerminalLink from "../_components/TerminalLink"
 import TerminalLoader from "../_components/TerminalLoader"
+import TerminalIdentityAuth, { type VerifiedTerminalIdentity } from "../_components/TerminalIdentityAuth"
 
 type ActiveMatch = {
   member_name: string
@@ -49,6 +50,7 @@ const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve
 
 export default function TerminalTournamentModePage() {
   const [pin, setPin] = useState("")
+  const [activeIdentity, setActiveIdentity] = useState<VerifiedTerminalIdentity | null>(null)
   const [pinMessage, setPinMessage] = useState("")
   const [loadingLabel, setLoadingLabel] = useState<string | null>(null)
 
@@ -373,6 +375,7 @@ export default function TerminalTournamentModePage() {
   const resetToPin = () => {
     setPin("")
     setPinMessage("")
+    setActiveIdentity(null)
     setMatch(null)
     setScore1(0)
     setScore2(0)
@@ -394,26 +397,26 @@ export default function TerminalTournamentModePage() {
     setPinMessage("")
   }
 
-  const loadMatch = async () => {
-    if (pin.length !== 4 || loadingLabel) return
-
-    const submittedPin = pin
+  const loadMatchForIdentity = async (identity: VerifiedTerminalIdentity) => {
     setPinMessage("")
     setLoadingLabel("Dein Match wird geladen")
+    setActiveIdentity(identity)
 
     try {
-      const rpcPromise = supabase.rpc("terminal_get_my_active_match", {
-        p_pin: submittedPin,
+      const rpcPromise = supabase.rpc("terminal_get_active_match_for_identity", {
+        p_identity_kind: identity.identity_kind,
+        p_identity_id: identity.identity_id,
+        p_method: identity.auth_method,
+        p_secret: identity.secret,
       })
-      const [{ data, error }] = await Promise.all([rpcPromise, sleep(2000)])
-
+      const [{ data, error }] = await Promise.all([rpcPromise, sleep(900)])
       if (error) throw error
 
       const row = Array.isArray(data) ? data[0] : null
       if (!row) {
         setLoadingLabel(null)
-        setPin("")
-        setPinMessage("Kein offenes Match für diese PIN gefunden.")
+        setActiveIdentity(null)
+        setPinMessage("Kein offenes Match für dieses Profil gefunden.")
         return
       }
 
@@ -427,10 +430,7 @@ export default function TerminalTournamentModePage() {
         player2: String(row.player2 || ""),
         score1: Number(row.score1 || 0),
         score2: Number(row.score2 || 0),
-        machine_number:
-          row.machine_number === null || row.machine_number === undefined
-            ? null
-            : Number(row.machine_number),
+        machine_number: row.machine_number == null ? null : Number(row.machine_number),
       }
 
       setMatch(activeMatch)
@@ -438,14 +438,13 @@ export default function TerminalTournamentModePage() {
       setScore2(activeMatch.score2)
       setLoadingLabel(null)
     } catch (error: any) {
-      console.error("Terminal tournament PIN error:", error)
+      console.error("Terminal tournament auth error:", error)
       setLoadingLabel(null)
-      setPin("")
-      const msg = String(error?.message || "").toLowerCase()
+      setActiveIdentity(null)
       setPinMessage(
-        msg.includes("rate limited")
+        String(error?.message || "").toLowerCase().includes("rate limited")
           ? "Zu viele Versuche. Bitte in 10 Minuten erneut versuchen."
-          : "PIN konnte nicht geprüft werden.",
+          : "Anmeldung konnte nicht geprüft werden.",
       )
     }
   }
@@ -467,8 +466,12 @@ export default function TerminalTournamentModePage() {
     savingRef.current = true
 
     try {
-      const { error } = await supabase.rpc("terminal_save_my_match_result", {
-        p_pin: pin,
+      if (!activeIdentity) throw new Error("identity missing")
+      const { error } = await supabase.rpc("terminal_save_match_result_for_identity", {
+        p_identity_kind: activeIdentity.identity_kind,
+        p_identity_id: activeIdentity.identity_id,
+        p_method: activeIdentity.auth_method,
+        p_secret: activeIdentity.secret,
         p_tournament_id: match.tournament_id,
         p_tournament_type: match.tournament_type,
         p_match_id: match.match_id,
@@ -861,88 +864,17 @@ export default function TerminalTournamentModePage() {
           </div>
         </header>
 
-        <section className="flex flex-1 items-center justify-center py-10">
-          <div className="w-full max-w-3xl rounded-[42px] border border-orange-300/18 bg-black/38 p-6 shadow-2xl backdrop-blur-2xl sm:p-9">
-            <div className="text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[28px] border border-orange-300/20 bg-orange-500/10">
-                <Target className="h-10 w-10 text-orange-300" />
-              </div>
-
-              <div className="mt-5 text-[11px] font-black uppercase tracking-[0.32em] text-orange-200/60">
-                EMD Match Terminal
-              </div>
-
-              <h1 className="mt-2 text-4xl font-black tracking-[-0.055em] sm:text-6xl">
-                PIN eingeben
-              </h1>
-
-              <p className="mx-auto mt-3 max-w-xl text-sm font-semibold leading-6 text-white/38">
-                Einer der beiden Spieler gibt seine 4-stellige EMD-PIN ein.
-                Das aktuelle offene Match wird automatisch geladen.
-              </p>
+        <section className="mx-auto mt-8 max-w-4xl">
+          {pinMessage ? (
+            <div className="mb-4 rounded-2xl border border-amber-300/15 bg-amber-500/[0.06] px-4 py-3 text-center text-sm font-bold text-amber-100/70">
+              {pinMessage}
             </div>
-
-            <div className="mx-auto mt-7 flex max-w-xs items-center justify-center gap-4">
-              {[0, 1, 2, 3].map((index) => (
-                <div
-                  key={index}
-                  className={`h-5 w-5 rounded-full border transition ${
-                    pin.length > index
-                      ? "border-orange-300 bg-orange-400 shadow-[0_0_20px_rgba(251,146,60,.55)]"
-                      : "border-white/20 bg-white/[0.04]"
-                  }`}
-                />
-              ))}
-            </div>
-
-            {pinMessage ? (
-              <div className="mx-auto mt-5 max-w-lg rounded-2xl border border-red-300/15 bg-red-500/[0.07] px-4 py-3 text-center text-sm font-bold text-red-100/75">
-                {pinMessage}
-              </div>
-            ) : null}
-
-            <div className="mx-auto mt-7 grid max-w-md grid-cols-3 gap-3">
-              {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((digit) => (
-                <button
-                  key={digit}
-                  type="button"
-                  onClick={() => addDigit(digit)}
-                  className="h-18 rounded-[24px] border border-white/10 bg-white/[0.04] text-2xl font-black transition active:scale-95 hover:bg-white/[0.08]"
-                >
-                  {digit}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                onClick={removeDigit}
-                className="flex h-18 items-center justify-center rounded-[24px] border border-white/10 bg-white/[0.04] text-white/45 transition active:scale-95 hover:bg-white/[0.08]"
-              >
-                <Delete className="h-6 w-6" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => addDigit("0")}
-                className="h-18 rounded-[24px] border border-white/10 bg-white/[0.04] text-2xl font-black transition active:scale-95 hover:bg-white/[0.08]"
-              >
-                0
-              </button>
-
-              <button
-                type="button"
-                disabled={pin.length !== 4}
-                onClick={() => void loadMatch()}
-                className="flex h-18 items-center justify-center rounded-[24px] bg-orange-500 text-white transition active:scale-95 enabled:hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-25"
-              >
-                <ArrowLeft className="h-6 w-6 rotate-180" />
-              </button>
-            </div>
-
-            <div className="mt-6 text-center text-xs font-semibold text-white/25">
-              Die Terminal-PIN wird einmalig in der EMD App im Mitgliederbereich festgelegt.
-            </div>
-          </div>
+          ) : null}
+          <TerminalIdentityAuth
+            title="Spieler suchen"
+            subtitle="Name eingeben, Profil auswählen und mit PIN oder Muster bestätigen. Danach wird dein offenes Match geladen."
+            onVerified={loadMatchForIdentity}
+          />
         </section>
       </div>
     </main>

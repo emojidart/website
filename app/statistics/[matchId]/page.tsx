@@ -123,33 +123,21 @@ export default function StatisticsPage() {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-        <Header />
-        <HeaderSpacer />
-
-        <main className="flex-grow flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-            <span className="text-lg font-medium">Lade Statistiken...</span>
-          </div>
-        </main>
-      </div>
-    )
+    return <div className="min-h-[1px]" aria-hidden="true" />
   }
 
   if (error || !match || !myTeam) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-transparent text-white font-sans flex flex-col">
         <Header />
         <HeaderSpacer />
 
         <main className="flex-grow flex items-center justify-center p-4">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Fehler</h1>
-            <p className="text-gray-600 mb-4">{error || "Daten nicht gefunden"}</p>
-            <Button onClick={() => router.push("/member-dashboard-app")} className="bg-orange-600 hover:bg-orange-700">
+            <h1 className="text-2xl font-black text-white mb-2">Fehler</h1>
+            <p className="text-white/50 mb-4">{error || "Daten nicht gefunden"}</p>
+            <Button onClick={() => router.push("/member-dashboard-app")} className="bg-orange-500 font-black text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white">
               Zurück zum Dashboard
             </Button>
           </div>
@@ -159,26 +147,28 @@ export default function StatisticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-transparent text-white font-sans flex flex-col">
       <Header />
       <HeaderSpacer />
 
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-8">
-          <Button onClick={() => router.push("/member-dashboard-app")} variant="outline" className="flex items-center gap-2">
+      <main className="w-full max-w-none px-3 pb-24 pt-16 sm:px-5 sm:pt-20 lg:px-8 xl:px-10 2xl:px-12">
+        <div className="mb-4 sm:mb-5">
+          <Button onClick={() => router.push("/member-dashboard-app")} variant="outline" className="flex items-center gap-2 rounded-xl border-white/[0.10] bg-white/[0.035] px-4 font-bold text-white/80 shadow-none hover:border-orange-300/20 hover:bg-white/[0.06] hover:text-white">
             <ArrowLeft className="h-4 w-4" />
             Zurück zum Dashboard
           </Button>
         </div>
 
-        <div className="mb-8">
-          <Card className="shadow-xl border-0 bg-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl lg:text-2xl font-bold">
-                <Target className="h-6 w-6 lg:h-7 lg:w-7 text-orange-600" />
+        <div className="mb-4 sm:mb-5">
+          <Card className="relative w-full overflow-hidden rounded-[28px] border border-orange-300/[0.10] bg-black/35 text-white shadow-[0_0_34px_rgba(249,115,22,.045),0_28px_80px_-50px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+            <CardHeader className="relative p-4 sm:p-5 lg:p-6">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(249,115,22,.12),transparent_28%),radial-gradient(circle_at_92%_0%,rgba(14,165,233,.07),transparent_30%)]" />
+              <div className="relative">
+              <CardTitle className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-lg font-black leading-tight tracking-tight text-white sm:text-xl lg:text-2xl">
+                <Target className="h-6 w-6 shrink-0 text-orange-300 lg:h-7 lg:w-7" />
                 Spielstatistiken - {myTeam.name}
                 {(match.home_score > 0 || match.away_score > 0) && (
-                  <span className="px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-bold text-lg shadow-md">
+                  <span className="rounded-xl border border-orange-300/20 bg-orange-500/12 px-2.5 py-1 text-base font-black text-orange-200 shadow-[0_0_18px_rgba(249,115,22,.08)] sm:text-lg">
                     {match.home_team_id === teamId
                       ? `${match.home_score || 0}:${match.away_score || 0}`
                       : `${match.away_score || 0}:${match.home_score || 0}`}
@@ -188,9 +178,10 @@ export default function StatisticsPage() {
                 {getOpponentName()}
               </CardTitle>
 
-              <p className="text-sm lg:text-base text-muted-foreground">
+              <p className="mt-2 break-words text-xs font-semibold leading-5 text-white/45 sm:text-sm lg:text-base">
                 {formatDate(match.match_date)} • {match.match_time} • {match.venue}
               </p>
+              </div>
             </CardHeader>
           </Card>
         </div>

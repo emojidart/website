@@ -17,7 +17,6 @@ import {
   History,
   Radio,
   X,
-  Building2,
   CalendarDays,
   ClipboardList,
   type LucideIcon,
@@ -56,7 +55,7 @@ const BOTTOM_BAR: NavItem[] = [
 ]
 
 const QUICK_BASE: Omit<NavItem, "key">[] = [
-  { name: "Lion Cup", href: "/lion-cup", icon: Trophy },
+  { name: "Turnierserien", href: "/turniere/serien", icon: Trophy },
   { name: "Live", href: "/live-all-app", icon: Radio },
   { name: "History", href: "/tournament-history", icon: History },
   {
@@ -87,8 +86,6 @@ const LIVE_ITEMS: NavItem[] = [
 ]
 
 const INFO_ITEMS: NavItem[] = [
-  { key: "emd", name: "EMD Campus", href: "/emd-campus", icon: Building2 },
-  { key: "faq", name: "FAQ", href: "/faq", icon: MessageCircle },
   { key: "about", name: "Über uns", href: "/uber-uns", icon: HelpCircle },
   { key: "kontakt", name: "Kontakt", href: "/kontakt", icon: MessageCircle },
 ]
@@ -126,13 +123,15 @@ function NavLink({
       href={item.href!}
       onClick={onAfter}
       className={cn(
-        "flex items-center gap-3 rounded-2xl p-3 border border-transparent transition-all",
-        "hover:bg-white text-slate-900",
+        "group flex items-center gap-3 rounded-2xl border p-3 transition-all",
+        "border-white/[0.07] bg-white/[0.035] text-white/65 hover:border-orange-300/20 hover:bg-orange-500/[0.08] hover:text-white",
         className,
       )}
     >
-      <Icon className="h-5 w-5 text-orange-600" />
-      <span className="font-semibold">{item.name}</span>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-orange-200 transition-colors group-hover:border-orange-300/20 group-hover:bg-orange-500/10">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-sm font-bold">{item.name}</span>
     </Link>
   )
 }
@@ -144,13 +143,22 @@ function NavButton({ item, className }: { item: NavItem; className?: string }) {
     <button
       onClick={item.onClick}
       className={cn(
-        "flex items-center gap-3 w-full rounded-xl p-3 border border-transparent font-semibold",
-        item.danger ? "text-red-600 hover:bg-red-50" : "text-gray-900 hover:bg-gray-50",
+        "group flex w-full items-center gap-3 rounded-2xl border p-3 font-semibold transition-all",
+        item.danger
+          ? "border-red-400/10 bg-red-500/[0.05] text-red-300 hover:border-red-400/20 hover:bg-red-500/[0.09]"
+          : "border-white/[0.07] bg-white/[0.035] text-white/65 hover:border-orange-300/20 hover:bg-orange-500/[0.08] hover:text-white",
         className,
       )}
     >
-      <Icon className="h-5 w-5" />
-      {item.name}
+      <span className={cn(
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
+        item.danger
+          ? "border-red-400/15 bg-red-500/10 text-red-300"
+          : "border-white/10 bg-white/5 text-orange-200",
+      )}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-left text-sm font-bold">{item.name}</span>
     </button>
   )
 }
@@ -169,7 +177,6 @@ export function MobileBottomNav() {
   const [profileChecked, setProfileChecked] = useState(false)
 
   const closeMore = useCallback(() => setIsMoreOpen(false), [])
-  const toggleMore = useCallback(() => setIsMoreOpen((v) => !v), [])
 
   useEffect(() => {
     let mounted = true
@@ -288,7 +295,7 @@ export function MobileBottomNav() {
   }, [isLoggedIn, isAdmin, isGuest, handleLogout])
 
   const BOTTOM_OFFSET = "0px"
-  const SPACER_H = "calc(4rem + max(12px, env(safe-area-inset-bottom)))"
+  const SPACER_H = "calc(4.5rem + max(10px, env(safe-area-inset-bottom)))"
 
   if (loading || (isLoggedIn && !profileChecked)) {
     return <div className="md:hidden" style={{ height: SPACER_H }} />
@@ -301,37 +308,46 @@ export function MobileBottomNav() {
 
       {/* MORE OVERLAY */}
       {isMoreOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden">
+        <div className="fixed inset-0 z-[100] md:hidden">
           <button
             aria-label="Schließen"
-            className="absolute inset-0 bg-black/40"
-            onClick={closeMore}
+            className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+            onPointerUp={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              closeMore()
+            }}
           />
 
           {/* Sheet sitzt über Nav + Offset */}
           <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: SPACER_H }}>
-            <div className="mx-3 overflow-hidden rounded-t-[28px] border border-slate-200 bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/10 bg-slate-950 p-4 text-white">
+            <div className="mx-3 overflow-hidden rounded-t-[28px] border border-white/10 bg-[#050608] shadow-[0_-28px_80px_-30px_rgba(0,0,0,.98)]">
+              <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[#070a0f] p-4 text-white">
                 <h3 className="text-lg font-black text-white">
                   Mehr Optionen
                 </h3>
 
                 <button
-                  onClick={closeMore}
-                  className="rounded-xl p-2 text-slate-300 hover:bg-white/10"
+                  type="button"
+                  onPointerUp={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    closeMore()
+                  }}
+                  className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/5 p-0 text-white/50 transition hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
                   aria-label="Schließen"
                 >
-                  <X className="h-5 w-5 text-slate-300" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <div className="max-h-[64vh] overflow-y-auto bg-slate-50 p-4 space-y-5">
+              <div className="max-h-[68vh] space-y-5 overflow-y-auto bg-[#050608] p-4 pb-[calc(env(safe-area-inset-bottom)+20px)]">
                 {sections.map((sec) => {
                   if (sec.items.length === 0) return null
 
                   return (
                     <section key={sec.title}>
-                      <div className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                      <div className="mb-2 px-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/28">
                         {sec.title}
                       </div>
 
@@ -342,7 +358,7 @@ export function MobileBottomNav() {
                               key={item.key}
                               item={item}
                               onAfter={closeMore}
-                              className="min-h-[72px] rounded-2xl bg-white border border-slate-200 hover:border-orange-200 hover:bg-orange-50/40 hover:shadow-sm"
+                              className="min-h-[74px] rounded-2xl"
                             />
                           ))}
                         </div>
@@ -368,41 +384,89 @@ export function MobileBottomNav() {
 
       {/* BOTTOM NAV */}
       <nav
-        className="fixed left-0 right-0 bottom-0 z-50 md:hidden border-t border-slate-200/80 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.10)] backdrop-blur-xl"
-        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+        className="fixed inset-x-0 bottom-0 z-[90] md:hidden pointer-events-none"
+        style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
       >
-        <div className="grid h-16 grid-cols-5">
-          {BOTTOM_BAR.map((item) => {
-            const isActive = pathname === item.href
-            const Icon = item.icon
+        <div className="pointer-events-auto mx-2 overflow-hidden rounded-[22px] border border-white/10 bg-[#06080d]/96 shadow-[0_-16px_46px_-24px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+          <div className="pointer-events-none absolute inset-x-2 bottom-[max(8px,env(safe-area-inset-bottom))] h-[68px] rounded-[22px] bg-[radial-gradient(circle_at_50%_110%,rgba(249,115,22,.12),transparent_52%)]" />
+          <div className="relative grid h-[68px] grid-cols-5 px-1">
+            {BOTTOM_BAR.map((item) => {
+              const isActive = pathname === item.href
+              const Icon = item.icon
 
-            return (
-              <Link
-                key={item.key}
-                href={item.href!}
+              return (
+                <Link
+                  key={item.key}
+                  href={item.href!}
+                  className="group flex min-h-[58px] min-w-0 touch-manipulation select-none items-center justify-center px-0.5"
+                >
+                  <span
+                    className={cn(
+                      "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 transition-all",
+                      isActive
+                        ? "bg-orange-500/[0.12] text-orange-200 shadow-[0_0_24px_rgba(249,115,22,.08)]"
+                        : "text-white/38 group-active:bg-white/[0.05] group-active:text-white/70",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-7 w-9 items-center justify-center rounded-xl border transition-all",
+                        isActive
+                          ? "border-orange-300/20 bg-orange-500/10 text-orange-200"
+                          : "border-transparent bg-transparent text-white/42",
+                      )}
+                    >
+                      <Icon className="h-[19px] w-[19px]" strokeWidth={isActive ? 2.5 : 2.1} />
+                    </span>
+                    <span className={cn(
+                      "max-w-[62px] truncate text-[9px] font-bold leading-none",
+                      isActive ? "text-orange-100" : "text-white/38",
+                    )}>
+                      {item.name}
+                    </span>
+                  </span>
+                </Link>
+              )
+            })}
+
+            <button
+              type="button"
+              onPointerUp={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                setIsMoreOpen(true)
+              }}
+              className="group relative z-[2] flex min-h-[58px] min-w-0 touch-manipulation select-none items-center justify-center px-0.5"
+              aria-label="Mehr Optionen"
+              aria-expanded={isMoreOpen}
+            >
+              <span
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 transition-all",
-                  isActive ? "text-orange-600" : "text-gray-500 hover:text-orange-600",
+                  "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 transition-all",
+                  isMoreOpen
+                    ? "bg-orange-500/[0.12] text-orange-200 shadow-[0_0_24px_rgba(249,115,22,.08)]"
+                    : "text-white/38 group-active:bg-white/[0.05] group-active:text-white/70",
                 )}
               >
-                <Icon className="h-6 w-6" strokeWidth={isActive ? 2.6 : 2.2} />
-                <span className="text-[10px] font-semibold">
-                  {item.name}
+                <span
+                  className={cn(
+                    "flex h-7 w-9 items-center justify-center rounded-xl border transition-all",
+                    isMoreOpen
+                      ? "border-orange-300/20 bg-orange-500/10 text-orange-200"
+                      : "border-transparent bg-transparent text-white/42",
+                  )}
+                >
+                  <MoreHorizontal className="h-[19px] w-[19px]" />
                 </span>
-              </Link>
-            )
-          })}
-
-          <button
-            onClick={toggleMore}
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 transition-all",
-              isMoreOpen ? "text-orange-600" : "text-gray-500 hover:text-orange-600",
-            )}
-          >
-            <MoreHorizontal className="h-6 w-6" />
-            <span className="text-[10px] font-semibold">Mehr</span>
-          </button>
+                <span className={cn(
+                  "text-[9px] font-bold leading-none",
+                  isMoreOpen ? "text-orange-100" : "text-white/38",
+                )}>
+                  Mehr
+                </span>
+              </span>
+            </button>
+          </div>
         </div>
       </nav>
     </>

@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react"
 import { Header } from "@/components/header"
-import { TournamentAdminNav } from "@/components/admin/tournaments/tournament-admin-nav"
+import { TournamentAdminNav } from "@/app/admin/_komponenten/turniere/turnier-navigation"
 import { supabase } from "@/lib/supabase"
 
 type PlayerRow = {

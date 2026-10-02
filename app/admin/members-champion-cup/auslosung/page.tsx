@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import {
   ArrowLeft,
@@ -67,8 +67,6 @@ type RRPlayer = {
   id: string
   name: string
 }
-
-const MEMBERS_CUP_SLUG = "2026/27"
 
 const LEVEL_INFO: Record<LevelGroup, { label: string; short: string; className: string }> = {
   1: { label: "Tabelle 1", short: "Stark", className: "bg-orange-50 text-orange-800 border-orange-200" },
@@ -169,6 +167,9 @@ function PlayerMiniCard({ player }: { player: DrawPlayer | GroupedDrawPlayer }) 
 
 export default function AdminMembersChampionCupAuslosungPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const requestedSeriesId = searchParams.get("seriesId")
+  const requestedEventId = searchParams.get("eventId")
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -193,29 +194,73 @@ export default function AdminMembersChampionCupAuslosungPage() {
       setLoading(true)
       setMessage(null)
 
-      const { data: seriesData, error: seriesError } = await supabase
+      let seriesQuery = supabase
         .from("dko_series")
-        .select("id,name,slug")
-        .eq("slug", MEMBERS_CUP_SLUG)
-        .maybeSingle()
+        .select("id,name,slug,series_type,no_show_penalty_mode,require_even_participants,odd_participant_policy")
+
+      if (requestedSeriesId) {
+        seriesQuery = seriesQuery.eq("id", requestedSeriesId)
+      } else {
+        seriesQuery = seriesQuery.eq("series_type", "members_cup").eq("is_active", true)
+      }
+
+      const { data: seriesData, error: seriesError } = await seriesQuery.maybeSingle()
 
       if (seriesError) throw seriesError
+      if (!seriesData?.id) throw new Error("Turnierserie wurde nicht gefunden.")
       if (seriesData?.name) setSeriesName(String(seriesData.name))
 
       const [{ data: registrationData, error: registrationError }, { data: levelData, error: levelError }] =
         await Promise.all([
-          supabase
-            .from("dko_tournament_registration")
-            .select("id,player_id,player_name,registered_at,paid,entry_fee,payment_method")
-            .order("registered_at", { ascending: true }),
+          (() => {
+            let query = supabase
+              .from("dko_tournament_registration")
+              .select("id,player_id,player_name,registered_at,paid,entry_fee,payment_method")
+              .eq("series_id", seriesData.id)
+              .order("registered_at", { ascending: true })
+
+            if (requestedEventId) query = query.eq("event_id", requestedEventId)
+            return query
+          })(),
 
           supabase
-            .from("emd_champion_cup_player_levels")
-            .select("id,spieldatenbank_id,player_name,level_group,level_label,average_points,notes"),
+            .from("dko_series_player_levels")
+            .select("id,spieldatenbank_id,player_name,level_group,level_label,average_points,notes")
+            .eq("series_id", seriesData.id),
         ])
 
       if (registrationError) throw registrationError
       if (levelError) throw levelError
+
+      let registrationsForDraw = (registrationData || []) as RegisteredPlayer[]
+
+      if (requestedEventId) {
+        const { data: attendanceData, error: attendanceError } = await supabase
+          .from("dko_event_attendance")
+          .select("player_id,status")
+          .eq("event_id", requestedEventId)
+
+        if (attendanceError) throw attendanceError
+
+        const attendanceRows = attendanceData || []
+        const attendanceRequired = seriesData.no_show_penalty_mode !== "none"
+
+        if (attendanceRequired && registrationsForDraw.length > 0 && attendanceRows.length < registrationsForDraw.length) {
+          throw new Error("Bitte zuerst unter „Turniertage starten“ die Anwesenheit vollständig bestätigen.")
+        }
+
+        if (attendanceRows.length > 0) {
+          const presentIds = new Set(
+            attendanceRows
+              .filter((row: any) => row.status === "present")
+              .map((row: any) => String(row.player_id))
+          )
+
+          registrationsForDraw = registrationsForDraw.filter((player) =>
+            presentIds.has(String(player.player_id))
+          )
+        }
+      }
 
       const levels = (levelData || []) as LevelRow[]
       const levelByPlayerId = new Map<string, LevelRow>()
@@ -224,7 +269,7 @@ export default function AdminMembersChampionCupAuslosungPage() {
         levelByPlayerId.set(String(level.spieldatenbank_id), level)
       })
 
-      const mappedPlayers: DrawPlayer[] = ((registrationData || []) as RegisteredPlayer[]).map((player) => ({
+      const mappedPlayers: DrawPlayer[] = registrationsForDraw.map((player) => ({
         ...player,
         level: levelByPlayerId.get(String(player.player_id)) ?? null,
       }))
@@ -249,7 +294,7 @@ export default function AdminMembersChampionCupAuslosungPage() {
     if (!authLoading && !adminLoading && user && isAdmin) {
       void loadData()
     }
-  }, [authLoading, adminLoading, user, isAdmin])
+  }, [authLoading, adminLoading, user, isAdmin, requestedSeriesId, requestedEventId])
 
   useEffect(() => {
     if (authLoading || adminLoading || !user || !isAdmin) return
@@ -259,7 +304,10 @@ export default function AdminMembersChampionCupAuslosungPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "dko_tournament_registration" }, () => {
         if (!groupsLocked && !teamsLocked) void loadData()
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "emd_champion_cup_player_levels" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "dko_series_player_levels" }, () => {
+        if (!groupsLocked && !teamsLocked) void loadData()
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "dko_event_attendance" }, () => {
         if (!groupsLocked && !teamsLocked) void loadData()
       })
       .subscribe()

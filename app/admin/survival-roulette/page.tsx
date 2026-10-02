@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   AlertCircle,
   CheckCircle,
@@ -15,10 +15,15 @@ import {
   X,
 } from "lucide-react"
 import { Header } from "@/components/header"
-import { TournamentAdminNav } from "@/components/admin/tournaments/tournament-admin-nav"
+import { TournamentAdminNav } from "@/app/admin/_komponenten/turniere/turnier-navigation"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
+import {
+  TournamentRegistrationPanel,
+  type TournamentRegistrationAvailablePlayer,
+  type TournamentRegistrationRegisteredPlayer,
+} from "@/components/tournament-registration/tournament-registration-panel"
 
 type DbPlayer = {
   id: number | string
@@ -60,6 +65,8 @@ function buildSurvivalRoute(total: number) {
 
 export default function SurvivalRouletteAdminPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const centralEventId = searchParams.get("centralEventId")
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
 
   const [tournamentName, setTournamentName] = useState("Survival Roulette")
@@ -246,26 +253,90 @@ export default function SurvivalRouletteAdminPage() {
 
         const id = String(draft.id)
         setDraftTournamentId(id)
-        setTournamentName(draft.name || "Survival Roulette")
+
+        let resolvedTournamentName = draft.name || "Survival Roulette"
+        let resolvedPlayers: SurvivalPlayer[] | null = null
+
+        if (centralEventId) {
+          const [{ data: centralEvent, error: centralEventError }, { data: centralRegistrations, error: centralRegistrationsError }] =
+            await Promise.all([
+              supabase
+                .from("central_tournament_events")
+                .select("id,title")
+                .eq("id", centralEventId)
+                .maybeSingle(),
+              supabase
+                .from("central_tournament_registrations")
+                .select("player_id,player_name_snapshot,status")
+                .eq("event_id", centralEventId)
+                .eq("status", "registered")
+                .order("registered_at", { ascending: true }),
+            ])
+
+          if (centralEventError) throw centralEventError
+          if (centralRegistrationsError) throw centralRegistrationsError
+
+          if (centralEvent?.title) {
+            resolvedTournamentName = String(centralEvent.title)
+          }
+
+          resolvedPlayers = (centralRegistrations || [])
+            .filter((row: any) => Boolean(row.player_id))
+            .map((row: any) => ({
+              player_id: String(row.player_id),
+              player_name: String(row.player_name_snapshot || "Spieler"),
+            }))
+
+          if (resolvedPlayers.length > 0) {
+            const { error: syncCentralPlayersError } = await supabase
+              .from("survival_players")
+              .upsert(
+                resolvedPlayers.map((player) => ({
+                  tournament_id: id,
+                  player_id: player.player_id,
+                  player_name: player.player_name,
+                  active: true,
+                })),
+                { onConflict: "tournament_id,player_id" },
+              )
+
+            if (syncCentralPlayersError) throw syncCentralPlayersError
+          }
+
+          const { error: syncNameError } = await supabase
+            .from("survival_tournaments")
+            .update({
+              name: resolvedTournamentName,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", id)
+
+          if (syncNameError) throw syncNameError
+        }
+
+        setTournamentName(resolvedTournamentName)
         setMachineCount(Number(draft.machine_count || 5))
 
         if (typeof window !== "undefined") {
           localStorage.setItem(draftKey, id)
         }
 
-        const { data: savedPlayers, error: savedPlayersError } = await supabase
-          .from("survival_players")
-          .select("player_id,player_name")
-          .eq("tournament_id", id)
-          .order("created_at", { ascending: true })
+        if (!resolvedPlayers) {
+          const { data: savedPlayers, error: savedPlayersError } = await supabase
+            .from("survival_players")
+            .select("player_id,player_name")
+            .eq("tournament_id", id)
+            .order("created_at", { ascending: true })
 
-        if (savedPlayersError) throw savedPlayersError
-        const persistedPlayers = (savedPlayers || []) as SurvivalPlayer[]
-        setRegisteredPlayers(persistedPlayers)
+          if (savedPlayersError) throw savedPlayersError
+          resolvedPlayers = (savedPlayers || []) as SurvivalPlayer[]
+        }
+
+        setRegisteredPlayers(resolvedPlayers)
         saveLocalBackup({
-          tournamentName: draft.name || "Survival Roulette",
+          tournamentName: resolvedTournamentName,
           machineCount: Number(draft.machine_count || 5),
-          registeredPlayers: persistedPlayers,
+          registeredPlayers: resolvedPlayers,
           draftTournamentId: id,
         })
       } catch (error) {
@@ -538,6 +609,19 @@ export default function SurvivalRouletteAdminPage() {
     return () => window.clearTimeout(timer)
   }, [draftTournamentId, tournamentName, machineCount, user])
 
+  const sharedAvailablePlayers: TournamentRegistrationAvailablePlayer[] = availablePlayers
+    .filter((player) => !registeredPlayers.some((registered) => registered.player_id === String(player.id)))
+    .map((player) => ({
+      id: String(player.id),
+      name: player.name,
+      eligible: true,
+    }))
+
+  const sharedRegisteredPlayers: TournamentRegistrationRegisteredPlayer[] = registeredPlayers.map((player) => ({
+    id: player.player_id,
+    name: player.player_name,
+  }))
+
   if (authLoading || adminLoading || loading) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -764,179 +848,49 @@ export default function SurvivalRouletteAdminPage() {
           </div>
         )}
 
-        <div className="grid gap-8 md:grid-cols-2">
-          <div className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-5">
-            <div className="mb-6 flex items-center justify-between gap-3">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Spieler hinzufügen
-              </h2>
+        <TournamentRegistrationPanel
+          availablePlayers={sharedAvailablePlayers}
+          registeredPlayers={sharedRegisteredPlayers}
+          selectedIds={selectedPlayers}
+          onToggleSelected={togglePlayer}
+          searchTerm={searchTerm}
+          onSearchTermChange={setSearchTerm}
+          loading={loading}
+          canRegister={tournamentFormCompleted}
+          disabledNotice={
+            tournamentFormCompleted
+              ? null
+              : "Bitte zuerst Turniername und Automatenanzahl vollständig festlegen."
+          }
+          onRegister={registerSelectedPlayers}
+          showEligibilityFilters={false}
+          showPaid={false}
+          registeredSubtitle="Für Survival Roulette vorgemerkt"
+          onRemove={unregisterPlayer}
+          onClearAll={() => setShowClearRegistration(true)}
+          clearAllLabel="Registrierung leeren"
+        />
 
-              <span className="text-sm text-gray-500">
-                {filteredPlayers.length} Spieler
-              </span>
-            </div>
-
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Spieler suchen..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/70 pl-10 pr-4 font-medium text-slate-900 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
-              />
-            </div>
-
-            <div className="mb-4 max-h-[520px] space-y-2 overflow-y-auto pr-1">
-              {filteredPlayers.length === 0 ? (
-                <p className="py-8 text-center text-gray-500">
-                  Keine Spieler gefunden
-                </p>
+        {registeredPlayers.length > 0 ? (
+          <div
+            className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+              validPlayerCount
+                ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-200"
+                : "border-orange-300/20 bg-orange-500/[0.08] text-orange-200"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {validPlayerCount ? (
+                <CheckCircle className="h-4 w-4" />
               ) : (
-                filteredPlayers.map((player) => {
-                  const playerId = String(player.id)
-                  const selected = selectedPlayers.has(playerId)
-
-                  return (
-                    <label
-                      key={playerId}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 shadow-sm transition-colors ${
-                        selected
-                          ? "border-orange-400 bg-orange-50"
-                          : "border-gray-200 bg-white hover:border-orange-400"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => togglePlayer(playerId)}
-                        className="h-5 w-5 rounded border-2 accent-orange-500"
-                      />
-
-                      <span className="min-w-0 flex-1 font-medium text-gray-900">
-                        {player.name}
-                      </span>
-
-                      {selected ? (
-                        <CheckCircle className="h-4 w-4 text-orange-600" />
-                      ) : (
-                        <UserPlus className="h-4 w-4 text-gray-400" />
-                      )}
-                    </label>
-                  )
-                })
+                <AlertCircle className="h-4 w-4" />
               )}
+              {validPlayerCount
+                ? `${registeredPlayers.length} Spieler – Turnier kann gestartet werden.`
+                : `${registeredPlayers.length} Spieler – die Teilnehmerzahl muss durch 4 teilbar sein.`}
             </div>
-
-            <button
-              onClick={registerSelectedPlayers}
-              disabled={
-                selectedPlayers.size === 0 || !tournamentFormCompleted
-              }
-              className={`w-full rounded-xl px-6 py-3 font-bold transition-all ${
-                selectedPlayers.size > 0 && tournamentFormCompleted
-                  ? "bg-slate-950 text-white shadow-sm hover:bg-slate-800"
-                  : "cursor-not-allowed bg-slate-200 text-slate-500"
-              }`}
-            >
-              {selectedPlayers.size > 0
-                ? `${selectedPlayers.size} Spieler registrieren`
-                : "Spieler auswählen"}
-            </button>
           </div>
-
-          <div className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-5">
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Registrierte Spieler
-                </h2>
-                <div className="mt-1 text-sm font-semibold text-slate-500">
-                  Für Survival Roulette vorgemerkt
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {registeredPlayers.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowClearRegistration(true)}
-                    disabled={startingTournament}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-black text-rose-700 transition hover:bg-rose-50 disabled:opacity-40"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Registrierung leeren
-                  </button>
-                ) : null}
-                <span
-                  className={`rounded-full px-2.5 py-1 text-sm font-bold ${
-                    validPlayerCount
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-orange-100 text-orange-700"
-                  }`}
-                >
-                  {registeredPlayers.length}
-                </span>
-              </div>
-            </div>
-
-            <div className="max-h-[620px] space-y-2.5 overflow-y-auto pr-1">
-              {registeredPlayers.length === 0 ? (
-                <p className="py-8 text-center text-gray-500">
-                  Noch keine Spieler registriert
-                </p>
-              ) : (
-                registeredPlayers.map((player, index) => (
-                  <div
-                    key={player.player_id}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 transition-all"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
-                        {index + 1}
-                      </span>
-
-                      <span className="truncate font-medium text-gray-900">
-                        {player.player_name}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => unregisterPlayer(player.player_id)}
-                      className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                      title="Registrierung entfernen"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {registeredPlayers.length > 0 && (
-              <div
-                className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${
-                  validPlayerCount
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-orange-200 bg-orange-50 text-orange-700"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {validPlayerCount ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4" />
-                  )}
-
-                  {validPlayerCount
-                    ? `${registeredPlayers.length} Spieler – Turnier kann gestartet werden.`
-                    : `${registeredPlayers.length} Spieler – für Doppel muss die Teilnehmerzahl durch 4 teilbar sein.`}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        ) : null}
       </div>
 
       {showClearRegistration ? (

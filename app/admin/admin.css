@@ -1,0 +1,1130 @@
+.emd-admin-shell {
+  --admin-bg: #05070a;
+  --admin-panel: rgba(10, 14, 20, 0.92);
+  --admin-panel-soft: rgba(255, 255, 255, 0.045);
+  --admin-panel-hover: rgba(255, 255, 255, 0.07);
+  --admin-border: rgba(255, 255, 255, 0.09);
+  --admin-border-strong: rgba(255, 255, 255, 0.14);
+  --admin-text: rgba(255, 255, 255, 0.96);
+  --admin-muted: rgba(255, 255, 255, 0.58);
+  --admin-subtle: rgba(255, 255, 255, 0.36);
+  --admin-orange: #f97316;
+  --admin-orange-soft: rgba(249, 115, 22, 0.13);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  width: 100%;
+  overflow-x: clip;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.emd-admin-shell__background {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(249, 115, 22, 0.12), transparent 26%),
+    radial-gradient(circle at 86% 18%, rgba(14, 165, 233, 0.07), transparent 25%),
+    linear-gradient(180deg, #06080c 0%, #05070a 48%, #030507 100%);
+}
+
+.emd-admin-shell__background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.012) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.45), transparent 72%);
+}
+
+.emd-admin-shell__content {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Alte Admin-Seiten bleiben während des Umbaus lesbar.
+   Diese Regeln wirken NUR innerhalb von /admin. */
+.emd-admin-shell .bg-white {
+  background-color: var(--admin-panel) !important;
+}
+
+.emd-admin-shell :is(.bg-gray-50,.bg-slate-50,.bg-gray-100,.bg-slate-100) {
+  background-color: var(--admin-panel-soft) !important;
+}
+
+.emd-admin-shell :is(
+  .text-gray-950,.text-gray-900,.text-gray-800,
+  .text-slate-950,.text-slate-900,.text-slate-800
+) {
+  color: var(--admin-text) !important;
+}
+
+.emd-admin-shell :is(
+  .text-gray-700,.text-gray-600,.text-gray-500,
+  .text-slate-700,.text-slate-600,.text-slate-500
+) {
+  color: var(--admin-muted) !important;
+}
+
+.emd-admin-shell :is(
+  .border-gray-100,.border-gray-200,.border-gray-300,
+  .border-slate-100,.border-slate-200,.border-slate-300
+) {
+  border-color: var(--admin-border) !important;
+}
+
+.emd-admin-shell :is(input, textarea, select) {
+  max-width: 100%;
+  background-color: rgba(7, 10, 15, 0.94);
+  color: var(--admin-text);
+  border-color: var(--admin-border-strong);
+}
+
+.emd-admin-shell :is(input, textarea)::placeholder {
+  color: var(--admin-subtle);
+}
+
+.emd-admin-shell button,
+.emd-admin-shell a,
+.emd-admin-shell [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Kein globaler Hover-Filter mehr: nur eine dezente Interaktion im Admin. */
+@media (hover: hover) {
+  .emd-admin-shell button:not(:disabled),
+  .emd-admin-shell a,
+  .emd-admin-shell [role="button"] {
+    transition:
+      background-color .16s ease,
+      border-color .16s ease,
+      color .16s ease,
+      box-shadow .16s ease,
+      transform .16s ease;
+  }
+}
+
+/* Fundament gegen die abgeschnittenen / zu breiten Admin-Seiten. */
+.emd-admin-shell main,
+.emd-admin-shell section,
+.emd-admin-shell article,
+.emd-admin-shell form,
+.emd-admin-shell .min-w-0 {
+  min-width: 0;
+}
+
+.emd-admin-shell img,
+.emd-admin-shell video,
+.emd-admin-shell canvas,
+.emd-admin-shell svg {
+  max-width: 100%;
+}
+
+.emd-admin-shell table {
+  max-width: 100%;
+}
+
+/* Modale/Dialoge dürfen nie breiter als der sichtbare Bildschirm werden. */
+.emd-admin-shell [role="dialog"] {
+  max-width: calc(100vw - 24px);
+}
+
+/* Mobile Grundschutz */
+@media (max-width: 767px) {
+  .emd-admin-shell {
+    overflow-x: hidden;
+  }
+
+  .emd-admin-shell input,
+  .emd-admin-shell textarea,
+  .emd-admin-shell select {
+    font-size: 16px;
+  }
+
+  .emd-admin-shell button,
+  .emd-admin-shell [role="button"] {
+    min-height: 44px;
+  }
+}
+
+
+/* Admin Navigation */
+.emd-admin-shell .admin-nav-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.12) transparent;
+}
+
+.emd-admin-shell .admin-nav-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.emd-admin-shell .admin-nav-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.emd-admin-shell .admin-nav-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255,255,255,.12);
+}
+
+/* =========================================================
+   ADMIN CONTENT WIDTH
+   Gleiche Desktop-Breite wie die Member-/Spielerbereiche.
+   ========================================================= */
+@media (min-width: 1024px) {
+  .emd-admin-shell__content {
+    width: 100%;
+    max-width: var(--emd-content-max, 1680px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* =========================================================
+   ADMIN SURFACE CLEANUP
+   Entfernt den großen rechteckigen Seitenblock im Admin.
+   Der Shell-Hintergrund bleibt sichtbar; nur echte Karten/Panels
+   behalten ihre eigene Fläche.
+   ========================================================= */
+.emd-admin-shell .min-h-screen.bg-gray-50 {
+  background: transparent !important;
+}
+
+.emd-admin-shell main {
+  background: transparent !important;
+}
+
+/* Der eigentliche Content-Bereich soll nicht wie eine zweite Seite wirken. */
+.emd-admin-shell__content {
+  background: transparent !important;
+}
+
+/* =========================================================
+   EMD ADMIN – GEMEINSAMES DESIGN SYSTEM
+   NUR /admin – KEINE öffentliche / Member-Seite betroffen.
+   Vereinsverwaltung, Liga und künftige Admin-Seiten nutzen
+   dieselben Klassen aus dieser admin.css.
+   ========================================================= */
+
+.emd-admin-shell {
+  --emd-admin-panel: rgba(8, 14, 21, 0.82);
+  --emd-admin-panel-strong: rgba(10, 17, 25, 0.92);
+  --emd-admin-panel-soft: rgba(255, 255, 255, 0.035);
+  --emd-admin-border: rgba(255, 255, 255, 0.085);
+  --emd-admin-border-hover: rgba(251, 146, 60, 0.20);
+  --emd-admin-muted: rgba(255, 255, 255, 0.46);
+}
+
+/* Einheitliches Seitenraster */
+.emd-admin-shell .emd-admin-page {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  color: rgba(255,255,255,.96);
+  background: transparent !important;
+}
+
+.emd-admin-shell .emd-admin-content {
+  width: 100%;
+  max-width: var(--emd-content-max, 1680px);
+  margin-inline: auto;
+  padding: 0 0 32px;
+}
+
+/* Einheitlicher Verwaltungs-Header */
+.emd-admin-shell .emd-admin-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid var(--emd-admin-border);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 4% 20%, rgba(249,115,22,.14), transparent 31%),
+    radial-gradient(circle at 96% 18%, rgba(14,165,233,.10), transparent 31%),
+    linear-gradient(110deg, rgba(48,22,10,.70), rgba(7,12,18,.88) 43%, rgba(5,25,37,.72));
+  box-shadow: 0 28px 90px -60px rgba(0,0,0,.96);
+  backdrop-filter: blur(22px) saturate(1.08);
+  -webkit-backdrop-filter: blur(22px) saturate(1.08);
+}
+
+.emd-admin-shell .emd-admin-hero::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(251,146,60,.24), transparent);
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .emd-admin-shell .emd-admin-hero { padding: 24px; }
+}
+
+/* Karten / Flächen */
+.emd-admin-shell :is(
+  .emd-admin-surface,
+  .emd-admin-surface-lg,
+  .emd-admin-card,
+  .emd-admin-card-hover,
+  .emd-admin-inset,
+  .emd-admin-stat
+) {
+  color: rgba(255,255,255,.95);
+  border: 1px solid var(--emd-admin-border);
+  background: var(--emd-admin-panel);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.emd-admin-shell .emd-admin-surface {
+  border-radius: 28px;
+  box-shadow: 0 22px 70px -54px rgba(0,0,0,.92);
+}
+
+.emd-admin-shell .emd-admin-surface-lg {
+  border-radius: 30px;
+  box-shadow: 0 26px 80px -58px rgba(0,0,0,.96);
+}
+
+.emd-admin-shell :is(.emd-admin-card,.emd-admin-card-hover) {
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(12,19,28,.88), rgba(7,13,20,.78));
+  box-shadow: 0 18px 55px -44px rgba(0,0,0,.90);
+}
+
+.emd-admin-shell .emd-admin-card-hover {
+  transition: border-color .17s ease, background .17s ease, transform .17s ease;
+}
+
+@media (hover:hover) {
+  .emd-admin-shell .emd-admin-card-hover:hover {
+    border-color: var(--emd-admin-border-hover);
+    background: linear-gradient(145deg, rgba(15,24,34,.94), rgba(9,16,24,.88));
+  }
+}
+
+.emd-admin-shell .emd-admin-inset {
+  border-radius: 18px;
+  background: rgba(6,11,17,.68);
+}
+
+.emd-admin-shell .emd-admin-stat {
+  border-radius: 16px;
+  padding: 9px 14px;
+  background: rgba(9,16,24,.76);
+  box-shadow: 0 14px 35px -30px rgba(0,0,0,.9);
+}
+
+/* Tabs – kein extra schwarzer Balken */
+.emd-admin-shell .emd-admin-tabs-shell {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.emd-admin-shell .emd-admin-tab {
+  display: flex;
+  height: 44px;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid;
+  border-radius: 12px;
+  padding-inline: 14px;
+  font-size: 14px;
+  font-weight: 900;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+
+.emd-admin-shell .emd-admin-tab-active {
+  border-color: rgba(251,146,60,.24) !important;
+  background: rgba(249,115,22,.12) !important;
+  color: rgb(255 237 213) !important;
+}
+
+.emd-admin-shell .emd-admin-tab-idle {
+  border-color: rgba(255,255,255,.08) !important;
+  background: rgba(9,16,24,.68) !important;
+  color: rgba(255,255,255,.50) !important;
+}
+
+@media (hover:hover) {
+  .emd-admin-shell .emd-admin-tab-idle:hover {
+    border-color: rgba(251,146,60,.18) !important;
+    background: rgba(14,23,33,.88) !important;
+    color: rgba(255,255,255,.84) !important;
+  }
+}
+
+/* Inputs / Selects */
+.emd-admin-shell :is(.emd-admin-input,.emd-admin-select) {
+  height: 44px;
+  border-radius: 12px !important;
+  border-color: rgba(255,255,255,.11) !important;
+  background: rgba(6,11,17,.78) !important;
+  color: rgba(255,255,255,.94) !important;
+  box-shadow: none !important;
+}
+
+.emd-admin-shell .emd-admin-input::placeholder {
+  color: rgba(255,255,255,.24) !important;
+}
+
+/* Buttons */
+.emd-admin-shell .emd-admin-button-primary {
+  height: 44px;
+  border-radius: 12px !important;
+  border: 1px solid rgba(251,146,60,.26) !important;
+  background: #f97316 !important;
+  color: white !important;
+  font-weight: 900 !important;
+}
+
+.emd-admin-shell .emd-admin-button-secondary {
+  height: 44px;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  background: rgba(10,18,26,.78) !important;
+  color: rgba(255,255,255,.76) !important;
+  font-weight: 900 !important;
+}
+
+.emd-admin-shell .emd-admin-button-danger {
+  height: 44px;
+  border-radius: 12px !important;
+  border: 1px solid rgba(251,113,133,.20) !important;
+  background: rgba(244,63,94,.10) !important;
+  color: rgb(254 205 211) !important;
+  font-weight: 900 !important;
+}
+
+.emd-admin-shell .emd-admin-icon-button {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  border-radius: 12px !important;
+  background: rgba(10,18,26,.72) !important;
+  color: rgba(255,255,255,.48) !important;
+}
+
+/* Modale */
+.emd-admin-shell :is(.emd-admin-modal,.emd-admin-modal-sm) {
+  overflow: hidden !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  background: rgba(6,10,15,.97) !important;
+  color: white !important;
+  box-shadow: 0 32px 110px -38px rgba(0,0,0,.98) !important;
+}
+
+.emd-admin-shell :is(.emd-admin-modal-header,.emd-admin-modal-footer) {
+  border-color: rgba(255,255,255,.07) !important;
+  background: rgba(255,255,255,.025) !important;
+}
+
+/* =========================================================
+   ADMIN BREADCRUMB / TOPBAR
+   Gleiche Breite wie die darunterliegende Verwaltungsseite.
+   Kein schwarzer "Übersicht"-Button mehr.
+   ========================================================= */
+.emd-admin-shell .emd-admin-breadcrumb {
+  border: 1px solid rgba(255,255,255,.085) !important;
+  background:
+    linear-gradient(110deg, rgba(11,18,26,.88), rgba(7,13,20,.82)) !important;
+  color: rgba(255,255,255,.92) !important;
+  box-shadow: 0 18px 52px -42px rgba(0,0,0,.92) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.emd-admin-shell .emd-admin-breadcrumb .text-gray-600,
+.emd-admin-shell .emd-admin-breadcrumb .text-gray-900 {
+  color: rgba(255,255,255,.62) !important;
+}
+
+.emd-admin-shell .emd-admin-breadcrumb .text-gray-900 {
+  color: rgba(255,255,255,.95) !important;
+}
+
+.emd-admin-shell .emd-admin-overview-button {
+  border: 1px solid rgba(251,146,60,.22) !important;
+  background: rgba(249,115,22,.10) !important;
+  color: rgb(255 237 213) !important;
+  box-shadow: 0 0 0 1px rgba(249,115,22,.03), 0 12px 28px -22px rgba(249,115,22,.75) !important;
+}
+
+@media (hover:hover) {
+  .emd-admin-shell .emd-admin-overview-button:hover {
+    border-color: rgba(251,146,60,.36) !important;
+    background: rgba(249,115,22,.16) !important;
+    color: #fff !important;
+  }
+}
+
+/* =========================================================
+   ADMIN MOBILE WIDTH SAFETY
+   Zentral für alle Admin-Unterseiten.
+   ========================================================= */
+@media (max-width: 767px) {
+  .emd-admin-shell,
+  .emd-admin-shell__content,
+  .emd-admin-shell main,
+  .emd-admin-shell section,
+  .emd-admin-shell .emd-admin-page,
+  .emd-admin-shell .emd-admin-content {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .emd-admin-shell .emd-admin-content {
+    padding-inline: 0;
+  }
+
+  .emd-admin-shell :is(
+    .emd-admin-surface,
+    .emd-admin-surface-lg,
+    .emd-admin-card,
+    .emd-admin-card-hover,
+    .emd-admin-inset,
+    .emd-admin-stat
+  ) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .emd-admin-shell .emd-admin-surface,
+  .emd-admin-shell .emd-admin-surface-lg {
+    border-radius: 20px;
+  }
+
+  .emd-admin-shell :is(.emd-admin-card,.emd-admin-card-hover) {
+    border-radius: 18px;
+  }
+
+  .emd-admin-shell .emd-admin-inset {
+    border-radius: 16px;
+  }
+
+  .emd-admin-shell .emd-admin-stat {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 11px;
+  }
+
+  .emd-admin-shell :is(.emd-admin-input,.emd-admin-select) {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .emd-admin-shell .emd-admin-tab {
+    min-width: 0;
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+
+  .emd-admin-shell [data-radix-scroll-area-viewport] {
+    max-width: 100%;
+  }
+}
+
+/* =========================================================
+   ADMIN MOBILE HARD WIDTH FIX
+   Verhindert abgeschnittene rechte Seiten / Buttons / Selects.
+   ========================================================= */
+@media (max-width: 767px) {
+  .emd-admin-shell *,
+  .emd-admin-shell *::before,
+  .emd-admin-shell *::after {
+    box-sizing: border-box;
+  }
+
+  .emd-admin-shell main {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .emd-admin-shell__content,
+  .emd-admin-shell main > *,
+  .emd-admin-shell section,
+  .emd-admin-shell section > *,
+  .emd-admin-shell .emd-admin-page,
+  .emd-admin-shell .emd-admin-content,
+  .emd-admin-shell .emd-admin-content > * {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .emd-admin-shell :is(
+    [class*="grid"],
+    [class*="flex"],
+    [data-radix-scroll-area-root],
+    [data-radix-scroll-area-viewport]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .emd-admin-shell [data-radix-scroll-area-viewport] > div {
+    display: block !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .emd-admin-shell :is(button,input,select,textarea) {
+    max-width: 100%;
+  }
+
+  .emd-admin-shell .emd-admin-card-hover {
+    overflow: hidden;
+  }
+
+  .emd-admin-shell .emd-admin-button-primary,
+  .emd-admin-shell .emd-admin-button-secondary,
+  .emd-admin-shell .emd-admin-button-danger {
+    min-width: 0;
+  }
+}
+
+/* =========================================================
+   ADMIN DESKTOP FULL-WIDTH CONTENT
+   Verwaltungsseiten sollen auf Desktop die verfügbare Breite
+   nutzen und keine schmalen Inseln im Hauptbereich bilden.
+   ========================================================= */
+@media (min-width: 1280px) {
+  .emd-admin-shell .emd-admin-page,
+  .emd-admin-shell .emd-admin-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Native scrolling in admin dialogs/lists.
+   Avoids Radix ScrollArea wheel/touch issues inside nested dialogs. */
+.emd-admin-shell .touch-pan-y {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================
+   Veranstaltungen – gemeinsames Admin-Design
+   ============================================================ */
+.emd-admin-shell .emd-events-admin {
+  width: 100%;
+  min-width: 0;
+}
+
+.emd-admin-shell .emd-events-admin [data-slot="card"] {
+  background: rgba(8, 12, 18, 0.72) !important;
+  border-color: rgba(255,255,255,.075) !important;
+  color: rgba(255,255,255,.92) !important;
+  box-shadow: 0 20px 60px -48px rgba(0,0,0,.92) !important;
+}
+
+.emd-admin-shell .emd-events-admin input:not([type="checkbox"]):not([type="file"]),
+.emd-admin-shell .emd-events-admin textarea,
+.emd-admin-shell .emd-events-admin button[role="combobox"] {
+  background: rgba(4, 8, 13, .74) !important;
+  border-color: rgba(255,255,255,.09) !important;
+  color: rgba(255,255,255,.88) !important;
+}
+
+.emd-admin-shell .emd-events-admin input::placeholder,
+.emd-admin-shell .emd-events-admin textarea::placeholder {
+  color: rgba(255,255,255,.24) !important;
+}
+
+.emd-admin-shell .emd-events-admin table {
+  color: rgba(255,255,255,.72);
+}
+
+.emd-admin-shell .emd-events-admin thead {
+  background: rgba(255,255,255,.025);
+}
+
+.emd-admin-shell .emd-events-admin tr {
+  border-color: rgba(255,255,255,.065) !important;
+}
+
+.emd-admin-shell .emd-events-admin tbody tr:hover {
+  background: rgba(255,255,255,.025) !important;
+}
+
+.emd-admin-shell .emd-events-admin [role="alertdialog"] {
+  background: rgba(7,10,15,.98) !important;
+  border-color: rgba(255,255,255,.09) !important;
+  color: white !important;
+}
+
+/* ============================================================
+   Zentrale Turnieranmeldung – Header / Tabs / Stat-Safety
+   Gleicher Aufbau wie Vereinsverwaltung / Liga.
+   ============================================================ */
+.emd-admin-shell .emd-central-registration-hero {
+  margin-bottom: 8px;
+}
+
+.emd-admin-shell .emd-central-tabs {
+  background:
+    linear-gradient(180deg, rgba(5,7,10,.98) 0%, rgba(5,7,10,.92) 72%, rgba(5,7,10,0) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.emd-admin-shell .emd-central-stat {
+  min-width: 108px;
+  max-width: 150px;
+  text-align: right;
+}
+
+.emd-admin-shell .emd-central-stat-label,
+.emd-admin-shell .emd-central-count-label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.28);
+}
+
+.emd-admin-shell .emd-central-count-box {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.emd-admin-shell .emd-central-summary-stat {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.emd-admin-shell .emd-central-refresh {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 639px) {
+  .emd-admin-shell .emd-central-registration-hero {
+    padding: 18px 16px;
+    border-radius: 22px;
+  }
+
+  .emd-admin-shell .emd-central-stat {
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 0;
+    text-align: left;
+  }
+
+  .emd-admin-shell .emd-central-refresh {
+    width: 100%;
+  }
+
+  .emd-admin-shell .emd-central-count-label,
+  .emd-admin-shell .emd-central-stat-label {
+    font-size: 8px;
+    letter-spacing: .07em;
+  }
+}
+
+/* ============================================================
+   TURNIERSERIEN & SPIELTAGE – EMD DARK ADMIN DESIGN
+   Nutzt ausschließlich den bestehenden Admin-Shell.
+   ============================================================ */
+
+.emd-admin-shell .emd-tournament-series-page {
+  width: 100%;
+  min-width: 0;
+  background: transparent !important;
+  color: rgba(255,255,255,.96);
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-hero {
+  margin-bottom: 18px;
+  border-radius: 30px;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-hero-line {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(249,115,22,.42), transparent);
+  pointer-events: none;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-stat {
+  padding: 14px 16px;
+  min-width: 0;
+  background:
+    linear-gradient(145deg, rgba(12,19,28,.90), rgba(7,13,20,.78)) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-surface,
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-surface {
+  background:
+    linear-gradient(155deg, rgba(10,16,24,.93), rgba(6,11,17,.86)) !important;
+  border: 1px solid rgba(255,255,255,.085) !important;
+  box-shadow: 0 26px 80px -58px rgba(0,0,0,.96) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-card-header {
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-header {
+  border-bottom: 1px solid rgba(255,255,255,.08) !important;
+  background:
+    radial-gradient(circle at 8% 20%, rgba(249,115,22,.18), transparent 31%),
+    radial-gradient(circle at 92% 18%, rgba(14,165,233,.10), transparent 31%),
+    linear-gradient(115deg, rgba(25,13,8,.92), rgba(7,12,18,.98) 48%, rgba(5,17,25,.94)) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-list-item {
+  border-color: rgba(255,255,255,.08) !important;
+  background: rgba(7,12,18,.66) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-list-item:hover {
+  border-color: rgba(249,115,22,.22) !important;
+  background: rgba(13,21,30,.86) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-list-item.border-slate-400 {
+  border-color: rgba(249,115,22,.30) !important;
+  background:
+    linear-gradient(135deg, rgba(249,115,22,.09), rgba(10,17,25,.90)) !important;
+  box-shadow: inset 3px 0 0 rgba(249,115,22,.62);
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-section {
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 24px !important;
+  background: rgba(5,10,16,.62) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.018);
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-neutral {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(148,163,184,.05), transparent 28%),
+    rgba(5,10,16,.68) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-green {
+  border-color: rgba(52,211,153,.13) !important;
+  background:
+    radial-gradient(circle at 4% 0%, rgba(16,185,129,.10), transparent 30%),
+    rgba(5,12,15,.72) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-blue {
+  border-color: rgba(56,189,248,.13) !important;
+  background:
+    radial-gradient(circle at 4% 0%, rgba(14,165,233,.10), transparent 32%),
+    rgba(5,11,17,.72) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-amber {
+  border-color: rgba(251,191,36,.13) !important;
+  background:
+    radial-gradient(circle at 4% 0%, rgba(245,158,11,.10), transparent 32%),
+    rgba(12,10,5,.72) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-violet {
+  border-color: rgba(167,139,250,.13) !important;
+  background:
+    radial-gradient(circle at 4% 0%, rgba(139,92,246,.10), transparent 32%),
+    rgba(9,7,15,.72) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-cyan {
+  border-color: rgba(34,211,238,.13) !important;
+  background:
+    radial-gradient(circle at 4% 0%, rgba(6,182,212,.09), transparent 32%),
+    rgba(5,11,14,.72) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-section > div > h2,
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-section h2,
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-section .text-slate-950,
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-section .text-slate-900 {
+  color: rgba(255,255,255,.94) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-section .text-slate-500,
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-section .text-slate-600 {
+  color: rgba(255,255,255,.42) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page :is(input:not([type="checkbox"]), textarea, select) {
+  border-color: rgba(255,255,255,.10) !important;
+  background: rgba(3,8,13,.82) !important;
+  color: rgba(255,255,255,.93) !important;
+  box-shadow: none !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page :is(input:not([type="checkbox"]), textarea, select):focus {
+  border-color: rgba(249,115,22,.42) !important;
+  box-shadow: 0 0 0 3px rgba(249,115,22,.08) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page label {
+  color: rgba(255,255,255,.70);
+}
+
+.emd-admin-shell .emd-tournament-series-page input[type="checkbox"] {
+  accent-color: #f97316;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-section .bg-white,
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-section .bg-slate-50 {
+  background: rgba(4,9,14,.72) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .border-blue-200,
+.emd-admin-shell .emd-tournament-series-page .border-amber-200,
+.emd-admin-shell .emd-tournament-series-page .border-violet-200,
+.emd-admin-shell .emd-tournament-series-page .border-cyan-200,
+.emd-admin-shell .emd-tournament-series-page .border-emerald-200 {
+  border-color: rgba(255,255,255,.09) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-savebar {
+  border: 1px solid rgba(249,115,22,.20);
+  background:
+    linear-gradient(110deg, rgba(15,20,27,.97), rgba(8,13,19,.96)) !important;
+  box-shadow: 0 24px 65px -36px rgba(0,0,0,.98);
+}
+
+.emd-admin-shell .emd-tournament-series-page table {
+  color: rgba(255,255,255,.72);
+}
+
+.emd-admin-shell .emd-tournament-series-page thead {
+  background: rgba(255,255,255,.025) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page tr {
+  border-color: rgba(255,255,255,.065) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page tbody tr:hover {
+  background: rgba(255,255,255,.025) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page [data-slot="card-title"] {
+  color: rgba(255,255,255,.94);
+}
+
+.emd-admin-shell .emd-tournament-series-page .text-slate-950,
+.emd-admin-shell .emd-tournament-series-page .text-slate-900,
+.emd-admin-shell .emd-tournament-series-page .text-slate-800 {
+  color: rgba(255,255,255,.94) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .text-slate-700,
+.emd-admin-shell .emd-tournament-series-page .text-slate-600,
+.emd-admin-shell .emd-tournament-series-page .text-slate-500 {
+  color: rgba(255,255,255,.48) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .bg-blue-50,
+.emd-admin-shell .emd-tournament-series-page .bg-emerald-50,
+.emd-admin-shell .emd-tournament-series-page .bg-amber-50,
+.emd-admin-shell .emd-tournament-series-page .bg-violet-50,
+.emd-admin-shell .emd-tournament-series-page .bg-cyan-50 {
+  background: rgba(255,255,255,.045) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .text-blue-700 { color: rgb(186 230 253) !important; }
+.emd-admin-shell .emd-tournament-series-page .text-emerald-700 { color: rgb(167 243 208) !important; }
+.emd-admin-shell .emd-tournament-series-page .text-amber-700 { color: rgb(253 230 138) !important; }
+.emd-admin-shell .emd-tournament-series-page .text-violet-700 { color: rgb(221 214 254) !important; }
+.emd-admin-shell .emd-tournament-series-page .text-cyan-700 { color: rgb(165 243 252) !important; }
+
+.emd-admin-shell .emd-tournament-series-page button {
+  transition:
+    background-color .16s ease,
+    border-color .16s ease,
+    color .16s ease,
+    transform .16s ease,
+    box-shadow .16s ease;
+}
+
+@media (hover:hover) {
+  .emd-admin-shell .emd-tournament-series-page button:not(:disabled):active {
+    transform: scale(.985);
+  }
+}
+
+@media (max-width: 767px) {
+  .emd-admin-shell .emd-tournament-series-page .emd-series-hero {
+    border-radius: 22px;
+    padding: 18px 16px;
+  }
+
+  .emd-admin-shell .emd-tournament-series-page .emd-series-config-section {
+    border-radius: 20px !important;
+  }
+
+  .emd-admin-shell .emd-tournament-series-page .emd-series-savebar {
+    bottom: 8px;
+  }
+
+  .emd-admin-shell .emd-tournament-series-page table {
+    min-width: 720px;
+  }
+}
+
+
+/* Turnierserien – Modale / Schalter / Status */
+.emd-admin-shell .emd-tournament-series-page .emd-series-toggle {
+  border: 1px solid rgba(255,255,255,.10) !important;
+  background: linear-gradient(145deg, rgba(12,18,26,.94), rgba(7,12,18,.88)) !important;
+  color: rgba(255,255,255,.92) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-toggle > span > span:first-child {
+  color: rgba(255,255,255,.94) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-toggle > span > span:last-child {
+  color: rgba(255,255,255,.46) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #f97316;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-status {
+  border: 1px solid transparent;
+  font-weight: 900;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-status-active {
+  border-color: rgba(74,222,128,.24) !important;
+  background: rgba(34,197,94,.14) !important;
+  color: rgb(187 247 208) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-status-inactive {
+  border-color: rgba(255,255,255,.08) !important;
+  background: rgba(255,255,255,.045) !important;
+  color: rgba(255,255,255,.46) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-field-card,
+.emd-admin-shell .emd-tournament-series-page .emd-series-rule-row,
+.emd-admin-shell .emd-tournament-series-page .emd-series-empty {
+  border: 1px solid rgba(255,255,255,.085) !important;
+  background: rgba(5,10,16,.70) !important;
+  color: rgba(255,255,255,.88) !important;
+}
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-empty {
+  color: rgba(255,255,255,.42) !important;
+}
+
+.emd-admin-shell .emd-series-confirm-modal {
+  border: 1px solid rgba(255,255,255,.10) !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(244,63,94,.10), transparent 34%),
+    rgba(6,10,15,.985) !important;
+}
+
+.emd-admin-shell .emd-series-confirm-box {
+  border: 1px solid rgba(244,63,94,.16);
+  border-radius: 18px;
+  background: rgba(244,63,94,.055);
+  padding: 16px;
+}
+
+.emd-admin-shell .emd-series-confirm-modal .emd-admin-button-danger {
+  border-color: rgba(244,63,94,.30) !important;
+  background: rgba(225,29,72,.16) !important;
+  color: rgb(255 228 230) !important;
+}
+
+@media (hover:hover) {
+  .emd-admin-shell .emd-series-confirm-modal .emd-admin-button-danger:hover {
+    background: rgba(225,29,72,.24) !important;
+    border-color: rgba(244,63,94,.42) !important;
+  }
+}
+
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-orange {
+  border-color: rgba(249,115,22,.15) !important;
+  background:
+    radial-gradient(circle at 4% 0%, rgba(249,115,22,.10), transparent 32%),
+    rgba(12,8,5,.72) !important;
+}
+
+
+.emd-admin-shell .emd-tournament-series-page .emd-series-config-draw {
+  border-color: rgba(217,70,239,.14) !important;
+  background:
+    radial-gradient(circle at 6% 0%, rgba(217,70,239,.09), transparent 34%),
+    rgba(10,7,13,.74) !important;
+}
+
+
+/* ============================================================
+   LIGAVERWALTUNG – gemeinsames Design wie Vereinsverwaltung
+   ============================================================ */
+.emd-admin-shell .emd-admin-page .league-readonly-note {
+  border: 1px solid rgba(56,189,248,.12);
+  background: rgba(14,165,233,.055);
+  color: rgba(224,242,254,.72);
+}
+
+.emd-admin-shell .emd-admin-page [data-state="open"] > .league-chevron,
+.emd-admin-shell .emd-admin-page [data-state="open"] .league-chevron {
+  transform: rotate(180deg);
+}
+
+
+.emd-admin-shell .emd-league-management [data-slot="card"] {
+  border-color: rgba(255,255,255,.08) !important;
+  background: linear-gradient(145deg, rgba(12,19,28,.88), rgba(7,13,20,.78)) !important;
+  color: rgba(255,255,255,.94) !important;
+  box-shadow: 0 18px 55px -44px rgba(0,0,0,.90) !important;
+}
+
+.emd-admin-shell .emd-league-management :is(.bg-muted\/20,.bg-muted\/30,.bg-muted\/40) {
+  background: rgba(255,255,255,.035) !important;
+}
+
+.emd-admin-shell .emd-league-management :is(.text-muted-foreground) {
+  color: rgba(255,255,255,.42) !important;
+}
+
+.emd-admin-shell .emd-league-management :is(.border,.border-t,.border-b) {
+  border-color: rgba(255,255,255,.075);
+}

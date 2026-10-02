@@ -304,13 +304,27 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
   }
 
   const getAllowedStatisticsPlayerIds = async (): Promise<string[]> => {
-    const [confirmedIds, eligibleIds] = await Promise.all([
+    const [confirmedIds, eligibleIds, activeMembersResult] = await Promise.all([
       getConfirmedLineupPlayerIds(),
       getEligibleLeaguePlayerIds(),
+      supabase
+        .from("team_members")
+        .select("player_id")
+        .eq("team_id", myTeamId)
+        .is("left_at", null),
     ])
 
+    if (activeMembersResult.error) {
+      console.error("getAllowedStatisticsPlayerIds activeMembers error:", activeMembersResult.error)
+      return []
+    }
+
     const eligible = new Set(eligibleIds)
-    return confirmedIds.filter((id) => eligible.has(id))
+    const active = new Set(
+      ((activeMembersResult.data as any[]) || []).map((row: any) => row?.player_id).filter(Boolean),
+    )
+
+    return confirmedIds.filter((id) => eligible.has(id) && active.has(id))
   }
 
   const fetchPlayers = async () => {

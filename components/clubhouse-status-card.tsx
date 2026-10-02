@@ -101,7 +101,7 @@ export function ClubhouseStatusCard() {
           : "text-slate-600"
 
   return (
-    <div className="mx-auto w-full max-w-[1800px] px-3 pt-2 sm:px-5 sm:pt-3 lg:px-8 xl:px-10">
+    <div className="w-full">
       <Link
         href="/vereinsheim"
         className="group flex min-h-11 w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm transition hover:border-orange-200 hover:shadow-md sm:min-h-12 sm:px-4"

@@ -1233,11 +1233,11 @@ try {
 
   const getStatusBadge = (status: string) => {
     if (status === "completed" || status === "finished") {
-      return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Beendet</Badge>
+      return <Badge className="bg-emerald-500/[0.10] text-emerald-200 border-emerald-300/[0.16] text-xs">Beendet</Badge>
     } else if (status === "live" || status === "in_progress") {
-      return <Badge className="bg-red-100 text-red-800 border-red-200 animate-pulse text-xs">Live</Badge>
+      return <Badge className="bg-red-500/[0.10] text-red-200 border-red-300/[0.16] animate-pulse text-xs">Live</Badge>
     } else {
-      return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">Anstehend</Badge>
+      return <Badge className="bg-sky-500/[0.10] text-sky-200 border-sky-300/[0.16] text-xs">Anstehend</Badge>
     }
   }
 
@@ -1370,21 +1370,21 @@ function getEventTypeBadge(eventType: string) {
   if (eventType === "Vorstand") {
     return <Badge className="bg-black text-white border-black text-xs">📌 Vorstand</Badge>
   } else if (eventType === "Geburtstag") {
-    return <Badge className="bg-pink-100 text-pink-800 border-pink-200 text-xs">🎂 Geburtstag</Badge>
+    return <Badge className="bg-pink-500/[0.10] text-pink-200 border-pink-300/[0.16] text-xs">🎂 Geburtstag</Badge>
   } else if (eventType === "Turnier") {
-    return <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs">Turnier</Badge>
+    return <Badge className="bg-violet-500/[0.10] text-violet-200 border-violet-300/[0.16] text-xs">Turnier</Badge>
   } else if (eventType === "Versammlung") {
-    return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Event</Badge>
+    return <Badge className="bg-emerald-500/[0.10] text-emerald-200 border-emerald-300/[0.16] text-xs">Event</Badge>
   } else if (eventType === "Urlaub") {
     } else if (eventType === "Privat") {
-    return <Badge className="bg-zinc-100 text-zinc-800 border-zinc-200 text-xs">🔒 Privat</Badge>
+    return <Badge className="bg-white/[0.05] text-white/65 border-white/[0.08] text-xs">🔒 Privat</Badge>
     return <Badge className="bg-sky-100 text-sky-800 border-sky-200 text-xs">🏖️ Urlaub</Badge>
   } else if (eventType === "Feiertag") {
-    return <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">🇦🇹 Feiertag</Badge>
+    return <Badge className="bg-red-500/[0.10] text-red-200 border-red-300/[0.16] text-xs">🇦🇹 Feiertag</Badge>
   } else if (eventType === "Spielfrei") {
-    return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">Spielfrei</Badge>
+    return <Badge className="bg-amber-500/[0.10] text-amber-200 border-amber-300/[0.16] text-xs">Spielfrei</Badge>
   } else {
-    return <Badge className="bg-gray-100 text-slate-800 border-slate-200 text-xs">Event</Badge>
+    return <Badge className="bg-white/[0.04] text-white/75 border-white/[0.08] text-xs">Event</Badge>
   }
 }
 
@@ -1533,14 +1533,14 @@ const toggleInvitePlayer = (playerId: string) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-20 text-slate-950">
+      <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-20 text-white">
         <main className="flex-grow pt-14 sm:pt-16">
-          <div className="w-full max-w-none overflow-x-hidden px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8">
+          <div className="mx-auto w-full max-w-[var(--emd-content-max)] overflow-x-hidden px-3 py-4 sm:px-5 lg:px-7 xl:px-8">
 
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
-                <p className="text-slate-500 font-medium">Lade Kalender...</p>
+                <p className="font-medium text-white/40">Vereinskalender wird geladen…</p>
               </div>
             </div>
           </div>
@@ -1551,9 +1551,19 @@ const toggleInvitePlayer = (playerId: string) => {
   }
 
   return (
-      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans flex flex-col pb-20">
+      <div className="calendar-premium relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans flex flex-col pb-20">
 
-      <Header />
+      <Header variant="app" title="Vereinskalender" subtitle="Mein EMD" backHref="/member-profile-app" />
+
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.17),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(14,165,233,.11),transparent_27%),radial-gradient(circle_at_52%_82%,rgba(168,85,247,.06),transparent_24%)]" />
+      </div>
+
      <main className="w-full pt-14 sm:pt-16">
       <div className="w-full max-w-none overflow-x-hidden px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
 
@@ -1561,12 +1571,12 @@ const toggleInvitePlayer = (playerId: string) => {
 
          
 
-          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
-            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
-            <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
+          <section className="relative mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/[0.14] blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-sky-500/[0.07] blur-3xl" />
             <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08]">
                   <CalendarDays className="h-6 w-6 text-orange-400" />
                 </div>
                 <div className="min-w-0">
@@ -1579,14 +1589,14 @@ const toggleInvitePlayer = (playerId: string) => {
 
           {todayHighlights.length > 0 && (
             <div className="mb-4 sm:mb-5">
-              <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl transition duration-300 hover:border-orange-300/[0.14]">
                 <CardContent className="p-4 sm:p-5">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
-                      <Star className="h-5 w-5 text-orange-600" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08]">
+                      <Star className="h-5 w-5 text-orange-200" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-black text-slate-950">Heute im Verein</div>
+                      <div className="font-black text-white">Heute im Verein</div>
 
                       <div className="mt-3 space-y-2">
                         {todayHighlights.slice(0, 5).map((item) => {
@@ -1599,12 +1609,12 @@ const toggleInvitePlayer = (playerId: string) => {
                                 onClick={() => openMatchDialog(match)}
                                 className="w-full text-left"
                               >
-                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-slate-200 bg-white p-3 transition hover:border-orange-200 hover:bg-orange-50/30">
+                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-black/30 p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]/30">
                                   <div className="min-w-0">
-                                    <div className="truncate text-sm font-black text-slate-950">
+                                    <div className="truncate text-sm font-black text-white">
                                       🎯 {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
                                     </div>
-                                    <div className="mt-1 text-xs font-medium text-slate-500">
+                                    <div className="mt-1 text-xs font-medium text-white/35">
   <span>{formatTimeWithoutSeconds(match.match_time)} Uhr</span>
 
   {match.season?.name ? ` • ${match.season.name}` : ""}
@@ -1614,7 +1624,7 @@ const toggleInvitePlayer = (playerId: string) => {
 
                                   <div className="shrink-0">
                                     {match.status === "completed" || match.status === "finished" ? (
-                                      <Badge className="bg-green-100 text-green-800 border-green-200 text-xs whitespace-nowrap">
+                                      <Badge className="bg-emerald-500/[0.10] text-emerald-200 border-emerald-300/[0.16] text-xs whitespace-nowrap">
                                         {match.home_score} : {match.away_score}
                                       </Badge>
                                     ) : (
@@ -1632,13 +1642,13 @@ const toggleInvitePlayer = (playerId: string) => {
                                 onClick={() => openEventDialog(ev)}
                                 className="w-full text-left"
                               >
-                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-slate-200 bg-white p-3 transition hover:border-orange-200 hover:bg-orange-50/30">
+                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-black/30 p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]/30">
                                   <div className="min-w-0">
-                                    <div className="truncate text-sm font-black text-slate-950">
+                                    <div className="truncate text-sm font-black text-white">
                                       {ev.event_type === "Geburtstag" ? "🎂" : ev.event_type === "Turnier" ? "🏆" : "📅"}{" "}
                                       {ev.name}
                                     </div>
-                                    <div className="mt-1 text-xs font-medium text-slate-500">
+                                    <div className="mt-1 text-xs font-medium text-white/35">
                                       {ev.event_type === "Urlaub"
                                         ? `Urlaub • ${ev.start_date} bis ${ev.end_date}`
                                         : ev.event_type === "Geburtstag"
@@ -1656,7 +1666,7 @@ const toggleInvitePlayer = (playerId: string) => {
                         })}
 
                         {todayHighlights.length > 5 && (
-                          <div className="text-xs text-slate-500 pt-1">+ {todayHighlights.length - 5} weitere</div>
+                          <div className="text-xs text-white/35 pt-1">+ {todayHighlights.length - 5} weitere</div>
                         )}
                       </div>
                     </div>
@@ -1668,15 +1678,15 @@ const toggleInvitePlayer = (playerId: string) => {
 
           {todayBirthdays.length > 0 && (
             <div className="mb-4 sm:mb-5">
-              <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl transition duration-300 hover:border-orange-300/[0.14]">
                 <CardContent className="p-4 sm:p-5">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-pink-100 rounded-sm-lg">
-                      <Cake className="h-5 w-5 text-pink-700" />
+                    <div className="p-2 bg-pink-500/[0.10] rounded-lg">
+                      <Cake className="h-5 w-5 text-pink-200" />
                     </div>
                     <div className="flex-1">
-                      <div className="font-black text-slate-950">Heute hat jemand Geburtstag 🎉</div>
-                      <div className="text-sm text-slate-700 mt-1">{todayBirthdays.map((p) => p.name).join(", ")}</div>
+                      <div className="font-black text-white">Heute hat jemand Geburtstag 🎉</div>
+                      <div className="text-sm text-white/60 mt-1">{todayBirthdays.map((p) => p.name).join(", ")}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -1685,16 +1695,16 @@ const toggleInvitePlayer = (playerId: string) => {
           )}
 
           <div className="mb-4 sm:mb-5">
-            <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+            <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl transition duration-300 hover:border-orange-300/[0.14]">
               <CardContent className="p-3">
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-center">
-                    <div className="flex bg-gray-100 rounded-sm-lg p-1">
+                    <div className="flex rounded-2xl border border-white/[0.08] bg-black/35 p-1">
                       <Button
                         variant={viewMode === "month" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setViewMode("month")}
-                        className="flex items-center gap-2 text-xs"
+                        className="flex items-center gap-2 rounded-xl border-0 text-xs font-black"
                       >
                         <Calendar className="h-4 w-4" />
                         Monat
@@ -1703,7 +1713,7 @@ const toggleInvitePlayer = (playerId: string) => {
                         variant={viewMode === "list" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setViewMode("list")}
-                        className="flex items-center gap-2 text-xs"
+                        className="flex items-center gap-2 rounded-xl border-0 text-xs font-black"
                       >
                         <Filter className="h-4 w-4" />
                         Liste
@@ -1712,7 +1722,7 @@ const toggleInvitePlayer = (playerId: string) => {
                         variant={viewMode === "browse" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setViewMode("browse")}
-                        className="flex items-center gap-2 text-xs"
+                        className="flex items-center gap-2 rounded-xl border-0 text-xs font-black"
                       >
                         <Users className="h-4 w-4" />
                         Übersicht
@@ -1722,7 +1732,7 @@ const toggleInvitePlayer = (playerId: string) => {
 
                   <div className="flex flex-col gap-2">
                     <Select value={selectedItemType} onValueChange={setSelectedItemType}>
-                      <SelectTrigger className="w-full text-sm">
+                      <SelectTrigger className="h-11 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
                         <SelectValue placeholder="Typ auswählen" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1731,13 +1741,13 @@ const toggleInvitePlayer = (playerId: string) => {
                         </SelectItem>
                         <SelectItem value="Spiele" className="text-sm">
                           <div className="flex items-center gap-2">
-                            <Target className="h-4 w-4 text-orange-600" />
+                            <Target className="h-4 w-4 text-orange-200" />
                             Nur Spiele
                           </div>
                         </SelectItem>
                         <SelectItem value="Turniere" className="text-sm">
                           <div className="flex items-center gap-2">
-                            <Trophy className="h-4 w-4 text-purple-600" />
+                            <Trophy className="h-4 w-4 text-violet-200" />
                             Nur Turniere
                           </div>
                         </SelectItem>
@@ -1750,14 +1760,14 @@ const toggleInvitePlayer = (playerId: string) => {
 						
 						<SelectItem value="Feiertage" className="text-sm">
   <div className="flex items-center gap-2">
-    <CalendarDays className="h-4 w-4 text-red-700" />
+    <CalendarDays className="h-4 w-4 text-red-200" />
     Nur Feiertage
   </div>
 </SelectItem>
 
                         <SelectItem value="Urlaube" className="text-sm">
                           <div className="flex items-center gap-2">
-                            <Sun className="h-4 w-4 text-sky-700" />
+                            <Sun className="h-4 w-4 text-sky-200" />
                             Nur Urlaube
                           </div>
                         </SelectItem>
@@ -1765,7 +1775,7 @@ const toggleInvitePlayer = (playerId: string) => {
                         {}
                         <SelectItem value="Geburtstage" className="text-sm">
                           <div className="flex items-center gap-2">
-                            <Cake className="h-4 w-4 text-pink-700" />
+                            <Cake className="h-4 w-4 text-pink-200" />
                             Nur Geburtstage
                           </div>
                         </SelectItem>
@@ -1773,7 +1783,7 @@ const toggleInvitePlayer = (playerId: string) => {
                     </Select>
 
                     <Select value={selectedLeague} onValueChange={setSelectedLeague}>
-                      <SelectTrigger className="w-full text-sm">
+                      <SelectTrigger className="h-11 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
                         <SelectValue placeholder="Liga auswählen" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1786,7 +1796,7 @@ const toggleInvitePlayer = (playerId: string) => {
                     </Select>
 
                     <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                      <SelectTrigger className="w-full text-sm">
+                      <SelectTrigger className="h-11 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
                         <SelectValue placeholder="Team auswählen" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1799,7 +1809,7 @@ const toggleInvitePlayer = (playerId: string) => {
                     </Select>
 
                     <Select value={selectedResultType} onValueChange={setSelectedResultType}>
-                      <SelectTrigger className="w-full text-sm">
+                      <SelectTrigger className="h-11 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
                         <SelectValue placeholder="Ergebnis-Typ auswählen" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1808,12 +1818,12 @@ const toggleInvitePlayer = (playerId: string) => {
                         </SelectItem>
                         <SelectItem value="Gespielt" className="text-sm">
                           <div className="flex items-center gap-2">
-                            <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Gespielt</Badge>
+                            <Badge className="bg-emerald-500/[0.10] text-emerald-200 border-emerald-300/[0.16] text-xs">Gespielt</Badge>
                           </div>
                         </SelectItem>
                         <SelectItem value="Geplant" className="text-sm">
                           <div className="flex items-center gap-2">
-                            <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">Geplant</Badge>
+                            <Badge className="bg-sky-500/[0.10] text-sky-200 border-sky-300/[0.16] text-xs">Geplant</Badge>
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -1828,7 +1838,7 @@ const toggleInvitePlayer = (playerId: string) => {
                         setSelectedTeam("Alle Teams")
                         setSelectedResultType("Alle")
                       }}
-                      className="w-full bg-white hover:bg-slate-50 border-slate-200 text-xs"
+                      className="w-full bg-black/30 hover:bg-white/[0.035] border-white/[0.08] text-xs"
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Zurücksetzen
@@ -1850,7 +1860,7 @@ const toggleInvitePlayer = (playerId: string) => {
   setInviteSearch("")
   setIsBoardDialogOpen(true)
 }}
-    className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm bg-black hover:bg-black/90"
+    className="w-full h-11 rounded-2xl text-sm font-semibold shadow-sm bg-black hover:bg-black/90"
   >
     <Plus className="h-4 w-4 mr-2" />
     Vorstand Termin
@@ -1869,7 +1879,7 @@ const toggleInvitePlayer = (playerId: string) => {
       setVacationNote("")
       setIsVacationDialogOpen(true)
     }}
-    className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm"
+    className="w-full h-11 rounded-2xl text-sm font-semibold shadow-sm"
   >
     <Plus className="h-4 w-4 mr-2" />
     Urlaub eintragen
@@ -1887,7 +1897,7 @@ const toggleInvitePlayer = (playerId: string) => {
   setPrivateNote("")
   setIsPrivateDialogOpen(true)
 }}
-    className="w-full h-11 rounded-sm-2xl text-sm font-semibold shadow-sm"
+    className="w-full h-11 rounded-2xl text-sm font-semibold shadow-sm"
   >
     🔒 Privaten Termin
   </Button>
@@ -1902,14 +1912,14 @@ const toggleInvitePlayer = (playerId: string) => {
 
           {viewMode === "browse" && (
             <div className="space-y-4">
-              <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl transition duration-300 hover:border-orange-300/[0.14]">
                 <CardHeader className="pb-2 px-2 sm:px-6">
 
-                  <CardTitle className="text-base text-slate-950">Kachelübersicht</CardTitle>
+                  <CardTitle className="text-base text-white">Kachelübersicht</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <div>
-                    <div className="text-sm font-semibold text-slate-950 mb-2">Typen</div>
+                    <div className="text-sm font-semibold text-white mb-2">Typen</div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => {
@@ -1918,11 +1928,11 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-sm-xl border bg-white hover:bg-slate-50 text-left transition-colors"
+                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-slate-700" />
-                          <div className="text-sm font-medium text-slate-950">Alle Termine</div>
+                          <Calendar className="h-4 w-4 text-white/60" />
+                          <div className="text-sm font-medium text-white">Alle Termine</div>
                         </div>
                       </button>
 
@@ -1933,11 +1943,11 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-sm-xl border bg-white hover:bg-slate-50 text-left transition-colors"
+                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
-                          <Target className="h-4 w-4 text-orange-600" />
-                          <div className="text-sm font-medium text-slate-950">Spiele</div>
+                          <Target className="h-4 w-4 text-orange-200" />
+                          <div className="text-sm font-medium text-white">Spiele</div>
                         </div>
                       </button>
 
@@ -1948,11 +1958,11 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-sm-xl border bg-white hover:bg-slate-50 text-left transition-colors"
+                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
-                          <Trophy className="h-4 w-4 text-purple-600" />
-                          <div className="text-sm font-medium text-slate-950">Turniere</div>
+                          <Trophy className="h-4 w-4 text-violet-200" />
+                          <div className="text-sm font-medium text-white">Turniere</div>
                         </div>
                       </button>
 
@@ -1963,11 +1973,11 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-sm-xl border bg-white hover:bg-slate-50 text-left transition-colors"
+                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <CalendarDays className="h-4 w-4 text-green-600" />
-                          <div className="text-sm font-medium text-slate-950">Events</div>
+                          <div className="text-sm font-medium text-white">Events</div>
                         </div>
                       </button>
 
@@ -1978,11 +1988,11 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-sm-xl border bg-white hover:bg-slate-50 text-left transition-colors"
+                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
-                          <Sun className="h-4 w-4 text-sky-700" />
-                          <div className="text-sm font-medium text-slate-950">Urlaube</div>
+                          <Sun className="h-4 w-4 text-sky-200" />
+                          <div className="text-sm font-medium text-white">Urlaube</div>
                         </div>
                       </button>
 
@@ -1993,18 +2003,18 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-sm-xl border bg-white hover:bg-slate-50 text-left transition-colors"
+                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
-                          <Cake className="h-4 w-4 text-pink-700" />
-                          <div className="text-sm font-medium text-slate-950">Geburtstage</div>
+                          <Cake className="h-4 w-4 text-pink-200" />
+                          <div className="text-sm font-medium text-white">Geburtstage</div>
                         </div>
                       </button>
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-sm font-semibold text-slate-950 mb-2">Ligen</div>
+                    <div className="text-sm font-semibold text-white mb-2">Ligen</div>
                     <div className="grid grid-cols-2 gap-2">
                       {leagues
                         .filter((l) => l !== "Alle Ligen")
@@ -2017,28 +2027,28 @@ const toggleInvitePlayer = (playerId: string) => {
                               setSelectedItemType("Spiele")
                               setViewMode("list")
                             }}
-                            className="p-3 rounded-sm-xl border bg-white hover:bg-slate-50 text-left transition-colors"
+                            className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <Trophy className="h-4 w-4 text-slate-700 shrink-0" />
-                              <div className="truncate text-sm font-black text-slate-950">{league}</div>
+                              <Trophy className="h-4 w-4 text-white/60 shrink-0" />
+                              <div className="truncate text-sm font-black text-white">{league}</div>
                             </div>
                           </button>
                         ))}
                     </div>
                     {leagues.filter((l) => l !== "Alle Ligen").length === 0 && (
-                      <div className="text-xs text-slate-500">Keine Ligen gefunden.</div>
+                      <div className="text-xs text-white/35">Keine Ligen gefunden.</div>
                     )}
                   </div>
 
                   <div>
-                    <div className="text-sm font-semibold text-slate-950 mb-2">Teams</div>
+                    <div className="text-sm font-semibold text-white mb-2">Teams</div>
                     <div className="mb-2">
                       <Input
                         value={browseTeamQuery}
                         onChange={(e) => setBrowseTeamQuery(e.target.value)}
                         placeholder="Team suchen…"
-                        className="text-sm"
+                        className="h-11 rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white placeholder:text-white/25 shadow-none"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -2052,19 +2062,19 @@ const toggleInvitePlayer = (playerId: string) => {
                               setSelectedItemType("Spiele")
                               setViewMode("list")
                             }}
-                            className="p-3 rounded-sm-xl border bg-white hover:bg-slate-50 text-left transition-colors"
+                            className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <Avatar className="h-6 w-6 shrink-0">
                                 <AvatarImage src={team.logo_url ?? undefined} alt={team.name} />
                                 <AvatarFallback>{team.name?.slice(0, 1)?.toUpperCase()}</AvatarFallback>
                               </Avatar>
-                              <div className="truncate text-sm font-black text-slate-950">{team.name}</div>
+                              <div className="truncate text-sm font-black text-white">{team.name}</div>
                             </div>
                           </button>
                         ))}</div>
                     {clubTeams.length === 0 && (
-                      <div className="text-xs text-slate-500">Keine Teams gefunden.</div>
+                      <div className="text-xs text-white/35">Keine Teams gefunden.</div>
                     )}
                   </div>
                 </CardContent>
@@ -2073,7 +2083,7 @@ const toggleInvitePlayer = (playerId: string) => {
           )}
 
           {viewMode === "month" && (
-  <Card className="shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] border-0 bg-white w-full">
+  <Card className="w-full overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
 
 
               <CardHeader className="pb-3 px-2 sm:px-6">
@@ -2084,13 +2094,13 @@ const toggleInvitePlayer = (playerId: string) => {
                     {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                   </CardTitle>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
+                    <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")} className="rounded-xl border-white/[0.09] bg-white/[0.035] text-white hover:bg-white/[0.07] hover:text-white">
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+                    <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())} className="rounded-xl border-orange-300/[0.15] bg-orange-500/[0.08] font-black text-orange-100 hover:bg-orange-500/[0.14] hover:text-white">
                       Heute
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigateMonth("next")}>
+                    <Button variant="outline" size="sm" onClick={() => navigateMonth("next")} className="rounded-xl border-white/[0.09] bg-white/[0.035] text-white hover:bg-white/[0.07] hover:text-white">
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
@@ -2100,7 +2110,7 @@ const toggleInvitePlayer = (playerId: string) => {
 
                 <div className="grid grid-cols-7 gap-1 mb-2">
                   {dayNames.map((day) => (
-                    <div key={day} className="text-center text-xs font-medium text-slate-500 p-2">
+                    <div key={day} className="text-center text-xs font-medium text-white/35 p-2">
                       {day}
                     </div>
                   ))}
@@ -2114,8 +2124,8 @@ const toggleInvitePlayer = (playerId: string) => {
                     return (
                       <div
                         key={index}
-                        className={`p-1 border border-slate-200 rounded-sm-lg transition-colors overflow-hidden ${
-                          isToday ? "bg-orange-50 border-orange-300" : "bg-white hover:bg-slate-50"
+                        className={`p-1 border border-white/[0.08] rounded-lg transition-colors overflow-hidden ${
+                          isToday ? "bg-orange-500/[0.08] border-orange-300" : "bg-black/30 hover:bg-white/[0.035]"
                         } 
                         h-24 sm:h-28 lg:h-40
  cursor-pointer`}
@@ -2134,7 +2144,7 @@ const toggleInvitePlayer = (playerId: string) => {
                         }}
                       >
                         {day && (
-                          <div className={`text-sm font-medium mb-1 ${isToday ? "text-orange-600" : "text-slate-950"}`}>
+                          <div className={`text-sm font-medium mb-1 ${isToday ? "text-orange-200" : "text-white"}`}>
                             {day.getDate()}
                           </div>
                         )}
@@ -2172,11 +2182,11 @@ text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awa
 
       } else {
         const ev: any = item
-        if (ev.event_type === "Feiertag") bg = "bg-red-600"
-else if (ev.event_type === "Urlaub") bg = "bg-sky-500"
-else if (ev.event_type === "Turnier") bg = "bg-purple-500"
-else if (ev.event_type === "Geburtstag") bg = "bg-pink-500"
-else bg = "bg-green-500"
+        if (ev.event_type === "Feiertag") bg = "bg-red-500/85"
+else if (ev.event_type === "Urlaub") bg = "bg-sky-500/85"
+else if (ev.event_type === "Turnier") bg = "bg-violet-500/85"
+else if (ev.event_type === "Geburtstag") bg = "bg-pink-500/85"
+else bg = "bg-emerald-500/85"
 
         text = ev.name || "Termin"
       }
@@ -2206,7 +2216,7 @@ else bg = "bg-green-500"
     })}
 
     {itemsForDay.length > 3 && (
-      <div className="text-[11px] font-medium text-slate-500 px-0.5">
+      <div className="text-[11px] font-medium text-white/35 px-0.5">
         +{itemsForDay.length - 3} mehr
       </div>
     )}
@@ -2240,12 +2250,12 @@ else bg = "bg-green-500"
 
                 if (listItems.length === 0) {
                   return (
-                    <Card className="border bg-white w-full shadow-none rounded-sm-none sm:rounded-sm-xl">
+                    <Card className="border bg-black/30 w-full shadow-none rounded-none sm:rounded-xl">
 
                       <CardContent className="p-6 text-center">
                         <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-semibold text-slate-950 mb-2">Keine Termine gefunden</h3>
-                        <p className="mt-2 text-sm font-medium text-slate-500 sm:text-base">Mit den aktuellen Filtern wurden keine Termine gefunden.</p>
+                        <h3 className="text-lg font-semibold text-white mb-2">Keine Termine gefunden</h3>
+                        <p className="mt-2 text-sm font-medium text-white/35 sm:text-base">Mit den aktuellen Filtern wurden keine Termine gefunden.</p>
                       </CardContent>
                     </Card>
                   )
@@ -2292,7 +2302,7 @@ const dateB =
                   .map((item) => {
                     if (isEvent(item)) {
                       return (
-                        <Card key={item.id} className="shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)] border-0 bg-white hover:shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] transition-shadow">
+                        <Card key={item.id} className="shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)] border-0 bg-black/30 hover:shadow-none backdrop-blur-xl transition-shadow">
                           <CardContent className="p-4 sm:p-5">
                             <div className="flex flex-col gap-3">
                               <div className="flex-1 min-w-0">
@@ -2303,7 +2313,7 @@ const dateB =
                                     <img
                                       src={item.photo_url}
                                       alt={item.name}
-                                      className="w-full h-36 object-cover rounded-sm-xl border"
+                                      className="w-full h-36 object-cover rounded-xl border"
                                     />
                                   </div>
                                 )}
@@ -2311,11 +2321,11 @@ const dateB =
                                 </div>
 
                                 <div className="mb-2 min-w-0">
-                                  <h3 className="text-base font-semibold text-slate-950 mb-1">{item.name}</h3>
-                                  {item.description && <p className="mt-2 text-sm font-medium text-slate-500 sm:text-base">{item.description}</p>}
+                                  <h3 className="text-base font-semibold text-white mb-1">{item.name}</h3>
+                                  {item.description && <p className="mt-2 text-sm font-medium text-white/35 sm:text-base">{item.description}</p>}
                                 </div>
 
-                                <div className="flex flex-col gap-2 text-sm text-slate-600">
+                                <div className="flex flex-col gap-2 text-sm text-white/50">
                                   <div className="flex items-center gap-2 min-w-0">
   <Calendar className="h-4 w-4 shrink-0" />
   <span>
@@ -2345,18 +2355,18 @@ const dateB =
                                   <div className="flex items-center gap-2 min-w-0">
                                     {item.event_type === "Turnier" ? (
                                       <>
-                                        <Trophy className="h-4 w-4 text-purple-600 shrink-0" />
-                                        <span className="text-purple-600 font-medium">Turnier</span>
+                                        <Trophy className="h-4 w-4 text-violet-200 shrink-0" />
+                                        <span className="text-violet-200 font-medium">Turnier</span>
                                       </>
                                     ) : item.event_type === "Geburtstag" ? (
                                       <>
-                                        <Cake className="h-4 w-4 text-pink-700 shrink-0" />
-                                        <span className="text-pink-700 font-medium">Geburtstag</span>
+                                        <Cake className="h-4 w-4 text-pink-200 shrink-0" />
+                                        <span className="text-pink-200 font-medium">Geburtstag</span>
                                       </>
                                     ) : item.event_type === "Urlaub" ? (
                                       <>
-                                        <Sun className="h-4 w-4 text-sky-700 shrink-0" />
-                                        <span className="text-sky-700 font-medium">Urlaub</span>
+                                        <Sun className="h-4 w-4 text-sky-200 shrink-0" />
+                                        <span className="text-sky-200 font-medium">Urlaub</span>
                                       </>
                                     ) : (
                                       <>
@@ -2385,7 +2395,7 @@ const dateB =
                     } else {
                       const match = item as Match
                       return (
-                        <Card key={match.id} className="shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)] border-0 bg-white hover:shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] transition-shadow">
+                        <Card key={match.id} className="shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)] border-0 bg-black/30 hover:shadow-none backdrop-blur-xl transition-shadow">
                           <CardContent className="p-4 sm:p-5">
                             <div className="flex flex-col gap-3">
                               <div className="flex-1 min-w-0">
@@ -2396,7 +2406,7 @@ const dateB =
                                       {match.season?.name || "Liga"}
                                     </Badge>
                                   </div>
-                                  <div className="text-sm text-slate-600">Spieltag {match.week_number}</div>
+                                  <div className="text-sm text-white/50">Spieltag {match.week_number}</div>
                                 </div>
 
                                 <div className="flex items-center gap-4 mb-2 min-w-0">
@@ -2405,7 +2415,7 @@ const dateB =
                                       <AvatarImage
                                         src={getTeamLogo(match, true) || "/placeholder.svg?height=40&width=40"}
                                       />
-                                      <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs">
+                                      <AvatarFallback className="bg-orange-100 text-orange-200 font-bold text-xs">
                                         {getTeamDisplayName(match, true).charAt(0)}
                                       </AvatarFallback>
                                     </Avatar>
@@ -2432,14 +2442,14 @@ const dateB =
                                       <AvatarImage
                                         src={getTeamLogo(match, false) || "/placeholder.svg?height=40&width=40"}
                                       />
-                                      <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">
+                                      <AvatarFallback className="bg-sky-500/[0.10] text-blue-700 font-bold text-xs">
                                         {getTeamDisplayName(match, false).charAt(0)}
                                       </AvatarFallback>
                                     </Avatar>
                                   </div>
                                 </div>
 
-                                <div className="flex flex-col gap-2 text-sm text-slate-600">
+                                <div className="flex flex-col gap-2 text-sm text-white/50">
                                   <div className="flex items-center gap-2 min-w-0">
                                     <Calendar className="h-4 w-4 shrink-0" />
                                     {new Date(match.match_date).toLocaleDateString("de-DE", {
@@ -2461,8 +2471,8 @@ const dateB =
                                   <div className="flex items-center gap-2 min-w-0">
                                     {isHomeGame(match) ? (
                                       <>
-                                        <Home className="h-4 w-4 text-orange-600 shrink-0" />
-                                        <span className="text-orange-600 font-medium">Heimspiel</span>
+                                        <Home className="h-4 w-4 text-orange-200 shrink-0" />
+                                        <span className="text-orange-200 font-medium">Heimspiel</span>
                                       </>
                                     ) : (
                                       <>
@@ -2490,7 +2500,7 @@ const dateB =
           )}
 
           <Dialog open={isMatchDialogOpen} onOpenChange={setIsMatchDialogOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
               <DialogHeader>
                 <DialogTitle className="text-lg">Spiel Details</DialogTitle>
                 <DialogDescription className="text-sm">Detaillierte Informationen zum Spiel</DialogDescription>
@@ -2505,7 +2515,7 @@ const dateB =
                       <div className="text-center min-w-0">
                         <Avatar className="h-16 w-16 mx-auto mb-2">
                           <AvatarImage src={getTeamLogo(selectedMatch, true) || "/placeholder.svg?height=64&width=64"} />
-                          <AvatarFallback className="bg-orange-100 text-orange-700 font-bold">
+                          <AvatarFallback className="bg-orange-100 text-orange-200 font-bold">
                             {getTeamDisplayName(selectedMatch, true).charAt(0)}
                           </AvatarFallback>
                         </Avatar>
@@ -2527,7 +2537,7 @@ const dateB =
                       <div className="text-center min-w-0">
                         <Avatar className="h-16 w-16 mx-auto mb-2">
                           <AvatarImage src={getTeamLogo(selectedMatch, false) || "/placeholder.svg?height=64&width=64"} />
-                          <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
+                          <AvatarFallback className="bg-sky-500/[0.10] text-blue-700 font-bold">
                             {getTeamDisplayName(selectedMatch, false).charAt(0)}
                           </AvatarFallback>
                         </Avatar>
@@ -2538,9 +2548,9 @@ const dateB =
                     </div>
                   </div>
 
-                  <div className="space-y-2 bg-white p-3 rounded-sm-lg border">
+                  <div className="space-y-2 bg-black/30 p-3 rounded-lg border">
                     <div className="flex items-center gap-3 text-sm">
-                      <Calendar className="h-5 w-5 text-slate-600 shrink-0" />
+                      <Calendar className="h-5 w-5 text-white/50 shrink-0" />
                       <span>
                         {new Date(selectedMatch.match_date).toLocaleDateString("de-DE", {
                           weekday: "long",
@@ -2552,20 +2562,20 @@ const dateB =
                     </div>
                     {selectedEvent?.start_time && (
   <div className="flex items-center gap-3 text-sm">
-    <Clock className="h-5 w-5 text-slate-600 shrink-0" />
+    <Clock className="h-5 w-5 text-white/50 shrink-0" />
     <span>{formatTimeWithoutSeconds(selectedEvent.start_time)}</span>
   </div>
 )}
 
                     {selectedEvent?.location && (
                       <div className="flex items-center gap-3 text-sm">
-                        <MapPin className="h-5 w-5 text-slate-600 shrink-0" />
+                        <MapPin className="h-5 w-5 text-white/50 shrink-0" />
                         <span>{selectedEvent?.location}</span>
                       </div>
                     )}
                     {(selectedEvent?.entry_fee != null || selectedEvent?.max_participants != null) && (
                       <div className="flex items-center gap-3 text-sm">
-                        <Users className="h-5 w-5 text-slate-600 shrink-0" />
+                        <Users className="h-5 w-5 text-white/50 shrink-0" />
                         <span>
                           {selectedEvent?.entry_fee != null ? `${selectedEvent?.entry_fee} €` : ""}
                           {selectedEvent?.entry_fee != null && selectedEvent?.max_participants != null ? " • " : ""}
@@ -2575,15 +2585,15 @@ const dateB =
                     )}
 
                     <div className="flex items-center gap-3 text-sm">
-                      <Clock className="h-5 w-5 text-slate-600 shrink-0" />
+                      <Clock className="h-5 w-5 text-white/50 shrink-0" />
                       <span>{formatTimeWithoutSeconds(selectedMatch.match_time)} Uhr</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm min-w-0">
-                      <MapPin className="h-5 w-5 text-slate-600 shrink-0" />
+                      <MapPin className="h-5 w-5 text-white/50 shrink-0" />
                       <span className="truncate">{selectedMatch.venue}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
-                      <Trophy className="h-5 w-5 text-slate-600 shrink-0" />
+                      <Trophy className="h-5 w-5 text-white/50 shrink-0" />
                       <span>
                         {selectedMatch.season?.name || "Liga"} - Spieltag {selectedMatch.week_number}
                       </span>
@@ -2591,8 +2601,8 @@ const dateB =
                     <div className="flex items-center gap-3 text-sm">
                       {isHomeGame(selectedMatch) ? (
                         <>
-                          <Home className="h-5 w-5 text-orange-600 shrink-0" />
-                          <span className="text-orange-600 font-medium">Heimspiel</span>
+                          <Home className="h-5 w-5 text-orange-200 shrink-0" />
+                          <span className="text-orange-200 font-medium">Heimspiel</span>
                         </>
                       ) : (
                         <>
@@ -2625,7 +2635,7 @@ const dateB =
 
 
           <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md max-h-[80dvh] overflow-y-auto">
+            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
 
               <DialogHeader>
                 <DialogTitle className="text-lg">Event Details</DialogTitle>
@@ -2642,30 +2652,30 @@ const dateB =
                         <img
                           src={selectedEvent.photo_url}
                           alt={selectedEvent.name}
-                          className="w-full h-44 object-cover rounded-sm-xl border"
+                          className="w-full h-44 object-cover rounded-xl border"
                         />
                       </div>
                     )}
                     <div className="mb-4 sm:mb-5">
-                      <div className="h-16 w-16 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded-sm-full flex items-center justify-center">
+                      <div className="h-16 w-16 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center">
                         {selectedEvent.event_type === "Turnier" ? (
-                          <Trophy className="h-8 w-8 text-orange-600" />
+                          <Trophy className="h-8 w-8 text-orange-200" />
                         ) : selectedEvent.event_type === "Geburtstag" ? (
-                          <Cake className="h-8 w-8 text-orange-600" />
+                          <Cake className="h-8 w-8 text-orange-200" />
                         ) : selectedEvent.event_type === "Urlaub" ? (
-                          <Sun className="h-8 w-8 text-orange-600" />
+                          <Sun className="h-8 w-8 text-orange-200" />
                         ) : (
-                          <CalendarDays className="h-8 w-8 text-orange-600" />
+                          <CalendarDays className="h-8 w-8 text-orange-200" />
                         )}
                       </div>
-                      <h3 className="text-xl font-bold text-slate-950">{selectedEvent.name}</h3>
-                      {selectedEvent.description && <p className="text-slate-600 mt-2">{selectedEvent.description}</p>}
+                      <h3 className="text-xl font-bold text-white">{selectedEvent.name}</h3>
+                      {selectedEvent.description && <p className="text-white/50 mt-2">{selectedEvent.description}</p>}
                     </div>
                   </div>
 
-                  <div className="space-y-2 bg-white p-3 rounded-sm-lg border">
+                  <div className="space-y-2 bg-black/30 p-3 rounded-lg border">
                     <div className="flex items-center gap-3 text-sm">
-  <Calendar className="h-5 w-5 text-slate-600 shrink-0" />
+  <Calendar className="h-5 w-5 text-white/50 shrink-0" />
   <span>
     {new Date(selectedEvent.start_date || selectedEvent.event_date).toLocaleDateString("de-DE", {
       weekday: "long",
@@ -2686,18 +2696,18 @@ const dateB =
                     <div className="flex items-center gap-3 text-sm">
                       {selectedEvent.event_type === "Turnier" ? (
                         <>
-                          <Trophy className="h-5 w-5 text-purple-600 shrink-0" />
-                          <span className="text-purple-600 font-medium">Turnier</span>
+                          <Trophy className="h-5 w-5 text-violet-200 shrink-0" />
+                          <span className="text-violet-200 font-medium">Turnier</span>
                         </>
                       ) : selectedEvent.event_type === "Geburtstag" ? (
                         <>
-                          <Cake className="h-5 w-5 text-pink-700 shrink-0" />
-                          <span className="text-pink-700 font-medium">Geburtstag</span>
+                          <Cake className="h-5 w-5 text-pink-200 shrink-0" />
+                          <span className="text-pink-200 font-medium">Geburtstag</span>
                         </>
                       ) : selectedEvent.event_type === "Urlaub" ? (
                         <>
-                          <Sun className="h-5 w-5 text-sky-700 shrink-0" />
-                          <span className="text-sky-700 font-medium">Urlaub</span>
+                          <Sun className="h-5 w-5 text-sky-200 shrink-0" />
+                          <span className="text-sky-200 font-medium">Urlaub</span>
                         </>
                       ) : (
                         <>
@@ -2754,13 +2764,13 @@ const dateB =
 				  
 				  
 				  {selectedEvent?.type === "board" && (
-  <div className="space-y-2 bg-white p-3 rounded-sm-lg border">
+  <div className="space-y-2 bg-black/30 p-3 rounded-lg border">
     <div className="font-semibold text-sm">Anhänge</div>
 
     {loadingBoardAttachments ? (
-      <div className="text-sm text-slate-600">Lade Dateien...</div>
+      <div className="text-sm text-white/50">Lade Dateien...</div>
     ) : boardAttachments.length === 0 ? (
-      <div className="text-sm text-slate-600">Keine Dateien hochgeladen.</div>
+      <div className="text-sm text-white/50">Keine Dateien hochgeladen.</div>
     ) : (
       <div className="space-y-3">
         {boardAttachments.map((a) => {
@@ -2770,7 +2780,7 @@ const dateB =
             a.file_name.toLowerCase().match(/\.(png|jpg|jpeg|webp|gif)$/)
 
           return (
-            <div key={a.id} className="border rounded-sm-lg p-2">
+            <div key={a.id} className="border rounded-lg p-2">
               <div className="text-sm font-medium break-words">{a.file_name}</div>
 
               {a.url ? (
@@ -2778,7 +2788,7 @@ const dateB =
                   <img
                     src={url}
                     alt={a.file_name}
-                    className="mt-2 w-full h-44 object-cover rounded-sm-xl border"
+                    className="mt-2 w-full h-44 object-cover rounded-xl border"
                   />
                 ) : (
                   <a
@@ -2851,7 +2861,7 @@ const dateB =
           </Dialog>
 
           <Dialog open={isMultiItemDialogOpen} onOpenChange={setIsMultiItemDialogOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
               <DialogHeader>
                 <DialogTitle className="text-lg">
                   Termine am{" "}
@@ -2870,7 +2880,7 @@ const dateB =
                   {getItemsForDate(selectedDate).map((item) => (
                     <Card
                       key={item.id}
-                      className="cursor-pointer hover:bg-slate-50"
+                      className="cursor-pointer hover:bg-white/[0.035]"
                       onClick={() => {
                         setIsMultiItemDialogOpen(false)
                         handleItemClick(item)
@@ -2884,9 +2894,9 @@ const dateB =
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               {item.event_type === "Turnier" ? (
-                                <Trophy className="h-4 w-4 text-purple-600" />
+                                <Trophy className="h-4 w-4 text-violet-200" />
                               ) : item.event_type === "Geburtstag" ? (
-                                <Cake className="h-4 w-4 text-pink-700" />
+                                <Cake className="h-4 w-4 text-pink-200" />
                               ) : (
                                 <CalendarDays className="h-4 w-4 text-green-600" />
                               )}
@@ -2907,7 +2917,7 @@ const dateB =
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               {isHomeGame(item) ? (
-                                <Home className="h-4 w-4 text-orange-600" />
+                                <Home className="h-4 w-4 text-orange-200" />
                               ) : (
                                 <Plane className="h-4 w-4 text-blue-600" />
                               )}
@@ -2924,7 +2934,7 @@ const dateB =
           </Dialog>
 
           <Dialog open={isConfirmDeleteBoardOpen} onOpenChange={setIsConfirmDeleteBoardOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md">
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md calendar-dialog">
     <DialogHeader>
       <DialogTitle className="text-lg">Vorstand-Termin wirklich löschen?</DialogTitle>
       <DialogDescription className="text-sm">
@@ -2976,7 +2986,7 @@ const dateB =
 </Dialog>
 
           <Dialog open={isVacationDialogOpen} onOpenChange={setIsVacationDialogOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
               <DialogHeader>
                 <DialogTitle className="text-lg">{editingVacationId ? "Urlaub bearbeiten" : "Urlaub eintragen"}</DialogTitle>
                 <DialogDescription className="text-sm">Für alle sichtbar im Vereins-Kalender</DialogDescription>
@@ -3039,7 +3049,7 @@ const dateB =
 		  
 		  
 		<Dialog open={isPrivateDialogOpen} onOpenChange={setIsPrivateDialogOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
     <DialogHeader>
       <DialogTitle className="text-lg">
         {editingPrivateEntryId ? "Privaten Termin bearbeiten" : "Privaten Termin eintragen"}
@@ -3119,7 +3129,7 @@ const dateB =
 		  
 		  
 		  <Dialog open={isConfirmDeletePrivateOpen} onOpenChange={setIsConfirmDeletePrivateOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md">
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md calendar-dialog">
     <DialogHeader>
       <DialogTitle className="text-lg">Privaten Termin wirklich löschen?</DialogTitle>
       <DialogDescription className="text-sm">
@@ -3161,7 +3171,7 @@ const dateB =
 		  
 		  
 		  <Dialog open={isBoardDialogOpen} onOpenChange={setIsBoardDialogOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
     <DialogHeader>
       <DialogTitle className="text-lg">Vorstand Termin eintragen</DialogTitle>
       <DialogDescription className="text-sm">Nur für Vorstand sichtbar</DialogDescription>
@@ -3205,7 +3215,7 @@ const dateB =
     className="text-sm"
   />
 
-  <div className="border rounded-sm-lg p-2 max-h-48 overflow-y-auto space-y-1">
+  <div className="border rounded-lg p-2 max-h-48 overflow-y-auto space-y-1">
     {allClubPlayers
       .filter((p) => (p.name || "").toLowerCase().includes(inviteSearch.toLowerCase().trim()))
       .map((p) => {
@@ -3213,7 +3223,7 @@ const dateB =
         return (
           <label
             key={p.id}
-            className="flex items-center gap-2 text-sm p-1 rounded-sm hover:bg-slate-50 cursor-pointer"
+            className="flex items-center gap-2 text-sm p-1 rounded-sm hover:bg-white/[0.035] cursor-pointer"
           >
             <input
               type="checkbox"
@@ -3226,11 +3236,11 @@ const dateB =
       })}
 
     {allClubPlayers.length === 0 && (
-      <div className="text-sm text-slate-600">Keine Spieler gefunden.</div>
+      <div className="text-sm text-white/50">Keine Spieler gefunden.</div>
     )}
   </div>
 
-  <div className="text-xs text-slate-600">
+  <div className="text-xs text-white/50">
     Ausgewählt: {invitePlayerIds.length}
   </div>
 </div>
@@ -3259,9 +3269,9 @@ const dateB =
             <div className="fixed inset-0 z-[999]">
               <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileBottomSheetOpen(false)} />
 
-              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-sm-t-xl max-h-[70dvh] overflow-hidden pb-[calc(env(safe-area-inset-bottom)+5rem)]">
+              <div className="absolute bottom-0 left-0 right-0 bg-black/30 rounded-t-xl max-h-[70dvh] overflow-hidden pb-[calc(env(safe-area-inset-bottom)+5rem)]">
                 <div className="flex justify-center py-3">
-                  <div className="w-10 h-1 bg-gray-300 rounded-sm-full" />
+                  <div className="w-10 h-1 bg-gray-300 rounded-full" />
                 </div>
 
                 <div className="px-4 pb-4 border-b">
@@ -3272,7 +3282,7 @@ const dateB =
                       month: "long",
                     })}
                   </h3>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-white/50">
                     {getItemsForDate(mobileSelectedDate).length}{" "}
                     {getItemsForDate(mobileSelectedDate).length === 1 ? "Termin" : "Termine"}
                   </p>
@@ -3283,7 +3293,7 @@ const dateB =
                     {getItemsForDate(mobileSelectedDate).map((item) => (
                       <Card
                         key={item.id}
-                        className="cursor-pointer hover:bg-slate-50 transition-colors"
+                        className="cursor-pointer hover:bg-white/[0.035] transition-colors"
                         onClick={() => {
                           setIsMobileBottomSheetOpen(false)
                           handleItemClick(item)
@@ -3294,29 +3304,29 @@ const dateB =
                             <div className="flex items-center justify-between gap-2 min-w-0">
                               <div className="flex items-center gap-3 min-w-0">
                                 <div
-                                  className={`p-2 rounded-sm-lg ${
+                                  className={`p-2 rounded-lg ${
                                     item.event_type === "Turnier"
-                                      ? "bg-purple-100"
+                                      ? "bg-violet-500/[0.10]"
                                       : item.event_type === "Geburtstag"
-                                        ? "bg-pink-100"
+                                        ? "bg-pink-500/[0.10]"
                                         : item.event_type === "Urlaub"
                                           ? "bg-sky-100"
-                                          : "bg-green-100"
+                                          : "bg-emerald-500/[0.10]"
                                   }`}
                                 >
                                   {item.event_type === "Turnier" ? (
-                                    <Trophy className="h-5 w-5 text-purple-600" />
+                                    <Trophy className="h-5 w-5 text-violet-200" />
                                   ) : item.event_type === "Geburtstag" ? (
-                                    <Cake className="h-5 w-5 text-pink-700" />
+                                    <Cake className="h-5 w-5 text-pink-200" />
                                   ) : item.event_type === "Urlaub" ? (
-                                    <Sun className="h-5 w-5 text-sky-700" />
+                                    <Sun className="h-5 w-5 text-sky-200" />
                                   ) : (
                                     <CalendarDays className="h-5 w-5 text-green-600" />
                                   )}
                                 </div>
                                 <div className="min-w-0">
                                   <div className="font-medium text-base truncate">{item.name}</div>
-                                  <div className="text-sm text-slate-600">
+                                  <div className="text-sm text-white/50">
                                     {item.event_type === "Urlaub"
                                       ? `${item.start_date} bis ${item.end_date}`
                                       : item.event_type === "Geburtstag"
@@ -3333,9 +3343,9 @@ const dateB =
                           ) : (
                             <div className="flex items-center justify-between gap-2 min-w-0">
                               <div className="flex items-center gap-3 min-w-0">
-                                <div className={`p-2 rounded-sm-lg ${isHomeGame(item) ? "bg-orange-100" : "bg-blue-100"}`}>
+                                <div className={`p-2 rounded-lg ${isHomeGame(item) ? "bg-orange-100" : "bg-sky-500/[0.10]"}`}>
                                   {isHomeGame(item) ? (
-                                    <Home className="h-5 w-5 text-orange-600" />
+                                    <Home className="h-5 w-5 text-orange-200" />
                                   ) : (
                                     <Plane className="h-5 w-5 text-blue-600" />
                                   )}
@@ -3344,7 +3354,7 @@ const dateB =
                                   <div className="font-medium text-base truncate">
                                     {getTeamDisplayName(item, true)} vs {getTeamDisplayName(item, false)}
                                   </div>
-                                  <div className="text-sm text-slate-600">
+                                  <div className="text-sm text-white/50">
                                     {formatTimeWithoutSeconds((item as any).match_time)} Uhr
 
                                     {item.season?.name && ` • ${item.season.name}`}
@@ -3365,7 +3375,7 @@ const dateB =
         </div>
 		
 			  <Dialog open={isLineupDialogOpen} onOpenChange={setIsLineupDialogOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto">
+  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
     <DialogHeader>
       <DialogTitle className="text-lg">Aufstellung</DialogTitle>
       <DialogDescription className="text-sm">
@@ -3374,21 +3384,21 @@ const dateB =
     </DialogHeader>
 
     {loadingLineup ? (
-      <div className="text-sm text-slate-600">Lade Aufstellung...</div>
+      <div className="text-sm text-white/50">Lade Aufstellung...</div>
     ) : lineupPlayers.length === 0 ? (
-      <div className="text-sm text-slate-600">Noch keine Aufstellung hinterlegt.</div>
+      <div className="text-sm text-white/50">Noch keine Aufstellung hinterlegt.</div>
     ) : (
       <div className="space-y-2">
         {lineupPlayers.map((p) => (
-          <div key={p.id} className="flex items-center justify-between border rounded-sm-lg p-2">
+          <div key={p.id} className="flex items-center justify-between border rounded-lg p-2">
             <div className="text-sm font-medium">
               {p.position}. {p.club_players?.name || "Unbekannter Spieler"}
             </div>
 
             {p.is_substitute ? (
-              <Badge className="bg-gray-100 text-slate-700 border-slate-200 text-xs">Ersatz</Badge>
+              <Badge className="bg-white/[0.04] text-white/60 border-white/[0.08] text-xs">Ersatz</Badge>
             ) : (
-              <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">Stamm</Badge>
+              <Badge className="bg-orange-100 text-orange-800 border-orange-300/[0.16] text-xs">Stamm</Badge>
             )}
           </div>
         ))}
@@ -3400,6 +3410,38 @@ const dateB =
 		
       </main>
 	  
+
+
+      <style jsx global>{`
+        .calendar-premium input,
+        .calendar-premium textarea,
+        .calendar-dialog input,
+        .calendar-dialog textarea {
+          border-color: rgba(255,255,255,.09) !important;
+          background: rgba(8,12,18,.96) !important;
+          color: white !important;
+          box-shadow: none !important;
+        }
+        .calendar-premium input::placeholder,
+        .calendar-premium textarea::placeholder,
+        .calendar-dialog input::placeholder,
+        .calendar-dialog textarea::placeholder {
+          color: rgba(255,255,255,.25) !important;
+        }
+        .calendar-dialog {
+          border: 1px solid rgba(255,255,255,.09) !important;
+          background:
+            radial-gradient(circle at 10% 0%, rgba(249,115,22,.10), transparent 30%),
+            radial-gradient(circle at 100% 20%, rgba(14,165,233,.08), transparent 32%),
+            rgba(5,8,12,.985) !important;
+          color: white !important;
+          box-shadow: 0 30px 90px -45px rgba(0,0,0,.98) !important;
+          border-radius: 1.5rem !important;
+        }
+        .calendar-dialog h2,
+        .calendar-dialog h3 { color: white !important; }
+        .calendar-dialog label { color: rgba(255,255,255,.55) !important; }
+      `}</style>
 
       <MobileBottomNav />
     </div>

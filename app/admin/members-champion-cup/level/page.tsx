@@ -2,7 +2,7 @@
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { AdminMembersLevelManagement } from "@/components/admin/members-champion-cup/admin-members-level-management"
+import { AdminMembersLevelManagement } from "@/app/admin/_komponenten/turniere/members-cup-einstufung"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"

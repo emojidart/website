@@ -27,6 +27,7 @@ type TimeFilter = "upcoming" | "all" | "past"
 
 type TerminalEvent = {
   id: string
+  internal_event_id?: string | null
   source: "internal" | "external"
   name: string
   event_type: string | null
@@ -132,7 +133,7 @@ export default function TerminalVeranstaltungenPage() {
           .order("start_date", { ascending: true }),
         supabase
           .from("dach_events")
-          .select("id,name,event_type,event_date,start_date,end_date,event_time,location,country_code,city,region,organizer_name,entry_fee,max_participants,details,photo_url,mode,discipline,startgeld_details,registration_url,event_status")
+          .select("id,internal_event_id,name,event_type,event_date,start_date,end_date,event_time,location,country_code,city,region,organizer_name,entry_fee,max_participants,details,photo_url,mode,discipline,startgeld_details,registration_url,event_status")
           .in("event_status", ["approved", "cancelled"])
           .order("start_date", { ascending: true }),
       ])
@@ -156,6 +157,7 @@ export default function TerminalVeranstaltungenPage() {
 
       const externalRows: TerminalEvent[] = ((externalResult.data || []) as any[]).map((row) => ({
         id: String(row.id),
+        internal_event_id: row.internal_event_id ? String(row.internal_event_id) : null,
         source: "external",
         name: row.name || "Veranstaltung",
         event_type: row.event_type || null,
@@ -178,7 +180,14 @@ export default function TerminalVeranstaltungenPage() {
         event_status: row.event_status || null,
       }))
 
-      setEvents([...internalRows, ...externalRows])
+      // DACH-Einträge, die nur die öffentliche Spiegelung einer bereits vorhandenen
+      // Vereinsveranstaltung sind, nicht ein zweites Mal im Terminal anzeigen.
+      const internalIds = new Set(internalRows.map((event) => event.id))
+      const uniqueExternalRows = externalRows.filter(
+        (event) => !event.internal_event_id || !internalIds.has(event.internal_event_id),
+      )
+
+      setEvents([...internalRows, ...uniqueExternalRows])
       setLoading(false)
     }
 

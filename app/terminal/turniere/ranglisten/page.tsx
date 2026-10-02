@@ -18,7 +18,6 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 )
 
-const MEMBERS_CHAMPION_SERIES_ID = "baeef5fb-b386-4a75-a1f3-c56090a0ec76"
 
 type Series = {
   id: string
@@ -65,33 +64,15 @@ export default function TerminalTournamentRankingsPage() {
       const { data } = await supabase
         .from("dko_series")
         .select("id,name,slug,is_active,series_type,qualification_requirement,total_tournament_days,halving_active,halving_date,division_active,division_date,created_at")
+        .eq("is_active", true)
         .order("created_at", { ascending: false })
 
-      const raw = (data || []) as Series[]
-      const visible = raw.filter(
-        (series) => series.is_active || series.id === MEMBERS_CHAMPION_SERIES_ID,
-      )
-
-      visible.sort((a, b) => {
-        const order: Record<string, number> = {
-          lion_cup: 1,
-          members_cup: 2,
-          summer_special: 3,
-          challenge_division: 4,
-          buffalo_cup: 5,
-        }
-        return (order[a.series_type] || 99) - (order[b.series_type] || 99)
-      })
+      const visible = (data || []) as Series[]
 
       setSeriesList(visible)
 
       const requested = requestedSeriesId && visible.find((s) => s.id === requestedSeriesId)
-      setSelectedSeriesId(
-        requested?.id ||
-        visible.find((s) => s.series_type === "lion_cup" && s.is_active)?.id ||
-        visible[0]?.id ||
-        "",
-      )
+      setSelectedSeriesId(requested?.id || visible[0]?.id || "")
     }
 
     void loadSeries()
@@ -112,7 +93,7 @@ export default function TerminalTournamentRankingsPage() {
 
       // =========================================================
       // MEMBERS CHAMPIONS CUP
-      // Die offizielle Wertung liegt in members_cup_results.
+      // Members-Cup-Wertungen werden aus members_cup_results der aktuell gewählten Serie geladen.
       // tournament_series_standings ist für diese Serie leer.
       // =========================================================
       if (selectedSeries.series_type === "members_cup") {
@@ -120,7 +101,8 @@ export default function TerminalTournamentRankingsPage() {
           await Promise.all([
             supabase
               .from("members_cup_results")
-              .select("round_robin_id,player_id,player_name,placement,points,created_at"),
+              .select("round_robin_id,player_id,player_name,placement,points,created_at,series_id")
+              .eq("series_id", selectedSeriesId),
             supabase
               .from("spieldatenbank")
               .select("id,name,profile_picture_url"),

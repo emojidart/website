@@ -2,9 +2,8 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, Users, ArrowRight } from "lucide-react"
+import { ChevronLeft, Users, ArrowRight, Crown, MapPin, Hand } from "lucide-react"
 
 interface Player {
   id: string
@@ -50,6 +49,32 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
     })
   }
 
+  const translateThrowingHand = (hand: string | null) => {
+    if (!hand) return "-"
+    const normalized = hand.trim().toLowerCase()
+    if (normalized === "left") return "Links"
+    if (normalized === "right") return "Rechts"
+    return hand
+  }
+
+  const calculateAge = (birthdate: string | null) => {
+    if (!birthdate) return null
+    const birth = new Date(birthdate)
+    if (isNaN(birth.getTime())) return null
+
+    const today = new Date()
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    const dayDiff = today.getDate() - birth.getDate()
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) age--
+    return age
+  }
+
+  const getAgeText = (birthdate: string | null) => {
+    const age = calculateAge(birthdate)
+    return age !== null ? String(age) : "-"
+  }
+
   const getOriginText = (origin: string | null) => {
     if (!origin || !origin.trim()) return "-"
     return origin
@@ -57,14 +82,10 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
 
   const getRoleText = (role: string | null) => {
     if (!role || !role.trim()) return "Spieler"
-
     const normalized = role.trim().toLowerCase()
-
     if (normalized === "captain") return "Captain"
     if (normalized === "co-captain") return "Co-Captain"
-    if (normalized === "player") return "Spieler"
-    if (normalized === "spieler") return "Spieler"
-
+    if (normalized === "player" || normalized === "spieler") return "Spieler"
     return role
   }
 
@@ -73,183 +94,167 @@ export function TeamGallery({ teamsWithPlayers }: TeamGalleryProps) {
 
     return (
       <div className="w-full">
-        <Button
-          variant="ghost"
-          onClick={() => setSelectedTeam(null)}
-          className="mb-4 -ml-1 h-10 gap-2 rounded-xl px-3 text-sm font-bold text-slate-600 hover:bg-white hover:text-slate-950"
-          type="button"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Alle Teams
-        </Button>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setSelectedTeam(null)}
+            className="h-10 rounded-xl border-white/10 bg-white/[0.04] px-3 text-sm font-bold text-white hover:bg-white/[0.08] hover:text-white"
+            type="button"
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Alle Teams
+          </Button>
+        </div>
 
-        <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
-          <div className="flex items-start gap-4 p-4 sm:p-5">
-            <div className="shrink-0">
+        <section className="relative overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/25 p-4 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-5 lg:p-6">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-orange-500/10 blur-[90px]" />
+          <div className="relative flex items-center gap-4 sm:gap-5">
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.04] sm:h-24 sm:w-24">
               {selectedTeam.logo_url ? (
-                <div className="relative h-16 w-16 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50 sm:h-20 sm:w-20">
-                  <Image
-                    src={selectedTeam.logo_url || "/placeholder.svg"}
-                    alt={selectedTeam.name}
-                    fill
-                    className="object-contain p-3"
-                  />
-                </div>
+                <Image
+                  src={selectedTeam.logo_url || "/placeholder.svg"}
+                  alt={selectedTeam.name}
+                  fill
+                  className="object-contain p-2"
+                />
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-[20px] border border-slate-200 bg-slate-50 sm:h-20 sm:w-20">
-                  <Users className="w-7 h-7 text-gray-400" />
+                <div className="flex h-full w-full items-center justify-center">
+                  <Users className="h-8 w-8 text-white/25" />
                 </div>
               )}
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="inline-flex rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-orange-700">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-300/[0.12] bg-orange-500/[0.07] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">
+                <Crown className="h-3 w-3" />
                 Team
               </div>
-              <h2 className="mt-2 truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+              <h2 className="mt-2 truncate text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
                 {selectedTeam.name}
               </h2>
-              <p className="mt-1 text-sm font-medium text-slate-500">
+              <p className="mt-1 text-sm font-semibold text-white/45">
                 {selectedTeam.players.length} Spieler
               </p>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 2xl:grid-cols-5">
-          {sortedPlayers.map((player) => (
-            <Card
-              key={player.id}
-              className="group overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_38px_-34px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_20px_60px_-38px_rgba(15,23,42,0.5)]"
-            >
-              <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
-                {player.photo_url ? (
-                  <Image
-                    src={player.photo_url || "/placeholder.svg"}
-                    alt={player.name}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Users className="w-16 h-16 text-gray-300" />
+        {sortedPlayers.length > 0 ? (
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {sortedPlayers.map((player) => (
+              <article
+                key={player.id}
+                className="group overflow-hidden rounded-[22px] border border-white/[0.08] bg-black/25 shadow-[0_18px_52px_-42px_rgba(0,0,0,.95)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-orange-300/20 hover:bg-white/[0.035]"
+              >
+                <div className="relative aspect-[4/5] overflow-hidden bg-white/[0.035]">
+                  {player.photo_url ? (
+                    <Image
+                      src={player.photo_url || "/placeholder.svg"}
+                      alt={player.name}
+                      fill
+                      className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Users className="h-14 w-14 text-white/15" />
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-3.5">
+                    <h3 className="line-clamp-2 text-sm font-black leading-tight text-white sm:text-base">
+                      {player.name}
+                    </h3>
+                    <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-orange-300">
+                      {getRoleText(player.role)}
+                    </div>
                   </div>
-                )}
-
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
-
-                <div className="absolute bottom-0 left-0 right-0 p-3.5 text-white">
-                  <h3 className="line-clamp-2 text-sm font-black leading-tight tracking-tight sm:text-base">
-                    {player.name}
-                  </h3>
-                  <p className="mt-1 inline-flex rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-orange-200">
-                    {getRoleText(player.role)}
-                  </p>
                 </div>
-              </div>
 
-              <div className="border-t border-slate-100 bg-white p-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Herkunft</p>
-                <p className="mt-1 line-clamp-1 text-xs font-bold text-slate-700">
-                  {getOriginText(player.origin)}
-                </p>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {selectedTeam.players.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
-              <Users className="w-7 h-7 text-gray-400" />
-            </div>
-            <p className="text-base font-semibold text-gray-600">
-              Noch keine Spieler in diesem Team
-            </p>
+                <div className="grid grid-cols-2 gap-2 border-t border-white/[0.06] p-3">
+                  <div className="rounded-xl bg-white/[0.035] p-2">
+                    <div className="text-[9px] font-black uppercase tracking-[0.12em] text-white/30">Alter</div>
+                    <div className="mt-1 text-sm font-black text-white">{getAgeText(player.birthdate)}</div>
+                  </div>
+                  <div className="rounded-xl bg-white/[0.035] p-2">
+                    <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.12em] text-white/30">
+                      <Hand className="h-3 w-3" />
+                      Hand
+                    </div>
+                    <div className="mt-1 text-sm font-black text-white">{translateThrowingHand(player.throwing_hand)}</div>
+                  </div>
+                  <div className="col-span-2 rounded-xl bg-white/[0.035] p-2">
+                    <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.12em] text-white/30">
+                      <MapPin className="h-3 w-3" />
+                      Herkunft
+                    </div>
+                    <div className="mt-1 truncate text-sm font-black text-white">{getOriginText(player.origin)}</div>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
-        ) : null}
+        ) : (
+          <div className="mt-4 rounded-[22px] border border-dashed border-white/10 bg-black/20 p-10 text-center">
+            <Users className="mx-auto h-10 w-10 text-white/20" />
+            <p className="mt-3 text-sm font-bold text-white/45">Noch keine Spieler in diesem Team.</p>
+          </div>
+        )}
       </div>
     )
   }
 
   return (
     <div className="w-full">
-      <div className="mb-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px] sm:p-5">
-        <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50 text-orange-600">
-            <Users className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="inline-flex rounded-full border border-orange-100 bg-orange-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-orange-700">
-              Unser Verein
-            </div>
-            <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
-              Unsere Teams
-            </h2>
-            <p className="mt-1 text-sm font-medium text-slate-500">
-              Tippe auf ein Team, um alle Spieler zu sehen.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-        {teamsWithPlayers.map((team) => (
-          <Card
-            key={team.id}
-            className="group cursor-pointer overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_38px_-34px_rgba(15,23,42,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_20px_60px_-38px_rgba(15,23,42,0.5)]"
-            onClick={() => setSelectedTeam(team)}
-          >
-            <div className="relative flex h-36 items-center justify-center overflow-hidden bg-slate-950 sm:h-40">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-orange-500/10 blur-2xl" />
-
-              {team.logo_url ? (
-                <div className="relative h-[78%] w-[72%] max-w-[220px]">
+      {teamsWithPlayers.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          {teamsWithPlayers.map((team) => (
+            <button
+              key={team.id}
+              type="button"
+              onClick={() => setSelectedTeam(team)}
+              className="group relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 text-left shadow-[0_20px_60px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-orange-300/20 hover:bg-white/[0.035]"
+            >
+              <div className="relative aspect-[16/8] overflow-hidden border-b border-white/[0.06] bg-black/45">
+                {team.logo_url ? (
                   <Image
                     src={team.logo_url || "/placeholder.svg"}
                     alt={team.name}
                     fill
-                    className="object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="object-contain p-3 transition duration-500 group-hover:scale-[1.025]"
                   />
-                </div>
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06]">
-                  <Users className="h-7 w-7 text-white/35" />
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <Users className="h-14 w-14 text-white/15" />
+                  </div>
+                )}
 
-            <div className="flex items-center justify-between gap-3 border-t border-slate-100 p-4">
-              <div className="min-w-0">
-                <div className="truncate text-base font-black tracking-tight text-slate-950">
-                  {team.name}
-                </div>
-                <div className="mt-0.5 text-xs font-medium text-slate-500">
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(0,0,0,.72))]" />
+                <div className="absolute bottom-3 left-3 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.13em] text-white/65 backdrop-blur-md">
                   {team.players.length} Spieler
                 </div>
               </div>
 
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 transition-colors group-hover:border-orange-500 group-hover:bg-orange-500">
-                <ArrowRight className="h-4 w-4 text-orange-700 transition-all group-hover:translate-x-0.5 group-hover:text-white" />
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+              <div className="flex items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-black tracking-tight text-white sm:text-lg">{team.name}</h3>
+                  <p className="mt-1 text-xs font-semibold text-white/38">Kader anzeigen</p>
+                </div>
 
-      {teamsWithPlayers.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
-            <Users className="w-7 h-7 text-gray-400" />
-          </div>
-          <p className="text-base font-semibold text-gray-600">
-            Noch keine Teams verfügbar
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            Teams werden bald hinzugefügt
-          </p>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-300/[0.12] bg-orange-500/[0.07] text-orange-300 transition group-hover:border-orange-400/30 group-hover:bg-orange-500 group-hover:text-white">
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </div>
+              </div>
+            </button>
+          ))}
         </div>
-      ) : null}
+      ) : (
+        <div className="rounded-[24px] border border-dashed border-white/10 bg-black/20 p-12 text-center">
+          <Users className="mx-auto h-11 w-11 text-white/20" />
+          <p className="mt-3 text-base font-black text-white/60">Noch keine Teams verfügbar</p>
+          <p className="mt-1 text-sm font-semibold text-white/35">Teams werden hier automatisch angezeigt.</p>
+        </div>
+      )}
     </div>
   )
 }

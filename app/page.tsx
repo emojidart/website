@@ -1,1802 +1,127 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
-import Link from "next/link"
 import { Header } from "@/components/header"
-import { Card, CardContent } from "@/components/ui/card"
 import { PushEnableBanner } from "@/components/push-enable-banner"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createBrowserClient } from "@supabase/ssr"
 import {
   Trophy,
-  TrendingUp,
-  Sparkles,
   ArrowRight,
   Calendar,
   MapPin,
   Clock,
-  Info,
-  Euro,
-  Target,
-  Swords,
-  Users,
   PartyPopper,
-  Gamepad2,
-  X,
   Zap,
-  CheckCircle2,
-  Bell,
-  Download,
   Loader2,
-  Timer,
-  LogOut,
   UserPlus,
   ShoppingBag,
+  Tv2
 } from "lucide-react"
 import Image from "next/image"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { ClubhouseStatusCard } from "@/components/clubhouse-status-card"
 import { useMembershipAccess } from "@/hooks/use-membership-access"
-import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
 import { PushNotificationDialog } from "@/components/push-notification-dialog"
+
+import { InterneTurnierAnmeldekarte } from "@/app/_startseite/komponenten/interne-turnier-anmeldekarte"
+import { StartseitenHero } from "@/app/_startseite/komponenten/startseiten-hero"
+import { DeineNaechstenLigaspiele } from "@/app/_startseite/komponenten/deine-naechsten-ligaspiele"
+import { HeuteImVerein } from "@/app/_startseite/komponenten/heute-im-verein"
+import { useStartseitenLiga } from "@/app/_startseite/hooks/use-startseiten-liga"
+import { useStartseitenVeranstaltungen } from "@/app/_startseite/hooks/use-startseiten-veranstaltungen"
+import { useStartseitenDynamischeSerien } from "@/app/_startseite/hooks/use-startseiten-dynamische-serien"
+import { useAktivesStartseitenTurnier } from "@/app/_startseite/hooks/use-aktives-startseiten-turnier"
+import { useInterneStartseitenAnmeldungen } from "@/app/_startseite/hooks/use-interne-startseiten-anmeldungen"
+import { useStartseitenGeburtstage } from "@/app/_startseite/hooks/use-startseiten-geburtstage"
+import { useStartseitenNaechsteSpiele } from "@/app/_startseite/hooks/use-startseiten-naechste-spiele"
+import { useStartseitenAuthUser } from "@/app/_startseite/hooks/use-startseiten-auth-user"
+import type { Match, CombinedEvent } from "@/app/_startseite/typen"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 //-----------------
-
-interface Match {
-  id: string
-  home_team_id: string | null
-  away_team_id: string | null
-  home_opponent_team_id: string | null
-  away_opponent_team_id: string | null
-  home_score: number | null
-  away_score: number | null
-  match_date: string
-  matchday: number
-  status: string
-  match_time?: string
-  dart_type?: string | null
-  home_team?: {
-    id: string
-    name: string
-    logo_url?: string
-  }
-  away_team?: {
-    id: string
-    name: string
-    logo_url?: string
-  }
-  home_opponent_team?: {
-    id: string
-    name: string
-    logo_url?: string
-  }
-  away_opponent_team?: {
-    id: string
-    name: string
-    logo_url?: string
-  }
-}
-
-interface Tournament {
-  id: string
-  name: string
-  date: string
-  time: string
-  location: string
-  entry_fee: number
-  mode: string
-  details: string | null
-  photo_url: string | null
-}
-
-interface Event {
-  id: string
-  name: string
-  event_date: string
-  start_date: string | null
-  end_date: string | null
-  event_time: string | null
-  location: string | null
-  event_type: string
-  description: string | null
-  photo_url: string | null
-  max_participants: number | null
-  draft_enabled?: boolean
-  draw_mode?: "online" | "onsite" | null
-  draw_datetime?: string | null
-  draw_location?: string | null
-  draw_attendance_required?: boolean
-}
-
-interface CombinedEvent {
-  id: string
-  name: string
-  date: string
-  start_date?: string | null
-  end_date?: string | null
-  time: string
-  location: string
-  details: string | null
-  photo_url: string | null
-  type: "tournament" | "event"
-  eventType?: string
-  entry_fee?: number | null
-  startgeld_details?: string | null
-  mode?: string | null
-  max_participants?: number | null
-  sourceKind?: "internal" | "dach"
-  internalEventId?: string | null
-  dachEventId?: string | null
-}
-
-interface LionCupEvent {
-  id: string
-  name: string
-  event_date: string
-  event_time: string | null
-  event_type: string
-  description: string | null
-  matchday?: number | null
-}
-
-type DkoSeriesEventRow = {
-  id: string
-  series_id: string
-  title: string | null
-  start_at: string // timestamptz
-  is_matchday: boolean
-  registration_cutoff_minutes: number | null
-  is_rescheduled?: boolean | null
-  rescheduled_at?: string | null
-}
-
-type UiDkoEvent = {
-  id: string
-  series_id: string
-  title: string | null
-  is_matchday: boolean
-  cutoffMinutes: number
-  originalDT: Date
-  effectiveDT: Date
-  effectiveISODate: string // YYYY-MM-DD
-  effectiveTimeHHMM: string // HH:MM
-}
-
-function toISODate(d: Date) {
-  const yyyy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, "0")
-  const dd = String(d.getDate()).padStart(2, "0")
-  return `${yyyy}-${mm}-${dd}`
-}
-
-function toHHMM(d: Date) {
-  const hh = String(d.getHours()).padStart(2, "0")
-  const mi = String(d.getMinutes()).padStart(2, "0")
-  return `${hh}:${mi}`
-}
-
-function startOfDay(d: Date) {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
-
-interface ActiveTournament {
-  tournament_id: string
-  tournament_name: string
-  tournament_type: string
-  status: string
-}
-
-type BirthdayPlayer = {
-  id: string
-  name: string
-  birthdate: string
-  age: number | null
-}
-
-type InternalSignupEvent = {
-  id: string
-  title: string
-  subtitle: string | null
-  event_date: string | null
-  end_date: string | null
-  date_open: boolean
-  start_time: string | null
-  location: string | null
-  image_url: string | null
-  image_path: string | null
-  max_participants: number | null
-}
-
-function CountdownTimer({ targetDate }: { targetDate: Date }) {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  })
-
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const difference = targetDate.getTime() - new Date().getTime()
-
-      if (difference > 0) {
-        setTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((difference / 1000 / 60) % 60),
-          seconds: Math.floor((difference / 1000) % 60),
-        })
-      }
-    }
-
-    calculateTimeLeft()
-    const timer = setInterval(calculateTimeLeft, 1000)
-
-    return () => clearInterval(timer)
-  }, [targetDate])
-
-  return (
-    <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 text-center">
-      <div>
-        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.days}</div>
-        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Tage</div>
-      </div>
-      <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
-      <div>
-        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.hours}</div>
-        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Std</div>
-      </div>
-      <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
-      <div>
-        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.minutes}</div>
-        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Min</div>
-      </div>
-      <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
-      <div>
-        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.seconds}</div>
-        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Sek</div>
-      </div>
-    </div>
-  )
-}
-
-function getEventTypeIcon(eventType: string) {
-  const type = eventType.toLowerCase()
-  if (type.includes("party")) return PartyPopper
-  if (type.includes("spiel")) return Gamepad2
-  if (type.includes("turnier")) return Trophy
-  return Users
-}
-
-function getEventTypeLabel(eventType: string) {
-  const type = String(eventType || "").toLowerCase()
-
-  if (type.includes("party")) return "Party"
-  if (type.includes("spiel")) return "Spielabend"
-  if (type.includes("turnier") || type === "tournament") return "Turnier"
-  if (type.includes("versammlung")) return "Versammlung"
-  if (type === "other") return "Veranstaltung"
-  if (type === "announcement") return "Ankündigung"
-  if (type === "console" || type === "gaming") return "Konsole"
-
-  return "Veranstaltung"
-}
-function pad2(n: number) {
-  return String(n).padStart(2, "0")
-}
-
-function formatGermanShortDateFromISO(isoDate: string) {
-  const [y, m, d] = isoDate.split("-").map((x) => Number.parseInt(x, 10))
-  const months = ["Jan.", "Feb.", "Mär.", "Apr.", "Mai", "Jun.", "Jul.", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."]
-  const mm = Number.isFinite(m) ? m - 1 : 0
-  return `${pad2(d)}. ${months[mm] || "Jan."} ${y}`
-}
-
-
-function formatGermanDateRange(startIso: string | null | undefined, endIso: string | null | undefined, fallbackIso: string) {
-  const start = startIso || fallbackIso
-  const end = endIso || fallbackIso
-
-  const startText = new Date(start).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  })
-
-  if (start === end) return startText
-
-  const endText = new Date(end).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  })
-
-  return `${startText} – ${endText}`
-}
-
-
-function ensureUhr(time: string) {
-  const raw = String(time || "19:00").replace("Uhr", "").trim()
-  const t = raw.length >= 5 ? raw.slice(0, 5) : raw
-  return t.includes(":") ? `${t} Uhr` : `${t}:00 Uhr`
-}
-
-function parseTimeToHHMM(time: string) {
-  return time.replace("Uhr", "").trim()
-}
-
-function getStartDateTimeFromISO(isoDate: string, time: string): Date {
-  const t = parseTimeToHHMM(time)
-  return new Date(`${isoDate}T${t}:00`)
-}
-
-function formatHoursMinutesSeconds(totalSeconds: number) {
-  const s = Math.max(0, Math.floor(totalSeconds))
-  const hours = Math.floor(s / 3600)
-  const minutes = Math.floor((s % 3600) / 60)
-  const seconds = s % 60
-  return `${hours} Std ${pad2(minutes)} Min ${pad2(seconds)} Sek`
-}
-
-
-type HomeLeagueMatch = Match & {
-  my_team_id: string
-  my_status: "none" | "yes" | "maybe" | "no"
-}
-
-
-function getLeagueDartTypeForMyTeam(match: any, myTeamIds: string[]) {
-  if (match?.home_team_id && myTeamIds.includes(match.home_team_id)) {
-    return String(match?.home_team?.dart_type || match?.dart_type || "").toLowerCase()
-  }
-
-  if (match?.away_team_id && myTeamIds.includes(match.away_team_id)) {
-    return String(match?.away_team?.dart_type || match?.dart_type || "").toLowerCase()
-  }
-
-  return String(match?.dart_type || "").toLowerCase()
-}
 
 function internalEventImageUrl(path:string|null|undefined,legacyUrl?:string|null){
   if(path)return supabase.storage.from("internal-events").getPublicUrl(path).data.publicUrl
   return legacyUrl||""
 }
 
-function formatInternalEventDrawDate(value:string|null|undefined){
-  if(!value)return ""
-  return new Date(value).toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"})
-}
-
-function formatInternalEventDrawDateTime(value:string|null|undefined){
-  if(!value)return ""
-  return new Date(value).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})
-}
-
-function formatInternalEventDateRange(start:string|null,end:string|null,dateOpen=false){
-  if(dateOpen || !start)return "Termin offen"
-  const effectiveEnd=end||start
-  const fmt=(v:string)=>new Date(`${v}T12:00:00`).toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"})
-  return start===effectiveEnd?fmt(start):`${fmt(start)} – ${fmt(effectiveEnd)}`
-}
-
 export default function Home() {
+  const rememberPublicAreaOrigin = () => {
+    window.sessionStorage.setItem("emd:public-area-origin", window.location.pathname + window.location.search)
+  }
   const { loading: membershipLoading, hasModule } = useMembershipAccess()
   const canSeeEDartLeague = hasModule("edart_league")
   const canSeeSteeldartLeague = hasModule("steeldart_league")
   const canSeeInternalTournaments = hasModule("internal_tournaments")
   const hasLeaguePackage = canSeeEDartLeague || canSeeSteeldartLeague
-
-  const [myPlayerId, setMyPlayerId] = useState<string | null>(null)
-  const [myLeagueMatches, setMyLeagueMatches] = useState<HomeLeagueMatch[]>([])
-  const [myLeagueLoading, setMyLeagueLoading] = useState(false)
-  const [myLeagueSaving, setMyLeagueSaving] = useState<string>("")
-  const [internalSignupEvents, setInternalSignupEvents] = useState<InternalSignupEvent[]>([])
-  const [internalSignupLoading, setInternalSignupLoading] = useState(false)
-
-  const [matches, setMatches] = useState<Match[]>([])
-  const [loading, setLoading] = useState(true)
-  const [cupPrizePool, setCupPrizePool] = useState<number>(0)
-  const [summerPrizePool, setSummerPrizePool] = useState<number>(0)
-  const [membersPrizePool, setMembersPrizePool] = useState<number>(0)
- const [lionTop5, setLionTop5] = useState<
-  Array<{ player_name: string; total_points: number; original_total_points: number; tournaments_played: number }>
->([])
-
-const [lionTop5Loading, setLionTop5Loading] = useState<boolean>(true)
+  const {
+    matches,
+    loading,
+  } = useStartseitenNaechsteSpiele()
   
 
   
   
     
-  const [lionHalvingActive, setLionHalvingActive] = useState<boolean>(false)
-  const [combinedEvents, setCombinedEvents] = useState<CombinedEvent[]>([])
-  const [nextEvent, setNextEvent] = useState<LionCupEvent | null>(null)
-  const [nextTournamentEvent, setNextTournamentEvent] = useState<LionCupEvent | null>(null)
-  const [lionCupLoading, setLionCupLoading] = useState(true)
-  const [nextSummerTournamentEvent, setNextSummerTournamentEvent] = useState<LionCupEvent | null>(null)
-const [summerSpecialLoading, setSummerSpecialLoading] = useState(true)
-const [nextMembersChampionEvent, setNextMembersChampionEvent] = useState<LionCupEvent | null>(null)
-const [membersChampionLoading, setMembersChampionLoading] = useState(true)
-  const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null)
-  const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
-  const [birthdayPlayers, setBirthdayPlayers] = useState<BirthdayPlayer[]>([])
-const [birthdayLoading, setBirthdayLoading] = useState(true)
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
-  const [showInstallButton, setShowInstallButton] = useState(false)
-  const handleApkDownload = () => {
-  const a = document.createElement("a")
-  a.href = APK_URL
-  a.download = "EMD-Vereinsapp.apk"
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-}
-
   // --- DKO Self Registration (Turniertag-Box) ---
-  const [authUserId, setAuthUserId] = useState<string | null>(null)
-  const [seriesStartgeldById, setSeriesStartgeldById] = useState<Record<string, number>>({})
-
-  const ensureStartgeldForSeriesId = async (seriesId: string): Promise<number> => {
-    const cached = seriesStartgeldById[seriesId]
-    if (typeof cached === "number") return cached
-
-    const { data, error } = await supabase.from("dko_series").select("startgeld").eq("id", seriesId).limit(1).single()
-    if (error) {
-      console.warn("ensureStartgeldForSeriesId error:", error)
-      return 0
-    }
-
-    const sg = Number((data as any)?.startgeld ?? 0)
-    setSeriesStartgeldById((prev) => ({ ...prev, [seriesId]: sg }))
-    return sg
-  }
-
-  type DkoModalState = {
-    isOpen: boolean
-    title: string
-    dateLabel: string
-    timeLabel: string
-    seriesId: string | null
-    startgeld: number | null
-  }
-
-  const [dkoModal, setDkoModal] = useState<DkoModalState>({
-    isOpen: false,
-    title: "",
-    dateLabel: "",
-    timeLabel: "",
-    seriesId: null,
-    startgeld: null,
-  })
-
-  const [liveInfoOpen, setLiveInfoOpen] = useState(false)
-
-  const [dkoRegistered, setDkoRegistered] = useState(false)
-  const [dkoRegLoading, setDkoRegLoading] = useState(false)
-  const [membersCupRegistered, setMembersCupRegistered] = useState(false)
-const [membersCupRegLoading, setMembersCupRegLoading] = useState(false)
-
-  // ✅ Modal Auto-Close Guard + Success Toast
-  const modalOpenedAtRef = useRef<number>(0)
-  const [toast, setToast] = useState<{ show: boolean; text: string }>({ show: false, text: "" })
-  const showToast = (text: string) => {
-    setToast({ show: true, text })
-    window.setTimeout(() => setToast({ show: false, text: "" }), 2500)
-  }
-  // Tick für Countdown (Turniertag-Box)
-  const [nowTick, setNowTick] = useState<number>(() => Date.now())
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-      setShowInstallButton(true)
-    }
-
-    const handleAppInstalled = () => {
-      setShowInstallButton(false)
-      setDeferredPrompt(null)
-    }
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
-    window.addEventListener("appinstalled", handleAppInstalled)
-
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setShowInstallButton(false)
-    }
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
-      window.removeEventListener("appinstalled", handleAppInstalled)
-    }
-  }, [])
-
- // DKO: Sekunden-Tick für Countdown
-useEffect(() => {
-  const id = window.setInterval(() => {
-    setNowTick(Date.now())
-  }, 1000)
-
-  return () => window.clearInterval(id)
-}, [])
-
-  // DKO: Auth User id (für Self-Registration)
-  useEffect(() => {
-    const init = async () => {
-      const { data } = await supabase.auth.getSession()
-      setAuthUserId(data.session?.user?.id ?? null)
-    }
-    init()
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthUserId(session?.user?.id ?? null)
-    })
-
-    return () => {
-      sub.subscription.unsubscribe()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (membershipLoading) return
-
-    const loadMyLeagueMatches = async () => {
-      if (!authUserId || !hasLeaguePackage) {
-        setMyPlayerId(null)
-        setMyLeagueMatches([])
-        return
-      }
-
-      try {
-        setMyLeagueLoading(true)
-
-        const { data: profileData, error: profileError } = await supabase
-          .from("user_profiles")
-          .select("player_id")
-          .eq("user_id", authUserId)
-          .maybeSingle()
-
-        if (profileError) throw profileError
-
-        const playerId = (profileData as any)?.player_id as string | undefined
-        if (!playerId) {
-          setMyPlayerId(null)
-          setMyLeagueMatches([])
-          return
-        }
-
-        setMyPlayerId(playerId)
-
-        const { data: teamRows, error: teamError } = await supabase
-          .from("team_members")
-          .select("team_id, teams(id,name,dart_type)")
-          .eq("player_id", playerId)
-          .is("left_at", null)
-
-        if (teamError) throw teamError
-
-        const eligibleTeams = ((teamRows as any[]) || []).filter((row: any) => {
-          const dartType = String(row?.teams?.dart_type || "").toLowerCase()
-          if (dartType === "edart") return canSeeEDartLeague
-          if (dartType === "steeldart") return canSeeSteeldartLeague
-          return false
-        })
-
-        const teamIds = eligibleTeams.map((row: any) => row.team_id).filter(Boolean)
-        if (teamIds.length === 0) {
-          setMyLeagueMatches([])
-          return
-        }
-
-        const today = new Date().toISOString().split("T")[0]
-
-        const [{ data: upcoming, error: matchError }, { data: opponentTeamsData }] = await Promise.all([
-          supabase
-            .from("matches")
-            .select(`
-              *,
-              home_team:teams!matches_home_team_id_fkey(id,name,logo_url,dart_type),
-              away_team:teams!matches_away_team_id_fkey(id,name,logo_url,dart_type)
-            `)
-            .or(`home_team_id.in.(${teamIds.join(",")}),away_team_id.in.(${teamIds.join(",")})`)
-            .gte("match_date", today)
-            .neq("status", "completed")
-            .order("match_date", { ascending: true })
-            .order("match_time", { ascending: true })
-            .limit(30),
-          supabase.from("opponent_teams").select("*"),
-        ])
-
-        if (matchError) throw matchError
-
-        const eligibleMatches = ((upcoming as any[]) || []).filter((match: any) => {
-          const dartType = getLeagueDartTypeForMyTeam(match, teamIds)
-
-          if (dartType === "edart") return canSeeEDartLeague
-          if (dartType === "steeldart") return canSeeSteeldartLeague
-
-          return false
-        })
-
-        const selected: any[] = []
-
-        if (canSeeEDartLeague) {
-          const next = eligibleMatches.find(
-            (match: any) => getLeagueDartTypeForMyTeam(match, teamIds) === "edart",
-          )
-          if (next) selected.push(next)
-        }
-
-        if (canSeeSteeldartLeague) {
-          const next = eligibleMatches.find(
-            (match: any) => getLeagueDartTypeForMyTeam(match, teamIds) === "steeldart",
-          )
-          if (next) selected.push(next)
-        }
-
-        const enriched: HomeLeagueMatch[] = []
-
-        for (const match of selected) {
-          const myTeamId = teamIds.includes(match.home_team_id)
-            ? match.home_team_id
-            : match.away_team_id
-
-          const { data: availability } = await supabase
-            .from("match_availability")
-            .select("status")
-            .eq("match_id", match.id)
-            .eq("player_id", playerId)
-            .maybeSingle()
-
-          const homeOpponentTeam = match.home_opponent_team_id
-            ? (opponentTeamsData as any[])?.find((team: any) => team.id === match.home_opponent_team_id)
-            : null
-          const awayOpponentTeam = match.away_opponent_team_id
-            ? (opponentTeamsData as any[])?.find((team: any) => team.id === match.away_opponent_team_id)
-            : null
-
-          enriched.push({
-            ...match,
-            dart_type: getLeagueDartTypeForMyTeam(match, teamIds),
-            home_opponent_team: homeOpponentTeam,
-            away_opponent_team: awayOpponentTeam,
-            my_team_id: myTeamId,
-            my_status: ((availability as any)?.status || "none") as "none" | "yes" | "maybe" | "no",
-          })
-        }
-
-        enriched.sort((a, b) => {
-          const aKey = `${a.match_date}T${a.match_time || "23:59"}`
-          const bKey = `${b.match_date}T${b.match_time || "23:59"}`
-          return aKey.localeCompare(bKey)
-        })
-
-        setMyLeagueMatches(enriched)
-      } catch (error) {
-        console.error("loadMyLeagueMatches error:", error)
-        setMyLeagueMatches([])
-      } finally {
-        setMyLeagueLoading(false)
-      }
-    }
-
-    void loadMyLeagueMatches()
-  }, [
+  const authUserId = useStartseitenAuthUser()
+  const {
+    myLeagueMatches,
+    myLeagueLoading,
+    myLeagueSaving,
+    setHomeLeagueAvailability,
+  } = useStartseitenLiga({
     authUserId,
     membershipLoading,
     canSeeEDartLeague,
     canSeeSteeldartLeague,
     hasLeaguePackage,
-  ])
-
-  const setHomeLeagueAvailability = async (
-    match: HomeLeagueMatch,
-    status: "yes" | "maybe" | "no",
-  ) => {
-    if (!myPlayerId) return
-
-    try {
-      setMyLeagueSaving(`${match.id}-${status}`)
-
-      const { error } = await supabase.from("match_availability").upsert(
-        {
-          match_id: match.id,
-          team_id: match.my_team_id,
-          player_id: myPlayerId,
-          status,
-          note: null,
-        },
-        { onConflict: "match_id,player_id" },
-      )
-
-      if (error) throw error
-
-      setMyLeagueMatches((prev) =>
-        prev.map((item) =>
-          item.id === match.id ? { ...item, my_status: status } : item,
-        ),
-      )
-    } catch (error) {
-      console.error("setHomeLeagueAvailability error:", error)
-    } finally {
-      setMyLeagueSaving("")
-    }
-  }
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      alert("Installation nicht verfügbar. Auf iOS: Teilen-Menü → Zum Home-Bildschirm hinzufügen")
-      return
-    }
-
-    deferredPrompt.prompt()
-
-    await deferredPrompt.userChoice
-
-    setDeferredPrompt(null)
-    setShowInstallButton(false)
-  }
-
-  useEffect(() => {
-    const loadMatches = async () => {
-      try {
-        const { data: opponentTeamsData } = await supabase.from("opponent_teams").select("*")
-
-        const now = new Date()
-        const today = now.toISOString().split("T")[0]
-
-        const { data: matchesData } = await supabase
-          .from("matches")
-          .select(
-            `
-            *,
-            home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
-            away_team:teams!matches_away_team_id_fkey(id, name, logo_url)
-          `,
-          )
-          .eq("status", "scheduled")
-          .gte("match_date", today)
-          .order("match_date", { ascending: true })
-          .order("match_time", { ascending: true })
-          .limit(4)
-
-        if (matchesData) {
-          const enrichedMatches =
-            matchesData?.map((match: any) => {
-              const homeOpponentTeam = match.home_opponent_team_id
-                ? opponentTeamsData?.find((team: any) => team.id === match.home_opponent_team_id)
-                : null
-              const awayOpponentTeam = match.away_opponent_team_id
-                ? opponentTeamsData?.find((team: any) => team.id === match.away_opponent_team_id)
-                : null
-
-              return {
-                ...match,
-                home_opponent_team: homeOpponentTeam,
-                away_opponent_team: awayOpponentTeam,
-              }
-            }) || []
-
-          setMatches(enrichedMatches)
-        }
-      } catch (error) {
-        console.error("Error loading matches:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadMatches()
-  }, [])
-
-  useEffect(() => {
-    const fetchCupData = async () => {
-      try {
-        const { data: activeSeries, error: seriesError } = await supabase
-          .from("dko_series")
-          .select("id")
-          .eq("series_type", "lion_cup")
-          .eq("is_active", true)
-          .maybeSingle()
-
-        if (seriesError) throw seriesError
-        if (!activeSeries?.id) {
-          setCupPrizePool(0)
-          return
-        }
-
-        const { data, error } = await supabase
-          .from("tournament_series_standings")
-          .select("player_name,tournament_id")
-          .eq("series_id", activeSeries.id)
-
-        if (error) throw error
-
-        const participants = new Set(
-          (data || []).map((r: any) => String(r.player_name || "").trim()).filter(Boolean)
-        )
-        const appearances = new Set(
-          (data || [])
-            .filter((r: any) => r?.player_name && r?.tournament_id)
-            .map((r: any) => `${String(r.player_name).trim()}:${String(r.tournament_id)}`)
-        )
-
-        const totalParticipants = participants.size
-        const totalAppearances = appearances.size
-
-        // € 10,00 Seriengebühr einmalig pro Spieler
-        // + € 5,00 pro Spieler und gespieltem Turniertag.
-        const seriesFees = totalParticipants * 10
-        const tournamentFees = totalAppearances * 5
-
-        let hostSponsoring = 0
-        if (totalAppearances >= 501) hostSponsoring = 250
-        else if (totalAppearances >= 500) hostSponsoring = 100
-
-        setCupPrizePool(seriesFees + tournamentFees + hostSponsoring)
-      } catch (error) {
-        console.error("Error fetching cup data:", error)
-        setCupPrizePool(0)
-      }
-    }
-
-    fetchCupData()
-  }, [])
-
-
-
-
-
-
-
-
-
-
-
-useEffect(() => {
-  const fetchSummerPrizePool = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("summer_special_total_standings")
-        .select("tournaments_played")
-
-      if (error) throw error
-
-      const totalParticipants = data?.length || 0
-
-      const totalAppearances =
-        data?.reduce(
-          (sum: number, player: any) =>
-            sum + Number(player.tournaments_played || 0),
-          0
-        ) || 0
-
-      const participationFees = totalParticipants * 10
-      const tournamentFees = totalAppearances * 5
-
-      const totalPrizePool =
-        participationFees + tournamentFees
-
-      setSummerPrizePool(totalPrizePool)
-    } catch (e) {
-      console.error("Error fetching Summer prize pool:", e)
-      setSummerPrizePool(0)
-    }
-  }
-
-  fetchSummerPrizePool()
-}, [])
-
-useEffect(() => {
-  const fetchMembersPrizePool = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("members_cup_results")
-        .select("round_robin_id, player_id")
-
-      if (error) throw error
-
-      // Pro Spieler und gespieltem Qualifikationsturnier fließen € 10,00
-      // aus dem Startgeld in den Finalpreisfonds.
-      const uniqueAppearances = new Set(
-        (data || [])
-          .filter((row: any) => row?.round_robin_id && row?.player_id)
-          .map((row: any) => `${row.round_robin_id}:${row.player_id}`)
-      )
-
-      setMembersPrizePool(uniqueAppearances.size * 10)
-    } catch (error) {
-      console.error("Error fetching Members Champion prize pool:", error)
-      setMembersPrizePool(0)
-    }
-  }
-
-  fetchMembersPrizePool()
-}, [])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  useEffect(() => {
-    const fetchEventsAndTournaments = async () => {
-      try {
-        const today = new Date().toISOString().split("T")[0]
-
-        const [tournamentsRes, eventsRes, dachRes] = await Promise.all([
-          supabase
-            .from("events")
-            .select("*")
-            .eq("event_type", "tournament")
-            .gte("end_date", today)
-            .order("start_date", { ascending: true })
-            .order("event_time", { ascending: true }),
-
-          supabase
-            .from("events")
-            .select("*")
-            .neq("event_type", "tournament")
-            .not("name", "ilike", "%LION%")
-            .gte("end_date", today)
-            .order("start_date", { ascending: true })
-            .order("event_time", { ascending: true }),
-
-          supabase
-            .from("dach_events")
-            .select("id,internal_event_id,name,event_type,event_date,start_date,end_date,event_time,location,details,photo_url,entry_fee,startgeld_details,max_participants,mode,event_status")
-            .eq("event_type", "tournament")
-            .in("event_status", ["approved"])
-            .gte("end_date", today)
-            .order("start_date", { ascending: true })
-            .order("event_time", { ascending: true }),
-        ])
-
-        if (tournamentsRes.error) console.error("Error fetching tournaments:", tournamentsRes.error)
-        if (eventsRes.error) console.error("Error fetching events:", eventsRes.error)
-        if (dachRes.error) console.error("Error fetching DACH tournaments:", dachRes.error)
-
-        const tournamentsData = tournamentsRes.data || []
-        const eventsData = eventsRes.data || []
-        const dachData = dachRes.data || []
-
-        const linkedInternalIds = new Set(
-          dachData
-            .map((event: any) => event.internal_event_id)
-            .filter(Boolean)
-            .map(String),
-        )
-
-        const combined: CombinedEvent[] = []
-
-        tournamentsData.forEach((tournament: any) => {
-          const linkedDachEvent = dachData.find(
-            (event: any) => event.internal_event_id && String(event.internal_event_id) === String(tournament.id),
-          )
-
-          combined.push({
-            id: tournament.id,
-            name: tournament.name,
-            date: tournament.start_date || tournament.event_date,
-            start_date: tournament.start_date || tournament.event_date,
-            end_date: tournament.end_date || tournament.event_date,
-            time: tournament.event_time || "19:00",
-            location: tournament.location || "Ort folgt",
-            details: tournament.details ?? tournament.description ?? null,
-            photo_url: tournament.photo_url,
-            type: "tournament",
-            entry_fee: tournament.entry_fee ?? null,
-            startgeld_details: tournament.startgeld_details ?? null,
-            max_participants: tournament.max_participants ?? null,
-            mode: tournament.mode ?? null,
-            sourceKind: "internal",
-            internalEventId: tournament.id,
-            dachEventId: linkedDachEvent?.id ?? null,
-          })
-        })
-
-        dachData
-          .filter((event: any) => !event.internal_event_id || !tournamentsData.some((t: any) => String(t.id) === String(event.internal_event_id)))
-          .forEach((event: any) => {
-            combined.push({
-              id: event.id,
-              name: event.name,
-              date: event.start_date || event.event_date,
-              start_date: event.start_date || event.event_date,
-              end_date: event.end_date || event.event_date,
-              time: event.event_time || "19:00",
-              location: event.location || "Ort folgt",
-              details: event.details ?? null,
-              photo_url: event.photo_url,
-              type: "tournament",
-              entry_fee: event.entry_fee ?? null,
-              startgeld_details: event.startgeld_details ?? null,
-              max_participants: event.max_participants ?? null,
-              mode: event.mode ?? null,
-              sourceKind: "dach",
-              internalEventId: event.internal_event_id ?? null,
-              dachEventId: event.id,
-            })
-          })
-
-        eventsData.forEach((event: any) => {
-          combined.push({
-            id: event.id,
-            name: event.name,
-            date: event.start_date || event.event_date,
-            start_date: event.start_date || event.event_date,
-            end_date: event.end_date || event.event_date,
-            time: event.event_time || "19:00",
-            location: event.location || "Wird bekannt gegeben",
-            details: event.details ?? event.description ?? null,
-            photo_url: event.photo_url,
-            type: "event",
-            eventType: event.event_type,
-            max_participants: event.max_participants,
-            sourceKind: "internal",
-            internalEventId: event.id,
-          })
-        })
-
-        combined.sort((a, b) => {
-          const dateA = new Date(`${a.date}T${a.time}`)
-          const dateB = new Date(`${b.date}T${b.time}`)
-          return dateA.getTime() - dateB.getTime()
-        })
-
-        setCombinedEvents(combined.slice(0, 12))
-      } catch (error) {
-        console.error("Error fetching events and tournaments:", error)
-      }
-    }
-
-    fetchEventsAndTournaments()
-  }, [])
-  
-  
-  
-  
-  
-
-useEffect(() => {
-  const loadActiveTournament = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("tournaments_status")
-        .select("tournament_id, tournament_name, tournament_type, status")
-        .eq("status", "active")
-        .limit(1)
-        .maybeSingle()
-
-      if (error) {
-        console.error("Error loading active tournament:", error)
-        setActiveTournament(null)
-        return
-      }
-
-      if (!data) {
-        setActiveTournament(null)
-        return
-      }
-
-      setActiveTournament({
-        tournament_id: data.tournament_id,
-        tournament_name: data.tournament_name,
-        tournament_type: data.tournament_type,
-        status: data.status,
-      })
-    } catch (error) {
-      console.error("Error loading active tournament:", error)
-      setActiveTournament(null)
-    }
-  }
-
-  loadActiveTournament()
-
-  const channel = supabase
-    .channel("tournament_status_home")
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "tournaments_status",
-      },
-      (payload) => {
-        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-          const data = payload.new as any
-          if (data.status === "active") {
-            setActiveTournament({
-              tournament_id: data.tournament_id,
-              tournament_name: data.tournament_name,
-              tournament_type: data.tournament_type,
-              status: data.status,
-            })
-          } else if (data.status === "cancelled" || data.status === "completed") {
-            setActiveTournament(null)
-          }
-        } else if (payload.eventType === "DELETE") {
-          setActiveTournament(null)
-        }
-      },
-    )
-    .subscribe()
-
-  return () => {
-    supabase.removeChannel(channel)
-  }
-}, [])
-  
-  
-  
-  
-
-  useEffect(() => {
-    const fetchFromDb = async () => {
-      try {
-        setLionCupLoading(true)
-
-        // Aktuelle Lion-Cup-Serie automatisch laden
-        const { data: activeLionSeries, error: seriesErr } = await supabase
-          .from("dko_series")
-          .select("id,name,startgeld")
-          .eq("series_type", "lion_cup")
-          .eq("is_active", true)
-          .maybeSingle()
-
-        if (seriesErr) throw seriesErr
-
-        if (!activeLionSeries?.id) {
-          setNextEvent(null)
-          setNextTournamentEvent(null)
-          return
-        }
-
-        const LION_SERIES_ID = String(activeLionSeries.id)
-
-        setSeriesStartgeldById((prev) => ({
-          ...prev,
-          [LION_SERIES_ID]: Number(activeLionSeries.startgeld ?? 0),
-        }))
-
-        const fetchEvents = async (seriesId: string) => {
-          const { data, error } = await supabase
-            .from("dko_series_events")
-            .select("id,series_id,title,start_at,is_matchday,registration_cutoff_minutes,is_rescheduled,rescheduled_at")
-            .eq("series_id", seriesId)
-            .order("start_at", { ascending: true })
-
-          if (error) throw error
-          return (data || []) as DkoSeriesEventRow[]
-        }
-
-        const [lionRows] = await Promise.all([fetchEvents(LION_SERIES_ID)])
-
-        const mapRow = (r: DkoSeriesEventRow): UiDkoEvent => {
-          const isRescheduled = !!r.is_rescheduled && !!r.rescheduled_at
-          const effectiveIso = isRescheduled && r.rescheduled_at ? r.rescheduled_at : r.start_at
-          const effectiveDT = new Date(effectiveIso)
-          const originalDT = new Date(r.start_at)
-          const cutoffMinutes = Number(r.registration_cutoff_minutes ?? 10) || 10
-
-          return {
-            id: r.id,
-            series_id: r.series_id,
-            title: r.title,
-            is_matchday: !!r.is_matchday,
-            cutoffMinutes,
-            originalDT,
-            effectiveDT,
-            effectiveISODate: toISODate(effectiveDT),
-            effectiveTimeHHMM: toHHMM(effectiveDT),
-          }
-        }
-
-        const lionEvents = lionRows.map(mapRow)
-
-        // Ab heute (inkl. heute)
-        const today0 = startOfDay(new Date()).getTime()
-
-        const lionUpcoming = lionEvents
-          .filter((e) => startOfDay(e.effectiveDT).getTime() >= today0)
-          .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
-
-        // --- LION: nächstes Event (inkl. Spielfrei) ---
-        if (lionUpcoming.length > 0) {
-          const first = lionUpcoming[0]
-          setNextEvent({
-            id: first.id,
-            name: "EMD LION CUP",
-            event_date: first.effectiveISODate,
-            event_time: first.effectiveTimeHHMM,
-            event_type: first.is_matchday ? "Turnier" : "Spielfrei",
-            description: null,
-          })
-        } else {
-          setNextEvent(null)
-        }
-
-        // --- LION: nächstes Turnier (matchday) ---
-        const lionNextMatchday = lionUpcoming.find((e) => e.is_matchday) ?? null
-        if (lionNextMatchday) {
-          const allMatchdaysSorted = lionEvents
-            .filter((e) => e.is_matchday)
-            .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
-
-          const idx = allMatchdaysSorted.findIndex((e) => e.id === lionNextMatchday.id)
-          const matchday = idx >= 0 ? idx + 1 : 1
-
-          setNextTournamentEvent({
-            id: lionNextMatchday.id,
-            name: "EMD LION CUP",
-            event_date: lionNextMatchday.effectiveISODate,
-            event_time: lionNextMatchday.effectiveTimeHHMM,
-            event_type: "Turnier",
-            matchday,
-            description: null,
-          })
-        } else {
-          setNextTournamentEvent(null)
-        }
-      } catch (error) {
-        console.error("Error fetching DKO schedules from DB:", error)
-        setNextEvent(null)
-        setNextTournamentEvent(null)
-      } finally {
-        setLionCupLoading(false)
-      }
-    }
-
-    fetchFromDb()
-  }, [])
-  
-  
-  
-  
-  
-  useEffect(() => {
-  const fetchSummerSpecialFromDb = async () => {
-    try {
-      setSummerSpecialLoading(true)
-
-      const SUMMER_SPECIAL_SERIES_ID = "ff1badbe-0d2c-4bd2-a877-9f1009579599"
-
-      const { data, error } = await supabase
-        .from("dko_series_events")
-        .select("id,series_id,title,start_at,is_matchday,registration_cutoff_minutes,is_rescheduled,rescheduled_at")
-        .eq("series_id", SUMMER_SPECIAL_SERIES_ID)
-        .order("start_at", { ascending: true })
-
-      if (error) throw error
-
-      const summerEvents = ((data || []) as DkoSeriesEventRow[]).map((r) => {
-        const isRescheduled = !!r.is_rescheduled && !!r.rescheduled_at
-        const effectiveIso = isRescheduled && r.rescheduled_at ? r.rescheduled_at : r.start_at
-        const effectiveDT = new Date(effectiveIso)
-
-        return {
-          id: r.id,
-          series_id: r.series_id,
-          title: r.title,
-          is_matchday: !!r.is_matchday,
-          cutoffMinutes: Number(r.registration_cutoff_minutes ?? 10) || 10,
-          originalDT: new Date(r.start_at),
-          effectiveDT,
-          effectiveISODate: toISODate(effectiveDT),
-          effectiveTimeHHMM: toHHMM(effectiveDT),
-        }
-      })
-
-      const today0 = startOfDay(new Date()).getTime()
-
-      const summerUpcoming = summerEvents
-        .filter((e) => startOfDay(e.effectiveDT).getTime() >= today0)
-        .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
-
-      const summerNextMatchday = summerUpcoming.find((e) => e.is_matchday) ?? null
-
-      if (summerNextMatchday) {
-        const allMatchdaysSorted = summerEvents
-          .filter((e) => e.is_matchday)
-          .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
-
-        const idx = allMatchdaysSorted.findIndex((e) => e.id === summerNextMatchday.id)
-        const matchday = idx >= 0 ? idx + 1 : 1
-
-        setNextSummerTournamentEvent({
-          id: summerNextMatchday.id,
-          name: "EMD Summer Special | Steeldart",
-          event_date: summerNextMatchday.effectiveISODate,
-          event_time: summerNextMatchday.effectiveTimeHHMM,
-          event_type: "Turnier",
-          matchday,
-          description: null,
-        })
-      } else {
-        setNextSummerTournamentEvent(null)
-      }
-    } catch (error) {
-      console.error("Error fetching Summer Special schedule from DB:", error)
-      setNextSummerTournamentEvent(null)
-    } finally {
-      setSummerSpecialLoading(false)
-    }
-  }
-
-  fetchSummerSpecialFromDb()
-}, [])
-  
-  
-  
-  
-  useEffect(() => {
-  const fetchMembersChampionFromDb = async () => {
-    try {
-      setMembersChampionLoading(true)
-
-      const MEMBERS_CHAMPION_SERIES_ID = "baeef5fb-b386-4a75-a1f3-c56090a0ec76"
-
-      const { data, error } = await supabase
-        .from("dko_series_events")
-        .select("id,series_id,title,start_at,is_matchday,registration_cutoff_minutes,is_rescheduled,rescheduled_at")
-        .eq("series_id", MEMBERS_CHAMPION_SERIES_ID)
-        .order("start_at", { ascending: true })
-
-      if (error) throw error
-
-      const events = ((data || []) as DkoSeriesEventRow[]).map((r) => {
-        const isRescheduled = !!r.is_rescheduled && !!r.rescheduled_at
-        const effectiveIso = isRescheduled && r.rescheduled_at ? r.rescheduled_at : r.start_at
-        const effectiveDT = new Date(effectiveIso)
-
-        return {
-          id: r.id,
-          series_id: r.series_id,
-          title: r.title,
-          is_matchday: !!r.is_matchday,
-          cutoffMinutes: Number(r.registration_cutoff_minutes ?? 10) || 10,
-          originalDT: new Date(r.start_at),
-          effectiveDT,
-          effectiveISODate: toISODate(effectiveDT),
-          effectiveTimeHHMM: toHHMM(effectiveDT),
-        }
-      })
-
-      const today0 = startOfDay(new Date()).getTime()
-
-      const upcoming = events
-        .filter((e) => startOfDay(e.effectiveDT).getTime() >= today0)
-        .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
-
-      const nextMatchday = upcoming.find((e) => e.is_matchday) ?? null
-
-      if (nextMatchday) {
-        const allMatchdaysSorted = events
-          .filter((e) => e.is_matchday)
-          .sort((a, b) => a.effectiveDT.getTime() - b.effectiveDT.getTime())
-
-        const idx = allMatchdaysSorted.findIndex((e) => e.id === nextMatchday.id)
-        const matchday = idx >= 0 ? idx + 1 : 1
-
-        setNextMembersChampionEvent({
-          id: nextMatchday.id,
-          name: "EMD Members Champions Cup",
-          event_date: nextMatchday.effectiveISODate,
-          event_time: nextMatchday.effectiveTimeHHMM,
-          event_type: "Turnier",
-          matchday,
-          description: null,
-        })
-      } else {
-        setNextMembersChampionEvent(null)
-      }
-    } catch (error) {
-      console.error("Error fetching Members Champions Cup schedule from DB:", error)
-      setNextMembersChampionEvent(null)
-    } finally {
-      setMembersChampionLoading(false)
-    }
-  }
-
-  fetchMembersChampionFromDb()
-}, [])
-  
-  
-  
+  })
+  const { combinedEvents } = useStartseitenVeranstaltungen()
+  const {
+    seriesItems,
+    liveRegistrationItems,
+    loading: dynamicSeriesLoading,
+  } = useStartseitenDynamischeSerien()
+  const { activeTournament } = useAktivesStartseitenTurnier()
+  const {
+    internalSignupEvents,
+    internalSignupLoading,
+  } = useInterneStartseitenAnmeldungen({
+    membershipLoading,
+    canSeeInternalTournaments,
+  })
+  const {
+    birthdayPlayers,
+    birthdayLoading,
+  } = useStartseitenGeburtstage()
 
   const getTeamName = (match: Match, isHome: boolean) => {
     if (isHome) {
       return match.home_team?.name || match.home_opponent_team?.name || "Unbekanntes Team"
-    } else {
-      return match.away_team?.name || match.away_opponent_team?.name || "Unbekanntes Team"
     }
+
+    return match.away_team?.name || match.away_opponent_team?.name || "Unbekanntes Team"
   }
 
   const getTeamLogo = (match: Match, isHome: boolean) => {
     if (isHome) {
-      return match.home_team?.logo_url || match.home_opponent_team?.logo_url
-    } else {
-      return match.away_team?.logo_url || match.away_opponent_team?.logo_url
+      return match.home_team?.logo_url || match.home_opponent_team?.logo_url || null
     }
+
+    return match.away_team?.logo_url || match.away_opponent_team?.logo_url || null
   }
 
-  const createEventDate = (event: LionCupEvent | null) => {
-    if (!event) return new Date("2025-11-15T19:00:00")
-    const time = event.event_time || "19:00:00"
-    return new Date(`${event.event_date}T${time}`)
-  }
-
-  const lionCupNextDate = createEventDate(nextTournamentEvent)
-  const summerSpecialNextDate = createEventDate(nextSummerTournamentEvent)
-  const membersChampionNextDate = createEventDate(nextMembersChampionEvent)
-  const isNextEventSpielfrei = nextEvent?.event_type?.toLowerCase() === "spielfrei"
-
-  // --- Turniertag (Lion) Self-Registration Box ---
   const now = new Date()
   const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
-  
-  
-  const todaysEvents = useMemo(() => {
-  return combinedEvents.filter((event) => {
+  const todaysEvents = combinedEvents.filter((event) => {
     const start = event.start_date || event.date
     const end = event.end_date || event.date
-
     if (!start || !end) return false
-
     return todayISO >= start && todayISO <= end
   })
-}, [combinedEvents, todayISO])
-
-  const liveSelfRegEvent = useMemo(() => {
-    const lionToday =
-      nextTournamentEvent &&
-      nextTournamentEvent.event_type?.toLowerCase() === "turnier" &&
-      nextTournamentEvent.event_date === todayISO
-
-    if (lionToday) {
-      return {
-        title: "Anmeldung geöffnet • LION CUP",
-        isoDate: nextTournamentEvent!.event_date,
-        time: nextTournamentEvent!.event_time || "19:30",
-      }
-    }
-
-    return null
-  }, [nextTournamentEvent, todayISO])
-
-  const liveStartDT = liveSelfRegEvent ? getStartDateTimeFromISO(liveSelfRegEvent.isoDate, liveSelfRegEvent.time) : null
-  const liveCutoffDT = liveStartDT ? new Date(liveStartDT.getTime() - 10 * 60 * 1000) : null
-  const liveSecondsLeft = liveCutoffDT ? Math.ceil((liveCutoffDT.getTime() - nowTick) / 1000) : null
-  const liveRegOpen = liveSelfRegEvent && (liveSecondsLeft ?? 0) > 0
-
-  const liveDateLabel = liveSelfRegEvent ? formatGermanShortDateFromISO(liveSelfRegEvent.isoDate) : ""
-  const liveTimeLabel = liveSelfRegEvent ? ensureUhr(liveSelfRegEvent.time) : ""
-  
-  // --- MEMBERS CHAMPIONS CUP Anmeldung oben auf Startseite ---
-const liveMembersSelfRegEvent = useMemo(() => {
-  const membersToday =
-    nextMembersChampionEvent &&
-    nextMembersChampionEvent.event_type?.toLowerCase() === "turnier" &&
-    nextMembersChampionEvent.event_date === todayISO
-
-  if (membersToday) {
-    return {
-      title: "Anmeldung geöffnet • MEMBERS CHAMPIONS CUP",
-      isoDate: nextMembersChampionEvent!.event_date,
-      time: nextMembersChampionEvent!.event_time || "19:30",
-    }
-  }
-
-  return null
-}, [nextMembersChampionEvent, todayISO])
-
-const liveMembersRegCloseDT = liveMembersSelfRegEvent
-  ? new Date(`${liveMembersSelfRegEvent.isoDate}T17:00:00`)
-  : null
-
-
-const liveMembersUnregCloseDT = liveMembersSelfRegEvent
-  ? new Date(`${liveMembersSelfRegEvent.isoDate}T14:00:00`)
-  : null
-
-const liveMembersSecondsLeft = liveMembersRegCloseDT
-  ? Math.ceil((liveMembersRegCloseDT.getTime() - nowTick) / 1000)
-  : null
-
-const liveMembersUnregSecondsLeft = liveMembersUnregCloseDT
-  ? Math.ceil((liveMembersUnregCloseDT.getTime() - nowTick) / 1000)
-  : null
-
-const liveMembersRegOpen = liveMembersSelfRegEvent && (liveMembersSecondsLeft ?? 0) > 0
-const liveMembersUnregOpen = liveMembersSelfRegEvent && (liveMembersUnregSecondsLeft ?? 0) > 0
-
-const liveMembersDateLabel = liveMembersSelfRegEvent
-  ? formatGermanShortDateFromISO(liveMembersSelfRegEvent.isoDate)
-  : ""
-
-const liveMembersTimeLabel = liveMembersSelfRegEvent
-  ? ensureUhr(liveMembersSelfRegEvent.time)
-  : ""
-  
-  // --- SUMMER SPECIAL Anmeldung oben auf Startseite ---
-const liveSummerSelfRegEvent = useMemo(() => {
-  const summerToday =
-    nextSummerTournamentEvent &&
-    nextSummerTournamentEvent.event_type?.toLowerCase() === "turnier" &&
-    nextSummerTournamentEvent.event_date === todayISO
-
-  if (summerToday) {
-    return {
-      title: "Anmeldung geöffnet • SUMMER SPECIAL",
-      isoDate: nextSummerTournamentEvent!.event_date,
-      time: nextSummerTournamentEvent!.event_time || "19:00",
-    }
-  }
-
-  return null
-}, [nextSummerTournamentEvent, todayISO])
-
-const liveSummerStartDT = liveSummerSelfRegEvent
-  ? getStartDateTimeFromISO(
-      liveSummerSelfRegEvent.isoDate,
-      liveSummerSelfRegEvent.time
-    )
-  : null
-
-const liveSummerRegCloseDT = liveSummerStartDT
-  ? new Date(liveSummerStartDT.getTime() - 10 * 60 * 1000)
-  : null
-
-const liveSummerSecondsLeft = liveSummerRegCloseDT
-  ? Math.ceil((liveSummerRegCloseDT.getTime() - nowTick) / 1000)
-  : null
-
-const liveSummerRegOpen =
-  liveSummerSelfRegEvent && (liveSummerSecondsLeft ?? 0) > 0
-
-const liveSummerDateLabel = liveSummerSelfRegEvent
-  ? formatGermanShortDateFromISO(liveSummerSelfRegEvent.isoDate)
-  : ""
-
-const liveSummerTimeLabel = liveSummerSelfRegEvent
-  ? ensureUhr(liveSummerSelfRegEvent.time)
-  : ""
-
-  const fetchDkoRegStatus = async () => {
-    setDkoRegLoading(true)
-    setDkoRegistered(false)
-
-    try {
-      if (!liveSelfRegEvent) return
-      if (!authUserId) return
-
-      const { data: profile, error: profErr } = await supabase
-        .from("user_profiles")
-        .select("club_players(spieldatenbank_id)")
-        .eq("user_id", authUserId)
-        .single()
-
-      if (profErr) throw profErr
-
-      const clubPlayersRel: any = (profile as any)?.club_players
-      const spieldatenbankId = Array.isArray(clubPlayersRel)
-        ? clubPlayersRel?.[0]?.spieldatenbank_id
-        : clubPlayersRel?.spieldatenbank_id
-      if (!spieldatenbankId) return
-
-      const pid = String(spieldatenbankId)
-
-      const { data: reg, error: regErr } = await supabase.from("dko_tournament_registration").select("id").eq("player_id", pid).limit(1)
-
-      if (regErr) throw regErr
-
-      setDkoRegistered((reg?.length ?? 0) > 0)
-    } catch (e) {
-      console.error("DKO registration status error:", e)
-    } finally {
-      setDkoRegLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchDkoRegStatus()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authUserId, liveSelfRegEvent])
-
-  useEffect(() => {
-    if (!authUserId || !liveSelfRegEvent) return
-
-    const channel = supabase
-      .channel("dko-registration-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "dko_tournament_registration" }, () => {
-        fetchDkoRegStatus()
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authUserId, liveSelfRegEvent])
-
-
-
-const fetchMembersCupRegStatus = async () => {
-  setMembersCupRegLoading(true)
-  setMembersCupRegistered(false)
-
-  try {
-    if (!liveMembersSelfRegEvent) return
-    if (!authUserId) return
-
-    const { data: profile, error: profErr } = await supabase
-      .from("user_profiles")
-      .select("club_players(spieldatenbank_id)")
-      .eq("user_id", authUserId)
-      .single()
-
-    if (profErr) throw profErr
-
-    const clubPlayersRel: any = (profile as any)?.club_players
-    const spieldatenbankId = Array.isArray(clubPlayersRel)
-      ? clubPlayersRel?.[0]?.spieldatenbank_id
-      : clubPlayersRel?.spieldatenbank_id
-
-    if (!spieldatenbankId) return
-
-    const pid = String(spieldatenbankId)
-
-    const { data: reg, error: regErr } = await supabase
-      .from("dko_tournament_registration")
-      .select("id")
-      .eq("player_id", pid)
-      .limit(1)
-
-    if (regErr) throw regErr
-
-    setMembersCupRegistered((reg?.length ?? 0) > 0)
-  } catch (e) {
-    console.error("Members Cup registration status error:", e)
-  } finally {
-    setMembersCupRegLoading(false)
-  }
-}
-
-useEffect(() => {
-  fetchMembersCupRegStatus()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [authUserId, liveMembersSelfRegEvent])
-
-useEffect(() => {
-  if (!authUserId || !liveMembersSelfRegEvent) return
-
-  const channel = supabase
-    .channel("members-cup-registration-realtime-home")
-    .on("postgres_changes", { event: "*", schema: "public", table: "dko_tournament_registration" }, () => {
-      fetchMembersCupRegStatus()
-    })
-    .subscribe()
-
-  return () => {
-    supabase.removeChannel(channel)
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [authUserId, liveMembersSelfRegEvent])
-
-
-
-useEffect(() => {
-  if (membershipLoading) return
-
-  const loadInternalSignupEvents = async () => {
-    if (!canSeeInternalTournaments) {
-      setInternalSignupEvents([])
-      return
-    }
-
-    try {
-      setInternalSignupLoading(true)
-      const today = new Date().toISOString().slice(0, 10)
-      const { data, error } = await supabase
-        .from("internal_tournament_events")
-        .select("id,title,subtitle,event_date,end_date,date_open,start_time,location,image_url,image_path,max_participants,draft_enabled,draw_mode,draw_datetime,draw_location,draw_attendance_required")
-        .eq("status", "published")
-        .eq("show_on_homepage", true)
-        .or(`date_open.eq.true,end_date.gte.${today},event_date.gte.${today}`)
-        .order("event_date", { ascending: true, nullsFirst: false })
-        .limit(2)
-
-      if (error) throw error
-      setInternalSignupEvents((data || []) as InternalSignupEvent[])
-    } catch (error) {
-      console.error("internal signup events load error:", error)
-      setInternalSignupEvents([])
-    } finally {
-      setInternalSignupLoading(false)
-    }
-  }
-
-  void loadInternalSignupEvents()
-}, [membershipLoading, canSeeInternalTournaments])
-
-useEffect(() => {
-  const loadTodayBirthdays = async () => {
-    try {
-      setBirthdayLoading(true)
-
-      const today = new Date()
-      const todayMonth = String(today.getMonth() + 1).padStart(2, "0")
-      const todayDay = String(today.getDate()).padStart(2, "0")
-
-      const { data, error } = await supabase
-        .from("club_players")
-        .select("id, name, birthdate")
-        .not("birthdate", "is", null)
-
-      if (error) throw error
-
-      const birthdays =
-        (data || [])
-          .filter((player: any) => {
-            if (!player.birthdate || !player.name) return false
-
-            const birthdate = String(player.birthdate).slice(0, 10)
-            const parts = birthdate.split("-")
-
-            if (parts.length !== 3) return false
-
-            const month = parts[1]
-            const day = parts[2]
-
-            return month === todayMonth && day === todayDay
-          })
-          .map((player: any) => {
-            const birthdate = String(player.birthdate).slice(0, 10)
-            const birthYear = Number(birthdate.split("-")[0])
-            const currentYear = today.getFullYear()
-
-            return {
-              id: String(player.id),
-              name: String(player.name),
-              birthdate,
-              age: Number.isFinite(birthYear) ? currentYear - birthYear : null,
-            }
-          })
-          .sort((a: BirthdayPlayer, b: BirthdayPlayer) => a.name.localeCompare(b.name, "de"))
-
-      setBirthdayPlayers(birthdays)
-    } catch (error) {
-      console.error("Error loading birthdays:", error)
-      setBirthdayPlayers([])
-    } finally {
-      setBirthdayLoading(false)
-    }
-  }
-
-  loadTodayBirthdays()
-}, [])
-
-  
 
   const emdUpcomingEvents = combinedEvents
     .filter((item) => item.sourceKind === "internal")
@@ -1811,99 +136,48 @@ useEffect(() => {
     .filter((item) => !emdHomepageKeys.has(`${item.sourceKind}:${item.id}`))
     .slice(0, 2)
 
-  const renderHomeEventCard = (item: CombinedEvent) => {
-    const EventIcon = item.type === "event" && item.eventType ? getEventTypeIcon(item.eventType) : Trophy
-    const badgeText = item.type === "tournament" ? "TURNIER" : getEventTypeLabel(item.eventType || "").toUpperCase()
+  const homepageEventItems = [...emdUpcomingEvents, ...discoverTournaments].slice(0, 3)
 
-    const detailsHref =
-      item.type === "tournament" && item.dachEventId
-        ? `/dach-veranstaltungen/${item.dachEventId}`
-        : item.sourceKind === "dach"
-          ? `/dach-veranstaltungen/${item.id}`
-          : `/veranstaltungen/${item.internalEventId || item.id}`
+  const openHomepageEvent = async (item: CombinedEvent) => {
+    if (item.sourceKind === "dach") {
+      rememberPublicAreaOrigin()
+      window.location.href = `/dach-veranstaltungen/${item.id}`
+      return
+    }
 
-    return (
-      <Link
-        key={`${item.sourceKind}:${item.id}`}
-        href={detailsHref}
-        className="block min-w-[300px] sm:min-w-0 rounded-[22px] border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
-      >
-        <div className="relative h-40 bg-gray-100">
-          {item.photo_url ? (
-            <Image
-              src={item.photo_url || "/placeholder.svg"}
-              alt={item.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
-              <EventIcon className="h-12 w-12 text-orange-600" />
-            </div>
-          )}
+    // Interne EMD-Turniere immer über die neue DACH-Detailseite öffnen.
+    // Dort läuft die Anmeldung ausschließlich über das zentrale Turniersystem.
+    if (item.type === "tournament") {
+      const internalEventId = item.internalEventId || item.id
 
-          <div className="absolute top-3 left-3">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-[11px] font-black text-gray-900 border border-gray-200">
-              {badgeText}
-            </span>
-          </div>
-        </div>
+      const { data: dachEvent, error: dachEventError } = await supabase
+        .from("dach_events")
+        .select("id")
+        .eq("internal_event_id", internalEventId)
+        .eq("event_status", "approved")
+        .maybeSingle()
 
-        <div className="p-4 sm:p-5">
-          <p className="text-[11px] text-gray-500 font-bold mb-1">
-            {formatGermanDateRange(item.start_date, item.end_date, item.date)}
-            {item.time ? ` • ${item.time.slice(0, 5)} Uhr` : ""}
-          </p>
+      if (!dachEventError && dachEvent?.id) {
+        rememberPublicAreaOrigin()
+        window.location.href = `/dach-veranstaltungen/${dachEvent.id}`
+        return
+      }
+    }
 
-          <h3 className="font-black text-gray-900 mb-1 line-clamp-2">{item.name}</h3>
-
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {item.type === "tournament" ? (
-              <>
-                {item.details && <span>{item.details} • </span>}
-                {item.startgeld_details && <span>Startgeld: {item.startgeld_details} • </span>}
-                {typeof item.entry_fee === "number" && item.entry_fee > 0 && (
-                  <span>Eintritt: €{item.entry_fee.toFixed(2)} • </span>
-                )}
-                {item.mode === "edart"
-                  ? "E-Dart"
-                  : item.mode === "steeldart"
-                    ? "Steel Dart"
-                    : item.mode === "both"
-                      ? "Beide Modi"
-                      : ""}
-              </>
-            ) : (
-              item.details || `${getEventTypeLabel(item.eventType || "")} • ${item.location}`
-            )}
-          </p>
-
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="min-w-0 truncate text-xs text-gray-500 inline-flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 shrink-0 text-orange-600" />
-              <span className="truncate">{item.location || "Wird bekannt gegeben"}</span>
-            </span>
-
-            <span className="shrink-0 inline-flex items-center gap-1 text-orange-700 text-xs font-black">
-              Details
-              <ArrowRight className="w-4 h-4" />
-            </span>
-          </div>
-        </div>
-      </Link>
-    )
+    // Normale Vereinsveranstaltungen bleiben auf der internen Detailseite.
+    window.location.href = `/veranstaltungen/${item.internalEventId || item.id}`
   }
 
+
   return (
-    <div className="min-h-screen bg-[#f5f6f8] text-slate-950">
+    <div className="emd-home-page min-h-screen bg-transparent text-white">
       <Header />
 
       {/* Abstand für fixed Header */}
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
       {/* Vereinslokal / Öffnungszeiten – mit sauberem Abstand zum Header */}
-      <section className="mx-auto w-full max-w-[1800px] px-3 pt-4 sm:px-5 sm:pt-5 lg:px-8 xl:px-10">
+      <section className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pt-4 sm:px-5 sm:pt-5 lg:px-8 xl:px-10">
         <ClubhouseStatusCard />
       </section>
 
@@ -1913,69 +187,14 @@ useEffect(() => {
 
       <PushNotificationDialog />
 
-      {/* ================= ULTRA MODERN DASHBOARD HERO ================= */}
-      <section className="mx-auto w-full max-w-[1800px] px-3 pt-4 sm:px-5 sm:pt-5 lg:px-8 xl:px-10">
-        <div className="relative overflow-hidden rounded-[30px] border border-slate-800/10 bg-slate-950 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.75)]">
-          <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-orange-500/20 blur-3xl" />
-          <div className="pointer-events-none absolute bottom-0 left-1/3 h-48 w-96 rounded-full bg-white/[0.04] blur-3xl" />
-
-          <div className="relative grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_560px] lg:items-end lg:p-9">
-            <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-orange-300">
-                <Sparkles className="h-3.5 w-3.5" />
-                EMD VereinsApp
-              </div>
-
-              <h1 className="mt-4 max-w-4xl text-3xl font-black tracking-[-0.045em] text-white sm:text-4xl lg:text-5xl">
-                Dein Dart-Tag auf einen Blick.
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
-                Spiele, Termine, Turniere und Vereinsleben – alles Wichtige direkt auf deiner Startseite.
-              </p>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  className="h-11 rounded-xl bg-orange-500 px-4 font-black text-white shadow-none hover:bg-orange-600"
-                  onClick={() => (window.location.href = "/member-availability")}
-                >
-                  Meine Spiele
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 rounded-xl border-white/15 bg-white/[0.06] px-4 font-black text-white hover:bg-white/10 hover:text-white"
-                  onClick={() => (window.location.href = "/turniere")}
-                >
-                  Turniere entdecken
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3.5 backdrop-blur">
-                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/40">Ligaspiele</div>
-                <div className="mt-1 text-2xl font-black text-white">{myLeagueMatches.length}</div>
-                <div className="mt-1 text-[11px] font-semibold text-white/45">für dich geplant</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3.5 backdrop-blur">
-                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/40">Heute</div>
-                <div className="mt-1 text-2xl font-black text-white">{todaysEvents.length}</div>
-                <div className="mt-1 text-[11px] font-semibold text-white/45">Vereinstermine</div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3.5 backdrop-blur">
-                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/40">Turniere</div>
-                <div className="mt-1 text-2xl font-black text-orange-300">{combinedEvents.filter((item) => item.type === "tournament").length}</div>
-                <div className="mt-1 text-[11px] font-semibold text-white/45">im Überblick</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <StartseitenHero
+        leagueMatchCount={myLeagueMatches.length}
+        todaysEventCount={todaysEvents.length}
+        tournamentCount={combinedEvents.filter((item) => item.type === "tournament").length}
+      />
 
       {canSeeInternalTournaments && (internalSignupLoading || internalSignupEvents.length > 0) ? (
-        <section className="mx-auto w-full max-w-[1800px] px-3 pt-5 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
+        <section className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pt-5 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-sm">
@@ -1998,547 +217,124 @@ useEffect(() => {
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
               {internalSignupEvents.map((event) => (
-                <Link
+                <InterneTurnierAnmeldekarte
                   key={event.id}
-                  href={`/internal-events/${event.id}`}
-                  className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="grid h-full sm:grid-cols-[240px_1fr]">
-                    <div className="relative overflow-hidden bg-black">
-                      {internalEventImageUrl(event.image_path,event.image_url) ? (
-                        <div className="aspect-video w-full sm:h-full sm:min-h-[170px]">
-                          <img
-                            src={internalEventImageUrl(event.image_path,event.image_url)}
-                            alt={event.title}
-                            className="block h-full w-full object-contain"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex aspect-video min-h-[170px] items-center justify-center bg-gradient-to-br from-slate-950 to-orange-950">
-                          <Trophy className="h-14 w-14 text-orange-400" />
-                        </div>
-                      )}
-                      <div className="absolute left-3 top-3 z-10 rounded-full bg-orange-600 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white">
-                        Anmeldung offen
-                      </div>
-                    </div>
-                    <div className="relative z-10 flex min-w-0 flex-col justify-between bg-white p-5">
-                      <div>
-                        <div className="text-xl font-black leading-tight text-slate-950">{event.title}</div>
-                        {event.subtitle ? <div className="mt-1 text-sm font-semibold text-slate-500">{event.subtitle}</div> : null}
-                        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-slate-500">
-                          <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-orange-600" />{formatInternalEventDateRange(event.event_date,event.end_date,event.date_open)}</span>
-                          {event.start_time ? <span className="flex items-center gap-1.5"><Clock className="h-4 w-4 text-orange-600" />{event.start_time.slice(0,5)} Uhr</span> : null}
-                          {event.location ? <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-orange-600" />{event.location}</span> : null}
-                        </div>
-                        {event.draw_mode ? (
-                          <div className={`mt-3 rounded-2xl border px-3 py-3 ${event.draw_mode==="onsite"?"border-amber-200 bg-amber-50":"border-sky-200 bg-sky-50"}`}>
-                            <div className="grid gap-2 sm:grid-cols-2">
-                              <div>
-                                <div className={`text-[10px] font-black uppercase tracking-widest ${event.draw_mode==="onsite"?"text-amber-700":"text-sky-700"}`}>
-                                  Auslosung
-                                </div>
-                                <div className="mt-1 text-sm font-black text-slate-950">
-                                  {event.draw_datetime ? formatInternalEventDrawDateTime(event.draw_datetime) : "Termin folgt"}
-                                </div>
-                                <div className="mt-0.5 text-xs font-bold text-slate-600">
-                                  {event.draw_mode==="onsite"?"Live vor Ort":"Online"}
-                                  {event.draw_mode==="onsite" && event.draw_attendance_required ? " · Anwesenheit erforderlich" : ""}
-                                </div>
-                              </div>
-
-                              <div className="border-t border-black/10 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-orange-700">
-                                  Turnier
-                                </div>
-                                <div className="mt-1 text-sm font-black text-slate-950">
-                                  {formatInternalEventDateRange(event.event_date,event.end_date,event.date_open)}
-                                </div>
-                                <div className="mt-0.5 text-xs font-bold text-slate-600">
-                                  {event.start_time ? `Beginn ${event.start_time.slice(0,5)} Uhr` : "Spieltermine laut Spielplan"}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                      <div className="mt-5 flex items-center justify-between gap-3">
-                        <span className="rounded-full bg-orange-50 px-3 py-1.5 text-[11px] font-black text-orange-700">Paket Interne Turniere</span>
-                        <span className="flex items-center gap-1.5 text-sm font-black text-orange-700">Zur Anmeldung <ArrowRight className="h-4 w-4" /></span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
+                  event={event}
+                  imageUrl={internalEventImageUrl(event.image_path, event.image_url)}
+                />
               ))}
             </div>
           )}
         </section>
       ) : null}
 
-      {/* WICHTIG: persönliche Ligaspiele ganz oben auf der Startseite */}
-      <div className="mx-auto w-full max-w-[1800px] px-3 pt-5 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
-        <div className="space-y-4">
-          {/* ================= DEINE LIGASPIELE ================= */}
-    {authUserId && hasLeaguePackage ? (
-      <section className="mb-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <Swords className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-600">
-                Liga
+      <DeineNaechstenLigaspiele
+        authUserId={authUserId}
+        hasLeaguePackage={hasLeaguePackage}
+        matches={myLeagueMatches}
+        loading={myLeagueLoading}
+        saving={myLeagueSaving}
+        onSetAvailability={setHomeLeagueAvailability}
+      />
+
+	  <HeuteImVerein events={todaysEvents} />	  {!birthdayLoading && birthdayPlayers.length > 0 && (
+        <section className="mx-auto mt-3 w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8 xl:px-10">
+          <div className="flex flex-col gap-3 rounded-2xl border border-orange-300/20 bg-orange-500/[0.07] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-300/20 bg-orange-500/10">
+                <PartyPopper className="h-5 w-5 text-orange-300" />
               </div>
-              <h2 className="text-lg font-black leading-tight text-gray-950 sm:text-xl">
-                Deine nächsten Spiele
-              </h2>
-            </div>
-          </div>
-
-          <Button
-            variant="ghost"
-            className="h-9 rounded-xl px-3 font-bold text-gray-600 hover:bg-white hover:text-orange-700"
-            onClick={() => (window.location.href = "/member-availability")}
-          >
-            Alle
-          </Button>
-        </div>
-
-        {myLeagueLoading ? (
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-500">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Deine Ligaspiele werden geladen...
-            </div>
-          </div>
-        ) : myLeagueMatches.length === 0 ? (
-          <div className="rounded-3xl border border-gray-200/80 bg-white p-7 text-center shadow-sm">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-50">
-              <Calendar className="h-5 w-5 text-gray-400" />
-            </div>
-            <p className="mt-3 font-bold text-gray-800">
-              Aktuell kein Ligaspiel geplant
-            </p>
-            <p className="mt-1 text-sm text-gray-500">
-              Sobald ein neues Spiel angesetzt ist, erscheint es hier.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {myLeagueMatches.map((match) => {
-              const dartType = String(match.dart_type || "").toLowerCase()
-              const isSteel = dartType === "steeldart"
-
-              return (
-                <div
-                  key={match.id}
-                  className="group overflow-hidden rounded-[26px] border border-slate-200/90 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_65px_-45px_rgba(15,23,42,0.62)]"
-                >
-                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3.5">
-                    <Badge
-                      variant="outline"
-                      className={
-                        isSteel
-                          ? "rounded-full border-slate-200 bg-slate-900 px-3 py-1 text-[11px] font-black tracking-wide text-white"
-                          : "rounded-full border-orange-200 bg-orange-600 px-3 py-1 text-[11px] font-black tracking-wide text-white"
-                      }
-                    >
-                      {isSteel ? "STEELDART" : "E-DART"}
-                    </Badge>
-
-                    <div className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-gray-600 ring-1 ring-gray-200">
-                      <Calendar className="h-3.5 w-3.5 text-orange-600" />
-                      {new Date(match.match_date).toLocaleDateString("de-DE", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
-                      {match.match_time ? ` · ${String(match.match_time).slice(0, 5)}` : ""}
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <div className="text-xl font-black leading-tight tracking-tight text-gray-950">
-                      {getTeamName(match, true)}{" "}
-                      <span className="font-semibold text-gray-400">vs</span>{" "}
-                      {getTeamName(match, false)}
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3">
-                      <div className="text-xs font-bold uppercase tracking-wide text-gray-500">
-                        Deine Antwort
-                      </div>
-                      <div className="mt-1">
-                        {match.my_status === "yes" ? (
-                          <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700">Zugesagt ✓</Badge>
-                        ) : match.my_status === "maybe" ? (
-                          <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-700">Vielleicht</Badge>
-                        ) : match.my_status === "no" ? (
-                          <Badge variant="outline" className="rounded-full border-rose-200 bg-rose-50 text-rose-700">Abgesagt</Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="rounded-full border-amber-300 bg-amber-50 text-amber-800"
-                          >
-                            Noch keine Antwort
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {match.my_status === "none" ? (
-                      <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm font-bold text-amber-900">
-                        <Bell className="h-4 w-4 shrink-0" />
-                        Bitte noch zu- oder absagen – wichtig für die Aufstellung.
-                      </div>
-                    ) : null}
-
-                    <div className="mt-4 grid grid-cols-3 gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={!!myLeagueSaving}
-                        onClick={() => void setHomeLeagueAvailability(match, "yes")}
-                        className="rounded-xl border border-emerald-200 bg-white px-2 font-black text-slate-800 shadow-none hover:bg-emerald-50 hover:text-emerald-800"
-                      >
-                        {myLeagueSaving === `${match.id}-yes` ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "Zusage"
-                        )}
-                      </Button>
-
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={!!myLeagueSaving}
-                        onClick={() => void setHomeLeagueAvailability(match, "maybe")}
-                        className="rounded-xl border border-amber-200 bg-white px-2 font-black text-slate-800 shadow-none hover:bg-amber-50 hover:text-amber-800"
-                      >
-                        {myLeagueSaving === `${match.id}-maybe` ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "Vielleicht"
-                        )}
-                      </Button>
-
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={!!myLeagueSaving}
-                        onClick={() => void setHomeLeagueAvailability(match, "no")}
-                        className="rounded-xl border border-rose-200 bg-white px-2 font-black text-slate-800 shadow-none hover:bg-rose-50 hover:text-rose-800"
-                      >
-                        {myLeagueSaving === `${match.id}-no` ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "Absage"
-                        )}
-                      </Button>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="mt-3 w-full rounded-xl border-slate-200 bg-slate-950 font-black text-white hover:bg-slate-800 hover:text-white"
-                      onClick={() =>
-                        (window.location.href = `/member-availability?match_id=${match.id}&team_id=${match.my_team_id}`)
-                      }
-                    >
-                      Details & Aufstellung
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300/75">Geburtstag im Verein</div>
+                <div className="mt-0.5 text-sm font-black text-white sm:text-base">
+                  {birthdayPlayers.length === 1
+                    ? `${birthdayPlayers[0].name}${birthdayPlayers[0].age ? ` · ${birthdayPlayers[0].age}. Geburtstag` : ""}`
+                    : `${birthdayPlayers.length} Vereinsmitglieder feiern heute`}
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
-    ) : null}
-
-        </div>
-      </div>
-	  
-	  
-	  {todaysEvents.length > 0 && (
-  <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-      <div className="h-1.5 bg-gradient-to-r from-slate-900 via-orange-500 to-slate-900" />
-
-      <div className="p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-slate-200 flex items-center justify-center shrink-0">
-              <Calendar className="w-6 h-6 text-orange-700" />
-            </div>
-
-            <div>
-              <div className="text-xs font-black uppercase tracking-wider text-orange-700">
-                Heute im Verein
-              </div>
-
-              <div className="text-lg sm:text-xl font-black text-gray-900">
-                {todaysEvents.length === 1
-                  ? todaysEvents[0].name
-                  : `${todaysEvents.length} Veranstaltungen heute`}
-              </div>
-
-              <div className="mt-2 space-y-2">
-                {todaysEvents.map((event) => (
-                  <div
-                    key={`${event.type}-${event.id}`}
-                    className="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"
-                  >
-                    <div className="text-sm font-black text-gray-900">
-                      {event.name}
-                    </div>
-
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-gray-600">
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-orange-700" />
-                        {ensureUhr(event.time)}
-                      </span>
-
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-orange-700" />
-                        {event.location}
-                      </span>
-
-                      {event.type === "tournament" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-orange-800 font-black">
-                          Turnier
-                        </span>
-                      )}
-
-                      {event.type === "event" && event.eventType && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-white border border-slate-200 px-2 py-0.5 text-slate-800 font-black">
-                          {getEventTypeLabel(event.eventType)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
-          </div>
-
-          <Button
-  type="button"
-  className="w-full sm:w-auto rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-black shadow-sm"
-  onClick={() => {
-    if (todaysEvents.length === 1) {
-      window.location.href = todaysEvents[0].sourceKind === "dach" ? `/dach-veranstaltungen/${todaysEvents[0].id}` : `/veranstaltungen/${todaysEvents[0].internalEventId || todaysEvents[0].id}`
-      return
-    }
-
-    window.location.href = "/turniere"
-  }}
->
-  Details ansehen
-  <ArrowRight className="w-4 h-4 ml-2" />
-</Button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-	  
-	  
-
-	  {!birthdayLoading && birthdayPlayers.length > 0 && (
-  <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
-    <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
-      <div className="h-1 bg-orange-500" />
-
-      <div className="p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
-              <PartyPopper className="w-6 h-6 text-orange-700" />
-            </div>
-
-            <div>
-              <div className="text-xs font-black uppercase tracking-wider text-orange-700">
-                Geburtstag im Verein
-              </div>
-
-              <div className="text-lg sm:text-xl font-black text-gray-900">
-                Heute feiern wir{" "}
-                {birthdayPlayers.length === 1
-                  ? birthdayPlayers[0].name
-                  : `${birthdayPlayers.length} Vereinsmitglieder`}
-                🎉
-              </div>
-
-              <div className="mt-1 text-sm font-semibold text-gray-600">
-                {birthdayPlayers.length === 1 ? (
-                  <>
-                    Alles Gute zum Geburtstag,{" "}
-                    <span className="font-black text-gray-900">{birthdayPlayers[0].name}</span>
-                    {birthdayPlayers[0].age ? (
-                      <> zum {birthdayPlayers[0].age}. Geburtstag</>
-                    ) : null}
-                    !
-                  </>
-                ) : (
-                  <>
-                    Alles Gute an{" "}
-                    <span className="font-black text-gray-900">
-                      {birthdayPlayers.map((p) => p.name).join(", ")}
-                    </span>
-                    !
-                  </>
-                )}
-              </div>
-
-              <div className="mt-2 flex flex-wrap gap-2">
-                {birthdayPlayers.map((player) => (
-                  <span
-                    key={player.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-black text-orange-800"
-                  >
-                    🎂 {player.name}
-                    {player.age ? ` • ${player.age}` : ""}
-                  </span>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              {birthdayPlayers.map((player) => (
+                <span key={player.id} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-bold text-white/65">
+                  {player.name}{player.age ? ` · ${player.age}` : ""}
+                </span>
+              ))}
             </div>
           </div>
-
-          <div className="hidden sm:flex items-center justify-center text-4xl">
-            🎁
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-	  
-	  
-	  
+        </section>
+      )}
 
 
-<section className="mx-auto mt-7 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
-  <div className="mb-4 flex items-end justify-between gap-3">
-    <div>
-      <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">Schnellzugriff</div>
-      <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Entdecken & loslegen</h2>
-    </div>
-  </div>
-  <div className="grid gap-4 lg:grid-cols-3">
-{/* GASTZUGANG KOMPAKT */}
-<div>
-  <div className="group h-full overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.5)] transition-all hover:-translate-y-0.5 hover:border-orange-200">
-    <div className="h-1 bg-orange-500" />
+<section className="mx-auto mt-6 w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8 xl:px-10">
+  <button
+    type="button"
+    onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/emd-tv" }}
+    className="group relative w-full overflow-hidden rounded-[26px] border border-orange-300/20 bg-[linear-gradient(135deg,rgba(249,115,22,.16),rgba(7,11,18,.96)_46%,rgba(14,165,233,.10))] p-5 text-left shadow-[0_24px_70px_-45px_rgba(249,115,22,.85)] transition-all hover:-translate-y-0.5 hover:border-orange-300/40 hover:shadow-[0_30px_80px_-42px_rgba(249,115,22,.95)] sm:p-6"
+  >
+    <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-orange-500/10 blur-3xl transition group-hover:bg-orange-500/20" />
+    <div className="pointer-events-none absolute -bottom-16 left-1/3 h-40 w-40 rounded-full bg-sky-500/10 blur-3xl" />
 
-    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
-          <UserPlus className="w-5 h-5 text-orange-700" />
-        </div>
-
-        <div className="min-w-0">
-          <div className="text-xs font-black uppercase tracking-wider text-orange-700">
-            Auch für Gäste
-          </div>
-          <div className="text-base sm:text-lg font-black text-gray-900">
-            EMD VereinsApp kostenlos kennenlernen
-          </div>
-          <div className="text-sm font-semibold text-gray-600">
-            Dartprofil, Turniere, Community und mehr.
-          </div>
-        </div>
+    <div className="relative flex items-center gap-4">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-orange-300/30 bg-orange-500/12 shadow-[0_0_32px_rgba(249,115,22,.14)] sm:h-16 sm:w-16">
+        <Tv2 className="h-7 w-7 text-orange-300 sm:h-8 sm:w-8" />
       </div>
 
-      <Button
-        className="w-full rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800 sm:w-auto"
-        onClick={() => (window.location.href = "/gastzugang-info")}
-      >
-        Mehr erfahren
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </Button>
-    </div>
-  </div>
-</div>
-
-{/* DARTBÖRSE KOMPAKT */}
-<div>
-  <div className="group h-full overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.5)] transition-all hover:-translate-y-0.5 hover:border-orange-200">
-    <div className="h-1 bg-orange-500" />
-
-    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0">
-          <ShoppingBag className="w-5 h-5 text-orange-700" />
+      <div className="min-w-0 flex-1">
+        <div className="mb-1.5 flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-orange-300/25 bg-orange-500/12 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-orange-200">
+            Neu
+          </span>
+          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/75">EMD TV</span>
         </div>
-
-        <div className="min-w-0">
-          <div className="text-xs font-black uppercase tracking-wider text-orange-700">
-            Dartbörse DACH
-          </div>
-          <div className="text-base sm:text-lg font-black text-gray-900">
-            Darts kaufen & verkaufen
-          </div>
-          <div className="text-sm font-semibold text-gray-600">
-            Darts, Barrels, Boards & Zubehör aus Österreich, Deutschland und der Schweiz.
-          </div>
-        </div>
+        <div className="text-xl font-black tracking-[-0.03em] text-white sm:text-2xl">Starting Lineup</div>
+        <div className="mt-1 text-sm font-semibold text-white/45">Teamaufstellungen & Match-Intros ansehen</div>
       </div>
 
-      <Button
-        className="w-full sm:w-auto rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black shadow-sm"
-        onClick={() => (window.location.href = "/dartboerse")}
-      >
-        Zur Dartbörse
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </Button>
-    </div>
-  </div>
-</div>
-
-{/* DACH TURNIERE KOMPAKT */}
-<div>
-  <div className="group h-full overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.5)] transition-all hover:-translate-y-0.5 hover:border-orange-200">
-    <div className="h-1 bg-orange-500" />
-
-    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0">
-          <Trophy className="w-5 h-5 text-orange-700" />
-        </div>
-
-        <div className="min-w-0">
-          <div className="text-xs font-black uppercase tracking-wider text-orange-700">
-            DACH Turniere
-          </div>
-          <div className="text-base sm:text-lg font-black text-gray-900">
-            Dart-Turniere entdecken
-          </div>
-          <div className="text-sm font-semibold text-gray-600">
-            Turniere aus Österreich, Deutschland und der Schweiz finden und eintragen.
-          </div>
-        </div>
+      <div className="hidden shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-black text-white/80 transition group-hover:border-orange-300/20 group-hover:bg-orange-500/10 group-hover:text-white sm:flex">
+        Jetzt ansehen
+        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
       </div>
 
-      <Button
-        className="w-full rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800 sm:w-auto"
-        onClick={() => (window.location.href = "/turniere")}
-      >
-        Zu den Turnieren
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </Button>
+      <ArrowRight className="h-5 w-5 shrink-0 text-orange-300 sm:hidden" />
     </div>
-  </div>
-</div>
+  </button>
 
+  <div className="mt-5 mb-3">
+    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">Weitere Bereiche</div>
+  </div>
+
+  <div className="grid gap-3 sm:grid-cols-3">
+    <button type="button" onClick={() => (window.location.href = "/gastzugang-info")} className="group flex min-h-[98px] items-center gap-3 rounded-2xl border border-white/10 bg-[#080d14]/85 p-4 text-left transition hover:border-orange-300/25 hover:bg-white/[0.045]">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-orange-300/20 bg-orange-500/10"><UserPlus className="h-5 w-5 text-orange-300" /></div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300/70">Gastzugang</div>
+        <div className="mt-1 font-black text-white">VereinsApp kennenlernen</div>
+      </div>
+      <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition group-hover:translate-x-0.5 group-hover:text-orange-300" />
+    </button>
+
+    <button type="button" onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/dartboerse" }} className="group flex min-h-[98px] items-center gap-3 rounded-2xl border border-white/10 bg-[#080d14]/85 p-4 text-left transition hover:border-orange-300/25 hover:bg-white/[0.045]">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]"><ShoppingBag className="h-5 w-5 text-orange-300" /></div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300/70">Dartbörse DACH</div>
+        <div className="mt-1 font-black text-white">Darts kaufen & verkaufen</div>
+      </div>
+      <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition group-hover:translate-x-0.5 group-hover:text-orange-300" />
+    </button>
+
+    <button type="button" onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/turniere" }} className="group flex min-h-[98px] items-center gap-3 rounded-2xl border border-white/10 bg-[#080d14]/85 p-4 text-left transition hover:border-orange-300/25 hover:bg-white/[0.045]">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-orange-300/20 bg-orange-500/10"><Trophy className="h-5 w-5 text-orange-300" /></div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300/70">DACH Turniere</div>
+        <div className="mt-1 font-black text-white">Turniere entdecken</div>
+      </div>
+      <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition group-hover:translate-x-0.5 group-hover:text-orange-300" />
+    </button>
   </div>
 </section>
-
 {activeTournament && (
   <div className="sticky top-12 sm:top-14 z-40">
-    <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
+    <div className="mx-auto mt-3 w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8 xl:px-10">
       <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
         
 
@@ -2603,925 +399,199 @@ useEffect(() => {
       
 	  
 	  
-	 {liveSelfRegEvent && (
-  <div className="sticky top-12 sm:top-14 z-40">
-    <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
-      <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
-        {/* Accent bar */}
-        <div
-          className={`h-1.5 ${
-            dkoRegistered
-              ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600"
-              : "bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600"
-          }`}
-        />
+      {liveRegistrationItems.length > 0 && (
+        <section className="mx-auto mt-3 w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8 xl:px-10">
+          <div
+            className={`grid gap-3 ${
+              liveRegistrationItems.length === 1
+                ? "max-w-[520px]"
+                : "sm:grid-cols-2 lg:grid-cols-3"
+            }`}
+          >
+            {liveRegistrationItems.map((item) => {
+              const eventDate = item.nextEvent ? new Date(item.nextEvent.startAt) : null
 
-        <div className="p-3 sm:p-4">
-          <div className="flex items-start justify-between gap-3">
-            {/* Left */}
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="relative flex-shrink-0 mt-0.5">
-                <div
-                  className={`w-11 h-11 rounded-2xl border flex items-center justify-center ${
-                    dkoRegistered ? "bg-emerald-50 border-emerald-200" : "bg-orange-50 border-orange-200"
-                  }`}
-                >
-                  <Timer className={`w-5 h-5 ${dkoRegistered ? "text-emerald-700" : "text-orange-700"}`} />
-                </div>
-
-                <span
-                  className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-white animate-pulse ${
-                    liveRegOpen ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                />
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
-                    LION CUP
-                  </span>
-
-                  <span className="inline-flex items-center rounded-full bg-gray-50 text-gray-800 border border-gray-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
-                    TURNIERTAG
-                  </span>
-
-                  {dkoRegistered && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[11px] font-black">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Angemeldet
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-1 text-sm sm:text-base font-black text-gray-900 truncate">
-                  {liveSelfRegEvent.title}
-                </div>
-
-                <div className="mt-0.5 text-[11px] sm:text-xs text-gray-600 flex flex-wrap items-center gap-3">
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-orange-600" />
-                    {liveDateLabel}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-orange-600" />
-                    {liveTimeLabel}
-                  </span>
-                </div>
-
-                <div className="mt-2 text-[11px] sm:text-xs text-gray-700 flex items-center gap-2">
-                  <Info className="w-3.5 h-3.5 text-gray-400" />
-                  {liveRegOpen ? (
-                    <span className="font-bold">
-                      Anmeldung noch: {formatHoursMinutesSeconds(liveSecondsLeft ?? 0)}
-                      <span className="font-semibold text-gray-500"> (schließt 10 Min vor Start)</span>
-                    </span>
-                  ) : (
-                    <span className="font-bold">
-                      Anmeldung geschlossen <span className="font-semibold text-gray-500">(10 Min vor Start)</span>
-                    </span>
-                  )}
-                </div>
-
+              return (
                 <button
+                  key={item.id}
                   type="button"
-                  onClick={() => setLiveInfoOpen(true)}
-                  className="mt-2 inline-flex items-center gap-1 text-[11px] sm:text-xs text-orange-700 font-bold hover:text-orange-800"
+                  onClick={() => (window.location.href = `/turniere/serien/${item.slug}/anmeldung`)}
+                  className="group w-full rounded-2xl border border-white/[0.09] bg-[#0b1017]/92 p-4 text-left shadow-[0_18px_45px_-34px_rgba(0,0,0,.9)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-emerald-300/25 hover:bg-[#0d141b]"
                 >
-                  <Info className="w-3.5 h-3.5" />
-                  Infos zu Abmeldung & Rückerstattung
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-500/10">
+                      <UserPlus className="h-5 w-5 text-emerald-300" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-300">
+                          Anmeldung offen
+                        </span>
+                        {item.accessType === "club_internal" ? (
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-violet-300">
+                            Intern
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="truncate text-sm font-black text-white sm:text-base">
+                        {item.name}
+                      </div>
+
+                      {eventDate ? (
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-white/45">
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5 text-orange-300" />
+                            {eventDate.toLocaleDateString("de-AT", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })}
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5 text-orange-300" />
+                            {eventDate.toLocaleTimeString("de-AT", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })} Uhr
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <ArrowRight className="h-5 w-5 shrink-0 text-white/35 transition-transform group-hover:translate-x-0.5 group-hover:text-emerald-300" />
+                  </div>
                 </button>
-              </div>
-            </div>
-
-            {/* Right CTA */}
-            <div className="flex-shrink-0">
-              <Button
-                size="sm"
-                disabled={!liveRegOpen || dkoRegLoading}
-                className={`rounded-xl font-black shadow-sm px-3 sm:px-4 disabled:opacity-60 disabled:cursor-not-allowed ${
-                  dkoRegistered
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                    : "bg-orange-600 hover:bg-orange-700 text-white"
-                }`}
-                onClick={() => (window.location.href = "/lion-cup/anmeldung")}
-              >
-                {dkoRegLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    ...
-                  </span>
-                ) : dkoRegistered ? (
-                  <>
-                    <span className="hidden sm:inline">Anmeldung verwalten</span>
-                    <span className="sm:hidden">Verwalten</span>
-                  </>
-                ) : liveRegOpen ? (
-                  <>
-                    <span className="hidden sm:inline">Jetzt anmelden</span>
-                    <span className="sm:hidden">Anmelden</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="hidden sm:inline">Geschlossen</span>
-                    <span className="sm:hidden">Zu</span>
-                  </>
-                )}
-              </Button>
-            </div>
+              )
+            })}
           </div>
+        </section>
+      )}
+
+      <section className="mx-auto w-full max-w-[var(--emd-content-max)] overflow-x-hidden px-3 py-7 sm:px-5 lg:px-8 lg:py-9 xl:px-10">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">Serien & Wettbewerbe</div>
+            <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Turnierserien</h2>
+            <p className="mt-1 text-xs font-semibold text-white/35">Aktive Serien, nächste Spieltage und Anmeldung</p>
+          </div>
+          <Button
+            variant="ghost"
+            className="h-9 shrink-0 px-3 font-black text-orange-200 hover:bg-orange-500/10 hover:text-white"
+            onClick={() => (window.location.href = "/turniere/serien")}
+          >
+            Alle Serien
+            <ArrowRight className="ml-1.5 h-4 w-4" />
+          </Button>
         </div>
-      </div>
-    </div>
-  </div>
-)} 
 
-
-
-	  
-	  
-	  
-	{liveMembersSelfRegEvent && (
-  <div className="sticky top-12 sm:top-14 z-40">
-    <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
-      <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
-        <div
-          className={`h-1.5 ${
-            membersCupRegistered
-              ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600"
-              : "bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600"
-          }`}
-        />
-
-        <div className="p-3 sm:p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="relative flex-shrink-0 mt-0.5">
-                <div
-                  className={`w-11 h-11 rounded-2xl border flex items-center justify-center ${
-                    membersCupRegistered
-                      ? "bg-emerald-50 border-emerald-200"
-                      : "bg-orange-50 border-orange-200"
-                  }`}
+        {dynamicSeriesLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {[0, 1].map((item) => (
+              <div key={item} className="h-[230px] animate-pulse rounded-[26px] border border-white/10 bg-white/[0.04]" />
+            ))}
+          </div>
+        ) : seriesItems.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {seriesItems.slice(0, 6).map((item) => {
+              const nextDate = item.nextEvent ? new Date(item.nextEvent.startAt) : null
+              return (
+                <article
+                  key={item.id}
+                  className="group relative overflow-hidden rounded-[26px] border border-white/10 bg-[#080d14]/90 shadow-[0_24px_70px_-50px_rgba(0,0,0,.95)]"
                 >
-                  <UserPlus
-                    className={`w-5 h-5 ${
-                      membersCupRegistered ? "text-emerald-700" : "text-orange-700"
-                    }`}
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-[0.22] transition duration-700 group-hover:scale-[1.03]"
+                    style={{ backgroundImage: `url('${item.imageUrl}')` }}
                   />
-                </div>
+                  <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(5,8,12,.98),rgba(5,8,12,.88)_60%,rgba(5,8,12,.72))]" />
 
-                <span
-                  className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-white animate-pulse ${
-                    liveMembersRegOpen ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                />
-              </div>
+                  <div className="relative flex min-h-[230px] flex-col justify-between p-4 sm:p-5">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-orange-300/20 bg-orange-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-orange-200">
+                          Turnierserie
+                        </span>
+                        {item.accessType === "club_internal" ? (
+                          <span className="rounded-full border border-violet-300/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-violet-200">Intern</span>
+                        ) : (
+                          <span className="rounded-full border border-emerald-300/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-200">Öffentlich</span>
+                        )}
+                        {item.registrationOpen ? (
+                          <span className="rounded-full border border-emerald-300/25 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-100">Anmeldung offen</span>
+                        ) : null}
+                      </div>
 
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
-                    MEMBERS CUP
-                  </span>
+                      <h3 className="mt-3 text-xl font-black leading-tight text-white">{item.name}</h3>
+                      {item.description ? (
+                        <p className="mt-1.5 line-clamp-2 text-xs font-semibold leading-5 text-white/38">{item.description}</p>
+                      ) : null}
+                    </div>
 
-                  <span className="inline-flex items-center rounded-full bg-gray-50 text-gray-800 border border-gray-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
-                    TURNIERTAG
-                  </span>
+                    <div className="mt-4 border-t border-white/[0.07] pt-3">
+                      {nextDate ? (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-white/48">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5 text-orange-300" />
+                            {nextDate.toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-orange-300" />
+                            {nextDate.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
+                          </span>
+                          {item.nextEvent?.location ? (
+                            <span className="inline-flex min-w-0 items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 shrink-0 text-orange-300" />
+                              <span className="truncate">{item.nextEvent.location}</span>
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <div className="text-xs font-semibold text-white/35">Aktuell kein weiterer Spieltag eingetragen</div>
+                      )}
 
-                  {membersCupRegistered && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[11px] font-black">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Angemeldet
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-1 text-sm sm:text-base font-black text-gray-900 truncate">
-                  {liveMembersSelfRegEvent.title}
-                </div>
-
-                <div className="mt-0.5 text-[11px] sm:text-xs text-gray-600 flex flex-wrap items-center gap-3">
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-orange-600" />
-                    {liveMembersDateLabel}
-                  </span>
-
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-orange-600" />
-                    {liveMembersTimeLabel}
-                  </span>
-                </div>
-
-                <div className="mt-2 text-[11px] sm:text-xs text-gray-700 flex items-center gap-2">
-                  <Info className="w-3.5 h-3.5 text-gray-400" />
-
-                  {liveMembersRegOpen ? (
-  <span className="font-bold">
-    Anmeldung noch: {formatHoursMinutesSeconds(liveMembersSecondsLeft ?? 0)}
-    <span className="font-semibold text-gray-500">
-      {" "}
-      (schließt um 17:00 Uhr)
-    </span>
-  </span>
-) : (
-  <span className="font-bold">
-    Anmeldung geschlossen{" "}
-    <span className="font-semibold text-gray-500">
-      (17:00 Uhr)
-    </span>
-  </span>
-)}
-                </div>
-
-                {liveMembersUnregOpen ? (
-                  <div className="mt-1 text-[11px] sm:text-xs text-red-700 font-bold">
-                    Abmeldung möglich bis 14:00 Uhr.
+                      <div className="mt-3 flex items-end justify-between gap-3">
+                        <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-white/35">
+                          <span>Startgeld <strong className="text-white/75">€ {item.startgeld.toFixed(2)}</strong></span>
+                          {item.totalTournamentDays ? <span>{item.totalTournamentDays} Spieltage</span> : null}
+                        </div>
+                        <Button
+                          size="sm"
+                          className="rounded-xl bg-orange-600 px-4 font-black text-white hover:bg-orange-500"
+                          onClick={() => (window.location.href = `/turniere/serien/${item.slug}`)}
+                        >
+                          Zur Serie
+                          <ArrowRight className="ml-1.5 h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="mt-1 text-[11px] sm:text-xs text-red-700 font-bold">
-                    Abmeldung geschlossen.
-                  </div>
-                )}
-              </div>
+                </article>
+              )
+            })}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => (window.location.href = "/turniere/serien")}
+            className="flex w-full items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-[#080d14]/88 p-4 text-left transition hover:border-orange-300/25 hover:bg-[#0b111a] sm:p-5"
+          >
+            <div>
+              <div className="font-black text-white">Turnierserien</div>
+              <div className="mt-1 text-xs font-semibold text-white/35">Serienübersicht öffnen</div>
             </div>
-
-            <div className="flex-shrink-0">
-              <Button
-                size="sm"
-                disabled={!liveMembersRegOpen}
-                className={`rounded-xl font-black shadow-sm px-3 sm:px-4 disabled:opacity-60 disabled:cursor-not-allowed ${
-                  membersCupRegistered
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                    : "bg-orange-600 hover:bg-orange-700 text-white"
-                }`}
-                onClick={() => (window.location.href = "/member-cup-anmeldung")}
-              >
-                {membersCupRegLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    ...
-                  </span>
-                ) : membersCupRegistered ? (
-                  <>
-                    <span className="hidden sm:inline">Anmeldung verwalten</span>
-                    <span className="sm:hidden">Verwalten</span>
-                  </>
-                ) : liveMembersRegOpen ? (
-                  <>
-                    <span className="hidden sm:inline">Jetzt anmelden</span>
-                    <span className="sm:hidden">Anmelden</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="hidden sm:inline">Geschlossen</span>
-                    <span className="sm:hidden">Zu</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  {liveSummerSelfRegEvent && (
-  <div className="hidden">
-    <div className="mx-auto mt-3 w-full max-w-[1800px] px-3 sm:px-5 lg:px-8 xl:px-10">
-      <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
-        <div
-          className={`h-1.5 ${
-            liveSummerRegOpen
-              ? "bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600"
-              : "bg-gradient-to-r from-gray-300 via-gray-200 to-gray-300"
-          }`}
-        />
-
-        <div className="p-3 sm:p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="relative flex-shrink-0 mt-0.5">
-                <div
-                  className={`w-11 h-11 rounded-2xl border flex items-center justify-center ${
-                    liveSummerRegOpen
-                      ? "bg-orange-50 border-orange-200"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
-                >
-                  <UserPlus
-                    className={`w-5 h-5 ${
-                      liveSummerRegOpen ? "text-orange-700" : "text-gray-500"
-                    }`}
-                  />
-                </div>
-
-                <span
-                  className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ring-2 ring-white animate-pulse ${
-                    liveSummerRegOpen ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                />
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
-                    SUMMER SPECIAL
-                  </span>
-
-                  <span className="inline-flex items-center rounded-full bg-gray-50 text-gray-800 border border-gray-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
-                    TURNIERTAG
-                  </span>
-                </div>
-
-                <div className="mt-1 text-sm sm:text-base font-black text-gray-900 truncate">
-                  {liveSummerSelfRegEvent.title}
-                </div>
-
-                <div className="mt-0.5 text-[11px] sm:text-xs text-gray-600 flex flex-wrap items-center gap-3">
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-orange-600" />
-                    {liveSummerDateLabel}
-                  </span>
-
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-orange-600" />
-                    {liveSummerTimeLabel}
-                  </span>
-                </div>
-
-                <div className="mt-2 text-[11px] sm:text-xs text-gray-700 flex items-center gap-2">
-                  <Info className="w-3.5 h-3.5 text-gray-400" />
-
-                  {liveSummerRegOpen ? (
-                    <span className="font-bold">
-                      An- und Abmeldung noch:{" "}
-                      {formatHoursMinutesSeconds(liveSummerSecondsLeft ?? 0)}
-                      <span className="font-semibold text-gray-500">
-                        {" "}
-                        (schließt 10 Min vor Start)
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="font-bold">
-                      An- und Abmeldung geschlossen{" "}
-                      <span className="font-semibold text-gray-500">
-                        (10 Min vor Start)
-                      </span>
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <Button
-                size="sm"
-                disabled={!liveSummerRegOpen}
-                className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm px-3 sm:px-4 disabled:opacity-60 disabled:cursor-not-allowed"
-                onClick={() => (window.location.href = "/summer-special/anmeldung")}
-              >
-                {liveSummerRegOpen ? (
-                  <>
-                    <span className="hidden sm:inline">Jetzt anmelden</span>
-                    <span className="sm:hidden">Anmelden</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="hidden sm:inline">Geschlossen</span>
-                    <span className="sm:hidden">Zu</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-
-      <section className="mx-auto w-full max-w-[1800px] overflow-x-hidden px-3 py-7 sm:px-5 lg:px-8 lg:py-9 xl:px-10">
-        <div className="grid gap-5 xl:grid-cols-2">
-		
-		
-		
-	
-
-
-
-
-		
-{/* SUMMER SPECIAL CARD – beendet, aktuell ausgeblendet */}
-<div className="hidden">
-  <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white">
-    <div className="absolute inset-0 opacity-10" />
-
-    <div className="relative p-5 sm:p-6 lg:p-7">
-      <div className="w-full mx-auto flex flex-col">
-        <div className="flex items-center justify-center mb-5 sm:mb-7">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
-            <Image src="/images/logo4.png" alt="EMD Summer Special" width={90} height={90} className="object-contain p-2" />
-          </div>
-        </div>
-
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
-            <Trophy className="w-3.5 h-3.5" />
-            <span>STEELDART SERIE 2026</span>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2">EMD Summer Special</h1>
-          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">Steeldart Tournament Competition Cup K26</p>
-
-          <div className="min-h-[40px] flex items-center justify-center mb-2">
-            {nextSummerTournamentEvent?.matchday ? (
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
-                <div className="flex items-center gap-2 text-xs">
-                  <Trophy className="w-3.5 h-3.5 text-yellow-300" />
-                  <span className="text-orange-100">Spieltag {nextSummerTournamentEvent.matchday}</span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">Nächstes Turnier</p>
-
-          <p className="text-sm lg:text-base text-orange-200">
-            {nextSummerTournamentEvent
-              ? `${new Date(summerSpecialNextDate).toLocaleDateString("de-DE", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                })} • ${nextSummerTournamentEvent.event_time || "19:00"} Uhr`
-              : summerSpecialLoading
-                ? "Lade Termin..."
-                : "Noch kein Termin eingetragen"}
-          </p>
-        </div>
-
-        <div className="mt-5 sm:mt-7 flex justify-center">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 lg:px-10 py-3 sm:py-4 border border-white/20">
-            <CountdownTimer targetDate={summerSpecialNextDate} />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div className="p-4 sm:p-6 lg:p-8">
-    <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="w-4 h-4 text-orange-600" />
-        <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">Preisgeld</span>
-      </div>
-
-      <div className="text-center rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
-        <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 mb-1">
-          €{summerPrizePool.toFixed(2)}
-        </div>
-        <p className="text-gray-600 text-xs sm:text-sm">Wächst mit jedem Teilnehmer und jeder Teilnahme</p>
-      </div>
-    </div>
-
-    <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-      <Button
-        size="lg"
-        className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
-        onClick={() => (window.location.href = "/summer-special")}
-      >
-        Zur Gesamtwertung
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </Button>
-
-      <Button
-        size="lg"
-        variant="outline"
-        className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-        onClick={() => (window.location.href = "/steeldart-competition-regelwerk")}
-      >
-        Regelwerk
-      </Button>
-
-     <Button
-  size="lg"
-  variant="outline"
-  className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-  onClick={() => (window.location.href = "/summer-special/anmeldung")}
->
-  Zur Anmeldung
-  <ArrowRight className="w-4 h-4 ml-2" />
-</Button>
-    </div>
-  </div>
-</div>
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-		
-		
-		
-		
-		
-<div className="mb-5 mt-2 xl:col-span-2">
-  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">Serien & Wettbewerbe</div>
-  <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Deine Cups</h2>
-  <p className="mt-1 text-sm font-medium text-slate-500">Aktuelle Serien, Termine und Wertungen auf einen Blick.</p>
-</div>
-
-{/* MEMBERS CHAMPIONS CUP CARD */}
-<div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
-  <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white">
-    <div className="absolute inset-0 opacity-10" />
-
-    <div className="relative p-5 sm:p-6 lg:p-7">
-      <div className="w-full mx-auto flex flex-col">
-        <div className="flex items-center justify-center mb-5 sm:mb-7">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 flex items-center justify-center">
-            <Image
-              src="/images/logo5.png"
-              alt="EMD Members Champions Cup"
-              width={160}
-              height={160}
-              className="object-contain"
-            />
-          </div>
-        </div>
-
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
-            <Trophy className="w-3.5 h-3.5" />
-            <span>MEMBERS CHAMPIONS CUP 2026/27</span>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2">
-            EMD Members Champions Cup
-          </h1>
-
-          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
-            Offizielle Vereinsserie 2026/27
-          </p>
-
-          <div className="min-h-[40px] flex items-center justify-center mb-2">
-            {nextMembersChampionEvent?.matchday ? (
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
-                <div className="flex items-center gap-2 text-xs">
-                  <Trophy className="w-3.5 h-3.5 text-yellow-300" />
-                  <span className="text-orange-100">
-                    Spieltag {nextMembersChampionEvent.matchday}
-                  </span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
-            Nächstes Turnier
-          </p>
-
-          <p className="text-sm lg:text-base text-orange-200">
-            {nextMembersChampionEvent
-              ? `${new Date(membersChampionNextDate).toLocaleDateString("de-DE", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                })} • ${nextMembersChampionEvent.event_time || "19:00"} Uhr`
-              : membersChampionLoading
-                ? "Lade Termin..."
-                : "Noch kein Termin eingetragen"}
-          </p>
-        </div>
-
-        <div className="mt-5 sm:mt-7 flex justify-center">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 lg:px-10 py-3 sm:py-4 border border-white/20">
-            <CountdownTimer targetDate={membersChampionNextDate} />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div className="p-4 sm:p-6 lg:p-8">
-    <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="w-4 h-4 text-orange-600" />
-        <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
-          Finalpreisfonds
-        </span>
-      </div>
-
-      <div className="rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
-        <div className="text-center">
-          <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900">
-            €{membersPrizePool.toFixed(2)}
-          </div>
-          <p className="mt-1 text-xs sm:text-sm font-semibold text-gray-600">
-            Aktueller Finalpreisfonds
-          </p>
-        </div>
-
-        <div className="mt-5 border-t border-orange-100 pt-4">
-          <p className="text-center text-sm font-bold text-gray-700">
-            Startgeld: <span className="font-black text-orange-700">€ 15,00</span> pro Spieler und Turniertag
-          </p>
-
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-center">
-              <div className="text-xl sm:text-2xl font-black text-orange-700">€ 10,00</div>
-              <div className="mt-1 text-[11px] sm:text-xs font-bold text-gray-600">
-                fließen in den Finalpreisfonds
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
-              <div className="text-xl sm:text-2xl font-black text-slate-900">€ 5,00</div>
-              <div className="mt-1 text-[11px] sm:text-xs font-bold text-gray-600">
-                werden am jeweiligen Turniertag ausgeschüttet
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-      <Button
-        size="lg"
-        className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
-        onClick={() => (window.location.href = "/members-champion-cup-tabelle")}
-      >
-        Zur Gesamtwertung
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </Button>
-
-      <Button
-        size="lg"
-        variant="outline"
-        className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-        onClick={() => (window.location.href = "/emd-champions-cup-regelwerk")}
-      >
-        Regelwerk
-      </Button>
-	  
-	  <Button
-  size="lg"
-  variant="outline"
-  className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-  onClick={() => (window.location.href = "/member-cup-einstufung")}
->
-  Einstufung
-</Button>
-
-      <Button
-  size="lg"
-  variant="outline"
-  className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-  onClick={() => (window.location.href = "/member-cup-anmeldung")}
->
-  Anmelden
-</Button>
-    </div>
-  </div>
-</div>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-	<div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
-    {/* TOP HERO (ORANGE) */}
-    <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white">
-     <div className="absolute inset-0 opacity-10" />
-
-      <div className="relative p-5 sm:p-6 lg:p-7">
-        <div className="w-full mx-auto flex flex-col">
-          {/* Logo */}
-          <div className="flex items-center justify-center mb-5 sm:mb-7">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
-              <Image
-                src="/images/logo1.png"
-                alt="Logo 1"
-                width={90}
-                height={90}
-                className="object-contain p-2"
-              />
-            </div>
-          </div>
-
-          {/* Title */}
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
-              <Trophy className="w-3.5 h-3.5" />
-              <span>LION CUP PART 3 • HERBST 2026</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2">
-              EMD - LION CUP
-            </h1>
-
-            <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
-              Offizielle Vereinsserie 2026
-            </p>
-
-            {/* Spieltag / Spielfrei */}
-            <div className="min-h-[40px] flex items-center justify-center mb-2">
-              {nextTournamentEvent?.matchday ? (
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
-                  <div className="flex items-center gap-2 text-xs">
-                    <Trophy className="w-3.5 h-3.5 text-yellow-300" />
-                    <span className="text-orange-100">
-                      Spieltag {nextTournamentEvent.matchday}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-
-              {false && isNextEventSpielfrei && nextEvent ? (
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
-                  <div className="flex items-center gap-2 text-xs">
-                    <Calendar className="w-3.5 h-3.5 text-yellow-300" />
-                    <span className="text-orange-100">
-                      Spielfrei am{" "}
-                      {new Date(nextEvent.event_date).toLocaleDateString("de-DE", {
-                        day: "2-digit",
-                        month: "long",
-                      })}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <p className="text-base sm:text-lg lg:text-xl text-orange-100 mb-1">
-              Nächstes Turnier
-            </p>
-            <p className="text-sm lg:text-base text-orange-200">
-              {nextTournamentEvent
-                ? `${new Date(lionCupNextDate).toLocaleDateString("de-DE", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })} • ${nextTournamentEvent.event_time || "19:30"} Uhr`
-                : "15. November 2025 • 19:30 Uhr"}
-            </p>
-          </div>
-
-          {/* Countdown (im orange Bereich, aber als Glass Box) */}
-          <div className="mt-5 sm:mt-7 flex justify-center">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 sm:px-6 lg:px-10 py-3 sm:py-4 border border-white/20">
-              <CountdownTimer targetDate={lionCupNextDate} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* BOTTOM CONTENT (WHITE) */}
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="grid grid-cols-1 gap-4 lg:gap-6">
-        {/* FINALPREISFONDS */}
-        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4 text-orange-600" />
-            <span className="text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider">
-              Finalpreisfonds
-            </span>
-          </div>
-
-          <div className="rounded-2xl bg-white border border-orange-200 p-4 sm:p-5">
-            <div className="text-center">
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900">
-                €{cupPrizePool.toFixed(2)}
-              </div>
-              <p className="mt-1 text-xs sm:text-sm font-semibold text-gray-600">
-                Aktueller Finalpreisfonds
-              </p>
-            </div>
-
-            <div className="mt-5 border-t border-orange-100 pt-4">
-              <p className="text-center text-sm font-bold text-gray-700">
-                Seriengebühr: <span className="font-black text-orange-700">€ 10,00</span> einmalig pro Spieler
-              </p>
-              <p className="mt-1 text-center text-sm font-bold text-gray-700">
-                Startgeld: <span className="font-black text-orange-700">€ 5,00</span> pro Spieler und Turniertag
-              </p>
-
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-center">
-                  <div className="text-xl sm:text-2xl font-black text-orange-700">€ 10,00</div>
-                  <div className="mt-1 text-[11px] sm:text-xs font-bold text-gray-600">
-                    einmalige Seriengebühr pro Spieler
-                  </div>
-                </div>
-                <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-center">
-                  <div className="text-xl sm:text-2xl font-black text-orange-700">€ 5,00</div>
-                  <div className="mt-1 text-[11px] sm:text-xs font-bold text-gray-600">
-                    pro Turnier und Spieler
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Buttons */}
-      <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-        <Button
-          size="lg"
-          className="bg-orange-600 hover:bg-orange-700 text-white font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-xl w-full sm:w-auto"
-          onClick={() => (window.location.href = "/lion-cup")}
-        >
-          Zur Gesamtwertung
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-
-        <Button
-          size="lg"
-          variant="outline"
-          className="border-gray-300 bg-white hover:bg-gray-50 text-gray-900 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-          onClick={() => (window.location.href = "/lion-cup/regelwerk")}
-        >
-          Regelwerk
-        </Button>
-
-        <Button
-          size="lg"
-          variant="outline"
-          className="border-orange-300 bg-orange-50 hover:bg-orange-100 text-orange-700 font-black text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto"
-          onClick={() => (window.location.href = "/lion-cup/anmeldung")}
-        >
-          Anmelden
-        </Button>
-      </div>
-    </div>
-  </div>
-</div>
- </section>
+            <ArrowRight className="h-5 w-5 text-orange-300" />
+          </button>
+        )}
+      </section>
  
  
  
  
  
 
-      <div className="mx-auto w-full max-w-[1800px] px-3 py-6 sm:px-5 sm:py-8 lg:px-8 xl:px-10">
+      <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-6 sm:px-5 sm:py-8 lg:px-8 xl:px-10">
   <div className="space-y-8">
     {/* ================= NÄCHSTE SPIELE ================= */}
     <section>
@@ -3641,68 +711,93 @@ useEffect(() => {
       )}
     </section>
 
-    {/* ================= DEMNÄCHST BEI EMD ================= */}
+    {/* ================= VERANSTALTUNGEN & TURNIERE ================= */}
     <section>
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-base sm:text-lg font-black text-gray-900">Demnächst bei EMD</h2>
-          <p className="text-xs sm:text-sm text-gray-500">Turniere, Spielabende, Partys & Vereinsveranstaltungen</p>
+          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">Aktuell & demnächst</div>
+          <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Veranstaltungen & Turniere</h2>
+          <p className="mt-1 text-sm font-semibold text-white/40">EMD-Termine und ausgewählte DACH-Turniere auf einen Blick.</p>
         </div>
 
-        <Button
-          variant="ghost"
-          className="h-9 px-3 text-orange-700 hover:text-orange-800 hover:bg-orange-50 font-bold"
-          onClick={() => (window.location.href = "/veranstaltungen")}
-        >
-          Alle
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="h-9 rounded-xl border-white/10 bg-white/[0.04] px-3 font-black text-white/70 hover:bg-white/[0.08] hover:text-white"
+            onClick={() => (window.location.href = "/veranstaltungen")}
+          >
+            EMD-Veranstaltungen
+          </Button>
+          <Button
+            variant="outline"
+            className="h-9 rounded-xl border-orange-300/20 bg-orange-500/[0.06] px-3 font-black text-orange-100 hover:bg-orange-500/[0.12]"
+            onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/turniere" }}
+          >
+            DACH-Turniere
+          </Button>
+        </div>
       </div>
 
-      {emdUpcomingEvents.length === 0 ? (
-        <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-8 text-center">
-          <Info className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-600 font-semibold">Derzeit sind keine EMD-Veranstaltungen geplant.</p>
+      {homepageEventItems.length === 0 ? (
+        <div className="rounded-[22px] border border-white/10 bg-[#080d14]/88 p-6 text-center">
+          <Calendar className="mx-auto mb-3 h-8 w-8 text-white/20" />
+          <p className="font-semibold text-white/45">Derzeit sind keine kommenden Veranstaltungen verfügbar.</p>
         </div>
       ) : (
-        <div className="-mx-4 px-4 overflow-x-auto">
-          <div className="flex gap-4 sm:grid sm:grid-cols-2 sm:gap-6">
-            {emdUpcomingEvents.map((item) => renderHomeEventCard(item))}
-          </div>
-        </div>
-      )}
-    </section>
+        <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:overflow-visible sm:px-0">
+          <div className="flex gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+            {homepageEventItems.map((item) => (
+              <button
+                key={`${item.sourceKind}:${item.id}`}
+                type="button"
+                onClick={() => openHomepageEvent(item)}
+                className="group min-w-[82vw] overflow-hidden rounded-[22px] border border-white/10 bg-[#080d14]/90 text-left shadow-[0_18px_55px_-42px_rgba(0,0,0,.95)] transition hover:-translate-y-0.5 hover:border-orange-300/25 sm:min-w-0"
+              >
+                <div className="relative h-[112px] overflow-hidden bg-white/[0.035]">
+                  {item.photo_url ? (
+                    <img
+                      src={item.photo_url}
+                      alt={item.name}
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Trophy className="h-8 w-8 text-orange-300/55" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#080d14]/45 via-transparent to-transparent" />
+                  <div className="absolute left-3 top-3 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white/75 backdrop-blur-md">
+                    {item.sourceKind === "dach" ? "DACH" : "EMD"}
+                  </div>
+                </div>
 
-    {/* ================= DART-TURNIERE ENTDECKEN ================= */}
-    <section className="mt-7 sm:mt-9">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base sm:text-lg font-black text-gray-900">Dart-Turniere entdecken</h2>
-            <span className="hidden sm:inline-flex rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-orange-700">
-              DACH
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-gray-500">Österreich, Deutschland & Schweiz</p>
-        </div>
+                <div className="p-3.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-white/38">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5 text-orange-300/70" />
+                      {new Date(item.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 text-orange-300/70" />
+                      {String(item.time || "").slice(0, 5)} Uhr
+                    </span>
+                  </div>
 
-        <Button
-          variant="ghost"
-          className="h-9 px-3 text-orange-700 hover:text-orange-800 hover:bg-orange-50 font-bold"
-          onClick={() => (window.location.href = "/turniere")}
-        >
-          Alle Turniere
-        </Button>
-      </div>
+                  <h3 className="mt-2 line-clamp-2 text-base font-black leading-tight text-white">{item.name}</h3>
 
-      {discoverTournaments.length === 0 ? (
-        <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-8 text-center">
-          <Trophy className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-          <p className="text-gray-600 font-semibold">Derzeit sind keine weiteren DACH-Turniere verfügbar.</p>
-        </div>
-      ) : (
-        <div className="-mx-4 px-4 overflow-x-auto">
-          <div className="flex gap-4 sm:grid sm:grid-cols-2 sm:gap-6">
-            {discoverTournaments.map((item) => renderHomeEventCard(item))}
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <span className="inline-flex min-w-0 items-center gap-1 text-xs font-semibold text-white/40">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-orange-300/70" />
+                      <span className="truncate">{item.location || "Ort folgt"}</span>
+                    </span>
+                    <span className="inline-flex shrink-0 items-center gap-1 text-xs font-black text-orange-200">
+                      Details
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -3724,124 +819,72 @@ useEffect(() => {
 	  
 	  
 	  
-<section className="py-8 sm:py-10">
-  <div className="container mx-auto px-4">
-    {/* Header */}
-    <div className="flex items-end justify-between mb-4">
+<section className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-6 sm:px-5 sm:py-8 lg:px-8 xl:px-10">
+  <div className="rounded-[28px] border border-white/10 bg-[#080d14]/88 p-4 shadow-[0_24px_80px_-55px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-5 lg:p-6">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-xs font-black uppercase tracking-wider text-orange-600">Unsere Partner</p>
-        <h2 className="text-base sm:text-lg font-black text-gray-900">Gemeinsam für den Dartsport</h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Danke an Sponsoren & Partner für die Unterstützung.
-        </p>
+        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">Unsere Partner</div>
+        <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Partner & Unterstützer</h2>
+        <p className="mt-1 text-sm font-semibold text-white/40">Danke an alle Unternehmen und Organisationen, die den Verein unterstützen.</p>
       </div>
 
       <Button
-        variant="ghost"
-        className="h-9 px-3 text-orange-700 hover:bg-orange-50 font-bold"
+        variant="outline"
+        className="h-10 rounded-xl border-orange-300/20 bg-orange-500/[0.08] px-4 font-black text-orange-100 hover:bg-orange-500/[0.14] hover:text-white"
         onClick={() => (window.location.href = "/sponsoring")}
       >
-        Sponsor werden
-        <ArrowRight className="w-4 h-4 ml-1" />
+        Sponsoring
+        <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
     </div>
 
-    {/* Hauptsponsor */}
-    <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-7 items-center rounded-full bg-orange-50 text-orange-700 border border-orange-200 px-3 text-xs font-black">
-            Hauptsponsor
-          </span>
-        </div>
-      </div>
-
-      <div className="p-4">
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 flex items-center justify-center">
+    <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
+      <div className="rounded-[22px] border border-orange-300/15 bg-orange-500/[0.05] p-4 sm:p-5">
+        <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-orange-200/60">Hauptsponsor</div>
+        <div className="flex min-h-[110px] items-center justify-center rounded-2xl border border-white/[0.08] bg-black/20 px-5 py-4">
           <Image
-  src="/images/sponsoren/sponsor1.png"
-  alt="Hauptsponsor"
-  width={260}
-  height={110}
-  className="h-auto object-contain"
-  style={{ width: "100%", height: "auto", maxWidth: "260px" }}
-  priority
-/>
+            src="/images/sponsoren/sponsor1.png"
+            alt="Hauptsponsor"
+            width={220}
+            height={90}
+            className="max-h-[76px] w-auto max-w-full object-contain"
+            priority
+          />
         </div>
       </div>
-    </div>
 
-    {/* Premium Partner (App Carousel) */}
-    <div className="mt-6">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-black text-gray-900">Premium Partner</h3>
-        <span className="text-xs text-gray-500"></span>
-      </div>
-
-      <div className="-mx-4 px-4 overflow-x-auto">
-        <div className="flex gap-3">
+      <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
+        <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Premium Partner</div>
+        <div className="grid grid-cols-3 gap-2.5">
           {[2, 3, 4].map((num) => (
-            <div
-              key={num}
-              className="min-w-[170px] rounded-[22px] border border-slate-200 bg-white shadow-sm p-4 flex items-center justify-center"
-            >
+            <div key={num} className="flex min-h-[92px] items-center justify-center rounded-2xl border border-white/[0.08] bg-black/20 p-3">
               <Image
-  src={`/images/sponsoren/sponsor${num}.png`}
-  alt={`Premium Partner ${num}`}
-  width={160}
-  height={70}
-  className="h-auto object-contain"
-  style={{ width: "100%", height: "auto", maxWidth: "160px" }}
-/>
+                src={`/images/sponsoren/sponsor${num}.png`}
+                alt={`Premium Partner ${num}`}
+                width={130}
+                height={58}
+                className="max-h-[58px] w-auto max-w-full object-contain"
+              />
             </div>
           ))}
         </div>
       </div>
     </div>
 
-    {/* */}
-    <div className="mt-6">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-black text-gray-900">Offizielle Partner</h3>
-        <span className="text-xs text-gray-500"></span>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+    <div className="mt-4 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
+      <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Offizielle Partner</div>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-8">
         {[5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
-          <div
-            key={num}
-            className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-3 flex items-center justify-center"
-          >
+          <div key={num} className="flex min-h-[82px] items-center justify-center rounded-2xl border border-white/[0.08] bg-black/20 p-2.5">
             <Image
-  src={`/images/sponsoren/sponsor${num}.png`}
-  alt={`Partner ${num}`}
-  width={140}
-  height={60}
-  className="h-auto object-contain"
-  style={{ width: "100%", height: "auto", maxWidth: "140px" }}
-/>
+              src={`/images/sponsoren/sponsor${num}.png`}
+              alt={`Partner ${num}`}
+              width={110}
+              height={50}
+              className="max-h-[50px] w-auto max-w-full object-contain"
+            />
           </div>
         ))}
-      </div>
-    </div>
-
-    {/*  */}
-    <div className="mt-8 rounded-2xl border border-orange-200 bg-orange-50 p-4 sm:p-5 shadow-sm">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <h4 className="text-sm sm:text-base font-black text-gray-900">Partner werden</h4>
-          <p className="text-sm text-gray-700 mt-1">
-            Interesse an einer Partnerschaft? Schreib uns – wir melden uns schnell.
-          </p>
-        </div>
-
-        <Button
-          className="h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black px-4"
-          onClick={() => (window.location.href = "/sponsoring")}
-        >
-          Sponsoring
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
       </div>
     </div>
   </div>
@@ -3853,72 +896,43 @@ useEffect(() => {
 
 
 
-<section className="relative overflow-hidden py-10 sm:py-14 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 rounded-3xl mx-4 sm:mx-6 shadow-2xl">
+<section className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-8 sm:px-5 sm:pb-10 lg:px-8 xl:px-10">
+  <div className="overflow-hidden rounded-[26px] border border-orange-300/15 bg-[linear-gradient(135deg,rgba(249,115,22,.12),rgba(7,12,20,.92)_45%,rgba(7,12,20,.96))] shadow-[0_24px_80px_-55px_rgba(0,0,0,.95)] backdrop-blur-xl">
+    <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-6 lg:p-6">
+      <div className="min-w-0">
+        <div className="inline-flex items-center rounded-full border border-orange-300/20 bg-orange-500/[0.08] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-orange-200/80">
+          EMD Vereinsapp
+        </div>
+        <h2 className="mt-2 text-xl font-black tracking-tight text-white sm:text-2xl">Liga, Turniere und Vereinsnews in einer App</h2>
+        <p className="mt-1.5 max-w-2xl text-sm font-semibold leading-6 text-white/45">
+          Live-Scores, Turniere, Push-News und Statistiken direkt auf deinem Smartphone.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {['Live-Scores','Turniere','Push-News','Statistiken'].map((item) => (
+            <span key={item} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-bold text-white/55">
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
 
-  {/* Soft Glow */}
-  <div className="absolute inset-0 pointer-events-none">
-    <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-yellow-300/20 blur-[120px] rounded-full"></div>
-  </div>
-
-  <div className="relative mx-auto max-w-2xl px-4 text-center text-white">
-
-    {/* Badge */}
-    <span className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full bg-white/15 text-xs font-bold backdrop-blur">
-      🚀 Jetzt verfügbar
-    </span>
-
-    {/* Headline */}
-    <h2 className="text-2xl sm:text-3xl font-black leading-tight">
-      EMD Vereinsapp
-    </h2>
-
-    {/* Text */}
-    <p className="mt-4 text-sm sm:text-base text-orange-50/90">
-      Alles rund um Liga, Turniere und Vereinsnews –
-      modern, schnell und direkt auf deinem Smartphone.
-    </p>
-
-    {/* Feature Chips */}
-    <div className="mt-6 flex flex-wrap justify-center gap-2">
-      {["Live-Scores", "Turniere", "Push-News", "Statistiken"].map((item) => (
-        <span
-          key={item}
-          className="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold backdrop-blur"
-        >
-          {item}
-        </span>
-      ))}
-    </div>
-
-    {/* Google Play Badge */}
-    <div className="mt-8 flex justify-center">
       <a
         href="https://play.google.com/store/apps/details?id=com.emojisdartverein.app"
         target="_blank"
         rel="noopener noreferrer"
-        className="transition-transform duration-300 active:scale-95"
+        className="inline-flex justify-start lg:justify-end"
       >
         <Image
           src="/images/google-play-badge.png"
           alt="Jetzt bei Google Play herunterladen"
-          width={200}
-          height={60}
-          className="h-14 w-auto drop-shadow-xl"
-          priority
+          width={180}
+          height={54}
+          className="h-12 w-auto sm:h-14"
         />
       </a>
     </div>
-
-   
-
   </div>
 </section>
-
-
-
-
-
-
 
 <footer className="mt-10 border-t border-gray-200 bg-white">
   <div className="container mx-auto px-4 py-6">
@@ -3994,69 +1008,12 @@ useEffect(() => {
 
       
 
-      {fullscreenPhoto && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 cursor-pointer"
-          onClick={() => setFullscreenPhoto(null)}
-        >
-          <button
-            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
-            onClick={(e) => {
-              e.stopPropagation()
-              setFullscreenPhoto(null)
-            }}
-            aria-label="Foto schließen"
-          >
-            <X className="w-8 h-8" />
-          </button>
-          <div className="relative w-full h-full max-w-7xl max-h-[90vh]">
-            <Image src={fullscreenPhoto || "/placeholder.svg"} alt="Vollbild" fill className="object-contain" sizes="100vw" />
-          </div>
-        </div>
-      )}
 
 
 
 
 
 
-      <Dialog open={liveInfoOpen} onOpenChange={setLiveInfoOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Hinweis</DialogTitle>
-          </DialogHeader>
-          <div className="text-sm text-gray-700 leading-relaxed">
-            Abmeldungen sind jederzeit bis 10 Minuten vor Turnierbeginn möglich, solange die Anmeldung offen ist. Wenn du
-            bis Turnierbeginn nicht anwesend bist, wird deine Anmeldung storniert und der Betrag bei vorab bezahlter
-            Startgebühr rückerstattet.
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <DKOSelfRegistrationModal
-        isOpen={dkoModal.isOpen}
-        onClose={() => setDkoModal((prev) => ({ ...prev, isOpen: false }))}
-        title={dkoModal.title}
-        dateLabel={dkoModal.dateLabel}
-        timeLabel={dkoModal.timeLabel}
-        seriesId={dkoModal.seriesId}
-        startgeld={dkoModal.startgeld}
-        onRegistrationChanged={(isReg: boolean) => {
-          setDkoRegistered(isReg)
-
-          const delta = Date.now() - (modalOpenedAtRef.current || 0)
-          if (delta < 900) return
-
-          setDkoModal((prev) => ({ ...prev, isOpen: false }))
-          showToast(isReg ? "✅ Erfolgreich angemeldet!" : "✅ Erfolgreich abgemeldet!")
-        }}
-      />
-
-      {toast.show && (
-        <div className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2">
-          <div className="rounded-full bg-black/85 text-white px-4 py-2 text-sm font-semibold shadow-lg">{toast.text}</div>
-        </div>
-      )}
 
       <MobileBottomNav />
     </div>

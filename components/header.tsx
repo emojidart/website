@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
@@ -26,6 +27,7 @@ import {
   GraduationCap,
   ClipboardList,
   ChevronRight,
+  ChevronsUpDown,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
@@ -93,6 +95,9 @@ export function Header({
   const [chatUnreadCount, setChatUnreadCount] = React.useState(0)
   const [isGuest, setIsGuest] = React.useState(false)
   const [profileChecked, setProfileChecked] = React.useState(false)
+  const [areaSwitcherOpen, setAreaSwitcherOpen] = React.useState(false)
+  const areaSwitcherRef = React.useRef<HTMLDivElement | null>(null)
+  const [portalReady, setPortalReady] = React.useState(false)
 
   const closeDrawer = () => setDrawerOpen(false)
   const toggleDrawer = () => setDrawerOpen((v) => !v)
@@ -104,6 +109,10 @@ export function Header({
   }, [user])
 
   const authReady = authReadyRef.current
+
+  React.useEffect(() => {
+    setPortalReady(true)
+  }, [])
 
   React.useEffect(() => {
     let mounted = true
@@ -168,6 +177,32 @@ export function Header({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
+  React.useEffect(() => {
+    setAreaSwitcherOpen(false)
+  }, [pathname])
+
+  React.useEffect(() => {
+    if (!areaSwitcherOpen) return
+
+    const onPointerDown = (event: MouseEvent) => {
+      if (!areaSwitcherRef.current?.contains(event.target as Node)) {
+        setAreaSwitcherOpen(false)
+      }
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAreaSwitcherOpen(false)
+    }
+
+    document.addEventListener("mousedown", onPointerDown)
+    window.addEventListener("keydown", onKeyDown)
+
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown)
+      window.removeEventListener("keydown", onKeyDown)
+    }
+  }, [areaSwitcherOpen])
+
   const handleAuthClick = () => {
     if (user && isGuest) {
       router.push("/guest-profile-app")
@@ -182,20 +217,21 @@ export function Header({
     router.push("/login")
   }
 
-  const handleApplyClick = () => {
-    router.push("/player-search")
+  const handleJoinClick = () => {
+    router.push("/verein-beitreten")
   }
 
   const handleAdminClick = () => {
     router.push("/admin")
   }
 
-  const handleCampusClick = () => {
-    router.push("/emd-campus")
-  }
-
   const handleChatClick = () => {
     router.push(isGuest ? "/chat-app?scope=community" : "/chat-app")
+  }
+
+  const openArea = (href: string) => {
+    setAreaSwitcherOpen(false)
+    router.push(href)
   }
 
   const isActive = (href: string) => {
@@ -384,61 +420,23 @@ export function Header({
     )
   }
 
-  if (variant === "app") {
-    const handleBack = () => {
-      if (onBackClick) return onBackClick()
-      if (backHref) return router.push(backHref)
-      router.back()
-    }
+  const drawerPortal =
+    portalReady && drawerOpen
+      ? createPortal(
+          (
+        <div className="fixed inset-0 z-[9999]">
+          <button
+            aria-label="Schließen"
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={closeDrawer}
+          />
 
-    return (
-      <header className="fixed left-0 right-0 top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur-xl pt-[env(safe-area-inset-top)]">
-        <div className="bg-white">
-          <div className="mx-auto w-full max-w-7xl px-4">
-            <div className="flex h-14 items-center gap-3">
-              {backHref || onBackClick ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBack}
-                  className="rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              ) : null}
-
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-600 shadow-sm">
-                    <BarChart3 className="h-5 w-5 text-white" />
-                  </span>
-
-                  <div className="min-w-0">
-                    <div className="truncate text-base font-extrabold text-gray-900 sm:text-lg">{title}</div>
-                    {subtitle ? <div className="truncate text-xs text-gray-500 sm:text-sm">{subtitle}</div> : null}
-                  </div>
-                </div>
-              </div>
-
-              <div className="ml-auto" />
-            </div>
-          </div>
-        </div>
-      </header>
-    )
-  }
-
-  return (
-    <>
-      {drawerOpen && (
-        <div className="fixed inset-0 z-[60]">
-          <button aria-label="Schließen" className="absolute inset-0 bg-black/40" onClick={closeDrawer} />
-
-          <aside className="absolute bottom-0 left-0 top-0 w-[330px] overflow-hidden border-r border-slate-800 bg-slate-950 text-white shadow-2xl lg:w-[390px]">
-            <div className="border-b border-white/10 bg-slate-950 p-4 pt-[max(env(safe-area-inset-top),16px)]">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0 flex items-center gap-2">
-                  <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm">
+          <aside className="absolute bottom-0 right-0 top-0 w-[min(90vw,380px)] overflow-hidden border-l border-white/10 bg-[#050608] text-white shadow-[-28px_0_90px_-36px_rgba(0,0,0,.98)]">
+            <div className="relative overflow-hidden border-b border-white/10 bg-[#070a0f] p-4 pt-[max(env(safe-area-inset-top),16px)]">
+              <div className="pointer-events-none absolute -right-10 -top-16 h-36 w-36 rounded-full bg-orange-500/10 blur-3xl" />
+              <div className="relative flex items-center justify-between gap-3">
+                <div className="min-w-0 flex items-center gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-orange-300/15 bg-orange-500/10 shadow-[0_0_28px_rgba(249,115,22,.08)]">
                     <Image
                       src="/images/brutal-darts-bg---.png"
                       alt="EMD Logo"
@@ -450,7 +448,7 @@ export function Header({
                     />
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate font-extrabold text-white">{title}</div>
+                    <div className="truncate text-sm font-black tracking-tight text-white">{title}</div>
                     {user ? (
                       <div className="truncate text-xs text-slate-400">
                         {isGuest ? "Gastzugang" : user.email}
@@ -461,37 +459,29 @@ export function Header({
                   </div>
                 </div>
 
-                <button onClick={closeDrawer} className="rounded-xl p-2 text-slate-300 hover:bg-white/10" aria-label="Schließen">
-                  <X className="h-5 w-5 text-slate-300" />
+                <button
+                  onClick={closeDrawer}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/50 transition hover:bg-white/10 hover:text-white"
+                  aria-label="Schließen"
+                >
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            <div className="h-full overflow-y-auto bg-slate-50 p-3 pb-[env(safe-area-inset-bottom)] text-slate-900">
+            <div className="h-full overflow-y-auto bg-[#050608] p-3 pb-[calc(env(safe-area-inset-bottom)+84px)] text-white">
               {!user ? (
                 <Button
                   onClick={() => {
                     closeDrawer()
-                    handleApplyClick()
+                    handleJoinClick()
                   }}
-                  className="mb-2 h-11 w-full rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
+                  className="mb-3 h-11 w-full rounded-2xl bg-orange-600 font-bold text-white shadow-none hover:bg-orange-500"
                 >
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Jetzt bewerben
+                  Jetzt beitreten
                 </Button>
               ) : null}
-
-              <Button
-                onClick={() => {
-                  closeDrawer()
-                  handleCampusClick()
-                }}
-                variant="outline"
-                className="mb-3 h-11 w-full rounded-xl border-orange-200 bg-white font-semibold text-orange-700 hover:bg-orange-50"
-              >
-                <GraduationCap className="mr-2 h-4 w-4" />
-                EMD Campus
-              </Button>
 
               <div className="space-y-5 pb-20">
                 {drawerSections.map((sec) => {
@@ -501,7 +491,7 @@ export function Header({
 
                   return (
                     <section key={sec.title}>
-                      <div className="mb-2 px-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                      <div className="mb-1.5 px-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/28">
                         {sec.title}
                       </div>
 
@@ -517,16 +507,25 @@ export function Header({
                               key={it.href + it.label}
                               href={it.href}
                               className={cn(
-                                "flex items-center gap-3 rounded-2xl px-3.5 py-3 transition-all",
+                                "group flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition-colors",
                                 active
-                                  ? "bg-white text-slate-950 shadow-sm ring-1 ring-orange-200"
-                                  : "text-slate-700 hover:bg-white hover:shadow-sm",
+                                  ? "border-orange-300/20 bg-orange-500/10 text-white"
+                                  : "border-transparent text-white/58 hover:border-white/10 hover:bg-white/5 hover:text-white",
                               )}
                               onClick={closeDrawer}
                             >
-                              <Icon className={cn("h-5 w-5 shrink-0", active ? "text-orange-600" : "text-slate-500")} />
-                              <span className="font-semibold">{it.label}</span>
-                              {chatBadge || <ChevronRight className="ml-auto h-4 w-4 text-slate-300" />}
+                              <span
+                                className={cn(
+                                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
+                                  active
+                                    ? "border-orange-300/20 bg-orange-500/10 text-orange-200"
+                                    : "border-white/10 bg-white/5 text-white/42 group-hover:text-white/70",
+                                )}
+                              >
+                                <Icon className="h-4 w-4" />
+                              </span>
+                              <span className="min-w-0 flex-1 truncate text-sm font-bold">{it.label}</span>
+                              {chatBadge || <ChevronRight className="h-4 w-4 shrink-0 text-white/18" />}
                             </Link>
                           )
                         })}
@@ -542,7 +541,7 @@ export function Header({
                       handleAdminClick()
                     }}
                     variant="outline"
-                    className="h-11 w-full rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+                    className="h-11 w-full rounded-2xl border-white/10 bg-white/5 font-bold text-white/70 hover:bg-white/10 hover:text-white"
                   >
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     ADMIN
@@ -555,31 +554,95 @@ export function Header({
                     handleAuthClick()
                   }}
                   variant="outline"
-                  className="h-11 w-full rounded-xl border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+                  className="h-11 w-full rounded-2xl border-white/10 bg-white/5 font-bold text-white/70 hover:bg-white/10 hover:text-white"
                 >
                   {user ? <UserCircle className="mr-2 h-4 w-4" /> : <LogIn className="mr-2 h-4 w-4" />}
-                  {user ? (isGuest ? "Gast-Profil öffnen" : "Profil öffnen") : "Login"}
+                  {user ? (isGuest ? "Gast-Profil öffnen" : "Spielerbereich öffnen") : "Login"}
                 </Button>
               </div>
             </div>
           </aside>
         </div>
-      )}
+          ),
+          document.body,
+        )
+      : null
 
-      <header className="fixed left-0 right-0 top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur-xl pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-5 lg:px-6">
-          <div className="flex h-14 items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-2.5">
+  if (variant === "app") {
+    const handleBack = () => {
+      if (onBackClick) return onBackClick()
+      if (backHref) return router.push(backHref)
+      router.back()
+    }
+
+    return (
+      <>
+        {drawerPortal}
+        <header className="fixed left-0 right-0 top-0 z-50 w-full border-b border-white/[0.08] bg-[#05070b]/96 shadow-[0_10px_35px_-22px_rgba(0,0,0,.95)] backdrop-blur-xl pt-[env(safe-area-inset-top)]">
+        <div className="relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(249,115,22,.10),transparent_34%),radial-gradient(circle_at_88%_0%,rgba(14,165,233,.06),transparent_34%)]" />
+
+          <div className="relative mx-auto w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-7 xl:px-8">
+            <div className="flex h-14 items-center gap-3">
+              {backHref || onBackClick ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBack}
+                  className="h-10 w-10 shrink-0 rounded-2xl border-orange-300/25 bg-black/30 p-0 text-orange-200 shadow-[0_0_18px_rgba(249,115,22,.10)] transition hover:border-orange-300/45 hover:bg-orange-500/[0.12] hover:text-white focus-visible:text-white"
+                >
+                  <ArrowLeft className="h-4 w-4 stroke-[2.5]" />
+                </Button>
+              ) : null}
+
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.10] text-orange-200 shadow-[0_0_20px_rgba(249,115,22,.10)]">
+                    <BarChart3 className="h-5 w-5" />
+                  </span>
+
+                  <div className="min-w-0">
+                    <div className="truncate text-base font-black tracking-[-0.02em] text-white sm:text-lg">
+                      {title}
+                    </div>
+                    {subtitle ? (
+                      <div className="truncate text-xs font-semibold text-white/38 sm:text-sm">
+                        {subtitle}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="ml-auto" />
+
               <button
                 onClick={toggleDrawer}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 hover:text-slate-950"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/65 transition-colors hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
                 aria-label="Menü öffnen"
+                title="Menü"
               >
                 <Menu className="h-5 w-5" />
               </button>
+            </div>
+          </div>
+        </div>
+        </header>
+      </>
+    )
+  }
 
-              <Link href="/" className="flex min-w-0 items-center gap-2.5">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-orange-600 shadow-sm ring-1 ring-orange-100">
+  return (
+    <>
+      {drawerPortal}
+
+
+
+      <header className="fixed left-0 right-0 top-0 z-50 w-full border-b border-white/10 bg-[#06080d]/96 shadow-[0_12px_42px_-28px_rgba(0,0,0,.95)] backdrop-blur-2xl pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-7 xl:px-8">
+          <div className="flex h-14 items-center gap-3">
+            <Link href="/" className="flex min-w-0 items-center gap-2.5">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-orange-300/15 bg-orange-500/10 shadow-[0_0_24px_rgba(249,115,22,.08)]">
                   <Image
                     src="/images/brutal-darts-bg---.png"
                     alt="EMD Logo"
@@ -589,20 +652,19 @@ export function Header({
                     priority
                   />
                 </span>
-                <span className="truncate text-sm font-extrabold tracking-wide text-slate-950 sm:text-base">
+                <span className="truncate text-sm font-black tracking-tight text-white sm:text-base">
                   {title}
                 </span>
               </Link>
-            </div>
 
             <div className="hidden items-center gap-2 lg:flex">
               {user ? (
                 <Button
                   onClick={handleChatClick}
                   variant="outline"
-                  className="relative h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 shadow-none hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
+                  className="relative h-10 rounded-xl border-white/10 bg-white/5 px-4 font-bold text-white/70 shadow-none hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
                 >
-                  <MessageCircle className="mr-2 h-4 w-4 text-orange-600" />
+                  <MessageCircle className="mr-2 h-4 w-4 text-orange-300" />
                   <span>Chat</span>
                   {chatUnreadCount > 0 ? (
                     <span className="ml-2 inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
@@ -612,72 +674,112 @@ export function Header({
                 </Button>
               ) : null}
 
-              <Button
-                onClick={handleCampusClick}
-                variant="outline"
-                className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 shadow-none hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
-              >
-                <GraduationCap className="mr-2 h-4 w-4 text-orange-600" />
-                EMD Campus
-              </Button>
-
-              {!user ? (
-                <Button
-                  onClick={handleApplyClick}
-                  className="h-10 rounded-xl bg-orange-600 px-4 font-semibold text-white hover:bg-orange-500"
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Jetzt bewerben
-                </Button>
-              ) : null}
-
-              {authReady ? (
-                user && isAdmin && !isGuest ? (
-                  <Button
-                    onClick={handleAdminClick}
-                    variant="outline"
-                    className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 shadow-none hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
-                  >
-                    <LayoutDashboard className="mr-2 h-4 w-4 text-orange-600" />
-                    ADMIN
-                  </Button>
-                ) : null
-              ) : (
-                <div className="h-10 w-[110px] rounded-xl border border-slate-200 bg-slate-50" />
-              )}
-
               {authReady ? (
                 user ? (
-                  <button
-                    onClick={handleAuthClick}
-                    className="group flex h-10 min-w-[190px] items-center gap-2.5 rounded-xl border border-orange-200 bg-white pl-2.5 pr-3.5 text-left transition hover:border-orange-300 hover:bg-orange-50"
-                  >
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-orange-600 ring-1 ring-orange-400/20">
-                      <UserCircle className="h-5 w-5" />
-                    </span>
-                    <span className="min-w-0 flex-1 text-right">
-                      <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-orange-600">
-                        {isGuest ? "Gast" : "Profil"}
+                  isAdmin && !isGuest ? (
+                    <div ref={areaSwitcherRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setAreaSwitcherOpen((open) => !open)}
+                        className="group flex h-10 min-w-[192px] items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 pl-2.5 pr-2.5 text-left transition-colors hover:border-orange-300/20 hover:bg-orange-500/10"
+                        aria-expanded={areaSwitcherOpen}
+                        aria-haspopup="menu"
+                      >
+                        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-orange-300/15 bg-orange-500/10 text-orange-200">
+                          <LayoutDashboard className="h-4.5 w-4.5" />
+                        </span>
+
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[9px] font-black uppercase tracking-[0.14em] text-orange-300/70">
+                            Bereich
+                          </span>
+                          <span className="block truncate text-sm font-bold text-white">
+                            Schnell wechseln
+                          </span>
+                        </span>
+
+                        <ChevronsUpDown className="h-4 w-4 shrink-0 text-white/35" />
+                      </button>
+
+                      {areaSwitcherOpen ? (
+                        <div
+                          role="menu"
+                          className="absolute right-0 top-[calc(100%+8px)] z-[80] w-[260px] overflow-hidden rounded-2xl border border-white/10 bg-[#050608] p-2 shadow-[0_30px_90px_-30px_rgba(0,0,0,1)]"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => openArea("/admin")}
+                            className="group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-left text-white/70 hover:border-orange-300/15 hover:bg-orange-500/10 hover:text-white"
+                          >
+                            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-orange-200">
+                              <LayoutDashboard className="h-4 w-4" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-black">Adminbereich</span>
+                              <span className="block text-[11px] font-semibold text-white/35">Verwaltung & Organisation</span>
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => openArea("/member-profile-app")}
+                            className="group mt-1 flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-left text-white/70 hover:border-orange-300/15 hover:bg-orange-500/10 hover:text-white"
+                          >
+                            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-orange-200">
+                              <UserCircle className="h-4 w-4" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-black">Spielerbereich</span>
+                              <span className="block text-[11px] font-semibold text-white/35">Profil, Karte & Mitgliedschaft</span>
+                            </span>
+                          </button>
+
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleAuthClick}
+                      className="group flex h-10 min-w-[190px] items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 pl-2.5 pr-3.5 text-left transition-colors hover:border-orange-300/20 hover:bg-orange-500/10"
+                    >
+                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-orange-300/15 bg-orange-500/10 text-orange-200">
+                        <UserCircle className="h-5 w-5" />
                       </span>
-                      <span className="block truncate text-sm font-semibold text-slate-950">
-                        {isGuest ? "Gastzugang" : getUserLabel(user)}
+                      <span className="min-w-0 flex-1 text-right">
+                        <span className="block text-[9px] font-black uppercase tracking-[0.14em] text-orange-300/70">
+                          {isGuest ? "Gast" : "Spielerbereich"}
+                        </span>
+                        <span className="block truncate text-sm font-bold text-white">
+                          {isGuest ? "Gastzugang" : getUserLabel(user)}
+                        </span>
                       </span>
-                    </span>
-                  </button>
+                    </button>
+                  )
                 ) : (
                   <Button
                     onClick={handleAuthClick}
                     variant="outline"
-                    className="h-10 rounded-xl border-orange-200 bg-white px-4 font-semibold text-orange-700 shadow-none hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800"
+                    className="h-10 rounded-xl border-white/10 bg-white/5 px-4 font-bold text-white/70 shadow-none hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
                   >
-                    <LogIn className="mr-2 h-4 w-4 text-orange-600" />
+                    <LogIn className="mr-2 h-4 w-4 text-orange-300" />
                     Login
                   </Button>
                 )
               ) : (
-                <div className="h-10 w-[190px] rounded-xl border border-slate-200 bg-slate-50" />
+                <div className="h-10 w-[190px] rounded-xl border border-white/10 bg-white/5" />
               )}
             </div>
+
+            <button
+              onClick={toggleDrawer}
+              className="ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/65 transition-colors hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
+              aria-label="Menü öffnen"
+              title="Menü"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </header>

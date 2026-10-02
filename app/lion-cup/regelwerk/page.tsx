@@ -58,13 +58,13 @@ function SectionCard({
   return (
     <motion.section
       variants={itemVariants}
-      className="rounded-2xl border border-gray-200/70 bg-white shadow-sm ring-1 ring-black/5"
+      className="rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl"
     >
       <div className="p-4 sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">{icon}</div>
+          <div className="shrink-0 rounded-2xl border border-amber-300/[0.16] bg-amber-500/[0.09] text-amber-100 p-3">{icon}</div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg sm:text-xl font-black text-gray-900">{title}</h2>
+            <h2 className="text-lg sm:text-xl font-black text-white">{title}</h2>
           </div>
         </div>
         <div className="mt-4">{children}</div>
@@ -84,54 +84,64 @@ function SubCard({
 }) {
   const toneCls =
     tone === "info"
-      ? "bg-blue-50 border-blue-100"
+      ? "bg-sky-500/[0.08] border-sky-300/[0.14]"
       : tone === "warn"
-        ? "bg-yellow-50 border-yellow-200"
+        ? "bg-amber-500/[0.08] border-amber-300/[0.16]"
         : tone === "success"
-          ? "bg-emerald-50 border-emerald-100"
-          : "bg-gray-50 border-gray-100"
+          ? "bg-emerald-500/[0.08] border-emerald-300/[0.14]"
+          : "bg-white/[0.035] border-white/[0.08]"
 
   const titleCls =
     tone === "info"
-      ? "text-blue-900"
+      ? "text-sky-100"
       : tone === "warn"
-        ? "text-yellow-900"
+        ? "text-amber-100"
         : tone === "success"
-          ? "text-emerald-900"
-          : "text-gray-900"
+          ? "text-emerald-100"
+          : "text-white"
 
   return (
     <div className={`rounded-xl border p-4 ${toneCls}`}>
       {title ? <div className={`font-black mb-2 ${titleCls}`}>{title}</div> : null}
-      <div className="text-sm text-gray-700 leading-relaxed">{children}</div>
+      <div className="text-sm text-white/55 leading-relaxed">{children}</div>
     </div>
   )
 }
 
 export default function RegelwerkAppPage() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-24 text-slate-950 font-sans md:pb-0">
-      <Header />
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white font-sans md:pb-0">
+      <Header variant="app" title="Lion Cup Regelwerk" subtitle="Lion Cup · Öffentlich" backHref="/lion-cup" />
 
-      <main className="pt-14 sm:pt-16">
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.31]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(245,158,11,.16),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(249,115,22,.13),transparent_27%),radial-gradient(circle_at_52%_82%,rgba(14,165,233,.07),transparent_24%)]" />
+      </div>
+
+
+      <main className="relative z-10 pt-20 sm:pt-24">
         <motion.div
-          className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
+          className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-14 sm:px-5 lg:px-7 xl:px-8"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
-              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+            <section className="relative overflow-hidden rounded-[30px] border border-amber-300/[0.12] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
+              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber-500/[0.08]0/20 blur-3xl" />
               <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex items-start gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
-                    <Crown className="h-6 w-6 text-orange-400" />
+                    <Crown className="h-6 w-6 text-amber-200" />
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-orange-300">
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-amber-200">
                         EMD – LION CUP Part 3
                       </span>
                       <span className="text-xs font-medium text-white/45">Herbst 2026 · New Edition</span>
@@ -170,8 +180,8 @@ export default function RegelwerkAppPage() {
                 </SubCard>
               </div>
 
-              <div className="mt-3 rounded-[18px] border border-orange-100 bg-orange-50 p-4">
-                <div className="flex items-center gap-2 font-black text-orange-900">
+              <div className="mt-3 rounded-[18px] border border-amber-300/[0.14] bg-amber-500/[0.08] p-4">
+                <div className="flex items-center gap-2 font-black text-amber-100">
                   <Trophy className="h-4 w-4" />
                   14 Qualifikationsturniere + 1 Mega-Finaltag
                 </div>
@@ -204,18 +214,18 @@ export default function RegelwerkAppPage() {
             <SectionCard icon={<Euro className="h-5 w-5" />} title="Startgeld & Serienbeitrag">
               <div className="grid gap-3 md:grid-cols-3">
                 <SubCard title="Serienanmeldung">
-                  <div className="text-2xl font-black text-slate-950">€ 10</div>
-                  <p className="mt-1 text-xs text-slate-500">einmalig für die Serie</p>
+                  <div className="text-2xl font-black text-white">€ 10</div>
+                  <p className="mt-1 text-xs text-white/35">einmalig für die Serie</p>
                 </SubCard>
 
                 <SubCard title="Je Spieltag">
-                  <div className="text-2xl font-black text-slate-950">€ 5</div>
-                  <p className="mt-1 text-xs text-slate-500">Startgeld pro Qualifikationsturnier</p>
+                  <div className="text-2xl font-black text-white">€ 5</div>
+                  <p className="mt-1 text-xs text-white/35">Startgeld pro Qualifikationsturnier</p>
                 </SubCard>
 
                 <SubCard title="Finaltag">
-                  <div className="text-2xl font-black text-slate-950">€ 10 + € 5</div>
-                  <p className="mt-1 text-xs text-slate-500">Finalbeitrag + Startgeld</p>
+                  <div className="text-2xl font-black text-white">€ 10 + € 5</div>
+                  <p className="mt-1 text-xs text-white/35">Finalbeitrag + Startgeld</p>
                 </SubCard>
               </div>
             </SectionCard>
@@ -310,7 +320,7 @@ export default function RegelwerkAppPage() {
                       ["3. Platz", "20 %"],
                     ].map(([place, share]) => (
                       <div key={place} className="rounded-[16px] border border-emerald-100 bg-white p-3 text-center">
-                        <div className="text-xs font-bold text-slate-500">{place}</div>
+                        <div className="text-xs font-bold text-white/35">{place}</div>
                         <div className="mt-1 text-xl font-black text-emerald-700">{share}</div>
                       </div>
                     ))}
@@ -349,13 +359,13 @@ export default function RegelwerkAppPage() {
                       ["8. Platz", "5 %"],
                     ].map(([place, share]) => (
                       <div key={place} className="rounded-[16px] border border-slate-200 bg-white p-3 text-center">
-                        <div className="text-xs font-bold text-slate-500">{place}</div>
-                        <div className="mt-1 text-lg font-black text-slate-950">{share}</div>
+                        <div className="text-xs font-bold text-white/35">{place}</div>
+                        <div className="mt-1 text-lg font-black text-white">{share}</div>
                       </div>
                     ))}
                   </div>
 
-                  <p className="mt-3 text-xs text-slate-500">
+                  <p className="mt-3 text-xs text-white/35">
                     Die Prozentwerte beziehen sich auf den tatsächlich vorhandenen Serien-Preispool und ergeben zusammen 100 %.
                   </p>
                 </SubCard>
@@ -393,7 +403,7 @@ export default function RegelwerkAppPage() {
 
             <motion.div variants={itemVariants} className="pb-6">
               <div className="rounded-[22px] border border-slate-200 bg-white p-5 text-center shadow-[0_14px_42px_-36px_rgba(15,23,42,0.45)]">
-                <p className="text-xs text-slate-500 sm:text-sm">
+                <p className="text-xs text-white/35 sm:text-sm">
                   <strong>Druck- und Satzfehler vorbehalten.</strong>
                   <br />
                   Stand: Herbst 2026

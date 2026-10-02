@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Fingerprint, Sparkles } from "lucide-react"
 import TerminalLink from "./_components/TerminalLink"
 
@@ -17,15 +17,40 @@ const particles = [
 ]
 
 export default function TerminalPage() {
-  const currentTime = useMemo(
-    () => new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit" }).format(new Date()),
-    [],
-  )
+  const [now, setNow] = useState(() => new Date())
 
-  const currentDate = useMemo(
-    () => new Intl.DateTimeFormat("de-AT", { weekday: "long", day: "2-digit", month: "long" }).format(new Date()),
-    [],
-  )
+  useEffect(() => {
+    const syncClock = () => setNow(new Date())
+
+    // Sofort synchronisieren und danach laufend aktuell halten.
+    syncClock()
+    const timer = window.setInterval(syncClock, 1000)
+
+    // Nach Standby, Tab-Wechsel oder erneutem Fokus sofort neu synchronisieren.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") syncClock()
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("focus", syncClock)
+
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", syncClock)
+    }
+  }, [])
+
+  const currentTime = new Intl.DateTimeFormat("de-AT", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(now)
+
+  const currentDate = new Intl.DateTimeFormat("de-AT", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  }).format(now)
 
   const enterFullscreen = useCallback(() => {
     if (typeof document === "undefined" || document.fullscreenElement) return

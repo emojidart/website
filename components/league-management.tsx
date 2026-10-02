@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import dynamic from "next/dynamic"
 import { createBrowserClient } from "@supabase/ssr"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,13 +28,16 @@ import {
   AlertTriangle,
   Target,
   Settings,
+  ClipboardList,
+  BellRing,
+  Inbox,
+  CheckCircle2,
+  XCircle,
+  HelpCircle,
+  Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-// ✅ Lazy-load (spart initial load in Apps)
-const MatchStatistics = dynamic(() => import("./match-statistics").then((m) => m.MatchStatistics), {
-  ssr: false,
-})
+import { vv } from "@/app/admin/_komponenten/vereinsverwaltung/vereinsverwaltung-styles"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -61,6 +63,7 @@ interface Season {
   start_date: string
   end_date: string
   is_active: boolean
+  status?: string | null
   created_at: string
 }
 
@@ -80,6 +83,8 @@ interface Match {
   home_score: number | null
   away_score: number | null
   status: string
+  original_date?: string | null
+  postponement_reason?: string | null
   notes?: string
   home_team: Team
   away_team: Team
@@ -89,10 +94,81 @@ interface Match {
   dart_type: "steeldart" | "edart"
 }
 
-type TabKey = "overview" | "matches" | "teams" | "venues"
+type TabKey = "overview" | "matches" | "lineups" | "overdue" | "teams" | "venues"
+
+export type LeagueMailboxPrefill = {
+  recipientMode: "player" | "team" | "captains" | "all"
+  recipientTeamId?: string
+  recipientPlayerId?: string
+  subject: string
+  body: string
+  category: "general" | "lineup" | "result" | "schedule" | "team" | "info" | "other"
+  priority: "info" | "normal" | "important" | "urgent"
+  matchId?: string
+  seasonId?: string
+}
 const TAB_STORAGE_KEY = "league-management-active-tab"
 
 const DEFAULT_HOME_VENUE = "Dart Freizeitverein Pfeil - OK"
+
+type SportdartsTeamAssignment = {
+  id: string
+  team_id: string
+  season_id: string
+  sportdarts_season_id: number
+  sportdarts_division_id: number
+  sportdarts_division_name: string
+  created_at?: string
+  updated_at?: string
+}
+
+
+type SportdartsGame = {
+  gameId: string
+  weekNumber: number
+  date: string
+  homeTeam: string
+  awayTeam: string
+  homeScore: number | null
+  awayScore: number | null
+  status: "scheduled" | "live" | "completed"
+  detailUrl: string
+  divisionId: number
+  divisionName: string
+}
+
+type SportdartsImportPreviewRow = SportdartsGame & {
+  ownTeamId: string
+  ownTeamName: string
+  alreadyExists: boolean
+  duplicateReason?: string
+}
+
+// Aktuelle Sportdarts-Saison: Herbstsaison 2026.
+// Die Zuordnung selbst wird trotzdem pro interner Saison gespeichert.
+const SPORTDARTS_CURRENT_SEASON_ID = 27
+
+const SPORTDARTS_DIVISIONS = [
+  { id: 5, name: "Lungau" },
+  { id: 33, name: "Pongau A" },
+  { id: 34, name: "Pongau B" },
+  { id: 35, name: "Pongau R" },
+  { id: 2, name: "Salzburg A" },
+  { id: 4, name: "Salzburg B" },
+  { id: 6, name: "Salzburg C1" },
+  { id: 7, name: "Salzburg C2" },
+  { id: 8, name: "Salzburg C3" },
+  { id: 9, name: "Salzburg C4" },
+  { id: 10, name: "Salzburg NC1" },
+  { id: 11, name: "Salzburg NC2" },
+  { id: 12, name: "Salzburg NC3" },
+  { id: 13, name: "Salzburg R" },
+  { id: 39, name: "Salzburg Steeldart 1" },
+  { id: 37, name: "Salzburg Steeldart 2" },
+  { id: 45, name: "Salzburg Steeldart 3" },
+  { id: 49, name: "Salzburg Steeldart 4" },
+  { id: 58, name: "Salzburg Steeldart 5" },
+] as const
 
 function ToastLike({
   type,
@@ -127,7 +203,13 @@ function ToastLike({
   )
 }
 
-export function LeagueManagement() {
+export function LeagueManagement({
+  initialTab = "overview",
+  onOpenMailbox,
+}: {
+  initialTab?: TabKey
+  onOpenMailbox?: (prefill?: LeagueMailboxPrefill) => void
+}) {
   const [ownTeams, setOwnTeams] = useState<Team[]>([])
   const [opponentTeams, setOpponentTeams] = useState<OpponentTeam[]>([])
   const [seasons, setSeasons] = useState<Season[]>([])
@@ -135,14 +217,34 @@ export function LeagueManagement() {
   const [selectedSeason, setSelectedSeason] = useState<string>("")
   const [loading, setLoading] = useState(true)
 
-  // ✅ Tab state (merken)
-  const [activeTab, setActiveTab] = useState<TabKey>("overview")
+  // Admin-Kontrollansicht für Zusagen/Aufstellungen – rein lesend.
+  const [planningLoading, setPlanningLoading] = useState(false)
+  const [planningTeamMembers, setPlanningTeamMembers] = useState<any[]>([])
+  const [planningAvailability, setPlanningAvailability] = useState<any[]>([])
+  const [planningLineups, setPlanningLineups] = useState<any[]>([])
+  const [planningLineupHeaders, setPlanningLineupHeaders] = useState<any[]>([])
+
+  // Sportdarts-Zuordnung: rein additiv, verändert keine bestehende Liga-/Saisonlogik.
+  const [sportdartsAssignments, setSportdartsAssignments] = useState<SportdartsTeamAssignment[]>([])
+  const [sportdartsAssignmentSeason, setSportdartsAssignmentSeason] = useState<string>("")
+  const [sportdartsSavingKey, setSportdartsSavingKey] = useState<string | null>(null)
+  const [sportdartsAssignmentMessage, setSportdartsAssignmentMessage] = useState<string>("")
+
+  const [isSportdartsImportOpen, setIsSportdartsImportOpen] = useState(false)
+  const [sportdartsImportLoading, setSportdartsImportLoading] = useState(false)
+  const [sportdartsImporting, setSportdartsImporting] = useState(false)
+  const [sportdartsImportPreview, setSportdartsImportPreview] = useState<SportdartsImportPreviewRow[]>([])
+  const [sportdartsImportMessage, setSportdartsImportMessage] = useState("")
+
+  // Tab state:
+  // Admin-Navigation gibt den gewünschten Ziel-Tab direkt vor.
+  // Dadurch gibt es keinen Race-Condition/StrictMode-Fehler mehr über localStorage.
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
+
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(TAB_STORAGE_KEY) as TabKey | null
-      if (saved) setActiveTab(saved)
-    } catch {}
-  }, [])
+    setActiveTab(initialTab)
+  }, [initialTab])
+
   useEffect(() => {
     try {
       window.localStorage.setItem(TAB_STORAGE_KEY, activeTab)
@@ -288,14 +390,741 @@ export function LeagueManagement() {
     fetchData()
   }, [fetchData])
 
+
+  const fetchSportdartsAssignments = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("team_sportdarts_assignments")
+        .select("*")
+        .order("created_at", { ascending: true })
+
+      if (error) {
+        // Falls die Migration noch nicht ausgeführt wurde, soll die bestehende Ligaverwaltung
+        // trotzdem vollständig weiter funktionieren.
+        if ((error as any)?.code === "42P01") {
+          setSportdartsAssignments([])
+          return
+        }
+        throw error
+      }
+
+      setSportdartsAssignments((data || []) as SportdartsTeamAssignment[])
+    } catch (error) {
+      console.error("Error fetching Sportdarts assignments:", error)
+    }
+  }, [])
+
+  useEffect(() => {
+    void fetchSportdartsAssignments()
+  }, [fetchSportdartsAssignments])
+
+  useEffect(() => {
+    if (!sportdartsAssignmentSeason && selectedSeason) {
+      setSportdartsAssignmentSeason(selectedSeason)
+    }
+  }, [selectedSeason, sportdartsAssignmentSeason])
+
+  const getSportdartsAssignment = useCallback(
+    (teamId: string, seasonId: string) =>
+      sportdartsAssignments.find((row) => row.team_id === teamId && row.season_id === seasonId) ?? null,
+    [sportdartsAssignments],
+  )
+
+  const saveSportdartsDivision = useCallback(
+    async (teamId: string, divisionIdRaw: string) => {
+      if (!sportdartsAssignmentSeason) {
+        setSportdartsAssignmentMessage("Bitte zuerst eine Saison auswählen.")
+        return
+      }
+
+      const divisionId = Number(divisionIdRaw)
+      const division = SPORTDARTS_DIVISIONS.find((item) => item.id === divisionId)
+      if (!division) return
+
+      const key = `${sportdartsAssignmentSeason}:${teamId}`
+      setSportdartsSavingKey(key)
+      setSportdartsAssignmentMessage("")
+
+      try {
+        const payload = {
+          team_id: teamId,
+          season_id: sportdartsAssignmentSeason,
+          sportdarts_season_id: SPORTDARTS_CURRENT_SEASON_ID,
+          sportdarts_division_id: division.id,
+          sportdarts_division_name: division.name,
+          updated_at: new Date().toISOString(),
+        }
+
+        const { data, error } = await supabase
+          .from("team_sportdarts_assignments")
+          .upsert(payload, { onConflict: "team_id,season_id" })
+          .select("*")
+          .single()
+
+        if (error) throw error
+
+        setSportdartsAssignments((prev) => {
+          const next = prev.filter(
+            (row) => !(row.team_id === teamId && row.season_id === sportdartsAssignmentSeason),
+          )
+          return [...next, data as SportdartsTeamAssignment]
+        })
+
+        setSportdartsAssignmentMessage(`Sportdarts-Division "${division.name}" gespeichert.`)
+      } catch (error: any) {
+        console.error("Error saving Sportdarts division:", error)
+        setSportdartsAssignmentMessage(
+          error?.code === "42P01"
+            ? "Die Tabelle team_sportdarts_assignments fehlt noch. Bitte zuerst die SQL-Migration ausführen."
+            : "Sportdarts-Division konnte nicht gespeichert werden.",
+        )
+      } finally {
+        setSportdartsSavingKey(null)
+      }
+    },
+    [sportdartsAssignmentSeason],
+  )
+
+  const removeSportdartsDivision = useCallback(
+    async (teamId: string) => {
+      if (!sportdartsAssignmentSeason) return
+
+      const key = `${sportdartsAssignmentSeason}:${teamId}`
+      setSportdartsSavingKey(key)
+      setSportdartsAssignmentMessage("")
+
+      try {
+        const { error } = await supabase
+          .from("team_sportdarts_assignments")
+          .delete()
+          .eq("team_id", teamId)
+          .eq("season_id", sportdartsAssignmentSeason)
+
+        if (error) throw error
+
+        setSportdartsAssignments((prev) =>
+          prev.filter(
+            (row) => !(row.team_id === teamId && row.season_id === sportdartsAssignmentSeason),
+          ),
+        )
+        setSportdartsAssignmentMessage("Sportdarts-Zuordnung entfernt.")
+      } catch (error) {
+        console.error("Error removing Sportdarts division:", error)
+        setSportdartsAssignmentMessage("Sportdarts-Zuordnung konnte nicht entfernt werden.")
+      } finally {
+        setSportdartsSavingKey(null)
+      }
+    },
+    [sportdartsAssignmentSeason],
+  )
+
+
+  const normalizeSportdartsName = useCallback(
+    (value?: string | null) =>
+      (value || "")
+        .replace(/&amp;/g, "&")
+        .replace(/&#039;/g, "'")
+        .replace(/&quot;/g, '"')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " "),
+    [],
+  )
+
+  const getExistingMatchTeamName = useCallback(
+    (match: Match, side: "home" | "away") => {
+      if (side === "home") {
+        return match.home_team_type === "own"
+          ? match.home_team?.name || ""
+          : match.home_opponent_team?.name || ""
+      }
+      return match.away_team_type === "own"
+        ? match.away_team?.name || ""
+        : match.away_opponent_team?.name || ""
+    },
+    [],
+  )
+
+  const loadSportdartsImportPreview = useCallback(async () => {
+    if (!selectedSeason) {
+      setSportdartsImportMessage("Bitte zuerst die Saison auswählen, in die importiert werden soll.")
+      return
+    }
+
+    const assignmentsForSeason = sportdartsAssignments.filter((row) => row.season_id === selectedSeason)
+    if (assignmentsForSeason.length === 0) {
+      setSportdartsImportMessage("Für diese Saison ist noch keinem eigenen Team eine Sportdarts-Division zugeordnet.")
+      setSportdartsImportPreview([])
+      return
+    }
+
+    setSportdartsImportLoading(true)
+    setSportdartsImportMessage("")
+    setSportdartsImportPreview([])
+
+    try {
+      const grouped = new Map<string, SportdartsTeamAssignment[]>()
+      assignmentsForSeason.forEach((assignment) => {
+        const key = `${assignment.sportdarts_season_id}:${assignment.sportdarts_division_id}`
+        grouped.set(key, [...(grouped.get(key) || []), assignment])
+      })
+
+      const collected: SportdartsImportPreviewRow[] = []
+
+      for (const [, assignments] of grouped) {
+        const sample = assignments[0]
+        const response = await fetch("/api/sportdarts/results", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            seasonId: sample.sportdarts_season_id,
+            divisionId: sample.sportdarts_division_id,
+          }),
+        })
+
+        const payload = await response.json()
+        if (!response.ok) {
+          throw new Error(payload?.error || "Sportdarts-Spielplan konnte nicht geladen werden.")
+        }
+
+        const divisionGames = (payload?.games || []) as SportdartsGame[]
+
+        for (const assignment of assignments) {
+          const ownTeam = ownTeams.find((team) => team.id === assignment.team_id)
+          if (!ownTeam) continue
+
+          const ownName = normalizeSportdartsName(ownTeam.name)
+
+          for (const rawGame of divisionGames) {
+            const game: SportdartsGame = {
+              ...rawGame,
+              divisionId: assignment.sportdarts_division_id,
+              divisionName: assignment.sportdarts_division_name,
+            }
+
+            const homeMatches = normalizeSportdartsName(game.homeTeam) === ownName
+            const awayMatches = normalizeSportdartsName(game.awayTeam) === ownName
+            if (!homeMatches && !awayMatches) continue
+
+            const idMarker = `SPORTDARTS_GAME_ID:${game.gameId}`
+
+            const duplicateById = matches.find(
+              (match) =>
+                match.season_id === selectedSeason &&
+                (match.notes || "").includes(idMarker),
+            )
+
+            const duplicateByFields = matches.find((match) => {
+              if (match.season_id !== selectedSeason) return false
+
+              const existingHome = normalizeSportdartsName(getExistingMatchTeamName(match, "home"))
+              const existingAway = normalizeSportdartsName(getExistingMatchTeamName(match, "away"))
+
+              return (
+                match.match_date === game.date &&
+                existingHome === normalizeSportdartsName(game.homeTeam) &&
+                existingAway === normalizeSportdartsName(game.awayTeam)
+              )
+            })
+
+            const duplicate = duplicateById || duplicateByFields
+
+            collected.push({
+              ...game,
+              ownTeamId: ownTeam.id,
+              ownTeamName: ownTeam.name,
+              alreadyExists: Boolean(duplicate),
+              duplicateReason: duplicateById
+                ? "bereits über Sportdarts-ID vorhanden"
+                : duplicateByFields
+                  ? "Datum + Heim/Auswärts bereits vorhanden"
+                  : undefined,
+            })
+          }
+        }
+      }
+
+      const unique = new Map<string, SportdartsImportPreviewRow>()
+      collected.forEach((row) => {
+        const key = `${row.gameId}:${row.ownTeamId}`
+        if (!unique.has(key)) unique.set(key, row)
+      })
+
+      const rows = Array.from(unique.values()).sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date)
+        if (dateCompare !== 0) return dateCompare
+        return a.weekNumber - b.weekNumber
+      })
+
+      setSportdartsImportPreview(rows)
+
+      const newCount = rows.filter((row) => !row.alreadyExists).length
+      const existingCount = rows.length - newCount
+      setSportdartsImportMessage(
+        `${rows.length} Spiele für eure zugeordneten Teams gefunden · ${newCount} neu · ${existingCount} bereits vorhanden.`,
+      )
+    } catch (error: any) {
+      console.error("Error loading Sportdarts import preview:", error)
+      setSportdartsImportMessage(error?.message || "Sportdarts-Spielplan konnte nicht geladen werden.")
+    } finally {
+      setSportdartsImportLoading(false)
+    }
+  }, [
+    getExistingMatchTeamName,
+    matches,
+    normalizeSportdartsName,
+    ownTeams,
+    selectedSeason,
+    sportdartsAssignments,
+  ])
+
+  const importNewSportdartsGames = useCallback(async () => {
+    if (!selectedSeason) return
+
+    const rowsToImport = sportdartsImportPreview.filter((row) => !row.alreadyExists)
+    if (rowsToImport.length === 0) {
+      setSportdartsImportMessage("Es gibt keine neuen Spiele zum Importieren.")
+      return
+    }
+
+    setSportdartsImporting(true)
+    setSportdartsImportMessage("")
+
+    try {
+      const opponentCache = new Map<string, OpponentTeam>()
+      opponentTeams.forEach((team) => opponentCache.set(normalizeSportdartsName(team.name), team))
+
+      const ownTeamByName = new Map<string, Team>()
+      ownTeams.forEach((team) => ownTeamByName.set(normalizeSportdartsName(team.name), team))
+
+      let imported = 0
+      let skipped = 0
+
+      const ensureOpponentTeam = async (name: string) => {
+        const normalized = normalizeSportdartsName(name)
+        const cached = opponentCache.get(normalized)
+        if (cached) return cached
+
+        const { data, error } = await supabase
+          .from("opponent_teams")
+          .insert([
+            {
+              name: name.trim(),
+              venue_name: null,
+              venue: null,
+              captain_phone: null,
+            },
+          ])
+          .select("*")
+          .single()
+
+        if (error) throw error
+
+        const created = data as OpponentTeam
+        opponentCache.set(normalized, created)
+        return created
+      }
+
+      for (const row of rowsToImport) {
+        // Zweite Sicherheitsprüfung unmittelbar vor dem Insert.
+        const idMarker = `SPORTDARTS_GAME_ID:${row.gameId}`
+        const stillExistsById = matches.some(
+          (match) =>
+            match.season_id === selectedSeason &&
+            (match.notes || "").includes(idMarker),
+        )
+
+        const stillExistsByFields = matches.some((match) => {
+          if (match.season_id !== selectedSeason) return false
+          return (
+            match.match_date === row.date &&
+            normalizeSportdartsName(getExistingMatchTeamName(match, "home")) ===
+              normalizeSportdartsName(row.homeTeam) &&
+            normalizeSportdartsName(getExistingMatchTeamName(match, "away")) ===
+              normalizeSportdartsName(row.awayTeam)
+          )
+        })
+
+        if (stillExistsById || stillExistsByFields) {
+          skipped += 1
+          continue
+        }
+
+        const homeOwn = ownTeamByName.get(normalizeSportdartsName(row.homeTeam))
+        const awayOwn = ownTeamByName.get(normalizeSportdartsName(row.awayTeam))
+
+        // Importiert werden ausschließlich Spiele, an denen eines unserer zugeordneten Teams beteiligt ist.
+        if (!homeOwn && !awayOwn) {
+          skipped += 1
+          continue
+        }
+
+        const matchData: any = {
+          season_id: selectedSeason,
+          match_date: row.date,
+          // Die Ergebnis-Seite enthält keine verlässliche Uhrzeit.
+          // Leer lassen statt eine Uhrzeit zu erfinden.
+          match_time: "",
+          week_number: row.weekNumber,
+          venue: "",
+          dart_type: row.divisionName.toLowerCase().includes("steeldart") ? "steeldart" : "edart",
+          home_team_type: homeOwn ? "own" : "opponent",
+          away_team_type: awayOwn ? "own" : "opponent",
+          status: "scheduled",
+          home_score: null,
+          away_score: null,
+          notes: `${idMarker}\nSportdarts: ${row.detailUrl}`,
+        }
+
+        if (homeOwn) {
+          matchData.home_team_id = homeOwn.id
+          matchData.home_opponent_team_id = null
+        } else {
+          const opponent = await ensureOpponentTeam(row.homeTeam)
+          matchData.home_team_id = null
+          matchData.home_opponent_team_id = opponent.id
+        }
+
+        if (awayOwn) {
+          matchData.away_team_id = awayOwn.id
+          matchData.away_opponent_team_id = null
+        } else {
+          const opponent = await ensureOpponentTeam(row.awayTeam)
+          matchData.away_team_id = null
+          matchData.away_opponent_team_id = opponent.id
+        }
+
+        const { error } = await supabase.from("matches").insert([matchData])
+        if (error) throw error
+
+        imported += 1
+      }
+
+      await fetchData()
+      setSportdartsImportPreview([])
+      setSportdartsImportMessage(
+        `${imported} neue Spiele importiert${skipped ? ` · ${skipped} übersprungen` : ""}. Bestehende Spiele wurden nicht verändert.`,
+      )
+      toastSuccess(`${imported} Sportdarts-Spiel${imported === 1 ? "" : "e"} importiert.`)
+    } catch (error) {
+      console.error("Error importing Sportdarts games:", error)
+      setSportdartsImportMessage("Import fehlgeschlagen. Es wurden keine bestehenden Spiele überschrieben.")
+    } finally {
+      setSportdartsImporting(false)
+    }
+  }, [
+    fetchData,
+    getExistingMatchTeamName,
+    matches,
+    normalizeSportdartsName,
+    opponentTeams,
+    ownTeams,
+    selectedSeason,
+    sportdartsImportPreview,
+    toastSuccess,
+  ])
+
+
+  const seasonLabel = useCallback((season?: Season | null) => {
+    if (!season) return ""
+    const name = String(season.name || "").trim()
+    return /\b\d{4}\b/.test(name) ? name : `${name} ${season.year}`
+  }, [])
+
+  const getMatchStartMs = useCallback((match: Match) => {
+    if (!match.match_date) return Number.NaN
+    const raw = String(match.match_time || "").trim()
+    const time = /^\d{1,2}:\d{2}(?::\d{2})?$/.test(raw)
+      ? raw.length === 5
+        ? `${raw}:00`
+        : raw
+      : "23:59:59"
+
+    return new Date(`${match.match_date}T${time}`).getTime()
+  }, [])
+
+  const fetchPlanningData = useCallback(async () => {
+    const seasonMatches = selectedSeason
+      ? matches.filter((match) => match.season_id === selectedSeason)
+      : []
+
+    const matchIds = Array.from(new Set(seasonMatches.map((match) => match.id).filter(Boolean)))
+    const teamIds = Array.from(
+      new Set(
+        seasonMatches
+          .flatMap((match) => [
+            match.home_team_type === "own" ? match.home_team_id : null,
+            match.away_team_type === "own" ? match.away_team_id : null,
+          ])
+          .filter(Boolean) as string[],
+      ),
+    )
+
+    if (matchIds.length === 0 || teamIds.length === 0) {
+      setPlanningTeamMembers([])
+      setPlanningAvailability([])
+      setPlanningLineups([])
+      setPlanningLineupHeaders([])
+      return
+    }
+
+    setPlanningLoading(true)
+    try {
+      const [membersRes, availabilityRes, lineupsRes, headersRes] = await Promise.all([
+        supabase
+          .from("team_members")
+          .select(`
+            team_id,
+            player_id,
+            role,
+            club_players:club_players!team_members_player_id_fkey(id,name,photo_url)
+          `)
+          .in("team_id", teamIds)
+          .is("left_at", null),
+        supabase
+          .from("match_availability")
+          .select("match_id,team_id,player_id,status,note,updated_at")
+          .in("match_id", matchIds)
+          .in("team_id", teamIds),
+        supabase
+          .from("match_lineups")
+          .select("id,match_id,team_id,player_id,position,is_substitute")
+          .in("match_id", matchIds)
+          .in("team_id", teamIds),
+        supabase
+          .from("match_lineup_headers")
+          .select("match_id,team_id,status,current_version,confirmed_version,confirmed_at,confirmed_by")
+          .in("match_id", matchIds)
+          .in("team_id", teamIds),
+      ])
+
+      if (membersRes.error) throw membersRes.error
+      if (availabilityRes.error) throw availabilityRes.error
+      if (lineupsRes.error) throw lineupsRes.error
+      if (headersRes.error) throw headersRes.error
+
+      setPlanningTeamMembers((membersRes.data as any[]) || [])
+      setPlanningAvailability((availabilityRes.data as any[]) || [])
+      setPlanningLineups((lineupsRes.data as any[]) || [])
+      setPlanningLineupHeaders((headersRes.data as any[]) || [])
+    } catch (error) {
+      console.error("Error loading league planning overview:", error)
+      setPlanningTeamMembers([])
+      setPlanningAvailability([])
+      setPlanningLineups([])
+      setPlanningLineupHeaders([])
+    } finally {
+      setPlanningLoading(false)
+    }
+  }, [matches, selectedSeason])
+
+  useEffect(() => {
+    void fetchPlanningData()
+  }, [fetchPlanningData])
+
+  const overdueMatches = useMemo(() => {
+    if (!selectedSeason) return []
+
+    const now = Date.now()
+    const graceMs = 24 * 60 * 60 * 1000
+
+    return matches
+      .filter((match) => match.season_id === selectedSeason)
+      .filter((match) => {
+        // Bei einer Verschiebung steht in match_date / match_time bereits
+        // der NEUE Termin. Deshalb postponed NICHT pauschal ausschließen:
+        // vor dem neuen Termin unsichtbar, ab neuem Termin + 24h überfällig.
+        if (match.status === "completed") return false
+        if (match.status === "cancelled") return false
+
+        // scheduled, postponed, live oder jeder andere nicht abgeschlossene
+        // Status bleibt offen. Vollständige Scores alleine schließen ein Spiel
+        // nicht ab – maßgeblich ist status === "completed".
+        const startMs = getMatchStartMs(match)
+        if (!Number.isFinite(startMs)) return false
+
+        return now >= startMs + graceMs
+      })
+      .sort((a, b) => getMatchStartMs(a) - getMatchStartMs(b))
+  }, [getMatchStartMs, matches, selectedSeason])
+
+  const upcomingPlanningMatches = useMemo(() => {
+    if (!selectedSeason) return []
+
+    const now = Date.now()
+    return matches
+      .filter((match) => match.season_id === selectedSeason)
+      .filter((match) => match.status !== "completed" && match.status !== "postponed")
+      .filter((match) => {
+        const startMs = getMatchStartMs(match)
+        return Number.isFinite(startMs) ? startMs >= now : true
+      })
+      .sort((a, b) => getMatchStartMs(a) - getMatchStartMs(b))
+  }, [getMatchStartMs, matches, selectedSeason])
+
+  const getOwnTeamContexts = useCallback(
+    (match: Match) => {
+      const result: { teamId: string; teamName: string }[] = []
+
+      if (match.home_team_type === "own" && match.home_team_id) {
+        result.push({
+          teamId: match.home_team_id,
+          teamName:
+            match.home_team?.name ||
+            ownTeams.find((team) => team.id === match.home_team_id)?.name ||
+            "Eigenes Team",
+        })
+      }
+
+      if (
+        match.away_team_type === "own" &&
+        match.away_team_id &&
+        !result.some((item) => item.teamId === match.away_team_id)
+      ) {
+        result.push({
+          teamId: match.away_team_id,
+          teamName:
+            match.away_team?.name ||
+            ownTeams.find((team) => team.id === match.away_team_id)?.name ||
+            "Eigenes Team",
+        })
+      }
+
+      return result
+    },
+    [ownTeams],
+  )
+
+  const getPlanningSummary = useCallback(
+    (match: Match, teamId: string) => {
+      const members = planningTeamMembers
+        .filter((row) => row.team_id === teamId)
+        .slice()
+        .sort((a, b) =>
+          String(a.club_players?.name || "").localeCompare(String(b.club_players?.name || ""), "de"),
+        )
+
+      const availabilityByPlayer = new Map(
+        planningAvailability
+          .filter((row) => row.match_id === match.id && row.team_id === teamId)
+          .map((row) => [row.player_id, row]),
+      )
+
+      const lineup = planningLineups
+        .filter((row) => row.match_id === match.id && row.team_id === teamId)
+        .slice()
+        .sort((a, b) => {
+          if (Boolean(a.is_substitute) !== Boolean(b.is_substitute)) {
+            return a.is_substitute ? 1 : -1
+          }
+          return Number(a.position || 0) - Number(b.position || 0)
+        })
+
+      const header = planningLineupHeaders.find(
+        (row) => row.match_id === match.id && row.team_id === teamId,
+      )
+
+      const counts = { yes: 0, maybe: 0, no: 0, none: 0 }
+
+      members.forEach((member) => {
+        const status = availabilityByPlayer.get(member.player_id)?.status
+        if (status === "yes") counts.yes += 1
+        else if (status === "maybe") counts.maybe += 1
+        else if (status === "no") counts.no += 1
+        else counts.none += 1
+      })
+
+      const confirmed =
+        header?.status === "confirmed" &&
+        header?.confirmed_version != null &&
+        header?.confirmed_version === header?.current_version
+
+      const stale =
+        header?.status === "confirmed" &&
+        header?.confirmed_version != null &&
+        header?.current_version != null &&
+        Number(header.confirmed_version) < Number(header.current_version)
+
+      const requiredStarters =
+        match.dart_type === "edart" ? 4 : match.dart_type === "steeldart" ? 3 : 1
+
+      const startersCount = lineup.filter((row) => !row.is_substitute).length
+
+      return {
+        members,
+        availabilityByPlayer,
+        lineup,
+        counts,
+        confirmed,
+        stale,
+        requiredStarters,
+        startersCount,
+      }
+    },
+    [planningAvailability, planningLineupHeaders, planningLineups, planningTeamMembers],
+  )
+
+  const lineupActionItems = useMemo(() => {
+    if (!selectedSeason) return []
+
+    const now = Date.now()
+    const warningWindowMs = 12 * 60 * 60 * 1000
+    const items: Array<{
+      match: Match
+      teamId: string
+      teamName: string
+      hoursUntil: number
+    }> = []
+
+    matches
+      .filter((match) => match.season_id === selectedSeason)
+      .filter((match) => match.status !== "completed" && match.status !== "cancelled")
+      .forEach((match) => {
+        const startMs = getMatchStartMs(match)
+        if (!Number.isFinite(startMs)) return
+
+        const remaining = startMs - now
+        if (remaining <= 0 || remaining > warningWindowMs) return
+
+        getOwnTeamContexts(match).forEach(({ teamId, teamName }) => {
+          const header = planningLineupHeaders.find(
+            (row) => row.match_id === match.id && row.team_id === teamId,
+          )
+
+          const confirmed =
+            header?.status === "confirmed" &&
+            header?.confirmed_version != null &&
+            header?.confirmed_version === header?.current_version
+
+          if (!confirmed) {
+            items.push({
+              match,
+              teamId,
+              teamName,
+              hoursUntil: Math.max(0, Math.ceil(remaining / (60 * 60 * 1000))),
+            })
+          }
+        })
+      })
+
+    return items.sort(
+      (a, b) => getMatchStartMs(a.match) - getMatchStartMs(b.match),
+    )
+  }, [
+    getMatchStartMs,
+    getOwnTeamContexts,
+    matches,
+    planningLineupHeaders,
+    selectedSeason,
+  ])
+
+  const leagueActionCount = lineupActionItems.length + overdueMatches.length
+
+
+
   // ✅ Derived
-  const pastGamesWithoutResults = useMemo(() => {
-    const now = new Date()
-    return matches.filter((match) => {
-      const gameDate = new Date(match.match_date)
-      return gameDate < now && (match.home_score === null || match.away_score === null)
-    })
-  }, [matches])
+  // Bestehende Hinweislogik verwendet jetzt dieselbe 24h-Kontrolle wie der Tab "Überfällig".
+  const pastGamesWithoutResults = overdueMatches
 
   const normalizeVenuePart = (value?: string) => (value || "").trim().toLowerCase().replace(/\s+/g, " ")
 
@@ -421,6 +1250,31 @@ export function LeagueManagement() {
       console.error("Error creating season:", error)
     }
   }, [fetchData, newSeason, toastSuccess])
+
+  const closeSeason = useCallback(
+    async (seasonId: string) => {
+      const season = seasons.find((row) => row.id === seasonId)
+      if (!season) return
+
+      if (!window.confirm(`Liga "${seasonLabel(season)}" wirklich abschließen?\n\nDie Saison bleibt vollständig erhalten.`)) {
+        return
+      }
+
+      try {
+        const { error } = await supabase
+          .from("seasons")
+          .update({ is_active: false, status: "completed" })
+          .eq("id", seasonId)
+        if (error) throw error
+        toastSuccess(`${seasonLabel(season)} wurde abgeschlossen.`)
+        await fetchData()
+      } catch (error) {
+        console.error("Error closing season:", error)
+        setShowSuccessMessage("Liga konnte nicht abgeschlossen werden.")
+      }
+    },
+    [fetchData, seasonLabel, seasons, toastSuccess],
+  )
 
   const deleteSeason = useCallback(
     async (seasonId: string) => {
@@ -825,963 +1679,693 @@ const createMatch = useCallback(async () => {
   }
 
   return (
-    <div className="w-full mx-auto space-y-4 px-2 sm:px-4">
-      {/* Hinweise */}
-      {pastGamesWithoutResults.length > 0 && (
-        <ToastLike
-          type="warning"
-          text={`${pastGamesWithoutResults.length} offene Spiele aus der Vergangenheit ohne Ergebnis`}
-        />
-      )}
-
-      {showSuccessMessage && (
-        <ToastLike type="success" text={showSuccessMessage} onClose={() => setShowSuccessMessage("")} />
-      )}
-
-      {/* Header */}
-      <Card className="border-gray-200 shadow-md rounded-2xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-4 sm:p-5">
-          <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Ligaspiele
-          </CardTitle>
-          <div className="text-orange-100 text-sm sm:text-base">Verwalte Mannschaften, Saisons und Spiele</div>
-        </CardHeader>
-
-        <CardContent className="p-3 sm:p-5 space-y-4 sm:space-y-6">
-          {/* Top Actions */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="min-w-0">
-              <div className="text-sm text-muted-foreground">
-                {seasons.length} Saison{seasons.length !== 1 ? "s" : ""} • {ownTeams.length} eigene Teams •{" "}
-                {opponentTeams.length} Gegner
+    <div className={cn(vv.page, "emd-league-management")}>
+      <div className={vv.content}>
+        <div className="emd-admin-hero">
+          <div className="relative flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-200/45">Mein EMD · Verwaltung</div>
+              <h1 className="mt-1 text-2xl font-black tracking-[-0.025em] text-white sm:text-[30px]">Ligaverwaltung</h1>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-white/38">Spielplan, Aufstellungen und Ligakontrolle zentral verwalten.</p>
+            </div>
+            <div className="hidden items-center gap-2 lg:flex">
+              <div className="emd-admin-stat text-right">
+                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/25">Mannschaften</div>
+                <div className="mt-0.5 text-sm font-black text-white">{ownTeams.length}</div>
+              </div>
+              <div className="emd-admin-stat text-right">
+                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/25">Handlungsbedarf</div>
+                <div className={cn("mt-0.5 text-sm font-black", leagueActionCount > 0 ? "text-amber-200" : "text-white")}>
+                  {leagueActionCount}
+                </div>
+              </div>
+              <div className="emd-admin-stat text-right">
+                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/25">Überfällig</div>
+                <div className="mt-0.5 text-sm font-black text-white">{overdueMatches.length}</div>
               </div>
             </div>
+          </div>
+        </div>
 
-            <Dialog open={isSeasonDialogOpen} onOpenChange={setIsSeasonDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="rounded-xl">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Neue Saison
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Neue Saison erstellen</DialogTitle>
-                </DialogHeader>
+        {showSuccessMessage ? (
+          <div className="mb-4 rounded-[18px] border border-emerald-300/15 bg-emerald-500/[0.06] px-4 py-3 text-sm font-bold text-emerald-100">
+            {showSuccessMessage}
+          </div>
+        ) : null}
 
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="season-name">Name</Label>
-                    <Input
-                      id="season-name"
-                      value={newSeason.name}
-                      onChange={(e) => setNewSeason({ ...newSeason, name: e.target.value })}
-                      placeholder="z.B. Frühjahrsmeisterschaft 2025"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="season-type">Typ</Label>
-                    <Select value={newSeason.type} onValueChange={(value) => setNewSeason({ ...newSeason, type: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Frühjahrsmeisterschaft">Frühjahrsmeisterschaft</SelectItem>
-                        <SelectItem value="Herbstmeisterschaft">Herbstmeisterschaft</SelectItem>
-                        <SelectItem value="Sommercup">Sommercup</SelectItem>
-                        <SelectItem value="Wintercup">Wintercup</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="start-date">Startdatum</Label>
-                      <Input
-                        id="start-date"
-                        type="date"
-                        value={newSeason.start_date}
-                        onChange={(e) => setNewSeason({ ...newSeason, start_date: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="end-date">Enddatum</Label>
-                      <Input
-                        id="end-date"
-                        type="date"
-                        value={newSeason.end_date}
-                        onChange={(e) => setNewSeason({ ...newSeason, end_date: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <Button onClick={createSeason} className="w-full rounded-xl" disabled={!newSeason.name.trim()}>
-                    Saison erstellen
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabKey)}>
+          <div className={cn("sticky top-0 z-20 -mx-3 mb-5 px-3 py-2.5 sm:-mx-5 sm:px-5 lg:-mx-7 lg:px-7 xl:-mx-8 xl:px-8", vv.navBar)}>
+            <div className="mx-auto flex max-w-[var(--emd-content-max)] gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {[
+                ["overview", "Übersicht", Trophy],
+                ["matches", "Spiele", Calendar],
+                ["lineups", "Aufstellungen & Zusagen", ClipboardList],
+                ["overdue", "Überfällig", BellRing],
+                ["teams", "Mannschaften", Users],
+                ["venues", "Lokale", MapPin],
+              ].map(([key, label, Icon]: any) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveTab(key as TabKey)}
+                  className={cn(vv.navItem, activeTab === key ? vv.navActive : vv.navIdle)}
+                >
+                  <Icon className={cn("h-4 w-4", activeTab === key ? "text-orange-300" : "text-white/28 group-hover:text-white/55")} />
+                  <span className="whitespace-nowrap">{label}</span>
+                  {key === "overdue" && overdueMatches.length > 0 ? (
+                    <span className="ml-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[10px] font-black text-amber-200">{overdueMatches.length}</span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Sticky Tabs */}
-          <div className="sticky top-0 z-10 -mx-3 sm:-mx-5 px-3 sm:px-5 py-3 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-gray-100">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabKey)}>
-              <TabsList className="w-full justify-start overflow-x-auto flex-nowrap gap-2 rounded-xl bg-transparent p-0">
-                <TabsTrigger value="overview" className="flex-none rounded-xl">
-                  Übersicht
-                </TabsTrigger>
-                <TabsTrigger value="matches" className="flex-none rounded-xl">
-                  Spiele
-                </TabsTrigger>
-                <TabsTrigger value="teams" className="flex-none rounded-xl">
-                  Mannschaften
-                </TabsTrigger>
-                <TabsTrigger value="venues" className="flex-none rounded-xl">
-                  Lokale
-                </TabsTrigger>
-              </TabsList>
-
+          <div className="space-y-5">
               {/* OVERVIEW */}
-              <TabsContent value="overview" className="space-y-6 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="rounded-2xl">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Eigene Teams</CardTitle>
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{ownTeams.length}</div>
-                      <p className="text-xs text-muted-foreground">Vereinsteams</p>
-                    </CardContent>
-                  </Card>
+              <TabsContent value="overview" className="mt-0 space-y-5">
+                <section className={vv.surface}>
+                  <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className={vv.label}>Liga-Zentrale</div>
+                        <h2 className="mt-1 flex items-center gap-2 text-xl font-black text-white">
+                          <AlertTriangle className={cn("h-5 w-5", leagueActionCount > 0 ? "text-amber-300" : "text-emerald-300")} />
+                          Handlungsbedarf
+                        </h2>
+                        <p className="mt-1 text-sm font-semibold text-white/38">
+                          Wichtige Punkte, die vor oder nach einem Ligaspiel noch offen sind.
+                        </p>
+                      </div>
+                      {onOpenMailbox ? (
+                        <Button type="button" variant="outline" className={vv.buttonSecondary} onClick={onOpenMailbox}>
+                          <Inbox className="mr-2 h-4 w-4" />
+                          Ligapostfach
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
 
-                  <Card className="rounded-2xl">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Gegnerische Teams</CardTitle>
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{opponentTeams.length}</div>
-                      <p className="text-xs text-muted-foreground">Gegner</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="rounded-2xl">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Saisons</CardTitle>
-                      <Trophy className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{seasons.length}</div>
-                      <p className="text-xs text-muted-foreground">Verfügbar</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Card className="rounded-2xl">
-                  <CardHeader>
-                    <CardTitle>Alle Saisons</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {seasons.map((season) => (
-                        <div key={season.id} className="border rounded-xl p-4">
-                          <div className="flex items-start justify-between gap-3 mb-2">
-                            <div className="min-w-0">
-                              <h3 className="font-semibold truncate">{season.name}</h3>
-                              <p className="text-sm text-muted-foreground">{season.type}</p>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {season.is_active && <Badge variant="default">Aktiv</Badge>}
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => deleteSeason(season.id)}
-                                className="h-8 w-8 p-0 rounded-lg"
-                                aria-label="Saison löschen"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                  <div className="grid gap-3 p-4 lg:grid-cols-2 sm:p-5">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("lineups")}
+                      className={cn(
+                        vv.cardHover,
+                        "p-4 text-left sm:p-5",
+                        lineupActionItems.length > 0 && "border-amber-300/[0.16] bg-amber-500/[0.045]",
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/30">
+                            Vor dem Spiel
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(season.start_date).toLocaleDateString()} –{" "}
-                            {new Date(season.end_date).toLocaleDateString()}
+                          <div className="mt-1 text-base font-black text-white">Aufstellung fehlt</div>
+                          <div className="mt-1 text-sm font-semibold leading-5 text-white/38">
+                            Ab 12 Stunden vor Spielbeginn wird eine fehlende bestätigte Aufstellung hier als Handlungsbedarf angezeigt.
                           </div>
                         </div>
-                      ))}
+                        <span className={cn(
+                          "rounded-full px-3 py-1 text-sm font-black",
+                          lineupActionItems.length > 0
+                            ? "bg-amber-500/12 text-amber-200"
+                            : "bg-emerald-500/10 text-emerald-200",
+                        )}>
+                          {lineupActionItems.length}
+                        </span>
+                      </div>
+
+                      {lineupActionItems.length > 0 ? (
+                        <div className="mt-4 space-y-2">
+                          {lineupActionItems.slice(0, 3).map((item) => (
+                            <div key={`${item.match.id}:${item.teamId}`} className={cn(vv.inset, "px-3 py-2.5")}>
+                              <div className="text-sm font-black text-white/80">{item.teamName}</div>
+                              <div className="mt-0.5 text-xs font-semibold text-white/35">
+                                {getTeamName(item.match, true)} vs. {getTeamName(item.match, false)}
+                                {" · "}
+                                noch ca. {item.hoursUntil} Std.
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-4 text-xs font-bold text-emerald-200/70">Aktuell alles erledigt.</div>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("overdue")}
+                      className={cn(
+                        vv.cardHover,
+                        "p-4 text-left sm:p-5",
+                        overdueMatches.length > 0 && "border-amber-300/[0.16] bg-amber-500/[0.045]",
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/30">
+                            Nach dem Spiel
+                          </div>
+                          <div className="mt-1 text-base font-black text-white">Ergebnis ausständig</div>
+                          <div className="mt-1 text-sm font-semibold leading-5 text-white/38">
+                            Spiele ohne Abschluss erscheinen 24 Stunden nach dem aktuell gültigen Spieltermin.
+                          </div>
+                        </div>
+                        <span className={cn(
+                          "rounded-full px-3 py-1 text-sm font-black",
+                          overdueMatches.length > 0
+                            ? "bg-amber-500/12 text-amber-200"
+                            : "bg-emerald-500/10 text-emerald-200",
+                        )}>
+                          {overdueMatches.length}
+                        </span>
+                      </div>
+
+                      {overdueMatches.length > 0 ? (
+                        <div className="mt-4 space-y-2">
+                          {overdueMatches.slice(0, 3).map((match) => (
+                            <div key={match.id} className={cn(vv.inset, "px-3 py-2.5")}>
+                              <div className="text-sm font-black text-white/80">
+                                {getTeamName(match, true)} vs. {getTeamName(match, false)}
+                              </div>
+                              <div className="mt-0.5 text-xs font-semibold text-white/35">
+                                {new Date(match.match_date).toLocaleDateString("de-AT")}
+                                {match.match_time ? ` · ${String(match.match_time).slice(0, 5)} Uhr` : ""}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="mt-4 text-xs font-bold text-emerald-200/70">Aktuell alles erledigt.</div>
+                      )}
+                    </button>
+                  </div>
+                </section>
+
+                <section className={vv.surface}>
+                  <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className={vv.label}>Aktuelle Saison</div>
+                        <h2 className="mt-1 text-xl font-black text-white">{currentSeason ? seasonLabel(currentSeason) : "Keine aktive Saison"}</h2>
+                        <p className="mt-1 text-sm font-semibold text-white/38">Sportdarts ist die führende Quelle für Spielplan und Ergebnisse.</p>
+                      </div>
+                      <Dialog open={isSeasonDialogOpen} onOpenChange={setIsSeasonDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className={vv.buttonSecondary}>
+                            <Plus className="mr-2 h-4 w-4" />Neue Saison
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className={vv.modalSmall}>
+                          <DialogHeader className={vv.modalHeader}>
+                            <DialogTitle>Neue Saison erstellen</DialogTitle>
+                          </DialogHeader>
+                          <div className={vv.modalBody}>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="season-name">Name</Label>
+                                <Input id="season-name" className={vv.input} value={newSeason.name} onChange={(e) => setNewSeason({ ...newSeason, name: e.target.value })} placeholder="z. B. Herbstmeisterschaft" />
+                              </div>
+                              <div>
+                                <Label>Jahr</Label>
+                                <Input type="number" className={vv.input} value={newSeason.year} onChange={(e) => setNewSeason({ ...newSeason, year: Number(e.target.value) || new Date().getFullYear() })} />
+                              </div>
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div><Label>Startdatum</Label><Input type="date" className={vv.input} value={newSeason.start_date} onChange={(e) => setNewSeason({ ...newSeason, start_date: e.target.value })} /></div>
+                                <div><Label>Enddatum</Label><Input type="date" className={vv.input} value={newSeason.end_date} onChange={(e) => setNewSeason({ ...newSeason, end_date: e.target.value })} /></div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className={vv.modalFooter}>
+                            <Button variant="outline" className={vv.buttonSecondary} onClick={() => setIsSeasonDialogOpen(false)}>Abbrechen</Button>
+                            <Button className={vv.buttonPrimary} onClick={createSeason} disabled={!newSeason.name.trim()}>Saison erstellen</Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
+                    <div className={cn(vv.card, "p-4")}><div className={vv.label}>Eigene Teams</div><div className="mt-2 text-2xl font-black text-white">{ownTeams.length}</div></div>
+                    <div className={cn(vv.card, "p-4")}><div className={vv.label}>Gegner</div><div className="mt-2 text-2xl font-black text-white">{opponentTeams.length}</div></div>
+                    <div className={cn(vv.card, "p-4")}><div className={vv.label}>Saisons</div><div className="mt-2 text-2xl font-black text-white">{seasons.length}</div></div>
+                  </div>
+                </section>
+
+                <section className={vv.surface}>
+                  <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
+                    <h2 className="text-lg font-black text-white">Saisons</h2>
+                  </div>
+                  <div className="grid gap-3 p-4 md:grid-cols-2 sm:p-5">
+                    {seasons.map((season) => (
+                      <div key={season.id} className={cn(vv.cardHover, "p-4")}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-base font-black text-white">{seasonLabel(season)}</div>
+                            <div className="mt-1 text-xs font-semibold text-white/35">{new Date(season.start_date).toLocaleDateString("de-AT")} – {new Date(season.end_date).toLocaleDateString("de-AT")}</div>
+                          </div>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {season.is_active ? <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-black text-emerald-200">Aktiv</span> : season.status === "completed" ? <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-black text-white/45">Abgeschlossen</span> : null}
+                          </div>
+                        </div>
+                        {season.is_active ? (
+                          <div className="mt-4">
+                            <Button type="button" variant="outline" className={vv.buttonSecondary} onClick={() => void closeSeason(season.id)}>Liga abschließen</Button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </section>
               </TabsContent>
 
               {/* MATCHES */}
-              <TabsContent value="matches" className="space-y-6 pt-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <Select value={selectedSeason} onValueChange={setSelectedSeason}>
-                    <SelectTrigger className="w-full sm:w-72 rounded-xl">
-                      <SelectValue placeholder="Saison auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {seasons.map((season) => (
-                        <SelectItem key={season.id} value={season.id}>
-                          {season.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <TabsContent value="matches" className="mt-0 space-y-5">
+                <section className={vv.surface}>
+                  <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <div className={vv.label}>Sportdarts-Sync</div>
+                        <h2 className="mt-1 text-xl font-black text-white">{currentSeason ? `${seasonLabel(currentSeason)} · Spielplan` : "Spielplan"}</h2>
+                        <p className="mt-1 text-sm font-semibold text-white/38">Keine manuelle Bearbeitung: Spielplan und Ergebnisse kommen ausschließlich aus Sportdarts.</p>
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+                          <SelectTrigger className={cn(vv.select, "w-full sm:w-64")}><SelectValue placeholder="Saison auswählen" /></SelectTrigger>
+                          <SelectContent>{seasons.map((season) => <SelectItem key={season.id} value={season.id}>{seasonLabel(season)}</SelectItem>)}</SelectContent>
+                        </Select>
+                        {selectedSeason ? (
+                          <Dialog open={isSportdartsImportOpen} onOpenChange={(open) => { setIsSportdartsImportOpen(open); if (!open) { setSportdartsImportPreview([]); setSportdartsImportMessage("") } }}>
+                            <DialogTrigger asChild><Button variant="outline" className={vv.buttonSecondary} onClick={() => { setSportdartsImportPreview([]); setSportdartsImportMessage("") }}><Trophy className="mr-2 h-4 w-4" />Sportdarts-Spielplan</Button></DialogTrigger>
+                            <DialogContent className={vv.modal}>
+                              <DialogHeader className={vv.modalHeader}><DialogTitle>Sportdarts-Spielplan synchronisieren</DialogTitle></DialogHeader>
+                              <div className={vv.modalBody}>
+                                <div className="space-y-4">
+                                  <div className={cn(vv.inset, "p-4 text-sm font-semibold text-white/55")}>Ziel: <span className="font-black text-white">{currentSeason ? seasonLabel(currentSeason) : "ausgewählte Saison"}</span>. Bestehende Spiele werden beim Import nicht überschrieben.</div>
+                                  <Button type="button" className={vv.buttonPrimary} onClick={() => void loadSportdartsImportPreview()} disabled={sportdartsImportLoading || sportdartsImporting}>{sportdartsImportLoading ? "Spielplan wird geladen…" : "Vorschau laden"}</Button>
+                                  {sportdartsImportMessage ? <div className={cn(vv.inset, "p-3 text-sm font-semibold text-white/60")}>{sportdartsImportMessage}</div> : null}
+                                  {sportdartsImportPreview.length > 0 ? (
+                                    <div className="space-y-3">
+                                      <div className="max-h-[48vh] overflow-y-auto rounded-[18px] border border-white/[0.07]">
+                                        {sportdartsImportPreview.map((row) => (
+                                          <div key={`${row.gameId}:${row.ownTeamId}`} className="grid gap-1 border-b border-white/[0.05] px-4 py-3 last:border-b-0 sm:grid-cols-[80px_110px_1fr_1fr_120px] sm:items-center">
+                                            <div className="text-xs font-black text-white/40">ST {row.weekNumber}</div>
+                                            <div className="text-xs font-bold text-white/55">{row.date.split("-").reverse().join(".")}</div>
+                                            <div className="truncate text-sm font-black text-white/80">{row.homeTeam}</div>
+                                            <div className="truncate text-sm font-black text-white/80">{row.awayTeam}</div>
+                                            <div className="text-xs font-black text-white/40">{row.alreadyExists ? "Vorhanden" : "Neu"}</div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </div>
+                              <div className={vv.modalFooter}>
+                                <Button variant="outline" className={vv.buttonSecondary} onClick={() => setIsSportdartsImportOpen(false)}>Schließen</Button>
+                                <Button className={vv.buttonPrimary} onClick={() => void importNewSportdartsGames()} disabled={sportdartsImporting || sportdartsImportPreview.every((row) => row.alreadyExists)}>{sportdartsImporting ? "Import läuft…" : `${sportdartsImportPreview.filter((row) => !row.alreadyExists).length} neue Spiele importieren`}</Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
 
-                  {selectedSeason && (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button className="rounded-xl w-full sm:w-auto">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Neues Spiel
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Neues Spiel erstellen</DialogTitle>
-                        </DialogHeader>
+                  <div className="p-3 sm:p-5">
+                    {!selectedSeason ? (
+                      <div className={cn(vv.inset, "p-8 text-center text-sm font-semibold text-white/35")}>Bitte eine Saison auswählen.</div>
+                    ) : filteredMatches.length === 0 ? (
+                      <div className={cn(vv.inset, "p-8 text-center text-sm font-semibold text-white/35")}>Noch keine Spiele vorhanden. Lade den Spielplan über Sportdarts.</div>
+                    ) : (
+                      <div className="space-y-4">
+                        {Object.values(groupedMatches).map(({ team, matches: teamMatches }) => (
+                          <Collapsible key={team.id} defaultOpen>
+                            <div className={cn(vv.card, "overflow-hidden")}>
+                              <CollapsibleTrigger asChild>
+                                <button type="button" className="flex w-full items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-4 text-left sm:px-5">
+                                  <div className="min-w-0">
+                                    <div className="text-base font-black text-white">{team.name}</div>
+                                    <div className="mt-0.5 text-xs font-semibold text-white/35">{teamMatches.length} Spiele</div>
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 shrink-0 text-white/35" />
+                                </button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="space-y-2 p-3 sm:p-4">
+                                  {teamMatches.map((match) => {
+                                    const shownStatus = match.status
+                                    const shownHome = match.home_score
+                                    const shownAway = match.away_score
 
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label>Heimteam</Label>
-                              <Select
-                                value={newMatchState.home_team_type}
-                                onValueChange={(value: "own" | "opponent") =>
-                                  setNewMatch({ ...newMatchState, home_team_type: value, home_team_id: "" })
-                                }
-                              >
-                                <SelectTrigger className="rounded-xl">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="own">Eigenes Team</SelectItem>
-                                  <SelectItem value="opponent">Gegnerisches Team</SelectItem>
-                                </SelectContent>
-                              </Select>
-
-                              <Select
-                                value={newMatchState.home_team_id}
-                                onValueChange={(value) => handleTeamSelection(value, newMatchState.home_team_type, "home")}
-                              >
-                                <SelectTrigger className="rounded-xl">
-                                  <SelectValue placeholder="Team auswählen" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {(newMatchState.home_team_type === "own" ? ownTeams : opponentTeams).map((team) => (
-                                    <SelectItem key={team.id} value={team.id}>
-                                      {team.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>Auswärtsteam</Label>
-                              <Select
-                                value={newMatchState.away_team_type}
-                                onValueChange={(value: "own" | "opponent") =>
-                                  setNewMatch({ ...newMatchState, away_team_type: value, away_team_id: "" })
-                                }
-                              >
-                                <SelectTrigger className="rounded-xl">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="own">Eigenes Team</SelectItem>
-                                  <SelectItem value="opponent">Gegnerisches Team</SelectItem>
-                                </SelectContent>
-                              </Select>
-
-                              <Select
-                                value={newMatchState.away_team_id}
-                                onValueChange={(value) => handleTeamSelection(value, newMatchState.away_team_type, "away")}
-                              >
-                                <SelectTrigger className="rounded-xl">
-                                  <SelectValue placeholder="Team auswählen" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {(newMatchState.away_team_type === "own" ? ownTeams : opponentTeams).map((team) => (
-                                    <SelectItem key={team.id} value={team.id}>
-                                      {team.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                              <Label>Datum</Label>
-                              <Input
-                                className="rounded-xl"
-                                type="date"
-                                value={newMatchState.match_date}
-                                onChange={(e) => setNewMatch({ ...newMatchState, match_date: e.target.value })}
-                              />
-                            </div>
-                            <div>
-                              <Label>Zeit</Label>
-                              <Input
-                                className="rounded-xl"
-                                type="time"
-                                value={newMatchState.match_time}
-                                onChange={(e) => setNewMatch({ ...newMatchState, match_time: e.target.value })}
-                              />
-                            </div>
-                            <div>
-                              <Label>Woche</Label>
-                              <Input
-                                className="rounded-xl"
-                                type="number"
-                                min="1"
-                                value={newMatchState.week_number}
-                                onChange={(e) =>
-                                  setNewMatch({ ...newMatchState, week_number: Number.parseInt(e.target.value) || 1 })
-                                }
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label>Spielort</Label>
-
-                            {newMatchState.home_team_id && (
-                              <div className="text-sm text-muted-foreground mb-1">
-                                {newMatchState.home_team_type === "own" ? (
-                                  <>
-                                    Heimteam-Lokal: <span className="font-medium">{DEFAULT_HOME_VENUE}</span>
-                                  </>
-                                ) : (
-                                  (() => {
-                                    const t = opponentTeams.find((ot) => ot.id === newMatchState.home_team_id)
-                                    const lokal = t?.venue_name?.trim()
-                                    const adresse = t?.venue?.trim()
                                     return (
-                                      <div className="space-y-0.5">
-                                        <div>
-                                          Heimteam-Lokal (Gegner): <span className="font-medium">{lokal || "—"}</span>
-                                        </div>
-                                        <div>
-                                          Adresse: <span className="font-medium">{adresse || "—"}</span>
+                                      <div key={match.id} className="rounded-[18px] border border-white/[0.07] bg-white/[0.025] p-4">
+                                        <div className="grid gap-3 lg:grid-cols-[150px_minmax(0,1fr)_auto] lg:items-center">
+                                          <div className="text-xs font-bold text-white/42">
+                                            <div>Spieltag {match.week_number}</div>
+
+                                            {shownStatus === "postponed" && match.original_date ? (
+                                              <div className="mt-2 space-y-1.5">
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-white/25">
+                                                    Ursprünglich
+                                                  </span>
+                                                  <span className="line-through decoration-red-400/70 text-white/35">
+                                                    {new Date(match.original_date).toLocaleDateString("de-AT")}
+                                                  </span>
+                                                </div>
+
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-amber-300/70">
+                                                    Neuer Termin
+                                                  </span>
+                                                  <span className="font-black text-amber-100">
+                                                    {new Date(match.match_date).toLocaleDateString("de-AT")}
+                                                    {match.match_time ? ` · ${String(match.match_time).slice(0, 5)} Uhr` : ""}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div className="mt-1">
+                                                {new Date(match.match_date).toLocaleDateString("de-AT")}
+                                                {match.match_time ? ` · ${String(match.match_time).slice(0, 5)}` : ""}
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          <div className="min-w-0">
+                                            <div className="truncate text-sm font-black text-white/88">
+                                              {getTeamName(match, true)} <span className="text-white/25">vs.</span> {getTeamName(match, false)}
+                                            </div>
+                                            <div className="mt-1 truncate text-xs font-semibold text-white/30">
+                                              {match.venue || "Spielort noch nicht hinterlegt"}
+                                            </div>
+
+                                            {shownStatus === "postponed" && match.postponement_reason ? (
+                                              <div className="mt-2 inline-flex max-w-full items-center rounded-full border border-amber-300/10 bg-amber-500/[0.07] px-2.5 py-1 text-[10px] font-bold text-amber-100/70">
+                                                <span className="mr-1 text-amber-300/70">Grund:</span>
+                                                <span className="truncate">{match.postponement_reason}</span>
+                                              </div>
+                                            ) : null}
+                                          </div>
+
+                                          <div className="flex items-center gap-3 lg:justify-end">
+                                            {shownStatus === "completed" ? (
+                                              <div className="font-mono text-lg font-black text-white">
+                                                {shownHome ?? "–"}:{shownAway ?? "–"}
+                                              </div>
+                                            ) : null}
+
+                                            <span
+                                              className={cn(
+                                                "rounded-full border px-2.5 py-1 text-[11px] font-black",
+                                                shownStatus === "completed"
+                                                  ? "border-emerald-300/10 bg-emerald-500/10 text-emerald-200"
+                                                  : shownStatus === "live"
+                                                    ? "border-red-300/10 bg-red-500/10 text-red-200"
+                                                    : shownStatus === "postponed"
+                                                      ? "border-amber-300/15 bg-amber-500/10 text-amber-200"
+                                                      : "border-sky-300/10 bg-sky-500/10 text-sky-200",
+                                              )}
+                                            >
+                                              {shownStatus === "completed"
+                                                ? "Beendet"
+                                                : shownStatus === "live"
+                                                  ? "Live"
+                                                  : shownStatus === "postponed"
+                                                    ? "Verschoben"
+                                                    : "Geplant"}
+                                            </span>
+                                          </div>
                                         </div>
                                       </div>
                                     )
-                                  })()
-                                )}
-                              </div>
-                            )}
-
-                            <Input
-                              className="rounded-xl"
-                              value={newMatchState.venue}
-                              onChange={(e) => setNewMatch({ ...newMatchState, venue: e.target.value })}
-                              placeholder="z.B. DC SIM - Salzburg"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Dart-Art</Label>
-                            <Select
-                              value={newMatchState.dart_type}
-                              onValueChange={(value) =>
-                                setNewMatch({ ...newMatchState, dart_type: value as "steeldart" | "edart" })
-                              }
-                            >
-                              <SelectTrigger className="rounded-xl">
-                                <SelectValue placeholder="Dart-Art auswählen" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="steeldart">Steeldart</SelectItem>
-                                <SelectItem value="edart">E-Dart</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <Button
-                            onClick={createMatch}
-                            className="w-full rounded-xl"
-                            disabled={
-                              !newMatchState.home_team_id ||
-                              !newMatchState.away_team_id ||
-                              !newMatchState.match_date ||
-                              !newMatchState.match_time ||
-                              !selectedSeason
-                            }
-                          >
-                            Spiel erstellen
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
-
-                {currentSeason && (
-                  <Card className="rounded-2xl">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Trophy className="h-5 w-5" />
-                        {currentSeason.name} – Spielplan
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        {Object.keys(groupedMatches).length === 0 && otherMatches.length === 0 ? (
-                          <div className="text-center py-12">
-                            <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-lg font-medium text-muted-foreground">Keine Spiele für diese Saison</p>
-                            <p className="text-sm text-muted-foreground">Erstelle dein erstes Spiel mit dem Button oben</p>
-                          </div>
-                        ) : (
-                          <>
-                            {Object.entries(groupedMatches).map(([teamId, { team, matches: teamMatches }]) => (
-                              <Collapsible
-                                key={teamId}
-                                open={!collapsedTeams.has(teamId)}
-                                onOpenChange={() => toggleTeamCollapse(teamId)}
-                              >
-                                <CollapsibleTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    className="w-full justify-between p-4 h-auto border rounded-xl hover:bg-muted/50"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <div className="flex items-center gap-2">
-                                        {collapsedTeams.has(teamId) ? (
-                                          <ChevronRight className="h-4 w-4" />
-                                        ) : (
-                                          <ChevronDown className="h-4 w-4" />
-                                        )}
-                                        <Users className="h-5 w-5 text-blue-600" />
-                                      </div>
-                                      <div className="text-left">
-                                        <h3 className="font-semibold text-lg">{team.name}</h3>
-                                        <p className="text-sm text-muted-foreground">
-                                          {teamMatches.length} Spiel{teamMatches.length !== 1 ? "e" : ""}
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <Badge variant="default" className="bg-blue-500">
-                                      Eigenes Team
-                                    </Badge>
-                                  </Button>
-                                </CollapsibleTrigger>
-
-                                <CollapsibleContent className="mt-4">
-                                  <div className="space-y-3 pl-0 sm:pl-4">
-                                    {teamMatches
-                                      .slice()
-                                      .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
-                                      .map((match) => (
-                                        <div key={match.id} className={cn("border rounded-xl p-4", getMatchBackgroundColor(match as Match))}>
-                                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-                                            <div className="flex flex-wrap items-center gap-3">
-                                              <Badge variant="outline" className="font-mono">
-                                                Woche {match.week_number}
-                                              </Badge>
-
-                                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Calendar className="h-4 w-4" />
-                                                <span>{new Date(match.match_date).toLocaleDateString("de-DE")}</span>
-                                              </div>
-
-                                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Clock className="h-4 w-4" />
-                                                <span>{match.match_time}</span>
-                                                <span className="text-xs bg-muted px-2 py-1 rounded">
-                                                  {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
-                                                </span>
-                                              </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 justify-between sm:justify-end">
-                                              <Badge variant={match.status === "completed" ? "default" : "secondary"}>
-                                                {match.status === "completed" ? "Beendet" : "Geplant"}
-                                              </Badge>
-                                              <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => deleteMatch(match.id)}
-                                                className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
-                                              >
-                                                <Trash2 className="h-4 w-4" />
-                                              </Button>
-                                            </div>
-                                          </div>
-
-                                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                            <div className="flex items-center justify-between md:justify-start gap-6">
-                                              <div className="text-center">
-                                                <div className="font-semibold text-base sm:text-lg mb-1">
-                                                  {getTeamName(match as Match, true)}
-                                                </div>
-                                                <div className="text-3xl font-bold text-blue-600">
-                                                  {match.home_score ?? "—"}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground mt-1">
-                                                  {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
-                                                </div>
-                                              </div>
-
-                                              <div className="text-2xl font-bold text-muted-foreground">:</div>
-
-                                              <div className="text-center">
-                                                <div className="font-semibold text-base sm:text-lg mb-1">
-                                                  {getTeamName(match as Match, false)}
-                                                </div>
-                                                <div className="text-3xl font-bold text-blue-600">
-                                                  {match.away_score ?? "—"}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground mt-1">
-                                                  {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
-                                                </div>
-                                              </div>
-                                            </div>
-
-                                            <div className="md:text-right">
-                                              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                                                <MapPin className="h-4 w-4" />
-                                                <span className="font-medium">{match.venue}</span>
-                                              </div>
-
-                                              <div className="flex flex-wrap gap-2">
-                                                <Button
-                                                  size="sm"
-                                                  variant="outline"
-                                                  onClick={() => {
-                                                    setSelectedMatchForStats(match as Match)
-                                                    setIsStatsDialogOpen(true)
-                                                  }}
-                                                  className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
-                                                >
-                                                  <Target className="h-4 w-4 mr-2" />
-                                                  Statistiken
-                                                </Button>
-
-                                                {/* DETAILS */}
-                                                <Dialog
-                                                  open={isMatchDetailsDialogOpen && selectedMatchForDetails === match.id}
-                                                  onOpenChange={(open) => {
-                                                    setIsMatchDetailsDialogOpen(open)
-                                                    if (!open) setSelectedMatchForDetails(null)
-                                                  }}
-                                                >
-                                                  <DialogTrigger asChild>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="outline"
-                                                      className="rounded-xl"
-                                                      onClick={() => {
-                                                        // resolve ids (own/opponent)
-                                                        let homeTeamId = ""
-                                                        let homeTeamType: "own" | "opponent" = "own"
-                                                        if ((match as any).home_team_id) {
-                                                          homeTeamId = (match as any).home_team_id
-                                                          homeTeamType = "own"
-                                                        } else if ((match as any).home_opponent_team_id) {
-                                                          homeTeamId = (match as any).home_opponent_team_id
-                                                          homeTeamType = "opponent"
-                                                        }
-
-                                                        let awayTeamId = ""
-                                                        let awayTeamType: "own" | "opponent" = "own"
-                                                        if ((match as any).away_team_id) {
-                                                          awayTeamId = (match as any).away_team_id
-                                                          awayTeamType = "own"
-                                                        } else if ((match as any).away_opponent_team_id) {
-                                                          awayTeamId = (match as any).away_opponent_team_id
-                                                          awayTeamType = "opponent"
-                                                        }
-
-                                                        setEditMatchDetails({
-                                                          home_team_id: homeTeamId,
-                                                          home_team_type: homeTeamType,
-                                                          away_team_id: awayTeamId,
-                                                          away_team_type: awayTeamType,
-                                                          match_date: (match as any).match_date,
-                                                          match_time: (match as any).match_time,
-                                                          week_number: (match as any).week_number,
-                                                          venue: (match as any).venue || "",
-                                                          dart_type: (match as any).dart_type || "steeldart",
-                                                        })
-
-                                                        setSelectedMatchForDetails(match.id)
-                                                        setIsMatchDetailsDialogOpen(true)
-                                                      }}
-                                                    >
-                                                      <Settings className="h-4 w-4 mr-2" />
-                                                      Details
-                                                    </Button>
-                                                  </DialogTrigger>
-
-                                                  <DialogContent className="sm:max-w-lg">
-                                                    <DialogHeader>
-                                                      <DialogTitle>Spieldetails bearbeiten</DialogTitle>
-                                                      <p className="text-sm text-muted-foreground">
-                                                        Datum, Uhrzeit, Teams und Details ändern
-                                                      </p>
-                                                    </DialogHeader>
-
-                                                    <div className="space-y-4">
-                                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        <div>
-                                                          <Label htmlFor="week-number">Spieltag</Label>
-                                                          <Input
-                                                            id="week-number"
-                                                            type="number"
-                                                            min="1"
-                                                            className="rounded-xl"
-                                                            value={editMatchDetails.week_number}
-                                                            onChange={(e) =>
-                                                              setEditMatchDetails((prev) => ({
-                                                                ...prev,
-                                                                week_number: Number.parseInt(e.target.value) || 1,
-                                                              }))
-                                                            }
-                                                          />
-                                                        </div>
-                                                        <div>
-                                                          <Label htmlFor="venue">Spielort</Label>
-                                                          <Input
-                                                            id="venue"
-                                                            className="rounded-xl"
-                                                            value={editMatchDetails.venue}
-                                                            onChange={(e) =>
-                                                              setEditMatchDetails((prev) => ({ ...prev, venue: e.target.value }))
-                                                            }
-                                                          />
-                                                        </div>
-                                                      </div>
-
-                                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        <div>
-                                                          <Label htmlFor="match-date">Datum</Label>
-                                                          <Input
-                                                            id="match-date"
-                                                            type="date"
-                                                            className="rounded-xl"
-                                                            value={editMatchDetails.match_date}
-                                                            onChange={(e) =>
-                                                              setEditMatchDetails((prev) => ({ ...prev, match_date: e.target.value }))
-                                                            }
-                                                          />
-                                                        </div>
-                                                        <div>
-                                                          <Label htmlFor="match-time">Uhrzeit</Label>
-                                                          <Input
-                                                            id="match-time"
-                                                            type="time"
-                                                            className="rounded-xl"
-                                                            value={editMatchDetails.match_time}
-                                                            onChange={(e) =>
-                                                              setEditMatchDetails((prev) => ({ ...prev, match_time: e.target.value }))
-                                                            }
-                                                          />
-                                                        </div>
-                                                      </div>
-
-                                                      <div className="space-y-2">
-                                                        <Label>Heimteam</Label>
-                                                        <div className="flex flex-col sm:flex-row gap-2">
-                                                        <Select
-  value={editMatchDetails.home_team_type}
-  onValueChange={(value: "own" | "opponent") =>
-    handleEditTeamSelection("", value, "home")
-  }
->
-                                                            <SelectTrigger className="w-full sm:w-40 rounded-xl">
-                                                              <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                              <SelectItem value="own">Eigenes</SelectItem>
-                                                              <SelectItem value="opponent">Gegner</SelectItem>
-                                                            </SelectContent>
-                                                          </Select>
-
-                                                          <Select
-  value={editMatchDetails.home_team_id}
-  onValueChange={(value) =>
-    handleEditTeamSelection(value, editMatchDetails.home_team_type, "home")
-  }
->
-                                                            <SelectTrigger className="flex-1 rounded-xl">
-                                                              <SelectValue placeholder="Team auswählen" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                              {editMatchDetails.home_team_type === "own"
-                                                                ? ownTeams.map((t) => (
-                                                                    <SelectItem key={t.id} value={t.id}>
-                                                                      {t.name}
-                                                                    </SelectItem>
-                                                                  ))
-                                                                : opponentTeams.map((t) => (
-                                                                    <SelectItem key={t.id} value={t.id}>
-                                                                      {t.name}
-                                                                    </SelectItem>
-                                                                  ))}
-                                                            </SelectContent>
-                                                          </Select>
-                                                        </div>
-                                                      </div>
-
-                                                      <div className="space-y-2">
-                                                        <Label>Auswärtsteam</Label>
-                                                        <div className="flex flex-col sm:flex-row gap-2">
-                                                         <Select
-  value={editMatchDetails.away_team_type}
-  onValueChange={(value: "own" | "opponent") =>
-    handleEditTeamSelection("", value, "away")
-  }
->
-                                                            <SelectTrigger className="w-full sm:w-40 rounded-xl">
-                                                              <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                              <SelectItem value="own">Eigenes</SelectItem>
-                                                              <SelectItem value="opponent">Gegner</SelectItem>
-                                                            </SelectContent>
-                                                          </Select>
-
-                                                          <Select
-  value={editMatchDetails.away_team_id}
-  onValueChange={(value) =>
-    handleEditTeamSelection(value, editMatchDetails.away_team_type, "away")
-  }
->
-                                                            <SelectTrigger className="flex-1 rounded-xl">
-                                                              <SelectValue placeholder="Team auswählen" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                              {editMatchDetails.away_team_type === "own"
-                                                                ? ownTeams.map((t) => (
-                                                                    <SelectItem key={t.id} value={t.id}>
-                                                                      {t.name}
-                                                                    </SelectItem>
-                                                                  ))
-                                                                : opponentTeams.map((t) => (
-                                                                    <SelectItem key={t.id} value={t.id}>
-                                                                      {t.name}
-                                                                    </SelectItem>
-                                                                  ))}
-                                                            </SelectContent>
-                                                          </Select>
-                                                        </div>
-                                                      </div>
-
-                                                      <div>
-                                                        <Label>Dart-Art</Label>
-                                                        <Select
-                                                          value={editMatchDetails.dart_type}
-                                                          onValueChange={(value) =>
-                                                            setEditMatchDetails((prev) => ({
-                                                              ...prev,
-                                                              dart_type: value as "steeldart" | "edart",
-                                                            }))
-                                                          }
-                                                        >
-                                                          <SelectTrigger className="rounded-xl">
-                                                            <SelectValue placeholder="Dart-Art auswählen" />
-                                                          </SelectTrigger>
-                                                          <SelectContent>
-                                                            <SelectItem value="steeldart">Steeldart</SelectItem>
-                                                            <SelectItem value="edart">E-Dart</SelectItem>
-                                                          </SelectContent>
-                                                        </Select>
-                                                      </div>
-
-                                                      <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                                                        <Button
-                                                          onClick={() => updateMatchDetails(match.id)}
-                                                          className="flex-1 rounded-xl"
-                                                          disabled={
-                                                            !editMatchDetails.home_team_id ||
-                                                            !editMatchDetails.away_team_id ||
-                                                            !editMatchDetails.match_date ||
-                                                            !editMatchDetails.match_time
-                                                          }
-                                                        >
-                                                          <Check className="h-4 w-4 mr-2" />
-                                                          Speichern
-                                                        </Button>
-                                                        <Button
-                                                          variant="outline"
-                                                          className="rounded-xl"
-                                                          onClick={() => setIsMatchDetailsDialogOpen(false)}
-                                                        >
-                                                          Abbrechen
-                                                        </Button>
-                                                      </div>
-                                                    </div>
-                                                  </DialogContent>
-                                                </Dialog>
-
-                                                {/* RESULTS */}
-                                                <Dialog
-                                                  open={isResultsDialogOpen && selectedMatchForResults === match.id}
-                                                  onOpenChange={(open) => {
-                                                    setIsResultsDialogOpen(open)
-                                                    if (!open) setSelectedMatchForResults(null)
-                                                  }}
-                                                >
-                                                  <DialogTrigger asChild>
-                                                    <Button
-                                                      size="sm"
-                                                      className="bg-blue-600 hover:bg-blue-700 rounded-xl"
-                                                      onClick={() => {
-                                                        setSelectedMatchForResults(match.id)
-                                                        setIsResultsDialogOpen(true)
-                                                        setEditMatchScores({
-                                                          home: (match.home_score ?? 0) as number,
-                                                          away: (match.away_score ?? 0) as number,
-                                                        })
-                                                      }}
-                                                    >
-                                                      <Edit className="h-4 w-4 mr-2" />
-                                                      {match.status === "completed" ? "Bearbeiten" : "Ergebnis"}
-                                                    </Button>
-                                                  </DialogTrigger>
-
-                                                  <DialogContent className="sm:max-w-md">
-                                                    <DialogHeader className="text-center pb-4">
-                                                      <DialogTitle className="text-xl font-semibold">
-                                                        {match.status === "completed" ? "Ergebnis bearbeiten" : "Spielergebnis eintragen"}
-                                                      </DialogTitle>
-                                                      <p className="text-sm text-muted-foreground">
-                                                        {new Date(match.match_date).toLocaleDateString("de-DE")} • {match.match_time}
-                                                      </p>
-                                                    </DialogHeader>
-
-                                                    <div className="space-y-6">
-                                                      <div className="bg-muted/30 rounded-xl p-4">
-                                                        <div className="grid grid-cols-3 gap-4 items-center">
-                                                          <div className="text-center">
-                                                            <Label className="text-sm font-medium text-muted-foreground">
-                                                              {getTeamName(match as Match, true)}
-                                                            </Label>
-                                                            <Input
-                                                              type="number"
-                                                              min="0"
-                                                              max="99"
-                                                              value={editMatchScores.home}
-                                                              className="text-center text-2xl font-bold h-16 mt-2 rounded-xl"
-                                                              onChange={(e) =>
-                                                                setEditMatchScores((prev) => ({
-                                                                  ...prev,
-                                                                  home: Number.parseInt(e.target.value) || 0,
-                                                                }))
-                                                              }
-                                                            />
-                                                          </div>
-                                                          <div className="text-center">
-                                                            <div className="text-3xl font-bold text-muted-foreground">:</div>
-                                                          </div>
-                                                          <div className="text-center">
-                                                            <Label className="text-sm font-medium text-muted-foreground">
-                                                              {getTeamName(match as Match, false)}
-                                                            </Label>
-                                                            <Input
-                                                              type="number"
-                                                              min="0"
-                                                              max="99"
-                                                              value={editMatchScores.away}
-                                                              className="text-center text-2xl font-bold h-16 mt-2 rounded-xl"
-                                                              onChange={(e) =>
-                                                                setEditMatchScores((prev) => ({
-                                                                  ...prev,
-                                                                  away: Number.parseInt(e.target.value) || 0,
-                                                                }))
-                                                              }
-                                                            />
-                                                          </div>
-                                                        </div>
-                                                      </div>
-
-                                                      <div className="flex flex-col sm:flex-row gap-3">
-                                                        <Button
-                                                          onClick={() => updateMatchScore(match.id, editMatchScores.home, editMatchScores.away)}
-                                                          className="flex-1 h-12 text-base font-medium rounded-xl"
-                                                        >
-                                                          <Check className="h-4 w-4 mr-2" />
-                                                          Speichern
-                                                        </Button>
-
-                                                        {match.status === "completed" && (
-                                                          <Button
-                                                            onClick={() => resetMatchScore(match.id)}
-                                                            variant="outline"
-                                                            className="h-12 px-4 text-base font-medium rounded-xl border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                                          >
-                                                            <AlertTriangle className="h-4 w-4 mr-2" />
-                                                            Reset
-                                                          </Button>
-                                                        )}
-                                                      </div>
-                                                    </div>
-                                                  </DialogContent>
-                                                </Dialog>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                  </div>
-                                </CollapsibleContent>
-                              </Collapsible>
-                            ))}
-
-                            {otherMatches.length > 0 && (
-                              <div className="border-t pt-6">
-                                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                                  <Users className="h-5 w-5 text-muted-foreground" />
-                                  Andere Spiele
-                                </h3>
-                                <div className="space-y-3">
-                                  {otherMatches.map((match) => (
-                                    <div key={match.id} className={cn("border rounded-xl p-4", getMatchBackgroundColor(match))}>
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                          <Badge variant="outline">Woche {match.week_number}</Badge>
-                                          <span className="font-medium truncate">
-                                            {getTeamName(match, true)} vs {getTeamName(match, false)}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                          <span className="font-mono text-lg">
-                                            {match.home_score ?? "—"}:{match.away_score ?? "—"}
-                                          </span>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => deleteMatch(match.id)}
-                                            className="text-red-600 hover:text-red-700 rounded-lg"
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
+                                  })}
                                 </div>
-                              </div>
-                            )}
-                          </>
-                        )}
+                              </CollapsibleContent>
+                            </div>
+                          </Collapsible>
+                        ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    )}
+                  </div>
+                </section>
               </TabsContent>
 
-              {/* TEAMS */}
-              <TabsContent value="teams" className="space-y-6 pt-4">
+              <TabsContent value="lineups" className="mt-0 space-y-5">
+                <section className={vv.surface}>
+                  <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div><div className={vv.label}>Ligaplanung</div><h2 className="mt-1 text-xl font-black text-white">Aufstellungen & Zusagen</h2><p className="mt-1 text-sm font-semibold text-white/38">Pro Spiel aufklappen: Zusagen, offene Antworten und bestätigte Aufstellung auf einen Blick.</p></div>
+                      <Button variant="outline" className={vv.buttonSecondary} onClick={() => void fetchPlanningData()} disabled={planningLoading}>{planningLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Aktualisieren</Button>
+                    </div>
+                  </div>
+                  <div className="space-y-3 p-3 sm:p-5">
+                    {planningLoading ? <div className={cn(vv.inset,"p-10 text-center text-sm font-bold text-white/35")}>Aufstellungen werden geladen …</div> : upcomingPlanningMatches.length === 0 ? <div className={cn(vv.inset,"p-10 text-center text-sm font-bold text-white/35")}>Keine kommenden Ligaspiele.</div> : upcomingPlanningMatches.flatMap((match) => getOwnTeamContexts(match).map(({teamId,teamName}) => {
+                      const summary = getPlanningSummary(match, teamId)
+                      const label = summary.confirmed ? "Bestätigt" : summary.stale ? "Bestätigung veraltet" : summary.lineup.length > 0 ? "Entwurf" : "Keine Aufstellung"
+                      return (
+                        <Collapsible key={`${match.id}:${teamId}`}>
+                          <div className={cn(vv.cardHover,"overflow-hidden")}>
+                            <CollapsibleTrigger asChild>
+                              <button type="button" className="flex w-full flex-col gap-3 p-4 text-left sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+                                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[11px] font-black text-orange-200">{teamName}</span><span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-black text-white/45">{match.dart_type === "edart" ? "E-Dart" : "Steeldart"}</span></div><div className="mt-2 truncate text-base font-black text-white">{getTeamName(match,true)} <span className="text-white/25">vs.</span> {getTeamName(match,false)}</div><div className="mt-1 text-xs font-semibold text-white/35">{new Date(match.match_date).toLocaleDateString("de-AT")}{match.match_time ? ` · ${String(match.match_time).slice(0,5)} Uhr` : ""}</div></div>
+                                <div className="flex flex-wrap items-center gap-2 lg:justify-end"><span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-black text-emerald-200">Ja {summary.counts.yes}</span><span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-black text-amber-200">Notfall {summary.counts.maybe}</span><span className="rounded-full bg-red-500/10 px-2.5 py-1 text-[11px] font-black text-red-200">Nein {summary.counts.no}</span><span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-black text-white/45">Offen {summary.counts.none}</span><span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", summary.confirmed ? "bg-emerald-500/10 text-emerald-200" : summary.lineup.length > 0 ? "bg-amber-500/10 text-amber-200" : "bg-white/[0.05] text-white/45")}>{label}</span><ChevronDown className="h-4 w-4 text-white/30" /></div>
+                              </button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="grid gap-4 border-t border-white/[0.06] p-4 sm:p-5 xl:grid-cols-[1.2fr_.8fr]">
+                                <div className={cn(vv.inset,"p-3 sm:p-4")}><div className={vv.label}>Zusagen</div><div className="mt-3 grid gap-2 sm:grid-cols-2">{summary.members.map((member:any) => { const status = summary.availabilityByPlayer.get(member.player_id)?.status ?? "none"; return <div key={member.player_id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5"><div className="min-w-0"><div className="truncate text-sm font-black text-white/85">{member.club_players?.name || "Spieler"}</div>{member.role === "Captain" || member.role === "Co-Captain" ? <div className="mt-0.5 text-[10px] font-black uppercase tracking-wider text-orange-200/45">{member.role}</div> : null}</div><span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black",status === "yes" ? "bg-emerald-500/10 text-emerald-200" : status === "maybe" ? "bg-amber-500/10 text-amber-200" : status === "no" ? "bg-red-500/10 text-red-200" : "bg-white/[0.05] text-white/35")}>{status === "yes" ? "Ja" : status === "maybe" ? "Nur wenn nötig" : status === "no" ? "Nein" : "Keine Antwort"}</span></div> })}</div></div>
+                                <div className={cn(vv.inset,"p-3 sm:p-4")}>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <div className={vv.label}>Aufstellung</div>
+                                      <div className="mt-1 text-base font-black text-white">{label}</div>
+                                    </div>
+                                    <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-black text-white/50">
+                                      {summary.startersCount}/{summary.requiredStarters} Starter
+                                    </span>
+                                  </div>
+
+                                  <div className="mt-3 space-y-2">
+                                    {summary.lineup.length === 0 ? (
+                                      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-3 text-sm font-semibold text-white/35">
+                                        Noch keine Aufstellung gespeichert.
+                                      </div>
+                                    ) : (
+                                      summary.lineup.map((row:any) => {
+                                        const member = summary.members.find((item:any) => item.player_id === row.player_id)
+                                        return (
+                                          <div key={row.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+                                            <span className="truncate text-sm font-bold text-white/80">{member?.club_players?.name || "Spieler"}</span>
+                                            <span className={cn("text-[11px] font-black",row.is_substitute ? "text-sky-200" : "text-orange-200")}>
+                                              {row.is_substitute ? "Reserve" : `Starter ${row.position}`}
+                                            </span>
+                                          </div>
+                                        )
+                                      })
+                                    )}
+                                  </div>
+
+                                  {!summary.confirmed && onOpenMailbox ? (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className={cn(vv.buttonSecondary, "mt-4 w-full")}
+                                      onClick={() =>
+                                        onOpenMailbox({
+                                          recipientMode: "captains",
+                                          recipientTeamId: teamId,
+                                          subject: `Aufstellung offen · ${getTeamName(match, true)} vs. ${getTeamName(match, false)}`,
+                                          body: `Für das Ligaspiel am ${new Date(match.match_date).toLocaleDateString("de-AT")}${match.match_time ? ` um ${String(match.match_time).slice(0, 5)} Uhr` : ""} ist für ${teamName} noch keine bestätigte Aufstellung hinterlegt. Bitte prüft die Aufstellung und gebt kurz Bescheid.`,
+                                          category: "lineup",
+                                          priority: "important",
+                                          matchId: match.id,
+                                          seasonId: match.season_id,
+                                        })
+                                      }
+                                    >
+                                      <Inbox className="mr-2 h-4 w-4" />
+                                      Kapitän & Co-Kapitän anschreiben
+                                    </Button>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
+                      )
+                    }))}
+                  </div>
+                </section>
+              </TabsContent>
+
+              <TabsContent value="overdue" className="mt-0 space-y-5">
+                <section className={vv.surface}>
+                  <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className={vv.label}>Offene Ergebnisse</div>
+                        <h2 className="mt-1 text-xl font-black text-white">Überfällige Ligaspiele</h2>
+                        <p className="mt-1 text-sm font-semibold text-white/38">
+                          Hier siehst du Spiele, deren Termin seit mindestens 24 Stunden vorbei ist und für die noch kein abgeschlossenes Ergebnis vorliegt.
+                          Bei verschobenen Spielen zählt immer der neue Spieltermin.
+                        </p>
+                      </div>
+                      <span className="w-fit rounded-full border border-amber-300/15 bg-amber-500/10 px-3 py-1 text-xs font-black text-amber-100">
+                        {overdueMatches.length} offen
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 sm:p-5">
+                    {overdueMatches.length === 0 ? (
+                      <div className={cn(vv.inset, "p-10 text-center")}>
+                        <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-300/70" />
+                        <div className="mt-3 font-black text-white">Keine überfälligen Spiele</div>
+                        <div className="mt-1 text-sm font-semibold text-white/35">
+                          Aktuell ist in unserer App kein Spiel seit mindestens 24 Stunden offen.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {overdueMatches.map((match) => {
+                          const startMs = getMatchStartMs(match)
+                          const hours = Number.isFinite(startMs)
+                            ? Math.max(24, Math.floor((Date.now() - startMs) / 3600000))
+                            : 24
+
+                          return (
+                            <Collapsible key={match.id}>
+                              <div className={cn(vv.cardHover, "overflow-hidden")}>
+                                <CollapsibleTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="flex w-full flex-col gap-3 p-4 text-left sm:p-5 lg:flex-row lg:items-center lg:justify-between"
+                                  >
+                                    <div>
+                                      <div className="flex flex-wrap gap-2">
+                                        <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-black text-amber-200">
+                                          {hours}h überfällig
+                                        </span>
+                                        <span className={cn(
+                                          "rounded-full border px-2.5 py-1 text-[11px] font-black",
+                                          match.status === "postponed"
+                                            ? "border-amber-300/15 bg-amber-500/10 text-amber-200"
+                                            : match.status === "live"
+                                              ? "border-red-300/10 bg-red-500/10 text-red-200"
+                                              : "border-sky-300/10 bg-sky-500/10 text-sky-200",
+                                        )}>
+                                          {match.status === "postponed"
+                                            ? "Verschoben"
+                                            : match.status === "live"
+                                              ? "Live"
+                                              : "Geplant"}
+                                        </span>
+                                      </div>
+
+                                      <div className="mt-2 text-base font-black text-white">
+                                        {getTeamName(match, true)} <span className="text-white/25">vs.</span>{" "}
+                                        {getTeamName(match, false)}
+                                      </div>
+
+                                      {match.status === "postponed" && match.original_date ? (
+                                        <div className="mt-2 space-y-1 text-xs font-semibold">
+                                          <div className="flex flex-wrap items-center gap-2 text-white/30">
+                                            <span>Ursprünglich:</span>
+                                            <span className="line-through decoration-red-400/70">
+                                              {new Date(match.original_date).toLocaleDateString("de-AT")}
+                                            </span>
+                                          </div>
+                                          <div className="flex flex-wrap items-center gap-2 text-amber-100/80">
+                                            <span className="font-black">Neuer Termin:</span>
+                                            <span>
+                                              {new Date(match.match_date).toLocaleDateString("de-AT")}
+                                              {match.match_time ? ` · ${String(match.match_time).slice(0, 5)} Uhr` : ""}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="mt-1 text-xs font-semibold text-white/35">
+                                          {new Date(match.match_date).toLocaleDateString("de-AT")}
+                                          {match.match_time ? ` · ${String(match.match_time).slice(0, 5)} Uhr` : ""}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <ChevronDown className="h-4 w-4 text-white/30" />
+                                  </button>
+                                </CollapsibleTrigger>
+
+                                <CollapsibleContent>
+                                  <div className="grid gap-3 border-t border-white/[0.06] p-4 text-sm sm:grid-cols-3 sm:p-5">
+                                    <div className={cn(vv.inset, "p-3")}>
+                                      <div className={vv.label}>Spielstatus</div>
+                                      <div className="mt-1 font-black text-white/80">
+                                        {match.status === "postponed"
+                                          ? "Verschoben"
+                                          : match.status === "live"
+                                            ? "Live"
+                                            : "Geplant"}
+                                      </div>
+                                    </div>
+
+                                    <div className={cn(vv.inset, "p-3")}>
+                                      <div className={vv.label}>Ergebnis</div>
+                                      <div className="mt-1 font-black text-white/80">
+                                        {match.home_score === null || match.away_score === null
+                                          ? "Noch kein Ergebnis"
+                                          : `${match.home_score}:${match.away_score}`}
+                                      </div>
+                                    </div>
+
+                                    <div className={cn(vv.inset, "p-3")}>
+                                      <div className={vv.label}>Überfällig</div>
+                                      <div className="mt-1 font-black text-amber-200">
+                                        Seit mindestens 24 Stunden offen
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {onOpenMailbox ? (
+                                    <div className="flex flex-wrap gap-2 border-t border-white/[0.06] px-4 py-4 sm:px-5">
+                                      {getOwnTeamContexts(match).map(({ teamId, teamName }) => (
+                                        <Button
+                                          key={teamId}
+                                          type="button"
+                                          variant="outline"
+                                          className={vv.buttonSecondary}
+                                          onClick={() =>
+                                            onOpenMailbox({
+                                              recipientMode: "captains",
+                                              recipientTeamId: teamId,
+                                              subject: `Ergebnis offen · ${getTeamName(match, true)} vs. ${getTeamName(match, false)}`,
+                                              body: `Für das Ligaspiel vom ${new Date(match.match_date).toLocaleDateString("de-AT")}${match.match_time ? ` um ${String(match.match_time).slice(0, 5)} Uhr` : ""} ist noch kein abgeschlossenes Ergebnis hinterlegt. Bitte prüft das Ergebnis und gebt kurz Bescheid.`,
+                                              category: "result",
+                                              priority: "important",
+                                              matchId: match.id,
+                                              seasonId: match.season_id,
+                                            })
+                                          }
+                                        >
+                                          <Inbox className="mr-2 h-4 w-4" />
+                                          {teamName}: Kapitän anschreiben
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  ) : null}
+                                </CollapsibleContent>
+                              </div>
+                            </Collapsible>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </TabsContent>
+
+              <TabsContent value="teams" className="mt-0 space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card className="rounded-2xl">
                     <CardHeader>
@@ -1789,21 +2373,99 @@ const createMatch = useCallback(async () => {
                         <Users className="h-5 w-5" />
                         Eigene Teams
                       </CardTitle>
+                      <div className="text-sm text-muted-foreground">
+                        Sportdarts-Division pro Saison zuordnen. Teamnamen bleiben unverändert.
+                      </div>
                     </CardHeader>
                     <CardContent>
+                      <div className="mb-4 rounded-xl border bg-muted/20 p-3">
+                        <Label className="text-xs text-muted-foreground">Saison für die Zuordnung</Label>
+                        <Select value={sportdartsAssignmentSeason} onValueChange={setSportdartsAssignmentSeason}>
+                          <SelectTrigger className="mt-1 rounded-xl">
+                            <SelectValue placeholder="Saison auswählen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {seasons.map((season) => (
+                              <SelectItem key={season.id} value={season.id}>
+                                {seasonLabel(season)}{season.is_active ? " · Aktiv" : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          Sportdarts-Saison: Herbstsaison 2026 (ID {SPORTDARTS_CURRENT_SEASON_ID})
+                        </div>
+                      </div>
+
+                      {sportdartsAssignmentMessage && (
+                        <div className="mb-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-900">
+                          {sportdartsAssignmentMessage}
+                        </div>
+                      )}
+
                       <div className="space-y-3">
                         {ownTeams.length === 0 ? (
                           <p className="text-muted-foreground text-center py-4">Keine eigenen Teams gefunden</p>
                         ) : (
-                          ownTeams.map((team) => (
-                            <div key={team.id} className="flex items-center justify-between p-3 border rounded-xl">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <Users className="h-4 w-4 text-blue-600 shrink-0" />
-                                <span className="font-medium truncate">{team.name}</span>
+                          ownTeams.map((team) => {
+                            const assignment = sportdartsAssignmentSeason
+                              ? getSportdartsAssignment(team.id, sportdartsAssignmentSeason)
+                              : null
+                            const saveKey = `${sportdartsAssignmentSeason}:${team.id}`
+                            const isSaving = sportdartsSavingKey === saveKey
+
+                            return (
+                              <div key={team.id} className="rounded-xl border p-3">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <Users className="h-4 w-4 text-blue-600 shrink-0" />
+                                    <div className="min-w-0">
+                                      <div className="font-medium truncate">{team.name}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {assignment
+                                          ? `Sportdarts: ${assignment.sportdarts_division_name}`
+                                          : "Noch keine Sportdarts-Division zugeordnet"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Badge variant={assignment ? "default" : "secondary"}>
+                                    {assignment ? "Zugeordnet" : "Offen"}
+                                  </Badge>
+                                </div>
+
+                                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                                  <Select
+                                    value={assignment ? String(assignment.sportdarts_division_id) : ""}
+                                    onValueChange={(value) => void saveSportdartsDivision(team.id, value)}
+                                    disabled={!sportdartsAssignmentSeason || isSaving}
+                                  >
+                                    <SelectTrigger className="w-full rounded-xl">
+                                      <SelectValue placeholder="Sportdarts-Division auswählen" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {SPORTDARTS_DIVISIONS.map((division) => (
+                                        <SelectItem key={division.id} value={String(division.id)}>
+                                          {division.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+
+                                  {assignment && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="rounded-xl text-red-600 hover:text-red-700"
+                                      disabled={isSaving}
+                                      onClick={() => void removeSportdartsDivision(team.id)}
+                                    >
+                                      Zuordnung entfernen
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
-                              <Badge variant="default">Eigenes Team</Badge>
-                            </div>
-                          ))
+                            )
+                          })
                         )}
                       </div>
                     </CardContent>
@@ -1956,7 +2618,7 @@ const createMatch = useCallback(async () => {
               </TabsContent>
 
               {/* VENUES */}
-              <TabsContent value="venues" className="space-y-6 pt-4">
+              <TabsContent value="venues" className="mt-0 space-y-5">
                 <Card className="rounded-2xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -2124,28 +2786,9 @@ const createMatch = useCallback(async () => {
                   </DialogContent>
                 </Dialog>
               </TabsContent>
-            </Tabs>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats Dialog/Component */}
-      {selectedMatchForStats && isStatsDialogOpen && (
-        <MatchStatistics
-          match={selectedMatchForStats}
-          myTeamId={
-            selectedMatchForStats.home_team_type === "own"
-              ? selectedMatchForStats.home_team_id
-              : selectedMatchForStats.away_team_type === "own"
-                ? selectedMatchForStats.away_team_id
-                : undefined
-          }
-          onClose={() => {
-            setIsStatsDialogOpen(false)
-            setSelectedMatchForStats(null)
-          }}
-        />
-      )}
-    </div>
+            </div>
+          </Tabs>
+        </div>
+      </div>
   )
 }

@@ -235,11 +235,9 @@ function PlayerSwitchOverlay({ open, name }: { open: boolean; name: string }) {
 export default function DartStatsClassicPage({
   initialPlayers = [],
   loadingPlayers = false,
-  teamId,
 }: {
   initialPlayers?: { id: string; name: string }[]
   loadingPlayers?: boolean
-  teamId: string
 }) {
   const params = useParams<{ matchId: string }>()
   const matchId = params?.matchId
@@ -265,7 +263,6 @@ export default function DartStatsClassicPage({
           .from("match_lineup_headers")
           .select("team_id,status,current_version,confirmed_version,confirmed_at")
           .eq("match_id", matchId)
-          .eq("team_id", teamId)
           .eq("status", "confirmed")
           .order("confirmed_at", { ascending: false })
 
@@ -315,48 +312,9 @@ export default function DartStatsClassicPage({
           orderedIds.push(pid)
         }
 
-        // Gleiche Paketlogik wie bei der Aufstellung: E-Dart/Steeldart + Testfreischaltungen.
-        const matchRes = await supabase.from("matches").select("dart_type").eq("id", matchId).single()
-        const currentDartType = String(matchRes.data?.dart_type || "").toLowerCase()
-        const requiredModule =
-          currentDartType === "edart"
-            ? "edart_league"
-            : currentDartType === "steeldart"
-              ? "steeldart_league"
-              : null
-
-        if (!requiredModule) {
-          setLineupPlayers(null)
-          setLoadingLineup(false)
-          return
-        }
-
-        const eligibleRes = await supabase.rpc("eligible_team_players_for_league", {
-          p_team_id: teamId,
-          p_required_module_code: requiredModule,
-        })
-
-        if (eligibleRes.error) {
-          console.error("eligible_team_players_for_league error:", eligibleRes.error)
-          setLineupPlayers(null)
-          setLoadingLineup(false)
-          return
-        }
-
-        const eligibleIds = new Set<string>(
-          ((eligibleRes.data as any[]) || []).map((row: any) => row?.player_id).filter(Boolean),
-        )
-        const allowedIds = orderedIds.filter((id) => eligibleIds.has(id))
-
-        if (allowedIds.length === 0) {
-          setLineupPlayers(null)
-          setLoadingLineup(false)
-          return
-        }
-
         // Resolve names: prefer initialPlayers, fetch missing from club_players
         const initMap = new Map((initialPlayers ?? []).map((p) => [p.id, p.name] as const))
-        const missing = allowedIds.filter((id) => !initMap.get(id))
+        const missing = orderedIds.filter((id) => !initMap.get(id))
 
         let fetchedMap = new Map<string, string>()
         if (missing.length > 0) {
@@ -366,7 +324,7 @@ export default function DartStatsClassicPage({
           }
         }
 
-        const resolved = allowedIds.map((id) => ({
+        const resolved = orderedIds.map((id) => ({
           id,
           name: initMap.get(id) ?? fetchedMap.get(id) ?? "Spieler",
         }))
@@ -382,7 +340,7 @@ export default function DartStatsClassicPage({
     return () => {
       cancelled = true
     }
-  }, [matchId, teamId, initialPlayers])
+  }, [matchId, initialPlayers])
 
   const effectiveLoadingPlayers = loadingPlayers || loadingLineup
 
@@ -493,65 +451,9 @@ export default function DartStatsClassicPage({
     }
   }, [matchId, legNumber, incomingSig, effectiveLoadingPlayers])
 
-  const isPlayerCurrentlyEligible = async (playerId: string) => {
-    if (!matchId || !teamId) return false
-
-    const matchRes = await supabase.from("matches").select("dart_type").eq("id", matchId).single()
-    if (matchRes.error) return false
-
-    const currentDartType = String(matchRes.data?.dart_type || "").toLowerCase()
-    const requiredModule =
-      currentDartType === "edart"
-        ? "edart_league"
-        : currentDartType === "steeldart"
-          ? "steeldart_league"
-          : null
-    if (!requiredModule) return false
-
-    const headerRes = await supabase
-      .from("match_lineup_headers")
-      .select("status,current_version,confirmed_version")
-      .eq("match_id", matchId)
-      .eq("team_id", teamId)
-      .maybeSingle()
-
-    const header = headerRes.data as any
-    const confirmed =
-      !headerRes.error &&
-      header?.status === "confirmed" &&
-      header?.confirmed_version != null &&
-      header?.current_version != null &&
-      header.confirmed_version === header.current_version
-    if (!confirmed) return false
-
-    const lineupRes = await supabase
-      .from("match_lineups")
-      .select("player_id")
-      .eq("match_id", matchId)
-      .eq("team_id", teamId)
-      .eq("player_id", playerId)
-      .maybeSingle()
-    if (lineupRes.error || !lineupRes.data) return false
-
-    const eligibleRes = await supabase.rpc("eligible_team_players_for_league", {
-      p_team_id: teamId,
-      p_required_module_code: requiredModule,
-    })
-    if (eligibleRes.error) return false
-
-    return ((eligibleRes.data as any[]) || []).some((row: any) => row?.player_id === playerId)
-  }
-
   // Ensure row (ONLY when saving)
   const ensureRow = async (playerId: string) => {
     if (!matchId) return false
-
-    // Vor jedem DB-Write erneut prüfen: bestätigte Aufstellung + aktives Liga-Paket/Testfreischaltung.
-    const eligible = await isPlayerCurrentlyEligible(playerId)
-    if (!eligible) {
-      setDbStatus("forbidden")
-      return false
-    }
 
     const chk = await supabase
       .from("leg_statistics")
@@ -701,18 +603,18 @@ export default function DartStatsClassicPage({
   // ✅ NEW: if no confirmed lineup -> show CTA
   if (!effectiveLoadingPlayers && incoming.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 text-center">
-        <div className="max-w-md w-full bg-white border rounded-3xl shadow-xl p-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-orange-600 rounded-3xl mb-4 shadow-xl">
+      <div className="flex min-h-[55vh] w-full items-center justify-center px-3 py-8 text-center sm:px-6">
+        <div className="w-full max-w-md rounded-[26px] border border-white/[0.08] bg-black/35 p-6 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+          <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-3xl border border-orange-300/20 bg-orange-500 text-white shadow-[0_0_28px_rgba(249,115,22,.14)]">
             <Target className="h-7 w-7 text-white" />
           </div>
-          <div className="text-xl font-bold text-red-600">Bitte Aufstellung bestätigen !!!!</div>
-          <div className="text-sm text-gray-600 mt-2">
+          <div className="text-xl font-black text-red-300">Bitte Aufstellung bestätigen !!!!</div>
+          <div className="mt-2 text-sm font-medium leading-6 text-white/50">
             Bitte beachten: Die Aufstellung muss zuerst bestätigt werden, da eine Live-Eingabe ansonsten nicht möglich ist.
           </div>
 
           <div className="mt-5">
-            <Button asChild className="bg-orange-600 hover:bg-orange-700 w-full">
+            <Button asChild className="w-full bg-orange-500 font-black text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white">
               <Link href="/member-availability">Zur Aufstellung / Bestätigen</Link>
             </Button>
           </div>
@@ -722,20 +624,13 @@ export default function DartStatsClassicPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <main className="flex-grow container mx-auto px-3 sm:px-4 py-5 pb-24 max-w-6xl">
-        <div className="text-center mb-5 sm:mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-orange-600 rounded-3xl mb-3 sm:mb-4 shadow-xl">
-            <Target className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Dart Statistik (Live)</h1>
-        </div>
-
+    <div className="w-full min-w-0 bg-transparent text-white">
+      <main className="w-full max-w-none px-0 pb-24 pt-0">
         {/* TOP BAR */}
-        <Card className="mb-5 sm:mb-6 shadow-xl">
-          <CardContent className="p-3 sm:p-4">
+        <Card className="mb-4 overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:mb-5">
+          <CardContent className="p-3 sm:p-4 lg:p-5">
             {/* Spieler: wirklich deutlich hervorgehoben + KEIN hover */}
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
               {players.map((p) => {
                 const isActive = activeId === p.id
                 return (
@@ -743,13 +638,13 @@ export default function DartStatsClassicPage({
                     key={p.id}
                     variant="outline"
                     onClick={() => switchPlayer(p.id)}
-                    className={`shrink-0 border transition-none ${
+                    className={`min-h-11 w-full min-w-0 whitespace-normal break-words rounded-xl border px-2.5 py-2 text-center text-xs font-black leading-tight transition-colors sm:text-sm ${
                       isActive
-                        ? "!bg-orange-600 !text-white !border-orange-600 !ring-2 !ring-orange-400 !shadow-lg hover:!bg-orange-600 hover:!text-white"
-                        : "!bg-gray-200 !text-black !border-gray-300 hover:!bg-gray-200 hover:!text-black"
+                        ? "!border-orange-400/40 !bg-orange-500 !text-white !shadow-[0_0_24px_rgba(249,115,22,.14)] hover:!bg-orange-500/90 hover:!text-white"
+                        : "!border-white/[0.10] !bg-white/[0.04] !text-white/75 hover:!border-orange-300/20 hover:!bg-white/[0.07] hover:!text-white"
                     }`}
                   >
-                    <User className="h-4 w-4 mr-2" />
+                    <User className="mr-1.5 hidden h-4 w-4 shrink-0 sm:block" />
                     {p.name}
                   </Button>
                 )
@@ -759,17 +654,17 @@ export default function DartStatsClassicPage({
             {/* Legs Buttons oben */}
             <div className="mt-3 grid grid-cols-2 gap-2">
               {/* Legs gewonnen */}
-              <div className="border rounded-2xl p-3 bg-white">
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-white">
                 <div className="flex justify-between mb-2 items-center">
                   <div className="font-bold text-sm sm:text-base">Legs W</div>
-                  <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-black/45 text-sm font-black text-white">
                     {activePlayer?.legsWon ?? 0}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={() => void applyLegs("won", +1)}
-                    className="bg-orange-600 hover:bg-orange-700"
+                    className="bg-orange-500 font-black text-white hover:bg-orange-500/90 hover:text-white"
                     disabled={!activePlayer}
                   >
                     +1
@@ -778,6 +673,7 @@ export default function DartStatsClassicPage({
                     onClick={() => void applyLegs("won", -1)}
                     disabled={!activePlayer || (activePlayer?.legsWon ?? 0) === 0}
                     variant="outline"
+                    className="border-white/[0.10] bg-white/[0.04] font-black text-white/80 hover:bg-white/[0.07] hover:text-white"
                   >
                     -1
                   </Button>
@@ -785,17 +681,17 @@ export default function DartStatsClassicPage({
               </div>
 
               {/* Legs verloren */}
-              <div className="border rounded-2xl p-3 bg-white">
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-white">
                 <div className="flex justify-between mb-2 items-center">
                   <div className="font-bold text-sm sm:text-base">Legs L</div>
-                  <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-black/45 text-sm font-black text-white">
                     {activePlayer?.legsLost ?? 0}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={() => void applyLegs("lost", +1)}
-                    className="bg-orange-600 hover:bg-orange-700"
+                    className="bg-orange-500 font-black text-white hover:bg-orange-500/90 hover:text-white"
                     disabled={!activePlayer}
                   >
                     +1
@@ -804,6 +700,7 @@ export default function DartStatsClassicPage({
                     onClick={() => void applyLegs("lost", -1)}
                     disabled={!activePlayer || (activePlayer?.legsLost ?? 0) === 0}
                     variant="outline"
+                    className="border-white/[0.10] bg-white/[0.04] font-black text-white/80 hover:bg-white/[0.07] hover:text-white"
                   >
                     -1
                   </Button>
@@ -814,16 +711,16 @@ export default function DartStatsClassicPage({
         </Card>
 
         {/* Felder */}
-        <Card className="shadow-xl">
-          <CardContent className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <Card className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+          <CardContent className="grid grid-cols-2 gap-2.5 p-3 sm:grid-cols-3 sm:gap-3 sm:p-4 lg:grid-cols-4 xl:grid-cols-7 2xl:grid-cols-7">
             {FIELDS.map((f) => {
               const val = activePlayer?.stats[f.key] ?? 0
 
               return (
-                <div key={f.key} className="border rounded-2xl p-3 bg-white">
+                <div key={f.key} className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-white">
                   <div className="flex justify-between mb-2 items-center">
                     <div className="font-bold text-base sm:text-lg">{f.label}</div>
-                    <div className="h-9 w-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-black/45 text-sm font-black text-white">
                       {val}
                     </div>
                   </div>
@@ -831,12 +728,17 @@ export default function DartStatsClassicPage({
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       onClick={() => void applyStat(f.key, +1)}
-                      className="bg-orange-600 hover:bg-orange-700"
+                      className="bg-orange-500 font-black text-white hover:bg-orange-500/90 hover:text-white"
                       disabled={!activePlayer}
                     >
                       +1
                     </Button>
-                    <Button onClick={() => void applyStat(f.key, -1)} disabled={!activePlayer || val === 0} variant="outline">
+                    <Button
+                      onClick={() => void applyStat(f.key, -1)}
+                      disabled={!activePlayer || val === 0}
+                      variant="outline"
+                      className="border-white/[0.10] bg-white/[0.04] font-black text-white/80 hover:bg-white/[0.07] hover:text-white"
+                    >
                       -1
                     </Button>
                   </div>
@@ -847,23 +749,23 @@ export default function DartStatsClassicPage({
         </Card>
 
         {/* Letzte Eingaben */}
-        <Card className="shadow-xl mt-6">
+        <Card className="mt-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
           <CardContent className="p-4 sm:p-5">
             <div className="font-bold mb-3">Letzte Eingaben ({history.length})</div>
 
             {history.length === 0 ? (
-              <div className="text-gray-500 text-sm">Noch keine Eingaben vorhanden.</div>
+              <div className="text-sm text-white/40">Noch keine Eingaben vorhanden.</div>
             ) : (
               <div className="space-y-2 max-h-80 overflow-auto">
                 {history.map((h) => {
                   const pName = players.find((p) => p.id === h.playerId)?.name ?? "Spieler"
                   return (
-                    <div key={h.ts} className="flex justify-between items-center bg-gray-50 border rounded-xl px-3 py-2">
+                    <div key={h.ts} className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-white">
                       <span className="text-sm">
                         {pName} · {labelFor(h.key)}
                       </span>
 
-                      <span className={h.delta > 0 ? "text-green-700 font-bold" : "text-red-700 font-bold"}>
+                      <span className={h.delta > 0 ? "text-emerald-300 font-bold" : "text-red-300 font-bold"}>
                         {h.delta > 0 ? `+${h.delta}` : "Delete"}
                       </span>
                     </div>

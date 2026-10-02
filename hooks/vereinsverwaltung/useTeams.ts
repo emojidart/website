@@ -151,7 +151,7 @@ export function useTeams(user: User | null, onDataSaved: () => void) {
   // ✅ NUR Team erstellen – Chatraum macht der TRIGGER automatisch
   const { data: teamRow, error: teamErr } = await supabase
     .from("teams")
-    .insert([{ name: newTeamName, logo_url: logoUrl, user_id: user.id }])
+    .insert([{ name: newTeamName, logo_url: logoUrl, dart_type: newTeamDartType, user_id: user.id }])
     .select("id, chat_room_id")
     .single()
 

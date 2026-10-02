@@ -179,16 +179,16 @@ function Chip({
 }) {
   const cls =
     tone === "orange"
-      ? "bg-orange-50 text-orange-900 border-orange-200"
+      ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
       : tone === "blue"
-        ? "bg-blue-50 text-blue-900 border-blue-200"
+        ? "bg-sky-400/10 text-sky-200 border-sky-400/25"
         : tone === "emerald"
-          ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+          ? "bg-emerald-400/10 text-emerald-200 border-emerald-400/25"
           : tone === "amber"
-            ? "bg-amber-50 text-amber-900 border-amber-200"
+            ? "bg-amber-400/10 text-amber-200 border-amber-400/25"
             : tone === "slate"
-              ? "bg-slate-50 text-slate-800 border-slate-200"
-              : "bg-slate-50 text-gray-800 border-gray-200"
+              ? "bg-white/5 text-white/65 border-white/10"
+              : "bg-white/5 text-white/75 border-white/10"
 
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
@@ -295,22 +295,54 @@ export default function VeranstaltungenPage() {
       })
   }, [events, timeFilter, typeFilter, sourceFilter, query])
 
+  const openEventDetails = async (event: EventRow) => {
+    const isTournament = (event.event_type || "").toLowerCase() === "tournament"
+
+    if (isTournament) {
+      const { data: dachEvent, error: dachEventError } = await supabase
+        .from("dach_events")
+        .select("id")
+        .eq("internal_event_id", event.id)
+        .eq("event_status", "approved")
+        .maybeSingle()
+
+      if (!dachEventError && dachEvent?.id) {
+        window.location.href = `/dach-veranstaltungen/${dachEvent.id}`
+        return
+      }
+    }
+
+    window.location.href = `/veranstaltungen/${event.id}`
+  }
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-20 text-slate-950">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
       <Header />
 
-      <main className="pt-14 sm:pt-16">
-        <div className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8">
+      {/* Stabiler Hintergrund wie im Member-Profil – ohne Lade-/Fade-Effekt */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
+      </div>
+
+      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+        <div className="w-full">
           {/* Page Header Card */}
-          <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
-            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
+          <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
+            <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-500/15 blur-[110px]" />
+            <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/10 blur-[120px]" />
             <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
                   <Calendar className="h-6 w-6 text-orange-400" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white/50">Vereinsleben</p>
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55"><span className="h-2 w-2 rounded-full bg-orange-400" />Vereinsleben · Events</div>
                   <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Veranstaltungen</h1>
                   <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">Turniere, Partys und mehr – alles auf einen Blick.</p>
                 </div>
@@ -319,8 +351,8 @@ export default function VeranstaltungenPage() {
           </section>
 
           {/* Filters (sticky like app) */}
-          <div className="sticky top-[60px] z-20 mt-4">
-            <Card className="rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+          <div className="sticky top-[60px] z-20 mt-4 sm:mt-5">
+            <Card className="rounded-[24px] border border-white/10 bg-black/40 shadow-[0_24px_80px_-52px_rgba(0,0,0,.95)] backdrop-blur-2xl">
               <CardContent className="p-4">
                 <div className="flex flex-col gap-3">
                   {/* Segmented Buttons */}
@@ -329,7 +361,7 @@ export default function VeranstaltungenPage() {
                       size="sm"
                       variant={timeFilter === "upcoming" ? "default" : "outline"}
                       onClick={() => setTimeFilter("upcoming")}
-                      className="rounded-xl"
+                      className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 data-[state=active]:bg-orange-500"
                     >
                       Anstehend
                     </Button>
@@ -337,7 +369,7 @@ export default function VeranstaltungenPage() {
                       size="sm"
                       variant={timeFilter === "past" ? "default" : "outline"}
                       onClick={() => setTimeFilter("past")}
-                      className="rounded-xl"
+                      className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 data-[state=active]:bg-orange-500"
                     >
                       Abgelaufen
                     </Button>
@@ -345,7 +377,7 @@ export default function VeranstaltungenPage() {
                       size="sm"
                       variant={timeFilter === "all" ? "default" : "outline"}
                       onClick={() => setTimeFilter("all")}
-                      className="rounded-xl"
+                      className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 data-[state=active]:bg-orange-500"
                     >
                       Alle
                     </Button>
@@ -353,21 +385,21 @@ export default function VeranstaltungenPage() {
 
                   {/* Search */}
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                     <Input
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder="Suchen (Name, Ort, Details …)"
-                      className="h-11 rounded-xl border-slate-200 bg-slate-50 pl-9"
+                      className="h-11 rounded-xl border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/35"
                     />
                   </div>
 
                   {/* Selects */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-slate-500" />
+                      <Filter className="w-4 h-4 text-white/45" />
                       <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger className="rounded-xl">
+                        <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-white">
                           <SelectValue placeholder="Typ" />
                         </SelectTrigger>
                         <SelectContent>
@@ -382,9 +414,9 @@ export default function VeranstaltungenPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-slate-500" />
+                      <Filter className="w-4 h-4 text-white/45" />
                       <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                        <SelectTrigger className="rounded-xl">
+                        <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-white">
                           <SelectValue placeholder="Ort / Art" />
                         </SelectTrigger>
                         <SelectContent>
@@ -396,7 +428,7 @@ export default function VeranstaltungenPage() {
                     </div>
                   </div>
 
-                  <div className="text-xs text-slate-600">
+                  <div className="text-xs font-semibold text-white/45">
                     {loading ? "Lade…" : `${filtered.length} Ergebnis(se)`}
                   </div>
                 </div>
@@ -407,11 +439,11 @@ export default function VeranstaltungenPage() {
           {/* List */}
           <div className="mt-4">
             {loading ? (
-              <div className="text-center text-slate-600 py-12">Lade Veranstaltungen…</div>
+              <div className="rounded-[22px] border border-white/10 bg-white/5 py-12 text-center text-white/55">Lade Veranstaltungen…</div>
             ) : error ? (
-              <div className="text-center text-red-600 py-12">{error}</div>
+              <div className="rounded-[22px] border border-red-400/20 bg-red-400/10 py-12 text-center text-red-300">{error}</div>
             ) : filtered.length === 0 ? (
-              <div className="text-center text-slate-600 py-12">Keine passenden Veranstaltungen gefunden.</div>
+              <div className="rounded-[22px] border border-white/10 bg-white/5 py-12 text-center text-white/55">Keine passenden Veranstaltungen gefunden.</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filtered.map((e) => {
@@ -427,9 +459,9 @@ const isPast = endDt.getTime() < Date.now()
                   const startgeldAmount = parseStartgeld(e.startgeld_details)
 
                   return (
-                    <Card key={e.id} className="overflow-hidden rounded-[20px] border border-slate-200 shadow-sm">
+                    <Card key={e.id} className="group overflow-hidden rounded-[24px] border border-white/10 bg-black/35 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-orange-400/30">
                       {e.photo_url ? (
-                        <div className="relative h-36 bg-gray-200">
+                        <div className="relative h-40 bg-black/40 sm:h-44">
                           <Image src={e.photo_url} alt={e.name} fill className="object-cover" />
                         </div>
                       ) : (
@@ -462,19 +494,19 @@ const isPast = endDt.getTime() < Date.now()
                       </CardHeader>
 
                       <CardContent className="pt-0">
-                        <div className="space-y-2 text-sm text-gray-700">
+                        <div className="space-y-2.5 text-sm text-white/70">
                           <div className="flex items-center gap-2">
-  <Calendar className="w-4 h-4 text-slate-500" />
+  <Calendar className="w-4 h-4 text-white/45" />
   <span className="font-medium">{formatDateRangeDE(e.start_date, e.end_date, e.event_date)}</span>
 </div>
 
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-slate-500" />
+                            <Clock className="w-4 h-4 text-white/45" />
                             <span>{formatTimeDE(e.event_time)} Uhr</span>
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-slate-500" />
+                            <MapPin className="w-4 h-4 text-white/45" />
                             <span className="line-clamp-1">{e.location || "Wird bekannt gegeben"}</span>
                           </div>
 
@@ -506,12 +538,16 @@ const isPast = endDt.getTime() < Date.now()
                             </div>
                           ) : null}
 
-                          {e.details ? <div className="text-sm text-slate-600 line-clamp-3 pt-1">{e.details}</div> : null}
+                          {e.details ? <div className="line-clamp-3 pt-1 text-sm leading-relaxed text-white/50">{e.details}</div> : null}
                         </div>
 
                         <div className="mt-4">
-                          <Button asChild className="w-full rounded-xl">
-                            <Link href={`/veranstaltungen/${e.id}`}>Details</Link>
+                          <Button
+                            type="button"
+                            className="h-11 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-600"
+                            onClick={() => void openEventDetails(e)}
+                          >
+                            Details
                           </Button>
                         </div>
                       </CardContent>

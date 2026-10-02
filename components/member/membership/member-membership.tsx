@@ -863,14 +863,7 @@ export function MemberMembership() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="flex items-center gap-3 font-semibold text-gray-600">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Mitgliedschaft wird geladen...
-        </div>
-      </div>
-    )
+    return <div className="min-h-[1px]" aria-hidden="true" />
   }
 
   return (

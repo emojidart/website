@@ -17,17 +17,12 @@ import { TeamStandingsCardApp } from "@/components/team-standings-card-app"
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
+  hidden: { opacity: 1 },
+  visible: { opacity: 1 },
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 1, y: 0 },
   visible: { opacity: 1, y: 0 },
 }
 
@@ -508,10 +503,10 @@ if (playersError) {
     const homeScore = match.home_score || 0
     const awayScore = match.away_score || 0
 
-    if (homeScore === awayScore) return "bg-yellow-50 border-yellow-200"
+    if (homeScore === awayScore) return "bg-amber-500/10 border-amber-400/20"
 
     const teamWon = isHomeTeam ? homeScore > awayScore : awayScore > homeScore
-    return teamWon ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+    return teamWon ? "bg-emerald-500/10 border-emerald-400/20" : "bg-red-500/10 border-red-400/20"
   }
 
  // ✅ "Ergebnisse" 
@@ -573,20 +568,29 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   // ✅ LOADING VIEW 
   if (loading) {
   return (
-    <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] pb-24 text-slate-950">
-      <Header />
+    <main className="emd-app-theme-shell relative min-h-screen flex flex-col overflow-x-hidden bg-[#050608] pb-24 text-white">
+      <Header variant="app" title="Liga & Statistiken" subtitle="Tabelle · Ergebnisse · Termine · Teams · Stats" backHref="/" />
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
-        <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-gray-200">
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[#050608]">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-30"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.82),rgba(3,5,9,.96)_46%,rgba(2,4,7,.99))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_18%,rgba(249,115,22,.16),transparent_26%),radial-gradient(circle_at_88%_22%,rgba(14,165,233,.09),transparent_27%)]" />
+      </div>
+
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
+        <div>
+          <div className="flex flex-col items-center gap-6 rounded-[28px] border border-white/10 bg-black/35 px-10 py-10 shadow-[0_28px_80px_-52px_rgba(0,0,0,.95)] backdrop-blur-xl">
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+              <Loader2 className="relative h-12 w-12 animate-spin text-orange-300" />
             </div>
 
             <div className="text-center">
-              <p className="text-lg font-bold text-slate-950">Statistiken werden geladen</p>
-              <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
+              <p className="text-lg font-bold text-white">Statistiken werden geladen</p>
+              <p className="text-sm text-white/55 mt-1">Bitte kurz warten…</p>
             </div>
           </div>
         </div>
@@ -598,51 +602,91 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 }
 
  return (
-  <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-20 text-slate-950">
-    <Header />
+  <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-[#050608] pb-20 text-white">
+    <Header variant="app" title="Liga & Statistiken" subtitle="Tabelle · Ergebnisse · Termine · Teams · Stats" backHref="/" />
+
+    <div className="pointer-events-none fixed inset-0 z-0 bg-[#050608]">
+      <div
+        className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-30"
+        style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.82),rgba(3,5,9,.96)_46%,rgba(2,4,7,.99))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_18%,rgba(249,115,22,.16),transparent_26%),radial-gradient(circle_at_88%_22%,rgba(14,165,233,.09),transparent_27%)]" />
+    </div>
 
     {/* fixed header offset */}
-    <main className="pt-14 sm:pt-16">
+    <main className="relative z-10 pt-14 sm:pt-16">
       <motion.div
-        className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
+        className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-4 sm:px-5 sm:pt-6 lg:px-7 lg:pb-14 xl:px-8"
         variants={containerVariants}
-        initial="hidden"
+        initial={false}
         animate="visible"
       >
-        {/* App-Header Card (wie Kontakt) */}
-       <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-  <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
-    <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
-    <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
-          <Users className="h-6 w-6 text-orange-400" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-white/50">Saison {selectedSeasonLabel}</p>
-          <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Teams & Kader</h1>
-          <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">{standings.length} Teams</p>
-        </div>
-      </div>
-    </div>
-  </section>
-</motion.div>
-		
-		
-		
-		
+        {/* HERO – gleiche Designsprache wie Mitgliederprofil */}
+        <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
+          <section className="relative overflow-hidden rounded-[28px] border border-white/[0.09] bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
+            <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-500/15 blur-[110px]" />
+            <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
+
+            <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55 backdrop-blur-xl">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-50" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-400" />
+                </span>
+                EMD Liga · {selectedSeasonLabel}
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-orange-300/[0.14] bg-orange-500/[0.08]">
+                  <Trophy className="h-7 w-7 text-orange-300" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/35">Sportdarts</p>
+                  <h1 className="mt-1 text-[clamp(1.9rem,5vw,3.5rem)] font-black leading-none tracking-[-0.055em] text-white">
+                    Liga & Statistiken
+                  </h1>
+                  <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/50 sm:text-base">
+                    Tabelle, Ergebnisse, Termine, Teams und Spielerstatistiken in einer Übersicht.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-3 gap-2.5 sm:mt-8 sm:gap-3">
+                {[
+                  { label: "Teams", value: standings.length, icon: Users },
+                  { label: "Spiele", value: matches.length, icon: Calendar },
+                  { label: "Spieler", value: playerLegStats.length, icon: Target },
+                ].map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <div key={item.label} className="relative min-w-0 overflow-hidden rounded-[20px] border border-white/[0.08] bg-white/[0.045] p-3.5 backdrop-blur-xl sm:p-4">
+                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_100%,rgba(249,115,22,.09),transparent_42%),radial-gradient(circle_at_92%_0%,rgba(14,165,233,.05),transparent_38%)]" />
+                      <div className="relative text-[9px] font-black uppercase tracking-[0.16em] text-white/35 sm:text-[10px]">{item.label}</div>
+                      <div className="relative mt-2.5 flex items-end justify-between gap-2">
+                        <div className="truncate text-lg font-black tracking-tight text-white sm:text-2xl">{item.value}</div>
+                        <Icon className="h-4 w-4 shrink-0 text-orange-400 sm:h-5 sm:w-5" />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        </motion.div>
 
           {/* ✅ Saison + DartType Filter (App-Card wie Kontakt) */}
 <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
-    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
+    <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
 
     <div className="p-4 sm:p-5 space-y-4">
       {/* Row 1: Saison (Mobile: untereinander, ab sm: nebeneinander) */}
 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
   <div className="min-w-0">
-    <p className="text-xs text-slate-500 font-bold">Saison</p>
-    <p className="text-sm font-black text-slate-950 truncate">{selectedSeasonLabel}</p>
+    <p className="text-xs text-white/48 font-bold">Saison</p>
+    <p className="text-sm font-black text-white truncate">{selectedSeasonLabel}</p>
   </div>
 
   <select
@@ -651,7 +695,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
       setSelectedSeasonId(e.target.value)
       setCurrentPage(1)
     }}
-    className="h-10 w-full sm:w-auto sm:max-w-[320px] rounded-2xl border border-gray-200 bg-white px-3 text-sm font-medium text-slate-950 shadow-sm"
+    className="h-10 w-full sm:w-auto sm:max-w-[320px] rounded-2xl border border-white/10 bg-[#0b0d10] px-3 text-sm font-semibold text-white shadow-sm outline-none focus:border-orange-400/40"
   >
     {seasons.map((s) => (
       <option key={s.id} value={s.id}>
@@ -663,17 +707,17 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 
       {/* Row 2: DartType */}
       <div>
-        <p className="text-xs text-slate-500 font-bold mb-2">Dart-Typ</p>
+        <p className="text-xs text-white/48 font-bold mb-2">Dart-Typ</p>
 
         <div className="grid grid-cols-3 gap-2">
           <Button
             variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
             onClick={() => setDartTypeFilter("gesamt")}
             className={[
-              "h-10 rounded-2xl font-semibold",
+              "h-11 rounded-2xl border font-black transition",
               dartTypeFilter === "gesamt"
-                ? "bg-orange-600 hover:bg-orange-700 text-white"
-                : "border-gray-200 bg-white hover:bg-slate-50 text-gray-700 font-medium",
+                ? "border-orange-400/30 bg-orange-500 text-white shadow-[0_0_22px_rgba(249,115,22,.10)] hover:bg-orange-400"
+                : "border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/[0.08] hover:text-white",
             ].join(" ")}
           >
             Gesamt
@@ -683,10 +727,10 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
             variant={dartTypeFilter === "edart" ? "default" : "outline"}
             onClick={() => setDartTypeFilter("edart")}
             className={[
-              "h-10 rounded-2xl font-semibold",
+              "h-11 rounded-2xl border font-black transition",
               dartTypeFilter === "edart"
-                ? "bg-orange-600 hover:bg-orange-700 text-white"
-                : "border-gray-200 bg-white hover:bg-slate-50 text-gray-700 font-medium",
+                ? "border-orange-400/30 bg-orange-500 text-white shadow-[0_0_22px_rgba(249,115,22,.10)] hover:bg-orange-400"
+                : "border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/[0.08] hover:text-white",
             ].join(" ")}
           >
             E-Dart
@@ -696,10 +740,10 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
             variant={dartTypeFilter === "steeldart" ? "default" : "outline"}
             onClick={() => setDartTypeFilter("steeldart")}
             className={[
-              "h-10 rounded-2xl font-semibold",
+              "h-11 rounded-2xl border font-black transition",
               dartTypeFilter === "steeldart"
-                ? "bg-orange-600 hover:bg-orange-700 text-white"
-                : "border-gray-200 bg-white hover:bg-slate-50 text-gray-700 font-medium",
+                ? "border-orange-400/30 bg-orange-500 text-white shadow-[0_0_22px_rgba(249,115,22,.10)] hover:bg-orange-400"
+                : "border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/[0.08] hover:text-white",
             ].join(" ")}
           >
             Steeldart
@@ -716,8 +760,8 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
             <Tabs defaultValue="standings" className="w-full">
              {/* Tabs (App-Style Container wie Kontakt) */}
 <div className="mt-2 mb-4">
-  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
-    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
+    <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
 
     <div className="p-2 sm:p-3">
      <TabsList className="grid w-full grid-cols-5 gap-1 rounded-2xl bg-transparent p-0">
@@ -725,12 +769,12 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
         <TabsTrigger
           value="standings"
           className={[
-  "rounded-2xl h-11 sm:h-10 px-2",
+  "rounded-2xl h-12 sm:h-11 px-2 border",
   "text-xs sm:text-sm font-medium",
   "data-[state=active]:font-semibold",
   "flex items-center justify-center",
-  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-slate-600",
+  "data-[state=active]:border-orange-400/25 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(249,115,22,.10)]",
+  "data-[state=inactive]:border-transparent data-[state=inactive]:text-white/48 data-[state=inactive]:hover:bg-white/[0.05] data-[state=inactive]:hover:text-white/80",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -743,11 +787,11 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
         <TabsTrigger
           value="results"
           className={[
-  "rounded-2xl h-11 sm:h-10 px-2",
+  "rounded-2xl h-12 sm:h-11 px-2 border",
   "text-xs sm:text-sm font-medium",
   "flex items-center justify-center",
-  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-slate-600",
+  "data-[state=active]:border-orange-400/25 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(249,115,22,.10)]",
+  "data-[state=inactive]:border-transparent data-[state=inactive]:text-white/48 data-[state=inactive]:hover:bg-white/[0.05] data-[state=inactive]:hover:text-white/80",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -760,11 +804,11 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
         <TabsTrigger
           value="fixtures"
           className={[
-  "rounded-2xl h-11 sm:h-10 px-2",
+  "rounded-2xl h-12 sm:h-11 px-2 border",
   "text-xs sm:text-sm font-medium",
   "flex items-center justify-center",
-  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-slate-600",
+  "data-[state=active]:border-orange-400/25 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(249,115,22,.10)]",
+  "data-[state=inactive]:border-transparent data-[state=inactive]:text-white/48 data-[state=inactive]:hover:bg-white/[0.05] data-[state=inactive]:hover:text-white/80",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -777,11 +821,11 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
         <TabsTrigger
           value="teams"
           className={[
-  "rounded-2xl h-11 sm:h-10 px-2",
+  "rounded-2xl h-12 sm:h-11 px-2 border",
   "text-xs sm:text-sm font-medium",
   "flex items-center justify-center",
-  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-slate-600",
+  "data-[state=active]:border-orange-400/25 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(249,115,22,.10)]",
+  "data-[state=inactive]:border-transparent data-[state=inactive]:text-white/48 data-[state=inactive]:hover:bg-white/[0.05] data-[state=inactive]:hover:text-white/80",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -794,11 +838,11 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
         <TabsTrigger
           value="legstats"
           className={[
-  "rounded-2xl h-11 sm:h-10 px-2",
+  "rounded-2xl h-12 sm:h-11 px-2 border",
   "text-xs sm:text-sm font-medium",
   "flex items-center justify-center",
-  "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
-  "data-[state=inactive]:text-slate-600",
+  "data-[state=active]:border-orange-400/25 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_20px_rgba(249,115,22,.10)]",
+  "data-[state=inactive]:border-transparent data-[state=inactive]:text-white/48 data-[state=inactive]:hover:bg-white/[0.05] data-[state=inactive]:hover:text-white/80",
 ].join(" ")}
         >
           <span className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 min-w-0 leading-none">
@@ -814,19 +858,19 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
               <TabsContent value="legstats">
                 
 
-                <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+                <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
                   <CardHeader className="p-0">
-  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
   <div className="p-4 sm:p-5 flex items-center justify-between gap-3">
     <div className="flex items-center gap-3 min-w-0">
-      <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-        <Target className="w-5 h-5 text-orange-600" />
+      <div className="w-11 h-11 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
+        <Target className="w-5 h-5 text-orange-300" />
       </div>
       <div className="min-w-0">
-        <CardTitle className="text-sm sm:text-base font-black text-slate-950 truncate">
+        <CardTitle className="text-sm sm:text-base font-black text-white truncate">
           Spieler-Statistiken
         </CardTitle>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-white/48 mt-1">
           {playerLegStats.length} Spieler ·{" "}
           {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
         </p>
@@ -835,11 +879,11 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 
     {/* rechts: Zeige Dropdown */}
     <div className="flex items-center gap-2 flex-shrink-0">
-      <span className="text-xs text-slate-500 font-bold whitespace-nowrap">Zeige</span>
+      <span className="text-xs text-white/48 font-bold whitespace-nowrap">Zeige</span>
       <select
         value={playersPerPage}
         onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-        className="h-10 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-black text-slate-950 shadow-sm"
+        className="h-10 rounded-2xl border border-white/10 bg-[#0b0d10] px-3 text-sm font-black text-white shadow-sm outline-none focus:border-orange-400/40"
       >
         <option value={10}>10</option>
         <option value={25}>25</option>
@@ -856,7 +900,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 
                   <CardContent className="p-3 sm:p-6">
                     {playerLegStats.length === 0 ? (
-                      <div className="text-center py-12 text-slate-500">
+                      <div className="text-center py-12 text-white/48">
                         <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                         <p className="text-lg">Keine Statistiken verfügbar</p>
                       </div>
@@ -874,9 +918,9 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
                         </div>
 
                         {totalPages > 1 && (
-                          <div className="p-4 border-t bg-slate-50">
+                          <div className="p-4 border-t bg-white/5">
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                              <div className="text-sm text-slate-600">
+                              <div className="text-sm text-white/55">
                                 Zeige {startIndex + 1} bis {Math.min(endIndex, playerLegStats.length)} von{" "}
                                 {playerLegStats.length} Spielern
                               </div>
@@ -940,18 +984,18 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 	
 
               <TabsContent value="standings">
-                <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+                <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
   <CardHeader className="p-0">
-  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
-    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-      <Trophy className="w-5 h-5 text-orange-600" />
+    <div className="w-11 h-11 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
+      <Trophy className="w-5 h-5 text-orange-300" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
+      <CardTitle className="text-sm sm:text-base font-black text-white">
         Liga-Tabelle
       </CardTitle>
-      <p className="text-xs text-slate-500 mt-1">
+      <p className="text-xs text-white/48 mt-1">
         {standings.length} Teams · {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
       </p>
     </div>
@@ -969,18 +1013,18 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
               </TabsContent>
 
               <TabsContent value="results">
-                <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+                <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
                   <CardHeader className="p-0">
-  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
-    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-      <Target className="w-5 h-5 text-orange-600" />
+    <div className="w-11 h-11 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
+      <Target className="w-5 h-5 text-orange-300" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
+      <CardTitle className="text-sm sm:text-base font-black text-white">
         Ergebnisse
       </CardTitle>
-      <p className="text-xs text-slate-500 mt-1">
+      <p className="text-xs text-white/48 mt-1">
         {completedMatches.length} Spiele ·{" "}
         {dartTypeFilter === "gesamt" ? "Gesamt" : dartTypeFilter === "edart" ? "E-Dart" : "Steeldart"}
       </p>
@@ -989,7 +1033,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
 </CardHeader>
                   <CardContent className="p-3 sm:p-5">
                     {completedMatches.length === 0 ? (
-                      <p className="text-center text-slate-500 py-8">Noch keine Ergebnisse verfügbar</p>
+                      <p className="text-center text-white/48 py-8">Noch keine Ergebnisse verfügbar</p>
                     ) : (
                       <div className="space-y-3 sm:space-y-4">
                         {completedMatches
@@ -1008,7 +1052,7 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
                             const isOurHomeTeam = match.home_team?.id
                             const isOurAwayTeam = match.away_team?.id
 
-                            let matchColor = "bg-slate-50 border-gray-200"
+                            let matchColor = "bg-white/5 border-gray-200"
                             let resultText = "Unentschieden"
 
                             
@@ -1022,22 +1066,22 @@ if (isFutureDate) {
   resultText = "Ausstehend"
 } else if (homeScore > awayScore) {
   if (isOurHomeTeam) {
-    matchColor = "bg-white border-green-200"
+    matchColor = "bg-white border-emerald-400/20"
     resultText = "Heimsieg"
   } else {
-    matchColor = "bg-white border-red-200"
+    matchColor = "bg-white border-red-400/20"
     resultText = "Niederlage"
   }
 } else if (awayScore > homeScore) {
   if (isOurAwayTeam) {
-    matchColor = "bg-white border-green-200"
+    matchColor = "bg-white border-emerald-400/20"
     resultText = "Auswärtssieg"
   } else {
-    matchColor = "bg-white border-red-200"
+    matchColor = "bg-white border-red-400/20"
     resultText = "Niederlage"
   }
 } else {
-  matchColor = "bg-white border-yellow-200"
+  matchColor = "bg-white border-amber-400/20"
   resultText = "Unentschieden"
 }
 
@@ -1057,10 +1101,10 @@ if (isFutureDate) {
       isFutureDate || isPendingResult
         ? "bg-orange-400"
         : resultText === "Heimsieg" || resultText === "Auswärtssieg"
-          ? "bg-green-500"
+          ? "bg-emerald-500/100"
           : resultText === "Unentschieden"
-            ? "bg-yellow-500"
-            : "bg-red-500",
+            ? "bg-amber-500/100"
+            : "bg-red-500/100",
     ].join(" ")}
   />
 
@@ -1070,21 +1114,21 @@ if (isFutureDate) {
 
   {/* Heim */}
   <div className="flex flex-col items-center gap-1">
-    <span className="text-[11px] uppercase text-slate-500 tracking-wide">Heim</span>
+    <span className="text-[11px] uppercase text-white/48 tracking-wide">Heim</span>
 
     <div className="flex items-center gap-2">
       {match.home_team?.logo_url ? (
         <img
           src={match.home_team.logo_url}
-          className="w-9 h-9 rounded-lg object-cover border border-gray-200 bg-white"
+          className="w-9 h-9 rounded-lg object-cover border border-white/10 bg-black/30"
         />
       ) : (
         <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-          <Trophy className="h-4 w-4 text-slate-500" />
+          <Trophy className="h-4 w-4 text-white/48" />
         </div>
       )}
 
-      <span className="font-semibold text-sm text-slate-950 max-w-[180px] truncate">
+      <span className="font-semibold text-sm text-white max-w-[180px] truncate">
         {match.home_team?.name || match.home_opponent_team?.name}
       </span>
     </div>
@@ -1096,26 +1140,26 @@ if (isFutureDate) {
       <div className="text-lg font-semibold text-orange-500">– : –</div>
     ) : (
       <div className="flex items-center justify-center gap-2">
-        <span className="text-2xl font-extrabold text-slate-950">{homeScore}</span>
-        <span className="text-gray-400">:</span>
-        <span className="text-2xl font-extrabold text-slate-950">{awayScore}</span>
+        <span className="text-2xl font-extrabold text-white">{homeScore}</span>
+        <span className="text-white/38">:</span>
+        <span className="text-2xl font-extrabold text-white">{awayScore}</span>
       </div>
     )}
   </div>
 
  {/* Gast */}
 <div className="flex flex-col items-center gap-1">
-  <span className="text-[11px] uppercase text-slate-500 tracking-wide">Gast</span>
+  <span className="text-[11px] uppercase text-white/48 tracking-wide">Gast</span>
 
   <div className="flex items-center gap-2">
-    <span className="font-semibold text-sm text-slate-950 max-w-[180px] truncate text-right">
+    <span className="font-semibold text-sm text-white max-w-[180px] truncate text-right">
   {match.away_team?.name || match.away_opponent_team?.name}
 </span>
 
     {match.away_team?.logo_url ? (
       <img
         src={match.away_team.logo_url}
-        className="w-9 h-9 rounded-lg object-cover border border-gray-200 bg-white"
+        className="w-9 h-9 rounded-lg object-cover border border-white/10 bg-black/30"
         alt="Away team logo"
       />
     ) : null}
@@ -1125,18 +1169,18 @@ if (isFutureDate) {
 
       {/* Meta Right (Desktop) */}
       <div className="hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
-        <div className="text-sm font-semibold text-gray-700">{formatDateDEShort(match.match_date)}</div>
-        {match.match_time && <div className="text-xs text-slate-600">{formatTimeDE(match.match_time)} Uhr</div>}
+        <div className="text-sm font-semibold text-white/70">{formatDateDEShort(match.match_date)}</div>
+        {match.match_time && <div className="text-xs text-white/55">{formatTimeDE(match.match_time)} Uhr</div>}
         <Badge
           className={`
             ${
               isFutureDate || isPendingResult
-                ? "bg-orange-100 text-orange-700 border-orange-300"
+                ? "bg-orange-100 text-orange-300 border-orange-300"
                 : resultText === "Heimsieg" || resultText === "Auswärtssieg"
-                  ? "bg-green-100 text-green-700"
+                  ? "bg-green-100 text-emerald-300"
                   : resultText === "Unentschieden"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-red-100 text-red-700"
+                    ? "bg-yellow-100 text-amber-300"
+                    : "bg-red-100 text-red-300"
             }
             font-semibold text-xs
           `}
@@ -1148,7 +1192,7 @@ if (isFutureDate) {
 
     {/* Mobile Meta */}
     <div className="sm:hidden mt-3 flex items-center justify-between gap-2">
-     <div className="text-xs font-semibold text-gray-700 whitespace-nowrap">
+     <div className="text-xs font-semibold text-white/70 whitespace-nowrap">
   {formatDateDEShort(match.match_date)}
   {match.match_time ? ` · ${formatTimeDE(match.match_time)} Uhr` : ""}
 </div>
@@ -1157,12 +1201,12 @@ if (isFutureDate) {
         className={`
           ${
             isFutureDate || isPendingResult
-              ? "bg-orange-100 text-orange-700 border-orange-300"
+              ? "bg-orange-100 text-orange-300 border-orange-300"
               : resultText === "Heimsieg" || resultText === "Auswärtssieg"
-                ? "bg-green-100 text-green-700"
+                ? "bg-green-100 text-emerald-300"
                 : resultText === "Unentschieden"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-red-100 text-red-700"
+                  ? "bg-yellow-100 text-amber-300"
+                  : "bg-red-100 text-red-300"
           }
           font-semibold text-[11px] px-2 py-1
         `}
@@ -1173,7 +1217,7 @@ if (isFutureDate) {
 
     {/* Optional: Original Date */}
     {match.original_date && (
-      <div className="mt-2 text-[10px] text-slate-500">
+      <div className="mt-2 text-[10px] text-white/48">
         Ursprünglich: {formatDateDE(match.original_date)} → Neu: {formatDateDE(match.match_date)}
       </div>
     )}
@@ -1183,8 +1227,8 @@ if (isFutureDate) {
 								
 								
                                 {isFutureDate && (
-  <div className="mt-2 pt-2 border-t border-orange-200">
-    <div className="flex items-start gap-2 text-[11px] text-orange-700 leading-snug">
+  <div className="mt-2 pt-2 border-t border-orange-300/20">
+    <div className="flex items-start gap-2 text-[11px] text-orange-300 leading-snug">
       <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse mt-1"></div>
       <span className="font-medium">
         Achtung: Datum liegt in der Zukunft – evtl. verschoben / noch nicht aktualisiert.
@@ -1194,8 +1238,8 @@ if (isFutureDate) {
 )}
 
 {!isFutureDate && isPendingResult && (
-  <div className="mt-2 pt-2 border-t border-orange-200">
-    <div className="flex items-start gap-2 text-[11px] text-orange-700 leading-snug">
+  <div className="mt-2 pt-2 border-t border-orange-300/20">
+    <div className="flex items-start gap-2 text-[11px] text-orange-300 leading-snug">
       <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse mt-1"></div>
       <span className="font-medium">
         Noch kein Ergebnis eingetragen.
@@ -1217,18 +1261,18 @@ if (isFutureDate) {
 
     {/* ===================== HEUTE ===================== */}
     {todayMatches.length > 0 && (
-      <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+      <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
         <CardHeader className="p-0">
-  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
-    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-      <Calendar className="w-5 h-5 text-orange-600" />
+    <div className="w-11 h-11 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
+      <Calendar className="w-5 h-5 text-orange-300" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
+      <CardTitle className="text-sm sm:text-base font-black text-white">
         Heute
       </CardTitle>
-      <p className="text-xs text-slate-500 mt-1">
+      <p className="text-xs text-white/48 mt-1">
         {todayMatches.length} Spiele
       </p>
     </div>
@@ -1246,15 +1290,15 @@ if (isFutureDate) {
               .map((match) => (
                 <div
                   key={match.id}
-                  className="border border-blue-300 rounded-2xl p-4 bg-white shadow-sm"
+                  className="border border-blue-300 rounded-2xl p-4 bg-black/30 shadow-sm"
                 >
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 
-                    <div className="font-semibold text-slate-950 text-center sm:text-left">
+                    <div className="font-semibold text-white text-center sm:text-left">
                       {match.home_team?.name ||
                         match.home_opponent_team?.name ||
                         "Team nicht gefunden"}{" "}
-                      <span className="text-gray-400 font-extrabold">vs</span>{" "}
+                      <span className="text-white/38 font-extrabold">vs</span>{" "}
                       {match.away_team?.name ||
                         match.away_opponent_team?.name ||
                         "Team nicht gefunden"}
@@ -1281,18 +1325,18 @@ if (isFutureDate) {
 
     {/* ===================== VERSCHOBENE SPIELE ===================== */}
     {postponedMatches.length > 0 && (
-      <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+      <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
         <CardHeader className="p-0">
-  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
-    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-      <Calendar className="w-5 h-5 text-orange-600" />
+    <div className="w-11 h-11 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
+      <Calendar className="w-5 h-5 text-orange-300" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
+      <CardTitle className="text-sm sm:text-base font-black text-white">
         Verschobene Spiele
       </CardTitle>
-      <p className="text-xs text-slate-500 mt-1">
+      <p className="text-xs text-white/48 mt-1">
         {postponedMatches.length} Spiele
       </p>
     </div>
@@ -1309,38 +1353,38 @@ if (isFutureDate) {
               .map((match) => (
                 <div
                   key={match.id}
-                  className="border border-red-200 rounded-2xl p-3 sm:p-4 bg-white shadow-sm"
+                  className="border border-red-400/20 rounded-2xl p-3 sm:p-4 bg-black/30 shadow-sm"
                 >
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 
-                    <div className="font-semibold text-slate-950 text-center sm:text-left">
+                    <div className="font-semibold text-white text-center sm:text-left">
                       {match.home_team?.name ||
                         match.home_opponent_team?.name ||
                         "Team nicht gefunden"}{" "}
-                      <span className="text-gray-400 font-extrabold">vs</span>{" "}
+                      <span className="text-white/38 font-extrabold">vs</span>{" "}
                       {match.away_team?.name ||
                         match.away_opponent_team?.name ||
                         "Team nicht gefunden"}
                     </div>
 
                     <div className="text-center sm:text-right">
-  <div className="text-sm font-semibold text-slate-950">
+  <div className="text-sm font-semibold text-white">
     {formatDateDE(match.match_date)}
   </div>
 
   {match.original_date && (
-    <div className="text-xs text-red-700/80 mt-1">
+    <div className="text-xs text-red-300/80 mt-1">
       Ursprünglich: {formatDateDE(match.original_date)}
     </div>
   )}
 
   {match.match_time && (
-    <div className="text-sm font-semibold text-blue-700">
+    <div className="text-sm font-semibold text-sky-300">
       {formatTimeDE(match.match_time)} Uhr
     </div>
   )}
 
-  <Badge className="bg-red-500 text-white border-red-600 font-semibold text-xs px-2 py-1 mt-2">
+  <Badge className="bg-red-500/100 text-white border-red-600 font-semibold text-xs px-2 py-1 mt-2">
     Verschoben
   </Badge>
 </div>
@@ -1354,18 +1398,18 @@ if (isFutureDate) {
     )}
 
     {/* ===================== KOMMENDE SPIELE ===================== */}
-    <Card className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+    <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
       <CardHeader className="p-0">
-  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
   <div className="p-4 sm:p-5 flex items-center gap-3">
-    <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-      <Calendar className="w-5 h-5 text-orange-600" />
+    <div className="w-11 h-11 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
+      <Calendar className="w-5 h-5 text-orange-300" />
     </div>
     <div className="min-w-0">
-      <CardTitle className="text-sm sm:text-base font-black text-slate-950">
+      <CardTitle className="text-sm sm:text-base font-black text-white">
         Kommende Spiele
       </CardTitle>
-      <p className="text-xs text-slate-500 mt-1">
+      <p className="text-xs text-white/48 mt-1">
         {upcomingMatches.length} Spiele
       </p>
     </div>
@@ -1374,7 +1418,7 @@ if (isFutureDate) {
 
       <CardContent className="p-3 sm:p-6">
         {upcomingMatches.length === 0 ? (
-          <p className="text-center text-slate-500 py-8">
+          <p className="text-center text-white/48 py-8">
             Keine kommenden Spiele geplant
           </p>
         ) : (
@@ -1394,19 +1438,19 @@ if (isFutureDate) {
                     key={match.id}
                     className={`border rounded-2xl p-3 sm:p-4 transition-shadow ${
   isToday
-    ? "border-blue-400 bg-blue-50"
+    ? "border-blue-400 bg-sky-500/10"
     : isTomorrow
       ? "border-orange-400 bg-white"
-      : "border-gray-200 bg-white"
+      : "border-white/10 bg-black/30"
 }`}
                   >
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 
-                      <div className="font-semibold text-slate-950 text-center sm:text-left">
+                      <div className="font-semibold text-white text-center sm:text-left">
                         {match.home_team?.name ||
                           match.home_opponent_team?.name ||
                           "Team nicht gefunden"}{" "}
-                        <span className="text-gray-400 font-extrabold">vs</span>{" "}
+                        <span className="text-white/38 font-extrabold">vs</span>{" "}
                         {match.away_team?.name ||
                           match.away_opponent_team?.name ||
                           "Team nicht gefunden"}
@@ -1414,12 +1458,12 @@ if (isFutureDate) {
 
                       <div className="text-center sm:text-right">
 
-                        <div className="text-sm font-semibold text-slate-950">
+                        <div className="text-sm font-semibold text-white">
                           {formatDateDE(match.match_date)}
                         </div>
 
                         {match.match_time && (
-                          <div className="text-sm font-semibold text-blue-700">
+                          <div className="text-sm font-semibold text-sky-300">
                             {formatTimeDE(match.match_time)} Uhr
                           </div>
                         )}
@@ -1465,15 +1509,15 @@ if (isFutureDate) {
               <TabsContent value="teams">
                 <div className="space-y-4 sm:space-y-6">
                   <div className="mb-5 sm:mb-6">
-  <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
-    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
+    <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
     <div className="p-4 sm:p-5 flex items-center gap-3">
-      <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-        <Users className="w-5 h-5 text-orange-600" />
+      <div className="w-11 h-11 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
+        <Users className="w-5 h-5 text-orange-300" />
       </div>
       <div className="min-w-0">
-        <h2 className="text-sm sm:text-base font-black text-slate-950">Teams & Kader</h2>
-        <p className="text-xs text-slate-500 mt-1">
+        <h2 className="text-sm sm:text-base font-black text-white">Teams & Kader</h2>
+        <p className="text-xs text-white/48 mt-1">
           {standings.length} Teams · {selectedSeasonLabel}
         </p>
       </div>
@@ -1492,10 +1536,10 @@ if (isFutureDate) {
                         const teamStats = standings.find((s) => s.team === team.name)
 
                         return (
-                          <Card key={team.id} className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)]">
+                          <Card key={team.id} className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
 						
   <CardHeader className="p-0">
-  <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+  <div className="h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
 
   <div className="p-4 sm:p-5">
     <div className="flex items-start justify-between gap-3">
@@ -1505,20 +1549,20 @@ if (isFutureDate) {
           <img
             src={team.logo_url || "/placeholder.svg"}
             alt={`${team.name} Logo`}
-            className="w-11 h-11 rounded-2xl object-cover border border-gray-200 bg-white flex-shrink-0"
+            className="w-11 h-11 rounded-2xl object-cover border border-white/10 bg-black/30 flex-shrink-0"
           />
         ) : (
-          <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-            <Trophy className="w-5 h-5 text-orange-600" />
+          <div className="w-11 h-11 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
+            <Trophy className="w-5 h-5 text-orange-300" />
           </div>
         )}
 
         <div className="min-w-0">
-          <CardTitle className="text-sm sm:text-base font-black text-slate-950 truncate">
+          <CardTitle className="text-sm sm:text-base font-black text-white truncate">
             {team.name}
           </CardTitle>
 
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-white/48 mt-1">
             {teamPlayers.length} Spieler
             {teamStats ? ` · ${teamStats.points} Punkte` : ""}
           </p>
@@ -1527,7 +1571,7 @@ if (isFutureDate) {
 
       {/* Right: Rank pill (optional) */}
       {teamStats && (
-        <span className="inline-flex items-center rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-[11px] font-black text-orange-700 flex-shrink-0">
+        <span className="inline-flex items-center rounded-full bg-orange-500/10 border border-orange-300/20 px-3 py-1 text-[11px] font-black text-orange-300 flex-shrink-0">
           #{standings.findIndex((s) => s.team === team.name) + 1}
         </span>
       )}
@@ -1540,35 +1584,35 @@ if (isFutureDate) {
     {/* Saisonstatistik */}
     {teamStats && (
       <div>
-        <h4 className="text-sm font-black text-slate-950 mb-3">Saisonstatistik</h4>
+        <h4 className="text-sm font-black text-white mb-3">Saisonstatistik</h4>
 
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          <div className="bg-slate-50 rounded-2xl p-3 text-center border border-gray-200">
-            <div className="text-xl sm:text-2xl font-black text-slate-950">{teamStats.played}</div>
-            <div className="text-xs text-slate-600 font-bold">Spiele</div>
+          <div className="bg-white/5 rounded-2xl p-3 text-center border border-gray-200">
+            <div className="text-xl sm:text-2xl font-black text-white">{teamStats.played}</div>
+            <div className="text-xs text-white/55 font-bold">Spiele</div>
           </div>
 
-          <div className="bg-green-50 rounded-2xl p-3 text-center border border-green-200">
-            <div className="text-xl sm:text-2xl font-black text-green-700">{teamStats.won}</div>
-            <div className="text-xs text-slate-600 font-bold">Siege</div>
+          <div className="bg-emerald-500/10 rounded-2xl p-3 text-center border border-emerald-400/20">
+            <div className="text-xl sm:text-2xl font-black text-emerald-300">{teamStats.won}</div>
+            <div className="text-xs text-white/55 font-bold">Siege</div>
           </div>
 
-          <div className="bg-yellow-50 rounded-2xl p-3 text-center border border-yellow-200">
-            <div className="text-xl sm:text-2xl font-black text-yellow-700">{teamStats.drawn}</div>
-            <div className="text-xs text-slate-600 font-bold">Unentschieden</div>
+          <div className="bg-amber-500/10 rounded-2xl p-3 text-center border border-amber-400/20">
+            <div className="text-xl sm:text-2xl font-black text-amber-300">{teamStats.drawn}</div>
+            <div className="text-xs text-white/55 font-bold">Unentschieden</div>
           </div>
 
-          <div className="bg-red-50 rounded-2xl p-3 text-center border border-red-200">
-            <div className="text-xl sm:text-2xl font-black text-red-700">{teamStats.lost}</div>
-            <div className="text-xs text-slate-600 font-bold">Niederlagen</div>
+          <div className="bg-red-500/10 rounded-2xl p-3 text-center border border-red-400/20">
+            <div className="text-xl sm:text-2xl font-black text-red-300">{teamStats.lost}</div>
+            <div className="text-xs text-white/55 font-bold">Niederlagen</div>
           </div>
 
-          <div className="bg-blue-50 rounded-2xl p-3 text-center border border-blue-200 col-span-2">
-            <div className="text-xl sm:text-2xl font-black text-blue-700">
+          <div className="bg-sky-500/10 rounded-2xl p-3 text-center border border-sky-400/20 col-span-2">
+            <div className="text-xl sm:text-2xl font-black text-sky-300">
               {teamStats.legsDifference > 0 ? "+" : ""}
               {teamStats.legsDifference}
             </div>
-            <div className="text-xs text-slate-600 font-bold">Legs-Differenz</div>
+            <div className="text-xs text-white/55 font-bold">Legs-Differenz</div>
           </div>
         </div>
       </div>
@@ -1576,10 +1620,10 @@ if (isFutureDate) {
 
     {/* Spielerkader */}
     <div>
-      <h4 className="text-sm font-black text-slate-950 mb-3">Spielerkader</h4>
+      <h4 className="text-sm font-black text-white mb-3">Spielerkader</h4>
 
       {teamPlayers.length === 0 ? (
-        <div className="text-center py-8 text-slate-500 border border-gray-200 rounded-2xl bg-slate-50">
+        <div className="text-center py-8 text-white/48 border border-gray-200 rounded-2xl bg-white/5">
           <Users className="h-10 w-10 mx-auto mb-2 text-gray-300" />
           <p className="text-sm font-bold">Keine Spieler zugeordnet</p>
         </div>
@@ -1590,12 +1634,12 @@ if (isFutureDate) {
               key={player.id}
               className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-gray-200"
             >
-              <div className="w-8 h-8 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-black text-orange-700">{index + 1}</span>
+              <div className="w-8 h-8 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-black text-orange-300">{index + 1}</span>
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="font-mediumtext-slate-950 text-sm truncate">{player.name}</div>
+                <div className="font-mediumtext-white text-sm truncate">{player.name}</div>
               </div>
             </div>
           ))}

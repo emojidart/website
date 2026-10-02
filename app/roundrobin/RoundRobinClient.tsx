@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { calculateSeriesLegPoints, calculateSeriesPlacementPoints, calculateSeriesWinnerBonus, loadSeriesScoringRuntime } from "@/lib/tournament-series-scoring"
 import { Header } from "@/components/header"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -307,6 +308,8 @@ export default function RoundRobinClient() {
 
   const roundRobinId = searchParams.get("roundRobinId") || ""
   const tournamentName = decodeURIComponent(searchParams.get("tournamentName") || "Round Robin")
+  const seriesId = searchParams.get("seriesId") || ""
+  const eventId = searchParams.get("eventId") || ""
 
   const tournamentTypeGroup = "round_robin"
   const tournamentTypePlayoff = "round_robin_playoff"
@@ -1638,6 +1641,133 @@ const resultSaveReady =
     }, 5000)
   }
 
+  const saveUnifiedSeriesResults = async (memberRows?: Array<any>) => {
+    if (!seriesId || !roundRobinId || finalPlacements.length === 0) return
+
+    const runtime = await loadSeriesScoringRuntime(seriesId)
+    if (!runtime) return
+
+    const placements = Array.from(new Set(finalPlacements.map((row) => Number(row.placement || 0))))
+      .filter((value) => value > 0)
+      .sort((a, b) => a - b)
+    const tiersBelow = new Map<number, number>()
+    placements.forEach((placement, index) => tiersBelow.set(placement, placements.length - index - 1))
+
+    const teamStats = new Map<string, { legsWon: number; legsLost: number; matchesPlayed: number; matchesWon: number; matchesLost: number }>()
+    const ensureStats = (name: string) => {
+      const key = normalizeName(name)
+      if (!teamStats.has(key)) {
+        teamStats.set(key, { legsWon: 0, legsLost: 0, matchesPlayed: 0, matchesWon: 0, matchesLost: 0 })
+      }
+      return teamStats.get(key)!
+    }
+
+    ;[...Object.values(matchStates), ...Object.values(playoffStates)].forEach((match) => {
+      if (!match?.winner) return
+      const p1 = normalizeName(match.player1 || "")
+      const p2 = normalizeName(match.player2 || "")
+      if (p1 && !isFreilos(p1)) {
+        const stats = ensureStats(p1)
+        stats.legsWon += Number(match.score1 || 0)
+        stats.legsLost += Number(match.score2 || 0)
+        stats.matchesPlayed += 1
+        if (normalizeName(match.winner) === p1) stats.matchesWon += 1
+        else stats.matchesLost += 1
+      }
+      if (p2 && !isFreilos(p2)) {
+        const stats = ensureStats(p2)
+        stats.legsWon += Number(match.score2 || 0)
+        stats.legsLost += Number(match.score1 || 0)
+        stats.matchesPlayed += 1
+        if (normalizeName(match.winner) === p2) stats.matchesWon += 1
+        else stats.matchesLost += 1
+      }
+    })
+
+    const sourceRows = memberRows?.length
+      ? memberRows.map((row) => ({
+          player_name: String(row.player_name || ""),
+          team_name: String(row.team_name || row.player_name || ""),
+          placement: Number(row.placement || 0),
+        }))
+      : finalPlacements.map((row) => ({
+          player_name: String(row.team_name || ""),
+          team_name: String(row.team_name || ""),
+          placement: Number(row.placement || 0),
+        }))
+
+    const rows = sourceRows
+      .filter((row) => row.player_name && row.placement > 0)
+      .map((row) => {
+        const stats = teamStats.get(normalizeName(row.team_name)) || {
+          legsWon: 0,
+          legsLost: 0,
+          matchesPlayed: 0,
+          matchesWon: 0,
+          matchesLost: 0,
+        }
+        const legacyPlacement = runtime.seriesType === "members_cup" ? getMembersCupPoints(row.placement) : 0
+        const placementPoints = calculateSeriesPlacementPoints(
+          runtime,
+          row.placement,
+          tiersBelow.get(row.placement) || 0,
+          legacyPlacement,
+        )
+        const legsPoints = calculateSeriesLegPoints(runtime, stats.legsWon, 0)
+        const bonusPoints = calculateSeriesWinnerBonus(runtime, row.placement, stats.matchesLost, 0)
+
+        return {
+          player_name: row.player_name,
+          tournament_id: roundRobinId,
+          tournament_name: tournamentName,
+          tournament_type: "round_robin",
+          tournament_date: new Date().toISOString(),
+          placement: row.placement,
+          placement_points: Math.round(placementPoints),
+          legs_points: Math.round(legsPoints),
+          bonus_points: Math.round(bonusPoints),
+          total_points: Math.round(placementPoints + legsPoints + bonusPoints),
+          legs_won: stats.legsWon,
+          legs_lost: stats.legsLost,
+          matches_played: stats.matchesPlayed,
+          matches_won: stats.matchesWon,
+          matches_lost: stats.matchesLost,
+          form: null,
+          series_id: seriesId,
+          event_id: eventId || null,
+        }
+      })
+
+    const { error: deleteError } = await supabase
+      .from("tournament_series_standings")
+      .delete()
+      .eq("series_id", seriesId)
+      .eq("tournament_id", roundRobinId)
+    if (deleteError) throw deleteError
+
+    if (rows.length > 0) {
+      const { error: insertError } = await supabase.from("tournament_series_standings").insert(rows)
+      if (insertError) throw insertError
+    }
+
+    const { error: historyDeleteError } = await supabase
+      .from("tournament_series_history")
+      .delete()
+      .eq("series_id", seriesId)
+      .eq("tournament_id", roundRobinId)
+    if (historyDeleteError) throw historyDeleteError
+
+    const { error: historyError } = await supabase.from("tournament_series_history").insert({
+      tournament_id: roundRobinId,
+      tournament_name: tournamentName,
+      tournament_type: "round_robin",
+      series_id: seriesId,
+      event_id: eventId || null,
+      added_at: new Date().toISOString(),
+    })
+    if (historyError) throw historyError
+  }
+
   const saveFunTournamentResults = async () => {
     if (!resultSaveReady) {
       alert("Bitte zuerst Gruppenphase und Finalrunde vollständig fertig spielen.")
@@ -1655,6 +1785,8 @@ const resultSaveReady =
       const rows = finalPlacements.map((row) => ({
         round_robin_id: roundRobinId,
         tournament_name: tournamentName,
+        series_id: seriesId || null,
+        event_id: eventId || null,
         team_id: row.team_id,
         team_name: row.team_name,
         placement: row.placement,
@@ -1667,6 +1799,8 @@ const resultSaveReady =
         })
 
       if (error) throw error
+
+      await saveUnifiedSeriesResults()
 
       showSuccess("Normales Turnier gespeichert", `${rows.length} Platzierungen wurden gespeichert oder aktualisiert.`)
     } catch (error: any) {
@@ -1725,6 +1859,8 @@ const resultSaveReady =
         rows.push({
           round_robin_id: roundRobinId,
           tournament_name: tournamentName,
+          series_id: seriesId || null,
+          event_id: eventId || null,
           team_id: String(teamRow.team_id),
           team_name: teamRow.team_name,
           player_id: String(teamRow.player1_id),
@@ -1736,6 +1872,8 @@ const resultSaveReady =
         rows.push({
           round_robin_id: roundRobinId,
           tournament_name: tournamentName,
+          series_id: seriesId || null,
+          event_id: eventId || null,
           team_id: String(teamRow.team_id),
           team_name: teamRow.team_name,
           player_id: String(teamRow.player2_id),
@@ -1758,6 +1896,8 @@ const resultSaveReady =
 
       if (error) throw error
 
+      await saveUnifiedSeriesResults(rows)
+
       showSuccess("Members Cup gespeichert", `${rows.length} Punkte-Einträge wurden gespeichert oder aktualisiert.`)
     } catch (error: any) {
       console.error("[RR] save members cup results error:", error)
@@ -1769,6 +1909,43 @@ const resultSaveReady =
   
   
   
+  const handleAutomaticFinishTournament = async () => {
+    if (!roundRobinId) return
+
+    if (!resultSaveReady) {
+      setFinishConfirmOpen(false)
+      alert("Bitte zuerst Gruppenphase und Finalrunde vollständig fertig spielen.")
+      return
+    }
+
+    try {
+      if (seriesId) {
+        const { data: seriesRow, error: seriesError } = await supabase
+          .from("dko_series")
+          .select("series_type")
+          .eq("id", seriesId)
+          .maybeSingle()
+
+        if (seriesError) throw seriesError
+
+        if (seriesRow?.series_type === "members_cup") {
+          await saveMembersCupResults()
+        } else {
+          await saveFunTournamentResults()
+        }
+      } else {
+        await saveFunTournamentResults()
+      }
+
+      await handleFinishTournament()
+    } catch (error: any) {
+      console.error("[RR] automatic finish error:", error)
+      setFinishConfirmOpen(false)
+      alert(error?.message || "Turnier konnte nicht automatisch gespeichert und abgeschlossen werden.")
+    }
+  }
+
+
   const handleFinishTournament = async () => {
   if (!roundRobinId) return
 
@@ -1819,11 +1996,15 @@ const resultSaveReady =
 
     if (roundRobinError) throw roundRobinError
 
-    const { error: registrationError } = await supabase
+    let registrationQuery = supabase
       .from("dko_tournament_registration")
       .delete()
       .not("id", "is", null)
 
+    if (seriesId) registrationQuery = registrationQuery.eq("series_id", seriesId)
+    if (eventId) registrationQuery = registrationQuery.eq("event_id", eventId)
+
+    const { error: registrationError } = await registrationQuery
     if (registrationError) throw registrationError
 
     setFinishConfirmOpen(false)
@@ -1834,7 +2015,7 @@ const resultSaveReady =
     setSuccessOpen(true)
 
     window.setTimeout(() => {
-      router.push("/dko_tournament_registration")
+      router.push(`/dko_tournament_registration${seriesId ? `?seriesId=${encodeURIComponent(seriesId)}${eventId ? `&eventId=${encodeURIComponent(eventId)}` : ""}` : ""}`)
     }, 1400)
   } catch (error: any) {
     console.error("[RR] finish tournament error:", error)
@@ -2366,84 +2547,46 @@ const resultSaveReady =
           </div>
         </Card>
 
-        {/* ERGEBNISSE SPEICHERN */}
+        {/* TURNIER ABSCHLIESSEN */}
         <Card className="rounded-2xl border-2 border-orange-100 shadow-lg p-5 bg-white">
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
               <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-orange-600" />
-                Ergebnisse speichern
+                Turnier abschließen
               </h2>
               <p className="text-sm text-gray-600 font-semibold mt-1">
-                Speichere die Turnierergebnisse entweder als normales Turnier oder werte sie für den Members Cup aus.  
-Bei Members-Cup-Turnieren werden die Punkte automatisch beiden Doppelspielern gutgeschrieben.
+                {seriesId
+                  ? "Ergebnisse und Serienwertung werden beim Abschluss automatisch passend zur Turnierserie gespeichert."
+                  : "Die Turnierergebnisse werden beim Abschluss automatisch gespeichert. Eine Serienwertung wird nicht erstellt."}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
-              {resultSaveReady ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={savingResults}
-                    onClick={saveFunTournamentResults}
-                    className="font-black"
-                  >
-                    {savingResults ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Trophy className="w-4 h-4 mr-2" />}
-                    Normales-Turnier speichern
-                  </Button>
-
-                  <Button
-                    type="button"
-                    disabled={savingResults}
-                    onClick={saveMembersCupResults}
-                    className="font-black bg-orange-600 hover:bg-orange-700"
-                  >
-                    {savingResults ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
-                    Members Cup Punkte speichern
-                  </Button>
-                </>
-              ) : null}
-
               <Button
                 type="button"
-                disabled={!hasSavedResults || finishingTournament}
+                disabled={!resultSaveReady || savingResults || finishingTournament}
                 onClick={() => setFinishConfirmOpen(true)}
                 className={cn(
-                  "font-black",
-                  hasSavedResults
+                  "font-black min-w-[260px]",
+                  resultSaveReady
                     ? "bg-green-600 hover:bg-green-700"
                     : "bg-gray-300 text-gray-500 hover:bg-gray-300",
                 )}
               >
-                {finishingTournament ? (
+                {savingResults || finishingTournament ? (
                   <RefreshCcw className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <Check className="w-4 h-4 mr-2" />
                 )}
-                Turnier abschließen
+                {seriesId ? "Turnier abschließen & speichern" : "Turnier abschließen"}
               </Button>
             </div>
           </div>
 
-          {resultsSaved ? (
-            <div className="mt-4 rounded-xl border-2 border-green-200 bg-green-50 px-4 py-3 text-green-800 font-black">
-              Ergebnisse wurden gespeichert oder aktualisiert. Turnier abschließen ist jetzt möglich.
-            </div>
-          ) : null}
-
-          {!resultSaveReady && !hasSavedResults ? (
+          {!resultSaveReady ? (
             <div className="mt-4 rounded-xl border-2 border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-900 font-bold">
-              Die Speicher-Buttons erscheinen erst, wenn Gruppenphase und Finalrunde vollständig fertig gespielt sind.  
-
-            </div>
-          ) : null}
-
-          {resultSaveReady && !hasSavedResults ? (
-            <div className="mt-4 rounded-xl border-2 border-green-200 bg-green-50 px-4 py-3 text-green-900 font-bold">
-              Das Turnier ist fertig. Speichere jetzt die Ergebnisse als normales Turnier oder als Members-Cup-Wertung.  
-Danach kannst du das Turnier vollständig.
+              Der Abschluss wird freigeschaltet, sobald Gruppenphase und Finalrunde vollständig gespielt sind.
             </div>
           ) : null}
 
@@ -2624,12 +2767,14 @@ Danach kannst du das Turnier vollständig.
             </DialogTitle>
 
             <DialogDescription className="text-base pt-2">
-              Dadurch wird das Turnier als abgeschlossen markiert, die aktuelle Anmeldung geleert und du wirst zur Anmeldung weitergeleitet.
+              {seriesId
+                ? "Ergebnisse und Serienwertung werden jetzt automatisch gespeichert. Danach wird das Turnier abgeschlossen und die Anmeldung dieses Spieltags geleert."
+                : "Die Turnierergebnisse werden jetzt automatisch gespeichert. Danach wird das Turnier abgeschlossen und die aktuelle Anmeldung geleert."}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="rounded-2xl border-2 border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-bold text-yellow-900">
-            Wichtig: Ergebnisse müssen vorher gespeichert sein. Die Team- und Punktehistorie bleibt erhalten.
+          <div className="rounded-2xl border-2 border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-900">
+            Ein Klick genügt: Speichern, Wertung zuordnen und Turnier abschließen.
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
@@ -2643,12 +2788,12 @@ Danach kannst du das Turnier vollständig.
             </Button>
             <Button
               type="button"
-              onClick={handleFinishTournament}
+              onClick={handleAutomaticFinishTournament}
               disabled={finishingTournament}
               className="bg-green-600 hover:bg-green-700"
             >
               {finishingTournament ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
-              Ja, abschließen
+              Ja, speichern & abschließen
             </Button>
           </div>
         </DialogContent>

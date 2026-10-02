@@ -1,0 +1,2351 @@
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
+import type { User } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabase"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Euro,
+  Loader2,
+  RefreshCw,
+  Save,
+  Search,
+  ShieldCheck,
+  WalletCards,
+  XCircle,
+  Gift,
+  CalendarDays,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { MembershipAccountingPanel } from "./abrechnung"
+
+type BillingCycle = "monthly" | "semiannual" | "annual"
+type PaymentMethod = "stripe" | "transfer" | "cash"
+type MembershipStatus = "pending" | "active" | "paused" | "cancelled" | "expired"
+type AdminMembershipView = "overview" | "paid" | "trials" | "manage"
+
+type ClubPlayer = {
+  id: string
+  name: string
+  email?: string | null
+  is_active?: boolean | null
+  club_left_at?: string | null
+}
+
+type MembershipModule = {
+  id: string
+  code: string
+  name: string
+  description: string | null
+  monthly_price: number
+  semiannual_price: number
+  annual_price: number
+  currency: string
+  is_required_base: boolean
+  is_active: boolean
+  sort_order: number
+}
+
+type ModuleDependency = {
+  module_id: string
+  required_module_id: string
+}
+
+type MemberMembership = {
+  id: string
+  player_id: string
+  billing_cycle: BillingCycle
+  payment_method: PaymentMethod
+  status: MembershipStatus
+  starts_on: string
+  ends_on: string | null
+  note: string | null
+  created_at: string
+}
+
+type MembershipModuleRow = {
+  membership_id: string
+  module_id: string
+  monthly_price_snapshot: number
+  semiannual_price_snapshot: number
+  annual_price_snapshot: number
+}
+
+
+type MembershipChangeRequest = {
+  id: string
+  player_id: string
+  current_membership_id: string | null
+  billing_cycle: BillingCycle
+  payment_method: PaymentMethod
+  requested_status: "pending" | "approved" | "rejected" | "cancelled"
+  request_type: "change" | "cancel"
+  requested_end_on: string | null
+  payment_status: "pending" | "paid"
+  paid_at: string | null
+  monthly_total: number
+  semiannual_total: number
+  annual_total: number
+  starts_on: string | null
+  note: string | null
+  reviewed_by: string | null
+  reviewed_at: string | null
+  created_at: string
+}
+
+type MembershipChangeRequestModule = {
+  request_id: string
+  module_id: string
+  monthly_price_snapshot: number
+  semiannual_price_snapshot: number
+  annual_price_snapshot: number
+}
+
+type MembershipTrial = {
+  id: string
+  player_id: string
+  module_code: string
+  starts_on: string
+  ends_on: string
+  status: "active" | "cancelled" | "expired"
+  note: string | null
+  created_by: string | null
+  created_at: string
+}
+
+interface AdminMembershipManagementProps {
+  user: User | null
+}
+
+function todayISO() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
+function formatEUR(value: number) {
+  return new Intl.NumberFormat("de-AT", {
+    style: "currency",
+    currency: "EUR",
+  }).format(Number(value || 0))
+}
+
+function paymentLabel(method: PaymentMethod) {
+  if (method === "stripe") return "Stripe"
+  if (method === "transfer") return "Überweisung / Erlagschein"
+  return "Bar im Verein"
+}
+
+function statusLabel(status: MembershipStatus) {
+  switch (status) {
+    case "active":
+      return "Aktiv"
+    case "pending":
+      return "Ausständig"
+    case "paused":
+      return "Pausiert"
+    case "cancelled":
+      return "Gekündigt"
+    case "expired":
+      return "Abgelaufen"
+  }
+}
+
+export function AdminMembershipManagement({ user }: AdminMembershipManagementProps) {
+  const [activeView, setActiveView] = useState<AdminMembershipView>("overview")
+  const [players, setPlayers] = useState<ClubPlayer[]>([])
+  const [modules, setModules] = useState<MembershipModule[]>([])
+  const [dependencies, setDependencies] = useState<ModuleDependency[]>([])
+  const [memberships, setMemberships] = useState<MemberMembership[]>([])
+  const [membershipModuleRows, setMembershipModuleRows] = useState<MembershipModuleRow[]>([])
+  const [changeRequests, setChangeRequests] = useState<MembershipChangeRequest[]>([])
+  const [changeRequestModules, setChangeRequestModules] = useState<MembershipChangeRequestModule[]>([])
+  const [trials, setTrials] = useState<MembershipTrial[]>([])
+  const [reviewingRequestId, setReviewingRequestId] = useState<string>("")
+
+  const [trialPreset, setTrialPreset] = useState<"edart" | "steeldart" | "both" | "full">("edart")
+  const [trialStartsOn, setTrialStartsOn] = useState(todayISO())
+  const [trialEndsOn, setTrialEndsOn] = useState("")
+  const [trialNote, setTrialNote] = useState("")
+  const [savingTrial, setSavingTrial] = useState(false)
+
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState("")
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("")
+
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("annual")
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
+  const [status, setStatus] = useState<MembershipStatus>("active")
+  const [startsOn, setStartsOn] = useState(todayISO())
+  const [endsOn, setEndsOn] = useState("")
+  const [selectedModuleIds, setSelectedModuleIds] = useState<Set<string>>(new Set())
+
+  const [message, setMessage] = useState<{
+    type: "success" | "error" | "info"
+    text: string
+  } | null>(null)
+
+  useEffect(() => {
+    if (user) void loadData()
+  }, [user?.id])
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      setMessage(null)
+
+      // Alte Mitgliedschaftsdaten sofort aus dem UI entfernen.
+      // So kann nach einem externen DB-Reset/Löschen kein alter "Aktiv"-Status
+      // aus dem vorherigen React-State sichtbar bleiben.
+      setMemberships([])
+      setMembershipModuleRows([])
+      setChangeRequests([])
+      setChangeRequestModules([])
+      setTrials([])
+
+      const [
+        { data: playerData, error: playerError },
+        { data: moduleData, error: moduleError },
+        { data: dependencyData, error: dependencyError },
+        { data: membershipData, error: membershipError },
+        { data: membershipModulesData, error: membershipModulesError },
+        { data: changeRequestData, error: changeRequestError },
+        { data: changeRequestModuleData, error: changeRequestModuleError },
+        { data: trialData, error: trialError },
+      ] = await Promise.all([
+        supabase
+          .from("club_players")
+          .select("id,name,email,is_active,club_left_at")
+          .order("name", { ascending: true }),
+
+        supabase
+          .from("membership_modules")
+          .select("id,code,name,description,monthly_price,semiannual_price,annual_price,currency,is_required_base,is_active,sort_order")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true }),
+
+        supabase
+          .from("membership_module_dependencies")
+          .select("module_id,required_module_id"),
+
+        supabase
+          .from("member_memberships")
+          .select("id,player_id,billing_cycle,payment_method,status,starts_on,ends_on,note,created_at")
+          .order("created_at", { ascending: false }),
+
+        supabase
+          .from("member_membership_modules")
+          .select("membership_id,module_id,monthly_price_snapshot,semiannual_price_snapshot,annual_price_snapshot"),
+
+        supabase
+          .from("membership_change_requests")
+          .select("id,player_id,current_membership_id,billing_cycle,payment_method,requested_status,request_type,requested_end_on,payment_status,paid_at,monthly_total,semiannual_total,annual_total,starts_on,note,reviewed_by,reviewed_at,created_at")
+          .order("created_at", { ascending: false }),
+
+        supabase
+          .from("membership_change_request_modules")
+          .select("request_id,module_id,monthly_price_snapshot,semiannual_price_snapshot,annual_price_snapshot"),
+
+        supabase
+          .from("membership_trials")
+          .select("id,player_id,module_code,starts_on,ends_on,status,note,created_by,created_at")
+          .order("ends_on", { ascending: true }),
+      ])
+
+      if (playerError) throw playerError
+      if (moduleError) throw moduleError
+      if (dependencyError) throw dependencyError
+      if (membershipError) throw membershipError
+      if (membershipModulesError) throw membershipModulesError
+      if (changeRequestError) throw changeRequestError
+      if (changeRequestModuleError) throw changeRequestModuleError
+      if (trialError) throw trialError
+
+      const nextPlayers = ((playerData || []) as any[]).map((p) => ({
+        id: p.id,
+        name: p.name,
+        email: p.email ?? null,
+        is_active: p.is_active ?? true,
+        club_left_at: p.club_left_at ?? null,
+      })) as ClubPlayer[]
+
+      const nextModules = ((moduleData || []) as any[]).map((m) => ({
+        ...m,
+        monthly_price: Number(m.monthly_price || 0),
+        semiannual_price: Number(m.semiannual_price || 0),
+        annual_price: Number(m.annual_price || 0),
+        is_required_base: !!m.is_required_base,
+        is_active: !!m.is_active,
+        sort_order: Number(m.sort_order || 0),
+      })) as MembershipModule[]
+
+      const nextMemberships = (membershipData || []) as MemberMembership[]
+      const nextMembershipModuleRows = ((membershipModulesData || []) as any[]).map((row) => ({
+        ...row,
+        monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+        semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
+        annual_price_snapshot: Number(row.annual_price_snapshot || 0),
+      })) as MembershipModuleRow[]
+
+      setPlayers(nextPlayers)
+      setModules(nextModules)
+      setDependencies((dependencyData || []) as ModuleDependency[])
+      setMemberships(nextMemberships)
+      setMembershipModuleRows(nextMembershipModuleRows)
+
+      setChangeRequests(
+        ((changeRequestData || []) as any[]).map((row) => ({
+          ...row,
+          monthly_total: Number(row.monthly_total || 0),
+          semiannual_total: Number(row.semiannual_total || 0),
+          annual_total: Number(row.annual_total || 0),
+        })) as MembershipChangeRequest[],
+      )
+      setChangeRequestModules(
+        ((changeRequestModuleData || []) as any[]).map((row) => ({
+          ...row,
+          monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+          annual_price_snapshot: Number(row.annual_price_snapshot || 0),
+        })) as MembershipChangeRequestModule[],
+      )
+
+      setTrials((trialData || []) as MembershipTrial[])
+
+      if (!selectedPlayerId && nextPlayers.length > 0) {
+        const active = nextPlayers.find((p) => p.is_active !== false && !p.club_left_at)
+        setSelectedPlayerId(active?.id || nextPlayers[0].id)
+      } else if (selectedPlayerId) {
+        // Wichtig bei extern gelöschten/resetten Mitgliedschaften:
+        // Den Editor sofort aus den FRISCH geladenen DB-Daten synchronisieren.
+        const freshMembership =
+          nextMemberships.find(
+            (m) =>
+              m.player_id === selectedPlayerId &&
+              (m.status === "active" || m.status === "pending" || m.status === "paused"),
+          ) ||
+          nextMemberships.find((m) => m.player_id === selectedPlayerId) ||
+          null
+
+        const baseIds = nextModules.filter((m) => m.is_required_base).map((m) => m.id)
+
+        if (!freshMembership) {
+          setBillingCycle("annual")
+          setPaymentMethod("cash")
+          setStatus("active")
+          setStartsOn(todayISO())
+          setEndsOn("")
+          setSelectedModuleIds(new Set(baseIds))
+        } else {
+          setBillingCycle(freshMembership.billing_cycle)
+          setPaymentMethod(freshMembership.payment_method)
+          setStatus(freshMembership.status)
+          setStartsOn(freshMembership.starts_on || todayISO())
+          setEndsOn(freshMembership.ends_on || "")
+
+          const freshModuleIds = nextMembershipModuleRows
+            .filter((row) => row.membership_id === freshMembership.id)
+            .map((row) => row.module_id)
+
+          setSelectedModuleIds(new Set([...freshModuleIds, ...baseIds]))
+        }
+      }
+    } catch (error: any) {
+      console.error("membership management load error:", error)
+      setMessage({
+        type: "error",
+        text: error?.message || "Mitgliedschaften konnten nicht geladen werden.",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredPlayers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return players
+
+    return players.filter(
+      (player) =>
+        player.name.toLowerCase().includes(q) ||
+        String(player.email || "").toLowerCase().includes(q),
+    )
+  }, [players, search])
+
+  const selectedPlayer = useMemo(
+    () => players.find((p) => p.id === selectedPlayerId) || null,
+    [players, selectedPlayerId],
+  )
+
+  const selectedMembership = useMemo(() => {
+    if (!selectedPlayerId) return null
+
+    // Neuester nicht gekündigter Datensatz hat Vorrang.
+    return (
+      memberships.find(
+        (m) =>
+          m.player_id === selectedPlayerId &&
+          (m.status === "active" || m.status === "pending" || m.status === "paused"),
+      ) ||
+      memberships.find((m) => m.player_id === selectedPlayerId) ||
+      null
+    )
+  }, [memberships, selectedPlayerId])
+
+  useEffect(() => {
+    if (!selectedPlayerId || modules.length === 0) return
+
+    const baseIds = modules.filter((m) => m.is_required_base).map((m) => m.id)
+
+    if (!selectedMembership) {
+      setBillingCycle("annual")
+      setPaymentMethod("cash")
+      setStatus("active")
+      setStartsOn(todayISO())
+      setEndsOn("")
+      setSelectedModuleIds(new Set(baseIds))
+      return
+    }
+
+    setBillingCycle(selectedMembership.billing_cycle)
+    setPaymentMethod(selectedMembership.payment_method)
+    setStatus(selectedMembership.status)
+    setStartsOn(selectedMembership.starts_on || todayISO())
+    setEndsOn(selectedMembership.ends_on || "")
+
+    const ids = membershipModuleRows
+      .filter((row) => row.membership_id === selectedMembership.id)
+      .map((row) => row.module_id)
+
+    setSelectedModuleIds(new Set([...ids, ...baseIds]))
+  }, [selectedPlayerId, selectedMembership?.id, modules, membershipModuleRows])
+
+  const ensureDependencies = (ids: Set<string>) => {
+    const next = new Set(ids)
+    let changed = true
+
+    while (changed) {
+      changed = false
+
+      for (const dep of dependencies) {
+        if (next.has(dep.module_id) && !next.has(dep.required_module_id)) {
+          next.add(dep.required_module_id)
+          changed = true
+        }
+      }
+    }
+
+    for (const base of modules.filter((m) => m.is_required_base)) {
+      next.add(base.id)
+    }
+
+    return next
+  }
+
+  const toggleModule = (module: MembershipModule, checked: boolean) => {
+    setMessage(null)
+
+    if (module.is_required_base && !checked) {
+      setMessage({
+        type: "info",
+        text: "Die Grundmitgliedschaft ist verpflichtend und kann nicht abgewählt werden.",
+      })
+      return
+    }
+
+    const next = new Set(selectedModuleIds)
+
+    if (checked) {
+      next.add(module.id)
+      setSelectedModuleIds(ensureDependencies(next))
+      return
+    }
+
+    const dependentActiveModule = dependencies.find(
+      (dep) => dep.required_module_id === module.id && next.has(dep.module_id),
+    )
+
+    if (dependentActiveModule) {
+      const dependent = modules.find((m) => m.id === dependentActiveModule.module_id)
+      setMessage({
+        type: "info",
+        text: `${module.name} kann nicht entfernt werden, solange „${dependent?.name || "ein abhängiges Modul"}“ aktiv ist.`,
+      })
+      return
+    }
+
+    next.delete(module.id)
+    setSelectedModuleIds(ensureDependencies(next))
+  }
+
+  const selectedModules = useMemo(
+    () => modules.filter((m) => selectedModuleIds.has(m.id)),
+    [modules, selectedModuleIds],
+  )
+
+  const monthlyTotal = useMemo(
+    () => selectedModules.reduce((sum, m) => sum + Number(m.monthly_price || 0), 0),
+    [selectedModules],
+  )
+
+  const annualTotal = useMemo(
+    () => selectedModules.reduce((sum, m) => sum + Number(m.annual_price || 0), 0),
+    [selectedModules],
+  )
+
+
+  const hasChanges = useMemo(() => {
+    if (!selectedPlayerId) return false
+    if (!selectedMembership) return true
+
+    if (selectedMembership.billing_cycle !== billingCycle) return true
+    if (selectedMembership.payment_method !== paymentMethod) return true
+    if (selectedMembership.status !== status) return true
+    if ((selectedMembership.starts_on || "") !== (startsOn || "")) return true
+    if ((selectedMembership.ends_on || "") !== (endsOn || "")) return true
+
+    const savedModuleIds = membershipModuleRows
+      .filter((row) => row.membership_id === selectedMembership.id)
+      .map((row) => row.module_id)
+      .sort()
+
+    const formModuleIds = Array.from(selectedModuleIds).sort()
+
+    if (savedModuleIds.length !== formModuleIds.length) return true
+
+    for (let i = 0; i < savedModuleIds.length; i += 1) {
+      if (savedModuleIds[i] !== formModuleIds[i]) return true
+    }
+
+    return false
+  }, [
+    selectedPlayerId,
+    selectedMembership,
+    billingCycle,
+    paymentMethod,
+    status,
+    startsOn,
+    endsOn,
+    selectedModuleIds,
+    membershipModuleRows,
+  ])
+
+  const handleBillingCycleChange = (value: BillingCycle) => {
+    setBillingCycle(value)
+
+    // EMD-Regel: Monatlich nur über Stripe.
+    if (value === "monthly" && paymentMethod !== "stripe") {
+      setPaymentMethod("stripe")
+      setMessage({
+        type: "info",
+        text: "Bei monatlicher Zahlung wird automatisch Stripe als Zahlungsart verwendet.",
+      })
+    }
+  }
+
+  const handlePaymentMethodChange = (value: PaymentMethod) => {
+    if (billingCycle === "monthly" && value !== "stripe") {
+      setMessage({
+        type: "info",
+        text: "Überweisung und Barzahlung sind nur bei jährlicher Zahlung möglich.",
+      })
+      return
+    }
+
+    setPaymentMethod(value)
+    setMessage(null)
+  }
+
+  const endActiveTrialsForPlayer = async (playerId: string) => {
+    const { error } = await supabase
+      .from("membership_trials")
+      .update({
+        status: "cancelled",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("player_id", playerId)
+      .eq("status", "active")
+
+    if (error) throw error
+  }
+
+  const saveMembership = async () => {
+    if (!user) {
+      setMessage({ type: "error", text: "Nicht eingeloggt." })
+      return
+    }
+
+    if (!selectedPlayerId) {
+      setMessage({ type: "error", text: "Bitte ein Mitglied auswählen." })
+      return
+    }
+
+    if (billingCycle === "monthly" && paymentMethod !== "stripe") {
+      setMessage({
+        type: "error",
+        text: "Monatliche Zahlung ist nur über Stripe möglich.",
+      })
+      return
+    }
+
+    if (selectedModules.length === 0) {
+      setMessage({ type: "error", text: "Es ist kein Modul ausgewählt." })
+      return
+    }
+
+    try {
+      setSaving(true)
+      setMessage(null)
+
+      const membershipPayload = {
+        player_id: selectedPlayerId,
+        billing_cycle: billingCycle,
+        payment_method: paymentMethod,
+        status,
+        starts_on: startsOn || todayISO(),
+        ends_on: endsOn || null,
+        updated_at: new Date().toISOString(),
+      }
+
+      let membershipId = selectedMembership?.id || ""
+
+      if (selectedMembership) {
+        const { error } = await supabase
+          .from("member_memberships")
+          .update(membershipPayload)
+          .eq("id", selectedMembership.id)
+
+        if (error) throw error
+      } else {
+        const { data, error } = await supabase
+          .from("member_memberships")
+          .insert({
+            ...membershipPayload,
+            note: "Über Admin-Mitgliedschaftsverwaltung angelegt",
+          })
+          .select("id")
+          .single()
+
+        if (error) throw error
+        membershipId = data.id
+      }
+
+      // Module bewusst komplett neu schreiben:
+      // So entspricht die DB exakt der aktuellen Auswahl.
+      const { error: deleteError } = await supabase
+        .from("member_membership_modules")
+        .delete()
+        .eq("membership_id", membershipId)
+
+      if (deleteError) throw deleteError
+
+      const rows = selectedModules.map((module) => ({
+        membership_id: membershipId,
+        module_id: module.id,
+        monthly_price_snapshot: Number(module.monthly_price),
+        semiannual_price_snapshot: Number(module.semiannual_price),
+        annual_price_snapshot: Number(module.annual_price),
+      }))
+
+      const { error: insertError } = await supabase
+        .from("member_membership_modules")
+        .insert(rows)
+
+      if (insertError) throw insertError
+
+      if (status === "active") {
+        await endActiveTrialsForPlayer(selectedPlayerId)
+      }
+
+      setMessage({
+        type: "success",
+        text: `Mitgliedschaft für ${selectedPlayer?.name || "das Mitglied"} wurde gespeichert.`,
+      })
+
+      await loadData()
+    } catch (error: any) {
+      console.error("membership save error:", error)
+      setMessage({
+        type: "error",
+        text: error?.message || "Mitgliedschaft konnte nicht gespeichert werden.",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+
+  const pendingChangeRequests = useMemo(
+    () => changeRequests.filter((request) => request.requested_status === "pending"),
+    [changeRequests],
+  )
+
+
+  const getCurrentMembershipForRequest = (request: MembershipChangeRequest) => {
+    if (!request.current_membership_id) return null
+    return memberships.find((membership) => membership.id === request.current_membership_id) || null
+  }
+
+  const getRequestChangeSummary = (request: MembershipChangeRequest) => {
+    const currentMembership = getCurrentMembershipForRequest(request)
+
+    const currentModuleIds = new Set(
+      membershipModuleRows
+        .filter((row) => row.membership_id === request.current_membership_id)
+        .map((row) => row.module_id),
+    )
+
+    const requestedModuleIds = new Set(
+      changeRequestModules
+        .filter((row) => row.request_id === request.id)
+        .map((row) => row.module_id),
+    )
+
+    const addedModules = modules.filter(
+      (module) => requestedModuleIds.has(module.id) && !currentModuleIds.has(module.id),
+    )
+
+    const removedModules = modules.filter(
+      (module) => currentModuleIds.has(module.id) && !requestedModuleIds.has(module.id),
+    )
+
+    const billingChanged =
+      !!currentMembership &&
+      currentMembership.billing_cycle !== request.billing_cycle
+
+    const paymentChanged =
+      !!currentMembership &&
+      currentMembership.payment_method !== request.payment_method
+
+    return {
+      currentMembership,
+      addedModules,
+      removedModules,
+      billingChanged,
+      paymentChanged,
+    }
+  }
+
+  const approveChangeRequest = async (request: MembershipChangeRequest) => {
+    if (!user) return
+
+    if (request.request_type === "cancel") return
+
+    if (request.payment_method === "stripe") {
+      setMessage({
+        type: "info",
+        text: request.payment_status === "paid"
+          ? "Diese Stripe-Zahlung wurde bereits von Stripe verarbeitet. Bitte die Ansicht neu laden."
+          : "Stripe-Zahlungen werden automatisch verarbeitet und dürfen nicht manuell bestätigt werden.",
+      })
+      return
+    }
+
+    try {
+      setReviewingRequestId(request.id)
+      setMessage(null)
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+
+      const accessToken = sessionData.session?.access_token
+      if (!accessToken) throw new Error("Deine Sitzung ist abgelaufen. Bitte melde dich neu an.")
+
+      const response = await fetch("/api/stripe/approve-manual-membership", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ requestId: request.id }),
+      })
+
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(payload?.error || "Die Zahlung konnte nicht bestätigt werden.")
+      }
+
+      await loadData()
+
+      const player = players.find((p) => p.id === request.player_id)
+      setMessage({
+        type: "success",
+        text: `Zahlung von ${player?.name || "dem Mitglied"} wurde bestätigt, verbucht und als Buchhaltungsbeleg erfasst.`,
+      })
+    } catch (error: any) {
+      console.error("approve membership request error:", error)
+      setMessage({
+        type: "error",
+        text: error?.message || "Die Mitgliedschaftsanfrage konnte nicht bestätigt werden.",
+      })
+    } finally {
+      setReviewingRequestId("")
+    }
+  }
+
+  const approveCancellationRequest = async (request: MembershipChangeRequest) => {
+    if (!user) return
+
+    try {
+      setReviewingRequestId(request.id)
+      setMessage(null)
+
+      if (!request.current_membership_id) {
+        throw new Error("Zu dieser Kündigungsanfrage wurde keine aktive Mitgliedschaft gefunden.")
+      }
+
+      if (!request.requested_end_on) {
+        throw new Error("Bei dieser Kündigungsanfrage fehlt das Kündigungsdatum.")
+      }
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+
+      const accessToken = sessionData.session?.access_token
+      if (!accessToken) {
+        throw new Error("Deine Sitzung ist abgelaufen. Bitte melde dich neu an.")
+      }
+
+      const response = await fetch("/api/stripe/cancel-membership", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ requestId: request.id }),
+      })
+
+      const payload = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Die Kündigung konnte nicht verarbeitet werden.")
+      }
+
+      await loadData()
+
+      const player = players.find((p) => p.id === request.player_id)
+      setMessage({
+        type: "success",
+        text: `Kündigung von ${player?.name || "dem Mitglied"} zum ${new Date(
+          `${request.requested_end_on}T00:00:00`,
+        ).toLocaleDateString("de-AT")} wurde bestätigt.`,
+      })
+    } catch (error: any) {
+      console.error("approve membership cancellation error:", error)
+      setMessage({
+        type: "error",
+        text: error?.message || "Die Kündigungsanfrage konnte nicht bestätigt werden.",
+      })
+    } finally {
+      setReviewingRequestId("")
+    }
+  }
+
+  const rejectChangeRequest = async (request: MembershipChangeRequest) => {
+    if (!user) return
+
+    try {
+      setReviewingRequestId(request.id)
+      setMessage(null)
+
+      const { error } = await supabase
+        .from("membership_change_requests")
+        .update({
+          requested_status: "rejected",
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", request.id)
+
+      if (error) throw error
+
+      await loadData()
+
+      const player = players.find((p) => p.id === request.player_id)
+      setMessage({
+        type: "success",
+        text: `Mitgliedschaftsanfrage von ${player?.name || "dem Mitglied"} wurde abgelehnt.`,
+      })
+    } catch (error: any) {
+      console.error("reject membership request error:", error)
+      setMessage({
+        type: "error",
+        text: error?.message || "Die Mitgliedschaftsanfrage konnte nicht abgelehnt werden.",
+      })
+    } finally {
+      setReviewingRequestId("")
+    }
+  }
+
+  const activeTrialsForPlayer = (playerId: string) => {
+    const today = todayISO()
+
+    return trials.filter(
+      (trial) =>
+        trial.player_id === playerId &&
+        trial.status === "active" &&
+        trial.starts_on <= today &&
+        trial.ends_on >= today,
+    )
+  }
+
+  const trialPresetCodes = (preset: "edart" | "steeldart" | "both" | "full") => {
+    const baseCodes = modules
+      .filter((module) => module.is_active && module.is_required_base)
+      .map((module) => module.code)
+
+    if (preset === "edart") return [...baseCodes, "premium_app", "edart_league"]
+    if (preset === "steeldart") return [...baseCodes, "premium_app", "steeldart_league"]
+    if (preset === "both") {
+      return [...baseCodes, "premium_app", "edart_league", "steeldart_league"]
+    }
+
+    return modules
+      .filter((module) => module.is_active)
+      .map((module) => module.code)
+  }
+
+  const createTrialPackage = async () => {
+    if (!selectedPlayerId) {
+      setMessage({ type: "error", text: "Bitte zuerst ein Mitglied auswählen." })
+      return
+    }
+
+    if (!trialEndsOn) {
+      setMessage({ type: "error", text: "Bitte ein Enddatum für die Testphase wählen." })
+      return
+    }
+
+    if (trialEndsOn < trialStartsOn) {
+      setMessage({ type: "error", text: "Das Enddatum darf nicht vor dem Startdatum liegen." })
+      return
+    }
+
+    try {
+      setSavingTrial(true)
+      setMessage(null)
+
+      const today = todayISO()
+      const hasActivePaidMembership = memberships.some(
+        (membership) =>
+          membership.player_id === selectedPlayerId &&
+          membership.status === "active" &&
+          membership.starts_on <= today &&
+          (!membership.ends_on || membership.ends_on >= today),
+      )
+
+      if (hasActivePaidMembership) {
+        setMessage({
+          type: "info",
+          text: "Für dieses Mitglied ist bereits eine reguläre Mitgliedschaft aktiv. Eine zusätzliche Testphase wird nicht angelegt.",
+        })
+        return
+      }
+
+      const codes = Array.from(new Set(trialPresetCodes(trialPreset)))
+
+      // Vorhandene aktive Tests zuerst beenden. Dadurch gibt es je Mitglied
+      // nur ein aktuelles Testpaket und keine doppelten Freischaltungen.
+      const { error: cancelExistingError } = await supabase
+        .from("membership_trials")
+        .update({
+          status: "cancelled",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("player_id", selectedPlayerId)
+        .eq("status", "active")
+
+      if (cancelExistingError) throw cancelExistingError
+
+      const rows = codes.map((code) => ({
+        player_id: selectedPlayerId,
+        module_code: code,
+        starts_on: trialStartsOn,
+        ends_on: trialEndsOn,
+        status: "active",
+        note: trialNote.trim() || null,
+        created_by: user?.id || null,
+      }))
+
+      const { error } = await supabase.from("membership_trials").insert(rows)
+      if (error) throw error
+
+      await loadData()
+
+      setMessage({
+        type: "success",
+        text: `Testpaket für ${selectedPlayer?.name || "das Mitglied"} wurde bis ${new Date(`${trialEndsOn}T00:00:00`).toLocaleDateString("de-AT")} freigeschaltet.`,
+      })
+      setTrialNote("")
+    } catch (error: any) {
+      console.error("create trial package error:", error)
+      setMessage({
+        type: "error",
+        text: error?.message || "Das Testpaket konnte nicht angelegt werden.",
+      })
+    } finally {
+      setSavingTrial(false)
+    }
+  }
+
+  const cancelTrial = async (trialId: string) => {
+    try {
+      setSavingTrial(true)
+      setMessage(null)
+
+      const { error } = await supabase
+        .from("membership_trials")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", trialId)
+
+      if (error) throw error
+
+      await loadData()
+      setMessage({ type: "success", text: "Die Testfreischaltung wurde beendet." })
+    } catch (error: any) {
+      setMessage({
+        type: "error",
+        text: error?.message || "Die Testfreischaltung konnte nicht beendet werden.",
+      })
+    } finally {
+      setSavingTrial(false)
+    }
+  }
+
+  // ECHTE Zahlungseingänge:
+  // Nur Vorgänge zählen, die tatsächlich als bezahlt markiert wurden und ein paid_at haben.
+  // Aktive Mitgliedschaften allein sind KEIN Zahlungsnachweis.
+  const paidPaymentTransactions = useMemo(
+    () =>
+      changeRequests
+        .filter(
+          (request) =>
+            request.request_type !== "cancel" &&
+            request.payment_status === "paid" &&
+            !!request.paid_at,
+        )
+        .map((request) => {
+          const player = players.find((item) => item.id === request.player_id) || null
+          const rows = changeRequestModules.filter((row) => row.request_id === request.id)
+          const transactionModules = rows
+            .map((row) => {
+              const module = modules.find((item) => item.id === row.module_id) || null
+              const paidAmount =
+                request.billing_cycle === "monthly"
+                  ? Number(row.monthly_price_snapshot || 0)
+                  : Number(row.annual_price_snapshot || 0)
+
+              return { row, module, paidAmount }
+            })
+            .filter((entry) => !!entry.module)
+
+          const paidAmount =
+            request.billing_cycle === "monthly"
+              ? Number(request.monthly_total || 0)
+              : Number(request.annual_total || 0)
+
+          return {
+            request,
+            player,
+            rows,
+            modules: transactionModules,
+            paidAmount,
+          }
+        })
+        .sort(
+          (a, b) =>
+            new Date(b.request.paid_at || b.request.created_at).getTime() -
+            new Date(a.request.paid_at || a.request.created_at).getTime(),
+        ),
+    [changeRequests, changeRequestModules, players, modules],
+  )
+
+  const paidPlayerCount = useMemo(
+    () => new Set(paidPaymentTransactions.map((item) => item.request.player_id)).size,
+    [paidPaymentTransactions],
+  )
+
+  const actuallyPaidMonthlyTotal = useMemo(
+    () =>
+      paidPaymentTransactions
+        .filter((item) => item.request.billing_cycle === "monthly")
+        .reduce((sum, item) => sum + item.paidAmount, 0),
+    [paidPaymentTransactions],
+  )
+
+  const actuallyPaidAnnualTotal = useMemo(
+    () =>
+      paidPaymentTransactions
+        .filter((item) => item.request.billing_cycle === "annual")
+        .reduce((sum, item) => sum + item.paidAmount, 0),
+    [paidPaymentTransactions],
+  )
+
+  const actuallyPaidTotal = actuallyPaidMonthlyTotal + actuallyPaidAnnualTotal
+
+  const paidModulePaymentSummary = useMemo(
+    () =>
+      modules
+        .map((module) => {
+          let paymentCount = 0
+          let paidTotal = 0
+
+          for (const transaction of paidPaymentTransactions) {
+            const entry = transaction.modules.find((item) => item.module?.id === module.id)
+            if (!entry) continue
+
+            paymentCount += 1
+            paidTotal += entry.paidAmount
+          }
+
+          return { module, paymentCount, paidTotal }
+        })
+        .filter((item) => item.paymentCount > 0),
+    [modules, paidPaymentTransactions],
+  )
+
+  const activePaidMemberships = useMemo(() => {
+    const today = todayISO()
+
+    return memberships.filter(
+      (membership) =>
+        membership.status === "active" &&
+        membership.starts_on <= today &&
+        (!membership.ends_on || membership.ends_on >= today),
+    )
+  }, [memberships])
+
+  const paidMembershipSummaries = useMemo(
+    () =>
+      activePaidMemberships
+        .map((membership) => {
+          const player = players.find((item) => item.id === membership.player_id) || null
+          const rows = membershipModuleRows.filter(
+            (row) => row.membership_id === membership.id,
+          )
+          const membershipModules = rows
+            .map((row) => modules.find((module) => module.id === row.module_id))
+            .filter((module): module is MembershipModule => !!module)
+          const monthlyAmount = rows.reduce(
+            (sum, row) => sum + Number(row.monthly_price_snapshot || 0),
+            0,
+          )
+          const annualAmount = rows.reduce(
+            (sum, row) => sum + Number(row.annual_price_snapshot || 0),
+            0,
+          )
+
+          return {
+            membership,
+            player,
+            rows,
+            modules: membershipModules,
+            monthlyAmount,
+            annualAmount,
+            billedAmount:
+              membership.billing_cycle === "monthly" ? monthlyAmount : annualAmount,
+          }
+        })
+        .filter((summary) => summary.rows.length > 0)
+        .sort((a, b) => (a.player?.name || "").localeCompare(b.player?.name || "", "de")),
+    [activePaidMemberships, players, membershipModuleRows, modules],
+  )
+
+  const activeTrialGroups = useMemo(() => {
+    const today = todayISO()
+    const grouped = new Map<string, MembershipTrial[]>()
+
+    for (const trial of trials) {
+      if (
+        trial.status !== "active" ||
+        trial.starts_on > today ||
+        trial.ends_on < today
+      ) {
+        continue
+      }
+
+      const current = grouped.get(trial.player_id) || []
+      current.push(trial)
+      grouped.set(trial.player_id, current)
+    }
+
+    return Array.from(grouped.entries())
+      .map(([playerId, playerTrials]) => ({
+        playerId,
+        player: players.find((item) => item.id === playerId) || null,
+        trials: playerTrials.sort((a, b) => a.module_code.localeCompare(b.module_code)),
+        startsOn: playerTrials.reduce(
+          (earliest, trial) => (!earliest || trial.starts_on < earliest ? trial.starts_on : earliest),
+          "",
+        ),
+        endsOn: playerTrials.reduce(
+          (latest, trial) => (!latest || trial.ends_on > latest ? trial.ends_on : latest),
+          "",
+        ),
+      }))
+      .sort((a, b) => (a.player?.name || "").localeCompare(b.player?.name || "", "de"))
+  }, [trials, players])
+
+  const paidModuleCodesByPlayer = useMemo(() => {
+    const result = new Map<string, Set<string>>()
+
+    for (const summary of paidMembershipSummaries) {
+      const paidCodes = result.get(summary.membership.player_id) || new Set<string>()
+      for (const module of summary.modules) paidCodes.add(module.code)
+      result.set(summary.membership.player_id, paidCodes)
+    }
+
+    return result
+  }, [paidMembershipSummaries])
+
+  const paidAccessSummaries = useMemo(
+    () =>
+      paidMembershipSummaries.map((summary) => {
+        const paidModuleCodes =
+          paidModuleCodesByPlayer.get(summary.membership.player_id) || new Set<string>()
+        const trialGroup = activeTrialGroups.find(
+          (group) => group.playerId === summary.membership.player_id,
+        )
+        const trialOnlyModules = (trialGroup?.trials || [])
+          .map((trial) => ({
+            trial,
+            module: modules.find((module) => module.code === trial.module_code) || null,
+          }))
+          .filter(({ trial }) => !paidModuleCodes.has(trial.module_code))
+
+        return {
+          ...summary,
+          trialOnlyModules,
+        }
+      }),
+    [paidMembershipSummaries, activeTrialGroups, modules, paidModuleCodesByPlayer],
+  )
+
+  const activeTrialOnlyGroups = useMemo(
+    () =>
+      activeTrialGroups
+        .map((group) => {
+          const paidModuleCodes = paidModuleCodesByPlayer.get(group.playerId) || new Set<string>()
+          const trialOnlyEntries = group.trials.filter(
+            (trial) => !paidModuleCodes.has(trial.module_code),
+          )
+
+          return {
+            ...group,
+            trials: trialOnlyEntries,
+            startsOn: trialOnlyEntries.reduce(
+              (earliest, trial) =>
+                !earliest || trial.starts_on < earliest ? trial.starts_on : earliest,
+              "",
+            ),
+            endsOn: trialOnlyEntries.reduce(
+              (latest, trial) => !latest || trial.ends_on > latest ? trial.ends_on : latest,
+              "",
+            ),
+          }
+        })
+        .filter((group) => group.trials.length > 0),
+    [activeTrialGroups, paidModuleCodesByPlayer],
+  )
+
+  const moduleBillingSummary = useMemo(
+    () =>
+      modules
+        .map((module) => {
+          let totalCount = 0
+          let monthlyCount = 0
+          let annualCount = 0
+          let monthlyRevenue = 0
+          let annualRevenue = 0
+
+          for (const summary of paidMembershipSummaries) {
+            const row = summary.rows.find((item) => item.module_id === module.id)
+            if (!row) continue
+
+            totalCount += 1
+            if (summary.membership.billing_cycle === "monthly") {
+              monthlyCount += 1
+              monthlyRevenue += Number(row.monthly_price_snapshot || 0)
+            } else {
+              annualCount += 1
+              annualRevenue += Number(row.annual_price_snapshot || 0)
+            }
+          }
+
+          return {
+            module,
+            totalCount,
+            monthlyCount,
+            annualCount,
+            monthlyRevenue,
+            annualRevenue,
+          }
+        })
+        .filter((item) => item.totalCount > 0),
+    [modules, paidMembershipSummaries],
+  )
+
+  const monthlyBillingTotal = paidMembershipSummaries
+    .filter((item) => item.membership.billing_cycle === "monthly")
+    .reduce((sum, item) => sum + item.monthlyAmount, 0)
+
+  const annualBillingTotal = paidMembershipSummaries
+    .filter((item) => item.membership.billing_cycle === "annual")
+    .reduce((sum, item) => sum + item.annualAmount, 0)
+
+  const projectedAnnualTotal = annualBillingTotal + monthlyBillingTotal * 12
+  const activeMembershipsWithoutPaidModules = activePaidMemberships.filter(
+    (membership) =>
+      !membershipModuleRows.some((row) => row.membership_id === membership.id),
+  )
+  return (
+    <div className="w-full space-y-6">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
+          <div className="flex gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50">
+              <WalletCards className="h-6 w-6 text-orange-600" />
+            </div>
+
+            <div>
+              <h2 className="text-lg font-black text-gray-900">Mitgliedschaften & Module</h2>
+              <p className="mt-1 text-sm font-semibold text-gray-600">
+                Pakete, Zahlungsrhythmus und Zugangs-Module der Vereinsmitglieder verwalten.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void loadData()}
+            disabled={loading}
+            className="rounded-xl"
+          >
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            Neu laden
+          </Button>
+        </div>
+      </div>
+
+      {message ? (
+        <div
+          className={cn(
+            "rounded-xl border px-4 py-3 text-sm font-bold",
+            message.type === "success" && "border-green-200 bg-green-50 text-green-800",
+            message.type === "error" && "border-red-200 bg-red-50 text-red-800",
+            message.type === "info" && "border-blue-200 bg-blue-50 text-blue-800",
+          )}
+        >
+          {message.text}
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm lg:grid-cols-4">
+        {([
+          ["overview", "Übersicht"],
+          ["paid", "Zahlungen"],
+          ["trials", `Test (${activeTrialOnlyGroups.length})`],
+          ["manage", "Verwalten"],
+        ] as Array<[AdminMembershipView, string]>).map(([view, label]) => (
+          <button
+            key={view}
+            type="button"
+            onClick={() => setActiveView(view)}
+            className={cn(
+              "rounded-xl px-3 py-3 text-sm font-black transition",
+              activeView === view
+                ? "bg-orange-600 text-white shadow-sm"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeView === "overview" ? (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <Card className="rounded-2xl border border-green-200 bg-green-50 shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-green-700">Mitglieder mit echter Zahlung</div>
+                <div className="mt-1 text-3xl font-black text-green-800">{paidPlayerCount}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-purple-200 bg-purple-50 shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-purple-700">Testmitglieder</div>
+                <div className="mt-1 text-3xl font-black text-purple-800">
+                  {activeTrialOnlyGroups.length}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-blue-200 bg-blue-50 shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-blue-700">Monatlich tatsächlich bezahlt</div>
+                <div className="mt-1 text-2xl font-black text-blue-800">
+                  {formatEUR(actuallyPaidMonthlyTotal)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-orange-200 bg-orange-50 shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-orange-700">Jährlich tatsächlich bezahlt</div>
+                <div className="mt-1 text-2xl font-black text-orange-800">
+                  {formatEUR(actuallyPaidAnnualTotal)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border border-gray-300 bg-gray-900 text-white shadow-sm">
+              <CardContent className="p-5">
+                <div className="text-sm font-bold text-gray-300">Tatsächlich eingegangen</div>
+                <div className="mt-1 text-2xl font-black">{formatEUR(actuallyPaidTotal)}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle>Tatsächlich bezahlte Module</CardTitle>
+              <CardDescription>
+                Ausschließlich bestätigte Zahlungseingänge mit Zahlungsdatum. Keine Hochrechnung und keine bloß aktiven Mitgliedschaften.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {paidModulePaymentSummary.length === 0 ? (
+                <div className="p-6 text-sm font-semibold text-gray-500">
+                  Noch keine bestätigten Zahlungseingänge vorhanden.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[700px] text-left text-sm">
+                    <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                      <tr>
+                        <th className="px-5 py-3">Modul</th>
+                        <th className="px-4 py-3 text-center">Bezahlvorgänge</th>
+                        <th className="px-5 py-3 text-right">Tatsächlich bezahlt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {paidModulePaymentSummary.map((item) => (
+                        <tr key={item.module.id}>
+                          <td className="px-5 py-4 font-black text-gray-900">{item.module.name}</td>
+                          <td className="px-4 py-4 text-center">
+                            <Badge variant="outline" className="rounded-full font-black">
+                              {item.paymentCount}×
+                            </Badge>
+                          </td>
+                          <td className="px-5 py-4 text-right font-black text-gray-900">
+                            {formatEUR(item.paidTotal)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => setActiveView("paid")}
+              className="rounded-2xl border border-green-200 bg-green-50 p-5 text-left transition hover:border-green-300"
+            >
+              <div className="text-sm font-black text-green-800">Bezahlte Module öffnen</div>
+              <div className="mt-1 text-sm font-semibold text-green-700">
+                Exakt verrechnete Module, Preise und Zahlungsarten.
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView("trials")}
+              className="rounded-2xl border border-purple-200 bg-purple-50 p-5 text-left transition hover:border-purple-300"
+            >
+              <div className="text-sm font-black text-purple-800">Testzugänge öffnen</div>
+              <div className="mt-1 text-sm font-semibold text-purple-700">
+                Alle kostenlosen Freischaltungen und Laufzeiten.
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView("manage")}
+              className="rounded-2xl border border-orange-200 bg-orange-50 p-5 text-left transition hover:border-orange-300"
+            >
+              <div className="text-sm font-black text-orange-800">Mitgliedschaft verwalten</div>
+              <div className="mt-1 text-sm font-semibold text-orange-700">
+                Pakete ändern, Tests vergeben und Anfragen bearbeiten.
+              </div>
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {activeView === "paid" ? (
+        <MembershipAccountingPanel user={user} />
+      ) : null}
+
+      {activeView === "trials" ? (
+        <Card className="overflow-hidden rounded-2xl border border-purple-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-purple-100 bg-purple-50/70">
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-purple-600" />
+              Aktive Testfreischaltungen
+            </CardTitle>
+            <CardDescription>
+              Diese Zugänge sind kostenlos und werden in keiner Abrechnung berücksichtigt.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4 sm:p-5">
+            {activeTrialOnlyGroups.length === 0 ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm font-semibold text-gray-500">
+                Keine aktiven Testfreischaltungen vorhanden.
+              </div>
+            ) : (
+              activeTrialOnlyGroups.map((group) => (
+                <div key={group.playerId} className="rounded-2xl border border-purple-100 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-black text-gray-900">
+                          {group.player?.name || "Unbekanntes Mitglied"}
+                        </div>
+                        <Badge className="rounded-full bg-purple-100 text-purple-800 hover:bg-purple-100">
+                          TEST · KOSTENLOS
+                        </Badge>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {group.trials.map((trial) => {
+                          const module = modules.find((item) => item.code === trial.module_code)
+                          return (
+                            <Badge key={trial.id} variant="outline" className="rounded-full border-purple-200 bg-purple-50 text-purple-800">
+                              {module?.name || trial.module_code}
+                            </Badge>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-sm font-bold text-purple-800 lg:text-right">
+                      <div>{new Date(`${group.startsOn}T00:00:00`).toLocaleDateString("de-AT")}</div>
+                      <div>bis {new Date(`${group.endsOn}T00:00:00`).toLocaleDateString("de-AT")}</div>
+                      <div className="mt-1 text-xs font-semibold text-purple-600">{group.trials.length} Module</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {activeView === "manage" ? (
+        <>
+      {pendingChangeRequests.length > 0 ? (
+        <Card className="overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-orange-100 bg-orange-50/70">
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-600" />
+              Offene Mitgliedschaftsanfragen
+            </CardTitle>
+            <CardDescription>
+              Bar- und Überweisungsanfragen erst nach Zahlungseingang bestätigen. Stripe wird später automatisch verarbeitet.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-3 p-4 sm:p-5">
+            {pendingChangeRequests.map((request) => {
+              const player = players.find((p) => p.id === request.player_id)
+              const requestRows = changeRequestModules.filter(
+                (row) => row.request_id === request.id,
+              )
+              const isReviewing = reviewingRequestId === request.id
+
+              return (
+                <div
+                  key={request.id}
+                  className="rounded-2xl border border-gray-200 bg-white p-4"
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="text-base font-black text-gray-900">
+                          {player?.name || "Unbekanntes Mitglied"}
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={
+                            request.request_type === "cancel"
+                              ? "rounded-full border-red-200 bg-red-50 text-red-700"
+                              : "rounded-full border-orange-200 bg-orange-50 text-orange-700"
+                          }
+                        >
+                          {request.request_type === "cancel" ? "KÜNDIGUNG" : "In Prüfung"}
+                        </Badge>
+                      </div>
+
+                      {request.request_type === "cancel" ? (
+                        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+                          <div className="text-xs font-black uppercase tracking-wide text-red-700">
+                            Komplette Mitgliedschaft kündigen
+                          </div>
+                          <div className="mt-2 text-lg font-black text-red-900">
+                            Kündigung zum{" "}
+                            {request.requested_end_on
+                              ? new Date(`${request.requested_end_on}T00:00:00`).toLocaleDateString("de-AT")
+                              : "—"}
+                          </div>
+                          {request.note ? (
+                            <div className="mt-2 text-sm font-semibold text-red-800">
+                              Grund / Notiz: {request.note}
+                            </div>
+                          ) : null}
+                          <div className="mt-2 text-xs font-semibold text-red-700">
+                            Bei Stripe wird das bestehende Abo auf dieses Kündigungsdatum beendet.
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Badge variant="outline" className="rounded-full">
+                              {request.billing_cycle === "monthly" ? "Monatlich" : "Jährlich"}
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full">
+                              {paymentLabel(request.payment_method)}
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full">
+                              {requestRows.length} Module
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full font-black">
+                              {request.billing_cycle === "monthly"
+                                ? `${formatEUR(request.monthly_total)} / Monat`
+                                : `${formatEUR(request.annual_total)} / Jahr`}
+                            </Badge>
+                          </div>
+
+                          {(() => {
+                            const changes = getRequestChangeSummary(request)
+
+                            return (
+                              <div className="mt-4 space-y-3">
+                                <div className="text-xs font-black uppercase tracking-wide text-gray-500">
+                                  Gewünschte Änderung
+                                </div>
+
+                                {changes.addedModules.length === 0 &&
+                                changes.removedModules.length === 0 &&
+                                !changes.billingChanged &&
+                                !changes.paymentChanged ? (
+                                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-bold text-gray-600">
+                                    Keine erkennbare Änderung zum aktuellen Paket
+                                  </div>
+                                ) : null}
+
+                                {changes.addedModules.map((module) => (
+                                  <div
+                                    key={`add-${module.id}`}
+                                    className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-black text-green-800"
+                                  >
+                                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                    AKTIVIEREN: {module.name}
+                                  </div>
+                                ))}
+
+                                {changes.removedModules.map((module) => (
+                                  <div
+                                    key={`remove-${module.id}`}
+                                    className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-black text-red-800"
+                                  >
+                                    <XCircle className="h-4 w-4 shrink-0" />
+                                    DEAKTIVIEREN: {module.name}
+                                  </div>
+                                ))}
+
+                                {changes.billingChanged && changes.currentMembership ? (
+                                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-800">
+                                    Abrechnung:{" "}
+                                    <span className="line-through opacity-70">
+                                      {changes.currentMembership.billing_cycle === "monthly"
+                                        ? "Monatlich"
+                                        : "Jährlich"}
+                                    </span>{" "}
+                                    →{" "}
+                                    <span className="font-black">
+                                      {request.billing_cycle === "monthly"
+                                        ? "Monatlich"
+                                        : "Jährlich"}
+                                    </span>
+                                  </div>
+                                ) : null}
+
+                                {changes.paymentChanged && changes.currentMembership ? (
+                                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-800">
+                                    Zahlungsart:{" "}
+                                    <span className="line-through opacity-70">
+                                      {paymentLabel(changes.currentMembership.payment_method)}
+                                    </span>{" "}
+                                    →{" "}
+                                    <span className="font-black">
+                                      {paymentLabel(request.payment_method)}
+                                    </span>
+                                  </div>
+                                ) : null}
+                              </div>
+                            )
+                          })()}
+                        </>
+                      )}
+
+                      <div className="mt-3 text-xs font-semibold text-gray-400">
+                        Anfrage vom{" "}
+                        {new Date(request.created_at).toLocaleDateString("de-AT", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 flex-col items-start gap-2">
+                      {request.request_type !== "cancel" && request.payment_method === "stripe" ? (
+                        <div
+                          className={cn(
+                            "rounded-xl border px-3 py-2 text-xs font-black",
+                            request.payment_status === "paid"
+                              ? "border-green-200 bg-green-50 text-green-800"
+                              : "border-blue-200 bg-blue-50 text-blue-800",
+                          )}
+                        >
+                          {request.payment_status === "paid"
+                            ? "Stripe bezahlt · automatische Verarbeitung abgeschlossen/gestartet"
+                            : "Stripe · automatische Verarbeitung · Zahlung noch offen"}
+                        </div>
+                      ) : null}
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => void rejectChangeRequest(request)}
+                          disabled={
+                            !!reviewingRequestId ||
+                            (request.request_type !== "cancel" &&
+                              request.payment_method === "stripe" &&
+                              request.payment_status !== "paid")
+                          }
+                          className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                        >
+                          {isReviewing ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <XCircle className="mr-2 h-4 w-4" />
+                          )}
+                          Ablehnen
+                        </Button>
+
+                        <Button
+                          type="button"
+                          onClick={() =>
+                            request.request_type === "cancel"
+                              ? void approveCancellationRequest(request)
+                              : void approveChangeRequest(request)
+                          }
+                          disabled={
+                            !!reviewingRequestId ||
+                            (request.request_type !== "cancel" &&
+                              request.payment_method === "stripe" &&
+                              request.payment_status !== "paid")
+                          }
+                          className="rounded-xl bg-green-600 font-black text-white hover:bg-green-700"
+                        >
+                          {isReviewing ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                          )}
+                          {request.request_type === "cancel"
+                            ? "Kündigung bestätigen"
+                            : request.payment_method === "stripe" &&
+                                request.payment_status !== "paid"
+                              ? "Wartet auf Stripe"
+                              : "Bestätigen"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {selectedPlayer ? (
+        <Card className="overflow-hidden rounded-2xl border border-purple-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-purple-100 bg-purple-50/70">
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-purple-600" />
+              Testphase / Testpaket
+            </CardTitle>
+            <CardDescription>
+              Kostenloser Zugang für eine definierte Zeit. Testmodule werden nicht als bezahlte Mitgliedschaft verrechnet.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-5 p-5">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+              <div className="text-xs font-black uppercase tracking-wide text-gray-500">
+                Ausgewähltes Mitglied
+              </div>
+              <div className="mt-1 text-lg font-black text-gray-900">{selectedPlayer.name}</div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2 md:col-span-2">
+                <Label>Testpaket</Label>
+                <Select
+                  value={trialPreset}
+                  onValueChange={(value) =>
+                    setTrialPreset(value as "edart" | "steeldart" | "both" | "full")
+                  }
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="edart">E-Dart Liga testen</SelectItem>
+                    <SelectItem value="steeldart">Steeldart Liga testen</SelectItem>
+                    <SelectItem value="both">E-Dart + Steeldart testen</SelectItem>
+                    <SelectItem value="full">Komplettpaket testen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Start</Label>
+                <Input
+                  type="date"
+                  value={trialStartsOn}
+                  onChange={(event) => setTrialStartsOn(event.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Ende</Label>
+                <Input
+                  type="date"
+                  value={trialEndsOn}
+                  onChange={(event) => setTrialEndsOn(event.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notiz (optional)</Label>
+              <Input
+                value={trialNote}
+                onChange={(event) => setTrialNote(event.target.value)}
+                placeholder="z. B. Testsaison 2026/27"
+                className="rounded-xl"
+              />
+            </div>
+
+            <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4">
+              <div className="text-xs font-black uppercase tracking-wide text-purple-700">
+                Wird kostenlos freigeschaltet
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {trialPresetCodes(trialPreset).map((code) => {
+                  const module = modules.find((item) => item.code === code)
+
+                  return (
+                    <Badge
+                      key={code}
+                      variant="outline"
+                      className="rounded-full border-purple-200 bg-white text-purple-700"
+                    >
+                      {module?.name || code}
+                    </Badge>
+                  )
+                })}
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              onClick={() => void createTrialPackage()}
+              disabled={savingTrial || !trialEndsOn}
+              className="rounded-xl bg-purple-600 font-black text-white hover:bg-purple-700"
+            >
+              {savingTrial ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Gift className="mr-2 h-4 w-4" />
+              )}
+              Testpaket freischalten
+            </Button>
+
+            {activeTrialsForPlayer(selectedPlayer.id).length > 0 ? (
+              <div className="border-t border-gray-100 pt-4">
+                <div className="mb-3 flex items-center gap-2 font-black text-gray-900">
+                  <CalendarDays className="h-4 w-4 text-purple-600" />
+                  Aktive Testfreischaltungen
+                </div>
+
+                <div className="space-y-2">
+                  {activeTrialsForPlayer(selectedPlayer.id).map((trial) => {
+                    const module = modules.find((item) => item.code === trial.module_code)
+
+                    return (
+                      <div
+                        key={trial.id}
+                        className="flex flex-col gap-2 rounded-xl border border-purple-100 bg-purple-50/60 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <div className="font-black text-purple-900">
+                            {module?.name || trial.module_code}
+                          </div>
+                          <div className="text-xs font-semibold text-purple-700">
+                            {new Date(`${trial.starts_on}T00:00:00`).toLocaleDateString("de-AT")} –{" "}
+                            {new Date(`${trial.ends_on}T00:00:00`).toLocaleDateString("de-AT")}
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={savingTrial}
+                          onClick={() => void cancelTrial(trial.id)}
+                          className="rounded-xl border-red-200 text-red-700 hover:bg-red-50"
+                        >
+                          Beenden
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_1fr]">
+        <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <CardHeader>
+            <CardTitle>Mitglied auswählen</CardTitle>
+            <CardDescription>
+              Suche nach Name oder E-Mail-Adresse.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Mitglied suchen..."
+                className="pl-9"
+              />
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-gray-200">
+              <ScrollArea className="h-[620px]">
+                <div className="space-y-2 p-3">
+                  {loading ? (
+                    <div className="flex items-center gap-2 p-3 text-sm font-semibold text-gray-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Mitglieder werden geladen...
+                    </div>
+                  ) : filteredPlayers.length === 0 ? (
+                    <div className="p-6 text-center text-sm font-semibold text-gray-500">
+                      Keine Mitglieder gefunden.
+                    </div>
+                  ) : (
+                    filteredPlayers.map((player) => {
+                      const membership = memberships.find(
+                        (m) =>
+                          m.player_id === player.id &&
+                          (m.status === "active" || m.status === "pending" || m.status === "paused"),
+                      )
+
+                      const isSelected = selectedPlayerId === player.id
+
+                      return (
+                        <button
+                          key={player.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPlayerId(player.id)
+                            setMessage(null)
+
+                            // Beim Spielerwechsel keine Paketdaten des vorherigen
+                            // Mitglieds kurz weiter anzeigen.
+                            setBillingCycle("annual")
+                            setPaymentMethod("cash")
+                            setStatus("active")
+                            setStartsOn(todayISO())
+                            setEndsOn("")
+                            setSelectedModuleIds(
+                              new Set(modules.filter((m) => m.is_required_base).map((m) => m.id)),
+                            )
+                          }}
+                          className={cn(
+                            "w-full rounded-2xl border p-3 text-left transition",
+                            isSelected
+                              ? "border-orange-300 bg-orange-50 shadow-sm"
+                              : "border-gray-200 bg-white hover:bg-gray-50",
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="truncate font-black text-gray-900">{player.name}</div>
+                              {player.email ? (
+                                <div className="mt-1 truncate text-xs font-semibold text-gray-500">
+                                  {player.email}
+                                </div>
+                              ) : null}
+                            </div>
+
+                            {membership ? (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "shrink-0 rounded-full",
+                                  membership.status === "active" &&
+                                    "border-green-200 bg-green-50 text-green-700",
+                                  membership.status === "pending" &&
+                                    "border-orange-200 bg-orange-50 text-orange-700",
+                                )}
+                              >
+                                {statusLabel(membership.status)}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="shrink-0 rounded-full">
+                                Kein Paket
+                              </Badge>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-6">
+          <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <CardHeader>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle>
+                    {selectedPlayer ? selectedPlayer.name : "Kein Mitglied ausgewählt"}
+                  </CardTitle>
+                  <CardDescription>
+                    Zahlungsweise und Mitgliedschaftsstatus festlegen.
+                  </CardDescription>
+                </div>
+
+                {selectedMembership ? (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "w-fit rounded-full px-3 py-1",
+                      selectedMembership.status === "active" &&
+                        "border-green-200 bg-green-50 text-green-700",
+                      selectedMembership.status === "pending" &&
+                        "border-orange-200 bg-orange-50 text-orange-700",
+                    )}
+                  >
+                    {statusLabel(selectedMembership.status)}
+                  </Badge>
+                ) : null}
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>Abrechnung</Label>
+                  <Select
+                    value={billingCycle}
+                    onValueChange={(value) => handleBillingCycleChange(value as BillingCycle)}
+                    disabled={!selectedPlayer}
+                  >
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monatlich</SelectItem>
+                      <SelectItem value="annual">Jährlich</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Zahlungsart</Label>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={(value) => handlePaymentMethodChange(value as PaymentMethod)}
+                    disabled={!selectedPlayer}
+                  >
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="stripe">Stripe</SelectItem>
+                      <SelectItem value="transfer" disabled={billingCycle === "monthly"}>
+                        Überweisung / Erlagschein
+                      </SelectItem>
+                      <SelectItem value="cash" disabled={billingCycle === "monthly"}>
+                        Bar im Verein
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select
+                    value={status}
+                    onValueChange={(value) => setStatus(value as MembershipStatus)}
+                    disabled={!selectedPlayer}
+                  >
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Ausständig</SelectItem>
+                      <SelectItem value="active">Aktiv</SelectItem>
+                      <SelectItem value="paused">Pausiert</SelectItem>
+                      <SelectItem value="cancelled">Gekündigt</SelectItem>
+                      <SelectItem value="expired">Abgelaufen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Beginn</Label>
+                  <Input
+                    type="date"
+                    value={startsOn}
+                    onChange={(event) => setStartsOn(event.target.value)}
+                    disabled={!selectedPlayer}
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Ende (optional)</Label>
+                  <Input
+                    type="date"
+                    value={endsOn}
+                    onChange={(event) => setEndsOn(event.target.value)}
+                    disabled={!selectedPlayer}
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+
+              {billingCycle === "monthly" ? (
+                <div className="flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-800">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
+                  Monatliche Zahlung ist nur über Stripe vorgesehen. Überweisung und Barzahlung sind bei jährlicher Zahlung verfügbar.
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle>Module</CardTitle>
+              <CardDescription>
+                Grundmitgliedschaft ist verpflichtend. E-Dart und Steeldart aktivieren automatisch die Premium App.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-3">
+              {modules.map((module) => {
+                const checked = selectedModuleIds.has(module.id)
+                const isBase = module.is_required_base
+
+                return (
+                  <div
+                    key={module.id}
+                    className={cn(
+                      "rounded-2xl border p-4 transition",
+                      checked ? "border-orange-200 bg-orange-50/50" : "border-gray-200 bg-white",
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="font-black text-gray-900">{module.name}</div>
+
+                          {isBase ? (
+                            <Badge
+                              variant="outline"
+                              className="rounded-full border-orange-200 bg-orange-50 text-orange-700"
+                            >
+                              Pflicht
+                            </Badge>
+                          ) : null}
+
+                          {module.code === "premium_app" ? (
+                            <Badge
+                              variant="outline"
+                              className="rounded-full border-purple-200 bg-purple-50 text-purple-700"
+                            >
+                              Premium
+                            </Badge>
+                          ) : null}
+                        </div>
+
+                        {module.description ? (
+                          <p className="mt-1 text-sm font-semibold text-gray-500">
+                            {module.description}
+                          </p>
+                        ) : null}
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Badge variant="outline" className="rounded-full">
+                            {formatEUR(module.monthly_price)} / Monat
+                          </Badge>
+                          <Badge variant="outline" className="rounded-full">
+                            {formatEUR(module.annual_price)} / Jahr
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <Switch
+                        checked={isBase ? true : checked}
+                        disabled={!selectedPlayer || isBase}
+                        onCheckedChange={(value) => toggleModule(module, value)}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </CardContent>
+          </Card>
+
+          <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <CardContent className="p-5 sm:p-6">
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Euro className="h-5 w-5 text-orange-600" />
+                    <div className="text-sm font-black uppercase tracking-wide text-gray-500">
+                      Gesamtpaket
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-2">
+                    <div>
+                      <div className="text-3xl font-black text-gray-900">
+                        {formatEUR(monthlyTotal)}
+                      </div>
+                      <div className="text-sm font-semibold text-gray-500">pro Monat</div>
+                    </div>
+
+                    <div>
+                      <div className="text-3xl font-black text-orange-600">
+                        {formatEUR(annualTotal)}
+                      </div>
+                      <div className="text-sm font-semibold text-gray-500">pro Jahr</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Badge variant="outline" className="rounded-full">
+                      {selectedModules.length} Module
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full">
+                      {billingCycle === "monthly" ? "Monatliche Abrechnung" : "Jährliche Abrechnung"}
+                    </Badge>
+                    <Badge variant="outline" className="rounded-full">
+                      {paymentLabel(paymentMethod)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={saveMembership}
+                  disabled={saving || loading || !selectedPlayer || !hasChanges}
+                  className={cn(
+                    "h-12 rounded-xl px-6 font-black text-white",
+                    !hasChanges && selectedMembership
+                      ? "bg-green-600 disabled:opacity-100"
+                      : "bg-orange-600 hover:bg-orange-700",
+                  )}
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Wird gespeichert...
+                    </>
+                  ) : !hasChanges && selectedMembership ? (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Gespeichert ✓
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Mitgliedschaft speichern
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {selectedMembership?.billing_cycle === "monthly" &&
+          selectedMembership?.payment_method !== "stripe" ? (
+            <div className="flex gap-3 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm font-semibold text-yellow-800">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+              Dieses vorhandene Testpaket verwendet monatliche Abrechnung mit {paymentLabel(selectedMembership.payment_method)}.
+              Beim nächsten Speichern wird für monatliche Zahlung Stripe verlangt.
+            </div>
+          ) : null}
+        </div>
+      </div>
+        </>
+      ) : null}
+    </div>
+  )
+}

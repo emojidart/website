@@ -1,0 +1,7 @@
+-- Bereits live in Supabase ausgeführt.
+-- Enthält:
+-- terminal_member_has_module
+-- terminal_tournament_access_for_pin
+-- terminal_list_tournament_registration_items
+-- Terminal-RPCs für zentrale Turniere und Turnierserien
+-- Gäste nur public; interne/externe Zugänge nur mit passendem Mitgliedsmodul.

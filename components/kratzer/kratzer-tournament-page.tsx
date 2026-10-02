@@ -40,7 +40,7 @@ import {
 } from "@/actions/tournament"
 
 import { Header } from "@/components/header"
-import { TournamentAdminNav } from "@/components/admin/tournaments/tournament-admin-nav"
+import { TournamentAdminNav } from "@/app/admin/_komponenten/turniere/turnier-navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 
@@ -755,8 +755,8 @@ export function KratzerTournamentPage() {
     showToast("info", "Turnier wird abgeschlossen und Daten finalisiert...")
     await updateKratzerTournamentStatus(tournamentState.tournamentId, "finished")
     await clearRegisteredPlayers()
-    showToast("success", "Turnier erfolgreich abgeschlossen. Weiterleitung zur Spielerdatenbank.")
-    window.location.href = "/spielerdatenbank"
+    showToast("success", "Turnier erfolgreich abgeschlossen.")
+    window.location.href = "/admin"
   }, [tournamentState.tournamentId, showToast])
 
   const confirmCancelTournament = useCallback(() => {
@@ -771,8 +771,8 @@ export function KratzerTournamentPage() {
         }
 
         resetTournamentState()
-        showToast("info", "Turnier abgebrochen. Sie werden zur Kratzer - Startseite weitergeleitet.")
-        window.location.href = "/kratzer-tournament"
+        showToast("info", "Turnier abgebrochen.")
+        window.location.href = "/admin"
       },
     })
 
@@ -881,6 +881,14 @@ export function KratzerTournamentPage() {
       />
 
       <main className="mx-auto w-full max-w-[1920px] px-3 py-5 sm:px-5 lg:px-8 xl:px-10 2xl:px-12">
+        {activeTournamentExists && recoveryTournamentData && (
+          <RecoveryBanner
+            recoveryTournamentData={recoveryTournamentData}
+            onRestore={restoreTournament}
+            onStartNew={startNewTournamentFromRecovery}
+          />
+        )}
+
         <TournamentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {activeTab === "register" ? (
@@ -900,14 +908,6 @@ export function KratzerTournamentPage() {
           />
         ) : (
           <>
-            {activeTournamentExists && recoveryTournamentData && (
-              <RecoveryBanner
-                recoveryTournamentData={recoveryTournamentData}
-                onRestore={restoreTournament}
-                onStartNew={startNewTournamentFromRecovery}
-              />
-            )}
-
             <TournamentControlsCard
               settings={tournamentState.settings}
               isTournamentRunning={isTournamentRunning}

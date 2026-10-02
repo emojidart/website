@@ -170,20 +170,13 @@ function getEventStatus(ev: UiEvent, nowMs: number) {
 }
 
 const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.12 },
-  },
+  hidden: { opacity: 1 },
+  visible: { opacity: 1 },
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 18 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 110, damping: 14 },
-  },
+  hidden: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0 },
 }
 
 export default function LionCupRegistrationPage() {
@@ -660,26 +653,31 @@ export default function LionCupRegistrationPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans pb-24 md:pb-0">
-      <Header />
+    <div className="min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans pb-24 md:pb-0">
+      <Header variant="app" title="Lion Cup Anmeldung" subtitle="Lion Cup · Öffentlich" backHref="/lion-cup" />
 
-      <main className="pt-16 sm:pt-14">
-        <div className="mx-auto w-full max-w-[1800px] px-2 pt-3 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
-          <a href="/" className="text-sm font-black text-orange-700 hover:text-orange-800">
-            ← Zur Startseite
-          </a>
-        </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[#050608]">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.31]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(245,158,11,.16),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(249,115,22,.13),transparent_27%),radial-gradient(circle_at_52%_82%,rgba(14,165,233,.07),transparent_24%)]" />
+      </div>
+
+
+      <main className="relative z-10 pt-20 sm:pt-24">
         <motion.div
-          className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
+          className="mx-auto w-full max-w-[var(--emd-content-max)] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8"
           variants={containerVariants}
-          initial="hidden"
+          initial={false}
           animate="visible"
         >
           <motion.div variants={itemVariants} className="mb-5">
-            <div className="rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)] overflow-hidden">
+            <div className="rounded-[28px] border border-white/[0.08] bg-black/30 backdrop-blur-xl shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)] overflow-hidden">
               <div className="bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
                 <div className="flex items-start gap-4">
-                  <div className="shrink-0 rounded-2xl border border-white/20 bg-white/10 p-3 text-orange-300">
+                  <div className="shrink-0 rounded-2xl border border-white/20 bg-black/30 p-3 text-orange-300">
                     <Sparkles className="h-6 w-6" />
                   </div>
 
@@ -692,26 +690,26 @@ export default function LionCupRegistrationPage() {
                       Lion Cup Anmeldung
                     </h1>
 
-                    <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-3xl">
+                    <p className="mt-2 text-sm sm:text-base text-white/48 max-w-3xl">
                      
                     </p>
 
                     <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-2">
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-900">
-                        <Clock className="h-4 w-4 text-orange-700" />
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-amber-300/15 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100">
+                        <Clock className="h-4 w-4 text-amber-200" />
                         Anmeldung ab <strong>00:00 Uhr</strong>
                       </div>
 
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-900">
-                        <XCircle className="h-4 w-4 text-red-700" />
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200">
+                        <XCircle className="h-4 w-4 text-red-200" />
                         An- und Abmeldung bis{" "}
                         <strong>10 Minuten vor Start</strong>
                       </div>
 
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700">
-                        <Trophy className="h-4 w-4 text-orange-700" />
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 text-xs font-semibold text-white/60">
+                        <Trophy className="h-4 w-4 text-amber-200" />
                         Startgeld:{" "}
-                        <strong className="text-gray-900">
+                        <strong className="text-white">
                           {Number(series?.startgeld ?? 0).toFixed(2)} €
                         </strong>
                       </div>
@@ -725,9 +723,9 @@ export default function LionCupRegistrationPage() {
           </motion.div>
 
           {loading ? (
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm">
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-orange-600" />
-              <div className="mt-2 text-sm font-semibold text-gray-600">
+            <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-6 text-center shadow-sm">
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-amber-200" />
+              <div className="mt-2 text-sm font-semibold text-white/48">
                 Lion Cup wird geladen...
               </div>
             </div>
@@ -736,7 +734,7 @@ export default function LionCupRegistrationPage() {
               {error ? (
                 <motion.div
                   variants={itemVariants}
-                  className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800"
+                  className="mb-4 rounded-2xl border border-red-300/[0.16] bg-red-500/[0.08] p-4 text-sm font-semibold text-red-800"
                 >
                   {error}
                 </motion.div>
@@ -745,7 +743,7 @@ export default function LionCupRegistrationPage() {
               {success ? (
                 <motion.div
                   variants={itemVariants}
-                  className="mb-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800"
+                  className="mb-4 rounded-2xl border border-emerald-300/[0.16] bg-emerald-500/[0.08] p-4 text-sm font-semibold text-green-800"
                 >
                   {success}
                 </motion.div>
@@ -753,34 +751,34 @@ export default function LionCupRegistrationPage() {
 
               <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,520px)_minmax(0,1fr)] gap-5">
                 <motion.div variants={itemVariants}>
-                  <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
-                    <div className="p-5 border-b border-gray-100">
+                  <div className="rounded-[22px] border border-white/[0.08] bg-black/30 shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
+                    <div className="p-5 border-b border-white/[0.07]">
                       <div className="flex items-center gap-2">
-                        <UserPlus className="h-5 w-5 text-orange-600" />
-                        <h2 className="text-lg font-black text-gray-900">
+                        <UserPlus className="h-5 w-5 text-amber-200" />
+                        <h2 className="text-lg font-black text-white">
                           Jetzt anmelden
                         </h2>
                       </div>
 
-                      <div className="mt-2 text-sm font-semibold text-gray-600">
+                      <div className="mt-2 text-sm font-semibold text-white/48">
                         {registrationInfoText}
                       </div>
                     </div>
 
                     <div className="p-5">
                       {todayEvent ? (
-                        <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                          <div className="font-black text-gray-900">
+                        <div className="mb-4 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
+                          <div className="font-black text-white">
                             {todayEvent.title}
                           </div>
 
-                          <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-600">
+                          <div className="mt-2 flex flex-wrap gap-3 text-sm text-white/48">
                             <span className="inline-flex items-center gap-1">
-                              <Calendar className="h-4 w-4 text-orange-600" />
+                              <Calendar className="h-4 w-4 text-amber-200" />
                               {todayEvent.dateLabel}
                             </span>
                             <span className="inline-flex items-center gap-1">
-                              <Clock className="h-4 w-4 text-orange-600" />
+                              <Clock className="h-4 w-4 text-amber-200" />
                               {todayEvent.timeLabel}
                             </span>
                           </div>
@@ -789,8 +787,8 @@ export default function LionCupRegistrationPage() {
                             <div
                               className={
                                 currentStatus.registrationClosed
-                                  ? "mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-800"
-                                  : "mt-3 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-xs font-black text-green-800"
+                                  ? "mt-3 rounded-xl border border-red-300/[0.16] bg-red-500/[0.08] px-3 py-2 text-xs font-black text-red-800"
+                                  : "mt-3 rounded-xl border border-emerald-300/[0.16] bg-emerald-500/[0.08] px-3 py-2 text-xs font-black text-green-800"
                               }
                             >
                               {currentStatus.registrationClosed
@@ -800,30 +798,30 @@ export default function LionCupRegistrationPage() {
                                   )}`}
                             </div>
                           ) : (
-                            <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-black text-orange-800">
+                            <div className="mt-3 rounded-xl border border-amber-300/[0.16] bg-amber-500/[0.08] px-3 py-2 text-xs font-black text-orange-800">
                               Anmeldung erst am Turniertag möglich
                             </div>
                           )}
                         </div>
                       ) : (
-                        <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-semibold text-orange-900">
+                        <div className="mb-4 rounded-2xl border border-amber-300/[0.16] bg-amber-500/[0.08] p-4 text-sm font-semibold text-orange-900">
                           Kein aktiver Lion Cup Spieltag gefunden.
                         </div>
                       )}
 
                       {accountLoading ? (
-                        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm font-bold text-gray-600 flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
+                        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 text-sm font-bold text-white/48 flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-amber-200" />
                           Anmeldung wird vorbereitet...
                         </div>
                       ) : null}
 
                       {!accountLoading && accountType === "member" ? (
-                        <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+                        <div className="rounded-2xl border border-emerald-300/[0.16] bg-emerald-500/[0.08] p-4">
                           <div className="flex items-start gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                            <CheckCircle2 className="h-5 w-5 text-emerald-200 mt-0.5" />
                             <div>
-                              <div className="font-black text-gray-900">
+                              <div className="font-black text-white">
                                 Mitglieder-Anmeldung
                               </div>
                               <div className="mt-1 text-sm text-green-800 font-semibold">
@@ -833,7 +831,7 @@ export default function LionCupRegistrationPage() {
                           </div>
 
                           {memberAlreadyRegistered && ownRegistration ? (
-                            <div className="mt-4 rounded-xl border border-green-300 bg-white px-3 py-2 text-xs font-black text-green-800">
+                            <div className="mt-4 rounded-xl border border-green-300 bg-black/30 px-3 py-2 text-xs font-black text-green-800">
                               Du bist bereits angemeldet.
                             </div>
                           ) : null}
@@ -845,7 +843,7 @@ export default function LionCupRegistrationPage() {
                               onClick={openMemberModal}
                               className={
                                 canRegister
-                                  ? "mt-4 w-full rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
+                                  ? "mt-4 w-full rounded-xl bg-amber-500 hover:bg-amber-400 text-white"
                                   : "mt-4 w-full rounded-xl"
                               }
                               variant={canRegister ? "default" : "outline"}
@@ -858,7 +856,7 @@ export default function LionCupRegistrationPage() {
                               type="button"
                               onClick={openMemberModal}
                               variant="outline"
-                              className="mt-4 w-full rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50"
+                              className="mt-4 w-full rounded-xl border-amber-300/[0.16] text-amber-200 hover:bg-amber-500/[0.08]"
                             >
                               <CheckCircle2 className="h-4 w-4 mr-2" />
                               Anmeldung anzeigen
@@ -866,7 +864,7 @@ export default function LionCupRegistrationPage() {
                           )}
 
                           {memberAlreadyRegistered && !canUnregister ? (
-                            <div className="mt-3 text-xs font-bold text-red-700">
+                            <div className="mt-3 text-xs font-bold text-red-200">
                               Die Abmeldung ist nicht mehr möglich.
                             </div>
                           ) : null}
@@ -874,11 +872,11 @@ export default function LionCupRegistrationPage() {
                       ) : null}
 
                       {!accountLoading && accountType === "guest" ? (
-                        <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+                        <div className="rounded-2xl border border-emerald-300/[0.16] bg-emerald-500/[0.08] p-4">
                           <div className="flex items-start gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                            <CheckCircle2 className="h-5 w-5 text-emerald-200 mt-0.5" />
                             <div>
-                              <div className="font-black text-gray-900">
+                              <div className="font-black text-white">
                                 Gast-Anmeldung
                               </div>
                               <div className="mt-1 text-sm text-green-800 font-semibold">
@@ -887,11 +885,11 @@ export default function LionCupRegistrationPage() {
                             </div>
                           </div>
 
-                          <div className="mt-4 rounded-2xl border border-green-200 bg-white p-4">
-                            <div className="text-xs font-black text-green-700 uppercase">
+                          <div className="mt-4 rounded-2xl border border-emerald-300/[0.16] bg-black/30 p-4">
+                            <div className="text-xs font-black text-emerald-200 uppercase">
                               Spieler
                             </div>
-                            <div className="mt-1 text-lg font-black text-gray-900">
+                            <div className="mt-1 text-lg font-black text-white">
                               {guestPlayerName || "—"}
                             </div>
                             <div className="mt-1 text-sm font-semibold text-green-800">
@@ -900,7 +898,7 @@ export default function LionCupRegistrationPage() {
                           </div>
 
                           {guestAlreadyRegistered && ownRegistration ? (
-                            <div className="mt-4 rounded-xl border border-green-300 bg-white px-3 py-2 text-xs font-black text-green-800">
+                            <div className="mt-4 rounded-xl border border-green-300 bg-black/30 px-3 py-2 text-xs font-black text-green-800">
                               Du bist bereits angemeldet.
                             </div>
                           ) : null}
@@ -919,7 +917,7 @@ export default function LionCupRegistrationPage() {
                                 canRegister &&
                                 guestPlayerId &&
                                 guestPlayerName
-                                  ? "mt-4 w-full rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
+                                  ? "mt-4 w-full rounded-xl bg-amber-500 hover:bg-amber-400 text-white"
                                   : "mt-4 w-full rounded-xl"
                               }
                               variant={
@@ -948,7 +946,7 @@ export default function LionCupRegistrationPage() {
                               disabled={!canUnregister || removing}
                               onClick={handleUnregister}
                               variant="outline"
-                              className="mt-4 w-full rounded-xl border-red-200 text-red-700 hover:bg-red-50"
+                              className="mt-4 w-full rounded-xl border-red-300/[0.16] text-red-200 hover:bg-red-500/[0.08]"
                             >
                               {removing ? (
                                 <>
@@ -965,7 +963,7 @@ export default function LionCupRegistrationPage() {
                           )}
 
                           {guestAlreadyRegistered && !canUnregister ? (
-                            <div className="mt-3 text-xs font-bold text-red-700">
+                            <div className="mt-3 text-xs font-bold text-red-200">
                               Die Abmeldung ist nicht mehr möglich.
                             </div>
                           ) : null}
@@ -973,9 +971,9 @@ export default function LionCupRegistrationPage() {
                       ) : null}
 
                       {!accountLoading && accountType === "unknown" ? (
-                        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                        <div className="rounded-2xl border border-amber-300/[0.16] bg-amber-500/[0.08] p-4">
                           <div className="flex items-start gap-2">
-                            <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
+                            <AlertTriangle className="h-5 w-5 text-amber-200 mt-0.5" />
                             <div>
                               <div className="font-black text-orange-900">
                                 Anmeldung nicht verfügbar
@@ -1007,18 +1005,18 @@ export default function LionCupRegistrationPage() {
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
-                  <div className="rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
-                    <div className="p-5 border-b border-gray-100">
+                  <div className="rounded-[22px] border border-white/[0.08] bg-black/30 shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
+                    <div className="p-5 border-b border-white/[0.07]">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <Users className="h-5 w-5 text-orange-600" />
-                            <h2 className="text-lg font-black text-gray-900">
+                            <Users className="h-5 w-5 text-amber-200" />
+                            <h2 className="text-lg font-black text-white">
                               Aktuelle Anmeldungen
                             </h2>
                           </div>
 
-                          <div className="mt-1 text-sm font-semibold text-gray-500">
+                          <div className="mt-1 text-sm font-semibold text-white/35">
                             {registeredPlayers.length} Spieler angemeldet
                           </div>
                         </div>
@@ -1042,8 +1040,8 @@ export default function LionCupRegistrationPage() {
                                 key={player.id}
                                 className={
                                   isOwn
-                                    ? "rounded-2xl border-2 border-orange-300 bg-orange-50 p-4 shadow-sm"
-                                    : "rounded-2xl border border-green-200 bg-green-50 p-4 shadow-sm"
+                                    ? "rounded-2xl border-2 border-orange-300 bg-amber-500/[0.08] p-4 shadow-sm"
+                                    : "rounded-2xl border border-emerald-300/[0.16] bg-emerald-500/[0.08] p-4 shadow-sm"
                                 }
                               >
                                 <div className="flex items-start justify-between gap-3">
@@ -1051,14 +1049,14 @@ export default function LionCupRegistrationPage() {
                                     <div
                                       className={
                                         isOwn
-                                          ? "text-xs text-orange-700 font-semibold"
-                                          : "text-xs text-green-700 font-semibold"
+                                          ? "text-xs text-amber-200 font-semibold"
+                                          : "text-xs text-emerald-200 font-semibold"
                                       }
                                     >
                                       #{index + 1}
                                     </div>
 
-                                    <div className="font-black text-gray-900">
+                                    <div className="font-black text-white">
                                       {player.player_name}
                                     </div>
 
@@ -1076,7 +1074,7 @@ export default function LionCupRegistrationPage() {
                                   <span
                                     className={
                                       isOwn
-                                        ? "rounded-full bg-orange-600 text-white px-3 py-1 text-[11px] font-black"
+                                        ? "rounded-full bg-amber-500 text-white px-3 py-1 text-[11px] font-black"
                                         : "rounded-full bg-green-600 text-white px-3 py-1 text-[11px] font-black"
                                     }
                                   >
@@ -1088,7 +1086,7 @@ export default function LionCupRegistrationPage() {
                           })}
                         </div>
                       ) : (
-                        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 text-sm font-semibold text-gray-600">
+                        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-5 text-sm font-semibold text-white/48">
                           Noch keine Anmeldungen vorhanden.
                         </div>
                       )}

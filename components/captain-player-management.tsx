@@ -415,115 +415,92 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
 
   if (managedTeams.length === 0) {
     return (
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Crown className="h-5 w-5 text-yellow-600" />
-            Spieler hinzufügen
-          </CardTitle>
-          <CardDescription>Du musst Kapitän oder Co-Kapitän eines Teams sein, um Spieler hinzuzufügen.</CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-300/[0.16] bg-amber-500/[0.08]">
+            <Crown className="h-5 w-5 text-amber-200" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white">Spieler hinzufügen</h3>
+            <p className="mt-1 text-sm font-semibold leading-5 text-white/40">
+              Du musst Kapitän oder Co-Kapitän eines Teams sein, um Spieler hinzuzufügen.
+            </p>
+          </div>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-      <CardHeader className="border-b border-slate-100 px-4 py-5 sm:px-5 sm:py-6">
+    <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-white/[0.025]">
+      <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
-            <UserRoundPlus className="h-5 w-5 text-orange-600" />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.16] bg-orange-500/[0.08]">
+            <UserRoundPlus className="h-5 w-5 text-orange-200" />
           </div>
+
           <div className="min-w-0">
-            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300/55">
               Spielerverwaltung
             </div>
-            <CardTitle className="mt-0.5 text-xl font-black tracking-tight text-slate-950">
+            <h3 className="mt-0.5 text-lg font-black text-white sm:text-xl">
               Spieler zum Team hinzufügen
-            </CardTitle>
-            <CardDescription className="mt-1 text-sm font-medium leading-5 text-slate-500">
-              Wähle einen bestehenden Spieler aus und füge ihn zu deinem Team hinzu.
-            </CardDescription>
+            </h3>
+            <p className="mt-1 text-sm font-semibold leading-5 text-white/40">
+              Bestehenden Spieler auswählen und dem richtigen Team zuordnen.
+            </p>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="px-4 py-5 sm:px-5 sm:py-6">
-        <section className="mb-6 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50/60">
-          <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-3.5 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50">
-              <Info className="h-4 w-4 text-orange-600" />
+      <div className="p-3.5 sm:p-5">
+        <section className="mb-5 overflow-hidden rounded-[20px] border border-white/[0.08] bg-black/20">
+          <div className="flex items-center gap-3 border-b border-white/[0.07] bg-white/[0.025] px-3.5 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-300/[0.14] bg-orange-500/[0.08]">
+              <Info className="h-4 w-4 text-orange-200" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Hinweise</div>
-              <div className="text-sm font-black text-slate-950">Was du beachten musst</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/25">Hinweise</div>
+              <div className="text-sm font-black text-white">Was du beachten musst</div>
             </div>
           </div>
 
-          <div className="grid gap-2.5 p-3.5 sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
-              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Spielerauswahl</div>
-              <p className="mt-1.5 text-sm font-medium leading-5 text-slate-600">
-                Du kannst nur bestehende Spieler zu deinem Team hinzufügen.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
-              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Neue Spieler</div>
-              <p className="mt-1.5 text-sm font-medium leading-5 text-slate-600">
-                Neue Spieler werden nur vom Admin erstellt.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
-              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Rolle</div>
-              <p className="mt-1.5 text-sm font-medium leading-5 text-slate-600">
-                Spieler werden hier mit der Rolle „Spieler“ hinzugefügt.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
-              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Auswahl</div>
-              <p className="mt-1.5 text-sm font-medium leading-5 text-slate-600">
-                Ist ein Spieler bereits vorhanden, wählst du ihn direkt aus der Liste aus.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
-              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">E-Dart</div>
-              <p className="mt-1.5 text-sm font-medium leading-5 text-slate-700">
-                Angezeigt werden nur Spieler mit gültigem E-Dart-Liga-Paket.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
-              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Steeldart</div>
-              <p className="mt-1.5 text-sm font-medium leading-5 text-slate-700">
-                Angezeigt werden nur Spieler mit gültigem Steeldart-Liga-Paket.
-              </p>
-            </div>
+          <div className="grid gap-2.5 p-3.5 sm:grid-cols-2 xl:grid-cols-3">
+            {[
+              ["Spielerauswahl", "Nur bestehende Spieler können hinzugefügt werden."],
+              ["Neue Spieler", "Neue Spieler werden ausschließlich vom Admin erstellt."],
+              ["Rolle", "Die Zuordnung erfolgt hier immer als Spieler."],
+              ["Auswahl", "Bereits vorhandene Spieler werden direkt aus der Liste gewählt."],
+              ["E-Dart", "Es erscheinen nur Spieler mit gültigem E-Dart-Liga-Paket."],
+              ["Steeldart", "Es erscheinen nur Spieler mit gültigem Steeldart-Liga-Paket."],
+            ].map(([title, copy]) => (
+              <div key={title} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
+                <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/25">{title}</div>
+                <p className="mt-1.5 text-sm font-semibold leading-5 text-white/50">{copy}</p>
+              </div>
+            ))}
           </div>
         </section>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="selectedTeam">Team auswählen *</Label>
+              <Label htmlFor="selectedTeam" className="text-sm font-black text-white/70">Team auswählen *</Label>
               <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-slate-50/70 font-semibold shadow-none focus:border-orange-400 focus:ring-orange-200">
+                <SelectTrigger className="h-11 rounded-xl border-white/[0.10] bg-[#0a0d12] font-semibold text-white shadow-none focus:border-orange-300/40 focus:ring-orange-500/10">
                   <SelectValue placeholder="Team auswählen" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-white/[0.10] bg-[#0a0d12] text-white">
                   {managedTeams.map((membership) => (
-                    <SelectItem key={membership.team_id} value={membership.team_id}>
+                    <SelectItem key={membership.team_id} value={membership.team_id} className="focus:bg-white/[0.06] focus:text-white">
                       <div className="flex items-center gap-2">
                         {membership.role === "Captain" ? (
-                          <Crown className="h-4 w-4 text-yellow-600" />
+                          <Crown className="h-4 w-4 text-amber-300" />
                         ) : (
-                          <ShieldCheck className="h-4 w-4 text-blue-600" />
+                          <ShieldCheck className="h-4 w-4 text-sky-300" />
                         )}
                         <span>{membership.teams.name}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-white/35">
                           ({membership.teams.dart_type === "steeldart" ? "Steeldart" : "E-Dart"})
                         </span>
                       </div>
@@ -534,13 +511,13 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="selectedPlayer">Spieler auswählen *</Label>
+              <Label htmlFor="selectedPlayer" className="text-sm font-black text-white/70">Spieler auswählen *</Label>
               <Select
                 value={selectedPlayerId}
                 onValueChange={setSelectedPlayerId}
                 disabled={!selectedTeamId || loadingPlayers}
               >
-                <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-slate-50/70 font-semibold shadow-none focus:border-orange-400 focus:ring-orange-200">
+                <SelectTrigger className="h-11 rounded-xl border-white/[0.10] bg-[#0a0d12] font-semibold text-white shadow-none focus:border-orange-300/40 focus:ring-orange-500/10">
                   <SelectValue
                     placeholder={
                       loadingPlayers
@@ -553,28 +530,22 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
                     }
                   />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-white/[0.10] bg-[#0a0d12] text-white">
                   {availablePlayers.map((player) => (
-                    <SelectItem key={player.id} value={player.id}>
+                    <SelectItem key={player.id} value={player.id} className="focus:bg-white/[0.06] focus:text-white">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.04]">
                           {player.photo_url ? (
                             <div className="relative h-full w-full">
-                              <Image
-                                src={player.photo_url || "/placeholder.svg"}
-                                alt={player.name}
-                                fill
-                                style={{ objectFit: "cover" }}
-                              />
+                              <Image src={player.photo_url} alt={player.name} fill style={{ objectFit: "cover" }} />
                             </div>
                           ) : (
-                            <span className="text-[11px] font-black uppercase text-slate-500">
+                            <span className="text-[11px] font-black uppercase text-white/40">
                               {player.name?.charAt(0) || "?"}
                             </span>
                           )}
                         </div>
-                        <span className="font-semibold text-slate-800">{player.name}</span>
-
+                        <span className="font-semibold text-white/80">{player.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -583,19 +554,19 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label>Rolle im Team</Label>
-              <div className="flex h-11 items-center rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-slate-700">
-                <span className="font-medium">Spieler</span>
-                <span className="ml-2 text-xs text-gray-500">(Nur diese Rolle verfügbar)</span>
+              <Label className="text-sm font-black text-white/70">Rolle im Team</Label>
+              <div className="flex h-11 items-center rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-white/65">
+                <span className="font-black">Spieler</span>
+                <span className="ml-2 text-xs text-white/30">(Nur diese Rolle verfügbar)</span>
               </div>
             </div>
           </div>
 
-          {selectedPlayerId && (
-            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+          {selectedPlayerId ? (
+            <div className="rounded-[18px] border border-orange-300/[0.16] bg-orange-500/[0.06] p-4">
               <div className="flex items-center gap-3">
-                {allPlayers.find((p) => p.id === selectedPlayerId)?.photo_url && (
-                  <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-orange-200 bg-orange-50">
+                {allPlayers.find((p) => p.id === selectedPlayerId)?.photo_url ? (
+                  <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-orange-300/[0.18] bg-orange-500/[0.08]">
                     <Image
                       src={allPlayers.find((p) => p.id === selectedPlayerId)?.photo_url || "/placeholder.svg"}
                       alt="Spieler"
@@ -603,28 +574,28 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
                       style={{ objectFit: "cover" }}
                     />
                   </div>
-                )}
+                ) : null}
                 <div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-black text-white">
                     {allPlayers.find((p) => p.id === selectedPlayerId)?.name}
                   </p>
-                  <div className="flex gap-3 text-sm text-gray-600">
-                    {allPlayers.find((p) => p.id === selectedPlayerId)?.age && (
+                  <div className="mt-1 flex flex-wrap gap-3 text-sm text-white/40">
+                    {allPlayers.find((p) => p.id === selectedPlayerId)?.age ? (
                       <span>Alter: {allPlayers.find((p) => p.id === selectedPlayerId)?.age}</span>
-                    )}
-                    {allPlayers.find((p) => p.id === selectedPlayerId)?.origin && (
+                    ) : null}
+                    {allPlayers.find((p) => p.id === selectedPlayerId)?.origin ? (
                       <span>Herkunft: {allPlayers.find((p) => p.id === selectedPlayerId)?.origin}</span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
 
           <Button
             type="submit"
             disabled={loading || !selectedPlayerId || !selectedTeamId}
-            className="h-11 w-full rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-600 disabled:opacity-50"
+            className="h-11 w-full rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-400 disabled:opacity-40"
           >
             {loading ? (
               <div className="flex items-center space-x-2">
@@ -639,7 +610,7 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
             )}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

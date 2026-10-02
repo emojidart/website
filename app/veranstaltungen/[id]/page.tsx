@@ -195,16 +195,16 @@ function Chip({
 }) {
   const cls =
     tone === "orange"
-      ? "bg-orange-50 text-orange-900 border-orange-200"
+      ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
       : tone === "blue"
-        ? "bg-blue-50 text-blue-900 border-blue-200"
+        ? "bg-sky-400/10 text-sky-200 border-sky-400/25"
         : tone === "emerald"
-          ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+          ? "bg-emerald-400/10 text-emerald-200 border-emerald-400/25"
           : tone === "amber"
-            ? "bg-amber-50 text-amber-900 border-amber-200"
+            ? "bg-amber-400/10 text-amber-200 border-amber-400/25"
             : tone === "slate"
-              ? "bg-slate-50 text-slate-800 border-slate-200"
-              : "bg-slate-50 text-gray-800 border-gray-200"
+              ? "bg-white/5 text-white/65 border-white/10"
+              : "bg-white/5 text-white/75 border-white/10"
 
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
@@ -232,7 +232,7 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
       aria-modal="true"
     >
       <div className="absolute top-3 right-3 z-10">
-        <Button variant="secondary" className="gap-2 rounded-xl" onClick={onClose} type="button">
+        <Button variant="secondary" className="gap-2 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={onClose} type="button">
           <X className="w-4 h-4" />
           Schließen
         </Button>
@@ -466,13 +466,23 @@ async function loadParticipants(eventId: string) {
     !membershipLoading && hasRequiredEventPackage
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-slate-950 overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
       <Header />
 
-      <main className="pt-12 sm:pt-14 pb-44 sm:pb-36">
-        <div className="w-full max-w-none px-2 py-3 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8">
+      {/* Stabiler Hintergrund wie im Member-Profil – ohne Lade-/Fade-Effekt */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
+        <div
+          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
+          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
+      </div>
+
+      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-44 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
+        <div className="w-full">
           <div className="sticky top-[56px] z-20 mb-4">
-            <div className="rounded-[20px] border border-slate-200 bg-white/90 backdrop-blur shadow-sm px-3 py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 rounded-[20px] border border-white/10 bg-black/45 px-3 py-2 shadow-[0_18px_60px_-46px_rgba(0,0,0,.95)] backdrop-blur-2xl">
               <Button
                 variant="outline"
                 size="sm"
@@ -484,31 +494,31 @@ async function loadParticipants(eventId: string) {
                 Zurück
               </Button>
 
-              <Button asChild variant="outline" size="sm" className="rounded-xl">
+              <Button asChild variant="outline" size="sm" className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10">
                 <Link href="/veranstaltungen">Übersicht</Link>
               </Button>
             </div>
           </div>
 
           {loading ? (
-            <div className="py-16 text-center text-slate-600">Lade Veranstaltung…</div>
+            <div className="rounded-[22px] border border-white/10 bg-white/5 py-16 text-center text-white/55">Lade Veranstaltung…</div>
           ) : error ? (
-            <div className="py-16 text-center text-red-600">{error}</div>
+            <div className="rounded-[22px] border border-red-400/20 bg-red-400/10 py-16 text-center text-red-300">{error}</div>
           ) : !event ? (
-            <div className="py-16 text-center text-slate-600">Nicht gefunden.</div>
+            <div className="rounded-[22px] border border-white/10 bg-white/5 py-16 text-center text-white/55">Nicht gefunden.</div>
           ) : (
             <>
-              <Card className="rounded-3xl border border-gray-200 shadow-sm overflow-hidden bg-white">
+              <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
                 {event.photo_url ? (
                   <button
                     type="button"
-                    className="relative h-56 sm:h-64 bg-gray-200 w-full group"
+                    className="group relative h-56 w-full bg-black/40 sm:h-72 lg:h-80"
                     onClick={() => setOpenImg(true)}
                     aria-label="Flyer vergrößern"
                   >
                     <Image src={event.photo_url} alt={event.name} fill className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-80" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition" />
+                    <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
 
                     <div className="absolute right-3 top-3 inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-full bg-black/55 text-white">
                       <ZoomIn className="w-4 h-4" />
@@ -520,7 +530,7 @@ async function loadParticipants(eventId: string) {
                 )}
 
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-2xl sm:text-3xl font-black leading-tight">{event.name}</CardTitle>
+                  <CardTitle className="text-3xl font-black leading-tight tracking-[-0.035em] text-white sm:text-4xl">{event.name}</CardTitle>
 
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Chip tone="gray">
@@ -557,22 +567,22 @@ async function loadParticipants(eventId: string) {
 
                 <CardContent className="pt-2 pb-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="space-y-3 text-sm text-slate-700">
+                    <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_55px_-42px_rgba(0,0,0,.95)]">
+                      <div className="space-y-3 text-sm text-white/70">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-orange-600" />
+                          <Calendar className="w-4 h-4 text-orange-300" />
                           <span className="font-medium">
                             {formatDateRangeDE(event.start_date, event.end_date, event.event_date)}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-orange-600" />
+                          <Clock className="w-4 h-4 text-orange-300" />
                           <span>{formatTimeDE(event.event_time)} Uhr</span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-orange-600" />
+                          <MapPin className="w-4 h-4 text-orange-300" />
                           <span className="line-clamp-2">{event.location || "Wird bekannt gegeben"}</span>
                         </div>
 
@@ -587,7 +597,7 @@ async function loadParticipants(eventId: string) {
 
                         {event.max_participants ? (
                           <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-orange-600" />
+                            <Users className="w-4 h-4 text-orange-300" />
                             <span>
                               <span className="font-semibold">Max. Teilnehmer:</span> {event.max_participants}
                             </span>
@@ -596,33 +606,33 @@ async function loadParticipants(eventId: string) {
                       </div>
                     </div>
 
-                    <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="text-sm font-semibold text-slate-950 mb-2">Details</div>
-                      <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                    <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_55px_-42px_rgba(0,0,0,.95)]">
+                      <div className="mb-2 text-sm font-black text-white">Details</div>
+                      <div className="whitespace-pre-wrap text-sm leading-relaxed text-white/65">
                         {event.details?.trim() ? event.details : "Keine weiteren Details."}
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_55px_-42px_rgba(0,0,0,.95)]">
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="text-sm font-semibold text-slate-950">Teilnahme</div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-sm font-black text-white">Teilnahme</div>
+                        <div className="text-xs text-white/45">
                           {goingParticipants.length + maybeParticipants.length + declinedParticipants.length} Antwort(en)
                         </div>
                       </div>
 
                       {!currentUserId ? (
-                        <div className="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 px-4 py-4 shadow-sm">
+                        <div className="rounded-2xl border border-orange-400/25 bg-orange-400/10 px-4 py-4 shadow-sm">
                           <div className="flex items-start gap-3">
-                            <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-100 shadow-sm">
-                              <Info className="h-5 w-5 text-orange-700" />
+                            <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-400/10 shadow-sm">
+                              <Info className="h-5 w-5 text-orange-300" />
                             </div>
 
                             <div className="min-w-0">
-                              <div className="text-base font-black text-orange-900">Login erforderlich</div>
-                              <div className="mt-1 text-sm text-orange-800 leading-relaxed">
+                              <div className="text-base font-black text-orange-100">Login erforderlich</div>
+                              <div className="mt-1 text-sm text-orange-200 leading-relaxed">
                                 Bitte einloggen, um für dieses Event zuzusagen, vielleicht anzugeben oder abzusagen.
                               </div>
 
@@ -635,18 +645,18 @@ async function loadParticipants(eventId: string) {
                           </div>
                         </div>
                       ) : membershipLoading ? (
-                        <div className="rounded-xl border border-gray-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/55">
                           Berechtigung wird geprüft…
                         </div>
                       ) : isClubOnlyEvent && !hasRequiredEventPackage ? (
-                        <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4">
-                          <div className="font-black text-orange-900">
+                        <div className="rounded-2xl border border-orange-400/25 bg-orange-400/10 px-4 py-4">
+                          <div className="font-black text-orange-100">
                             Paket „{requiredEventPackageLabel}“ erforderlich
                           </div>
-                          <div className="mt-1 text-sm font-semibold text-orange-800">
+                          <div className="mt-1 text-sm font-semibold text-orange-200">
                             Diese Veranstaltung ist nur für Vereinsmitglieder mit diesem Paket freigeschaltet.
                           </div>
-                          <Button asChild variant="outline" className="mt-3 rounded-xl border-orange-300 bg-white font-bold">
+                          <Button asChild variant="outline" className="mt-3 rounded-xl border-orange-400/30 bg-white/5 font-bold text-white hover:bg-white/10">
                             <Link href="/member-membership">Mitgliedschaft ansehen</Link>
                           </Button>
                         </div>
@@ -690,21 +700,21 @@ async function loadParticipants(eventId: string) {
                             </Button>
                           </div>
 
-                          <div className="mt-3 rounded-xl bg-slate-50 border border-gray-200 px-3 py-2 text-sm text-slate-700">
+                          <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/65">
                             Dein Status:{" "}
-                            <span className="font-semibold text-slate-950">
+                            <span className="font-semibold text-white">
                               {myParticipation ? getParticipantStatusLabel(myParticipation.status) : "Noch keine Antwort"}
                             </span>
                           </div>
 
                           {(event.access_type || "public") === "public" ? (
-                            <div className="mt-2 text-xs font-semibold text-blue-700">
+                            <div className="mt-2 text-xs font-semibold text-sky-300">
                               Öffentliche Veranstaltung – kein Veranstaltungspaket erforderlich.
                             </div>
                           ) : null}
 
                           {view?.isPast ? (
-                            <div className="mt-2 text-xs text-slate-500">
+                            <div className="mt-2 text-xs text-white/40">
                               Für vergangene Events kann nichts mehr geändert werden.
                             </div>
                           ) : null}
@@ -712,25 +722,25 @@ async function loadParticipants(eventId: string) {
                       )}
                     </div>
 
-                    <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="text-sm font-semibold text-slate-950 mb-3">Teilnehmer</div>
+                    <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_55px_-42px_rgba(0,0,0,.95)]">
+                      <div className="mb-3 text-sm font-black text-white">Teilnehmer</div>
 
                       <div className="space-y-4">
                         <div>
-                          <div className="inline-flex items-center rounded-full bg-green-50 text-green-800 border border-green-200 px-2.5 py-1 text-xs font-bold mb-2">
+                          <div className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 text-emerald-200 px-2.5 py-1 text-xs font-bold mb-2">
                             Dabei ({goingParticipants.length})
                           </div>
 
                           {goingParticipants.length === 0 ? (
-                            <div className="text-sm text-slate-500">Noch niemand.</div>
+                            <div className="text-sm text-white/40">Noch niemand.</div>
                           ) : (
                             <div className="space-y-2">
                               {goingParticipants.map((p) => (
                                 <div
                                   key={p.id}
-                                  className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 bg-slate-50/60"
+                                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2"
                                 >
-                                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
                                     {p.club_players?.photo_url ? (
                                       <img
                                         src={p.club_players.photo_url}
@@ -738,10 +748,10 @@ async function loadParticipants(eventId: string) {
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
-                                      <Users className="w-4 h-4 text-slate-500" />
+                                      <Users className="w-4 h-4 text-white/40" />
                                     )}
                                   </div>
-                                  <span className="text-sm text-slate-950 font-medium">
+                                  <span className="text-sm font-medium text-white/85">
                                     {p.club_players?.name || guestNameMap[p.user_id] || "Unbekannt"}
                                   </span>
                                 </div>
@@ -751,20 +761,20 @@ async function loadParticipants(eventId: string) {
                         </div>
 
                         <div>
-                          <div className="inline-flex items-center rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 text-xs font-bold mb-2">
+                          <div className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-400/10 text-amber-200 px-2.5 py-1 text-xs font-bold mb-2">
                             Vielleicht ({maybeParticipants.length})
                           </div>
 
                           {maybeParticipants.length === 0 ? (
-                            <div className="text-sm text-slate-500">Niemand.</div>
+                            <div className="text-sm text-white/40">Niemand.</div>
                           ) : (
                             <div className="space-y-2">
                               {maybeParticipants.map((p) => (
                                 <div
                                   key={p.id}
-                                  className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 bg-slate-50/60"
+                                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2"
                                 >
-                                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
                                     {p.club_players?.photo_url ? (
                                       <img
                                         src={p.club_players.photo_url}
@@ -772,10 +782,10 @@ async function loadParticipants(eventId: string) {
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
-                                      <Users className="w-4 h-4 text-slate-500" />
+                                      <Users className="w-4 h-4 text-white/40" />
                                     )}
                                   </div>
-                                  <span className="text-sm text-slate-950 font-medium">
+                                  <span className="text-sm font-medium text-white/85">
                                     {p.club_players?.name || guestNameMap[p.user_id] || "Unbekannt"}
                                   </span>
                                 </div>
@@ -785,20 +795,20 @@ async function loadParticipants(eventId: string) {
                         </div>
 
                         <div>
-                          <div className="inline-flex items-center rounded-full bg-red-50 text-red-800 border border-red-200 px-2.5 py-1 text-xs font-bold mb-2">
+                          <div className="inline-flex items-center rounded-full border border-red-400/25 bg-red-400/10 text-red-200 px-2.5 py-1 text-xs font-bold mb-2">
                             Abgesagt ({declinedParticipants.length})
                           </div>
 
                           {declinedParticipants.length === 0 ? (
-                            <div className="text-sm text-slate-500">Niemand.</div>
+                            <div className="text-sm text-white/40">Niemand.</div>
                           ) : (
                             <div className="space-y-2">
                               {declinedParticipants.map((p) => (
                                 <div
                                   key={p.id}
-                                  className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 bg-slate-50/60"
+                                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2"
                                 >
-                                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
                                     {p.club_players?.photo_url ? (
                                       <img
                                         src={p.club_players.photo_url}
@@ -806,10 +816,10 @@ async function loadParticipants(eventId: string) {
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
-                                      <Users className="w-4 h-4 text-slate-500" />
+                                      <Users className="w-4 h-4 text-white/40" />
                                     )}
                                   </div>
-                                  <span className="text-sm text-slate-950 font-medium">
+                                  <span className="text-sm font-medium text-white/85">
                                     {p.club_players?.name || guestNameMap[p.user_id] || "Unbekannt"}
                                   </span>
                                 </div>
@@ -824,10 +834,10 @@ async function loadParticipants(eventId: string) {
               </Card>
 
               <div className="fixed inset-x-0 z-30 px-3 sm:px-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] sm:bottom-6">
-                <div className="mx-auto max-w-2xl">
-                  <div className="rounded-3xl border border-gray-200/80 bg-white/95 backdrop-blur-xl shadow-2xl p-3">
+                <div className="mx-auto max-w-3xl">
+                  <div className="rounded-3xl border border-white/10 bg-black/70 p-3 shadow-[0_24px_80px_-42px_rgba(0,0,0,.98)] backdrop-blur-2xl">
                     <div className="grid grid-cols-2 gap-2">
-                      <Button asChild variant="outline" className="h-12 rounded-2xl font-semibold bg-white">
+                      <Button asChild variant="outline" className="h-12 rounded-2xl border-white/10 bg-white/5 font-semibold text-white hover:bg-white/10">
                         <Link href="/veranstaltungen">
                           <ArrowLeft className="w-4 h-4 mr-2" />
                           Übersicht

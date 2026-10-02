@@ -8,10 +8,10 @@ function BracketContent() {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-950">
+    <div className="min-h-screen bg-[#050608] text-white">
       <Header />
       <main className="w-full pt-[64px]">
-        <Suspense fallback={<div className="grid min-h-[50vh] place-items-center text-sm font-bold text-slate-500">Turnier wird geladen…</div>}>
+        <Suspense fallback={<div className="grid min-h-[50vh] place-items-center text-sm font-bold text-white/45">Turnier wird geladen…</div>}>
           <BracketContent />
         </Suspense>
       </main>
