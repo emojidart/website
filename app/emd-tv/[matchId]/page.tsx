@@ -97,6 +97,7 @@ export default function EmdTvMatchPreviewPage() {
   const searchParams = useSearchParams()
   const matchId = params?.matchId
   const teamId = searchParams.get("team_id")
+  const embedded = searchParams.get("embedded") === "1"
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -306,12 +307,18 @@ export default function EmdTvMatchPreviewPage() {
 
   useEffect(() => {
     if (!playing || screens.length <= 1) return
+
+    const isFinal = screenIndex === screens.length - 1
     const timer = window.setTimeout(() => {
+      if (isFinal && embedded) {
+        window.parent.postMessage({ type: "EMD_TV_LINEUP_COMPLETE", matchId, teamId }, window.location.origin)
+        return
+      }
       setScreenIndex((prev) => (prev + 1) % screens.length)
-    }, screenIndex === 0 ? 5200 : screenIndex === screens.length - 1 ? 5200 : 3400)
+    }, screenIndex === 0 ? 5200 : isFinal ? 7000 : 3400)
 
     return () => window.clearTimeout(timer)
-  }, [playing, screenIndex, screens.length])
+  }, [playing, screenIndex, screens.length, embedded, matchId, teamId])
 
   useEffect(() => {
     if (screenIndex !== 0) return
@@ -432,7 +439,7 @@ export default function EmdTvMatchPreviewPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#030509] text-white">
-        <Header variant="app" title="EMD TV" subtitle="Match Preview" backHref="/emd-tv" />
+        {!embedded ? <Header variant="app" title="EMD TV" subtitle="Match Preview" backHref="/emd-tv" /> : null}
         <main className="flex min-h-screen items-center justify-center">
           <div className="text-center">
             <Tv2 className="mx-auto h-10 w-10 animate-pulse text-orange-300" />
@@ -447,14 +454,14 @@ export default function EmdTvMatchPreviewPage() {
   if (error || !match || !screens[screenIndex]) {
     return (
       <div className="min-h-screen bg-[#030509] text-white">
-        <Header variant="app" title="EMD TV" subtitle="Match Preview" backHref="/emd-tv" />
+        {!embedded ? <Header variant="app" title="EMD TV" subtitle="Match Preview" backHref="/emd-tv" /> : null}
         <main className="mx-auto flex min-h-[80vh] max-w-2xl items-center justify-center px-4">
           <div className="w-full rounded-[28px] border border-white/[0.08] bg-black/35 p-7 text-center backdrop-blur-xl">
             <Tv2 className="mx-auto h-10 w-10 text-white/25" />
             <div className="mt-4 text-lg font-black">{error || "Match Preview nicht verfügbar"}</div>
           </div>
         </main>
-        <MobileBottomNav />
+        {!embedded ? <MobileBottomNav /> : null}
       </div>
     )
   }
@@ -481,11 +488,13 @@ export default function EmdTvMatchPreviewPage() {
 
   return (
     <div className="emd-tv-page min-h-screen overflow-hidden bg-[#020305] text-white">
-      <div className="emd-tv-page-header">
-        <Header variant="app" title="EMD TV" subtitle="Match Preview" backHref="/emd-tv" />
-      </div>
+      {!embedded ? (
+        <div className="emd-tv-page-header">
+          <Header variant="app" title="EMD TV" subtitle="Match Preview" backHref="/emd-tv" />
+        </div>
+      ) : null}
 
-      <main className="emd-tv-main mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14">
+      <main className={`emd-tv-main mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 ${embedded ? "!fixed !inset-0 !max-w-none !p-0" : ""}`}>
         <style>{`
           .emd-tv-frame{
             width:min(1280px,96vw);
@@ -497,6 +506,15 @@ export default function EmdTvMatchPreviewPage() {
             background:#080b11;
             box-shadow:0 40px 120px rgba(0,0,0,.65);
             margin:0 auto;
+          }
+          .emd-tv-frame-embedded{
+            width:100vw;
+            height:100vh;
+            max-width:none;
+            max-height:none;
+            border-radius:0;
+            border:0;
+            margin:0;
           }
           .emd-tv-frame:after{
             content:"";
@@ -1413,7 +1431,7 @@ export default function EmdTvMatchPreviewPage() {
           }
         `}</style>
 
-        <section ref={frameRef} className="emd-tv-frame" onClick={() => { if (window.innerWidth <= 760 && !document.fullscreenElement) void enterFullscreen() }}>
+        <section ref={frameRef} className={`emd-tv-frame ${embedded ? "emd-tv-frame-embedded" : ""}`} onClick={() => { if (!embedded && window.innerWidth <= 760 && !document.fullscreenElement) void enterFullscreen() }}>
           <div className="emd-arena-atmosphere" aria-hidden="true">
             <span className="emd-ember e1" />
             <span className="emd-ember e2" />
@@ -1427,7 +1445,7 @@ export default function EmdTvMatchPreviewPage() {
             <div className="emd-tv-logo">EMD <b>TV</b></div>
             <div className="emd-tv-actions">
               <div className="emd-tv-live">MATCH PREVIEW</div>
-              <button
+              {!embedded ? <button
                 type="button"
                 className="emd-tv-close"
                 aria-label="Preview beenden"
@@ -1438,7 +1456,7 @@ export default function EmdTvMatchPreviewPage() {
                 }}
               >
                 <X className="h-5 w-5" />
-              </button>
+              </button> : null}
             </div>
           </div>
 
@@ -1627,14 +1645,14 @@ export default function EmdTvMatchPreviewPage() {
             <i style={{ width: `${progress}%` }} />
           </div>
 
-          {!isFullscreen ? (
+          {!embedded && !isFullscreen ? (
             <div className="emd-mobile-fullscreen-hint">
               Antippen für Vollbild
             </div>
           ) : null}
         </section>
 
-        <div className="emd-tv-controls mx-auto mt-4 flex max-w-[1280px] flex-wrap items-center justify-center gap-2">
+        {!embedded ? <div className="emd-tv-controls mx-auto mt-4 flex max-w-[1280px] flex-wrap items-center justify-center gap-2">
           <button
             type="button"
             onClick={() => setPlaying((v) => !v)}
@@ -1664,12 +1682,14 @@ export default function EmdTvMatchPreviewPage() {
             <X className="h-4 w-4" />
             Beenden
           </button>
-        </div>
+        </div> : null}
       </main>
 
-      <div className="emd-tv-bottom-nav">
-        <MobileBottomNav />
-      </div>
+      {!embedded ? (
+        <div className="emd-tv-bottom-nav">
+          <MobileBottomNav />
+        </div>
+      ) : null}
     </div>
   )
 }

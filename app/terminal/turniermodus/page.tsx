@@ -9,6 +9,7 @@ import {
   Loader2,
   Minus,
   Plus,
+  Radio,
   RotateCcw,
   ShieldCheck,
   Target,
@@ -18,7 +19,6 @@ import {
 import { supabase } from "@/lib/supabase"
 import TerminalLink from "../_components/TerminalLink"
 import TerminalLoader from "../_components/TerminalLoader"
-import TerminalIdentityAuth, { type VerifiedTerminalIdentity } from "../_components/TerminalIdentityAuth"
 
 type ActiveMatch = {
   member_name: string
@@ -33,6 +33,17 @@ type ActiveMatch = {
   machine_number: number | null
 }
 
+
+type RunningMatch = {
+  tournament_id: string
+  tournament_type: string
+  match_id: number
+  player1: string
+  player2: string
+  score1: number
+  score2: number
+  machine_number: number
+}
 
 type MatchCall = {
   key: string
@@ -50,9 +61,11 @@ const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve
 
 export default function TerminalTournamentModePage() {
   const [pin, setPin] = useState("")
-  const [activeIdentity, setActiveIdentity] = useState<VerifiedTerminalIdentity | null>(null)
+  const [verifiedPin, setVerifiedPin] = useState("")
   const [pinMessage, setPinMessage] = useState("")
   const [loadingLabel, setLoadingLabel] = useState<string | null>(null)
+  const [runningMatches, setRunningMatches] = useState<RunningMatch[]>([])
+  const [selectedRunningMatch, setSelectedRunningMatch] = useState<RunningMatch | null>(null)
 
   const [match, setMatch] = useState<ActiveMatch | null>(null)
   const [score1, setScore1] = useState(0)
@@ -99,7 +112,7 @@ export default function TerminalTournamentModePage() {
   }, [match])
 
 
-  const terminalBusy = Boolean(match || confirmOpen || saving || loadingLabel || savedResult || externalResult)
+  const terminalBusy = Boolean(selectedRunningMatch || match || confirmOpen || saving || loadingLabel || savedResult || externalResult)
 
   const playMatchCallSound = () => {
     try {
@@ -199,6 +212,7 @@ export default function TerminalTournamentModePage() {
 
       if (keys.size === 0) {
         knownMatchesRef.current.clear()
+        setRunningMatches([])
         return
       }
 
@@ -212,7 +226,7 @@ export default function TerminalTournamentModePage() {
 
       const { data: matchRows } = await supabase
         .from("dko_match_states")
-        .select("tournament_id, tournament_type, match_id, machine_number, winner")
+        .select("tournament_id, tournament_type, match_id, player1, player2, score1, score2, machine_number, winner")
         .in("tournament_id", ids)
 
       if (!mounted) return
@@ -229,6 +243,33 @@ export default function TerminalTournamentModePage() {
         })
       })
       knownMatchesRef.current = nextKnown
+
+      const nextRunning = (matchRows || [])
+        .filter((row: any) => {
+          const tournamentKey = `${String(row.tournament_type || "")}:${String(row.tournament_id || "")}`
+          return (
+            keys.has(tournamentKey) &&
+            Number(row.machine_number) > 0 &&
+            !row.winner &&
+            String(row.player1 || "").trim() &&
+            String(row.player2 || "").trim()
+          )
+        })
+        .map((row: any): RunningMatch => ({
+          tournament_id: String(row.tournament_id),
+          tournament_type: String(row.tournament_type),
+          match_id: Number(row.match_id),
+          player1: String(row.player1 || "").trim(),
+          player2: String(row.player2 || "").trim(),
+          score1: Number(row.score1 || 0),
+          score2: Number(row.score2 || 0),
+          machine_number: Number(row.machine_number),
+        }))
+        .sort((a: RunningMatch, b: RunningMatch) =>
+          a.machine_number - b.machine_number || a.match_id - b.match_id,
+        )
+
+      setRunningMatches(nextRunning)
     }
 
     void refreshActiveTournaments()
@@ -264,6 +305,7 @@ export default function TerminalTournamentModePage() {
               const key = `${String(oldRow.tournament_type)}:${String(oldRow.tournament_id)}:${Number(oldRow.match_id)}`
               knownMatchesRef.current.delete(key)
             }
+            void refreshActiveTournaments()
             return
           }
 
@@ -343,6 +385,8 @@ export default function TerminalTournamentModePage() {
           if (startsNow) {
             enqueueMatchCall(row)
           }
+
+          void refreshActiveTournaments()
         },
       )
       .subscribe()
@@ -375,7 +419,8 @@ export default function TerminalTournamentModePage() {
   const resetToPin = () => {
     setPin("")
     setPinMessage("")
-    setActiveIdentity(null)
+    setSelectedRunningMatch(null)
+    setVerifiedPin("")
     setMatch(null)
     setScore1(0)
     setScore2(0)
@@ -397,55 +442,71 @@ export default function TerminalTournamentModePage() {
     setPinMessage("")
   }
 
-  const loadMatchForIdentity = async (identity: VerifiedTerminalIdentity) => {
+  const selectRunningMatch = (item: RunningMatch) => {
+    setPin("")
     setPinMessage("")
-    setLoadingLabel("Dein Match wird geladen")
-    setActiveIdentity(identity)
+    setVerifiedPin("")
+    setSelectedRunningMatch(item)
+  }
+
+  const openSelectedMatchWithPin = async () => {
+    if (!selectedRunningMatch || pin.length !== 4 || loadingLabel) return
+
+    const submittedPin = pin
+    setPinMessage("")
+    setLoadingLabel("Spiel wird geprüft")
 
     try {
-      const rpcPromise = supabase.rpc("terminal_get_active_match_for_identity", {
-        p_identity_kind: identity.identity_kind,
-        p_identity_id: identity.identity_id,
-        p_method: identity.auth_method,
-        p_secret: identity.secret,
+      // Bewusst die alte, bereits funktionierende Terminal-RPC verwenden.
+      // Wir filtern anschließend zusätzlich auf das vorher ausgewählte Match.
+      const { data, error } = await supabase.rpc("terminal_get_my_active_match", {
+        p_pin: submittedPin,
       })
-      const [{ data, error }] = await Promise.all([rpcPromise, sleep(900)])
       if (error) throw error
 
-      const row = Array.isArray(data) ? data[0] : null
+      const rows = Array.isArray(data) ? data : []
+      const row = rows.find((candidate: any) =>
+        String(candidate?.tournament_id) === String(selectedRunningMatch.tournament_id) &&
+        String(candidate?.tournament_type) === String(selectedRunningMatch.tournament_type) &&
+        Number(candidate?.match_id) === Number(selectedRunningMatch.match_id)
+      )
+
       if (!row) {
-        setLoadingLabel(null)
-        setActiveIdentity(null)
-        setPinMessage("Kein offenes Match für dieses Profil gefunden.")
+        setPin("")
+        setPinMessage("Diese PIN gehört nicht zu einem Spieler dieses Matches.")
         return
       }
 
       const activeMatch: ActiveMatch = {
-        member_name: String(row.member_name || ""),
+        member_name: String(row.member_name || "Spieler"),
         tournament_id: String(row.tournament_id),
         tournament_type: String(row.tournament_type),
         tournament_name: String(row.tournament_name || "Aktives Turnier"),
         match_id: Number(row.match_id),
-        player1: String(row.player1 || ""),
-        player2: String(row.player2 || ""),
+        player1: String(row.player1 || selectedRunningMatch.player1 || ""),
+        player2: String(row.player2 || selectedRunningMatch.player2 || ""),
         score1: Number(row.score1 || 0),
         score2: Number(row.score2 || 0),
-        machine_number: row.machine_number == null ? null : Number(row.machine_number),
+        machine_number: row.machine_number == null ? selectedRunningMatch.machine_number : Number(row.machine_number),
       }
 
+      setVerifiedPin(submittedPin)
       setMatch(activeMatch)
       setScore1(activeMatch.score1)
       setScore2(activeMatch.score2)
-      setLoadingLabel(null)
+      setSelectedRunningMatch(null)
+      setPin("")
     } catch (error: any) {
-      console.error("Terminal tournament auth error:", error)
-      setLoadingLabel(null)
-      setActiveIdentity(null)
+      console.error("Terminal tournament PIN error:", error)
+      const msg = String(error?.message || "").toLowerCase()
+      setPin("")
       setPinMessage(
-        String(error?.message || "").toLowerCase().includes("rate limited")
+        msg.includes("rate limited")
           ? "Zu viele Versuche. Bitte in 10 Minuten erneut versuchen."
-          : "Anmeldung konnte nicht geprüft werden.",
+          : "PIN konnte nicht geprüft werden.",
       )
+    } finally {
+      setLoadingLabel(null)
     }
   }
 
@@ -466,12 +527,9 @@ export default function TerminalTournamentModePage() {
     savingRef.current = true
 
     try {
-      if (!activeIdentity) throw new Error("identity missing")
-      const { error } = await supabase.rpc("terminal_save_match_result_for_identity", {
-        p_identity_kind: activeIdentity.identity_kind,
-        p_identity_id: activeIdentity.identity_id,
-        p_method: activeIdentity.auth_method,
-        p_secret: activeIdentity.secret,
+      if (!verifiedPin) throw new Error("verified pin missing")
+      const { error } = await supabase.rpc("terminal_save_my_match_result", {
+        p_pin: verifiedPin,
         p_tournament_id: match.tournament_id,
         p_tournament_type: match.tournament_type,
         p_match_id: match.match_id,
@@ -621,17 +679,17 @@ export default function TerminalTournamentModePage() {
             </div>
           </header>
 
-          <section className="mx-auto mt-6 max-w-6xl">
+          <section className="mx-auto mt-3 max-w-5xl">
             <div className="text-center">
               <div className="text-[11px] font-black uppercase tracking-[0.3em] text-orange-300/70">
                 {match.tournament_name}
               </div>
 
-              <h1 className="mt-2 text-3xl font-black tracking-[-0.05em] sm:text-5xl">
+              <h1 className="mt-1 text-3xl font-black tracking-[-0.05em] sm:text-4xl">
                 Ergebnis eintragen
               </h1>
 
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm font-bold text-white/35">
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-white/35 sm:text-sm">
                 <span>Match #{match.match_id}</span>
                 <>
                   <span>·</span>
@@ -646,7 +704,7 @@ export default function TerminalTournamentModePage() {
               </div>
             </div>
 
-            <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch">
+            <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch">
               <ScoreCard
                 name={match.player1?.trim() || "Gegner offen"}
                 score={score1}
@@ -657,7 +715,7 @@ export default function TerminalTournamentModePage() {
               />
 
               <div className="flex items-center justify-center">
-                <div className="rounded-2xl border border-white/10 bg-black/35 px-5 py-3 text-xl font-black text-white/35 backdrop-blur-xl">
+                <div className="rounded-xl border border-white/10 bg-black/35 px-4 py-2 text-base font-black text-white/35 backdrop-blur-xl">
                   VS
                 </div>
               </div>
@@ -692,14 +750,14 @@ export default function TerminalTournamentModePage() {
               </div>
             ) : null}
 
-            <div className="mx-auto mt-7 grid max-w-3xl gap-3 sm:grid-cols-2">
+            <div className="mx-auto mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => {
                   setScore1(0)
                   setScore2(0)
                 }}
-                className="flex h-16 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-base font-black text-white/55 transition hover:bg-white/[0.07]"
+                className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-sm font-black text-white/55 transition hover:bg-white/[0.07]"
               >
                 <RotateCcw className="h-5 w-5" />
                 Ergebnis zurücksetzen
@@ -709,7 +767,7 @@ export default function TerminalTournamentModePage() {
                 type="button"
                 disabled={!canSubmit || saving}
                 onClick={() => setConfirmOpen(true)}
-                className="flex h-16 items-center justify-center gap-2 rounded-2xl bg-orange-500 text-base font-black text-white shadow-[0_18px_45px_-22px_rgba(249,115,22,.8)] transition enabled:hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 text-sm font-black text-white shadow-[0_18px_45px_-22px_rgba(249,115,22,.8)] transition enabled:hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <Check className="h-5 w-5" />
                 Ergebnis speichern
@@ -843,10 +901,10 @@ export default function TerminalTournamentModePage() {
   return (
     <main className="relative min-h-[100svh] overflow-x-hidden bg-[#050608] text-white">
       <div
-        className="pointer-events-none fixed inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.6]"
+        className="pointer-events-none fixed inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.58]"
         style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
       />
-      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.32),rgba(4,6,9,.82)),radial-gradient(circle_at_50%_0%,rgba(249,115,22,.18),transparent_32%)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.30),rgba(4,6,9,.88)),radial-gradient(circle_at_12%_10%,rgba(249,115,22,.18),transparent_28%),radial-gradient(circle_at_92%_82%,rgba(14,165,233,.12),transparent_30%)]" />
 
       <div className="relative mx-auto flex min-h-[100svh] max-w-[1500px] flex-col px-5 py-6 lg:px-8 lg:py-8">
         <header className="flex items-center justify-between gap-4">
@@ -864,21 +922,158 @@ export default function TerminalTournamentModePage() {
           </div>
         </header>
 
-        <section className="mx-auto mt-8 max-w-4xl">
-          {pinMessage ? (
-            <div className="mb-4 rounded-2xl border border-amber-300/15 bg-amber-500/[0.06] px-4 py-3 text-center text-sm font-bold text-amber-100/70">
+        <section className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col py-4 lg:py-5">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/20 bg-orange-500/[0.08] px-4 py-2 text-[11px] font-black uppercase tracking-[0.24em] text-orange-200/80">
+              <Radio className="h-4 w-4" /> Live
+            </div>
+            <h1 className="mt-3 text-3xl font-black tracking-[-0.055em] sm:text-4xl">Laufende Spiele</h1>
+            <p className="mx-auto mt-2 max-w-2xl text-xs font-semibold leading-5 text-white/42 sm:text-sm">
+              Dein Spiel antippen, deinen Namen wählen und kurz mit PIN oder Muster bestätigen.
+            </p>
+          </div>
+
+          {pinMessage && !selectedRunningMatch ? (
+            <div className="mx-auto mt-5 w-full max-w-2xl rounded-2xl border border-amber-300/15 bg-amber-500/[0.07] px-4 py-3 text-center text-sm font-bold text-amber-100/75">
               {pinMessage}
             </div>
           ) : null}
-          <TerminalIdentityAuth
-            title="Spieler suchen"
-            subtitle="Name eingeben, Profil auswählen und mit PIN oder Muster bestätigen. Danach wird dein offenes Match geladen."
-            onVerified={loadMatchForIdentity}
-          />
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {runningMatches.map((item) => (
+              <button
+                key={`${item.tournament_type}:${item.tournament_id}:${item.match_id}`}
+                type="button"
+                onClick={() => selectRunningMatch(item)}
+                className="group relative min-h-[168px] overflow-hidden rounded-[26px] border border-white/10 bg-black/38 p-4 text-left shadow-xl backdrop-blur-2xl transition duration-200 hover:-translate-y-0.5 hover:border-orange-300/30 hover:bg-black/50 active:scale-[.985]"
+              >
+                <div className="absolute -right-14 -top-16 h-40 w-40 rounded-full bg-orange-500/12 blur-3xl transition group-hover:bg-orange-500/20" />
+                <div className="relative flex items-start justify-between gap-4">
+                  <div className="rounded-xl border border-orange-300/20 bg-orange-500/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-orange-200">
+                    Board {item.machine_number}
+                  </div>
+                  <div className="text-xs font-black text-white/25">Match #{item.match_id}</div>
+                </div>
+
+                <div className="relative mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                  <div className="text-right text-[clamp(17px,1.55vw,25px)] font-black leading-tight tracking-[-0.035em]">
+                    {item.player1}
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1.5 text-xs font-black text-white/35">VS</div>
+                  <div className="text-left text-[clamp(17px,1.55vw,25px)] font-black leading-tight tracking-[-0.035em]">
+                    {item.player2}
+                  </div>
+                </div>
+
+                <div className="relative mt-4 flex items-center justify-center gap-2 text-xs font-black text-orange-200/80">
+                  <CheckCircle2 className="h-4 w-4" /> Spiel auswählen
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {!runningMatches.length ? (
+            <div className="mx-auto mt-10 w-full max-w-3xl rounded-[38px] border border-white/10 bg-black/35 p-8 text-center shadow-2xl backdrop-blur-2xl sm:p-12">
+              <Target className="mx-auto h-12 w-12 text-white/20" />
+              <h2 className="mt-5 text-3xl font-black tracking-[-0.04em]">Aktuell kein laufendes Spiel</h2>
+              <p className="mt-3 text-sm font-semibold text-white/38">
+                Sobald die Turnierleitung ein Match einem Board zuweist, erscheint es hier automatisch.
+              </p>
+            </div>
+          ) : null}
         </section>
       </div>
+
+      {selectedRunningMatch ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 px-5 py-8 backdrop-blur-xl"
+          data-terminal-idle-lock="true"
+        >
+          <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-[#0a0c0f]/95 p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.24em] text-orange-300/70">
+                  Board {selectedRunningMatch.machine_number} · Match #{selectedRunningMatch.match_id}
+                </div>
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">PIN eingeben</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRunningMatch(null)
+                  setPin("")
+                  setPinMessage("")
+                }}
+                className="h-11 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm font-black text-white/60"
+              >
+                Abbrechen
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.03] p-4 text-center">
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                <div className="text-right text-lg font-black">{selectedRunningMatch.player1}</div>
+                <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs font-black text-white/35">VS</div>
+                <div className="text-left text-lg font-black">{selectedRunningMatch.player2}</div>
+              </div>
+            </div>
+
+            <p className="mt-4 text-center text-sm font-semibold text-white/40">
+              Einer der beiden Spieler gibt seine 4-stellige Terminal-PIN ein. Die PIN wird nur für dieses ausgewählte Match akzeptiert.
+            </p>
+
+            <div className="mt-5 flex justify-center gap-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${
+                    index < pin.length ? "border-orange-300/30 bg-orange-500/10" : "border-white/10 bg-white/[0.025]"
+                  }`}
+                >
+                  <span className={`h-3 w-3 rounded-full ${index < pin.length ? "bg-orange-300" : "bg-white/10"}`} />
+                </div>
+              ))}
+            </div>
+
+            {pinMessage ? (
+              <div className="mt-4 rounded-2xl border border-red-300/15 bg-red-500/[0.07] px-4 py-3 text-center text-sm font-bold text-red-100/75">
+                {pinMessage}
+              </div>
+            ) : null}
+
+            <div className="mx-auto mt-5 grid max-w-[360px] grid-cols-3 gap-2.5">
+              {["1","2","3","4","5","6","7","8","9"].map((digit) => (
+                <button
+                  key={digit}
+                  type="button"
+                  onClick={() => addDigit(digit)}
+                  className="flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035] text-xl font-black active:scale-95"
+                >
+                  {digit}
+                </button>
+              ))}
+              <button type="button" onClick={() => setPin("")} className="flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025] text-white/35">×</button>
+              <button type="button" onClick={() => addDigit("0")} className="flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035] text-xl font-black active:scale-95">0</button>
+              <button type="button" onClick={removeDigit} className="flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025] text-white/45">
+                <Delete className="h-5 w-5" />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void openSelectedMatchWithPin()}
+              disabled={pin.length !== 4}
+              className="mx-auto mt-5 flex min-h-[56px] w-full max-w-[360px] items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 text-sm font-black uppercase tracking-[0.14em] text-white disabled:opacity-35"
+            >
+              <ShieldCheck className="h-5 w-5" />
+              Spiel öffnen
+            </button>
+          </div>
+        </div>
+      ) : null}
     </main>
   )
+
 }
 
 function ScoreCard({
@@ -900,7 +1095,7 @@ function ScoreCard({
 
   return (
     <div
-      className={`rounded-[36px] border bg-black/35 p-6 text-center backdrop-blur-2xl sm:p-8 ${
+      className={`rounded-[28px] border bg-black/35 p-4 text-center backdrop-blur-2xl sm:p-5 ${
         orange ? "border-orange-300/18" : "border-cyan-300/18"
       }`}
     >
@@ -908,35 +1103,35 @@ function ScoreCard({
         Spieler
       </div>
 
-      <div className="mt-2 min-h-20 text-3xl font-black leading-tight tracking-[-0.04em] sm:text-5xl">
+      <div className="mt-1 min-h-14 text-2xl font-black leading-tight tracking-[-0.04em] sm:text-3xl">
         {name}
       </div>
 
-      <div className={`mt-5 text-8xl font-black tracking-[-0.08em] sm:text-9xl ${orange ? "text-orange-300" : "text-cyan-200"}`}>
+      <div className={`mt-3 text-6xl font-black tracking-[-0.07em] sm:text-7xl ${orange ? "text-orange-300" : "text-cyan-200"}`}>
         {score}
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={onMinus}
           disabled={disabled}
-          className="flex h-18 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] transition active:scale-95 enabled:hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-25"
+          className="flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] transition active:scale-95 enabled:hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-25"
         >
-          <Minus className="h-7 w-7" />
+          <Minus className="h-6 w-6" />
         </button>
 
         <button
           type="button"
           onClick={onPlus}
           disabled={disabled}
-          className={`flex h-18 items-center justify-center rounded-2xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-25 ${
+          className={`flex h-14 items-center justify-center rounded-2xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-25 ${
             orange
               ? "border-orange-300/20 bg-orange-500/10 text-orange-200 hover:bg-orange-500/15"
               : "border-cyan-300/20 bg-cyan-400/[0.08] text-cyan-100 hover:bg-cyan-400/[0.12]"
           }`}
         >
-          <Plus className="h-7 w-7" />
+          <Plus className="h-6 w-6" />
         </button>
       </div>
     </div>

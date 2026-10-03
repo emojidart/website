@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { TerminalTransitionProvider } from "./_components/TerminalTransition"
+import TerminalAutoTournamentMode from "./_components/TerminalAutoTournamentMode"
 
 export default function TerminalLayout({ children }: { children: ReactNode }) {
   return (
@@ -30,7 +31,10 @@ export default function TerminalLayout({ children }: { children: ReactNode }) {
         }
       `}</style>
 
-      <TerminalTransitionProvider>{children}</TerminalTransitionProvider>
+      <TerminalTransitionProvider>
+        <TerminalAutoTournamentMode />
+        {children}
+      </TerminalTransitionProvider>
     </div>
   )
 }

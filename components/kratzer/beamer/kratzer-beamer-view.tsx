@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { AlertTriangle, ChevronRight, Dices, Heart, Maximize2, Radio, Sparkles, Trophy, Users } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 import {
   KRATZER_BEAMER_CHANNEL,
   KRATZER_BEAMER_EVENT_KEY,
@@ -84,6 +85,81 @@ function formatElapsed(startTime: number | null, now: number) {
   return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
 }
 
+
+async function loadRemoteKratzerSnapshot(): Promise<KratzerBeamerSnapshot | null> {
+  const { data: tournament, error: tournamentError } = await supabase
+    .from("kratzer_tournaments")
+    .select("id,status,current_round,board_count,max_group_size,sudden_death_enabled,sudden_death_time,winner_id,winner_name,total_rounds")
+    .eq("status", "running")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (tournamentError) throw tournamentError
+  if (!tournament?.id) return null
+
+  const [{ data: playersData, error: playersError }, { data: latestRound, error: roundError }] = await Promise.all([
+    supabase
+      .from("kratzer_tournament_players")
+      .select("player_id,player_name,ligastatus,lives,is_eliminated,elimination_round")
+      .eq("kratzer_tournament_id", tournament.id),
+    supabase
+      .from("kratzer_tournament_rounds")
+      .select("round_number,boards_data")
+      .eq("kratzer_tournament_id", tournament.id)
+      .order("round_number", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ])
+
+  if (playersError) throw playersError
+  if (roundError) throw roundError
+
+  const players = (playersData || []).map((player: any) => ({
+    id: String(player.player_id),
+    name: player.player_name,
+    ligastatus: player.ligastatus || "N/A",
+    lives: Number(player.lives || 0),
+    isEliminated: Boolean(player.is_eliminated),
+    eliminationRound: player.elimination_round ?? null,
+  }))
+
+  const playersById = new Map(players.map((player) => [String(player.id), player]))
+  const rawBoards = Array.isArray((latestRound as any)?.boards_data) ? (latestRound as any).boards_data : []
+
+  const boards = rawBoards
+    .map((board: any) => ({
+      id: Number(board.id),
+      startTime: board.startTime ?? null,
+      gameMode: board.gameMode ?? null,
+      players: (board.players || []).map((boardPlayer: any) => playersById.get(String(boardPlayer.id)) || {
+        id: String(boardPlayer.id),
+        name: boardPlayer.name,
+        ligastatus: boardPlayer.ligastatus || "N/A",
+        lives: Number(boardPlayer.lives || 0),
+        isEliminated: Boolean(boardPlayer.isEliminated),
+        eliminationRound: boardPlayer.eliminationRound ?? null,
+      }),
+    }))
+    .filter((board: any) => board.players.length > 0)
+
+  return {
+    tournamentId: String(tournament.id),
+    currentRound: Number((latestRound as any)?.round_number ?? tournament.current_round ?? 0),
+    tournamentFinished: false,
+    winner: null,
+    boards,
+    players,
+    settings: {
+      suddenDeathEnabled: Boolean(tournament.sudden_death_enabled),
+      suddenDeathTime: Number(tournament.sudden_death_time || 0),
+      diceModeEnabled: false,
+    },
+    isTournamentRunning: true,
+    updatedAt: Date.now(),
+  }
+}
+
 export function KratzerBeamerView() {
   const [snapshot, setSnapshot] = useState<KratzerBeamerSnapshot | null>(null)
   const [diceEvent, setDiceEvent] = useState<KratzerBeamerEvent | null>(null)
@@ -112,7 +188,7 @@ export function KratzerBeamerView() {
 
       if (shouldCompare && previousSnapshot) {
         const moments: AudienceMoment[] = []
-        const previousPlayers = new Map(previousSnapshot.players.map((player) => [String(player.id), player]))
+        const previousPlayers = new Map<string, KratzerBeamerSnapshot["players"][number]>(previousSnapshot.players.map((player) => [String(player.id), player]))
 
         for (const player of nextSnapshot.players) {
           const previousPlayer = previousPlayers.get(String(player.id))
@@ -194,6 +270,49 @@ export function KratzerBeamerView() {
     return () => {
       channel?.close()
       window.removeEventListener("storage", onStorage)
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    let refreshTimer: number | null = null
+
+    const refreshRemote = async () => {
+      try {
+        const nextSnapshot = await loadRemoteKratzerSnapshot()
+        if (cancelled || !nextSnapshot) return
+
+        // Auf einem zweiten Gerät (z. B. Fire TV Stick) existiert kein gemeinsamer
+        // localStorage. Darum kommt der laufende Kratzer-Spielstand hier direkt
+        // aus Supabase. Lokale Broadcasts bleiben für den Admin-Browser erhalten.
+        previousSnapshotRef.current = nextSnapshot
+        setSnapshot(nextSnapshot)
+      } catch (error) {
+        console.error("Kratzer Beamer remote sync failed:", error)
+      }
+    }
+
+    const scheduleRefresh = () => {
+      if (refreshTimer) window.clearTimeout(refreshTimer)
+      refreshTimer = window.setTimeout(() => void refreshRemote(), 180)
+    }
+
+    void refreshRemote()
+
+    const remoteChannel = supabase
+      .channel("kratzer_beamer_remote_sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "kratzer_tournaments" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "kratzer_tournament_players" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "kratzer_tournament_rounds" }, scheduleRefresh)
+      .subscribe()
+
+    const fallbackInterval = window.setInterval(() => void refreshRemote(), 5000)
+
+    return () => {
+      cancelled = true
+      if (refreshTimer) window.clearTimeout(refreshTimer)
+      window.clearInterval(fallbackInterval)
+      void supabase.removeChannel(remoteChannel)
     }
   }, [])
 
