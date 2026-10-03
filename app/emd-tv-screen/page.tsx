@@ -150,6 +150,7 @@ export default function EmdTvScreenPage() {
   const [loaded, setLoaded] = useState(false)
   const [assetsReady, setAssetsReady] = useState(false)
   const preloadedKeyRef = useRef("")
+  const preloadedImagesRef = useRef<HTMLImageElement[]>([])
   const [now, setNow] = useState(() => new Date())
   const [active, setActive] = useState<ActiveStatus>({ dko: false, kratzer: false })
   const [tournaments, setTournaments] = useState<TournamentRow[]>([])
@@ -312,10 +313,10 @@ export default function EmdTvScreenPage() {
   }, [slides.length])
 
   useEffect(() => {
-    if (active.dko || active.kratzer || slides.length <= 1 || currentSlide?.kind === "lineup") return
+    if (!assetsReady || active.dko || active.kratzer || slides.length <= 1 || currentSlide?.kind === "lineup") return
     const timer = window.setTimeout(() => setSlideIndex((i) => (i + 1) % slides.length), NORMAL_SLIDE_MS)
     return () => window.clearTimeout(timer)
-  }, [active.dko, active.kratzer, currentSlide?.kind, slideIndex, slides.length])
+  }, [assetsReady, active.dko, active.kratzer, currentSlide?.kind, slideIndex, slides.length])
 
   const advanceSlide = useCallback(() => {
     setSlideIndex((i) => (i + 1) % slides.length)
@@ -333,17 +334,18 @@ export default function EmdTvScreenPage() {
   const veranstaltungenPreview = dachEvents.slice(0, 4)
 
   const preloadImageUrls = useMemo(() => {
+    // TV: only preload the images that are actually shown on the first series/event slides.
+    // Loading dozens of large originals in parallel is what made Fire TV/Silk paint them one after another.
     const urls = new Set<string>()
-    tournamentCards.forEach((item) => { if (item.imageUrl) urls.add(item.imageUrl) })
-    seriesEvents.forEach((item) => {
+    seriesEvents.slice(0, 4).forEach((item) => {
       const url = seriesPhoto(item.imagePath)
       if (url) urls.add(url)
     })
-    dachEvents.forEach((event) => {
+    dachEvents.slice(0, 4).forEach((event) => {
       if (event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf")) urls.add(event.photo_url)
     })
     return Array.from(urls)
-  }, [dachEvents, seriesEvents, tournamentCards])
+  }, [dachEvents, seriesEvents])
 
   const preloadKey = useMemo(() => preloadImageUrls.slice().sort().join("|"), [preloadImageUrls])
 
@@ -353,42 +355,47 @@ export default function EmdTvScreenPage() {
     async function warmImages() {
       if (!loaded) return
       if (!preloadImageUrls.length) {
+        preloadedImagesRef.current = []
         setAssetsReady(true)
         return
       }
-      if (preloadedKeyRef.current === preloadKey) {
+      if (preloadedKeyRef.current === preloadKey && preloadedImagesRef.current.length) {
         setAssetsReady(true)
         return
       }
 
       setAssetsReady(false)
+
+      // Keep the decoded Image objects alive. This is important on low-memory TV browsers:
+      // otherwise Silk may throw away the decoded bitmap and visibly rebuild it line by line.
+      const images = preloadImageUrls.map((src) => {
+        const img = new Image()
+        img.decoding = "sync"
+        img.loading = "eager"
+        img.fetchPriority = "high"
+        img.src = src
+        return img
+      })
+
       await Promise.all(
-        preloadImageUrls.map(
-          (src) =>
+        images.map(
+          (img) =>
             new Promise<void>((resolve) => {
-              const img = new Image()
-              let finished = false
-              const finish = () => {
-                if (finished) return
-                finished = true
+              const finish = async () => {
+                try { await img.decode?.() } catch {}
                 resolve()
               }
-              const timeout = window.setTimeout(finish, 7000)
-              img.onload = async () => {
-                window.clearTimeout(timeout)
-                try { await img.decode?.() } catch {}
-                finish()
+              if (img.complete) void finish()
+              else {
+                img.onload = () => void finish()
+                img.onerror = () => resolve()
               }
-              img.onerror = () => {
-                window.clearTimeout(timeout)
-                finish()
-              }
-              img.src = src
             }),
         ),
       )
 
       if (!cancelled) {
+        preloadedImagesRef.current = images
         preloadedKeyRef.current = preloadKey
         setAssetsReady(true)
       }
@@ -450,7 +457,7 @@ export default function EmdTvScreenPage() {
                       src={flyerIsImage ? event.photo_url! : "/terminal/hero-startscreen.png"}
                       alt=""
                       loading="eager"
-                      decoding="async"
+                      decoding="sync"
                       className="absolute inset-0 h-full w-full object-cover object-center opacity-65"
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.10),rgba(0,0,0,.30)_34%,rgba(0,0,0,.97)_100%)]" />
@@ -484,7 +491,7 @@ export default function EmdTvScreenPage() {
                     src={seriesPhoto(item.imagePath) || "/terminal/hero-startscreen.png"}
                     alt=""
                     loading="eager"
-                    decoding="async"
+                    decoding="sync"
                     draggable={false}
                     className="absolute inset-0 h-full w-full object-cover object-center opacity-55"
                   />

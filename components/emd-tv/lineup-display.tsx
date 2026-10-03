@@ -61,14 +61,15 @@ function formatMatchDate(date: string, time: string | null) {
   return timeText ? `${dateText} · ${timeText}` : dateText
 }
 
-function preloadImage(src: string, timeoutMs = 7000) {
-  return new Promise<void>((resolve) => {
+function preloadImage(src: string, timeoutMs = 9000) {
+  return new Promise<HTMLImageElement | null>((resolve) => {
     const img = new Image()
+    img.decoding = "sync"
     let done = false
     const finish = () => {
       if (done) return
       done = true
-      resolve()
+      resolve(img)
     }
     const timeout = window.setTimeout(finish, timeoutMs)
     img.onload = async () => {
@@ -80,7 +81,9 @@ function preloadImage(src: string, timeoutMs = 7000) {
     }
     img.onerror = () => {
       window.clearTimeout(timeout)
-      finish()
+      if (done) return
+      done = true
+      resolve(null)
     }
     img.src = src
   })
@@ -111,6 +114,7 @@ export default function LineupDisplay({
   const [players, setPlayers] = useState<Player[]>([])
   const [screenIndex, setScreenIndex] = useState(0)
   const completedRef = useRef(false)
+  const imageCacheRef = useRef<HTMLImageElement[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -170,13 +174,19 @@ export default function LineupDisplay({
         .map((p) => p.club_players?.photo_url)
         .filter((value): value is string => Boolean(value))
 
-      await Promise.all(urls.map((src) => preloadImage(src)))
-      if (!cancelled) setReady(true)
+      const decodedImages = await Promise.all(urls.map((src) => preloadImage(src)))
+      if (!cancelled) {
+        // Keep decoded player images alive for the whole lineup so Fire TV/Silk
+        // does not have to decode them again when the next player appears.
+        imageCacheRef.current = decodedImages.filter((img): img is HTMLImageElement => Boolean(img))
+        setReady(true)
+      }
     }
 
     void load()
     return () => {
       cancelled = true
+      imageCacheRef.current = []
     }
   }, [matchId, teamId, onComplete])
 
@@ -295,6 +305,8 @@ export default function LineupDisplay({
                     src={photo}
                     alt=""
                     draggable={false}
+                    decoding="sync"
+                    fetchPriority="high"
                     className="absolute left-0 top-[59%] h-[80vh] w-[49vw] -translate-y-1/2 object-contain object-center drop-shadow-[0_35px_50px_rgba(0,0,0,.55)]"
                     style={{
                       WebkitMaskImage: "linear-gradient(to right,#000 0%,#000 93%,rgba(0,0,0,.78) 96%,transparent 100%)",
@@ -379,6 +391,7 @@ export default function LineupDisplay({
                         src={p.photo_url}
                         alt={p.name || `Spieler ${index + 1}`}
                         draggable={false}
+                        decoding="sync"
                         className="absolute inset-0 h-full w-full object-contain object-top"
                         style={{
                           WebkitMaskImage:
