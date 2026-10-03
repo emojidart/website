@@ -61,7 +61,25 @@ function formatMatchDate(date: string, time: string | null) {
   return timeText ? `${dateText} · ${timeText}` : dateText
 }
 
-function preloadImage(src: string, timeoutMs = 9000) {
+
+function tvPlayerImageUrl(src: string | null, width = 1100, height = 1500, quality = 70) {
+  if (!src) return null
+  try {
+    const u = new URL(src)
+    const marker = "/storage/v1/object/public/"
+    if (!u.pathname.includes(marker)) return src
+    u.pathname = u.pathname.replace(marker, "/storage/v1/render/image/public/")
+    u.searchParams.set("width", String(width))
+    u.searchParams.set("height", String(height))
+    u.searchParams.set("quality", String(quality))
+    u.searchParams.set("resize", "contain")
+    return u.toString()
+  } catch {
+    return src
+  }
+}
+
+function preloadImage(src: string, fallbackSrc?: string, timeoutMs = 9000) {
   return new Promise<HTMLImageElement | null>((resolve) => {
     const img = new Image()
     img.decoding = "sync"
@@ -80,6 +98,10 @@ function preloadImage(src: string, timeoutMs = 9000) {
       finish()
     }
     img.onerror = () => {
+      if (fallbackSrc && img.src !== fallbackSrc) {
+        img.src = fallbackSrc
+        return
+      }
       window.clearTimeout(timeout)
       if (done) return
       done = true
@@ -91,10 +113,10 @@ function preloadImage(src: string, timeoutMs = 9000) {
 
 function playerNameSize(name: string) {
   const len = name.trim().length
-  if (len >= 22) return "clamp(2.7rem,4.45vw,5.5rem)"
-  if (len >= 17) return "clamp(3rem,4.9vw,6rem)"
-  if (len >= 13) return "clamp(3.2rem,5.35vw,6.5rem)"
-  return "clamp(3.45rem,5.8vw,7rem)"
+  if (len >= 22) return "clamp(2.95rem,4.8vw,5.9rem)"
+  if (len >= 17) return "clamp(3.25rem,5.2vw,6.35rem)"
+  if (len >= 13) return "clamp(3.55rem,5.65vw,6.85rem)"
+  return "clamp(3.85rem,6.15vw,7.35rem)"
 }
 
 export default function LineupDisplay({
@@ -123,6 +145,9 @@ export default function LineupDisplay({
     setScreenIndex(0)
 
     async function load() {
+      // Die Team-Introfolie bleibt mindestens 2,2 Sekunden sichtbar.
+      // Wenn das Vorladen länger dauert, bleibt sie automatisch länger stehen.
+      const minimumIntro = new Promise((resolve) => window.setTimeout(resolve, 2200))
       const [matchRes, lineupRes, teamRes, memberRes, opponentRes] = await Promise.all([
         supabase
           .from("matches")
@@ -174,7 +199,10 @@ export default function LineupDisplay({
         .map((p) => p.club_players?.photo_url)
         .filter((value): value is string => Boolean(value))
 
-      const decodedImages = await Promise.all(urls.map((src) => preloadImage(src)))
+      const [decodedImages] = await Promise.all([
+        Promise.all(urls.map((src) => preloadImage(tvPlayerImageUrl(src) || src, src))),
+        minimumIntro,
+      ])
       if (!cancelled) {
         // Keep decoded player images alive for the whole lineup so Fire TV/Silk
         // does not have to decode them again when the next player appears.
@@ -222,7 +250,7 @@ export default function LineupDisplay({
   useEffect(() => {
     if (!ready || screens.length < 2) return
     const final = screenIndex === screens.length - 1
-    const delay = screenIndex === 0 ? 4200 : final ? 7800 : 3600
+    const delay = screenIndex === 0 ? 2600 : final ? 7800 : 3600
     const timer = window.setTimeout(() => {
       if (final) {
         if (!completedRef.current) {
@@ -231,18 +259,34 @@ export default function LineupDisplay({
         }
         return
       }
+
+      // Innerhalb eines Teams direkt zum nächsten Bild wechseln.
+      // Die STARTING-LINEUP-Folie kommt nur beim Start des nächsten Teams.
       setScreenIndex((i) => i + 1)
     }, delay)
     return () => window.clearTimeout(timer)
   }, [ready, screenIndex, screens.length, onComplete])
 
   if (!ready || !match) {
-    return <div className="absolute inset-0 bg-[#030303]" />
+    return (
+      <div className="absolute inset-0 overflow-hidden bg-[#030303] text-white">
+        <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.26]" />
+        <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.97),rgba(5,5,6,.90)_48%,rgba(17,8,2,.76))]" />
+        <div className="absolute inset-0 grid place-items-center px-[5vw] text-center">
+          <div>
+            <div className="text-[clamp(.78rem,1vw,1.08rem)] font-black uppercase tracking-[.42em] text-orange-300/82">EMD TV</div>
+            <div className="mt-[1.6vh] text-[clamp(2.5rem,4.8vw,5.6rem)] font-black uppercase leading-[.92] tracking-[-.05em]">STARTING LINEUP</div>
+            <div className="mx-auto mt-[2.4vh] h-[4px] w-[10vw] bg-orange-400 shadow-[0_0_28px_rgba(251,146,60,.55)]" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const currentPlayer = screen.kind === "player" ? screen.player : null
   const playerName = currentPlayer?.club_players?.name || "SPIELER"
-  const photo = currentPlayer?.club_players?.photo_url || null
+  const photoOriginal = currentPlayer?.club_players?.photo_url || null
+  const photo = tvPlayerImageUrl(photoOriginal) || photoOriginal
   const finalCount = allPlayers.length
   const oneRowFinal = finalCount <= 6
 
@@ -303,6 +347,12 @@ export default function LineupDisplay({
                   />
                   <img
                     src={photo}
+                    onError={(e) => {
+                      if (photoOriginal && e.currentTarget.dataset.fallback !== "1") {
+                        e.currentTarget.dataset.fallback = "1"
+                        e.currentTarget.src = photoOriginal
+                      }
+                    }}
                     alt=""
                     draggable={false}
                     decoding="sync"
@@ -328,7 +378,7 @@ export default function LineupDisplay({
             {/* Hintergrund beginnt DIREKT am Foto. Nur der Text bleibt weit rechts. */}
             <div className="absolute inset-y-0 left-[49vw] right-0 z-[2] bg-[linear-gradient(110deg,rgba(6,5,5,.18),rgba(8,6,5,.10)_22%,transparent_55%)]" />
 
-            <div className="absolute inset-y-0 left-[49vw] right-0 z-10 flex min-w-0 flex-col justify-center overflow-hidden pl-[13vw] pr-[3.8vw]">
+            <div className="absolute inset-y-0 left-[49vw] right-0 z-10 flex min-w-0 flex-col justify-center overflow-hidden pl-[4.8vw] pr-[3.2vw]">
               <div className="absolute right-[4vw] top-[9vh] text-[clamp(8rem,15vw,18rem)] font-black leading-none text-white/[.035]">
                 {String(screen.number).padStart(2, "0")}
               </div>
@@ -336,7 +386,7 @@ export default function LineupDisplay({
                 {currentPlayer.is_substitute ? "ERSATZSPIELER" : roleText(currentPlayer.role)}
               </div>
               <h2
-                className="mt-[2vh] max-w-[12ch] break-words font-black uppercase leading-[.82] tracking-[-.075em]"
+                className="mt-[2vh] max-w-[15ch] break-words font-black uppercase leading-[.84] tracking-[-.072em]"
                 style={{ fontSize: playerNameSize(playerName) }}
               >
                 {playerName}
@@ -385,10 +435,16 @@ export default function LineupDisplay({
                     <>
                       <div
                         className="absolute inset-0 scale-[1.06] bg-cover bg-center opacity-20 blur-[1vw]"
-                        style={{ backgroundImage: `url('${p.photo_url}')` }}
+                        style={{ backgroundImage: `url('${tvPlayerImageUrl(p.photo_url, 700, 1100, 66) || p.photo_url}')` }}
                       />
                       <img
-                        src={p.photo_url}
+                        src={tvPlayerImageUrl(p.photo_url, 700, 1100, 66) || p.photo_url}
+                        onError={(e) => {
+                          if (p.photo_url && e.currentTarget.dataset.fallback !== "1") {
+                            e.currentTarget.dataset.fallback = "1"
+                            e.currentTarget.src = p.photo_url
+                          }
+                        }}
                         alt={p.name || `Spieler ${index + 1}`}
                         draggable={false}
                         decoding="sync"

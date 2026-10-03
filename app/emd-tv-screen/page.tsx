@@ -141,6 +141,23 @@ function seriesPhoto(path: string | null) {
   return supabase.storage.from("tournament-photos").getPublicUrl(path).data.publicUrl
 }
 
+function tvImageUrl(src: string | null, width = 1280, height = 900, quality = 68, resize: "cover" | "contain" = "cover") {
+  if (!src) return null
+  try {
+    const u = new URL(src)
+    const marker = "/storage/v1/object/public/"
+    if (!u.pathname.includes(marker)) return src
+    u.pathname = u.pathname.replace(marker, "/storage/v1/render/image/public/")
+    u.searchParams.set("width", String(width))
+    u.searchParams.set("height", String(height))
+    u.searchParams.set("quality", String(quality))
+    u.searchParams.set("resize", resize)
+    return u.toString()
+  } catch {
+    return src
+  }
+}
+
 function tournamentStart(row: TournamentRow) {
   const time = row.time && /^\d{2}:\d{2}/.test(row.time) ? row.time.slice(0, 5) : "23:59"
   return new Date(`${row.date}T${time}:00`).getTime()
@@ -338,11 +355,14 @@ export default function EmdTvScreenPage() {
     // Loading dozens of large originals in parallel is what made Fire TV/Silk paint them one after another.
     const urls = new Set<string>()
     seriesEvents.slice(0, 4).forEach((item) => {
-      const url = seriesPhoto(item.imagePath)
+      const url = tvImageUrl(seriesPhoto(item.imagePath), 900, 1100, 66, "cover")
       if (url) urls.add(url)
     })
     dachEvents.slice(0, 4).forEach((event) => {
-      if (event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf")) urls.add(event.photo_url)
+      if (event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf")) {
+        const url = tvImageUrl(event.photo_url, 900, 1100, 66, "cover")
+        if (url) urls.add(url)
+      }
     })
     return Array.from(urls)
   }, [dachEvents, seriesEvents])
@@ -454,7 +474,13 @@ export default function EmdTvScreenPage() {
                 return (
                   <article key={event.id} className="relative h-[48vh] overflow-hidden rounded-[2vw] border border-white/[.10] bg-[#090909] shadow-[0_35px_100px_rgba(0,0,0,.55)]">
                     <img
-                      src={flyerIsImage ? event.photo_url! : "/terminal/hero-startscreen.png"}
+                      src={flyerIsImage ? (tvImageUrl(event.photo_url!, 900, 1100, 66, "cover") || event.photo_url!) : "/terminal/hero-startscreen.png"}
+                      onError={(e) => {
+                        if (flyerIsImage && e.currentTarget.dataset.fallback !== "1") {
+                          e.currentTarget.dataset.fallback = "1"
+                          e.currentTarget.src = event.photo_url!
+                        }
+                      }}
                       alt=""
                       loading="eager"
                       decoding="sync"
@@ -488,7 +514,14 @@ export default function EmdTvScreenPage() {
               {seriesPreview.map((item, index) => (
                 <article key={item.id} className="group relative h-[47vh] overflow-hidden rounded-[2vw] border border-white/[.10] bg-[#0a0a0a] shadow-[0_35px_100px_rgba(0,0,0,.55)]">
                   <img
-                    src={seriesPhoto(item.imagePath) || "/terminal/hero-startscreen.png"}
+                    src={tvImageUrl(seriesPhoto(item.imagePath), 900, 1100, 66, "cover") || seriesPhoto(item.imagePath) || "/terminal/hero-startscreen.png"}
+                    onError={(e) => {
+                      const original = seriesPhoto(item.imagePath)
+                      if (original && e.currentTarget.dataset.fallback !== "1") {
+                        e.currentTarget.dataset.fallback = "1"
+                        e.currentTarget.src = original
+                      }
+                    }}
                     alt=""
                     loading="eager"
                     decoding="sync"
