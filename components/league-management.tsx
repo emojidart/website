@@ -96,6 +96,30 @@ interface Match {
 
 type TabKey = "overview" | "matches" | "lineups" | "overdue" | "teams" | "venues"
 
+type LineupAlertRecipient = "captain" | "co_captain" | "both"
+
+type LineupAlertLogRow = {
+  id: string
+  created_at: string
+  recipient_mode: LineupAlertRecipient
+  recipient_names: string[]
+  targeted_devices: number
+  sent_count: number
+  failed_count: number
+  status: string
+}
+
+type LineupAlertDialogState = {
+  matchId: string
+  teamId: string
+  teamName: string
+  matchTitle: string
+  matchDate: string
+  matchTime: string
+  captainName: string | null
+  coCaptainName: string | null
+}
+
 export type LeagueMailboxPrefill = {
   recipientMode: "player" | "team" | "captains" | "all"
   recipientTeamId?: string
@@ -223,6 +247,14 @@ export function LeagueManagement({
   const [planningAvailability, setPlanningAvailability] = useState<any[]>([])
   const [planningLineups, setPlanningLineups] = useState<any[]>([])
   const [planningLineupHeaders, setPlanningLineupHeaders] = useState<any[]>([])
+
+  // EMD Alert für noch nicht bestätigte Aufstellungen.
+  const [lineupAlertDialog, setLineupAlertDialog] = useState<LineupAlertDialogState | null>(null)
+  const [lineupAlertSelectedRecipient, setLineupAlertSelectedRecipient] = useState<LineupAlertRecipient | null>(null)
+  const [lineupAlertSending, setLineupAlertSending] = useState(false)
+  const [lineupAlertError, setLineupAlertError] = useState<string>("")
+  const [lineupAlertLogs, setLineupAlertLogs] = useState<LineupAlertLogRow[]>([])
+  const [lineupAlertLogsLoading, setLineupAlertLogsLoading] = useState(false)
 
   // Sportdarts-Zuordnung: rein additiv, verändert keine bestehende Liga-/Saisonlogik.
   const [sportdartsAssignments, setSportdartsAssignments] = useState<SportdartsTeamAssignment[]>([])
@@ -921,6 +953,117 @@ export function LeagueManagement({
   useEffect(() => {
     void fetchPlanningData()
   }, [fetchPlanningData])
+
+  const loadLineupAlertLogs = useCallback(async (matchId: string, teamId: string) => {
+    setLineupAlertLogsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from("emd_lineup_alert_log")
+        .select("id,created_at,recipient_mode,recipient_names,targeted_devices,sent_count,failed_count,status")
+        .eq("match_id", matchId)
+        .eq("team_id", teamId)
+        .order("created_at", { ascending: false })
+        .limit(8)
+
+      if (error) throw error
+      setLineupAlertLogs((data || []) as LineupAlertLogRow[])
+    } catch (error) {
+      console.error("loadLineupAlertLogs error:", error)
+      setLineupAlertLogs([])
+    } finally {
+      setLineupAlertLogsLoading(false)
+    }
+  }, [])
+
+  const openLineupAlertDialog = useCallback(
+    (match: Match, teamId: string, teamName: string, members: any[]) => {
+      const captain = members.find((member) => member.role === "Captain")
+      const coCaptain = members.find((member) => member.role === "Co-Captain")
+
+      setLineupAlertError("")
+      setLineupAlertSelectedRecipient(null)
+      setLineupAlertDialog({
+        matchId: match.id,
+        teamId,
+        teamName,
+        matchTitle: `${getTeamName(match, true)} vs. ${getTeamName(match, false)}`,
+        matchDate: new Date(match.match_date).toLocaleDateString("de-AT"),
+        matchTime: match.match_time ? String(match.match_time).slice(0, 5) : "",
+        captainName: captain?.club_players?.name || null,
+        coCaptainName: coCaptain?.club_players?.name || null,
+      })
+      void loadLineupAlertLogs(match.id, teamId)
+    },
+    [loadLineupAlertLogs],
+  )
+
+  const sendLineupConfirmationAlert = useCallback(
+    async () => {
+      if (!lineupAlertDialog || !lineupAlertSelectedRecipient || lineupAlertSending) return
+
+      setLineupAlertSending(true)
+      setLineupAlertError("")
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        const accessToken = session?.access_token
+        if (!accessToken) throw new Error("Keine aktive Admin-Sitzung gefunden.")
+
+        const response = await fetch("/api/push/lineup-confirmation-alert", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            match_id: lineupAlertDialog.matchId,
+            team_id: lineupAlertDialog.teamId,
+            recipient: lineupAlertSelectedRecipient,
+          }),
+        })
+
+        const payload = await response.json().catch(() => ({}))
+        if (!response.ok || !payload?.success) {
+          throw new Error(payload?.error || "EMD Alert konnte nicht gesendet werden.")
+        }
+
+        const sent = Number(payload?.sent || 0)
+        const targetLabel =
+          lineupAlertSelectedRecipient === "captain"
+            ? "Kapitän"
+            : lineupAlertSelectedRecipient === "co_captain"
+              ? "Co-Kapitän"
+              : "Kapitän & Co-Kapitän"
+
+        if (sent > 0) {
+          toastSuccess(
+            `EMD Alert an ${targetLabel} gesendet (${sent} Gerät${sent === 1 ? "" : "e"}).`,
+            4500,
+          )
+          await loadLineupAlertLogs(lineupAlertDialog.matchId, lineupAlertDialog.teamId)
+          setLineupAlertSelectedRecipient(null)
+        } else {
+          setLineupAlertError(`Für ${targetLabel} ist aktuell kein registriertes Push-Gerät vorhanden.`)
+          await loadLineupAlertLogs(lineupAlertDialog.matchId, lineupAlertDialog.teamId)
+        }
+      } catch (error: any) {
+        console.error("sendLineupConfirmationAlert error:", error)
+        setLineupAlertError(error?.message || "EMD Alert konnte nicht gesendet werden.")
+      } finally {
+        setLineupAlertSending(false)
+      }
+    },
+    [
+      lineupAlertDialog,
+      lineupAlertSelectedRecipient,
+      lineupAlertSending,
+      loadLineupAlertLogs,
+      toastSuccess,
+    ],
+  )
 
   const overdueMatches = useMemo(() => {
     if (!selectedSeason) return []
@@ -2167,27 +2310,40 @@ const createMatch = useCallback(async () => {
                                     )}
                                   </div>
 
-                                  {!summary.confirmed && onOpenMailbox ? (
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      className={cn(vv.buttonSecondary, "mt-4 w-full")}
-                                      onClick={() =>
-                                        onOpenMailbox({
-                                          recipientMode: "captains",
-                                          recipientTeamId: teamId,
-                                          subject: `Aufstellung offen · ${getTeamName(match, true)} vs. ${getTeamName(match, false)}`,
-                                          body: `Für das Ligaspiel am ${new Date(match.match_date).toLocaleDateString("de-AT")}${match.match_time ? ` um ${String(match.match_time).slice(0, 5)} Uhr` : ""} ist für ${teamName} noch keine bestätigte Aufstellung hinterlegt. Bitte prüft die Aufstellung und gebt kurz Bescheid.`,
-                                          category: "lineup",
-                                          priority: "important",
-                                          matchId: match.id,
-                                          seasonId: match.season_id,
-                                        })
-                                      }
-                                    >
-                                      <Inbox className="mr-2 h-4 w-4" />
-                                      Kapitän & Co-Kapitän anschreiben
-                                    </Button>
+                                  {!summary.confirmed ? (
+                                    <div className="mt-4 space-y-2">
+                                      <Button
+                                        type="button"
+                                        className="w-full rounded-xl border border-red-300/25 bg-red-500/10 font-black text-red-100 shadow-[0_0_20px_rgba(239,68,68,.10)] hover:bg-red-500/20"
+                                        onClick={() => openLineupAlertDialog(match, teamId, teamName, summary.members)}
+                                      >
+                                        <BellRing className="mr-2 h-4 w-4" />
+                                        EMD Alert senden
+                                      </Button>
+
+                                      {onOpenMailbox ? (
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          className={cn(vv.buttonSecondary, "w-full")}
+                                          onClick={() =>
+                                            onOpenMailbox({
+                                              recipientMode: "captains",
+                                              recipientTeamId: teamId,
+                                              subject: `Aufstellung offen · ${getTeamName(match, true)} vs. ${getTeamName(match, false)}`,
+                                              body: `Für das Ligaspiel am ${new Date(match.match_date).toLocaleDateString("de-AT")}${match.match_time ? ` um ${String(match.match_time).slice(0, 5)} Uhr` : ""} ist für ${teamName} noch keine bestätigte Aufstellung hinterlegt. Bitte prüft die Aufstellung und gebt kurz Bescheid.`,
+                                              category: "lineup",
+                                              priority: "important",
+                                              matchId: match.id,
+                                              seasonId: match.season_id,
+                                            })
+                                          }
+                                        >
+                                          <Inbox className="mr-2 h-4 w-4" />
+                                          Kapitän & Co-Kapitän anschreiben
+                                        </Button>
+                                      ) : null}
+                                    </div>
                                   ) : null}
                                 </div>
                               </div>
@@ -2787,6 +2943,255 @@ const createMatch = useCallback(async () => {
                 </Dialog>
               </TabsContent>
             </div>
+
+            <Dialog
+              open={Boolean(lineupAlertDialog)}
+              onOpenChange={(open) => {
+                if (!open && !lineupAlertSending) {
+                  setLineupAlertDialog(null)
+                  setLineupAlertSelectedRecipient(null)
+                  setLineupAlertError("")
+                  setLineupAlertLogs([])
+                }
+              }}
+            >
+              <DialogContent className="max-h-[92dvh] max-w-md overflow-y-auto rounded-[26px] border border-red-300/15 bg-[#090b10] text-white shadow-[0_28px_100px_-42px_rgba(239,68,68,.55)]">
+                <DialogHeader>
+                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl border border-red-300/20 bg-red-500/10">
+                    <BellRing className="h-6 w-6 text-red-200" />
+                  </div>
+                  <DialogTitle className="text-xl font-black text-white">EMD Alert senden</DialogTitle>
+                </DialogHeader>
+
+                {lineupAlertDialog ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
+                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-red-200/60">
+                        Aufstellung noch nicht bestätigt
+                      </div>
+                      <div className="mt-1 font-black text-white">{lineupAlertDialog.matchTitle}</div>
+                      <div className="mt-1 text-xs font-semibold text-white/40">
+                        {lineupAlertDialog.teamName} · {lineupAlertDialog.matchDate}
+                        {lineupAlertDialog.matchTime ? ` · ${lineupAlertDialog.matchTime} Uhr` : ""}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-white/35">
+                        Empfänger auswählen
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={!lineupAlertDialog.captainName || lineupAlertSending}
+                          onClick={() => setLineupAlertSelectedRecipient("captain")}
+                          className={cn(
+                            "h-auto min-h-12 justify-between rounded-xl px-4 py-3 text-left transition-all",
+                            lineupAlertSelectedRecipient === "captain"
+                              ? "border-red-300/45 bg-red-500/18 text-red-50 shadow-[0_0_24px_rgba(239,68,68,.18)]"
+                              : "border-white/10 bg-white/[0.035] text-white hover:border-red-300/20 hover:bg-white/[0.06]",
+                          )}
+                        >
+                          <span>
+                            <span className="block font-black">Nur Kapitän</span>
+                            <span className={cn(
+                              "mt-0.5 block text-xs font-semibold",
+                              lineupAlertSelectedRecipient === "captain" ? "text-red-100/75" : "text-white/40",
+                            )}>
+                              {lineupAlertDialog.captainName || "Kein Kapitän hinterlegt"}
+                            </span>
+                          </span>
+                          <BellRing className={cn(
+                            "h-4 w-4",
+                            lineupAlertSelectedRecipient === "captain" ? "text-red-100" : "text-red-200/65",
+                          )} />
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={!lineupAlertDialog.coCaptainName || lineupAlertSending}
+                          onClick={() => setLineupAlertSelectedRecipient("co_captain")}
+                          className={cn(
+                            "h-auto min-h-12 justify-between rounded-xl px-4 py-3 text-left transition-all",
+                            lineupAlertSelectedRecipient === "co_captain"
+                              ? "border-red-300/45 bg-red-500/18 text-red-50 shadow-[0_0_24px_rgba(239,68,68,.18)]"
+                              : "border-white/10 bg-white/[0.035] text-white hover:border-red-300/20 hover:bg-white/[0.06]",
+                          )}
+                        >
+                          <span>
+                            <span className="block font-black">Nur Co-Kapitän</span>
+                            <span className={cn(
+                              "mt-0.5 block text-xs font-semibold",
+                              lineupAlertSelectedRecipient === "co_captain" ? "text-red-100/75" : "text-white/40",
+                            )}>
+                              {lineupAlertDialog.coCaptainName || "Kein Co-Kapitän hinterlegt"}
+                            </span>
+                          </span>
+                          <BellRing className={cn(
+                            "h-4 w-4",
+                            lineupAlertSelectedRecipient === "co_captain" ? "text-red-100" : "text-red-200/65",
+                          )} />
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={
+                            (!lineupAlertDialog.captainName && !lineupAlertDialog.coCaptainName) ||
+                            lineupAlertSending
+                          }
+                          onClick={() => setLineupAlertSelectedRecipient("both")}
+                          className={cn(
+                            "h-auto min-h-12 justify-between rounded-xl px-4 py-3 text-left transition-all",
+                            lineupAlertSelectedRecipient === "both"
+                              ? "border-red-300/45 bg-red-500/18 text-red-50 shadow-[0_0_24px_rgba(239,68,68,.18)]"
+                              : "border-white/10 bg-white/[0.035] text-white hover:border-red-300/20 hover:bg-white/[0.06]",
+                          )}
+                        >
+                          <span>
+                            <span className="block font-black">An beide</span>
+                            <span className={cn(
+                              "mt-0.5 block text-xs font-semibold",
+                              lineupAlertSelectedRecipient === "both" ? "text-red-100/75" : "text-white/40",
+                            )}>
+                              Kapitän + Co-Kapitän
+                            </span>
+                          </span>
+                          <BellRing className={cn(
+                            "h-4 w-4",
+                            lineupAlertSelectedRecipient === "both" ? "text-red-100" : "text-red-200/65",
+                          )} />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {lineupAlertSelectedRecipient ? (
+                      <div className="rounded-xl border border-red-300/15 bg-red-500/[0.06] px-3 py-2.5 text-xs font-bold text-red-100/75">
+                        Ausgewählt:{" "}
+                        {lineupAlertSelectedRecipient === "captain"
+                          ? `Kapitän · ${lineupAlertDialog.captainName}`
+                          : lineupAlertSelectedRecipient === "co_captain"
+                            ? `Co-Kapitän · ${lineupAlertDialog.coCaptainName}`
+                            : `Kapitän + Co-Kapitän · ${[lineupAlertDialog.captainName, lineupAlertDialog.coCaptainName].filter(Boolean).join(" + ")}`}
+                      </div>
+                    ) : null}
+
+                    <Button
+                      type="button"
+                      disabled={!lineupAlertSelectedRecipient || lineupAlertSending}
+                      onClick={() => void sendLineupConfirmationAlert()}
+                      className={cn(
+                        "h-14 w-full rounded-2xl border font-black uppercase tracking-[0.08em] transition-all",
+                        lineupAlertSelectedRecipient
+                          ? "border-red-200/35 bg-red-600 text-white shadow-[0_0_28px_rgba(239,68,68,.28)] hover:bg-red-500"
+                          : "border-white/10 bg-white/[0.04] text-white/25",
+                      )}
+                    >
+                      {lineupAlertSending ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          EMD Alert wird gesendet …
+                        </>
+                      ) : (
+                        <>
+                          <BellRing className="mr-2 h-5 w-5" />
+                          EMD Alert senden
+                        </>
+                      )}
+                    </Button>
+
+                    {lineupAlertError ? (
+                      <div className="rounded-xl border border-red-300/15 bg-red-500/10 px-3 py-2.5 text-sm font-bold text-red-100">
+                        {lineupAlertError}
+                      </div>
+                    ) : null}
+
+                    <div className="border-t border-white/[0.07] pt-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-black uppercase tracking-[0.14em] text-white/35">
+                            Versandlog
+                          </div>
+                          <div className="mt-0.5 text-xs font-semibold text-white/25">
+                            Letzte EMD Alerts für dieses Spiel
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={lineupAlertLogsLoading}
+                          onClick={() => void loadLineupAlertLogs(lineupAlertDialog.matchId, lineupAlertDialog.teamId)}
+                          className="h-8 rounded-xl border-white/10 bg-white/[0.03] px-3 text-xs text-white/55"
+                        >
+                          {lineupAlertLogsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Neu laden"}
+                        </Button>
+                      </div>
+
+                      {lineupAlertLogsLoading && lineupAlertLogs.length === 0 ? (
+                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs font-semibold text-white/30">
+                          Versandlog wird geladen …
+                        </div>
+                      ) : lineupAlertLogs.length === 0 ? (
+                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs font-semibold text-white/30">
+                          Für dieses Spiel wurde noch kein EMD Alert protokolliert.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {lineupAlertLogs.map((row) => {
+                            const modeLabel =
+                              row.recipient_mode === "captain"
+                                ? "Kapitän"
+                                : row.recipient_mode === "co_captain"
+                                  ? "Co-Kapitän"
+                                  : "Beide"
+
+                            return (
+                              <div
+                                key={row.id}
+                                className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <div className="text-xs font-black text-white">
+                                      {modeLabel}
+                                      {row.recipient_names?.length
+                                        ? ` · ${row.recipient_names.join(" + ")}`
+                                        : ""}
+                                    </div>
+                                    <div className="mt-1 text-[11px] font-semibold text-white/30">
+                                      {new Date(row.created_at).toLocaleString("de-AT")} · Geräte {row.targeted_devices}
+                                    </div>
+                                  </div>
+                                  <div
+                                    className={cn(
+                                      "shrink-0 rounded-full px-2 py-1 text-[10px] font-black",
+                                      row.failed_count > 0
+                                        ? "bg-amber-500/10 text-amber-200"
+                                        : "bg-emerald-500/10 text-emerald-200",
+                                    )}
+                                  >
+                                    {row.sent_count} gesendet
+                                    {row.failed_count > 0 ? ` · ${row.failed_count} Fehler` : ""}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-xs font-semibold leading-5 text-white/30">
+                      Auswahl allein sendet nichts. Erst der rote Button „EMD Alert senden“ verschickt den Alert.
+                    </div>
+                  </div>
+                ) : null}
+              </DialogContent>
+            </Dialog>
           </Tabs>
         </div>
       </div>

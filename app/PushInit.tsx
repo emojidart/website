@@ -267,6 +267,19 @@ export default function PushInit() {
           lights: true,
         })
         console.log("[push] channel created: chat")
+
+        await PushNotifications.createChannel({
+          id: "emd_alert_v2",
+          name: "EMD Alert",
+          description: "Dringende Hinweise zur Aufstellungsbestätigung",
+          importance: 5,
+          visibility: 1,
+          vibration: true,
+          lights: true,
+          lightColor: "#ef4444",
+          sound: "emd_alert_siren.wav",
+        })
+        console.log("[push] channel created: emd_alert")
       } catch (e) {
         console.log("[push] createChannel skipped:", e)
       }
@@ -304,8 +317,36 @@ export default function PushInit() {
       console.error("[push] registration error:", err)
     })
 
+    const persistAndDispatchEmdAlert = (data: any) => {
+      if (data?.type !== "lineup_confirmation_alert") return
+
+      const payload = {
+        type: data.type,
+        match_id: data.match_id,
+        team_id: data.team_id,
+        received_at: Date.now(),
+      }
+
+      try {
+        localStorage.setItem("emd_lineup_alert_pending", JSON.stringify(payload))
+      } catch {}
+
+      window.dispatchEvent(
+        new CustomEvent("emd-lineup-alert", {
+          detail: payload,
+        }),
+      )
+    }
+
     const subReceived = PushNotifications.addListener("pushNotificationReceived", (notif) => {
       console.log("[push] received:", notif)
+
+      try {
+        const data: any = (notif as any)?.data || {}
+        persistAndDispatchEmdAlert(data)
+      } catch (e) {
+        console.log("[push] EMD alert foreground event failed:", e)
+      }
     })
 
     const subAction = PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
@@ -313,6 +354,28 @@ export default function PushInit() {
 
       try {
         const data: any = (action as any)?.notification?.data || {}
+
+        if (data?.type === "lineup_confirmation_alert") {
+          const payload = {
+            type: data.type,
+            match_id: data.match_id,
+            team_id: data.team_id,
+            received_at: Date.now(),
+          }
+
+          try {
+            localStorage.setItem("emd_lineup_alert_pending", JSON.stringify(payload))
+          } catch {}
+
+          window.setTimeout(() => {
+            window.dispatchEvent(
+              new CustomEvent("emd-lineup-alert", {
+                detail: payload,
+              }),
+            )
+          }, 120)
+        }
+
         const url = data?.url || data?.clickUrl || data?.path
 
         if (url && typeof url === "string") {

@@ -10,6 +10,7 @@ import AppPlatformClass from "./AppPlatformClass"
 import SupabaseSessionGuard from "@/components/SupabaseSessionGuard"
 import { AppRouteGuard } from "@/components/auth/app-route-guard"
 import AppThemeShell from "@/components/AppThemeShell"
+import EmdLineupAlert from "@/components/emd-lineup-alert"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PresenceTracker />
           <PushSubscriptionRepair />
           <PushInit />
+          <EmdLineupAlert />
 
           <AppRouteGuard><AppThemeShell>{children}</AppThemeShell></AppRouteGuard>
         </div>

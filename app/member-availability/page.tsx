@@ -327,6 +327,10 @@ function MemberAvailabilityInner() {
         setSelectedTeamId(teamId)
         await loadMatchData(m.id, teamId, m)
       }
+
+      if (searchParams.get("tab") === "lineup") {
+        setModalTab("lineup")
+      }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user, matches])
