@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { CalendarDays, Clock3, MapPin, Trophy } from "lucide-react"
+import { CalendarDays, Clock3, MapPin, Sparkles, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import LineupDisplay from "@/components/emd-tv/lineup-display"
 
 const REFRESH_MS = 30000
 const NORMAL_SLIDE_MS = 14000
@@ -33,6 +34,21 @@ type SeriesEventRow = {
   is_rescheduled: boolean | null
   is_matchday: boolean | null
   location: string | null
+}
+
+
+type DachEventRow = {
+  id: string
+  name: string
+  event_type: string | null
+  start_date: string
+  end_date: string | null
+  event_time: string | null
+  location: string | null
+  city: string | null
+  country_code: string | null
+  photo_url: string | null
+  discipline: string | null
 }
 
 type LineupHeader = {
@@ -87,8 +103,9 @@ type EventCard = {
 }
 
 type Slide =
-  | { kind: "events"; offset: number }
+  | { kind: "tournaments"; offset: number }
   | { kind: "series" }
+  | { kind: "veranstaltungen" }
   | { kind: "lineup"; lineup: LineupSlide }
 
 type ActiveStatus = { dko: boolean; kratzer: boolean }
@@ -135,17 +152,19 @@ export default function EmdTvScreenPage() {
   const [active, setActive] = useState<ActiveStatus>({ dko: false, kratzer: false })
   const [tournaments, setTournaments] = useState<TournamentRow[]>([])
   const [seriesEvents, setSeriesEvents] = useState<SeriesEvent[]>([])
+  const [dachEvents, setDachEvents] = useState<DachEventRow[]>([])
   const [lineups, setLineups] = useState<LineupSlide[]>([])
   const [slideIndex, setSlideIndex] = useState(0)
 
   const loadData = useCallback(async () => {
     const today = todayIso()
 
-    const [dkoStatusRes, kratzerStatusRes, tournamentRes, seriesRes, headersRes] = await Promise.all([
+    const [dkoStatusRes, kratzerStatusRes, tournamentRes, seriesRes, dachEventsRes, headersRes] = await Promise.all([
       supabase.from("tournaments_status").select("tournament_id").eq("status", "active").limit(1),
       supabase.from("kratzer_tournaments").select("id").eq("status", "running").order("created_at", { ascending: false }).limit(1),
       supabase.from("tournaments").select("id,name,date,time,location,mode,photo_url").gte("date", today).order("date", { ascending: true }).order("time", { ascending: true }).limit(12),
       supabase.from("dko_series").select("id,name,slug,image_path").eq("is_active", true).order("created_at", { ascending: false }),
+      supabase.from("dach_events").select("id,name,event_type,start_date,end_date,event_time,location,city,country_code,photo_url,discipline").eq("event_status", "approved").gte("start_date", today).order("start_date", { ascending: true }).order("event_time", { ascending: true }).limit(10),
       supabase.from("match_lineup_headers").select("match_id,team_id,status,current_version,confirmed_version").eq("status", "confirmed"),
     ])
 
@@ -153,6 +172,10 @@ export default function EmdTvScreenPage() {
 
     if (!tournamentRes.error) {
       setTournaments(((tournamentRes.data || []) as TournamentRow[]).filter((item) => Number.isFinite(tournamentStart(item))))
+    }
+
+    if (!dachEventsRes.error) {
+      setDachEvents((dachEventsRes.data || []) as DachEventRow[])
     }
 
     const activeSeries = (seriesRes.data || []) as SeriesRow[]
@@ -241,6 +264,7 @@ export default function EmdTvScreenPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "match_lineup_headers" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "dko_series_events" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "tournaments" }, () => void loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "dach_events" }, () => void loadData())
       .subscribe()
 
     return () => {
@@ -250,43 +274,34 @@ export default function EmdTvScreenPage() {
     }
   }, [loadData])
 
-  const events = useMemo<EventCard[]>(() => {
-    const standalone: EventCard[] = tournaments.map((t) => ({
-      key: `t-${t.id}`,
-      kind: "tournament",
-      title: t.name,
-      eyebrow: "Turnier",
-      startsAt: tournamentStart(t),
-      dateText: formatDate(`${t.date}T12:00:00`),
-      timeText: formatTime(t.time),
-      location: t.location,
-      detail: t.mode,
-      imageUrl: t.photo_url,
-    }))
-    const series: EventCard[] = seriesEvents.map((e) => ({
-      key: `s-${e.id}`,
-      kind: "series",
-      title: e.seriesName,
-      eyebrow: e.title?.trim() || "Turnierserie",
-      startsAt: new Date(e.startsAt).getTime(),
-      dateText: formatDate(e.startsAt),
-      timeText: formatTime(e.startsAt),
-      location: e.location,
-      detail: e.title,
-      imageUrl: seriesPhoto(e.imagePath),
-    }))
-    return [...standalone, ...series].sort((a, b) => a.startsAt - b.startsAt).slice(0, 12)
-  }, [tournaments, seriesEvents])
+  const tournamentCards = useMemo<EventCard[]>(() => {
+    return tournaments
+      .map((t) => ({
+        key: `t-${t.id}`,
+        kind: "tournament" as const,
+        title: t.name,
+        eyebrow: "Turnier",
+        startsAt: tournamentStart(t),
+        dateText: formatDate(`${t.date}T12:00:00`),
+        timeText: formatTime(t.time),
+        location: t.location,
+        detail: t.mode,
+        imageUrl: t.photo_url,
+      }))
+      .sort((a, b) => a.startsAt - b.startsAt)
+      .slice(0, 12)
+  }, [tournaments])
 
   const slides = useMemo<Slide[]>(() => {
     const next: Slide[] = []
-    if (events.length) {
-      for (let offset = 0; offset < events.length; offset += 4) next.push({ kind: "events", offset })
+    if (tournamentCards.length) {
+      for (let offset = 0; offset < tournamentCards.length; offset += 4) next.push({ kind: "tournaments", offset })
     }
     if (seriesEvents.length) next.push({ kind: "series" })
+    if (dachEvents.length) next.push({ kind: "veranstaltungen" })
     lineups.forEach((lineup) => next.push({ kind: "lineup", lineup }))
-    return next.length ? next : [{ kind: "events", offset: 0 }]
-  }, [events.length, lineups, seriesEvents.length])
+    return next.length ? next : [{ kind: "tournaments", offset: 0 }]
+  }, [dachEvents.length, lineups, seriesEvents.length, tournamentCards.length])
 
   const currentSlide = slides[slideIndex] || slides[0]
 
@@ -300,56 +315,42 @@ export default function EmdTvScreenPage() {
     return () => window.clearTimeout(timer)
   }, [active.dko, active.kratzer, currentSlide?.kind, slideIndex, slides.length])
 
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return
-      if (event.data?.type !== "EMD_TV_LINEUP_COMPLETE") return
-      setSlideIndex((i) => (i + 1) % slides.length)
-    }
-    window.addEventListener("message", onMessage)
-    return () => window.removeEventListener("message", onMessage)
+  const advanceSlide = useCallback(() => {
+    setSlideIndex((i) => (i + 1) % slides.length)
   }, [slides.length])
-
-  useEffect(() => {
-    if (currentSlide?.kind !== "lineup") return
-    const fallback = window.setTimeout(() => setSlideIndex((i) => (i + 1) % slides.length), 65000)
-    return () => window.clearTimeout(fallback)
-  }, [currentSlide?.kind, currentSlide && "lineup" in currentSlide ? currentSlide.lineup?.matchId : "", slides.length])
 
   async function tryFullscreen() {
     if (document.fullscreenElement) return
     try { await document.documentElement.requestFullscreen?.() } catch {}
   }
 
-  if (active.dko || active.kratzer) {
-    return (
-      <main className="fixed inset-0 overflow-hidden bg-black" onClick={tryFullscreen}>
-        <iframe src="/beamer" title="EMD TV Live" className="h-full w-full border-0 bg-black" allow="autoplay; fullscreen" allowFullScreen />
-      </main>
-    )
-  }
-
-  if (currentSlide?.kind === "lineup") {
-    return (
-      <main className="fixed inset-0 overflow-hidden bg-black" onClick={tryFullscreen}>
-        <iframe
-          src={`/emd-tv/${currentSlide.lineup.matchId}?team_id=${encodeURIComponent(currentSlide.lineup.teamId)}&embedded=1`}
-          title={`Starting Lineup ${currentSlide.lineup.teamName}`}
-          className="h-full w-full border-0 bg-black"
-          allow="autoplay; fullscreen"
-          allowFullScreen
-        />
-      </main>
-    )
-  }
-
-  const visibleEvents = currentSlide?.kind === "events" ? events.slice(currentSlide.offset, currentSlide.offset + 4) : []
-  const hero = visibleEvents[0] || events[0]
+  const visibleEvents = currentSlide?.kind === "tournaments" ? tournamentCards.slice(currentSlide.offset, currentSlide.offset + 4) : []
+  const hero = visibleEvents[0] || tournamentCards[0]
   const rest = visibleEvents.slice(1, 4)
   const seriesPreview = seriesEvents.slice(0, 4)
+  const veranstaltungenPreview = dachEvents.slice(0, 4)
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#030303] text-white" onClick={tryFullscreen}>
+      <div className="absolute inset-x-0 top-0 z-[80] flex h-[72px] items-center justify-between border-b border-white/[.06] bg-black/90 px-[3.2vw] shadow-[0_8px_30px_rgba(0,0,0,.35)]">
+        <div className="flex items-center gap-4">
+          <div className="text-[clamp(1.15rem,1.55vw,1.9rem)] font-black tracking-[-.055em]">EMD <span className="text-orange-400">TV</span></div>
+          <div className="h-6 w-px bg-white/10" />
+          <div className="text-[clamp(.58rem,.72vw,.78rem)] font-black uppercase tracking-[.25em] text-white/35">Emoji Darts · Salzburg</div>
+        </div>
+        <div className="flex items-center gap-5 text-right">
+          <div className="text-[clamp(.58rem,.72vw,.78rem)] font-bold uppercase tracking-[.16em] text-white/28">{formatLongDate(now)}</div>
+          <div className="text-[clamp(1.35rem,1.9vw,2.2rem)] font-black tabular-nums tracking-[-.05em]">{new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit" }).format(now)}</div>
+        </div>
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 top-[72px] overflow-hidden">
+        {active.dko || active.kratzer ? (
+          <iframe src="/beamer" title="EMD TV Live" className="h-full w-full border-0 bg-black" allow="autoplay; fullscreen" allowFullScreen />
+        ) : currentSlide?.kind === "lineup" ? (
+          <LineupDisplay key={`${currentSlide.lineup.matchId}-${currentSlide.lineup.teamId}`} matchId={currentSlide.lineup.matchId} teamId={currentSlide.lineup.teamId} onComplete={advanceSlide} />
+        ) : (
+          <>
       <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.32]" />
       <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.97)_0%,rgba(4,4,4,.88)_45%,rgba(8,5,2,.72)_100%)]" />
       <div className="absolute -left-[12vw] top-[5vh] h-[38vw] w-[38vw] rounded-full bg-orange-500/[.10] blur-[9vw]" />
@@ -357,23 +358,46 @@ export default function EmdTvScreenPage() {
       <div className="absolute inset-x-0 bottom-0 h-[28vh] bg-gradient-to-t from-black to-transparent" />
 
       <div className="relative z-10 flex h-full flex-col px-[4.2vw] py-[4vh]">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="text-[clamp(1.35rem,2.2vw,2.7rem)] font-black tracking-[-.055em]">EMD <span className="text-orange-400">TV</span></div>
-            <div className="mt-1 h-[3px] w-[4.2rem] rounded-full bg-orange-400 shadow-[0_0_20px_rgba(251,146,60,.65)]" />
-          </div>
-          <div className="text-right">
-            <div className="text-[clamp(2.2rem,4.4vw,5rem)] font-black tabular-nums leading-none tracking-[-.07em]">
-              {new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit" }).format(now)}
-            </div>
-            <div className="mt-2 text-[clamp(.72rem,1vw,1rem)] font-bold uppercase tracking-[.18em] text-white/42">{formatLongDate(now)}</div>
-          </div>
-        </div>
-
         {!loaded ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="h-2 w-40 overflow-hidden rounded-full bg-white/10"><div className="h-full w-2/3 animate-pulse rounded-full bg-orange-400" /></div>
-          </div>
+          <div className="flex flex-1" />
+        ) : currentSlide?.kind === "veranstaltungen" ? (
+          <section className="flex flex-1 flex-col justify-center pt-[1vh]">
+            <div className="mb-[3.3vh] flex items-end justify-between gap-8">
+              <div>
+                <div className="text-[clamp(.7rem,.9vw,.95rem)] font-black uppercase tracking-[.38em] text-orange-300/75">Veranstaltungen</div>
+                <h1 className="mt-2 text-[clamp(3rem,5.5vw,6.4rem)] font-black leading-[.88] tracking-[-.07em]">DAS LÄUFT <span className="text-orange-400">ALS NÄCHSTES</span></h1>
+              </div>
+              <Sparkles className="mb-2 h-[3.2vw] w-[3.2vw] text-orange-300/40" />
+            </div>
+
+            <div className="grid grid-cols-4 gap-[1.25vw]">
+              {veranstaltungenPreview.map((event, index) => {
+                const flyerIsImage = Boolean(event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf"))
+                const place = [event.location, event.city].filter(Boolean).join(" · ")
+                return (
+                  <article key={event.id} className="relative h-[48vh] overflow-hidden rounded-[2vw] border border-white/[.10] bg-[#090909] shadow-[0_35px_100px_rgba(0,0,0,.55)]">
+                    <div
+                      className="absolute inset-0 bg-cover bg-center opacity-65"
+                      style={{ backgroundImage: `url('${flyerIsImage ? event.photo_url : "/terminal/hero-startscreen.png"}')` }}
+                    />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.10),rgba(0,0,0,.30)_34%,rgba(0,0,0,.97)_100%)]" />
+                    <div className="absolute left-[1.35vw] top-[1.35vw] rounded-full border border-orange-300/20 bg-black/55 px-[.8vw] py-[.45vw] text-[clamp(.55rem,.68vw,.72rem)] font-black uppercase tracking-[.17em] text-orange-200 backdrop-blur-md">
+                      {event.event_type || "Event"}
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 p-[1.55vw]">
+                      <div className="text-[clamp(.58rem,.7vw,.75rem)] font-black uppercase tracking-[.18em] text-white/38">Veranstaltung {String(index + 1).padStart(2, "0")}</div>
+                      <h2 className="mt-2 line-clamp-2 text-[clamp(1.35rem,2.05vw,2.55rem)] font-black leading-[.95] tracking-[-.045em]">{event.name}</h2>
+                      <div className="mt-5 flex flex-col gap-2 text-[clamp(.74rem,.92vw,1rem)] font-bold text-white/58">
+                        <span className="flex items-center gap-2"><CalendarDays className="h-[1.05em] w-[1.05em] text-orange-300" />{formatDate(`${event.start_date}T12:00:00`)}</span>
+                        {event.event_time ? <span className="flex items-center gap-2"><Clock3 className="h-[1.05em] w-[1.05em] text-orange-300" />{formatTime(event.event_time)}</span> : null}
+                        {place ? <span className="flex items-center gap-2 truncate"><MapPin className="h-[1.05em] w-[1.05em] shrink-0 text-orange-300" />{place}</span> : null}
+                      </div>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </section>
         ) : currentSlide?.kind === "series" ? (
           <section className="flex flex-1 flex-col justify-center pt-[1vh]">
             <div className="mb-[3.6vh]">
@@ -398,12 +422,12 @@ export default function EmdTvScreenPage() {
               ))}
             </div>
           </section>
-        ) : hero ? (
+        ) : currentSlide?.kind === "tournaments" && hero ? (
           <section className="grid flex-1 grid-cols-[1.55fr_.85fr] items-center gap-[3vw] pt-[1vh]">
             <div className="min-w-0">
               <div className="mb-[2vh] flex items-center gap-3">
                 <span className="h-2 w-2 rounded-full bg-orange-400 shadow-[0_0_18px_rgba(251,146,60,.9)]" />
-                <span className="text-[clamp(.7rem,.9vw,.95rem)] font-black uppercase tracking-[.36em] text-white/46">Als Nächstes im EMD</span>
+                <span className="text-[clamp(.7rem,.9vw,.95rem)] font-black uppercase tracking-[.36em] text-white/46">Nächste Turniere</span>
               </div>
               <div className="text-[clamp(.75rem,1vw,1.05rem)] font-black uppercase tracking-[.26em] text-orange-300/80">{hero.eyebrow}</div>
               <h1 className="mt-[1.5vh] max-w-[14ch] text-[clamp(3.8rem,7.1vw,8.6rem)] font-black leading-[.82] tracking-[-.075em]">{hero.title}</h1>
@@ -443,12 +467,14 @@ export default function EmdTvScreenPage() {
           </section>
         )}
 
-        <div className="flex items-center justify-between pb-[.5vh] pt-[2vh]">
-          <div className="text-[clamp(.55rem,.72vw,.75rem)] font-black uppercase tracking-[.28em] text-white/20">Emoji Darts · Salzburg</div>
+        <div className="flex items-center justify-end pb-[.5vh] pt-[2vh]">
           <div className="flex items-center gap-2">
             {slides.map((slide, index) => <span key={`${slide.kind}-${index}`} className={`h-[4px] rounded-full transition-all duration-700 ${index === slideIndex ? "w-12 bg-orange-400" : "w-3 bg-white/12"}`} />)}
           </div>
         </div>
+      </div>
+          </>
+        )}
       </div>
     </main>
   )
