@@ -175,6 +175,7 @@ export default function EmdTvScreenPage() {
   const [dachEvents, setDachEvents] = useState<DachEventRow[]>([])
   const [lineups, setLineups] = useState<LineupSlide[]>([])
   const [slideIndex, setSlideIndex] = useState(0)
+  const [brandBreak, setBrandBreak] = useState(true)
 
   const loadData = useCallback(async () => {
     const today = todayIso()
@@ -330,14 +331,26 @@ export default function EmdTvScreenPage() {
   }, [slides.length])
 
   useEffect(() => {
-    if (!assetsReady || active.dko || active.kratzer || slides.length <= 1 || currentSlide?.kind === "lineup") return
-    const timer = window.setTimeout(() => setSlideIndex((i) => (i + 1) % slides.length), NORMAL_SLIDE_MS)
+    if (!loaded || !assetsReady || active.dko || active.kratzer || !brandBreak) return
+    const timer = window.setTimeout(() => setBrandBreak(false), 5000)
     return () => window.clearTimeout(timer)
-  }, [assetsReady, active.dko, active.kratzer, currentSlide?.kind, slideIndex, slides.length])
+  }, [loaded, assetsReady, active.dko, active.kratzer, brandBreak])
 
   const advanceSlide = useCallback(() => {
-    setSlideIndex((i) => (i + 1) % slides.length)
+    setSlideIndex((i) => {
+      if (i >= slides.length - 1) {
+        setBrandBreak(true)
+        return 0
+      }
+      return i + 1
+    })
   }, [slides.length])
+
+  useEffect(() => {
+    if (!assetsReady || brandBreak || active.dko || active.kratzer || slides.length <= 1 || currentSlide?.kind === "lineup") return
+    const timer = window.setTimeout(advanceSlide, NORMAL_SLIDE_MS)
+    return () => window.clearTimeout(timer)
+  }, [assetsReady, brandBreak, active.dko, active.kratzer, currentSlide?.kind, slideIndex, slides.length, advanceSlide])
 
   async function tryFullscreen() {
     if (document.fullscreenElement) return
@@ -442,6 +455,19 @@ export default function EmdTvScreenPage() {
       <div className="absolute inset-x-0 bottom-0 top-[72px] overflow-hidden">
         {active.dko || active.kratzer ? (
           <iframe src="/beamer" title="EMD TV Live" className="h-full w-full border-0 bg-black" allow="autoplay; fullscreen" allowFullScreen />
+        ) : brandBreak && loaded && assetsReady ? (
+          <section className="absolute inset-0 overflow-hidden bg-[#030303]">
+            <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.25]" />
+            <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.98),rgba(5,5,6,.91)_48%,rgba(17,8,2,.77))]" />
+            <div className="absolute left-[-10vw] top-[10vh] h-[42vw] w-[42vw] rounded-full bg-orange-500/[.08] blur-[7vw]" />
+            <div className="absolute inset-0 grid place-items-center px-[5vw] text-center">
+              <div>
+                <div className="text-[clamp(4rem,8vw,9rem)] font-black leading-none tracking-[-.075em] text-white">EMD <span className="text-orange-400">TV</span></div>
+                <div className="mx-auto mt-[2.8vh] h-[4px] w-[11vw] bg-orange-400 shadow-[0_0_30px_rgba(251,146,60,.55)]" />
+                <div className="mt-[2.6vh] text-[clamp(.72rem,1vw,1.05rem)] font-black uppercase tracking-[.42em] text-white/42">Emoji Darts · Salzburg</div>
+              </div>
+            </div>
+          </section>
         ) : currentSlide?.kind === "lineup" ? (
           <LineupDisplay key={`${currentSlide.lineup.matchId}-${currentSlide.lineup.teamId}`} matchId={currentSlide.lineup.matchId} teamId={currentSlide.lineup.teamId} onComplete={advanceSlide} />
         ) : (
@@ -505,7 +531,7 @@ export default function EmdTvScreenPage() {
             </div>
           </section>
         ) : currentSlide?.kind === "series" ? (
-          <section className="flex flex-1 flex-col justify-center pt-[1vh]">
+          <section className="flex flex-1 flex-col justify-center pt-[4vh]">
             <div className="mb-[3.6vh]">
               <div className="text-[clamp(.7rem,.9vw,.95rem)] font-black uppercase tracking-[.38em] text-orange-300/75">Turnierserien</div>
               <h1 className="mt-2 text-[clamp(3rem,5.8vw,6.8rem)] font-black leading-[.88] tracking-[-.07em]">NÄCHSTE <span className="text-orange-400">SPIELTAGE</span></h1>

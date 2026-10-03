@@ -250,7 +250,7 @@ export default function LineupDisplay({
   useEffect(() => {
     if (!ready || screens.length < 2) return
     const final = screenIndex === screens.length - 1
-    const delay = screenIndex === 0 ? 2600 : final ? 7800 : 3600
+    const delay = screenIndex === 0 ? 7000 : final ? 7800 : 3600
     const timer = window.setTimeout(() => {
       if (final) {
         if (!completedRef.current) {
@@ -378,7 +378,7 @@ export default function LineupDisplay({
             {/* Hintergrund beginnt DIREKT am Foto. Nur der Text bleibt weit rechts. */}
             <div className="absolute inset-y-0 left-[49vw] right-0 z-[2] bg-[linear-gradient(110deg,rgba(6,5,5,.18),rgba(8,6,5,.10)_22%,transparent_55%)]" />
 
-            <div className="absolute inset-y-0 left-[49vw] right-0 z-10 flex min-w-0 flex-col justify-center overflow-hidden pl-[4.8vw] pr-[3.2vw]">
+            <div className="absolute inset-y-0 left-[49vw] right-0 z-10 flex min-w-0 flex-col justify-center overflow-hidden pl-[2.4vw] pr-[3.2vw]">
               <div className="absolute right-[4vw] top-[9vh] text-[clamp(8rem,15vw,18rem)] font-black leading-none text-white/[.035]">
                 {String(screen.number).padStart(2, "0")}
               </div>
@@ -386,7 +386,7 @@ export default function LineupDisplay({
                 {currentPlayer.is_substitute ? "ERSATZSPIELER" : roleText(currentPlayer.role)}
               </div>
               <h2
-                className="mt-[2vh] max-w-[15ch] break-words font-black uppercase leading-[.84] tracking-[-.072em]"
+                className="mt-[2vh] max-w-[16ch] break-words font-black uppercase leading-[.84] tracking-[-.072em]"
                 style={{ fontSize: playerNameSize(playerName) }}
               >
                 {playerName}
