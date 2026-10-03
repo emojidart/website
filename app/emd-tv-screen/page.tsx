@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { CalendarDays, Clock3, MapPin, Sparkles, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import LineupDisplay from "@/components/emd-tv/lineup-display"
@@ -148,6 +148,8 @@ function tournamentStart(row: TournamentRow) {
 
 export default function EmdTvScreenPage() {
   const [loaded, setLoaded] = useState(false)
+  const [assetsReady, setAssetsReady] = useState(false)
+  const preloadedKeyRef = useRef("")
   const [now, setNow] = useState(() => new Date())
   const [active, setActive] = useState<ActiveStatus>({ dko: false, kratzer: false })
   const [tournaments, setTournaments] = useState<TournamentRow[]>([])
@@ -330,6 +332,72 @@ export default function EmdTvScreenPage() {
   const seriesPreview = seriesEvents.slice(0, 4)
   const veranstaltungenPreview = dachEvents.slice(0, 4)
 
+  const preloadImageUrls = useMemo(() => {
+    const urls = new Set<string>()
+    tournamentCards.forEach((item) => { if (item.imageUrl) urls.add(item.imageUrl) })
+    seriesEvents.forEach((item) => {
+      const url = seriesPhoto(item.imagePath)
+      if (url) urls.add(url)
+    })
+    dachEvents.forEach((event) => {
+      if (event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf")) urls.add(event.photo_url)
+    })
+    return Array.from(urls)
+  }, [dachEvents, seriesEvents, tournamentCards])
+
+  const preloadKey = useMemo(() => preloadImageUrls.slice().sort().join("|"), [preloadImageUrls])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function warmImages() {
+      if (!loaded) return
+      if (!preloadImageUrls.length) {
+        setAssetsReady(true)
+        return
+      }
+      if (preloadedKeyRef.current === preloadKey) {
+        setAssetsReady(true)
+        return
+      }
+
+      setAssetsReady(false)
+      await Promise.all(
+        preloadImageUrls.map(
+          (src) =>
+            new Promise<void>((resolve) => {
+              const img = new Image()
+              let finished = false
+              const finish = () => {
+                if (finished) return
+                finished = true
+                resolve()
+              }
+              const timeout = window.setTimeout(finish, 7000)
+              img.onload = async () => {
+                window.clearTimeout(timeout)
+                try { await img.decode?.() } catch {}
+                finish()
+              }
+              img.onerror = () => {
+                window.clearTimeout(timeout)
+                finish()
+              }
+              img.src = src
+            }),
+        ),
+      )
+
+      if (!cancelled) {
+        preloadedKeyRef.current = preloadKey
+        setAssetsReady(true)
+      }
+    }
+
+    void warmImages()
+    return () => { cancelled = true }
+  }, [loaded, preloadImageUrls, preloadKey])
+
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#030303] text-white" onClick={tryFullscreen}>
       <div className="absolute inset-x-0 top-0 z-[80] flex h-[72px] items-center justify-between border-b border-white/[.06] bg-black/90 px-[3.2vw] shadow-[0_8px_30px_rgba(0,0,0,.35)]">
@@ -358,8 +426,10 @@ export default function EmdTvScreenPage() {
       <div className="absolute inset-x-0 bottom-0 h-[28vh] bg-gradient-to-t from-black to-transparent" />
 
       <div className="relative z-10 flex h-full flex-col px-[4.2vw] py-[4vh]">
-        {!loaded ? (
-          <div className="flex flex-1" />
+        {!loaded || !assetsReady ? (
+          <div className="flex flex-1 items-center justify-center">
+            <div className="text-[clamp(2.4rem,4.7vw,5.6rem)] font-black tracking-[-.06em] text-white/12">EMD <span className="text-orange-400/25">TV</span></div>
+          </div>
         ) : currentSlide?.kind === "veranstaltungen" ? (
           <section className="flex flex-1 flex-col justify-center pt-[1vh]">
             <div className="mb-[3.3vh] flex items-end justify-between gap-8">
@@ -376,9 +446,12 @@ export default function EmdTvScreenPage() {
                 const place = [event.location, event.city].filter(Boolean).join(" · ")
                 return (
                   <article key={event.id} className="relative h-[48vh] overflow-hidden rounded-[2vw] border border-white/[.10] bg-[#090909] shadow-[0_35px_100px_rgba(0,0,0,.55)]">
-                    <div
-                      className="absolute inset-0 bg-cover bg-center opacity-65"
-                      style={{ backgroundImage: `url('${flyerIsImage ? event.photo_url : "/terminal/hero-startscreen.png"}')` }}
+                    <img
+                      src={flyerIsImage ? event.photo_url! : "/terminal/hero-startscreen.png"}
+                      alt=""
+                      loading="eager"
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover object-center opacity-65"
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.10),rgba(0,0,0,.30)_34%,rgba(0,0,0,.97)_100%)]" />
                     <div className="absolute left-[1.35vw] top-[1.35vw] rounded-full border border-orange-300/20 bg-black/55 px-[.8vw] py-[.45vw] text-[clamp(.55rem,.68vw,.72rem)] font-black uppercase tracking-[.17em] text-orange-200 backdrop-blur-md">
@@ -407,7 +480,14 @@ export default function EmdTvScreenPage() {
             <div className="grid grid-cols-4 gap-[1.25vw]">
               {seriesPreview.map((item, index) => (
                 <article key={item.id} className="group relative h-[47vh] overflow-hidden rounded-[2vw] border border-white/[.10] bg-[#0a0a0a] shadow-[0_35px_100px_rgba(0,0,0,.55)]">
-                  <div className="absolute inset-0 bg-cover bg-center opacity-55" style={{ backgroundImage: `url('${seriesPhoto(item.imagePath) || "/terminal/hero-startscreen.png"}')` }} />
+                  <img
+                    src={seriesPhoto(item.imagePath) || "/terminal/hero-startscreen.png"}
+                    alt=""
+                    loading="eager"
+                    decoding="async"
+                    draggable={false}
+                    className="absolute inset-0 h-full w-full object-cover object-center opacity-55"
+                  />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.30)_35%,rgba(0,0,0,.96)_100%)]" />
                   <div className="absolute left-[1.4vw] top-[1.4vw] grid h-[3vw] min-h-10 w-[3vw] min-w-10 place-items-center rounded-full border border-white/15 bg-black/45 text-[.8vw] font-black text-white/65 backdrop-blur-md">{index + 1}</div>
                   <div className="absolute inset-x-0 bottom-0 p-[1.6vw]">
