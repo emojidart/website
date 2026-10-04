@@ -54,8 +54,6 @@ import {
   PenLine,
   RotateCcw,
   LockKeyhole,
-  Smartphone,
-  Share2,
   X,
 } from "lucide-react"
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
@@ -386,75 +384,6 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
   const [memberGuardianName, setMemberGuardianName] = useState("")
   const [memberGuardianSignature, setMemberGuardianSignature] = useState<string | null>(null)
   const [memberArchiveLoading, setMemberArchiveLoading] = useState<string | null>(null)
-
-  // EMD Messenger PWA installation
-  const [messengerInstallPrompt, setMessengerInstallPrompt] = useState<any>(null)
-  const [messengerInstallHelpOpen, setMessengerInstallHelpOpen] = useState(false)
-  const [messengerInstalled, setMessengerInstalled] = useState(false)
-  const [messengerIsIOS, setMessengerIsIOS] = useState(false)
-
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const manifestId = "emd-messenger-manifest"
-    let manifest = document.getElementById(manifestId) as HTMLLinkElement | null
-    if (!manifest) {
-      manifest = document.createElement("link")
-      manifest.id = manifestId
-      manifest.rel = "manifest"
-      manifest.href = "/emd-messenger.webmanifest"
-      document.head.appendChild(manifest)
-    }
-
-    const standalone =
-      window.matchMedia?.("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true
-    setMessengerInstalled(Boolean(standalone))
-    setMessengerIsIOS(/iphone|ipad|ipod/i.test(window.navigator.userAgent))
-
-    const onBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault()
-      setMessengerInstallPrompt(event as any)
-    }
-
-    const onInstalled = () => {
-      setMessengerInstalled(true)
-      setMessengerInstallPrompt(null)
-      setMessengerInstallHelpOpen(false)
-    }
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener)
-    window.addEventListener("appinstalled", onInstalled)
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener)
-      window.removeEventListener("appinstalled", onInstalled)
-    }
-  }, [])
-
-  const installMessenger = async () => {
-    if (messengerInstalled) {
-      router.push("/chat-app")
-      return
-    }
-
-    if (messengerInstallPrompt?.prompt) {
-      try {
-        await messengerInstallPrompt.prompt()
-        const choice = await messengerInstallPrompt.userChoice
-        if (choice?.outcome === "accepted") {
-          setMessengerInstallPrompt(null)
-        }
-        return
-      } catch (error) {
-        console.error("Messenger install prompt failed:", error)
-      }
-    }
-
-    setMessengerInstallHelpOpen(true)
-  }
-
 
   const [statistics, setStatistics] = useState({
   legsWon: 0,
@@ -1826,25 +1755,12 @@ if (error || !profile) {
                   </p>
                 </div>
               </div>
-
               <Button
                 type="button"
-                onClick={() => void installMessenger()}
-                className={`h-12 shrink-0 rounded-2xl px-5 font-black text-white transition active:scale-[0.985] ${
-                  messengerInstalled
-                    ? "border border-emerald-300/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20"
-                    : "border border-orange-300/25 bg-orange-500 shadow-[0_0_30px_rgba(249,115,22,.22)] hover:bg-orange-400"
-                }`}
+                onClick={() => router.push("/messenger-install")}
+                className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-orange-500 px-5 font-black text-white shadow-[0_0_30px_rgba(249,115,22,.22)] transition hover:bg-orange-400 active:scale-[0.985]"
               >
-                {messengerInstalled ? (
-                  <>
-                    <ExternalLink className="mr-2 h-4 w-4" /> Messenger öffnen
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" /> Messenger installieren
-                  </>
-                )}
+                <Download className="mr-2 h-4 w-4" /> Messenger installieren
               </Button>
             </div>
           </div>
