@@ -1,11 +1,20 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { CalendarDays, Clock3, MapPin, Sparkles, Trophy } from "lucide-react"
+import { CalendarDays, Clock3, MapPin, Play, Sparkles, Trophy, Tv2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import LineupDisplay from "@/components/emd-tv/lineup-display"
+import BirthdayTv from "@/components/emd-tv/birthday-tv"
+import TodayTv from "@/components/emd-tv/today-tv"
+import {
+  SportdartsLiveOverviewTv,
+  SportdartsLiveTv,
+  SportdartsResultsTv,
+  SportdartsUpcomingTv,
+  useSportdartsTvData,
+} from "@/components/emd-tv/sportdarts-tv"
 
-const REFRESH_MS = 30000
+const REFRESH_MS = 15 * 60 * 1000
 const NORMAL_SLIDE_MS = 14000
 
 type TournamentRow = {
@@ -59,11 +68,24 @@ type LineupHeader = {
   confirmed_version: number | null
 }
 
+type LineupRow = {
+  match_id: string
+  team_id: string
+  is_substitute: boolean
+}
+
+type TeamRow = {
+  id: string
+  name: string
+  dart_type: string | null
+}
+
 type MatchRow = {
   id: string
   match_date: string
   match_time: string | null
   status: string | null
+  dart_type: string | null
   home_team_type: string | null
   away_team_type: string | null
   home_opponent_team_id: string | null
@@ -76,6 +98,7 @@ type LineupSlide = {
   matchId: string
   teamId: string
   teamName: string
+  opponentName: string
   startsAt: number
 }
 
@@ -103,10 +126,23 @@ type EventCard = {
 }
 
 type Slide =
+  | { kind: "today" }
   | { kind: "tournaments"; offset: number }
   | { kind: "series" }
   | { kind: "veranstaltungen" }
+  | { kind: "sportdarts-live-overview" }
+  | { kind: "sportdarts-live"; index: number }
+  | { kind: "league-upcoming" }
+  | { kind: "league-results" }
+  | { kind: "birthday"; player: BirthdayPlayer }
   | { kind: "lineup"; lineup: LineupSlide }
+
+type BirthdayPlayer = {
+  id: string
+  name: string
+  photo_url: string | null
+  birthdate: string
+}
 
 type ActiveStatus = { dko: boolean; kratzer: boolean }
 
@@ -158,6 +194,23 @@ function tvImageUrl(src: string | null, width = 1280, height = 900, quality = 68
   }
 }
 
+function normalizeDartType(value: string | null | undefined) {
+  const v = String(value ?? "").toLowerCase().replace(/[\s_-]+/g, "")
+  if (v.includes("edart")) return "edart" as const
+  if (v.includes("steel")) return "steeldart" as const
+  return "" as const
+}
+
+function normalizeTeamName(value?: string | null) {
+  return String(value ?? "")
+    .replace(/&amp;/g, "&")
+    .replace(/&#039;/g, "'")
+    .replace(/&quot;/g, '"')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+}
+
 function tournamentStart(row: TournamentRow) {
   const time = row.time && /^\d{2}:\d{2}/.test(row.time) ? row.time.slice(0, 5) : "23:59"
   return new Date(`${row.date}T${time}:00`).getTime()
@@ -174,22 +227,84 @@ export default function EmdTvScreenPage() {
   const [seriesEvents, setSeriesEvents] = useState<SeriesEvent[]>([])
   const [dachEvents, setDachEvents] = useState<DachEventRow[]>([])
   const [lineups, setLineups] = useState<LineupSlide[]>([])
+  const [birthdays, setBirthdays] = useState<BirthdayPlayer[]>([])
   const [slideIndex, setSlideIndex] = useState(0)
   const [brandBreak, setBrandBreak] = useState(true)
+  const sportdarts = useSportdartsTvData()
+  const [testMode, setTestMode] = useState<"" | "live" | "today" | "results" | "all">("")
+
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("test")
+    setTestMode(raw === "live" || raw === "today" || raw === "results" || raw === "all" ? raw : "")
+  }, [])
+
+  const testLiveEnabled = testMode === "live" || testMode === "all"
+  const testTodayEnabled = testMode === "today" || testMode === "all"
+  const testResultsEnabled = testMode === "results" || testMode === "all"
+
+  const testLiveGame = useMemo(() => ({
+    gameId: "emd-tv-test-live",
+    division: "E-Dart Division 2",
+    weekNumber: 7,
+    homeTeam: "Emoj!'s 4",
+    awayTeam: "Habidere Lady's",
+    homeScore: 5,
+    awayScore: 3,
+    status: "started" as const,
+  }), [])
+
+  const tvLiveGames = useMemo(() => {
+    if (!testLiveEnabled) return sportdarts.live
+    return [testLiveGame, ...sportdarts.live.filter((game) => game.gameId !== testLiveGame.gameId)]
+  }, [sportdarts.live, testLiveEnabled, testLiveGame])
+
+  const testResultGame = useMemo(() => ({
+    gameId: "emd-tv-test-result",
+    weekNumber: 6,
+    date: todayIso(),
+    homeTeam: "Emoj!\'s 4",
+    awayTeam: "Habidere Lady\'s",
+    homeScore: 9,
+    awayScore: 7,
+    status: "completed" as const,
+    divisionName: "E-Dart Division 2",
+  }), [])
+
+  const tvResults = useMemo(() => {
+    if (!testResultsEnabled) return sportdarts.results
+    return [testResultGame, ...sportdarts.results.filter((game) => game.gameId !== testResultGame.gameId)]
+  }, [sportdarts.results, testResultsEnabled, testResultGame])
 
   const loadData = useCallback(async () => {
     const today = todayIso()
 
-    const [dkoStatusRes, kratzerStatusRes, tournamentRes, seriesRes, dachEventsRes, headersRes] = await Promise.all([
+    const [dkoStatusRes, kratzerStatusRes, tournamentRes, seriesRes, dachEventsRes, headersRes, birthdaysRes] = await Promise.all([
       supabase.from("tournaments_status").select("tournament_id").eq("status", "active").limit(1),
       supabase.from("kratzer_tournaments").select("id").eq("status", "running").order("created_at", { ascending: false }).limit(1),
       supabase.from("tournaments").select("id,name,date,time,location,mode,photo_url").gte("date", today).order("date", { ascending: true }).order("time", { ascending: true }).limit(12),
       supabase.from("dko_series").select("id,name,slug,image_path").eq("is_active", true).order("created_at", { ascending: false }),
       supabase.from("dach_events").select("id,name,event_type,start_date,end_date,event_time,location,city,country_code,photo_url,discipline").eq("event_status", "approved").gte("start_date", today).order("start_date", { ascending: true }).order("event_time", { ascending: true }).limit(10),
       supabase.from("match_lineup_headers").select("match_id,team_id,status,current_version,confirmed_version").eq("status", "confirmed"),
+      supabase.from("club_players").select("id,name,photo_url,birthdate").eq("is_active", true).not("birthdate", "is", null),
     ])
 
     setActive({ dko: Boolean(dkoStatusRes.data?.length), kratzer: Boolean(kratzerStatusRes.data?.length) })
+
+    if (!birthdaysRes.error) {
+      const now = new Date()
+      const month = now.getMonth() + 1
+      const day = now.getDate()
+      const todaysBirthdays = ((birthdaysRes.data || []) as BirthdayPlayer[])
+        .filter((player) => {
+          if (!player.birthdate) return false
+          const parts = player.birthdate.split("-")
+          return Number(parts[1]) === month && Number(parts[2]) === day
+        })
+        .sort((a, b) => a.name.localeCompare(b.name, "de"))
+      setBirthdays(todaysBirthdays)
+    } else {
+      setBirthdays([])
+    }
 
     if (!tournamentRes.error) {
       setTournaments(((tournamentRes.data || []) as TournamentRow[]).filter((item) => Number.isFinite(tournamentStart(item))))
@@ -245,23 +360,54 @@ export default function EmdTvScreenPage() {
     if (!headersRes.error && confirmed.length) {
       const matchIds = [...new Set(confirmed.map((x) => x.match_id))]
       const teamIds = [...new Set(confirmed.map((x) => x.team_id))]
-      const [matchesRes, teamsRes] = await Promise.all([
-        supabase.from("matches").select("id,match_date,match_time,status,home_team_type,away_team_type,home_opponent_team_id,away_opponent_team_id,home_team:teams!matches_home_team_id_fkey(id,name),away_team:teams!matches_away_team_id_fkey(id,name)").in("id", matchIds).gte("match_date", today).neq("status", "completed"),
-        supabase.from("teams").select("id,name").in("id", teamIds),
+      const [matchesRes, teamsRes, lineupRes, opponentsRes] = await Promise.all([
+        supabase.from("matches").select("id,match_date,match_time,status,dart_type,home_team_type,away_team_type,home_opponent_team_id,away_opponent_team_id,home_team:teams!matches_home_team_id_fkey(id,name),away_team:teams!matches_away_team_id_fkey(id,name)").in("id", matchIds).gte("match_date", today).neq("status", "completed"),
+        supabase.from("teams").select("id,name,dart_type").in("id", teamIds),
+        supabase.from("match_lineups").select("match_id,team_id,is_substitute").in("match_id", matchIds).in("team_id", teamIds),
+        supabase.from("opponent_teams").select("id,name"),
       ])
       const matches = (matchesRes.data || []) as unknown as MatchRow[]
       const matchMap = new Map(matches.map((m) => [m.id, m]))
-      const teams = new Map(((teamsRes.data || []) as Array<{ id: string; name: string }>).map((t) => [t.id, t.name]))
+      const teamRows = (teamsRes.data || []) as TeamRow[]
+      const teams = new Map(teamRows.map((t) => [t.id, t]))
+      const lineupRows = (lineupRes.data || []) as LineupRow[]
+      const opponents = new Map(((opponentsRes.data || []) as Array<{ id: string; name: string }>).map((o) => [o.id, o.name]))
       const nowMs = Date.now()
 
       setLineups(
         confirmed
           .map((header) => {
             const match = matchMap.get(header.match_id)
-            if (!match) return null
+            const team = teams.get(header.team_id)
+            if (!match || !team) return null
+
+            // Exakt wie in der originalen EMD-TV-Übersicht:
+            // Ein confirmed Header allein reicht nicht. Die aktuell bestätigte
+            // Version muss vollständig sein, sonst ist es ein Entwurf/ungültig.
+            const rows = lineupRows.filter(
+              (r) => r.match_id === header.match_id && r.team_id === header.team_id,
+            )
+            const starters = rows.filter((r) => !r.is_substitute).length
+            const dartType = normalizeDartType(team.dart_type || (match as any).dart_type)
+            const requiredStarters = dartType === "edart" ? 4 : dartType === "steeldart" ? 3 : 1
+            if (starters < requiredStarters) return null
+
             const startsAt = new Date(`${match.match_date}T${match.match_time || "23:59:00"}`).getTime()
             if (!Number.isFinite(startsAt) || startsAt <= nowMs) return null
-            return { matchId: header.match_id, teamId: header.team_id, teamName: teams.get(header.team_id) || "EMD", startsAt }
+
+            const sideName = (side: "home" | "away") => {
+              const type = side === "home" ? match.home_team_type : match.away_team_type
+              const oppId = side === "home" ? match.home_opponent_team_id : match.away_opponent_team_id
+              const own = side === "home" ? match.home_team : match.away_team
+              if (type === "opponent" && oppId) return opponents.get(oppId) || "GEGNER"
+              return own?.name || "UNBEKANNT"
+            }
+            const homeName = sideName("home")
+            const awayName = sideName("away")
+            const ownIsHome = match.home_team?.id === header.team_id || normalizeTeamName(homeName) === normalizeTeamName(team.name)
+            const opponentName = ownIsHome ? awayName : homeName
+
+            return { matchId: header.match_id, teamId: header.team_id, teamName: team.name || "EMD", opponentName, startsAt }
           })
           .filter(Boolean)
           .sort((a, b) => a!.startsAt - b!.startsAt)
@@ -276,7 +422,25 @@ export default function EmdTvScreenPage() {
 
   useEffect(() => {
     void loadData()
-    const refreshInterval = window.setInterval(() => void loadData(), REFRESH_MS)
+    let refreshInterval: number | null = null
+
+    const startFallbackRefresh = () => {
+      if (refreshInterval) window.clearInterval(refreshInterval)
+      refreshInterval = null
+      if (!document.hidden) {
+        // Supabase Realtime übernimmt die unmittelbaren Änderungen.
+        // Dieser Intervall ist nur ein sparsames Sicherheitsnetz.
+        refreshInterval = window.setInterval(() => void loadData(), REFRESH_MS)
+      }
+    }
+
+    const handleVisibility = () => {
+      startFallbackRefresh()
+      if (!document.hidden) void loadData()
+    }
+
+    startFallbackRefresh()
+    document.addEventListener("visibilitychange", handleVisibility)
     const clockInterval = window.setInterval(() => setNow(new Date()), 1000)
     const channel = supabase
       .channel("emd_tv_screen_updates_v2")
@@ -286,11 +450,13 @@ export default function EmdTvScreenPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "dko_series_events" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "tournaments" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "dach_events" }, () => void loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "club_players" }, () => void loadData())
       .subscribe()
 
     return () => {
-      window.clearInterval(refreshInterval)
+      if (refreshInterval) window.clearInterval(refreshInterval)
       window.clearInterval(clockInterval)
+      document.removeEventListener("visibilitychange", handleVisibility)
       void supabase.removeChannel(channel)
     }
   }, [loadData])
@@ -313,22 +479,120 @@ export default function EmdTvScreenPage() {
       .slice(0, 12)
   }, [tournaments])
 
+  const todayKey = todayIso()
+
+  const todayLeagueGames = useMemo(() => {
+    const live = sportdarts.ownLive.map((game) => ({
+      id: `live-${game.gameId}`,
+      homeTeam: game.homeTeam,
+      awayTeam: game.awayTeam,
+      division: game.division,
+      weekNumber: game.weekNumber,
+      live: true,
+      homeScore: game.homeScore,
+      awayScore: game.awayScore,
+    }))
+    const upcoming = sportdarts.upcoming
+      .filter((game) => game.date === todayKey)
+      .map((game) => ({
+        id: `up-${game.gameId}`,
+        homeTeam: game.homeTeam,
+        awayTeam: game.awayTeam,
+        division: game.divisionName || "Sportdarts",
+        weekNumber: game.weekNumber,
+        live: false,
+        homeScore: game.homeScore,
+        awayScore: game.awayScore,
+      }))
+    const seen = new Set<string>()
+    return [...live, ...upcoming].filter((game) => {
+      const key = game.id.replace(/^(live|up)-/, "")
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [sportdarts.ownLive, sportdarts.upcoming, todayKey])
+
+  const todayTournaments = useMemo(() => tournaments
+    .filter((item) => item.date === todayKey)
+    .map((item) => ({ id: item.id, title: item.name, subtitle: item.location || item.mode, time: formatTime(item.time) })),
+  [tournaments, todayKey])
+
+  const todaySeries = useMemo(() => seriesEvents
+    .filter((item) => {
+      const d = new Date(item.startsAt)
+      if (!Number.isFinite(d.getTime())) return false
+      const local = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+      return local === todayKey
+    })
+    .map((item) => ({ id: item.id, title: item.title || item.seriesName, subtitle: item.seriesName, time: formatTime(item.startsAt) })),
+  [seriesEvents, todayKey])
+
+  const todayEvents = useMemo(() => dachEvents
+    .filter((item) => item.start_date === todayKey)
+    .map((item) => ({ id: item.id, title: item.name, subtitle: [item.location, item.city].filter(Boolean).join(" · "), time: formatTime(item.event_time) })),
+  [dachEvents, todayKey])
+
+  const tvTodayLeagueGames = useMemo(() => {
+    if (!testTodayEnabled) return todayLeagueGames
+    return [
+      { id: "emd-tv-test-today-league", homeTeam: "Emoj!'s 4", awayTeam: "Habidere Lady's", division: "E-Dart Division 2", weekNumber: 7, live: testLiveEnabled, homeScore: 5, awayScore: 3 },
+      ...todayLeagueGames.filter((game) => game.id !== "emd-tv-test-today-league"),
+    ]
+  }, [todayLeagueGames, testTodayEnabled, testLiveEnabled])
+
+  const tvTodayTournaments = useMemo(() => testTodayEnabled
+    ? [{ id: "emd-tv-test-tournament", title: "Members Champion Cup", subtitle: "EMD Vereinslokal", time: "19:00 Uhr" }, ...todayTournaments]
+    : todayTournaments, [testTodayEnabled, todayTournaments])
+
+  const tvTodaySeries = useMemo(() => testTodayEnabled
+    ? [{ id: "emd-tv-test-series", title: "Summer Special · Spieltag", subtitle: "Turnierserie", time: "18:30 Uhr" }, ...todaySeries]
+    : todaySeries, [testTodayEnabled, todaySeries])
+
+  const tvTodayEvents = useMemo(() => testTodayEnabled
+    ? [{ id: "emd-tv-test-event", title: "EMD Clubabend", subtitle: "Linzer Bundesstraße 16 · Salzburg", time: "20:00 Uhr" }, ...todayEvents]
+    : todayEvents, [testTodayEnabled, todayEvents])
+
+  const hasTodaySlide = tvTodayLeagueGames.length > 0 || tvTodayTournaments.length > 0 || tvTodaySeries.length > 0 || tvTodayEvents.length > 0 || birthdays.length > 0
+
   const slides = useMemo<Slide[]>(() => {
+    // Schneller TV-Test: zuerst LIVE-Übersicht, danach Detailansicht des Testspiels.
+    if (testMode === "live") {
+      return [
+        { kind: "sportdarts-live-overview" },
+        { kind: "sportdarts-live", index: 0 },
+      ]
+    }
+
     const next: Slide[] = []
+    birthdays.forEach((player) => next.push({ kind: "birthday", player }))
+    if (hasTodaySlide) next.push({ kind: "today" })
+    if (tvLiveGames.length) {
+      next.push({ kind: "sportdarts-live-overview" })
+      tvLiveGames.forEach((_, index) => next.push({ kind: "sportdarts-live", index }))
+    }
     if (tournamentCards.length) {
       for (let offset = 0; offset < tournamentCards.length; offset += 4) next.push({ kind: "tournaments", offset })
     }
     if (seriesEvents.length) next.push({ kind: "series" })
     if (dachEvents.length) next.push({ kind: "veranstaltungen" })
+    if (sportdarts.upcoming.length) next.push({ kind: "league-upcoming" })
+    if (tvResults.length) next.push({ kind: "league-results" })
     lineups.forEach((lineup) => next.push({ kind: "lineup", lineup }))
     return next.length ? next : [{ kind: "tournaments", offset: 0 }]
-  }, [dachEvents.length, lineups, seriesEvents.length, tournamentCards.length])
+  }, [birthdays, dachEvents.length, hasTodaySlide, lineups, seriesEvents.length, tvLiveGames.length, tvResults.length, sportdarts.upcoming.length, tournamentCards.length, testMode])
 
   const currentSlide = slides[slideIndex] || slides[0]
 
   useEffect(() => {
     setSlideIndex((i) => Math.min(i, Math.max(0, slides.length - 1)))
   }, [slides.length])
+
+  useEffect(() => {
+    if (testMode !== "live") return
+    setBrandBreak(false)
+    setSlideIndex(0)
+  }, [testMode])
 
   useEffect(() => {
     if (!loaded || !assetsReady || active.dko || active.kratzer || !brandBreak) return
@@ -371,6 +635,10 @@ export default function EmdTvScreenPage() {
       const url = tvImageUrl(seriesPhoto(item.imagePath), 900, 1100, 66, "cover")
       if (url) urls.add(url)
     })
+    birthdays.forEach((player) => {
+      const url = tvImageUrl(player.photo_url, 900, 1100, 68, "cover")
+      if (url) urls.add(url)
+    })
     dachEvents.slice(0, 4).forEach((event) => {
       if (event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf")) {
         const url = tvImageUrl(event.photo_url, 900, 1100, 66, "cover")
@@ -378,7 +646,7 @@ export default function EmdTvScreenPage() {
       }
     })
     return Array.from(urls)
-  }, [dachEvents, seriesEvents])
+  }, [birthdays, dachEvents, seriesEvents])
 
   const preloadKey = useMemo(() => preloadImageUrls.slice().sort().join("|"), [preloadImageUrls])
 
@@ -442,10 +710,21 @@ export default function EmdTvScreenPage() {
     <main className="fixed inset-0 overflow-hidden bg-[#030303] text-white" onClick={tryFullscreen}>
       <div className="absolute inset-x-0 top-0 z-[80] flex h-[72px] items-center justify-between border-b border-white/[.06] bg-black/90 px-[3.2vw] shadow-[0_8px_30px_rgba(0,0,0,.35)]">
         <div className="flex items-center gap-4">
-          <div className="text-[clamp(1.15rem,1.55vw,1.9rem)] font-black tracking-[-.055em]">EMD <span className="text-orange-400">TV</span></div>
+          <div className="flex items-center gap-2.5">
+            <div className="relative flex h-[38px] w-[46px] shrink-0 items-center justify-center rounded-[10px] border border-orange-300/20 bg-gradient-to-br from-white/[.055] to-orange-500/[.055] shadow-[0_0_22px_rgba(251,146,60,.10)]">
+              <Tv2 className="h-[25px] w-[25px] stroke-[1.8] text-white/72" />
+              <div className="absolute inset-0 flex items-center justify-center pt-[1px]">
+                <Play className="ml-[2px] h-[10px] w-[10px] fill-orange-400 text-orange-400 drop-shadow-[0_0_5px_rgba(251,146,60,.5)]" />
+              </div>
+            </div>
+            <div className="text-[clamp(1.15rem,1.55vw,1.9rem)] font-black tracking-[-.055em]">EMD <span className="text-orange-400">TV</span></div>
+          </div>
           <div className="h-6 w-px bg-white/10" />
           <div className="text-[clamp(.58rem,.72vw,.78rem)] font-black uppercase tracking-[.25em] text-white/35">Emoji Darts · Salzburg</div>
         </div>
+        {testMode ? (
+          <div className="absolute left-1/2 -translate-x-1/2 rounded-full border border-orange-300/20 bg-orange-500/10 px-4 py-2 text-[11px] font-black uppercase tracking-[.22em] text-orange-200">TESTMODUS · {testMode.toUpperCase()}</div>
+        ) : null}
         <div className="flex items-center gap-5 text-right">
           <div className="text-[clamp(.58rem,.72vw,.78rem)] font-bold uppercase tracking-[.16em] text-white/28">{formatLongDate(now)}</div>
           <div className="text-[clamp(1.35rem,1.9vw,2.2rem)] font-black tabular-nums tracking-[-.05em]">{new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit" }).format(now)}</div>
@@ -461,15 +740,71 @@ export default function EmdTvScreenPage() {
             <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.98),rgba(5,5,6,.91)_48%,rgba(17,8,2,.77))]" />
             <div className="absolute left-[-10vw] top-[10vh] h-[42vw] w-[42vw] rounded-full bg-orange-500/[.08] blur-[7vw]" />
             <div className="absolute inset-0 grid place-items-center px-[5vw] text-center">
-              <div>
-                <div className="text-[clamp(4rem,8vw,9rem)] font-black leading-none tracking-[-.075em] text-white">EMD <span className="text-orange-400">TV</span></div>
-                <div className="mx-auto mt-[2.8vh] h-[4px] w-[11vw] bg-orange-400 shadow-[0_0_30px_rgba(251,146,60,.55)]" />
-                <div className="mt-[2.6vh] text-[clamp(.72rem,1vw,1.05rem)] font-black uppercase tracking-[.42em] text-white/42">Emoji Darts · Salzburg</div>
+              <div className="relative flex min-h-[52vh] min-w-[58vw] items-center justify-center">
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-[39vh] w-[46vw] -translate-x-1/2 -translate-y-[48%]">
+                  {/* deutlich sichtbarer TV-Rahmen */}
+                  <div className="absolute left-1/2 top-[-7.4vh] h-[13vh] w-[2.6px] origin-bottom -translate-x-[5.7vw] rotate-[-43deg] rounded-full bg-gradient-to-t from-orange-300/55 via-white/50 to-white/10 shadow-[0_0_10px_rgba(251,146,60,.18)]" />
+                  <div className="absolute left-1/2 top-[-7.4vh] h-[13vh] w-[2.6px] origin-bottom translate-x-[5.7vw] rotate-[43deg] rounded-full bg-gradient-to-t from-orange-300/55 via-white/50 to-white/10 shadow-[0_0_10px_rgba(251,146,60,.18)]" />
+
+                  <div className="absolute inset-0 rounded-[3.6vw] border-[3px] border-white/[.17] bg-black/20 shadow-[inset_0_0_0_2px_rgba(251,146,60,.10),0_0_65px_rgba(251,146,60,.055)]" />
+                  <div className="absolute inset-[1.15vw] rounded-[2.55vw] border-[2px] border-orange-300/[.12]" />
+
+                  {/* TV-Standfüße */}
+                  <div className="absolute -bottom-[2.6vh] left-[8.8vw] h-[2.8vh] w-[5.6vw] -skew-x-[18deg] rounded-b-[10px] bg-gradient-to-b from-white/[.16] to-orange-400/[.12]" />
+                  <div className="absolute -bottom-[2.6vh] right-[8.8vw] h-[2.8vh] w-[5.6vw] skew-x-[18deg] rounded-b-[10px] bg-gradient-to-b from-white/[.16] to-orange-400/[.12]" />
+
+                  {/* kleiner Power-Punkt macht den Fernseher sofort erkennbar */}
+                  <div className="absolute bottom-[1.8vw] right-[2.2vw] h-[9px] w-[9px] rounded-full bg-orange-400/80 shadow-[0_0_14px_rgba(251,146,60,.8)]" />
+                </div>
+
+                <div className="relative z-10">
+                  <div className="text-[clamp(4rem,8vw,9rem)] font-black leading-none tracking-[-.075em] text-white drop-shadow-[0_6px_30px_rgba(0,0,0,.65)]">EMD <span className="text-orange-400">TV</span></div>
+                  <div className="mx-auto mt-[2.8vh] h-[4px] w-[11vw] bg-orange-400 shadow-[0_0_30px_rgba(251,146,60,.55)]" />
+                  <div className="mt-[2.6vh] text-[clamp(.72rem,1vw,1.05rem)] font-black uppercase tracking-[.42em] text-white/42">Emoji Darts · Salzburg</div>
+                </div>
               </div>
             </div>
           </section>
+        ) : currentSlide?.kind === "today" ? (
+          <TodayTv
+            leagueGames={tvTodayLeagueGames}
+            tournaments={tvTodayTournaments}
+            series={tvTodaySeries}
+            events={tvTodayEvents}
+            birthdays={birthdays.map((player) => ({ id: player.id, name: player.name }))}
+          />
+        ) : currentSlide?.kind === "birthday" ? (
+          <BirthdayTv player={{ id: currentSlide.player.id, name: currentSlide.player.name, photoUrl: tvImageUrl(currentSlide.player.photo_url, 1000, 1300, 72, "cover") || currentSlide.player.photo_url }} />
         ) : currentSlide?.kind === "lineup" ? (
-          <LineupDisplay key={`${currentSlide.lineup.matchId}-${currentSlide.lineup.teamId}`} matchId={currentSlide.lineup.matchId} teamId={currentSlide.lineup.teamId} onComplete={advanceSlide} />
+          <LineupDisplay
+            key={`${currentSlide.lineup.matchId}-${currentSlide.lineup.teamId}`}
+            matchId={currentSlide.lineup.matchId}
+            teamId={currentSlide.lineup.teamId}
+            prediction={sportdarts.getPrediction(currentSlide.lineup.teamName, currentSlide.lineup.opponentName)}
+            onComplete={advanceSlide}
+          />
+        ) : currentSlide?.kind === "sportdarts-live-overview" ? (
+          <div className="absolute inset-0 overflow-hidden bg-[#030303]">
+            <div className="relative z-10 h-full"><SportdartsLiveOverviewTv games={tvLiveGames} lastUpdated={sportdarts.lastUpdated} /></div>
+          </div>
+        ) : currentSlide?.kind === "sportdarts-live" ? (
+          <div className="absolute inset-0 overflow-hidden bg-[#030303]">
+            <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.24]" />
+            <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.97),rgba(5,5,6,.88)_50%,rgba(12,3,3,.82))]" />
+            <div className="relative z-10 h-full"><SportdartsLiveTv game={tvLiveGames[currentSlide.index]} lastUpdated={sportdarts.lastUpdated} testMode={testLiveEnabled && tvLiveGames[currentSlide.index]?.gameId === testLiveGame.gameId} /></div>
+          </div>
+        ) : currentSlide?.kind === "league-upcoming" ? (
+          <div className="absolute inset-0 overflow-hidden bg-[#030303]">
+            <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.24]" />
+            <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.97),rgba(5,5,6,.88)_50%,rgba(17,8,2,.78))]" />
+            <div className="relative z-10 h-full"><SportdartsUpcomingTv games={sportdarts.upcoming} getPrediction={sportdarts.getPrediction} /></div>
+          </div>
+        ) : currentSlide?.kind === "league-results" ? (
+          <div className="absolute inset-0 overflow-hidden bg-[#030303]">
+            <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.24]" />
+            <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.97),rgba(5,5,6,.88)_50%,rgba(17,8,2,.78))]" />
+            <div className="relative z-10 h-full"><SportdartsResultsTv games={tvResults.slice(0, 6)} /></div>
+          </div>
         ) : (
           <>
       <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.32]" />

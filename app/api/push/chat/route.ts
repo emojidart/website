@@ -3,18 +3,25 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { sendPushAndCleanup } from "@/lib/sendPushAndCleanup"
 
-type ChatScope = "team" | "match" | "captains" | "club" | "freizeit" | "vorstand"
+type ChatScope = "team" | "match" | "captains" | "club" | "freizeit" | "vorstand" | "test"
 
 const ROLE_TABLE = "club_roles"
 const ROLE_USER_COL = "user_id"
 const ROLE_COL = "role"
 const BOARD_ROLES = ["Vorstand", "Kassier", "Schriftführer"]
 
+const TEST_ROOM_ID = "66666666-6666-6666-6666-666666666666"
+const TEST_AUTH_USER_IDS = [
+  "966f979e-e14d-4d86-abbe-21a2d93eade9", // wilhelmer.jimmy@gmail.com
+  "9bff9eb4-661e-44f8-9e8c-6712dec8da6a", // wilhelmerjimmy3@gmail.com
+]
+
 function pickTitle(scope: ChatScope) {
   if (scope === "team") return "Team-Chat"
   if (scope === "captains") return "Captain-Chat"
   if (scope === "vorstand") return "Vorstand"
   if (scope === "freizeit") return "Freizeit"
+  if (scope === "test") return "🧪 Jimmy Testchat"
   return "Vereinsinfo"
 }
 
@@ -102,6 +109,18 @@ export async function POST(request: NextRequest) {
     }
 
     const senderAuthUserId = senderAuth.user.id
+
+    if (scope === "test") {
+      if (room_id !== TEST_ROOM_ID) {
+        console.log("[push-chat] ERROR: Invalid test room")
+        return NextResponse.json({ success: false, error: "Invalid test room" }, { status: 403 })
+      }
+
+      if (!TEST_AUTH_USER_IDS.includes(senderAuthUserId)) {
+        console.log("[push-chat] ERROR: Sender not allowed in test chat")
+        return NextResponse.json({ success: false, error: "Not allowed in test chat" }, { status: 403 })
+      }
+    }
 
     const { data: senderProfile, error: senderProfileError } = await supabase
       .from("user_profiles")
@@ -205,6 +224,12 @@ export async function POST(request: NextRequest) {
     console.log("[push-chat] resolved teamId:", teamId)
 
     let targetAuthUserIds: string[] = []
+
+    if (scope === "test") {
+      // Testchat: Push ausschließlich zwischen den zwei Jimmy-Testkonten.
+      // Der Absender wird weiter unten wie bei allen anderen Chats entfernt.
+      targetAuthUserIds = [...TEST_AUTH_USER_IDS]
+    }
 
     if ((scope === "team" || scope === "match") && teamId) {
       const { data: mems, error: memsError } = await supabase
@@ -383,6 +408,10 @@ if (scope === "captains") {
 
 if (scope === "vorstand") {
   clickUrl = `/chat-app?scope=vorstand&room_id=${encodeURIComponent(room_id)}`
+}
+
+if (scope === "test") {
+  clickUrl = `/chat-app?scope=test&room_id=${encodeURIComponent(room_id)}`
 }
 
     console.log("[push-chat] cleanMessage:", cleanMessage)

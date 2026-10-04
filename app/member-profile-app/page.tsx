@@ -54,6 +54,8 @@ import {
   PenLine,
   RotateCcw,
   LockKeyhole,
+  Smartphone,
+  Share2,
   X,
 } from "lucide-react"
 import type { UserProfile, TeamMembership, Match, Notification } from "@/types"
@@ -384,6 +386,74 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
   const [memberGuardianName, setMemberGuardianName] = useState("")
   const [memberGuardianSignature, setMemberGuardianSignature] = useState<string | null>(null)
   const [memberArchiveLoading, setMemberArchiveLoading] = useState<string | null>(null)
+
+  // EMD Messenger PWA installation
+  const [messengerInstallPrompt, setMessengerInstallPrompt] = useState<any>(null)
+  const [messengerInstallHelpOpen, setMessengerInstallHelpOpen] = useState(false)
+  const [messengerInstalled, setMessengerInstalled] = useState(false)
+  const [messengerIsIOS, setMessengerIsIOS] = useState(false)
+
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const manifestId = "emd-messenger-manifest"
+    let manifest = document.getElementById(manifestId) as HTMLLinkElement | null
+    if (!manifest) {
+      manifest = document.createElement("link")
+      manifest.id = manifestId
+      manifest.rel = "manifest"
+      manifest.href = "/emd-messenger.webmanifest"
+      document.head.appendChild(manifest)
+    }
+
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true
+    setMessengerInstalled(Boolean(standalone))
+    setMessengerIsIOS(/iphone|ipad|ipod/i.test(window.navigator.userAgent))
+
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault()
+      setMessengerInstallPrompt(event as any)
+    }
+
+    const onInstalled = () => {
+      setMessengerInstalled(true)
+      setMessengerInstallPrompt(null)
+      setMessengerInstallHelpOpen(false)
+    }
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener)
+    window.addEventListener("appinstalled", onInstalled)
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener)
+      window.removeEventListener("appinstalled", onInstalled)
+    }
+  }, [])
+
+  const installMessenger = async () => {
+    if (messengerInstalled) {
+      router.push("/chat-app")
+      return
+    }
+
+    if (messengerInstallPrompt?.prompt) {
+      try {
+        await messengerInstallPrompt.prompt()
+        const choice = await messengerInstallPrompt.userChoice
+        if (choice?.outcome === "accepted") {
+          setMessengerInstallPrompt(null)
+        }
+        return
+      } catch (error) {
+        console.error("Messenger install prompt failed:", error)
+      }
+    }
+
+    setMessengerInstallHelpOpen(true)
+  }
 
 
   const [statistics, setStatistics] = useState({
@@ -1736,6 +1806,50 @@ if (error || !profile) {
           </div>
         </section>
 
+        <section className="mt-4">
+          <div className="group relative overflow-hidden rounded-[26px] border border-orange-300/[0.14] bg-[#090b10]/92 p-4 shadow-[0_26px_90px_-52px_rgba(249,115,22,.65)] backdrop-blur-2xl sm:p-5">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,rgba(249,115,22,.18),transparent_38%),radial-gradient(circle_at_100%_0%,rgba(14,165,233,.09),transparent_34%)]" />
+            <div className="pointer-events-none absolute inset-x-[10%] bottom-0 h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
+
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-orange-300/20 bg-orange-500/10 text-orange-200 shadow-[0_0_28px_rgba(249,115,22,.13)]">
+                  <MessageCircle className="h-7 w-7" />
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#090b10] bg-orange-500 px-1 text-[9px] font-black text-white">EMD</span>
+                </div>
+
+                <div className="min-w-0">
+                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">Direkt am Homescreen</div>
+                  <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">EMD Messenger installieren</h2>
+                  <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-white/45">
+                    Chats, Aktuelles und Aufstellungen wie eine eigene App öffnen – ohne Umweg über den Mitgliederbereich.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => void installMessenger()}
+                className={`h-12 shrink-0 rounded-2xl px-5 font-black text-white transition active:scale-[0.985] ${
+                  messengerInstalled
+                    ? "border border-emerald-300/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20"
+                    : "border border-orange-300/25 bg-orange-500 shadow-[0_0_30px_rgba(249,115,22,.22)] hover:bg-orange-400"
+                }`}
+              >
+                {messengerInstalled ? (
+                  <>
+                    <ExternalLink className="mr-2 h-4 w-4" /> Messenger öffnen
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" /> Messenger installieren
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {(photoDecision || nameDecision) ? (
           <section className="mt-4 grid gap-3">
             {nameDecision ? (
@@ -2466,6 +2580,63 @@ if (error || !profile) {
           <LogOut className="h-4 w-4" />Abmelden
         </button>
       </main>
+
+      {messengerInstallHelpOpen ? (
+        <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-5">
+          <button
+            type="button"
+            aria-label="Installationshinweis schließen"
+            className="absolute inset-0 cursor-default"
+            onClick={() => setMessengerInstallHelpOpen(false)}
+          />
+          <div className="relative w-full rounded-t-[28px] border border-white/10 bg-[#0a0d12] p-5 shadow-[0_28px_100px_rgba(0,0,0,.8)] sm:max-w-md sm:rounded-[28px] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-500/10 text-orange-200">
+                  <Smartphone className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300/65">EMD Messenger</div>
+                  <h3 className="mt-0.5 text-xl font-black text-white">Zum Homescreen hinzufügen</h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMessengerInstallHelpOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-white/60 hover:bg-white/[0.10] hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {messengerIsIOS ? (
+              <div className="mt-5 space-y-3">
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 text-sm font-semibold leading-6 text-white/65">
+                  <div className="flex items-center gap-2 font-black text-white"><Share2 className="h-4 w-4 text-orange-300" />1. Im Browser auf <span className="text-orange-200">Teilen</span> tippen</div>
+                  <div className="mt-2">2. <span className="font-black text-white">„Zum Home-Bildschirm“</span> wählen</div>
+                  <div className="mt-2">3. Mit <span className="font-black text-white">„Hinzufügen“</span> bestätigen</div>
+                </div>
+                <div className="text-xs font-semibold leading-5 text-white/35">Danach erscheint „EMD Messenger“ als eigene Kachel und startet direkt mit Chats, Aktuell und Aufstellung.</div>
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 text-sm font-semibold leading-6 text-white/65">
+                  Der Browser bietet die Installation aktuell nicht automatisch an. Öffne das Browser-Menü <span className="font-black text-white">⋮</span> und wähle <span className="font-black text-white">„App installieren“</span> oder <span className="font-black text-white">„Zum Startbildschirm hinzufügen“</span>.
+                </div>
+                <div className="text-xs font-semibold leading-5 text-white/35">Auf Android funktioniert der direkte Install-Button, sobald Chrome die Messenger-PWA als installierbar erkannt hat.</div>
+              </div>
+            )}
+
+            <Button
+              type="button"
+              onClick={() => setMessengerInstallHelpOpen(false)}
+              className="mt-5 h-11 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400"
+            >
+              Verstanden
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Foto Dialog */}
       {memberDocsModalOpen ? (

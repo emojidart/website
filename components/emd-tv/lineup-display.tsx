@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import type { EmdPrediction } from "@/components/emd-tv/sportdarts-tv"
 
 type Match = {
   id: string
@@ -123,10 +124,12 @@ export default function LineupDisplay({
   matchId,
   teamId,
   onComplete,
+  prediction = null,
 }: {
   matchId: string
   teamId: string
   onComplete: () => void
+  prediction?: EmdPrediction | null
 }) {
   const [ready, setReady] = useState(false)
   const [match, setMatch] = useState<Match | null>(null)
@@ -148,7 +151,13 @@ export default function LineupDisplay({
       // Die Team-Introfolie bleibt mindestens 2,2 Sekunden sichtbar.
       // Wenn das Vorladen länger dauert, bleibt sie automatisch länger stehen.
       const minimumIntro = new Promise((resolve) => window.setTimeout(resolve, 2200))
-      const [matchRes, lineupRes, teamRes, memberRes, opponentRes] = await Promise.all([
+      const [headerRes, matchRes, lineupRes, teamRes, memberRes, opponentRes] = await Promise.all([
+        supabase
+          .from("match_lineup_headers")
+          .select("status,current_version,confirmed_version")
+          .eq("match_id", matchId)
+          .eq("team_id", teamId)
+          .maybeSingle(),
         supabase
           .from("matches")
           .select("id,home_team_id,away_team_id,home_team_type,away_team_type,home_opponent_team_id,away_opponent_team_id,match_date,match_time,venue,dart_type,home_team:teams!matches_home_team_id_fkey(id,name),away_team:teams!matches_away_team_id_fkey(id,name)")
@@ -164,7 +173,27 @@ export default function LineupDisplay({
         supabase.from("opponent_teams").select("id,name"),
       ])
 
-      if (cancelled || !matchRes.data || matchRes.error || lineupRes.error) {
+      if (cancelled || headerRes.error || !matchRes.data || matchRes.error || lineupRes.error) {
+        if (!cancelled) onComplete()
+        return
+      }
+
+      const header = headerRes.data as {
+        status?: string | null
+        current_version?: number | null
+        confirmed_version?: number | null
+      } | null
+      const isConfirmed =
+        header?.status === "confirmed" &&
+        header.current_version !== null &&
+        header.current_version !== undefined &&
+        header.confirmed_version !== null &&
+        header.confirmed_version !== undefined &&
+        header.current_version === header.confirmed_version
+
+      // Niemals Entwürfe oder nachträglich geänderte, nicht erneut bestätigte
+      // Aufstellungen auf EMD TV anzeigen.
+      if (!isConfirmed) {
         if (!cancelled) onComplete()
         return
       }
@@ -181,6 +210,15 @@ export default function LineupDisplay({
       ;((opponentRes.data || []) as Array<{ id: string; name: string }>).forEach((o) => opponents.set(o.id, o.name))
 
       const loadedMatch = matchRes.data as unknown as Match
+      const teamDartType = (teamRes.data as { dart_type?: string | null } | null)?.dart_type || loadedMatch.dart_type
+      const normalizedDartType = String(teamDartType ?? "").toLowerCase().replace(/[\s_-]+/g, "")
+      const requiredStarters = normalizedDartType.includes("edart") ? 4 : normalizedDartType.includes("steel") ? 3 : 1
+      const starterCount = loadedPlayers.filter((p) => !p.is_substitute).length
+      if (starterCount < requiredStarters) {
+        if (!cancelled) onComplete()
+        return
+      }
+
       const sideName = (side: "home" | "away") => {
         const type = side === "home" ? loadedMatch.home_team_type : loadedMatch.away_team_type
         const oppId = side === "home" ? loadedMatch.home_opponent_team_id : loadedMatch.away_opponent_team_id
@@ -330,6 +368,19 @@ export default function LineupDisplay({
             <div className="mt-[2vh] text-[clamp(.75rem,1.05vw,1.1rem)] font-bold uppercase tracking-[.18em] text-white/42">
               {dartLabel(match.dart_type)} · {formatMatchDate(match.match_date, match.match_time)}
             </div>
+
+            {prediction ? (
+              <div className="mx-auto mt-[3vh] w-fit rounded-[1.1vw] border border-orange-300/15 bg-black/35 px-[1.5vw] py-[1.25vh] shadow-[0_18px_50px_rgba(0,0,0,.28)] backdrop-blur-xl">
+                <div className="text-[clamp(.56rem,.7vw,.78rem)] font-black uppercase tracking-[.26em] text-orange-300/75">EMD PROGNOSE</div>
+                <div className="mt-[.75vh] flex items-center justify-center gap-[1.2vw] text-[clamp(.9rem,1.25vw,1.45rem)] font-black uppercase">
+                  <span className="text-emerald-200">{prediction.firstWin}% Sieg</span>
+                  <span className="text-white/22">·</span>
+                  <span className="text-white/70">{prediction.draw}% X</span>
+                  <span className="text-white/22">·</span>
+                  <span className="text-red-200/85">{prediction.secondWin}% Niederlage</span>
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
       ) : null}

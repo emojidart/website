@@ -30,14 +30,26 @@ import {
   BarChart3,
   CheckCircle2,
   Home,
+  Search,
+  FlaskConical,
+  MoreVertical,
+  Smile,
+  Star,
+  Reply,
+  Pencil,
+  Trash2,
+  Newspaper,
+  ClipboardList,
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, ChangeEvent } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
+import ChatLineupPanel from "./chat-lineup-panel";
+import ChatUpdatesPanel from "./chat-updates-panel";
 
-type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand" | "community";
+type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand" | "community" | "test";
 
 // GLOBAL room ids (müssen zum SQL passen)
 const CLUB_ROOM_ID = "11111111-1111-1111-1111-111111111111";
@@ -45,6 +57,14 @@ const FREIZEIT_ROOM_ID = "22222222-2222-2222-2222-222222222222";
 const VORSTAND_ROOM_ID = "33333333-3333-3333-3333-333333333333";
 const CAPTAINS_ROOM_ID = "44444444-4444-4444-4444-444444444444";
 const COMMUNITY_ROOM_ID = "55555555-5555-5555-5555-555555555555";
+const TEST_ROOM_ID = "66666666-6666-6666-6666-666666666666";
+const TEST_CHAT_EMAILS = new Set([
+  "wilhelmer.jimmy@gmail.com",
+  "wilhelmerjimmy3@gmail.com",
+]);
+
+const CHAT_EMOJIS = ["😀","😂","😍","🥰","😎","🤔","😅","😭","😡","👍","👎","👏","🙌","🙏","💪","👌","❤️","🧡","🔥","🎯","🏆","🍻","🎉","🎂","✅","❌","👀","🤝","🤣","😉","😊","🥳"];
+type ChatFilter = "all" | "unread" | "favorites";
 
 // Rollen-Tabelle (falls du sie anders benannt hast, hier anpassen)
 const ROLE_TABLE = "club_roles";
@@ -61,6 +81,9 @@ type ChatMessage = {
   room_id: string; // uuid as string
   scope: ChatScope;
   created_at: string;
+  reply_to_message_id?: string | null;
+  edited_at?: string | null;
+  deleted_at?: string | null;
 
   message_type?: "text" | "poll";
 
@@ -78,6 +101,14 @@ type ChatMessageRead = {
   message_id: string;
   user_id: string;
   read_at: string;
+};
+
+type ChatReaction = {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
 };
 
 type LastMessagePreview = {
@@ -239,7 +270,7 @@ export default function TeamChatPage({
   const urlScopeRaw = searchParams.get("scope") as ChatScope | null;
   const urlScope: ChatScope | null =
     urlScopeRaw &&
-    (["team", "captains", "club", "freizeit", "vorstand", "community"] as const).includes(
+    (["team", "captains", "club", "freizeit", "vorstand", "community", "test"] as const).includes(
       urlScopeRaw,
     )
       ? urlScopeRaw
@@ -253,6 +284,10 @@ export default function TeamChatPage({
   };
 
   const [profile, setProfile] = useState<UserProfileLite | null>(null);
+  const isTestUser = useMemo(
+    () => TEST_CHAT_EMAILS.has((session?.user?.email || "").trim().toLowerCase()),
+    [session?.user?.email],
+  );
   const [profileLoading, setProfileLoading] = useState(true);
   const [clubVisibleFrom, setClubVisibleFrom] = useState<string | null>(null);
 
@@ -291,11 +326,12 @@ export default function TeamChatPage({
   const [openImageName, setOpenImageName] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [roomReady, setRoomReady] = useState(false);
   const [sending, setSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
+  const messagesCacheRef = useRef<Record<string, ChatMessage[]>>({});
   const markingRef = useRef(false);
 
   const [chatRooms, setChatRooms] = useState<TeamRoom[]>([]);
@@ -310,12 +346,27 @@ export default function TeamChatPage({
     if (selectedScope === "vorstand") return VORSTAND_ROOM_ID;
     if (selectedScope === "captains") return CAPTAINS_ROOM_ID;
     if (selectedScope === "community") return COMMUNITY_ROOM_ID;
+    if (selectedScope === "test") return TEST_ROOM_ID;
     return selectedRoom?.id ?? null; // ✅ chat_rooms.id
   }, [selectedScope, selectedRoom?.id]);
 
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const [appSection, setAppSection] = useState<"chats" | "updates" | "lineup">("chats");
+  const [chatSearch, setChatSearch] = useState("");
+  const [chatFilter, setChatFilter] = useState<ChatFilter>("all");
+  const [favoriteChats, setFavoriteChats] = useState<Set<string>>(new Set());
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [myDisplayName, setMyDisplayName] = useState("Du");
+  const [typingByRoom, setTypingByRoom] = useState<Record<string, { name: string; userId: string; expiresAt: number }>>({});
+  const typingChannelRef = useRef<any>(null);
+  const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [replyToMessage, setReplyToMessage] = useState<ChatMessage | null>(null);
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
+  const [activeMessageMenu, setActiveMessageMenu] = useState<string | null>(null);
+  const [messageMenuPosition, setMessageMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const [reactionsByMessage, setReactionsByMessage] = useState<Record<string, ChatReaction[]>>({});
 
   // Vorstand (club_roles.role = "Vorstand") can see/write in all chats
   const [isVorstand, setIsVorstand] = useState(false);
@@ -362,6 +413,7 @@ export default function TeamChatPage({
 
     const scopeToUse: ChatScope = init.scope ?? "team";
 
+    if (scopeToUse === "test" && !isTestUser) return;
     if (scopeToUse === "vorstand" && !canSeeVorstandChat && !isVorstand) return;
 
     if (scopeToUse === "captains") {
@@ -404,6 +456,7 @@ export default function TeamChatPage({
 
     const scopeToUse: ChatScope = init.scope ?? "team";
 
+    if (scopeToUse === "test" && !isTestUser) return;
     if (scopeToUse === "vorstand" && !canSeeVorstandChat && !isVorstand) return;
 
     if (scopeToUse === "captains") {
@@ -441,7 +494,7 @@ export default function TeamChatPage({
     if (!profile?.id) return;
 
     // Gäste dürfen nur in den Community-Chat.
-    if (profile.is_guest) {
+    if (profile.is_guest && !isTestUser) {
       setSelectedScope("community");
       setChatRooms([]);
       setSelectedRoom(null);
@@ -485,7 +538,10 @@ export default function TeamChatPage({
 
   useEffect(() => {
     messagesRef.current = messages;
-  }, [messages]);
+    if (currentRoomId) {
+      messagesCacheRef.current[`${selectedScope}:${currentRoomId}`] = messages;
+    }
+  }, [messages, currentRoomId, selectedScope]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -535,7 +591,21 @@ export default function TeamChatPage({
   useEffect(() => {
     if (!currentRoomId) return;
 
-    fetchMessages();
+    // WhatsApp-artig: bereits geladene Räume sofort aus dem Speicher zeigen.
+    // Supabase aktualisiert danach unsichtbar im Hintergrund.
+    const cacheKey = `${selectedScope}:${currentRoomId}`;
+    const cachedMessages = messagesCacheRef.current[cacheKey];
+    if (cachedMessages) {
+      setMessages(cachedMessages);
+      setRoomReady(true);
+    } else {
+      // Kein sichtbarer Ladezustand beim Raumwechsel. Der Bereich bleibt ruhig,
+      // bis die ersten Daten da sind.
+      setMessages([]);
+      setRoomReady(false);
+    }
+
+    void fetchMessages();
 
     // Wichtig:
     // Auf Handy startet die Seite mit der Chatliste.
@@ -559,11 +629,13 @@ export default function TeamChatPage({
     const unsubMsg = subscribeToMessages();
     const unsubReads = subscribeToReads();
     const unsubPollVotes = subscribeToPollVotes();
+    const unsubReactions = subscribeToReactions();
 
     return () => {
       unsubMsg?.();
       unsubReads?.();
       unsubPollVotes?.();
+      unsubReactions?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoomId]);
@@ -577,7 +649,6 @@ export default function TeamChatPage({
 
   useEffect(() => {
     if (!currentRoomId) return;
-    if (loading) return;
 
     const id = requestAnimationFrame(() => {
       messagesEndRef.current?.scrollIntoView({
@@ -587,19 +658,19 @@ export default function TeamChatPage({
     });
 
     return () => cancelAnimationFrame(id);
-  }, [currentRoomId, selectedRoom?.id, selectedScope, loading]);
+  }, [currentRoomId, selectedRoom?.id, selectedScope, messages.length]);
 
   useEffect(() => {
-    if (loading) return;
     if (!messages.length) return;
     if (document.visibilityState !== "visible") return;
     if (!document.hasFocus()) return;
     markMessagesAsRead();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, currentRoomId, selectedScope, messages.length]);
+  }, [currentRoomId, selectedScope, messages.length]);
 
   const selectedRoomName = useMemo(() => {
     if (selectedScope === "community") return "EMD Community";
+    if (selectedScope === "test") return "🧪 Jimmy Testchat";
     if (selectedScope === "club") return "Vereinsinfo";
     if (selectedScope === "freizeit") return "Freizeit";
     if (selectedScope === "vorstand") return "Vorstand";
@@ -654,6 +725,10 @@ export default function TeamChatPage({
     }> = [
       { roomId: COMMUNITY_ROOM_ID, scope: "community", visibleFrom: null },
     ];
+
+    if (isTestUser) {
+      targets.push({ roomId: TEST_ROOM_ID, scope: "test", visibleFrom: null });
+    }
 
     if (!profile?.is_guest) {
       targets.push(
@@ -1161,13 +1236,14 @@ export default function TeamChatPage({
       }
 
       if ((data as any)?.is_guest) {
+        setMyDisplayName(session?.user?.email?.split("@")[0] || "Du");
         setSelectedScope("community");
         setSelectedRoom(null);
         setClubVisibleFrom(null);
       } else if ((data as any)?.player_id) {
         const { data: clubPlayer, error: clubPlayerError } = await supabase
           .from("club_players")
-          .select("club_joined_at,created_at")
+          .select("club_joined_at,created_at,name")
           .eq("id", (data as any).player_id)
           .maybeSingle();
 
@@ -1181,6 +1257,7 @@ export default function TeamChatPage({
               (clubPlayer as any)?.created_at ??
               null,
           );
+          if ((clubPlayer as any)?.name) setMyDisplayName((clubPlayer as any).name);
         }
       } else {
         setClubVisibleFrom(null);
@@ -1564,7 +1641,17 @@ export default function TeamChatPage({
   };
 
   const fetchMessages = async () => {
-    if (profile?.is_guest && selectedScope !== "community") {
+    if (selectedScope === "test" && !isTestUser) {
+      setSelectedScope("community");
+      setMessages([]);
+      return;
+    }
+
+    if (
+      profile?.is_guest &&
+      selectedScope !== "community" &&
+      !(selectedScope === "test" && isTestUser)
+    ) {
       setSelectedScope("community");
       setMessages([]);
       return;
@@ -1594,8 +1681,6 @@ export default function TeamChatPage({
     }
 
     try {
-      setLoading(true);
-
       const visibleFrom = getVisibleFromForChat(
         roomId,
         selectedScope,
@@ -1612,6 +1697,9 @@ export default function TeamChatPage({
   room_id,
   scope,
   created_at,
+  reply_to_message_id,
+  edited_at,
+  deleted_at,
   message_type,
   attachment_url,
   attachment_path,
@@ -1635,7 +1723,10 @@ export default function TeamChatPage({
 
       const rows = (messagesData as any[]) || [];
       if (rows.length === 0) {
+        const cacheKey = `${selectedScope}:${roomId}`;
+        messagesCacheRef.current[cacheKey] = [];
         setMessages([]);
+        setRoomReady(true);
         return;
       }
 
@@ -1703,8 +1794,20 @@ export default function TeamChatPage({
       });
 
       const withSender = rows.map((r) => {
-        const info = profileInfoMap.get(r.user_id);
-        const playerId = profileToPlayer.get(r.user_id);
+        const displayRow = r.deleted_at
+          ? {
+              ...r,
+              message: "Diese Nachricht wurde gelöscht",
+              message_type: "text",
+              attachment_url: null,
+              attachment_path: null,
+              attachment_name: null,
+              attachment_type: null,
+              attachment_size: null,
+            }
+          : r;
+        const info = profileInfoMap.get(displayRow.user_id);
+        const playerId = profileToPlayer.get(displayRow.user_id);
 
         let sender = playerId ? (playerMap.get(playerId) ?? null) : null;
 
@@ -1719,13 +1822,18 @@ export default function TeamChatPage({
           sender = { name: "Unbekannt", photo_url: null };
         }
 
-        return { ...r, sender_player_id: playerId ?? null, sender };
+        return { ...displayRow, sender_player_id: playerId ?? null, sender };
       });
 
+      const cacheKey = `${selectedScope}:${roomId}`;
+      messagesCacheRef.current[cacheKey] = withSender as any;
       setMessages(withSender as any);
+      setRoomReady(true);
       await loadReadsForMessageIds(withSender.map((m: any) => m.id));
       await loadPollDataForMessages(withSender as any);
+      await loadReactionsForMessageIds(withSender.map((m: any) => m.id));
     } catch (error) {
+      setRoomReady(true);
       console.error("Error fetching messages:", error);
       toast({
         title: "Fehler",
@@ -1733,7 +1841,7 @@ export default function TeamChatPage({
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      // Absichtlich kein sichtbarer Loading-State: Chatwechsel bleiben sofort.
     }
   };
 
@@ -1856,6 +1964,273 @@ export default function TeamChatPage({
     }
   };
 
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("emd-chat-favorites");
+      if (raw) setFavoriteChats(new Set(JSON.parse(raw)));
+    } catch {}
+  }, []);
+
+  const toggleFavoriteChat = (key: string) => {
+    setFavoriteChats((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try { window.localStorage.setItem("emd-chat-favorites", JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel("emd_chat_typing_v1")
+      .on("broadcast", { event: "typing" }, ({ payload }: any) => {
+        if (!payload?.room_id || !payload?.scope || !payload?.user_id) return;
+        if (payload.user_id === profile.id) return;
+        const key = `${payload.room_id}:${payload.scope}`;
+        setTypingByRoom((prev) => {
+          const next = { ...prev };
+          if (payload.active) {
+            next[key] = {
+              name: payload.name || "Jemand",
+              userId: payload.user_id,
+              expiresAt: Date.now() + 2600,
+            };
+          } else {
+            delete next[key];
+          }
+          return next;
+        });
+      })
+      .subscribe();
+    typingChannelRef.current = channel;
+
+    const prune = window.setInterval(() => {
+      const now = Date.now();
+      setTypingByRoom((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        (Object.entries(next) as Array<[string, { name: string; userId: string; expiresAt: number }]>).forEach(([key, value]) => {
+          if (value.expiresAt < now) { delete next[key]; changed = true; }
+        });
+        return changed ? next : prev;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(prune);
+      if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+      typingChannelRef.current = null;
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id]);
+
+  const sendTypingState = (active: boolean) => {
+    if (!profile?.id || !currentRoomId || !typingChannelRef.current) return;
+    typingChannelRef.current.send({
+      type: "broadcast",
+      event: "typing",
+      payload: {
+        room_id: currentRoomId,
+        scope: selectedScope,
+        user_id: profile.id,
+        name: myDisplayName,
+        active,
+      },
+    });
+  };
+
+  const handleMessageInput = (value: string) => {
+    setNewMessage(value);
+    sendTypingState(Boolean(value.trim()));
+    if (typingStopTimerRef.current) clearTimeout(typingStopTimerRef.current);
+    if (value.trim()) {
+      typingStopTimerRef.current = setTimeout(() => sendTypingState(false), 1400);
+    }
+  };
+
+  const insertEmoji = (emoji: string) => {
+    setNewMessage((prev) => `${prev}${emoji}`);
+    setEmojiOpen(false);
+    setTimeout(() => document.getElementById("emd-chat-input")?.focus(), 0);
+    sendTypingState(true);
+  };
+
+  const loadReactionsForMessageIds = async (messageIds: string[]) => {
+    if (!messageIds.length) {
+      setReactionsByMessage({});
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("chat_message_reactions")
+      .select("id,message_id,user_id,emoji,created_at")
+      .in("message_id", messageIds);
+
+    if (error) {
+      console.error("loadReactionsForMessageIds error", error);
+      return;
+    }
+
+    const next: Record<string, ChatReaction[]> = {};
+    ((data as ChatReaction[]) || []).forEach((reaction) => {
+      if (!next[reaction.message_id]) next[reaction.message_id] = [];
+      next[reaction.message_id].push(reaction);
+    });
+    setReactionsByMessage(next);
+  };
+
+  const subscribeToReactions = () => {
+    const channel = supabase
+      .channel(`chat_reactions_${currentRoomId}_${selectedScope}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chat_message_reactions" },
+        () => loadReactionsForMessageIds(messagesRef.current.map((m) => m.id)),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    if (!profile?.id) return;
+    const existing = (reactionsByMessage[messageId] || []).find(
+      (r) => r.user_id === profile.id && r.emoji === emoji,
+    );
+
+    if (existing) {
+      const { error } = await supabase
+        .from("chat_message_reactions")
+        .delete()
+        .eq("id", existing.id);
+      if (error) {
+        toast({ title: "Fehler", description: "Reaktion konnte nicht entfernt werden.", variant: "destructive" });
+        return;
+      }
+    } else {
+      const { error } = await supabase.from("chat_message_reactions").insert({
+        message_id: messageId,
+        user_id: profile.id,
+        emoji,
+      });
+      if (error) {
+        toast({ title: "Fehler", description: "Reaktion konnte nicht gespeichert werden.", variant: "destructive" });
+        return;
+      }
+    }
+
+    setActiveMessageMenu(null);
+    setMessageMenuPosition(null);
+    await loadReactionsForMessageIds(messagesRef.current.map((m) => m.id));
+  };
+
+  const toggleMessageMenuAt = (event: React.MouseEvent<HTMLButtonElement>, messageId: string) => {
+    if (activeMessageMenu === messageId) {
+      setActiveMessageMenu(null);
+      setMessageMenuPosition(null);
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const menuWidth = 220;
+    const menuHeight = 205;
+    const gap = 8;
+    const viewportPadding = 8;
+
+    const left = Math.max(
+      viewportPadding,
+      Math.min(window.innerWidth - menuWidth - viewportPadding, rect.right - menuWidth),
+    );
+
+    const roomBelow = window.innerHeight - rect.bottom;
+    const top = roomBelow >= menuHeight + gap
+      ? rect.bottom + gap
+      : Math.max(viewportPadding, rect.top - menuHeight - gap);
+
+    setMessageMenuPosition({ top, left });
+    setActiveMessageMenu(messageId);
+  };
+
+  const startReply = (message: ChatMessage) => {
+    setEditingMessage(null);
+    setReplyToMessage(message);
+    setActiveMessageMenu(null);
+    setMessageMenuPosition(null);
+    setTimeout(() => document.getElementById("emd-chat-input")?.focus(), 0);
+  };
+
+  const startEdit = (message: ChatMessage) => {
+    if (message.deleted_at || message.message_type === "poll") return;
+    setReplyToMessage(null);
+    setEditingMessage(message);
+    setNewMessage(message.message || "");
+    setActiveMessageMenu(null);
+    setMessageMenuPosition(null);
+    setTimeout(() => document.getElementById("emd-chat-input")?.focus(), 0);
+  };
+
+  const cancelComposerAction = () => {
+    setReplyToMessage(null);
+    setEditingMessage(null);
+    setNewMessage("");
+    sendTypingState(false);
+  };
+
+  const saveEditedMessage = async () => {
+    if (!editingMessage || !profile?.id) return;
+    const clean = newMessage.trim();
+    if (!clean) return;
+
+    const { error } = await supabase
+      .from("chat_messages")
+      .update({ message: clean, edited_at: new Date().toISOString() })
+      .eq("id", editingMessage.id)
+      .eq("user_id", profile.id);
+
+    if (error) {
+      toast({ title: "Fehler", description: "Nachricht konnte nicht bearbeitet werden.", variant: "destructive" });
+      return;
+    }
+
+    setEditingMessage(null);
+    setNewMessage("");
+    sendTypingState(false);
+    await fetchMessages();
+    await fetchLastMessagePreviews();
+  };
+
+  const deleteOwnMessage = async (message: ChatMessage) => {
+    if (!profile?.id || message.user_id !== profile.id) return;
+    const { error } = await supabase
+      .from("chat_messages")
+      .update({
+        message: "",
+        deleted_at: new Date().toISOString(),
+        edited_at: null,
+      })
+      .eq("id", message.id)
+      .eq("user_id", profile.id);
+
+    if (error) {
+      toast({ title: "Fehler", description: "Nachricht konnte nicht gelöscht werden.", variant: "destructive" });
+      return;
+    }
+
+    setActiveMessageMenu(null);
+    setMessageMenuPosition(null);
+    await fetchMessages();
+    await fetchLastMessagePreviews();
+  };
+
+  const submitComposer = () => {
+    if (editingMessage) return saveEditedMessage();
+    return sendMessage();
+  };
+
   const subscribeToMessages = () => {
     const roomId = currentRoomId;
     if (!roomId) return () => {};
@@ -1865,20 +2240,27 @@ export default function TeamChatPage({
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "chat_messages",
           filter: `room_id=eq.${roomId}`,
         },
-        (payload) => {
+        async (payload: any) => {
           const incoming = payload.new as any;
-          if ((incoming.scope as ChatScope) !== selectedScope) return;
+          const oldRow = payload.old as any;
+          const eventType = payload.eventType;
+          const scope = (incoming?.scope ?? oldRow?.scope) as ChatScope | undefined;
+          if (scope !== selectedScope) return;
 
-          // ❌ KEINE zusätzlichen DB Calls mehr!
-          setMessages((prev) => [...prev, incoming]);
+          if (eventType === "INSERT") {
+            await fetchMessages();
+            if (incoming?.user_id !== profile?.id) fetchUnreadCounts(chatRooms);
+            return;
+          }
 
-          if (incoming.user_id !== profile?.id) {
-            fetchUnreadCounts(chatRooms);
+          if (eventType === "UPDATE" || eventType === "DELETE") {
+            await fetchMessages();
+            await fetchLastMessagePreviews();
           }
         },
       )
@@ -1947,7 +2329,21 @@ export default function TeamChatPage({
   const sendMessage = async () => {
     if ((!newMessage.trim() && selectedFiles.length === 0) || sending) return;
 
-    if (profile?.is_guest && selectedScope !== "community") {
+    if (selectedScope === "test" && !isTestUser) {
+      toast({
+        title: "Kein Zugriff",
+        description: "Dieser Testchat ist nur für die beiden Testkonten freigeschaltet.",
+        variant: "destructive",
+      });
+      setSelectedScope("community");
+      return;
+    }
+
+    if (
+      profile?.is_guest &&
+      selectedScope !== "community" &&
+      !(selectedScope === "test" && isTestUser)
+    ) {
       toast({
         title: "Kein Zugriff",
         description: "Gäste können nur im Community-Chat schreiben.",
@@ -2005,6 +2401,7 @@ export default function TeamChatPage({
             message: i === 0 ? msg : "",
             room_id: roomId,
             scope: selectedScope,
+            reply_to_message_id: i === 0 ? replyToMessage?.id ?? null : null,
             ...attachmentData,
           });
 
@@ -2016,12 +2413,17 @@ export default function TeamChatPage({
           message: msg,
           room_id: roomId,
           scope: selectedScope,
+          reply_to_message_id: replyToMessage?.id ?? null,
         });
 
         if (error) throw error;
       }
 
       setNewMessage("");
+      setReplyToMessage(null);
+      setEditingMessage(null);
+      sendTypingState(false);
+      setEmojiOpen(false);
       clearSelectedFiles();
       markCurrentAsVisited();
       fetchLastMessagePreviews();
@@ -2101,6 +2503,9 @@ export default function TeamChatPage({
       };
 
       await computeGlobalUnread(COMMUNITY_ROOM_ID, "community");
+      if (isTestUser) {
+        await computeGlobalUnread(TEST_ROOM_ID, "test");
+      }
 
       if (profile.is_guest) {
         setUnreadCounts(counts);
@@ -2186,43 +2591,40 @@ export default function TeamChatPage({
     await markRoomAsVisited(roomId, selectedScope);
   };
 
-  // Modernes Chat-App Design (Orange Theme) – nur Styling, keine Logikänderung
+  // EMD Messenger: vertrauter WhatsApp-Aufbau, aber eigenes EMD-Branding.
   const WA = {
-    appBg:
-      "bg-[#040609] text-white bg-[radial-gradient(circle_at_10%_8%,rgba(249,115,22,.11),transparent_28%),radial-gradient(circle_at_88%_14%,rgba(14,165,233,.065),transparent_25%),linear-gradient(180deg,#05070b,#030508)]",
-    card:
-      "border border-white/[0.075] bg-[#080b10]/94 text-white shadow-[0_30px_100px_-50px_rgba(0,0,0,.99)] backdrop-blur-2xl",
-    header:
-      "border-b border-white/[0.07] bg-[#080b10]/94 backdrop-blur-2xl",
+    appBg: "bg-[#0b1117] text-white",
+    card: "border-0 bg-[#111820] text-white shadow-none",
+    header: "border-b border-white/[0.07] bg-[#171f27]/98 backdrop-blur-xl",
     sidebarItemBase:
-      "w-full justify-start h-auto px-3 py-3 text-left rounded-[18px] transition-all duration-200 border border-transparent focus-visible:ring-2 focus-visible:ring-orange-400/20 overflow-hidden",
-    sidebarItemSelected:
-      "bg-gradient-to-r from-orange-500/16 to-white/[0.045] text-white border-orange-300/15 shadow-[0_10px_30px_-22px_rgba(249,115,22,.28)] hover:bg-orange-500/[0.18]",
-    sidebarItemUnselected:
-      "text-white/72 hover:text-white hover:border-white/[0.08] hover:bg-white/[0.028]",
-    iconBadge:
-      "border border-orange-300/15 bg-orange-500/[0.09] text-orange-300",
+      "w-full justify-start h-auto px-3 py-2.5 text-left rounded-none border-0 border-b border-white/[0.055] transition-colors focus-visible:ring-0 overflow-hidden",
+    sidebarItemSelected: "bg-white/[0.055] text-white hover:bg-white/[0.07]",
+    sidebarItemUnselected: "text-white hover:bg-white/[0.035]",
+    iconBadge: "bg-orange-500/15 text-orange-300",
     iconInSelected: "text-orange-300",
     iconInUnselected: "text-orange-300",
     unreadBadge:
-      "ml-2 shrink-0 px-2 py-1 text-[11px] font-black min-w-[23px] h-[23px] inline-flex items-center justify-center bg-orange-500 text-white border-0 shadow-[0_0_18px_rgba(249,115,22,.18)] rounded-full ring-2 ring-[#090c12]",
+      "shrink-0 min-w-[20px] h-5 px-1.5 inline-flex items-center justify-center rounded-full border-0 bg-orange-500 text-[10px] font-black text-white shadow-none",
     chatBg:
-      "bg-[radial-gradient(circle_at_72%_0%,rgba(14,165,233,.03),transparent_28%),radial-gradient(circle_at_10%_80%,rgba(249,115,22,.025),transparent_24%),linear-gradient(180deg,rgba(6,9,14,.96),rgba(4,6,9,.99))]",
+      "bg-[#0b1117] bg-[radial-gradient(circle_at_18%_16%,rgba(249,115,22,.022),transparent_26%),radial-gradient(circle_at_82%_72%,rgba(255,255,255,.016),transparent_24%),linear-gradient(135deg,rgba(255,255,255,.006)_25%,transparent_25%,transparent_75%,rgba(255,255,255,.006)_75%)] bg-[length:auto,auto,28px_28px]",
     bubbleOwn:
-      "bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 text-white rounded-[22px] rounded-br-[7px] border border-orange-300/15 shadow-[0_14px_34px_-18px_rgba(249,115,22,.42)]",
+      "bg-[#8a4615] text-white rounded-[9px] rounded-tr-[2px] border-0 shadow-[0_1px_1px_rgba(0,0,0,.24)]",
     bubbleOther:
-      "bg-[#0d1118]/92 text-white/90 border border-white/[0.08] rounded-[22px] rounded-bl-[7px] shadow-[0_14px_34px_-24px_rgba(0,0,0,.98)] backdrop-blur-xl",
-    composer:
-      "bg-[#070a0f]/96 backdrop-blur-2xl border-t border-white/[0.075] shadow-[0_-18px_50px_-36px_rgba(0,0,0,.95)]",
+      "bg-[#202932] text-white rounded-[9px] rounded-tl-[2px] border-0 shadow-[0_1px_1px_rgba(0,0,0,.24)]",
+    composer: "bg-[#171f27] border-t border-white/[0.06]",
     input:
-      "bg-white/[0.045] border border-white/[0.10] text-white placeholder:text-white/30 rounded-[16px] focus-visible:ring-orange-400/15 focus-visible:border-orange-300/20 h-12 px-4 shadow-inner shadow-black/10",
+      "h-11 rounded-full border-0 bg-[#25303a] px-4 text-[15px] text-white placeholder:text-white/40 focus-visible:ring-1 focus-visible:ring-orange-400/30",
     sendBtn:
-      "bg-orange-500 hover:bg-orange-500/90 text-white rounded-[16px] shadow-[0_10px_26px_-16px_rgba(249,115,22,.42)]",
+      "h-11 w-11 shrink-0 rounded-full bg-orange-500 text-white hover:bg-orange-500/90 shadow-none disabled:bg-white/10 disabled:text-white/25",
   };
 
   const communityUnread =
     unreadCounts[unreadKey(COMMUNITY_ROOM_ID, "community")] ??
     unreadCounts[COMMUNITY_ROOM_ID] ??
+    0;
+  const testUnread =
+    unreadCounts[unreadKey(TEST_ROOM_ID, "test")] ??
+    unreadCounts[TEST_ROOM_ID] ??
     0;
 
   const clubUnread =
@@ -2242,28 +2644,10 @@ export default function TeamChatPage({
     unreadCounts[CAPTAINS_ROOM_ID] ??
     0;
 
-  const totalUnread =
-    communityUnread +
-    (profile?.is_guest
-      ? 0
-      : clubUnread +
-        freizeitUnread +
-        captainsUnread +
-        vorstandUnread +
-        chatRooms.reduce((sum, room) => {
-      const count =
-        unreadCounts[unreadKey(room.id, "team")] ?? unreadCounts[room.id] ?? 0;
-      return sum + count;
-    }, 0));
-
-  const visibleRoomCount =
-    1 +
-    (profile?.is_guest
-      ? 0
-      : 2 +
-        (canSeeCaptainChat || isVorstand ? 1 : 0) +
-        (canSeeVorstandChat ? 1 : 0) +
-        chatRooms.length);
+  const totalUnread = useMemo(() => {
+    const teamUnreadTotal = chatRooms.reduce((sum, room) => sum + (unreadCounts[unreadKey(room.id, "team")] ?? unreadCounts[room.id] ?? 0), 0);
+    return communityUnread + testUnread + clubUnread + freizeitUnread + vorstandUnread + captainsUnread + teamUnreadTotal;
+  }, [communityUnread, testUnread, clubUnread, freizeitUnread, vorstandUnread, captainsUnread, chatRooms, unreadCounts]);
 
   const headerPeople = useMemo(() => {
     if (selectedScope === "team") return teamMembers;
@@ -2305,6 +2689,124 @@ export default function TeamChatPage({
     return out;
   }, [messages]);
 
+  const normalizedChatSearch = chatSearch.trim().toLowerCase();
+
+  const chatMatches = (title: string, subtitle = "") =>
+    !normalizedChatSearch ||
+    `${title} ${subtitle}`.toLowerCase().includes(normalizedChatSearch);
+
+  const sidebarTime = (roomId: string, scope: ChatScope) => {
+    const preview = lastMessagesByRoom[lastPreviewKey(roomId, scope)];
+    if (!preview?.created_at) return "";
+    const key = dateKeyVienna(preview.created_at);
+    const today = dateKeyVienna(new Date().toISOString());
+    if (key === today) return formatTimeVienna(preview.created_at);
+    const yesterday = dateKeyVienna(
+      new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    );
+    if (key === yesterday) return "Gestern";
+    return new Intl.DateTimeFormat("de-AT", {
+      timeZone: "Europe/Vienna",
+      day: "2-digit",
+      month: "2-digit",
+    }).format(new Date(preview.created_at));
+  };
+
+  const renderChatRow = ({
+    keyValue,
+    title,
+    subtitle,
+    roomId,
+    scope,
+    unread,
+    selected,
+    icon,
+    imageUrl,
+    onClick,
+    isGroup = true,
+  }: {
+    keyValue: string;
+    title: string;
+    subtitle: string;
+    roomId: string;
+    scope: ChatScope;
+    unread: number;
+    selected: boolean;
+    icon: React.ReactNode;
+    imageUrl?: string | null;
+    onClick: () => void;
+    isGroup?: boolean;
+  }) => {
+    if (!chatMatches(title, subtitle)) return null;
+    const favoriteKey = `${scope}:${roomId}`;
+    const isFavorite = favoriteChats.has(favoriteKey);
+    if (chatFilter === "unread" && unread <= 0) return null;
+    if (chatFilter === "favorites" && !isFavorite) return null;
+    const lastText = getLastPreviewText(
+      lastMessagesByRoom[lastPreviewKey(roomId, scope)],
+    );
+    const time = sidebarTime(roomId, scope);
+    const typing = typingByRoom[`${roomId}:${scope}`];
+
+    return (
+      <button
+        key={keyValue}
+        type="button"
+        onClick={onClick}
+        className={`group flex min-h-[72px] w-full items-center gap-3 px-3.5 py-2 text-left transition-colors ${
+          selected ? "bg-white/[0.055]" : "hover:bg-white/[0.035]"
+        }`}
+      >
+        {imageUrl ? (
+          <Avatar className="h-[50px] w-[50px] shrink-0">
+            <AvatarImage src={imageUrl} alt={title} />
+            <AvatarFallback className="bg-orange-500/15 text-sm font-black text-orange-300">
+              {initials(title)}
+            </AvatarFallback>
+          </Avatar>
+        ) : (
+          <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-[#25303a] text-orange-300">
+            {icon}
+          </div>
+        )}
+
+        <div className="min-w-0 flex-1 border-b border-white/[0.055] py-2">
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <div className={`truncate text-[15.5px] ${unread > 0 ? "font-black text-white" : "font-semibold text-white/95"}`}>
+                {title}
+              </div>
+              <div className={`mt-1 truncate text-[13px] ${typing ? "font-semibold text-orange-400" : unread > 0 ? "font-semibold text-white/72" : "text-white/45"}`}>
+                {typing ? `${typing.name} schreibt …` : (lastText || subtitle)}
+              </div>
+            </div>
+
+            <div className="flex min-w-[50px] shrink-0 flex-col items-end gap-1">
+              <span className={`text-[10px] ${unread > 0 ? "font-bold text-orange-300" : "text-white/35"}`}>
+                {time}
+              </span>
+              <div className="flex items-center gap-1">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  title={isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten"}
+                  onClick={(e) => { e.stopPropagation(); toggleFavoriteChat(favoriteKey); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); toggleFavoriteChat(favoriteKey); } }}
+                  className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors ${isFavorite ? "text-orange-300" : "text-white/20 hover:bg-white/[0.06] hover:text-white/60"}`}
+                >
+                  <Star className={`h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`} />
+                </span>
+                {unread > 0 ? (
+                  <span className={WA.unreadBadge}>{unread > 99 ? "99+" : unread}</span>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      </button>
+    );
+  };
+
   const showNoProfile = !profileLoading && !profile;
 
   if (!session) {
@@ -2333,7 +2835,7 @@ export default function TeamChatPage({
 
   return (
     <div className={`relative h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
-      <div className="pointer-events-none fixed inset-0 z-0">
+      <div className="pointer-events-none fixed inset-0 z-0 hidden">
         <div
           className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.18]"
           style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
@@ -2341,7 +2843,8 @@ export default function TeamChatPage({
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.95)_44%,rgba(2,4,7,.99))]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_7%_16%,rgba(249,115,22,.15),transparent_25%),radial-gradient(circle_at_90%_22%,rgba(14,165,233,.09),transparent_26%)]" />
       </div>
-      <main className="relative z-10 flex-1 min-h-0 overflow-hidden p-0 lg:px-5 lg:py-5 xl:px-6 2xl:px-8">
+      <main className="relative z-10 flex-1 min-h-0 overflow-hidden p-0">
+        {appSection === "chats" ? (
         <div className="h-full w-full max-w-none">
           <div className="flex flex-col h-full min-h-0">
             {showNoProfile ? (
@@ -2362,615 +2865,300 @@ export default function TeamChatPage({
                 </CardContent>
               </Card>
             ) : (
-              <div className="flex-1 min-h-0 flex gap-4 overflow-hidden lg:gap-5">
-                {/* Chatliste: auf Handy direkt sichtbar, kein Hamburger-Menü */}
+              <div className="relative flex-1 min-h-0 flex overflow-hidden">
+                {/* Messenger-Liste: mobil wie eine eigenständige Chat-App */}
                 <div
-                  className={`${mobileChatOpen ? "hidden lg:flex" : "flex"} w-full lg:w-[350px] xl:w-[380px] 2xl:w-[400px] shrink-0 min-h-0`}
+                  className={`absolute inset-0 z-10 flex w-full min-h-0 bg-[#111820] transition-transform duration-[240ms] ease-out will-change-transform lg:relative lg:inset-auto lg:z-auto lg:w-[405px] xl:w-[430px] 2xl:w-[455px] lg:shrink-0 ${
+                    mobileChatOpen
+                      ? "-translate-x-full pointer-events-none lg:translate-x-0 lg:pointer-events-auto"
+                      : "translate-x-0"
+                  }`}
                 >
-                  <Card
-                    className={`h-full w-full ${WA.card} flex flex-col min-h-0 overflow-hidden rounded-none lg:rounded-[28px]`}
-                  >
-                    <CardHeader className="relative shrink-0 overflow-hidden border-b border-white/[0.07] bg-[#080b10]/96 px-4 pb-4 pt-5 text-white backdrop-blur-2xl">
-                      <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-orange-500/[0.16] blur-3xl" />
-                      <div className="relative flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-300/90">
-                            {contextLabel}
-                          </p>
-                          <CardTitle className="mt-0.5 text-[28px] font-black leading-tight tracking-[-0.04em] text-white sm:text-3xl">
-                            Chats
-                          </CardTitle>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {isVorstand && (
-                            <Badge
-                              variant="secondary"
-                              className="hidden gap-1 border-white/10 bg-white/10 text-white sm:inline-flex"
-                            >
-                              <Shield className="h-3.5 w-3.5 text-orange-300" />
-                              Vorstand
-                            </Badge>
-                          )}
-
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => router.push(backHref)}
-                            className="h-10 rounded-xl border border-white/[0.09] bg-white/[0.045] px-3 text-white/85 hover:border-orange-300/20 hover:bg-white/[0.075] hover:text-white"
-                            aria-label={`Zurück zu ${backLabel}`}
-                          >
-                            <Home className="mr-2 h-4 w-4" />
-                            {backLabel}
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="relative mt-4 rounded-[20px] border border-white/[0.08] bg-white/[0.035] p-3.5 shadow-[0_16px_40px_-34px_rgba(0,0,0,.85)]">
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/[0.10] text-orange-300">
+                  <div className="flex h-full w-full min-h-0 flex-col overflow-hidden border-r border-white/[0.06] bg-[#111820]">
+                    <div className="shrink-0 border-b border-white/[0.045] bg-[#171f27] px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm">
                             <MessageCircle className="h-5 w-5" />
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-sm font-black text-white truncate">
-                                  Vereinschat
-                                </p>
-                                <p className="mt-0.5 text-[11px] text-white/55 leading-relaxed">
-                                  Alle wichtigen Räume und Team-Chats auf einen Blick.
-                                </p>
-                              </div>
-                              {totalUnread > 0 ? (
-                                <span className="shrink-0 rounded-full bg-orange-600 px-2.5 py-1 text-xs font-black text-white shadow-sm">
-                                  {totalUnread > 99 ? "99+" : totalUnread}
-                                </span>
-                              ) : null}
-                            </div>
-
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-[11px] font-extrabold text-white/65">
-                                <Hash className="h-3 w-3 text-orange-300" />
-                                <span className="text-white">{visibleRoomCount}</span>
-                                Räume
-                              </span>
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-[11px] font-extrabold text-white/65">
-                                <MessageCircle className="h-3 w-3 text-orange-300" />
-                                <span className="text-white">{totalUnread}</span>
-                                ungelesen
-                              </span>
-                            </div>
+                          <div className="min-w-0">
+                            <div className="text-[20px] font-black tracking-tight text-white">EMD Chat</div>
+                            <div className="mt-0.5 text-[11px] font-medium text-white/38">Chats</div>
                           </div>
                         </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => router.push(backHref)}
+                          className="h-10 w-10 rounded-full p-0 text-white/75 hover:bg-white/[0.08] hover:text-white"
+                          aria-label={`Zurück zu ${backLabel}`}
+                        >
+                          <Home className="h-5 w-5" />
+                        </Button>
                       </div>
-                    </CardHeader>
 
-                    <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
-                      <ScrollArea className="h-full">
-                        <div className="space-y-1 border-b border-white/[0.07] px-3 py-3.5">
-                          <div className="px-2 pb-2 flex items-center justify-between">
-                            <span className="text-[11px] font-black uppercase tracking-[0.16em] text-white/30">
-                              Allgemein
-                            </span>
-                            {totalUnread > 0 ? (
-                              <span className="text-[11px] font-bold text-orange-300">
-                                {totalUnread > 99 ? "99+" : totalUnread} neu
-                              </span>
-                            ) : (
-                              <span className="text-[11px] font-bold text-white/30">
-                                alles gelesen
-                              </span>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            className={`${WA.sidebarItemBase} ${selectedScope === "community" ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
-                            onClick={() => {
-                              setSelectedScope("community");
-                              setSidebarOpen(false);
-                              setMobileChatOpen(true);
-                              setTimeout(
-                                () =>
-                                  markRoomAsVisited(
-                                    COMMUNITY_ROOM_ID,
-                                    "community",
-                                  ),
-                                50,
-                              );
-                            }}
+                      <div className="relative mt-3">
+                        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                        <Input
+                          value={chatSearch}
+                          onChange={(e) => setChatSearch(e.target.value)}
+                          placeholder="Suchen oder Chat finden"
+                          className="h-10 rounded-lg border-0 bg-[#202a33] pl-10 pr-4 text-[13px] text-white placeholder:text-white/35 focus-visible:ring-1 focus-visible:ring-orange-400/25"
+                        />
+                      </div>
+
+                      <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {([
+                          ["all", "Alle"],
+                          ["unread", `Ungelesen${totalUnread > 0 ? ` ${totalUnread}` : ""}`],
+                          ["favorites", "Favoriten"],
+                        ] as Array<[ChatFilter, string]>).map(([value, label]) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setChatFilter(value)}
+                            className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors ${chatFilter === value ? "border-orange-400/35 bg-orange-500/15 text-orange-200" : "border-white/[0.10] bg-transparent text-white/60 hover:bg-white/[0.05] hover:text-white"}`}
                           >
-                            <div className="flex items-center gap-3 w-full">
-                              <div
-                                className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                  selectedScope === "community"
-                                    ? "bg-white/10"
-                                    : "bg-white/[0.045]"
-                                }`}
-                              >
-                                <MessageCircle
-                                  className={`h-5 w-5 ${selectedScope === "community" ? WA.iconInSelected : WA.iconInUnselected}`}
-                                />
-                              </div>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate text-sm">
-                                  EMD Community
-                                </div>
-                                <p className="text-xs mt-1 truncate text-white/40">
-                                  Gäste & Mitglieder
-                                </p>
-                              </div>
+                    <ScrollArea className="flex-1 min-h-0">
+                      <div className="pb-[max(12px,env(safe-area-inset-bottom))]">
+                        {isTestUser && renderChatRow({
+                          keyValue: "test",
+                          title: "🧪 Jimmy Testchat",
+                          subtitle: "Nur Testkonten · keine Pushs",
+                          roomId: TEST_ROOM_ID,
+                          scope: "test",
+                          unread: testUnread,
+                          selected: selectedScope === "test",
+                          icon: <FlaskConical className="h-5 w-5" />,
+                          onClick: () => {
+                            setSelectedScope("test");
+                            setSelectedRoom(null);
+                            setSidebarOpen(false);
+                            setMobileChatOpen(true);
+                            setTimeout(() => markRoomAsVisited(TEST_ROOM_ID, "test"), 50);
+                          },
+                        })}
 
-                              {communityUnread > 0 && (
-                                <Badge
-                                  variant="destructive"
-                                  className={WA.unreadBadge}
-                                >
-                                  {communityUnread > 99 ? "99+" : communityUnread}
-                                </Badge>
-                              )}
-                            </div>
-                          </Button>
-
-                          {!profile?.is_guest && (
-                            <>
-                          <Button
-                            variant="ghost"
-                            className={`${WA.sidebarItemBase} ${selectedScope === "club" ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
-                            onClick={() => {
-                              setSelectedScope("club");
-                              setSidebarOpen(false);
-                              setMobileChatOpen(true);
-                              setTimeout(
-                                () => markRoomAsVisited(CLUB_ROOM_ID, "club"),
-                                50,
-                              );
-                            }}
-                          >
-                            <div className="flex items-center gap-3 w-full">
-                              <div
-                                className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                  selectedScope === "club"
-                                    ? "bg-white/20"
-                                    : "bg-orange-500/[0.09]"
-                                }`}
-                              >
-                                <Info
-                                  className={`h-5 w-5 ${selectedScope === "club" ? WA.iconInSelected : WA.iconInUnselected}`}
-                                />
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate text-sm">
-                                  Vereinsinfo
-                                </div>
-                                <p
-                                  className="mt-1 truncate text-xs text-white/40"
-                                >
-                                  {getLastPreviewText(
-                                    lastMessagesByRoom[
-                                      lastPreviewKey(CLUB_ROOM_ID, "club")
-                                    ],
-                                  )}
-                                </p>
-                              </div>
-
-                              {clubUnread > 0 && (
-                                <Badge
-                                  variant="destructive"
-                                  className={WA.unreadBadge}
-                                >
-                                  {clubUnread > 99 ? "99+" : clubUnread}
-                                </Badge>
-                              )}
-                            </div>
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            className={`${WA.sidebarItemBase} mt-1 ${selectedScope === "freizeit" ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
-                            onClick={() => {
-                              setSelectedScope("freizeit");
-                              setSidebarOpen(false);
-                              setMobileChatOpen(true);
-                              setTimeout(
-                                () =>
-                                  markRoomAsVisited(
-                                    FREIZEIT_ROOM_ID,
-                                    "freizeit",
-                                  ),
-                                50,
-                              );
-                            }}
-                          >
-                            <div className="flex items-center gap-3 w-full">
-                              <div
-                                className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                  selectedScope === "freizeit"
-                                    ? "bg-white/20"
-                                    : "bg-orange-500/[0.09]"
-                                }`}
-                              >
-                                <Coffee
-                                  className={`h-5 w-5 ${selectedScope === "freizeit" ? WA.iconInSelected : WA.iconInUnselected}`}
-                                />
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate text-sm">
-                                  Freizeit
-                                </div>
-                                <p
-                                  className="mt-1 truncate text-xs text-white/40"
-                                >
-                                  {getLastPreviewText(
-                                    lastMessagesByRoom[
-                                      lastPreviewKey(
-                                        FREIZEIT_ROOM_ID,
-                                        "freizeit",
-                                      )
-                                    ],
-                                  )}
-                                </p>
-                              </div>
-
-                              {freizeitUnread > 0 && (
-                                <Badge
-                                  variant="destructive"
-                                  className={WA.unreadBadge}
-                                >
-                                  {freizeitUnread > 99 ? "99+" : freizeitUnread}
-                                </Badge>
-                              )}
-                            </div>
-                          </Button>
-
-                          {(canSeeCaptainChat || isVorstand) && (
-                            <Button
-                              variant="ghost"
-                              className={`${WA.sidebarItemBase} mt-1 ${
-                                selectedScope === "captains"
-                                  ? WA.sidebarItemSelected
-                                  : WA.sidebarItemUnselected
-                              }`}
-                              onClick={() => {
-                                setSelectedScope("captains");
-                                setSidebarOpen(false);
-                                setMobileChatOpen(true);
-                                setTimeout(
-                                  () =>
-                                    markRoomAsVisited(
-                                      CAPTAINS_ROOM_ID,
-                                      "captains",
-                                    ),
-                                  50,
-                                );
-                              }}
-                            >
-                              <div className="flex items-center gap-3 w-full">
-                                <div
-                                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                    selectedScope === "captains"
-                                      ? "bg-white/20"
-                                      : "bg-orange-500/[0.09]"
-                                  }`}
-                                >
-                                  <Users
-                                    className={`h-5 w-5 ${selectedScope === "captains" ? WA.iconInSelected : WA.iconInUnselected}`}
-                                  />
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium truncate text-sm">
-                                    Captain-Chat
-                                  </div>
-                                  <p
-                                    className={`text-xs mt-1 truncate ${
-                                      selectedScope === "captains"
-                                        ? "text-white/50"
-                                        : "text-white/40"
-                                    }`}
-                                  >
-                                    Alle Captain &amp; Co-Captain
-                                  </p>
-                                </div>
-
-                                {captainsUnread > 0 && (
-                                  <Badge
-                                    variant="destructive"
-                                    className={WA.unreadBadge}
-                                  >
-                                    {captainsUnread > 99
-                                      ? "99+"
-                                      : captainsUnread}
-                                  </Badge>
-                                )}
-                              </div>
-                            </Button>
-                          )}
-
-                          {canSeeVorstandChat && (
-                            <Button
-                              variant="ghost"
-                              className={`${WA.sidebarItemBase} mt-1 ${
-                                selectedScope === "vorstand"
-                                  ? WA.sidebarItemSelected
-                                  : WA.sidebarItemUnselected
-                              }`}
-                              onClick={() => {
-                                setSelectedScope("vorstand");
-                                setSidebarOpen(false);
-                                setMobileChatOpen(true);
-                                setTimeout(
-                                  () =>
-                                    markRoomAsVisited(
-                                      VORSTAND_ROOM_ID,
-                                      "vorstand",
-                                    ),
-                                  50,
-                                );
-                              }}
-                            >
-                              <div className="flex items-center gap-3 w-full">
-                                <div
-                                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                    selectedScope === "vorstand"
-                                      ? "bg-white/20"
-                                      : "bg-orange-500/[0.09]"
-                                  }`}
-                                >
-                                  <Shield
-                                    className={`h-5 w-5 ${selectedScope === "vorstand" ? WA.iconInSelected : WA.iconInUnselected}`}
-                                  />
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium truncate text-sm">
-                                    Vorstand
-                                  </div>
-                                  <p
-                                    className={`text-xs mt-1 truncate ${
-                                      selectedScope === "vorstand"
-                                        ? "text-white/50"
-                                        : "text-white/40"
-                                    }`}
-                                  >
-                                    Nur Vorstand-Rollen
-                                  </p>
-                                </div>
-
-                                {vorstandUnread > 0 && (
-                                  <Badge
-                                    variant="destructive"
-                                    className={WA.unreadBadge}
-                                  >
-                                    {vorstandUnread > 99
-                                      ? "99+"
-                                      : vorstandUnread}
-                                  </Badge>
-                                )}
-                              </div>
-                            </Button>
-                          )}
-                            </>
-                          )}
-                        </div>
+                        {renderChatRow({
+                          keyValue: "community",
+                          title: "EMD Community",
+                          subtitle: "Gäste & Mitglieder",
+                          roomId: COMMUNITY_ROOM_ID,
+                          scope: "community",
+                          unread: communityUnread,
+                          selected: selectedScope === "community",
+                          icon: <MessageCircle className="h-5 w-5" />,
+                          onClick: () => {
+                            setSelectedScope("community");
+                            setSidebarOpen(false);
+                            setMobileChatOpen(true);
+                            setTimeout(() => markRoomAsVisited(COMMUNITY_ROOM_ID, "community"), 50);
+                          },
+                        })}
 
                         {!profile?.is_guest && (
                           <>
-                        {roomsLoading ? (
-                          <div className="p-4 text-center">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto" />
-                            <p className="mt-2 text-sm text-white/42">
-                              Lade Teams...
-                            </p>
-                          </div>
-                        ) : !profile?.player_id ? (
-                          <div className="p-4 text-center text-white/42">
-                            <Hash className="h-8 w-8 mx-auto mb-2 text-white/25" />
-                            <p className="text-sm">
-                              Du bist noch keinem Spieler zugeordnet.
-                            </p>
-                          </div>
-                        ) : chatRooms.length === 0 ? (
-                          <div className="p-4 text-center text-white/42">
-                            <Hash className="h-8 w-8 mx-auto mb-2 text-white/25" />
-                            <p className="text-sm">Du bist in keinem Team.</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-1 px-3 py-3.5">
-                            <div className="px-2 pb-2 flex items-center justify-between">
-                              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-white/30">
-                                Team-Chats
-                              </span>
-                              <span className="text-[11px] font-bold text-white/30">
-                                {chatRooms.length} {chatRooms.length === 1 ? "Team" : "Teams"}
-                              </span>
-                            </div>
-                            {chatRooms.map((room) => {
-                              const teamUnread =
-                                unreadCounts[unreadKey(room.id, "team")] ??
-                                unreadCounts[room.id] ??
-                                0;
-                              const isSelected =
-                                selectedScope === "team" &&
-                                selectedRoom?.id === room.id;
-
-                              return (
-                                <div key={room.id}>
-                                  <Button
-                                    variant="ghost"
-                                    className={`${WA.sidebarItemBase} ${isSelected ? WA.sidebarItemSelected : WA.sidebarItemUnselected}`}
-                                    onClick={() => {
-                                      setSelectedRoom(room);
-                                      setSelectedScope("team");
-                                      setSidebarOpen(false);
-                                      setMobileChatOpen(true);
-                                      setTimeout(
-                                        () =>
-                                          markRoomAsVisited(room.id, "team"),
-                                        50,
-                                      );
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-3 w-full">
-                                      {room.logo_url ? (
-                                        <Avatar className="w-11 h-11 flex-shrink-0">
-                                          <AvatarImage
-                                            src={
-                                              room.logo_url ||
-                                              "/placeholder.svg"
-                                            }
-                                            alt={room.name}
-                                          />
-                                          <AvatarFallback
-                                            className={
-                                              isSelected
-                                                ? "bg-white/20 text-white"
-                                                : "bg-orange-500/[0.10] text-orange-300"
-                                            }
-                                          >
-                                            {room.name.charAt(0).toUpperCase()}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                      ) : (
-                                        <div
-                                          className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                            isSelected
-                                              ? "bg-white/20"
-                                              : "bg-orange-500/[0.09]"
-                                          }`}
-                                        >
-                                          <Hash
-                                            className={`h-5 w-5 ${isSelected ? WA.iconInSelected : WA.iconInUnselected}`}
-                                          />
-                                        </div>
-                                      )}
-
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                          <div className="font-semibold truncate text-sm">
-                                            {room.name}
-                                          </div>
-                                          {room.role ? (
-                                            <span
-                                              className="shrink-0 rounded-full border border-white/[0.07] bg-white/[0.035] px-2 py-0.5 text-[10px] font-bold text-white/40"
-                                            >
-                                              {room.role}
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                        <p
-                                          className="mt-1 truncate text-xs text-white/40"
-                                        >
-                                          {getLastPreviewText(
-                                            lastMessagesByRoom[
-                                              lastPreviewKey(room.id, "team")
-                                            ],
-                                          )}
-                                        </p>
-                                      </div>
-
-                                      {teamUnread > 0 && (
-                                        <Badge
-                                          variant="destructive"
-                                          className={WA.unreadBadge}
-                                        >
-                                          {teamUnread > 99 ? "99+" : teamUnread}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </Button>
-                                </div>
-                              );
+                            {renderChatRow({
+                              keyValue: "club",
+                              title: "Vereinsinfo",
+                              subtitle: "Informationen vom Verein",
+                              roomId: CLUB_ROOM_ID,
+                              scope: "club",
+                              unread: clubUnread,
+                              selected: selectedScope === "club",
+                              icon: <Info className="h-5 w-5" />,
+                              onClick: () => {
+                                setSelectedScope("club");
+                                setSidebarOpen(false);
+                                setMobileChatOpen(true);
+                                setTimeout(() => markRoomAsVisited(CLUB_ROOM_ID, "club"), 50);
+                              },
                             })}
-                          </div>
-                        )}
+
+                            {renderChatRow({
+                              keyValue: "freizeit",
+                              title: "Freizeit",
+                              subtitle: "Plaudern & gemeinsame Aktivitäten",
+                              roomId: FREIZEIT_ROOM_ID,
+                              scope: "freizeit",
+                              unread: freizeitUnread,
+                              selected: selectedScope === "freizeit",
+                              icon: <Coffee className="h-5 w-5" />,
+                              onClick: () => {
+                                setSelectedScope("freizeit");
+                                setSidebarOpen(false);
+                                setMobileChatOpen(true);
+                                setTimeout(() => markRoomAsVisited(FREIZEIT_ROOM_ID, "freizeit"), 50);
+                              },
+                            })}
+
+                            {(canSeeCaptainChat || isVorstand) && renderChatRow({
+                              keyValue: "captains",
+                              title: "Captain-Chat",
+                              subtitle: "Captain & Co-Captain",
+                              roomId: CAPTAINS_ROOM_ID,
+                              scope: "captains",
+                              unread: captainsUnread,
+                              selected: selectedScope === "captains",
+                              icon: <Users className="h-5 w-5" />,
+                              onClick: () => {
+                                setSelectedScope("captains");
+                                setSidebarOpen(false);
+                                setMobileChatOpen(true);
+                                setTimeout(() => markRoomAsVisited(CAPTAINS_ROOM_ID, "captains"), 50);
+                              },
+                            })}
+
+                            {canSeeVorstandChat && renderChatRow({
+                              keyValue: "vorstand",
+                              title: "Vorstand",
+                              subtitle: "Interner Vorstands-Chat",
+                              roomId: VORSTAND_ROOM_ID,
+                              scope: "vorstand",
+                              unread: vorstandUnread,
+                              selected: selectedScope === "vorstand",
+                              icon: <Shield className="h-5 w-5" />,
+                              onClick: () => {
+                                setSelectedScope("vorstand");
+                                setSidebarOpen(false);
+                                setMobileChatOpen(true);
+                                setTimeout(() => markRoomAsVisited(VORSTAND_ROOM_ID, "vorstand"), 50);
+                              },
+                            })}
+
+                            {roomsLoading ? (
+                              <div className="px-4 py-5 text-center text-xs text-white/35">Teams werden geladen…</div>
+                            ) : (
+                              chatRooms.map((room) => {
+                                const unread = unreadCounts[unreadKey(room.id, "team")] ?? unreadCounts[room.id] ?? 0;
+                                return renderChatRow({
+                                  keyValue: room.id,
+                                  title: room.name,
+                                  subtitle: room.role ? `Team · ${room.role}` : "Team-Chat",
+                                  roomId: room.id,
+                                  scope: "team",
+                                  unread,
+                                  selected: selectedScope === "team" && selectedRoom?.id === room.id,
+                                  icon: <Hash className="h-5 w-5" />,
+                                  imageUrl: room.logo_url,
+                                  onClick: () => {
+                                    setSelectedRoom(room);
+                                    setSelectedScope("team");
+                                    setSidebarOpen(false);
+                                    setMobileChatOpen(true);
+                                    setTimeout(() => markRoomAsVisited(room.id, "team"), 50);
+                                  },
+                                });
+                              })
+                            )}
                           </>
                         )}
-                      </ScrollArea>
-                    </CardContent>
-                  </Card>
+
+                        {normalizedChatSearch &&
+                        (!isTestUser || !chatMatches("🧪 Jimmy Testchat", "Nur Testkonten keine Pushs")) &&
+                        !chatMatches("EMD Community", "Gäste & Mitglieder") &&
+                        !chatRooms.some((room) => chatMatches(room.name, room.role ?? "")) &&
+                        !chatMatches("Vereinsinfo", "Informationen vom Verein") &&
+                        !chatMatches("Freizeit", "Plaudern gemeinsame Aktivitäten") ? (
+                          <div className="px-6 py-12 text-center">
+                            <Search className="mx-auto h-8 w-8 text-white/20" />
+                            <div className="mt-3 text-sm font-semibold text-white/50">Kein Chat gefunden</div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </ScrollArea>
+                  </div>
                 </div>
 
                 {/* Main Chat */}
                 <div
-                  className={`${mobileChatOpen ? "flex" : "hidden lg:flex"} flex-1 min-w-0 min-h-0 overflow-hidden`}
+                  className={`absolute inset-0 z-20 flex min-w-0 min-h-0 overflow-hidden bg-[#0b1117] transition-transform duration-[240ms] ease-out will-change-transform lg:relative lg:inset-auto lg:z-auto lg:flex-1 lg:translate-x-0 ${
+                    mobileChatOpen
+                      ? "translate-x-0"
+                      : "translate-x-full pointer-events-none lg:pointer-events-auto"
+                  }`}
                 >
                   <Card
-                    className={`h-full w-full ${WA.card} overflow-hidden flex flex-col min-h-0 rounded-none lg:rounded-[26px]`}
+                    className={`h-full w-full ${WA.card} overflow-hidden flex flex-col min-h-0 rounded-none`}
                   >
-                    <CardHeader className={`pb-3 ${WA.header} shrink-0`}>
-                      <div className="flex items-center justify-between gap-3">
+                    <CardHeader className={`shrink-0 px-2.5 sm:px-4 py-1.5 ${WA.header}`}>
+                      <div className="flex min-h-[52px] items-center gap-2.5">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="lg:hidden h-10 w-10 rounded-xl p-0"
+                          className="lg:hidden h-10 w-10 shrink-0 rounded-full p-0 text-white/85 hover:bg-white/[0.08]"
                           onClick={() => setMobileChatOpen(false)}
                           aria-label="Zur Chatliste"
                         >
                           <ArrowLeft className="h-5 w-5" />
                         </Button>
 
-                        <div className="flex items-center justify-center">
-                          {selectedScope === "team" &&
-                          selectedRoom?.logo_url ? (
-                            <Avatar className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0">
-                              <AvatarImage
-                                src={
-                                  selectedRoom.logo_url || "/placeholder.svg"
-                                }
-                                alt={selectedRoomName}
-                              />
-                              <AvatarFallback className="bg-orange-500/[0.10] text-orange-300">
-                                {(selectedRoomName || "#")
-                                  .charAt(0)
-                                  .toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          ) : (
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-orange-500/[0.10] flex items-center justify-center">
-                              {selectedScope === "community" ? (
-                                <MessageCircle className="h-5 w-5 text-orange-300" />
-                              ) : selectedScope === "club" ? (
-                                <Info className="h-5 w-5 text-orange-300" />
-                              ) : selectedScope === "freizeit" ? (
-                                <Coffee className="h-5 w-5 text-orange-300" />
-                              ) : selectedScope === "vorstand" ? (
-                                <Shield className="h-5 w-5 text-orange-300" />
-                              ) : selectedScope === "captains" ? (
-                                <Users className="h-5 w-5 text-orange-300" />
-                              ) : (
-                                <Hash className="h-5 w-5 text-orange-300" />
-                              )}
-                            </div>
-                          )}
+                        {selectedScope === "team" && selectedRoom?.logo_url ? (
+                          <Avatar className="h-10 w-10 shrink-0">
+                            <AvatarImage src={selectedRoom.logo_url} alt={selectedRoomName} />
+                            <AvatarFallback className="bg-orange-500/15 text-orange-300">
+                              {initials(selectedRoomName)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25303a] text-orange-300">
+                            {selectedScope === "community" ? (
+                              <MessageCircle className="h-5 w-5" />
+                            ) : selectedScope === "club" ? (
+                              <Info className="h-5 w-5" />
+                            ) : selectedScope === "freizeit" ? (
+                              <Coffee className="h-5 w-5" />
+                            ) : selectedScope === "vorstand" ? (
+                              <Shield className="h-5 w-5" />
+                            ) : selectedScope === "captains" ? (
+                              <Users className="h-5 w-5" />
+                            ) : (
+                              <Hash className="h-5 w-5" />
+                            )}
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="truncate text-[15px] font-bold text-white">
+                            {selectedRoomName}
+                          </CardTitle>
+                          <p className="truncate text-[11px] text-white/42">
+                            {headerPeopleLoading
+                              ? "Mitglieder werden geladen…"
+                              : headerPeople.length > 0
+                                ? `${headerPeople.length} Teilnehmer`
+                                : selectedScope === "community"
+                                  ? "EMD Community"
+                                  : "Vereinschat"}
+                          </p>
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <CardTitle className="truncate text-base font-black tracking-tight text-white sm:text-lg">
-                                {selectedRoomName}
-                              </CardTitle>
-                              <p className="mt-0.5 truncate text-[11px] font-medium text-white/30">
-                                {messages.length} {messages.length === 1 ? "Nachricht" : "Nachrichten"}
-                              </p>
-                            </div>
-
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => router.push(backHref)}
-                              className="hidden h-9 rounded-xl border-white/[0.09] bg-white/[0.035] px-3 text-xs font-bold text-white/70 hover:bg-white/[0.06] hover:text-white sm:inline-flex"
-                            >
-                              <Home className="mr-1.5 h-3.5 w-3.5" />
-                              {backLabel}
-                            </Button>
-                          </div>
-
-                          {/* ✅ Mitglieder-Anzeige komplett weg (wie gewünscht) */}
+                        <div className="flex shrink-0 items-center gap-0.5">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="hidden h-10 w-10 rounded-full p-0 text-white/60 hover:bg-white/[0.08] hover:text-white md:inline-flex"
+                            aria-label="Chat-Menü"
+                            title="Chat-Menü"
+                          >
+                            <MoreVertical className="h-[19px] w-[19px]" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => router.push(backHref)}
+                            className="hidden h-10 w-10 rounded-full p-0 text-white/60 hover:bg-white/[0.08] hover:text-white sm:inline-flex"
+                            aria-label={backLabel}
+                            title={backLabel}
+                          >
+                            <Home className="h-[18px] w-[18px]" />
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>
@@ -3025,15 +3213,10 @@ export default function TeamChatPage({
                       ) : (
                         <>
                           <ScrollArea
-                            className={`flex-1 min-h-0 px-3 py-4 sm:px-5 sm:py-5 lg:px-7 xl:px-8 ${WA.chatBg}`}
+                            className={`flex-1 min-h-0 px-2 py-2.5 sm:px-3 lg:px-4 xl:px-5 ${WA.chatBg}`}
                           >
-                            {loading ? (
-                              <div className="text-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto" />
-                                <p className="mt-2 text-white/42 text-sm">
-                                  Lade Chat...
-                                </p>
-                              </div>
+                            {!roomReady ? (
+                              <div className="min-h-[45vh]" aria-hidden="true" />
                             ) : messages.length === 0 ? (
                               <div className="text-center py-8 text-white/42">
                                 <MessageCircle className="h-12 w-12 mx-auto mb-4 text-white/25" />
@@ -3045,15 +3228,15 @@ export default function TeamChatPage({
                                 </p>
                               </div>
                             ) : (
-                              <div className="mx-auto w-full max-w-6xl space-y-3.5">
+                              <div className="w-full space-y-0.5">
                                 {renderedStream.map((item) => {
                                   if (item.type === "date") {
                                     return (
                                       <div
                                         key={`date-${item.key}`}
-                                        className="py-3 flex items-center justify-center"
+                                        className="py-3.5 flex items-center justify-center"
                                       >
-                                        <div className="rounded-full border border-white/[0.07] bg-[#0a0d12]/88 px-3 py-1 text-[10px] font-black uppercase tracking-[0.10em] text-white/35 shadow-[0_10px_28px_-22px_rgba(0,0,0,.95)] backdrop-blur-xl">
+                                        <div className="rounded-lg border border-white/[0.055] bg-[#111820]/92 px-2.5 py-1 text-[10px] font-bold tracking-[0.02em] text-white/45 shadow-[0_10px_28px_-22px_rgba(0,0,0,.95)] backdrop-blur-xl">
                                           {item.label}
                                         </div>
                                       </div>
@@ -3075,13 +3258,27 @@ export default function TeamChatPage({
                                   const time = formatTimeVienna(
                                     message.created_at,
                                   );
+                                  const repliedMessage = message.reply_to_message_id
+                                    ? messages.find((m) => m.id === message.reply_to_message_id) ?? null
+                                    : null;
+                                  const messageReactions = reactionsByMessage[message.id] || [];
+                                  const reactionGroups = Array.from(
+                                    messageReactions.reduce((map, reaction) => {
+                                      const row = map.get(reaction.emoji) || { emoji: reaction.emoji, count: 0, mine: false };
+                                      row.count += 1;
+                                      if (reaction.user_id === profile?.id) row.mine = true;
+                                      map.set(reaction.emoji, row);
+                                      return map;
+                                    }, new Map<string, { emoji: string; count: number; mine: boolean }>()).values(),
+                                  );
 
                                   return (
                                     <div
                                       key={message.id}
-                                      className={`flex gap-2 min-w-0 overflow-hidden ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}
+                                      id={`msg-${message.id}`}
+                                      className={`group flex min-w-0 gap-1.5 overflow-visible py-[1px] ${isOwnMessage ? "flex-row-reverse" : "flex-row"}`}
                                     >
-                                      <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 mt-0.5">
+                                      <Avatar className={`h-7 w-7 flex-shrink-0 mt-0.5 ${isOwnMessage ? "hidden" : ""}`}>
                                         <AvatarImage
                                           src={photoUrl || "/placeholder.svg"}
                                           alt={name}
@@ -3092,17 +3289,17 @@ export default function TeamChatPage({
                                       </Avatar>
 
                                       <div
-                                        className={`flex flex-col flex-1 min-w-0 max-w-[calc(100%-40px)] sm:max-w-[72%] lg:max-w-[68%] xl:max-w-[62%] ${
+                                        className={`flex flex-col flex-1 min-w-0 max-w-[88%] sm:max-w-[82%] md:max-w-[76%] lg:max-w-[68%] xl:max-w-[64%] 2xl:max-w-[60%] ${
                                           isOwnMessage
                                             ? "items-end"
                                             : "items-start"
                                         }`}
                                       >
                                         {!isOwnMessage && (
-                                          <div className="w-full mb-1">
-                                            <div className="flex flex-col gap-1 sm:grid sm:grid-cols-[1fr_auto] sm:items-center sm:gap-2">
+                                          <div className="w-full mb-0.5">
+                                            <div className="flex items-center gap-2">
                                               <div className="min-w-0 flex flex-wrap items-center gap-2">
-                                                <span className="break-words text-[13px] font-black text-white/78">
+                                                <span className="break-words text-[12px] font-bold text-orange-200/90">
                                                   {name}
                                                 </span>
 
@@ -3113,21 +3310,35 @@ export default function TeamChatPage({
                                                 )}
                                               </div>
 
-                                              <span className="text-[11px] text-white/42 flex items-center gap-1 whitespace-nowrap sm:justify-self-end">
-                                                <Clock className="h-3 w-3" />
-                                                {time}
-                                              </span>
+
                                             </div>
                                           </div>
                                         )}
 
                                         <div
-                                          className={`px-3 py-2 min-w-0 ${
+                                          className={`px-2.5 py-1.5 min-w-0 ${
                                             message.message_type === "poll"
                                               ? "w-full max-w-full"
                                               : "w-fit max-w-full"
                                           } ${isOwnMessage ? WA.bubbleOwn : WA.bubbleOther}`}
                                         >
+                                          {repliedMessage && (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                document.getElementById(`msg-${repliedMessage.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                              }}
+                                              className={`mb-1.5 block w-full rounded-lg border-l-4 px-2.5 py-1.5 text-left ${isOwnMessage ? "border-orange-200/70 bg-black/15" : "border-orange-400/70 bg-black/10"}`}
+                                            >
+                                              <div className="truncate text-[11px] font-bold text-orange-200">
+                                                {repliedMessage.sender?.name || "Nachricht"}
+                                              </div>
+                                              <div className="mt-0.5 truncate text-[11px] text-white/60">
+                                                {repliedMessage.deleted_at ? "Diese Nachricht wurde gelöscht" : repliedMessage.message || repliedMessage.attachment_name || "Nachricht"}
+                                              </div>
+                                            </button>
+                                          )}
+
                                           {message.attachment_url &&
                                             isImageFile(
                                               message.attachment_type,
@@ -3321,7 +3532,7 @@ export default function TeamChatPage({
                                                 );
                                               })()
                                             : message.message?.trim() && (
-                                                <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+                                                <p className={`whitespace-pre-wrap break-words text-[14px] leading-[1.42] sm:text-[14.5px] ${message.deleted_at ? "italic text-white/55" : ""}`}>
                                                   {message.message}
                                                 </p>
                                               )}
@@ -3341,41 +3552,116 @@ export default function TeamChatPage({
 
                                               return (
                                                 <div
-                                                  className={`text-[10px] min-w-0 flex items-center gap-1 flex-wrap ${
+                                                  className={`text-[10px] min-w-0 flex items-center gap-1 ${
                                                     isOwnMessage
                                                       ? "text-white/80"
                                                       : "text-white/40"
                                                   }`}
                                                 >
-                                                  {isOwnMessage && (
-                                                    <Clock className="h-3 w-3" />
-                                                  )}
+                                                  {message.edited_at && !message.deleted_at && <span className="italic">bearbeitet</span>}
                                                   <span>{time}</span>
 
-                                                  {isOwnMessage &&
-                                                    recipientsCount > 0 && (
-                                                      <button
-                                                        type="button"
-                                                        className="ml-2 underline decoration-dotted"
-                                                        onClick={() =>
-                                                          setOpenReadsFor(
-                                                            message.id,
-                                                          )
-                                                        }
-                                                      >
-                                                        {readCountWithoutMe ===
-                                                        0
-                                                          ? "✓"
-                                                          : "✓✓"}{" "}
-                                                        gelesen (
-                                                        {readCountWithoutMe}/
-                                                        {recipientsCount})
-                                                      </button>
-                                                    )}
+                                                  {isOwnMessage && recipientsCount > 0 && (
+                                                    <button
+                                                      type="button"
+                                                      className={`ml-0.5 font-black tracking-[-0.08em] ${
+                                                        readCountWithoutMe > 0 ? "text-orange-200" : "text-white/55"
+                                                      }`}
+                                                      onClick={() => setOpenReadsFor(message.id)}
+                                                      aria-label={`Gelesen von ${readCountWithoutMe} von ${recipientsCount}`}
+                                                      title={`Gelesen von ${readCountWithoutMe} von ${recipientsCount}`}
+                                                    >
+                                                      {readCountWithoutMe === 0 ? "✓" : "✓✓"}
+                                                    </button>
+                                                  )}
                                                 </div>
                                               );
                                             })()}
                                           </div>
+                                        </div>
+
+                                        {!message.deleted_at && reactionGroups.length > 0 && (
+                                          <div className={`mt-0.5 flex flex-wrap gap-1 ${isOwnMessage ? "justify-end" : "justify-start"}`}>
+                                            {reactionGroups.map((r) => (
+                                              <button
+                                                key={r.emoji}
+                                                type="button"
+                                                onClick={() => toggleReaction(message.id, r.emoji)}
+                                                className={`inline-flex h-6 items-center gap-1 rounded-full border px-1.5 text-[12px] ${r.mine ? "border-orange-400/35 bg-orange-500/15" : "border-white/[0.10] bg-[#17212b]"}`}
+                                              >
+                                                <span>{r.emoji}</span>
+                                                <span className="text-[10px] text-white/70">{r.count}</span>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
+
+                                        <div className={`relative mt-0.5 flex items-center gap-0.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 ${isOwnMessage ? "justify-end" : "justify-start"}`}>
+                                          <button
+                                            type="button"
+                                            onClick={() => startReply(message)}
+                                            className="flex h-7 w-7 items-center justify-center rounded-full text-white/45 hover:bg-white/[0.08] hover:text-white"
+                                            aria-label="Antworten"
+                                            title="Antworten"
+                                          >
+                                            <Reply className="h-3.5 w-3.5" />
+                                          </button>
+                                          {!message.deleted_at && (
+                                            <button
+                                              type="button"
+                                              onClick={(event) => toggleMessageMenuAt(event, message.id)}
+                                              className="flex h-7 w-7 items-center justify-center rounded-full text-white/45 hover:bg-white/[0.08] hover:text-white"
+                                              aria-label="Nachrichtenoptionen"
+                                            >
+                                              <MoreVertical className="h-3.5 w-3.5" />
+                                            </button>
+                                          )}
+
+                                          {activeMessageMenu === message.id && !message.deleted_at && messageMenuPosition && (
+                                            <>
+                                              <button
+                                                type="button"
+                                                aria-label="Nachrichtenmenü schließen"
+                                                className="fixed inset-0 z-[90] cursor-default bg-transparent"
+                                                onClick={() => {
+                                                  setActiveMessageMenu(null);
+                                                  setMessageMenuPosition(null);
+                                                }}
+                                              />
+                                              <div
+                                                className="fixed z-[100] w-[220px] rounded-xl border border-white/[0.10] bg-[#202a33] p-2 shadow-2xl"
+                                                style={{ top: messageMenuPosition.top, left: messageMenuPosition.left }}
+                                                onClick={(event) => event.stopPropagation()}
+                                              >
+                                              <div className="mb-1 px-1 text-[10px] font-bold uppercase tracking-wide text-white/35">Reagieren</div>
+                                              <div className="mb-2 flex items-center justify-between gap-1">
+                                                {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
+                                                  <button
+                                                    key={emoji}
+                                                    type="button"
+                                                    onClick={() => toggleReaction(message.id, emoji)}
+                                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[18px] hover:bg-white/[0.08]"
+                                                  >
+                                                    {emoji}
+                                                  </button>
+                                                ))}
+                                              </div>
+                                              <button type="button" onClick={() => startReply(message)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs text-white/80 hover:bg-white/[0.07]">
+                                                <Reply className="h-3.5 w-3.5" /> Antworten
+                                              </button>
+                                              {isOwnMessage && message.message_type !== "poll" && (
+                                                <button type="button" onClick={() => startEdit(message)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs text-white/80 hover:bg-white/[0.07]">
+                                                  <Pencil className="h-3.5 w-3.5" /> Bearbeiten
+                                                </button>
+                                              )}
+                                              {isOwnMessage && (
+                                                <button type="button" onClick={() => deleteOwnMessage(message)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs text-red-300 hover:bg-red-500/10">
+                                                  <Trash2 className="h-3.5 w-3.5" /> Löschen
+                                                </button>
+                                              )}
+                                              </div>
+                                            </>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
@@ -3388,9 +3674,25 @@ export default function TeamChatPage({
 
                           {/* ✅ Composer "fixiert": sticky bottom im Card-Container */}
                           <div
-                            className={`px-3 py-3 sm:px-5 ${WA.composer} shrink-0 sticky bottom-0 z-10`}
+                            className={`px-2 py-1.5 sm:px-4 ${WA.composer} shrink-0 sticky bottom-0 z-10 pb-[max(7px,env(safe-area-inset-bottom))]`}
                           >
-                            <div className="mx-auto w-full max-w-5xl space-y-2">
+                            <div className="w-full space-y-2">
+                              {(replyToMessage || editingMessage) && (
+                                <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-[#17212b] px-3 py-2">
+                                  <div className="min-w-0 border-l-4 border-orange-400 pl-2.5">
+                                    <div className="truncate text-[11px] font-bold text-orange-300">
+                                      {editingMessage ? "Nachricht bearbeiten" : `Antwort an ${replyToMessage?.sender?.name || "Nachricht"}`}
+                                    </div>
+                                    <div className="mt-0.5 truncate text-xs text-white/55">
+                                      {editingMessage?.message || replyToMessage?.message || replyToMessage?.attachment_name || "Nachricht"}
+                                    </div>
+                                  </div>
+                                  <button type="button" onClick={cancelComposerAction} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/45 hover:bg-white/[0.08] hover:text-white">
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              )}
+
                               {selectedFiles.length > 0 && (
                                 <div className="rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-white/80">
                                   <div className="mb-2 flex items-center justify-between gap-2">
@@ -3432,7 +3734,7 @@ export default function TeamChatPage({
                                 </div>
                               )}
 
-                              <div className="flex gap-2 items-end">
+                              <div className="relative flex items-end gap-1.5">
                                 <input
                                   ref={fileInputRef}
                                   type="file"
@@ -3448,7 +3750,7 @@ export default function TeamChatPage({
                                   size="sm"
                                   onClick={() => setPollDialogOpen(true)}
                                   disabled={sending || !profile?.id}
-                                  className="h-12 w-12 shrink-0 rounded-[16px] border border-white/[0.09] bg-white/[0.035] p-0 text-white/55 transition-colors hover:border-orange-300/20 hover:bg-orange-500/[0.08] hover:text-orange-200"
+                                  className="h-11 w-10 shrink-0 rounded-full border-0 bg-transparent p-0 text-white/55 transition-colors hover:bg-white/[0.08] hover:text-orange-200"
                                 >
                                   <BarChart3 className="h-4 w-4" />
                                 </Button>
@@ -3459,21 +3761,49 @@ export default function TeamChatPage({
                                   size="sm"
                                   onClick={() => fileInputRef.current?.click()}
                                   disabled={sending || !profile?.id}
-                                  className="h-12 w-12 shrink-0 rounded-[16px] border border-white/[0.09] bg-white/[0.035] p-0 text-white/55 transition-colors hover:border-orange-300/20 hover:bg-orange-500/[0.08] hover:text-orange-200"
+                                  className="h-11 w-10 shrink-0 rounded-full border-0 bg-transparent p-0 text-white/55 transition-colors hover:bg-white/[0.08] hover:text-orange-200"
                                 >
                                   <Paperclip className="h-4 w-4" />
                                 </Button>
 
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEmojiOpen((v) => !v)}
+                                  className={`h-11 w-9 shrink-0 rounded-full p-0 hover:bg-white/[0.06] ${emojiOpen ? "text-orange-300" : "text-white/45 hover:text-white/75"}`}
+                                  aria-label="Emoji auswählen"
+                                >
+                                  <Smile className="h-[19px] w-[19px]" />
+                                </Button>
+
+                                {emojiOpen && (
+                                  <div className="absolute bottom-[52px] left-0 z-50 w-[286px] max-w-[calc(100vw-28px)] rounded-2xl border border-white/[0.10] bg-[#202a33] p-2.5 shadow-2xl">
+                                    <div className="mb-2 px-1 text-[11px] font-bold text-white/45">Emojis</div>
+                                    <div className="grid grid-cols-8 gap-1 sm:grid-cols-8">
+                                      {CHAT_EMOJIS.map((emoji) => (
+                                        <button
+                                          key={emoji}
+                                          type="button"
+                                          onClick={() => insertEmoji(emoji)}
+                                          className="flex h-8 w-8 items-center justify-center rounded-lg text-[21px] hover:bg-white/[0.08] active:scale-95"
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
                                 <Input
-                                  placeholder="Nachricht eingeben..."
+                                  id="emd-chat-input"
+                                  placeholder="Nachricht"
                                   value={newMessage}
-                                  onChange={(e) =>
-                                    setNewMessage(e.target.value)
-                                  }
+                                  onChange={(e) => handleMessageInput(e.target.value)}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter" && !e.shiftKey) {
                                       e.preventDefault();
-                                      sendMessage();
+                                      submitComposer();
                                     }
                                   }}
                                   disabled={sending || !profile?.id}
@@ -3481,20 +3811,21 @@ export default function TeamChatPage({
                                 />
 
                                 <Button
-                                  onClick={sendMessage}
+                                  onClick={submitComposer}
                                   disabled={
-                                    (!newMessage.trim() &&
-                                      selectedFiles.length === 0) ||
-                                    sending ||
-                                    !profile?.id
+                                    editingMessage
+                                      ? !newMessage.trim() || sending || !profile?.id
+                                      : ((!newMessage.trim() && selectedFiles.length === 0) ||
+                                        sending ||
+                                        !profile?.id)
                                   }
                                   size="icon"
-                                  className={`h-12 w-12 shrink-0 ${WA.sendBtn}`}
+                                  className={WA.sendBtn}
                                 >
                                   {sending ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                                   ) : (
-                                    <Send className="h-4 w-4" />
+                                    <Send className="h-[18px] w-[18px]" />
                                   )}
                                 </Button>
                               </div>
@@ -3509,7 +3840,43 @@ export default function TeamChatPage({
             )}
           </div>
         </div>
+        ) : appSection === "lineup" ? (
+          <ChatLineupPanel />
+        ) : (
+          <ChatUpdatesPanel onOpenLineup={() => setAppSection("lineup")} />
+        )}
       </main>
+
+      <nav className={`${appSection === "chats" && mobileChatOpen ? "hidden lg:flex" : "flex"} relative z-30 h-[64px] shrink-0 items-stretch border-t border-white/[0.07] bg-[#111820] pb-[env(safe-area-inset-bottom)]`}>
+        {[
+          { key: "chats" as const, label: "Chats", icon: MessageCircle, badge: totalUnread },
+          { key: "updates" as const, label: "Aktuell", icon: Newspaper, badge: 0 },
+          { key: "lineup" as const, label: "Aufstellung", icon: ClipboardList, badge: 0 },
+        ].map((item) => {
+          const Icon = item.icon;
+          const active = appSection === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => {
+                setAppSection(item.key);
+                if (item.key !== "chats") setMobileChatOpen(false);
+              }}
+              className={`relative flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors ${active ? "text-orange-300" : "text-white/45 hover:text-white/75"}`}
+            >
+              <span className="relative">
+                <Icon className="h-5 w-5" />
+                {item.badge > 0 ? (
+                  <span className="absolute -right-3 -top-2 min-w-[18px] rounded-full bg-orange-500 px-1.5 py-0.5 text-[9px] font-black leading-none text-white">{item.badge > 99 ? "99+" : item.badge}</span>
+                ) : null}
+              </span>
+              <span>{item.label}</span>
+              {active ? <span className="absolute top-0 h-0.5 w-10 rounded-full bg-orange-400" /> : null}
+            </button>
+          );
+        })}
+      </nav>
 
       <Dialog
         open={!!openReadsFor}

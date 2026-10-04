@@ -1,0 +1,28 @@
+{
+  "id": "/chat-app",
+  "name": "EMD Messenger",
+  "short_name": "EMD Messenger",
+  "description": "Chats, Aktuelles und Aufstellungen von EMD.",
+  "start_url": "/chat-app?source=homescreen",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#050608",
+  "theme_color": "#f97316",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/emd-messenger/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/emd-messenger/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

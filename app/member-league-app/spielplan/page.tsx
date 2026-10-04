@@ -2089,9 +2089,49 @@ const submitSportdartsSync = async (mode: "apply" | "review") => {
     }
 
     if (payload?.applied) {
+      // Niemals nur der API-Antwort vertrauen: direkt nach dem Schreiben prüfen,
+      // ob Ergebnis UND Spieler-Legstatistiken wirklich in Supabase vorhanden sind.
+      const expectedPlayerIds = sportdartsSyncPreview.players
+        .map((player) => player.localPlayerId)
+        .filter((playerId): playerId is string => Boolean(playerId))
+
+      const [{ data: verifiedMatch, error: verifyMatchError }, { data: verifiedStats, error: verifyStatsError }] =
+        await Promise.all([
+          supabase
+            .from("matches")
+            .select("id,home_score,away_score,status")
+            .eq("id", sportdartsSyncMatch.id)
+            .single(),
+          expectedPlayerIds.length > 0
+            ? supabase
+                .from("leg_statistics")
+                .select("player_id,player_legs_won,opponent_legs_won")
+                .eq("match_id", sportdartsSyncMatch.id)
+                .in("player_id", expectedPlayerIds)
+            : Promise.resolve({ data: [], error: null } as any),
+        ])
+
+      if (verifyMatchError) throw verifyMatchError
+      if (verifyStatsError) throw verifyStatsError
+
+      const expectedHomeScore = Number(sportdartsSyncPreview.homeScore)
+      const expectedAwayScore = Number(sportdartsSyncPreview.awayScore)
+      const savedPlayerIds = new Set((verifiedStats || []).map((row: any) => row.player_id))
+      const allPlayersSaved = expectedPlayerIds.every((playerId) => savedPlayerIds.has(playerId))
+      const matchSaved =
+        verifiedMatch?.status === "completed" &&
+        Number(verifiedMatch?.home_score) === expectedHomeScore &&
+        Number(verifiedMatch?.away_score) === expectedAwayScore
+
+      if (!matchSaved || !allPlayersSaved) {
+        throw new Error(
+          "Die Übernahme wurde nicht vollständig in Supabase gespeichert. Bitte erneut versuchen oder den Fall prüfen.",
+        )
+      }
+
       toast({
-        title: "Sportdarts übernommen",
-        description: `Endstand und offizielle Leg-Daten von ${payload.playerCount ?? 0} Spielern wurden übernommen.`,
+        title: "Sportdarts erfolgreich gespeichert",
+        description: `Endstand und Leg-Daten von ${expectedPlayerIds.length} Spielern wurden geprüft und gespeichert.`,
       })
 
       setSportdartsSyncOpen(false)
@@ -2102,6 +2142,8 @@ const submitSportdartsSync = async (mode: "apply" | "review") => {
       setSportdartsExtraOpenPlayers({})
       setSportdartsExtraStats({})
       await fetchMatches()
+      await fetchLigaStatistics()
+      await fetchLegStatistics()
       return
     }
 
@@ -3922,7 +3964,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                     {sportdartsSyncActionLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <Check className="mr-2 h-4 w-4" />
+                      <ArrowRight className="mr-2 h-4 w-4" />
                     )}
                     Offizielle Sportdarts-Daten übernehmen
                   </Button>
