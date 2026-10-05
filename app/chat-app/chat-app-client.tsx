@@ -2938,6 +2938,180 @@ export default function TeamChatPage() {
     );
   };
 
+
+  // WhatsApp-Logik: ALLE Chats nach letzter Aktivität sortieren.
+  // Jede normale Nachricht, Umfrage, Datei und auch unsere Spiel-/Aufstellungskarte
+  // liegt in chat_messages und hebt damit den betreffenden Chat automatisch nach oben.
+  const chatListItems = [
+    ...(isTestUser
+      ? [{
+          keyValue: "test",
+          title: "🧪 Jimmy Testchat",
+          subtitle: "Nur Testkonten · keine Pushs",
+          roomId: TEST_ROOM_ID,
+          scope: "test" as ChatScope,
+          unread: testUnread,
+          selected: selectedScope === "test",
+          icon: <FlaskConical className="h-5 w-5" />,
+          imageUrl: null as string | null,
+          fallbackOrder: 0,
+          onClick: () => {
+            setSelectedScope("test");
+            setSelectedRoom(null);
+            setSidebarOpen(false);
+            setMobileChatOpen(true);
+            setTimeout(() => markRoomAsVisited(TEST_ROOM_ID, "test"), 50);
+          },
+        }]
+      : []),
+    {
+      keyValue: "community",
+      title: "EMD Community",
+      subtitle: "Gäste & Mitglieder",
+      roomId: COMMUNITY_ROOM_ID,
+      scope: "community" as ChatScope,
+      unread: communityUnread,
+      selected: selectedScope === "community",
+      icon: <MessageCircle className="h-5 w-5" />,
+      imageUrl: null as string | null,
+      fallbackOrder: 1,
+      onClick: () => {
+        setSelectedScope("community");
+        setSelectedRoom(null);
+        setSidebarOpen(false);
+        setMobileChatOpen(true);
+        setTimeout(() => markRoomAsVisited(COMMUNITY_ROOM_ID, "community"), 50);
+      },
+    },
+    ...(!profile?.is_guest
+      ? [
+          {
+            keyValue: "club",
+            title: "Vereinsinfo",
+            subtitle: "Informationen vom Verein",
+            roomId: CLUB_ROOM_ID,
+            scope: "club" as ChatScope,
+            unread: clubUnread,
+            selected: selectedScope === "club",
+            icon: <Info className="h-5 w-5" />,
+            imageUrl: null as string | null,
+            fallbackOrder: 2,
+            onClick: () => {
+              setSelectedScope("club");
+              setSelectedRoom(null);
+              setSidebarOpen(false);
+              setMobileChatOpen(true);
+              setTimeout(() => markRoomAsVisited(CLUB_ROOM_ID, "club"), 50);
+            },
+          },
+          {
+            keyValue: "freizeit",
+            title: "Freizeit",
+            subtitle: "Plaudern & gemeinsame Aktivitäten",
+            roomId: FREIZEIT_ROOM_ID,
+            scope: "freizeit" as ChatScope,
+            unread: freizeitUnread,
+            selected: selectedScope === "freizeit",
+            icon: <Coffee className="h-5 w-5" />,
+            imageUrl: null as string | null,
+            fallbackOrder: 3,
+            onClick: () => {
+              setSelectedScope("freizeit");
+              setSelectedRoom(null);
+              setSidebarOpen(false);
+              setMobileChatOpen(true);
+              setTimeout(() => markRoomAsVisited(FREIZEIT_ROOM_ID, "freizeit"), 50);
+            },
+          },
+          ...((canSeeCaptainChat || isVorstand)
+            ? [{
+                keyValue: "captains",
+                title: "Captain-Chat",
+                subtitle: "Captain & Co-Captain",
+                roomId: CAPTAINS_ROOM_ID,
+                scope: "captains" as ChatScope,
+                unread: captainsUnread,
+                selected: selectedScope === "captains",
+                icon: <Users className="h-5 w-5" />,
+                imageUrl: null as string | null,
+                fallbackOrder: 4,
+                onClick: () => {
+                  setSelectedScope("captains");
+                  setSelectedRoom(null);
+                  setSidebarOpen(false);
+                  setMobileChatOpen(true);
+                  setTimeout(() => markRoomAsVisited(CAPTAINS_ROOM_ID, "captains"), 50);
+                },
+              }]
+            : []),
+          ...(canSeeVorstandChat
+            ? [{
+                keyValue: "vorstand",
+                title: "Vorstand",
+                subtitle: "Interner Vorstands-Chat",
+                roomId: VORSTAND_ROOM_ID,
+                scope: "vorstand" as ChatScope,
+                unread: vorstandUnread,
+                selected: selectedScope === "vorstand",
+                icon: <Shield className="h-5 w-5" />,
+                imageUrl: null as string | null,
+                fallbackOrder: 5,
+                onClick: () => {
+                  setSelectedScope("vorstand");
+                  setSelectedRoom(null);
+                  setSidebarOpen(false);
+                  setMobileChatOpen(true);
+                  setTimeout(() => markRoomAsVisited(VORSTAND_ROOM_ID, "vorstand"), 50);
+                },
+              }]
+            : []),
+          ...chatRooms.map((room, index) => ({
+            keyValue: room.id,
+            title: room.name,
+            subtitle: room.role ? `Team · ${room.role}` : "Team-Chat",
+            roomId: room.id,
+            scope: "team" as ChatScope,
+            unread: unreadCounts[unreadKey(room.id, "team")] ?? unreadCounts[room.id] ?? 0,
+            selected: selectedScope === "team" && selectedRoom?.id === room.id,
+            icon: <Hash className="h-5 w-5" />,
+            imageUrl: room.logo_url ?? null,
+            fallbackOrder: 100 + index,
+            onClick: () => {
+              setSelectedRoom(room);
+              setSelectedScope("team");
+              setSidebarOpen(false);
+              setMobileChatOpen(true);
+              setTimeout(() => markRoomAsVisited(room.id, "team"), 50);
+            },
+          })),
+        ]
+      : []),
+  ]
+    .map((item) => {
+      const preview = lastMessagesByRoom[lastPreviewKey(item.roomId, item.scope)];
+      const activity = preview?.created_at
+        ? new Date(preview.created_at).getTime()
+        : 0;
+      return {
+        ...item,
+        activity: Number.isFinite(activity) ? activity : 0,
+      };
+    })
+    .sort((a, b) => {
+      // Neueste Aktivität immer ganz nach oben – exakt wie bei WhatsApp.
+      if (b.activity !== a.activity) return b.activity - a.activity;
+      // Chats ohne Nachrichten bleiben in einer stabilen, nachvollziehbaren Reihenfolge.
+      return a.fallbackOrder - b.fallbackOrder;
+    });
+
+  const visibleChatListItems = chatListItems.filter((item) => {
+    if (!chatMatches(item.title, item.subtitle)) return false;
+    const favoriteKey = `${item.scope}:${item.roomId}`;
+    if (chatFilter === "unread" && item.unread <= 0) return false;
+    if (chatFilter === "favorites" && !favoriteChats.has(favoriteKey)) return false;
+    return true;
+  });
+
   const showNoProfile = !profileLoading && !profile;
 
   if (authLoading) {
@@ -3109,150 +3283,37 @@ export default function TeamChatPage() {
 
                     <ScrollArea className="flex-1 min-h-0">
                       <div className="pb-[max(12px,env(safe-area-inset-bottom))]">
-                        {isTestUser && renderChatRow({
-                          keyValue: "test",
-                          title: "🧪 Jimmy Testchat",
-                          subtitle: "Nur Testkonten · keine Pushs",
-                          roomId: TEST_ROOM_ID,
-                          scope: "test",
-                          unread: testUnread,
-                          selected: selectedScope === "test",
-                          icon: <FlaskConical className="h-5 w-5" />,
-                          onClick: () => {
-                            setSelectedScope("test");
-                            setSelectedRoom(null);
-                            setSidebarOpen(false);
-                            setMobileChatOpen(true);
-                            setTimeout(() => markRoomAsVisited(TEST_ROOM_ID, "test"), 50);
-                          },
-                        })}
-
-                        {renderChatRow({
-                          keyValue: "community",
-                          title: "EMD Community",
-                          subtitle: "Gäste & Mitglieder",
-                          roomId: COMMUNITY_ROOM_ID,
-                          scope: "community",
-                          unread: communityUnread,
-                          selected: selectedScope === "community",
-                          icon: <MessageCircle className="h-5 w-5" />,
-                          onClick: () => {
-                            setSelectedScope("community");
-                            setSidebarOpen(false);
-                            setMobileChatOpen(true);
-                            setTimeout(() => markRoomAsVisited(COMMUNITY_ROOM_ID, "community"), 50);
-                          },
-                        })}
-
-                        {!profile?.is_guest && (
-                          <>
-                            {renderChatRow({
-                              keyValue: "club",
-                              title: "Vereinsinfo",
-                              subtitle: "Informationen vom Verein",
-                              roomId: CLUB_ROOM_ID,
-                              scope: "club",
-                              unread: clubUnread,
-                              selected: selectedScope === "club",
-                              icon: <Info className="h-5 w-5" />,
-                              onClick: () => {
-                                setSelectedScope("club");
-                                setSidebarOpen(false);
-                                setMobileChatOpen(true);
-                                setTimeout(() => markRoomAsVisited(CLUB_ROOM_ID, "club"), 50);
-                              },
-                            })}
-
-                            {renderChatRow({
-                              keyValue: "freizeit",
-                              title: "Freizeit",
-                              subtitle: "Plaudern & gemeinsame Aktivitäten",
-                              roomId: FREIZEIT_ROOM_ID,
-                              scope: "freizeit",
-                              unread: freizeitUnread,
-                              selected: selectedScope === "freizeit",
-                              icon: <Coffee className="h-5 w-5" />,
-                              onClick: () => {
-                                setSelectedScope("freizeit");
-                                setSidebarOpen(false);
-                                setMobileChatOpen(true);
-                                setTimeout(() => markRoomAsVisited(FREIZEIT_ROOM_ID, "freizeit"), 50);
-                              },
-                            })}
-
-                            {(canSeeCaptainChat || isVorstand) && renderChatRow({
-                              keyValue: "captains",
-                              title: "Captain-Chat",
-                              subtitle: "Captain & Co-Captain",
-                              roomId: CAPTAINS_ROOM_ID,
-                              scope: "captains",
-                              unread: captainsUnread,
-                              selected: selectedScope === "captains",
-                              icon: <Users className="h-5 w-5" />,
-                              onClick: () => {
-                                setSelectedScope("captains");
-                                setSidebarOpen(false);
-                                setMobileChatOpen(true);
-                                setTimeout(() => markRoomAsVisited(CAPTAINS_ROOM_ID, "captains"), 50);
-                              },
-                            })}
-
-                            {canSeeVorstandChat && renderChatRow({
-                              keyValue: "vorstand",
-                              title: "Vorstand",
-                              subtitle: "Interner Vorstands-Chat",
-                              roomId: VORSTAND_ROOM_ID,
-                              scope: "vorstand",
-                              unread: vorstandUnread,
-                              selected: selectedScope === "vorstand",
-                              icon: <Shield className="h-5 w-5" />,
-                              onClick: () => {
-                                setSelectedScope("vorstand");
-                                setSidebarOpen(false);
-                                setMobileChatOpen(true);
-                                setTimeout(() => markRoomAsVisited(VORSTAND_ROOM_ID, "vorstand"), 50);
-                              },
-                            })}
-
-                            {roomsLoading ? (
-                              <div className="px-4 py-5 text-center text-xs text-white/35">Teams werden geladen…</div>
-                            ) : (
-                              chatRooms.map((room) => {
-                                const unread = unreadCounts[unreadKey(room.id, "team")] ?? unreadCounts[room.id] ?? 0;
-                                return renderChatRow({
-                                  keyValue: room.id,
-                                  title: room.name,
-                                  subtitle: room.role ? `Team · ${room.role}` : "Team-Chat",
-                                  roomId: room.id,
-                                  scope: "team",
-                                  unread,
-                                  selected: selectedScope === "team" && selectedRoom?.id === room.id,
-                                  icon: <Hash className="h-5 w-5" />,
-                                  imageUrl: room.logo_url,
-                                  onClick: () => {
-                                    setSelectedRoom(room);
-                                    setSelectedScope("team");
-                                    setSidebarOpen(false);
-                                    setMobileChatOpen(true);
-                                    setTimeout(() => markRoomAsVisited(room.id, "team"), 50);
-                                  },
-                                });
-                              })
-                            )}
-                          </>
-                        )}
-
-                        {normalizedChatSearch &&
-                        (!isTestUser || !chatMatches("🧪 Jimmy Testchat", "Nur Testkonten keine Pushs")) &&
-                        !chatMatches("EMD Community", "Gäste & Mitglieder") &&
-                        !chatRooms.some((room) => chatMatches(room.name, room.role ?? "")) &&
-                        !chatMatches("Vereinsinfo", "Informationen vom Verein") &&
-                        !chatMatches("Freizeit", "Plaudern gemeinsame Aktivitäten") ? (
+                        {roomsLoading ? (
+                          <div className="px-4 py-5 text-center text-xs text-white/35">
+                            Chats werden geladen…
+                          </div>
+                        ) : visibleChatListItems.length > 0 ? (
+                          visibleChatListItems.map((item) =>
+                            renderChatRow({
+                              keyValue: item.keyValue,
+                              title: item.title,
+                              subtitle: item.subtitle,
+                              roomId: item.roomId,
+                              scope: item.scope,
+                              unread: item.unread,
+                              selected: item.selected,
+                              icon: item.icon,
+                              imageUrl: item.imageUrl,
+                              onClick: item.onClick,
+                            }),
+                          )
+                        ) : (
                           <div className="px-6 py-12 text-center">
                             <Search className="mx-auto h-8 w-8 text-white/20" />
-                            <div className="mt-3 text-sm font-semibold text-white/50">Kein Chat gefunden</div>
+                            <div className="mt-3 text-sm font-semibold text-white/50">
+                              {chatFilter === "unread"
+                                ? "Keine ungelesenen Chats"
+                                : chatFilter === "favorites"
+                                  ? "Keine Favoriten gefunden"
+                                  : "Kein Chat gefunden"}
+                            </div>
                           </div>
-                        ) : null}
+                        )}
                       </div>
                     </ScrollArea>
                   </div>
