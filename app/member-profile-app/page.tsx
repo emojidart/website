@@ -1267,6 +1267,33 @@ const fetchProfile = async () => {
     }
   }
 
+
+  const openMessengerInstall = () => {
+    if (typeof window === "undefined") return
+
+    const installUrl = `${window.location.origin}/messenger-install`
+    const ua = window.navigator.userAgent || ""
+    const isAndroid = /Android/i.test(ua)
+    const isAndroidWebView =
+      isAndroid &&
+      (/\bwv\b/i.test(ua) ||
+        /; wv\)/i.test(ua) ||
+        !!(window as any).Capacitor)
+
+    // In der Play-Store-App den normalen Chrome-Browser öffnen.
+    // So kann Android den EMD Messenger als eigene Homescreen-App installieren.
+    if (isAndroidWebView) {
+      const target = installUrl.replace(/^https?:\/\//i, "")
+      const fallback = encodeURIComponent(installUrl)
+      window.location.href =
+        `intent://${target}#Intent;scheme=https;package=com.android.chrome;` +
+        `S.browser_fallback_url=${fallback};end`
+      return
+    }
+
+    router.push("/messenger-install")
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push("/")
@@ -1757,7 +1784,7 @@ if (error || !profile) {
               </div>
               <Button
                 type="button"
-                onClick={() => router.push("/messenger-install")}
+                onClick={openMessengerInstall}
                 className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-orange-500 px-5 font-black text-white shadow-[0_0_30px_rgba(249,115,22,.22)] transition hover:bg-orange-400 active:scale-[0.985]"
               >
                 <Download className="mr-2 h-4 w-4" /> Messenger installieren
