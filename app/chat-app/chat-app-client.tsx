@@ -399,6 +399,7 @@ export default function TeamChatPage() {
   const [sending, setSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesViewportRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
   const messagesCacheRef = useRef<Record<string, ChatMessage[]>>({});
   const markingRef = useRef(false);
@@ -620,22 +621,24 @@ export default function TeamChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, profile?.player_id, profile?.is_guest, isVorstand]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+    viewport.scrollTo({
+      top: viewport.scrollHeight,
+      behavior,
+    });
   };
 
   useEffect(() => {
-    if (!messages.length) return;
+    if (!messages.length || appSection !== "chats") return;
 
     const id = requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-      });
+      scrollToBottom("smooth");
     });
 
     return () => cancelAnimationFrame(id);
-  }, [messages]);
+  }, [messages, appSection]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -763,17 +766,14 @@ export default function TeamChatPage() {
   }, [chatRooms]);
 
   useEffect(() => {
-    if (!currentRoomId) return;
+    if (!currentRoomId || appSection !== "chats") return;
 
     const id = requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({
-        behavior: "auto",
-        block: "end",
-      });
+      scrollToBottom("auto");
     });
 
     return () => cancelAnimationFrame(id);
-  }, [currentRoomId, selectedRoom?.id, selectedScope, messages.length]);
+  }, [currentRoomId, selectedRoom?.id, selectedScope, messages.length, appSection]);
 
   useEffect(() => {
     if (!messages.length) return;
@@ -3445,8 +3445,9 @@ export default function TeamChatPage() {
                         </div>
                       ) : (
                         <>
-                          <ScrollArea
-                            className={`flex-1 min-h-0 px-2 py-2.5 sm:px-3 lg:px-4 xl:px-5 ${WA.chatBg}`}
+                          <div
+                            ref={messagesViewportRef}
+                            className={`flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-2.5 sm:px-3 lg:px-4 xl:px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${WA.chatBg}`}
                           >
                             {!roomReady ? (
                               <div className="min-h-[45vh]" aria-hidden="true" />
@@ -3915,7 +3916,7 @@ export default function TeamChatPage() {
                                 <div ref={messagesEndRef} />
                               </div>
                             )}
-                          </ScrollArea>
+                          </div>
 
                           {/* ✅ Composer "fixiert": sticky bottom im Card-Container */}
                           <div
@@ -4086,9 +4087,16 @@ export default function TeamChatPage() {
           </div>
         </div>
         ) : appSection === "lineup" ? (
-          <ChatLineupPanel initialMatchId={urlMatchId} initialTeamId={urlTeamId} />
+          <ChatLineupPanel
+            key={`lineup-${urlMatchId ?? "list"}-${urlTeamId ?? "team"}`}
+            initialMatchId={urlMatchId}
+            initialTeamId={urlTeamId}
+          />
         ) : (
-          <ChatUpdatesPanel onOpenLineup={() => setAppSection("lineup")} />
+          <ChatUpdatesPanel
+            key="updates"
+            onOpenLineup={() => setAppSection("lineup")}
+          />
         )}
       </main>
 
@@ -4106,7 +4114,13 @@ export default function TeamChatPage() {
               type="button"
               onClick={() => {
                 setAppSection(item.key);
-                if (item.key !== "chats") setMobileChatOpen(false);
+
+                if (item.key !== "chats") {
+                  // Übersichtsseiten wie WhatsApp immer sauber von oben öffnen.
+                  // Wichtig: kein scrollIntoView aus dem Nachrichtenfenster darf
+                  // den Scrollstand von Aufstellung/Aktuell beeinflussen.
+                  setMobileChatOpen(false);
+                }
               }}
               className={`relative flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors ${active ? "text-orange-300" : "text-white/45 hover:text-white/75"}`}
             >
