@@ -1271,6 +1271,15 @@ const fetchProfile = async () => {
 
   const openMessengerInstall = () => {
     if (typeof window === "undefined") return
+
+    const nativeBridge = (window as any).AndroidEMD
+
+    if (nativeBridge?.openExternalMessengerPage) {
+      nativeBridge.openExternalMessengerPage()
+      return
+    }
+
+    // Normaler Browser/PC-Fallback
     window.open("https://emojisdartverein.com/messenger", "_blank", "noopener,noreferrer")
   }
 
