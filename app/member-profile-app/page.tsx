@@ -16,6 +16,7 @@ import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useDues } from "@/hooks/vereinsverwaltung/useDues"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { Capacitor, registerPlugin } from "@capacitor/core"
 import { supabase } from "@/lib/supabase"
 import {
   Calendar,
@@ -316,6 +317,13 @@ function MemberSignaturePad({ label, onChange }: { label: string; onChange: (val
   )
 }
 
+
+
+type MessengerDownloadPlugin = {
+  downloadApk: () => Promise<{ downloadId?: number }>
+}
+
+const NativeMessengerDownload = registerPlugin<MessengerDownloadPlugin>("MessengerDownload")
 
 export default function MemberProfileAppPage() {
   const CHAT_SCOPE: "team" | "captains" | "club" = "team"
@@ -1269,18 +1277,22 @@ const fetchProfile = async () => {
   }
 
 
-  const openMessengerInstall = () => {
+  const openMessengerInstall = async () => {
     if (typeof window === "undefined") return
 
     const apkUrl = "https://emojisdartverein.com/downloads/emd-messenger.apk"
 
-    const link = document.createElement("a")
-    link.href = apkUrl
-    link.download = "emd-messenger.apk"
-    link.rel = "noopener"
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    if (!Capacitor.isNativePlatform()) {
+      window.location.href = apkUrl
+      return
+    }
+
+    try {
+      await NativeMessengerDownload.downloadApk()
+    } catch (error) {
+      console.error("Messenger APK download failed:", error)
+      window.location.href = apkUrl
+    }
   }
 
   const handleLogout = async () => {
