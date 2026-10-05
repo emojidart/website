@@ -630,11 +630,59 @@ export default function TeamChatPage() {
     });
   };
 
+
+  const revealLastMatchCard = (behavior: ScrollBehavior = "auto") => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport || messages.length === 0) return false;
+
+    const lastMessage = messages[messages.length - 1];
+    if (!parseChatMatchCardMessage(lastMessage?.message)) return false;
+
+    const card = viewport.querySelector<HTMLElement>(`#msg-${lastMessage.id}`);
+    if (!card) return false;
+
+    const viewportRect = viewport.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+
+    // Wenn die Karte vollständig in den sichtbaren Nachrichtenbereich passt,
+    // so scrollen, dass wirklich die GANZE Karte sichtbar ist.
+    if (cardRect.height <= viewportRect.height) {
+      const currentTop = viewport.scrollTop;
+      const cardTopInsideViewport = cardRect.top - viewportRect.top + currentTop;
+      const cardBottomInsideViewport = cardTopInsideViewport + cardRect.height;
+      const padding = 10;
+
+      let targetTop = currentTop;
+
+      if (cardBottomInsideViewport > currentTop + viewport.clientHeight - padding) {
+        targetTop = cardBottomInsideViewport - viewport.clientHeight + padding;
+      }
+      if (cardTopInsideViewport < targetTop + padding) {
+        targetTop = Math.max(0, cardTopInsideViewport - padding);
+      }
+
+      viewport.scrollTo({ top: Math.max(0, targetTop), behavior });
+      return true;
+    }
+
+    // Falls die Karte auf einem sehr kleinen Display höher als der sichtbare Bereich ist,
+    // immer ihren Anfang zeigen statt irgendwo mitten in der Karte zu landen.
+    const currentTop = viewport.scrollTop;
+    const cardTopInsideViewport = cardRect.top - viewportRect.top + currentTop;
+    viewport.scrollTo({
+      top: Math.max(0, cardTopInsideViewport - 8),
+      behavior,
+    });
+    return true;
+  };
+
   useEffect(() => {
     if (!messages.length || appSection !== "chats") return;
 
     const id = requestAnimationFrame(() => {
-      scrollToBottom("smooth");
+      if (!revealLastMatchCard("auto")) {
+        scrollToBottom("smooth");
+      }
     });
 
     return () => cancelAnimationFrame(id);
@@ -769,11 +817,45 @@ export default function TeamChatPage() {
     if (!currentRoomId || appSection !== "chats") return;
 
     const id = requestAnimationFrame(() => {
-      scrollToBottom("auto");
+      if (!revealLastMatchCard("auto")) {
+        scrollToBottom("auto");
+      }
     });
 
     return () => cancelAnimationFrame(id);
   }, [currentRoomId, selectedRoom?.id, selectedScope, messages.length, appSection]);
+
+  useEffect(() => {
+    if (!currentRoomId || appSection !== "chats" || messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (!parseChatMatchCardMessage(lastMessage?.message)) return;
+
+    const viewport = messagesViewportRef.current;
+    const card = viewport?.querySelector<HTMLElement>(`#msg-${lastMessage.id}`);
+    if (!viewport || !card) return;
+
+    // Die Ligaspielkarte lädt Daten nach. Dadurch wird sie nach dem ersten Scrollen
+    // höher. ResizeObserver korrigiert den Scrollstand, sobald die fertige Karte da ist.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const observer = new ResizeObserver(() => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        revealLastMatchCard("auto");
+      }, 40);
+    });
+
+    observer.observe(card);
+
+    // Einmal direkt + nochmal kurz nach dem Mount, damit auch langsame Handys passen.
+    requestAnimationFrame(() => revealLastMatchCard("auto"));
+    timer = setTimeout(() => revealLastMatchCard("auto"), 250);
+
+    return () => {
+      observer.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+  }, [currentRoomId, selectedScope, messages, appSection]);
 
   useEffect(() => {
     if (!messages.length) return;
