@@ -51,10 +51,21 @@ export default function ChatVoiceMessage({
         ? mediaDuration
         : 0;
 
+  // Für die sichtbare Fortschrittsanzeige verwenden wir dieselbe Dauer
+  // wie bei der Anzeige rechts. Sonst kann Android/WebM z. B. 7 Sekunden
+  // melden, obwohl die echte Aufnahme nur 1 Sekunde lang ist – dann bewegt
+  // sich der Balken nur ein winziges Stück.
+  const progressDuration = displayDuration > 0 ? displayDuration : mediaDuration;
+
+  // Für echtes Springen im Audio darf weiterhin die Mediendauer verwendet werden,
+  // wenn sie plausibel ist. Bei falscher WebM-Dauer wird auf die gespeicherte
+  // Aufnahmezeit begrenzt.
   const seekDuration =
-    Number.isFinite(mediaDuration) && mediaDuration > 0
-      ? mediaDuration
-      : displayDuration;
+    storedDuration > 0
+      ? storedDuration
+      : Number.isFinite(mediaDuration) && mediaDuration > 0
+        ? mediaDuration
+        : 0;
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -83,7 +94,13 @@ export default function ChatVoiceMessage({
     const time = () => setCurrent(audio.currentTime || 0);
     const ended = () => {
       setPlaying(false);
-      setCurrent(0);
+      // Kurz auf 100 % springen, damit der Balken sichtbar bis zum Ende läuft.
+      if (displayDuration > 0) {
+        setCurrent(displayDuration);
+        window.setTimeout(() => setCurrent(0), 180);
+      } else {
+        setCurrent(0);
+      }
     };
 
     audio.addEventListener("loadedmetadata", syncDuration);
@@ -101,7 +118,7 @@ export default function ChatVoiceMessage({
       audio.removeEventListener("timeupdate", time);
       audio.removeEventListener("ended", ended);
     };
-  }, [src]);
+  }, [src, displayDuration]);
 
   const toggle = async () => {
     const audio = audioRef.current;
@@ -155,15 +172,15 @@ export default function ChatVoiceMessage({
           <input
             type="range"
             min={0}
-            max={Math.max(seekDuration, 1)}
-            step={0.05}
-            value={Math.min(current, Math.max(seekDuration, 1))}
+            max={Math.max(progressDuration, 1)}
+            step={0.01}
+            value={Math.min(current, Math.max(progressDuration, 1))}
             onChange={(e) => seek(Number(e.target.value))}
             className="h-1.5 w-full cursor-pointer accent-orange-400"
             aria-label="Sprachnachricht Position"
           />
           <div className="mt-1 flex items-center justify-between text-[10px] font-bold text-white/45">
-            <span>{fmt(current)}</span>
+            <span>{fmt(Math.min(current, displayDuration || current))}</span>
             <span className="inline-flex items-center gap-1">
               <Mic2 className="h-3 w-3" />
               {fmt(displayDuration)}
