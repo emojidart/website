@@ -1131,3 +1131,78 @@ body [data-slot="dialog-content"] :is(button,a,[role="button"]):disabled,
 body [data-slot="alert-dialog-content"] :is(button,a,[role="button"]):disabled {
   opacity: .52;
 }
+
+/* =========================================================
+   EMD MESSENGER – native safe-area ownership
+   /chat-app verwaltet Status-/Navigationsleisten selbst.
+   Verhindert doppeltes Padding und den schwarzen Leerraum unten.
+   ========================================================= */
+body:has(.emd-chat-app-shell) .app-root {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  min-height: 100dvh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+body:has(.emd-chat-app-shell) .emd-app-touch-fx,
+body:has(.emd-chat-app-shell) .emd-app-touch-fx__outer,
+body:has(.emd-chat-app-shell) .emd-app-touch-fx__inner,
+body:has(.emd-chat-app-shell) .emd-app-touch-fx__dot {
+  display: none !important;
+  animation: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+
+
+/* =========================================================
+   EMD MESSENGER – Android/WebView interaction + scrolling
+   ========================================================= */
+.emd-chat-app-shell,
+.emd-chat-app-shell *,
+.emd-messenger-root,
+.emd-messenger-root * {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+html:has(.emd-chat-app-shell),
+body:has(.emd-chat-app-shell) {
+  overscroll-behavior: none !important;
+}
+
+body:has(.emd-chat-app-shell) {
+  overflow: hidden !important;
+}
+
+.emd-messenger-root {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overscroll-behavior: none;
+}
+
+.emd-messenger-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-behavior: auto;
+}
+
+.emd-messenger-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.emd-messenger-bottom-nav {
+  min-height: 64px;
+  padding-bottom: 0;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}

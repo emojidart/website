@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -3008,7 +3007,7 @@ export default function TeamChatPage() {
   }
 
   return (
-    <div className={`relative h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
+    <div className={`emd-messenger-root relative h-[100dvh] min-h-0 flex flex-col overflow-hidden ${WA.appBg}`}>
       <div className="pointer-events-none fixed inset-0 z-0 hidden">
         <div
           className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.18]"
@@ -3084,8 +3083,8 @@ export default function TeamChatPage() {
                       </div>
                     </div>
 
-                    <ScrollArea className="flex-1 min-h-0">
-                      <div className="pb-[max(12px,env(safe-area-inset-bottom))]">
+                    <div className="emd-messenger-scroll flex-1 min-h-0">
+                      <div className="pb-3">
                         {isTestUser && renderChatRow({
                           keyValue: "test",
                           title: "🧪 Jimmy Testchat",
@@ -3231,7 +3230,7 @@ export default function TeamChatPage() {
                           </div>
                         ) : null}
                       </div>
-                    </ScrollArea>
+                    </div>
                   </div>
                 </div>
 
@@ -3361,8 +3360,8 @@ export default function TeamChatPage() {
                         </div>
                       ) : (
                         <>
-                          <ScrollArea
-                            className={`flex-1 min-h-0 px-2 py-2.5 sm:px-3 lg:px-4 xl:px-5 ${WA.chatBg}`}
+                          <div
+                            className={`emd-messenger-scroll flex-1 min-h-0 px-2 py-2.5 sm:px-3 lg:px-4 xl:px-5 ${WA.chatBg}`}
                           >
                             {!roomReady ? (
                               <div className="min-h-[45vh]" aria-hidden="true" />
@@ -3819,7 +3818,7 @@ export default function TeamChatPage() {
                                 <div ref={messagesEndRef} />
                               </div>
                             )}
-                          </ScrollArea>
+                          </div>
 
                           {/* ✅ Composer "fixiert": sticky bottom im Card-Container */}
                           <div
@@ -3996,7 +3995,7 @@ export default function TeamChatPage() {
         )}
       </main>
 
-      <nav className={`${appSection === "chats" && mobileChatOpen ? "hidden lg:flex" : "flex"} relative z-30 h-[64px] shrink-0 items-stretch border-t border-white/[0.07] bg-[#111820] pb-[env(safe-area-inset-bottom)]`}>
+      <nav className={`${appSection === "chats" && mobileChatOpen ? "hidden lg:flex" : "flex"} emd-messenger-bottom-nav relative z-30 h-[64px] shrink-0 items-stretch border-t border-white/[0.07] bg-[#111820]`}>
         {[
           { key: "chats" as const, label: "Chats", icon: MessageCircle, badge: totalUnread },
           { key: "updates" as const, label: "Aktuell", icon: Newspaper, badge: 0 },
