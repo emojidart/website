@@ -1,12 +1,15 @@
 package com.emojisdartverein.app;
 
 import android.content.Intent;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
 import android.net.Uri;
+import android.graphics.drawable.Icon;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
-import android.webkit.JavascriptInterface;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.core.content.pm.ShortcutInfoCompat;
@@ -25,13 +28,10 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        registerPlugin(MessengerShortcutPlugin.class);
         super.onCreate(savedInstanceState);
 
-        // Robuste Brücke für den Messenger-Install-Button der Web-App.
-        if (bridge != null && bridge.getWebView() != null) {
-            bridge.getWebView().addJavascriptInterface(new EmdNativeBridge(), "AndroidEMD");
-        }
-
+        // Native Capacitor plugin for Messenger shortcut.
 
         if (isMessengerInstallIntent(getIntent())) {
             requestMessengerShortcut();
@@ -76,12 +76,6 @@ public class MainActivity extends BridgeActivity {
         if (!TextUtils.isEmpty(pendingPath)) navigateWhenReady();
     }
 
-    private class EmdNativeBridge {
-        @JavascriptInterface
-        public void installMessengerShortcut() {
-            runOnUiThread(() -> requestMessengerShortcut());
-        }
-    }
 
     private boolean isMessengerInstallIntent(Intent intent) {
         if (intent == null) return false;
@@ -99,6 +93,29 @@ public class MainActivity extends BridgeActivity {
             shortcutIntent.setData(Uri.parse("emd://shortcut/messenger"));
             shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
+            // Android 8+: native Pin-Shortcut API first.
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                ShortcutManager manager = getSystemService(ShortcutManager.class);
+
+                if (manager != null && manager.isRequestPinShortcutSupported()) {
+                    ShortcutInfo shortcutInfo = new ShortcutInfo.Builder(this, "emd_messenger")
+                            .setShortLabel("EMD Messenger")
+                            .setLongLabel("EMD Messenger")
+                            .setIcon(Icon.createWithResource(this, R.mipmap.ic_launcher))
+                            .setIntent(shortcutIntent)
+                            .build();
+
+                    boolean requested = manager.requestPinShortcut(shortcutInfo, null);
+                    Log.d("EMD_SHORTCUT", "Native requestPinShortcut returned: " + requested);
+
+                    if (requested) {
+                        Toast.makeText(this, "Bitte „EMD Messenger“ zum Startbildschirm hinzufügen.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                }
+            }
+
+            // Fallback über AndroidX.
             ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(this, "emd_messenger")
                     .setShortLabel("EMD Messenger")
                     .setLongLabel("EMD Messenger")
@@ -110,12 +127,23 @@ public class MainActivity extends BridgeActivity {
             ShortcutManagerCompat.pushDynamicShortcut(this, shortcut);
 
             if (ShortcutManagerCompat.isRequestPinShortcutSupported(this)) {
-                ShortcutManagerCompat.requestPinShortcut(this, shortcut, null);
-            } else {
-                ShortcutManagerCompat.addDynamicShortcuts(this, Collections.singletonList(shortcut));
-                Toast.makeText(this, "EMD Messenger wurde zu den App-Verknüpfungen hinzugefügt.", Toast.LENGTH_LONG).show();
+                boolean requested = ShortcutManagerCompat.requestPinShortcut(this, shortcut, null);
+                Log.d("EMD_SHORTCUT", "Compat requestPinShortcut returned: " + requested);
+                if (requested) {
+                    Toast.makeText(this, "Bitte „EMD Messenger“ zum Startbildschirm hinzufügen.", Toast.LENGTH_LONG).show();
+                    return;
+                }
             }
+
+            ShortcutManagerCompat.addDynamicShortcuts(this, Collections.singletonList(shortcut));
+            Toast.makeText(
+                    this,
+                    "Dein Launcher erlaubt keine automatische Homescreen-Kachel. Halte das App-Symbol gedrückt – dort findest du „EMD Messenger“.",
+                    Toast.LENGTH_LONG
+            ).show();
+
         } catch (Exception e) {
+            Log.e("EMD_SHORTCUT", "Shortcut install failed", e);
             Toast.makeText(this, "EMD Messenger konnte nicht hinzugefügt werden.", Toast.LENGTH_LONG).show();
         }
     }

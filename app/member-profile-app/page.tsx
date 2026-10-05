@@ -16,6 +16,7 @@ import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useDues } from "@/hooks/vereinsverwaltung/useDues"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { Capacitor, registerPlugin } from "@capacitor/core"
 import { supabase } from "@/lib/supabase"
 import {
   Calendar,
@@ -315,6 +316,13 @@ function MemberSignaturePad({ label, onChange }: { label: string; onChange: (val
     </div>
   )
 }
+
+
+type MessengerShortcutPlugin = {
+  install(): Promise<{ requested?: boolean }>
+}
+
+const NativeMessengerShortcut = registerPlugin<MessengerShortcutPlugin>("MessengerShortcut")
 
 export default function MemberProfileAppPage() {
   const CHAT_SCOPE: "team" | "captains" | "club" = "team"
@@ -1268,26 +1276,16 @@ const fetchProfile = async () => {
   }
 
 
-  const openMessengerInstall = () => {
+  const openMessengerInstall = async () => {
     if (typeof window === "undefined") return
 
-    // Native Android-App: direkt über die Android-Brücke.
-    const nativeBridge = (window as any).AndroidEMD
-    if (nativeBridge?.installMessengerShortcut) {
-      nativeBridge.installMessengerShortcut()
-      return
-    }
-
-    // Fallback für ältere Builds.
-    const ua = window.navigator.userAgent || ""
-    const isAndroid = /Android/i.test(ua)
-    const isAndroidWebView =
-      isAndroid &&
-      (/wv/i.test(ua) || /; wv\)/i.test(ua) || !!(window as any).Capacitor)
-
-    if (isAndroidWebView) {
-      window.location.href = "emd://install-messenger"
-      return
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
+      try {
+        await NativeMessengerShortcut.install()
+        return
+      } catch (error) {
+        console.error("Messenger shortcut native install failed:", error)
+      }
     }
 
     router.push("/messenger-install")
