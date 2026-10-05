@@ -1271,23 +1271,22 @@ const fetchProfile = async () => {
   const openMessengerInstall = () => {
     if (typeof window === "undefined") return
 
-    const installUrl = `${window.location.origin}/messenger-install`
+    // Native Android-App: direkt über die Android-Brücke.
+    const nativeBridge = (window as any).AndroidEMD
+    if (nativeBridge?.installMessengerShortcut) {
+      nativeBridge.installMessengerShortcut()
+      return
+    }
+
+    // Fallback für ältere Builds.
     const ua = window.navigator.userAgent || ""
     const isAndroid = /Android/i.test(ua)
     const isAndroidWebView =
       isAndroid &&
-      (/\bwv\b/i.test(ua) ||
-        /; wv\)/i.test(ua) ||
-        !!(window as any).Capacitor)
+      (/wv/i.test(ua) || /; wv\)/i.test(ua) || !!(window as any).Capacitor)
 
-    // In der Play-Store-App den normalen Chrome-Browser öffnen.
-    // So kann Android den EMD Messenger als eigene Homescreen-App installieren.
     if (isAndroidWebView) {
-      const target = installUrl.replace(/^https?:\/\//i, "")
-      const fallback = encodeURIComponent(installUrl)
-      window.location.href =
-        `intent://${target}#Intent;scheme=https;package=com.android.chrome;` +
-        `S.browser_fallback_url=${fallback};end`
+      window.location.href = "emd://install-messenger"
       return
     }
 

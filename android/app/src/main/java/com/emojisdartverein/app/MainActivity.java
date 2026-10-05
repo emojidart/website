@@ -6,14 +6,20 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.webkit.JavascriptInterface;
+import android.widget.Toast;
+
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
+import androidx.core.graphics.drawable.IconCompat;
 
 import com.getcapacitor.BridgeActivity;
 
+import java.util.Collections;
+
 public class MainActivity extends BridgeActivity {
 
-    // DeepLink/Pfad bis Bridge/WebView ready ist
     private static String pendingPath = null;
-
     private final Handler handler = new Handler(Looper.getMainLooper());
     private int tries = 0;
 
@@ -21,10 +27,21 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // ✅ Beim echten Launcher-Start niemals Push erzwingen
+        // Robuste Brücke für den Messenger-Install-Button der Web-App.
+        if (bridge != null && bridge.getWebView() != null) {
+            bridge.getWebView().addJavascriptInterface(new EmdNativeBridge(), "AndroidEMD");
+        }
+
+
+        if (isMessengerInstallIntent(getIntent())) {
+            requestMessengerShortcut();
+            clearToLauncherIntent();
+            return;
+        }
+
         if (isLauncherIntent(getIntent())) {
             pendingPath = null;
-            clearToLauncherIntent(); // wipes old extras that can be reused by Android
+            clearToLauncherIntent();
             return;
         }
 
@@ -37,7 +54,12 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent);
 
-        // ✅ Wenn App über Icon / Task Switcher normal geöffnet wird -> kein Push erzwingen
+        if (isMessengerInstallIntent(intent)) {
+            requestMessengerShortcut();
+            clearToLauncherIntent();
+            return;
+        }
+
         if (isLauncherIntent(intent)) {
             pendingPath = null;
             clearToLauncherIntent();
@@ -54,29 +76,70 @@ public class MainActivity extends BridgeActivity {
         if (!TextUtils.isEmpty(pendingPath)) navigateWhenReady();
     }
 
-    /**
-     * Launcher-Start ist in der Praxis oft ACTION_MAIN.
-     * Categories können bei manchen Herstellern/Launchern fehlen oder anders sein.
-     */
+    private class EmdNativeBridge {
+        @JavascriptInterface
+        public void installMessengerShortcut() {
+            runOnUiThread(() -> requestMessengerShortcut());
+        }
+    }
+
+    private boolean isMessengerInstallIntent(Intent intent) {
+        if (intent == null) return false;
+        Uri data = intent.getData();
+        return data != null
+                && "emd".equalsIgnoreCase(data.getScheme())
+                && "install-messenger".equalsIgnoreCase(data.getHost());
+    }
+
+    private void requestMessengerShortcut() {
+        try {
+            Intent shortcutIntent = new Intent(this, MainActivity.class);
+            shortcutIntent.setAction("OPEN_MESSENGER_SHORTCUT");
+            shortcutIntent.putExtra("path", "/chat-app?tab=chats");
+            shortcutIntent.setData(Uri.parse("emd://shortcut/messenger"));
+            shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+            ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(this, "emd_messenger")
+                    .setShortLabel("EMD Messenger")
+                    .setLongLabel("EMD Messenger")
+                    .setIcon(IconCompat.createWithResource(this, R.mipmap.ic_launcher))
+                    .setIntent(shortcutIntent)
+                    .setLongLived(true)
+                    .build();
+
+            ShortcutManagerCompat.pushDynamicShortcut(this, shortcut);
+
+            if (ShortcutManagerCompat.isRequestPinShortcutSupported(this)) {
+                ShortcutManagerCompat.requestPinShortcut(this, shortcut, null);
+            } else {
+                ShortcutManagerCompat.addDynamicShortcuts(this, Collections.singletonList(shortcut));
+                Toast.makeText(this, "EMD Messenger wurde zu den App-Verknüpfungen hinzugefügt.", Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "EMD Messenger konnte nicht hinzugefügt werden.", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private boolean isLauncherIntent(Intent intent) {
         if (intent == null) return true;
 
         String action = intent.getAction();
         if (Intent.ACTION_MAIN.equals(action)) return true;
 
-        // Fallback: wenn kein klares Push-Signal da ist, behandeln wir es wie Launcher
-        // (verhindert "alte Extras" => fälschlicher Push-Start)
         Uri data = intent.getData();
-        boolean looksLikePush = false;
+        boolean isKnownDeepLink = false;
 
-        if (data != null && "emd".equalsIgnoreCase(data.getScheme()) && "push".equalsIgnoreCase(data.getHost())) {
-            looksLikePush = true;
-        }
-        if (!TextUtils.isEmpty(action) && action.startsWith("OPEN_PUSH_")) {
-            looksLikePush = true;
+        if (data != null && "emd".equalsIgnoreCase(data.getScheme())) {
+            String host = data.getHost();
+            isKnownDeepLink = "push".equalsIgnoreCase(host) || "shortcut".equalsIgnoreCase(host);
         }
 
-        return !looksLikePush;
+        if (!TextUtils.isEmpty(action)
+                && (action.startsWith("OPEN_PUSH_") || "OPEN_MESSENGER_SHORTCUT".equals(action))) {
+            isKnownDeepLink = true;
+        }
+
+        return !isKnownDeepLink;
     }
 
     private void clearToLauncherIntent() {
@@ -91,46 +154,40 @@ public class MainActivity extends BridgeActivity {
     private void captureIntent(Intent intent) {
         if (intent == null) return;
 
-        // ✅ Push nur dann, wenn wir es wirklich sicher wissen:
-        // - Action OPEN_PUSH_...
-        // - oder emd://push/...
-        boolean isPush = false;
-
+        boolean isDeepLink = false;
         String action = intent.getAction();
-        if (!TextUtils.isEmpty(action) && action.startsWith("OPEN_PUSH_")) {
-            isPush = true;
+
+        if (!TextUtils.isEmpty(action)
+                && (action.startsWith("OPEN_PUSH_") || "OPEN_MESSENGER_SHORTCUT".equals(action))) {
+            isDeepLink = true;
         }
 
         Uri data = intent.getData();
-        if (data != null) {
-            if ("emd".equalsIgnoreCase(data.getScheme()) && "push".equalsIgnoreCase(data.getHost())) {
-                isPush = true;
+        if (data != null && "emd".equalsIgnoreCase(data.getScheme())) {
+            String host = data.getHost();
+            if ("push".equalsIgnoreCase(host) || "shortcut".equalsIgnoreCase(host)) {
+                isDeepLink = true;
             }
         }
 
-        // ✅ Kein Push -> nix tun (wichtig!)
-        if (!isPush) {
+        if (!isDeepLink) {
             pendingPath = null;
             return;
         }
 
-        // ✅ Nur bei echtem Push lesen wir Extras aus
-        String pathExtra = intent.getStringExtra("path");
-        String scopeExtra = intent.getStringExtra("scope");
+        String path = intent.getStringExtra("path");
+        String scope = intent.getStringExtra("scope");
         String roomId1 = intent.getStringExtra("room_id");
         String roomId2 = intent.getStringExtra("roomId");
         String rid = !TextUtils.isEmpty(roomId1) ? roomId1 : roomId2;
 
-        String path = pathExtra;
-        String scope = scopeExtra;
-
         if (TextUtils.isEmpty(path)) {
             if (!TextUtils.isEmpty(scope) && "team".equals(scope) && !TextUtils.isEmpty(rid)) {
-                path = "/chat-app?scope=team&room_id=" + Uri.encode(rid);
+                path = "/chat-app?tab=chats&scope=team&room_id=" + Uri.encode(rid);
             } else if (!TextUtils.isEmpty(scope)) {
-                path = "/chat-app?scope=" + Uri.encode(scope);
+                path = "/chat-app?tab=chats&scope=" + Uri.encode(scope);
             } else {
-                path = "/chat-app";
+                path = "/chat-app?tab=chats";
             }
         }
 
@@ -152,20 +209,14 @@ public class MainActivity extends BridgeActivity {
             if (TextUtils.isEmpty(pendingPath)) return;
 
             tries++;
-
             if (bridge == null || bridge.getWebView() == null || bridge.getServerUrl() == null) {
-                if (tries < 120) { // ~6 Sekunden
-                    handler.postDelayed(this, 50);
-                }
+                if (tries < 120) handler.postDelayed(this, 50);
                 return;
             }
 
             String url = bridge.getServerUrl() + pendingPath;
             bridge.getWebView().loadUrl(url);
-
             pendingPath = null;
-
-            // ✅ nach Push säubern (damit nix hängen bleibt)
             clearToLauncherIntent();
         }
     };
