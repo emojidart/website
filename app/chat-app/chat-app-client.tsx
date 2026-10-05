@@ -3883,7 +3883,7 @@ export default function TeamChatPage() {
         )}
       </main>
 
-      <nav className={`${appSection === "chats" && mobileChatOpen ? "hidden lg:flex" : "flex"} relative z-30 h-[64px] shrink-0 items-stretch border-t border-white/[0.07] bg-[#111820] pb-[env(safe-area-inset-bottom)]`}>
+      <nav className={`${appSection === "chats" && mobileChatOpen ? "hidden lg:flex" : "flex"} relative z-30 h-[64px] shrink-0 items-stretch border-t border-white/[0.07] bg-[#111820]`}>
         {[
           { key: "chats" as const, label: "Chats", icon: MessageCircle, badge: totalUnread },
           { key: "updates" as const, label: "Aktuell", icon: Newspaper, badge: 0 },
