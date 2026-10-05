@@ -253,12 +253,13 @@ export async function POST(request: NextRequest) {
       // Fail-open: Der normale Push muss trotzdem weiter funktionieren.
     }
 
+    // WICHTIG: DATA-ONLY.
+    // Sobald ein "notification"-Block mitgesendet wird, zeigt Android den Push
+    // im Hintergrund selbst an und der Klick landet in der Vereinsapp.
+    // Data-only erzwingt unseren WhatsAppStyleMessagingService; der baut den
+    // ContentIntent selbst und leitet /chat-app korrekt in den EMD Messenger.
     const multicast = await getFirebaseAdmin().messaging().sendEachForMulticast({
       tokens,
-      notification: {
-        title: "🚨 EMD ALERT",
-        body: `Aufstellung noch nicht bestätigt · ${team.name} · ${whenText}`,
-      },
       data: {
         type: "lineup_confirmation_alert",
         match_id: String(matchId),
@@ -274,14 +275,6 @@ export async function POST(request: NextRequest) {
       },
       android: {
         priority: "high",
-        notification: {
-          channelId: "emd_alert_v2",
-          sound: "emd_alert_siren",
-          color: "#ef4444",
-          defaultVibrateTimings: true,
-          defaultLightSettings: true,
-          notificationCount: 1,
-        },
       },
     })
 

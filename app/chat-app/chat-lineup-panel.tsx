@@ -822,7 +822,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
             </div>
           )}
 
-          {profile?.is_admin && !confirmed ? (
+          {profile?.is_admin ? (
             <div className="space-y-3 rounded-2xl border border-red-300/20 bg-red-500/[0.07] p-3">
               <div>
                 <div className="flex items-center gap-2 text-sm font-black text-red-100">
@@ -830,7 +830,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   🚨 EMD ALERT
                 </div>
                 <div className="mt-1 text-xs font-semibold leading-5 text-white/45">
-                  Großen Alarm direkt im Messenger anzeigen und zusätzlich den Alarm-Push senden.
+                  {confirmed ? "Aufstellung ist bereits bestätigt – der Alarm bleibt sichtbar, ist aber gesperrt." : "Großen Alarm direkt im Messenger anzeigen und zusätzlich den Alarm-Push senden."}
                 </div>
               </div>
 
@@ -839,7 +839,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={!!emdAlertSending}
+                  disabled={confirmed || !!emdAlertSending}
                   onClick={()=>void sendEmdAlert("captain")}
                   className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-[11px] font-black text-red-100"
                 >
@@ -850,7 +850,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={!!emdAlertSending}
+                  disabled={confirmed || !!emdAlertSending}
                   onClick={()=>void sendEmdAlert("co_captain")}
                   className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-[11px] font-black text-red-100"
                 >
@@ -860,7 +860,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                 <Button
                   type="button"
                   size="sm"
-                  disabled={!!emdAlertSending}
+                  disabled={confirmed || !!emdAlertSending}
                   onClick={()=>void sendEmdAlert("both")}
                   className="h-10 rounded-xl bg-red-600 px-1 text-[11px] font-black text-white hover:bg-red-500"
                 >
