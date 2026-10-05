@@ -3939,6 +3939,7 @@ export default function TeamChatPage() {
                                               <ChatVoiceMessage
                                                 src={message.attachment_url}
                                                 own={isOwnMessage}
+                                                attachmentName={message.attachment_name}
                                               />
                                             )}
 
