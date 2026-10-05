@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar, CheckCircle2, Clock, Loader2, MapPin, ShieldCheck, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
@@ -49,7 +49,7 @@ type LineupRow = { id: string; player_id: string; position: number; is_substitut
 type Header = { status: string; current_version: number | null; confirmed_version: number | null; confirmed_at: string | null };
 type CardStatus = { teamId: string; myStatus: "yes" | "maybe" | "no" | null; open: number; yes: number; maybe: number; no: number; lineupConfirmed: boolean; starters: number; required: number };
 
-export default function ChatLineupPanel() {
+export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { initialMatchId?: string | null; initialTeamId?: string | null }) {
   const { session } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [memberships, setMemberships] = useState<Membership[]>([]);
@@ -65,6 +65,7 @@ export default function ChatLineupPanel() {
   const [error, setError] = useState<string | null>(null);
   const [cardStatus, setCardStatus] = useState<Record<string, CardStatus>>({});
   const [availabilitySaving, setAvailabilitySaving] = useState<Record<string, boolean>>({});
+  const initialDeepLinkOpened = useRef(false);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -129,6 +130,14 @@ export default function ChatLineupPanel() {
       setLoading(false);
     })();
   }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (loading || initialDeepLinkOpened.current || !initialMatchId || matches.length === 0) return;
+    const target = matches.find((m) => m.id === initialMatchId);
+    if (!target) return;
+    initialDeepLinkOpened.current = true;
+    void openMatch(target, initialTeamId || undefined);
+  }, [loading, initialMatchId, initialTeamId, matches]);
 
   const ownTeamsForMatch = (m: Match) => memberships.filter(x => x.team_id === m.home_team_id || x.team_id === m.away_team_id);
   const teamMembership = memberships.find(x => x.team_id === selectedTeamId) ?? null;
@@ -259,6 +268,18 @@ export default function ChatLineupPanel() {
       if (ce) throw ce;
       await fetch("/api/push/lineup", { method:"POST", headers:{"Content-Type":"application/json", authorization:`Bearer ${session?.access_token ?? ""}`}, body:JSON.stringify({ team_id:selectedTeamId, match_id:selectedMatch.id, action:"confirmed", sender_profile_id:profile.id }) });
       await loadLineup(selectedMatch, selectedTeamId);
+      setCardStatus(prev => {
+        const current = prev[selectedMatch.id];
+        if (!current) return prev;
+        return {
+          ...prev,
+          [selectedMatch.id]: {
+            ...current,
+            lineupConfirmed: true,
+            starters: draft.filter(x => !x.is_substitute).length,
+          },
+        };
+      });
     } catch (e:any) {
       setError(e?.message?.includes("Spielbeginn") ? "Spielbeginn erreicht – Aufstellung ist gesperrt." : "Aufstellung konnte nicht gespeichert werden.");
     } finally { setSaving(false); }

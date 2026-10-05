@@ -23,5 +23,5 @@ export default function ChatAppLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  return children
+  return <div className="emd-chat-app-shell h-[100dvh] overflow-hidden">{children}</div>
 }

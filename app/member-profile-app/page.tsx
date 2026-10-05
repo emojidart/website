@@ -536,6 +536,20 @@ const [userPagePermissions, setUserPagePermissions] = useState<UserPagePermissio
   const [chatRooms, setChatRooms] = useState<Array<{ id: string; name: string }>>([])
   const [leagueMailboxUnread, setLeagueMailboxUnread] = useState(0)
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
+  const [messengerActivationCode, setMessengerActivationCode] = useState<string | null>(null)
+  const [messengerActivationExpiresAt, setMessengerActivationExpiresAt] = useState<string | null>(null)
+  const [messengerActivationLoading, setMessengerActivationLoading] = useState(false)
+  const [messengerActivationMessage, setMessengerActivationMessage] = useState<string | null>(null)
+  const [messengerDevices, setMessengerDevices] = useState<Array<{
+    id: string
+    device_name: string | null
+    platform: string | null
+    app_version: string | null
+    activated_at: string
+    last_seen_at: string
+    revoked_at: string | null
+  }>>([])
+
 
   useEffect(() => {
     const target = nextMatchSummary ? getMatchStartDateTime(nextMatchSummary.match as any) : null
@@ -1277,6 +1291,67 @@ const fetchProfile = async () => {
   }
 
 
+  const loadMessengerDevices = async () => {
+    if (!session?.user?.id) {
+      setMessengerDevices([])
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("messenger_devices")
+      .select("id,device_name,platform,app_version,activated_at,last_seen_at,revoked_at")
+      .eq("user_id", session.user.id)
+      .is("revoked_at", null)
+      .order("activated_at", { ascending: false })
+
+    if (error) {
+      console.error("Messenger devices load error:", error)
+      return
+    }
+
+    setMessengerDevices((data || []) as any)
+  }
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    void loadMessengerDevices()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id])
+
+  const createMessengerActivationCode = async () => {
+    if (!session?.access_token || messengerActivationLoading) return
+
+    setMessengerActivationLoading(true)
+    setMessengerActivationMessage(null)
+
+    try {
+      const { data, error } = await supabase.functions.invoke("messenger-activation", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          action: "create",
+        },
+      })
+
+      if (error) throw error
+      if (!data?.code) throw new Error(data?.error || "Aktivierungscode konnte nicht erstellt werden.")
+
+      setMessengerActivationCode(String(data.code))
+      setMessengerActivationExpiresAt(data.expiresAt || null)
+      setMessengerActivationMessage("Code ist 10 Minuten gültig und kann nur einmal verwendet werden.")
+    } catch (error: any) {
+      console.error("Messenger activation code error:", error)
+      setMessengerActivationMessage(
+        error?.context?.body?.error ||
+        error?.message ||
+        "Aktivierungscode konnte nicht erstellt werden.",
+      )
+    } finally {
+      setMessengerActivationLoading(false)
+    }
+  }
+
   const openMessengerInstall = async () => {
     if (typeof window === "undefined") return
 
@@ -1768,28 +1843,116 @@ if (error || !profile) {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,rgba(249,115,22,.18),transparent_38%),radial-gradient(circle_at_100%_0%,rgba(14,165,233,.09),transparent_34%)]" />
             <div className="pointer-events-none absolute inset-x-[10%] bottom-0 h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
 
-            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-orange-300/20 bg-orange-500/10 text-orange-200 shadow-[0_0_28px_rgba(249,115,22,.13)]">
-                  <MessageCircle className="h-7 w-7" />
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#090b10] bg-orange-500 px-1 text-[9px] font-black text-white">EMD</span>
+            <div className="relative">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-orange-300/20 bg-orange-500/10 text-orange-200 shadow-[0_0_28px_rgba(249,115,22,.13)]">
+                    <MessageCircle className="h-7 w-7" />
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#090b10] bg-orange-500 px-1 text-[9px] font-black text-white">EMD</span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">EMD Messenger</div>
+                    <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Messenger verbinden</h2>
+                    <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-white/45">
+                      Messenger installieren und anschließend einmalig mit einem 6-stelligen Code mit deinem EMD Konto verbinden.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="min-w-0">
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">Direkt am Homescreen</div>
-                  <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">EMD Messenger installieren</h2>
-                  <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-white/45">
-                    Chats, Aktuelles und Aufstellungen wie eine eigene App öffnen – ohne Umweg über den Mitgliederbereich.
-                  </p>
+                <Button
+                  type="button"
+                  onClick={openMessengerInstall}
+                  className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-orange-500 px-5 font-black text-white shadow-[0_0_30px_rgba(249,115,22,.22)] transition hover:bg-orange-400 active:scale-[0.985]"
+                >
+                  <Download className="mr-2 h-4 w-4" /> Messenger installieren
+                </Button>
+              </div>
+
+              <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_.95fr]">
+                <div className="rounded-[22px] border border-white/[0.07] bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Aktivierung</div>
+                      <div className="mt-1 text-base font-black text-white">
+                        {messengerActivationCode ? "Dein einmaliger Code" : "Messenger auf neuem Gerät verbinden"}
+                      </div>
+                    </div>
+                    <KeyRound className="h-5 w-5 shrink-0 text-orange-300" />
+                  </div>
+
+                  {messengerActivationCode ? (
+                    <div className="mt-4">
+                      <div className="rounded-2xl border border-orange-300/20 bg-orange-500/10 px-4 py-4 text-center">
+                        <div className="select-all text-3xl font-black tracking-[0.32em] text-orange-100">
+                          {messengerActivationCode}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs font-semibold text-white/40">
+                        {messengerActivationMessage || "10 Minuten gültig · einmal verwendbar"}
+                        {messengerActivationExpiresAt ? ` · bis ${new Date(messengerActivationExpiresAt).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm font-semibold leading-5 text-white/40">
+                      Öffne danach den EMD Messenger und gib diesen Code dort ein. Dein Passwort wird im Messenger nicht benötigt.
+                    </p>
+                  )}
+
+                  <Button
+                    type="button"
+                    onClick={() => void createMessengerActivationCode()}
+                    disabled={messengerActivationLoading}
+                    className="mt-4 h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.055] font-black text-white hover:bg-white/[0.09]"
+                  >
+                    <KeyRound className="mr-2 h-4 w-4 text-orange-300" />
+                    {messengerActivationLoading
+                      ? "Code wird erstellt…"
+                      : messengerActivationCode
+                        ? "Neuen Code erstellen"
+                        : "Aktivierungscode erstellen"}
+                  </Button>
+
+                  {!messengerActivationCode && messengerActivationMessage ? (
+                    <div className="mt-3 text-xs font-semibold text-red-200">{messengerActivationMessage}</div>
+                  ) : null}
+                </div>
+
+                <div className="rounded-[22px] border border-white/[0.07] bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Verbundene Geräte</div>
+                      <div className="mt-1 text-base font-black text-white">
+                        {messengerDevices.length > 0
+                          ? `${messengerDevices.length} ${messengerDevices.length === 1 ? "Gerät" : "Geräte"} aktiviert`
+                          : "Noch kein Gerät aktiviert"}
+                      </div>
+                    </div>
+                    <ShieldCheck className={`h-5 w-5 shrink-0 ${messengerDevices.length > 0 ? "text-emerald-300" : "text-white/25"}`} />
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    {messengerDevices.length > 0 ? messengerDevices.slice(0, 3).map((device) => (
+                      <div key={device.id} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-black/15 px-3 py-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-black text-white">{device.device_name || "EMD Messenger Gerät"}</div>
+                          <div className="mt-0.5 text-[11px] font-semibold text-white/35">
+                            Aktiviert am {new Date(device.activated_at).toLocaleDateString("de-AT")}
+                            {device.app_version ? ` · App ${device.app_version}` : ""}
+                          </div>
+                        </div>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-300">
+                          <CheckCircle className="h-4 w-4" />
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="rounded-2xl border border-dashed border-white/[0.08] px-3 py-4 text-sm font-semibold leading-5 text-white/35">
+                        Nach der ersten erfolgreichen Code-Eingabe erscheint dein Messenger-Gerät hier automatisch.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              <Button
-                type="button"
-                onClick={openMessengerInstall}
-                className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-orange-500 px-5 font-black text-white shadow-[0_0_30px_rgba(249,115,22,.22)] transition hover:bg-orange-400 active:scale-[0.985]"
-              >
-                <Download className="mr-2 h-4 w-4" /> Messenger installieren
-              </Button>
             </div>
           </div>
         </section>

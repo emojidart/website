@@ -277,6 +277,10 @@ export default function TeamChatPage() {
     scope: urlScope,
   };
 
+  const [messengerActivationCode, setMessengerActivationCode] = useState("");
+  const [messengerActivating, setMessengerActivating] = useState(false);
+  const [messengerActivationError, setMessengerActivationError] = useState<string | null>(null);
+
   const [profile, setProfile] = useState<UserProfileLite | null>(null);
   const isTestUser = useMemo(
     () => TEST_CHAT_EMAILS.has((session?.user?.email || "").trim().toLowerCase()),
@@ -2864,6 +2868,63 @@ export default function TeamChatPage() {
     );
   };
 
+  const activateMessenger = async () => {
+    const code = messengerActivationCode.replace(/\D/g, "").slice(0, 6);
+    if (code.length !== 6 || messengerActivating) return;
+
+    setMessengerActivating(true);
+    setMessengerActivationError(null);
+
+    try {
+      let deviceId = "";
+      try {
+        deviceId = window.localStorage.getItem("emd-messenger-device-id") || "";
+        if (!deviceId) {
+          deviceId = window.crypto?.randomUUID?.() || `emd-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          window.localStorage.setItem("emd-messenger-device-id", deviceId);
+        }
+      } catch {
+        deviceId = `emd-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      }
+
+      const isAndroid = /Android/i.test(navigator.userAgent || "");
+      const deviceName = isAndroid ? "Android-Gerät" : "EMD Messenger Gerät";
+
+      const { data, error } = await supabase.functions.invoke("messenger-activation", {
+        body: {
+          action: "activate",
+          code,
+          deviceId,
+          deviceName,
+          platform: isAndroid ? "android" : "web",
+          appVersion: "1.0.0",
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.tokenHash) throw new Error(data?.error || "Aktivierung konnte nicht abgeschlossen werden.");
+
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: data.tokenHash,
+        type: "email",
+      });
+
+      if (verifyError) throw verifyError;
+
+      setMessengerActivationCode("");
+      setMessengerActivationError(null);
+    } catch (error: any) {
+      console.error("Messenger activation failed:", error);
+      setMessengerActivationError(
+        error?.context?.body?.error ||
+        error?.message ||
+        "Der Code ist ungültig oder abgelaufen.",
+      );
+    } finally {
+      setMessengerActivating(false);
+    }
+  };
+
   const showNoProfile = !profileLoading && !profile;
 
   if (authLoading) {
@@ -2871,24 +2932,76 @@ export default function TeamChatPage() {
   }
 
   if (!session) {
+    const cleanActivationCode = messengerActivationCode.replace(/\D/g, "").slice(0, 6);
+
     return (
-      <div className={`min-h-[100dvh] flex flex-col ${WA.appBg}`}>
-        <main className="flex-1 flex items-center justify-center p-4">
-          <Card className={`w-full max-w-md ${WA.card}`}>
-            <CardContent className="p-6 text-center">
-              <MessageCircle className="mx-auto mb-4 h-12 w-12 text-orange-300" />
-              <h2 className="text-xl font-bold mb-2">Anmeldung erforderlich</h2>
-              <p className="mb-4 text-white/45">
-                Bitte melden Sie sich an, um den Chat zu verwenden.
+      <div className={`relative min-h-[100dvh] overflow-hidden ${WA.appBg}`}>
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-[-8rem] top-[-7rem] h-72 w-72 rounded-full bg-orange-500/15 blur-[90px]" />
+          <div className="absolute bottom-[-8rem] right-[-7rem] h-72 w-72 rounded-full bg-sky-500/10 blur-[100px]" />
+        </div>
+
+        <main className="relative flex min-h-[100dvh] items-center justify-center px-4 py-8">
+          <div className="w-full max-w-[420px]">
+            <div className="mb-7 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] border border-orange-300/20 bg-orange-500/10 shadow-[0_0_45px_rgba(249,115,22,.18)]">
+                <MessageCircle className="h-8 w-8 text-orange-300" />
+              </div>
+              <div className="mt-5 text-[11px] font-black uppercase tracking-[0.24em] text-orange-300/70">
+                EMD Messenger
+              </div>
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-white">
+                Messenger aktivieren
+              </h1>
+              <p className="mx-auto mt-3 max-w-sm text-sm font-semibold leading-6 text-white/45">
+                Erstelle in deiner EMD Vereinsapp im Profil einen 6-stelligen Aktivierungscode und gib ihn hier einmalig ein.
               </p>
-              <Button
-                onClick={() => router.push("/member-login")}
-                className={WA.sendBtn}
-              >
-                Zur Anmeldung
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+
+            <Card className={`overflow-hidden ${WA.card}`}>
+              <CardContent className="p-5 sm:p-6">
+                <label className="text-[11px] font-black uppercase tracking-[0.18em] text-white/45">
+                  Aktivierungscode
+                </label>
+
+                <Input
+                  value={messengerActivationCode}
+                  onChange={(event) => {
+                    setMessengerActivationCode(event.target.value.replace(/\D/g, "").slice(0, 6));
+                    setMessengerActivationError(null);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void activateMessenger();
+                  }}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="000000"
+                  className="mt-3 h-16 rounded-2xl border border-white/[0.08] bg-white/[0.045] text-center text-3xl font-black tracking-[0.34em] text-white placeholder:text-white/15 focus-visible:ring-orange-400/40"
+                />
+
+                {messengerActivationError ? (
+                  <div className="mt-3 rounded-xl border border-red-300/15 bg-red-500/10 px-3 py-2.5 text-sm font-semibold text-red-200">
+                    {messengerActivationError}
+                  </div>
+                ) : null}
+
+                <Button
+                  type="button"
+                  onClick={() => void activateMessenger()}
+                  disabled={cleanActivationCode.length !== 6 || messengerActivating}
+                  className="mt-4 h-13 w-full rounded-2xl bg-orange-500 font-black text-white hover:bg-orange-400 disabled:bg-white/10 disabled:text-white/30"
+                >
+                  {messengerActivating ? "Wird aktiviert…" : "Messenger aktivieren"}
+                </Button>
+
+                <div className="mt-4 flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-3 text-xs font-semibold leading-5 text-white/35">
+                  <Shield className="mt-0.5 h-4 w-4 shrink-0 text-orange-300/70" />
+                  <span>Nur beim ersten Start nötig. Danach bleibt dieses Gerät mit deinem EMD Konto verbunden.</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </main>
       </div>
     );
