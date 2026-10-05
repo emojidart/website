@@ -40,6 +40,12 @@ import {
 
 type AvailabilityStatus = "yes" | "maybe" | "no"
 
+const MATCH_CARD_PREFIX = "[[EMD_MATCH_CARD|"
+
+function makeChatMatchCardMessage(matchId: string, teamId: string) {
+  return `${MATCH_CARD_PREFIX}${matchId}|${teamId}]]`
+}
+
 interface UserProfile {
   id: string
   user_id: string
@@ -269,6 +275,8 @@ function MemberAvailabilityInner() {
   const [lineupHeader, setLineupHeader] = useState<LineupHeader | null>(null)
   const [confirmingLineup, setConfirmingLineup] = useState(false)
   const [lineupError, setLineupError] = useState<string | null>(null)
+  const [publishingChatCard, setPublishingChatCard] = useState(false)
+  const [chatCardResult, setChatCardResult] = useState<string | null>(null)
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatLoading, setChatLoading] = useState(false)
@@ -858,6 +866,57 @@ function MemberAvailabilityInner() {
     }
   }
 
+  async function publishMatchCardToTeamChat() {
+    if (!dialogMatch || !selectedTeamId || !profile?.id || !isCaptainOrCoForTeam) {
+      return { ok: false, created: false }
+    }
+
+    const response = await fetch("/api/push/team-match", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify({
+        action: "publish",
+        team_id: selectedTeamId,
+        match_id: dialogMatch.id,
+        sender_profile_id: profile.id,
+      }),
+    })
+
+    const json = await response.json().catch(() => null)
+    if (!response.ok || !json?.success) {
+      throw new Error(json?.error || "Veröffentlichen fehlgeschlagen.")
+    }
+
+    return { ok: true, created: !!json?.created }
+  }
+
+  async function manuallyPublishMatchCard() {
+    if (publishingChatCard || !dialogMatch || !selectedTeamId) return
+
+    setPublishingChatCard(true)
+    setChatCardResult(null)
+
+    try {
+      const result = await publishMatchCardToTeamChat()
+      if (!result.ok) return
+      setChatCardResult(
+        result.created
+          ? "Im Team-Chat veröffentlicht."
+          : "Karte ist bereits im Team-Chat – Push wurde erneut gesendet.",
+      )
+      setTimeout(() => setChatCardResult(null), 3500)
+    } catch (e: any) {
+      console.error("manuallyPublishMatchCard error", e)
+      setChatCardResult(e?.message || "Veröffentlichen fehlgeschlagen.")
+      setTimeout(() => setChatCardResult(null), 4500)
+    } finally {
+      setPublishingChatCard(false)
+    }
+  }
+
   async function confirmLineup() {
     if (!dialogMatch || !selectedTeamId) return
     if (!isCaptainOrCoForTeam) return
@@ -914,19 +973,29 @@ function MemberAvailabilityInner() {
       setLineupEditMode(false)
       setLineupError(null)
 
-      await fetch("/api/push/lineup", {
+      // Alles rund um das bestätigte Spiel läuft über die Team-Chat-Route:
+      // - Spielkarte sicher im Team-Chat
+      // - Bestätigung als Chat-Nachricht posten
+      // - genau EINE Push an die Teammitglieder
+      // - Klick führt direkt zum Spiel in "Aufstellung" innerhalb des Messengers
+      const confirmPush = await fetch("/api/push/team-match", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           authorization: `Bearer ${session?.access_token ?? ""}`,
         },
         body: JSON.stringify({
+          action: "confirmed",
           team_id: selectedTeamId,
           match_id: dialogMatch.id,
-          action: "confirmed",
           sender_profile_id: profile.id,
         }),
       })
+
+      const confirmJson = await confirmPush.json().catch(() => null)
+      if (!confirmPush.ok || !confirmJson?.success) {
+        throw new Error(confirmJson?.error || "Aufstellung wurde gespeichert, aber Team-Info konnte nicht gesendet werden.")
+      }
     } catch (e: any) {
       console.error("confirmLineup error", e)
 
@@ -952,13 +1021,14 @@ function MemberAvailabilityInner() {
     setRemindOk((p) => ({ ...p, [targetPlayerId]: false }))
 
     try {
-      const res = await fetch("/api/push/availability-reminder", {
+      const res = await fetch("/api/push/team-match", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           authorization: `Bearer ${session?.access_token ?? ""}`,
         },
         body: JSON.stringify({
+          action: "reminder",
           team_id: selectedTeamId,
           match_id: dialogMatch.id,
           target_player_id: targetPlayerId,
@@ -1002,13 +1072,14 @@ function MemberAvailabilityInner() {
 
     for (const pid of noAnswerPlayerIds) {
       try {
-        const res = await fetch("/api/push/availability-reminder", {
+        const res = await fetch("/api/push/team-match", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             authorization: `Bearer ${session?.access_token ?? ""}`,
           },
           body: JSON.stringify({
+            action: "reminder",
             team_id: selectedTeamId,
             match_id: dialogMatch.id,
             target_player_id: pid,
@@ -1392,6 +1463,30 @@ function MemberAvailabilityInner() {
                               <section className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-3"><div className="mb-2 text-sm font-black text-white">Starter ({starters.length})</div><div className="space-y-2">{starters.length === 0 ? <div className="rounded-xl border border-dashed border-white/10 p-3 text-center text-xs text-white/30">Noch keine Starter</div> : starters.map((lp) => { const p = displayPlayers.find((x) => x.id === lp.player_id); return <div key={lp.player_id} className="rounded-xl border border-white/[0.07] bg-black/20 px-3 py-2.5 text-sm font-black text-white">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div> })}</div></section>
                               <section className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-3"><div className="mb-2 text-sm font-black text-white">Ersatz ({substitutes.length})</div><div className="space-y-2">{substitutes.length === 0 ? <div className="rounded-xl border border-dashed border-white/10 p-3 text-center text-xs text-white/30">Kein Ersatz</div> : substitutes.map((lp) => { const p = displayPlayers.find((x) => x.id === lp.player_id); return <div key={lp.player_id} className="rounded-xl border border-white/[0.07] bg-black/20 px-3 py-2.5 text-sm font-black text-white">{p?.name ?? lp.club_players?.name ?? lp.player_id}</div> })}</div></section>
                             </div>
+
+                            {isCaptainOrCoForTeam && !dialogIsLocked ? (
+                              <div className="space-y-2 rounded-2xl border border-sky-300/10 bg-sky-500/[0.035] p-3">
+                                <div>
+                                  <div className="text-sm font-black text-white">Team-Chat</div>
+                                  <div className="mt-1 text-xs font-medium leading-5 text-white/45">
+                                    Veröffentlicht eine interaktive Spielkarte. Spieler können dort direkt zu-, absagen oder „wenn nötig“ wählen.
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={manuallyPublishMatchCard}
+                                  disabled={publishingChatCard}
+                                  className="h-11 w-full rounded-xl border-sky-300/15 bg-sky-500/[0.07] font-black text-sky-100 hover:bg-sky-500/[0.12]"
+                                >
+                                  {publishingChatCard ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />}
+                                  Im Team-Chat veröffentlichen
+                                </Button>
+                                {chatCardResult ? (
+                                  <div className="text-center text-xs font-semibold text-white/55">{chatCardResult}</div>
+                                ) : null}
+                              </div>
+                            ) : null}
 
                             {isCaptainOrCoForTeam && !dialogIsLocked && (lineupIsConfirmed || lineupIsStale) && !lineupEditMode ? <Button variant="outline" onClick={() => { setLineupEditMode(true); setDraftLineup(lineupPlayers); setDraftDirty(false); setLineupError(null) }} className="h-11 w-full rounded-xl border-white/10 bg-white/[0.035] font-black text-white/70">Aufstellung bearbeiten</Button> : null}
 

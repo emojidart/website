@@ -47,6 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import ChatLineupPanel from "./chat-lineup-panel";
 import ChatUpdatesPanel from "./chat-updates-panel";
+import ChatMatchCard, { MATCH_CARD_PREFIX, parseChatMatchCardMessage } from "./chat-match-card";
 
 type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand" | "community" | "test";
 
@@ -800,6 +801,7 @@ export default function TeamChatPage() {
 
   const getLastPreviewText = (preview?: LastMessagePreview | null) => {
     if (!preview) return "Noch keine Nachrichten";
+    if ((preview.message || "").startsWith(MATCH_CARD_PREFIX)) return "📋 Spiel & Zusage";
     if (preview.message_type === "poll") return "📊 Umfrage";
     if (preview.attachment_name) {
       if (preview.attachment_type?.startsWith("image/"))
@@ -3414,6 +3416,18 @@ export default function TeamChatPage() {
                                   }
 
                                   const message = item.msg;
+                                  const matchCard = parseChatMatchCardMessage(message.message);
+                                  if (matchCard) {
+                                    return (
+                                      <div key={message.id} id={`msg-${message.id}`} className="py-1.5">
+                                        <ChatMatchCard
+                                          matchId={matchCard.matchId}
+                                          teamId={matchCard.teamId}
+                                        />
+                                      </div>
+                                    );
+                                  }
+
                                   const isOwnMessage =
                                     message.user_id === profile?.id;
                                   const name =
