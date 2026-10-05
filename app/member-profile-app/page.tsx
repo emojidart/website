@@ -16,7 +16,6 @@ import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useDues } from "@/hooks/vereinsverwaltung/useDues"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Capacitor, registerPlugin } from "@capacitor/core"
 import { supabase } from "@/lib/supabase"
 import {
   Calendar,
@@ -317,12 +316,6 @@ function MemberSignaturePad({ label, onChange }: { label: string; onChange: (val
   )
 }
 
-
-type MessengerShortcutPlugin = {
-  install(): Promise<{ requested?: boolean }>
-}
-
-const NativeMessengerShortcut = registerPlugin<MessengerShortcutPlugin>("MessengerShortcut")
 
 export default function MemberProfileAppPage() {
   const CHAT_SCOPE: "team" | "captains" | "club" = "team"
@@ -1276,26 +1269,9 @@ const fetchProfile = async () => {
   }
 
 
-  const openMessengerInstall = async () => {
+  const openMessengerInstall = () => {
     if (typeof window === "undefined") return
-
-    console.log("Messenger install click", {
-      native: Capacitor.isNativePlatform(),
-      platform: Capacitor.getPlatform(),
-    })
-
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
-      try {
-        const result = await NativeMessengerShortcut.install()
-        console.log("MessengerShortcut result:", result)
-        return
-      } catch (error) {
-        console.error("Messenger shortcut native install failed:", error)
-        return
-      }
-    }
-
-    router.push("/messenger-install")
+    window.open("https://emojisdartverein.com/messenger", "_blank", "noopener,noreferrer")
   }
 
   const handleLogout = async () => {
@@ -1788,10 +1764,10 @@ if (error || !profile) {
               </div>
               <Button
                 type="button"
-                disabled
-                className="h-12 shrink-0 cursor-not-allowed rounded-2xl border border-white/10 bg-white/5 px-5 font-black text-white/45 shadow-none"
+                onClick={openMessengerInstall}
+                className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-orange-500 px-5 font-black text-white shadow-[0_0_30px_rgba(249,115,22,.22)] transition hover:bg-orange-400 active:scale-[0.985]"
               >
-                <Download className="mr-2 h-4 w-4" /> Messenger demnächst verfügbar
+                <Download className="mr-2 h-4 w-4" /> Messenger installieren
               </Button>
             </div>
           </div>

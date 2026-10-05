@@ -74,6 +74,10 @@ function isTerminalPath(pathname: string) {
   return pathname === "/terminal" || pathname.startsWith("/terminal/")
 }
 
+function isMessengerPath(pathname: string) {
+  return pathname === "/chat-app" || pathname.startsWith("/chat-app/")
+}
+
 function LoadingScreen() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050608] px-4 text-white">
@@ -113,9 +117,9 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         setChecking(true)
 
         // Club Terminal is a separate public kiosk area.
-        // IMPORTANT: only /terminal and /terminal/* bypass this global guard.
+        // Club Terminal and EMD Messenger are standalone areas and bypass this global guard.
         // The normal site keeps all existing auth/access checks unchanged.
-        if (isTerminalPath(pathname)) {
+        if (isTerminalPath(pathname) || isMessengerPath(pathname)) {
           if (mounted) setChecking(false)
           return
         }
@@ -271,10 +275,11 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
     }
   }, [authLoading, session?.user?.id, pathname, router])
 
-  // Never show the global white access-check screen inside the Club Terminal.
+  // Never show the global access-check screen inside Club Terminal or EMD Messenger.
   // All other routes still use the original LoadingScreen and guard behavior.
   if (
     isTerminalPath(pathname) ||
+    isMessengerPath(pathname) ||
     pathname === MEMBER_LOGIN_ROUTE ||
     pathname === GUEST_LOGIN_ROUTE
   ) {

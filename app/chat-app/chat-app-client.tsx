@@ -29,8 +29,7 @@ import {
   Image as ImageIcon,
   BarChart3,
   CheckCircle2,
-  Home,
-  Search,
+    Search,
   FlaskConical,
   MoreVertical,
   Smile,
@@ -251,18 +250,8 @@ function initials(name: string) {
   return (a + b).toUpperCase();
 }
 
-type ChatAppClientProps = {
-  backHref?: string;
-  backLabel?: string;
-  contextLabel?: string;
-};
-
-export default function TeamChatPage({
-  backHref = "/member-profile-app",
-  backLabel = "Profil",
-  contextLabel = "EMD Vereinsapp",
-}: ChatAppClientProps) {
-  const { session } = useAuth();
+export default function TeamChatPage() {
+  const { session, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -277,6 +266,11 @@ export default function TeamChatPage({
       : null;
 
   const urlRoomId = searchParams.get("room_id");
+  const urlTabRaw = (searchParams.get("tab") || "").toLowerCase();
+  const urlMatchId = searchParams.get("match_id");
+  const urlTeamId = searchParams.get("team_id");
+  const urlDraft = searchParams.get("draft");
+  const urlNativeReply = searchParams.get("native_reply");
 
   const deepLinkParams = {
     roomId: urlRoomId,
@@ -325,6 +319,8 @@ export default function TeamChatPage({
   const [openImageUrl, setOpenImageUrl] = useState<string | null>(null);
   const [openImageName, setOpenImageName] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
+  const nativeDraftApplied = useRef(false);
+  const nativeReplySent = useRef(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [roomReady, setRoomReady] = useState(false);
   const [sending, setSending] = useState(false);
@@ -354,6 +350,38 @@ export default function TeamChatPage({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [appSection, setAppSection] = useState<"chats" | "updates" | "lineup">("chats");
+
+  useEffect(() => {
+    if (urlDraft && !nativeDraftApplied.current) {
+      nativeDraftApplied.current = true;
+      setNewMessage(urlDraft);
+    }
+  }, [urlDraft]);
+
+  useEffect(() => {
+    if (urlTabRaw === "aufstellung" || urlTabRaw === "lineup") {
+      setAppSection("lineup");
+      setMobileChatOpen(false);
+      return;
+    }
+    if (urlTabRaw === "aktuell" || urlTabRaw === "updates") {
+      setAppSection("updates");
+      setMobileChatOpen(false);
+      return;
+    }
+    if (urlTabRaw === "chats" || urlScope || urlRoomId) {
+      setAppSection("chats");
+
+      // Push-/Deep-Link auf dem Handy: direkt den eigentlichen Chat öffnen.
+      if (
+        (urlScope || urlRoomId) &&
+        typeof window !== "undefined" &&
+        window.innerWidth < 1024
+      ) {
+        setMobileChatOpen(true);
+      }
+    }
+  }, [urlTabRaw, urlScope, urlRoomId]);
   const [chatSearch, setChatSearch] = useState("");
   const [chatFilter, setChatFilter] = useState<ChatFilter>("all");
   const [favoriteChats, setFavoriteChats] = useState<Set<string>>(new Set());
@@ -589,6 +617,20 @@ export default function TeamChatPage({
   }, [profile?.id]);
 
   useEffect(() => {
+    if (!currentRoomId || !mobileChatOpen) return;
+    if (typeof window === "undefined" || window.innerWidth >= 1024) return;
+
+    // Bei Push-/Deep-Link wird der Chat auf Mobile direkt sichtbar.
+    // Dann auch als besucht markieren, sobald die Chatansicht offen ist.
+    const id = window.setTimeout(() => {
+      markCurrentAsVisited();
+    }, 80);
+
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mobileChatOpen, currentRoomId, selectedScope]);
+
+  useEffect(() => {
     if (!currentRoomId) return;
 
     // WhatsApp-artig: bereits geladene Räume sofort aus dem Speicher zeigen.
@@ -801,7 +843,13 @@ export default function TeamChatPage({
   useEffect(() => {
     if (!currentRoomId) return;
     if (!messages.length) return;
+
     const latest = messages[messages.length - 1];
+
+    // Beim schnellen Raumwechsel darf die letzte Nachricht des vorherigen
+    // Chats nicht kurz als Vorschau des neuen Chats gespeichert werden.
+    if (latest.room_id !== currentRoomId || latest.scope !== selectedScope) return;
+
     setLastMessagesByRoom((prev) => ({
       ...prev,
       [lastPreviewKey(currentRoomId, selectedScope)]:
@@ -2463,6 +2511,15 @@ export default function TeamChatPage({
     }
   };
 
+  useEffect(() => {
+    if (urlNativeReply !== "1" || nativeReplySent.current) return;
+    if (!urlDraft || !profile?.id || !currentRoomId || !roomReady || sending) return;
+    if (newMessage.trim() !== urlDraft.trim()) return;
+
+    nativeReplySent.current = true;
+    void sendMessage();
+  }, [urlNativeReply, urlDraft, profile?.id, currentRoomId, roomReady, sending, newMessage]);
+
   const fetchUnreadCounts = async (roomsOverride?: TeamRoom[]) => {
     const rooms = roomsOverride ?? chatRooms;
     if (!profile?.id) return;
@@ -2809,6 +2866,10 @@ export default function TeamChatPage({
 
   const showNoProfile = !profileLoading && !profile;
 
+  if (authLoading) {
+    return <div className={`min-h-[100dvh] ${WA.appBg}`} />;
+  }
+
   if (!session) {
     return (
       <div className={`min-h-[100dvh] flex flex-col ${WA.appBg}`}>
@@ -2856,12 +2917,6 @@ export default function TeamChatPage({
                     Für diesen Account gibt es keinen Eintrag in{" "}
                     <code>user_profiles</code>. Bitte melde dich beim Admin.
                   </p>
-                  <Button
-                    onClick={() => router.push(backHref)}
-                    className={WA.sendBtn}
-                  >
-                    Zurück
-                  </Button>
                 </CardContent>
               </Card>
             ) : (
@@ -2886,15 +2941,6 @@ export default function TeamChatPage({
                             <div className="mt-0.5 text-[11px] font-medium text-white/38">Chats</div>
                           </div>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => router.push(backHref)}
-                          className="h-10 w-10 rounded-full p-0 text-white/75 hover:bg-white/[0.08] hover:text-white"
-                          aria-label={`Zurück zu ${backLabel}`}
-                        >
-                          <Home className="h-5 w-5" />
-                        </Button>
                       </div>
 
                       <div className="relative mt-3">
@@ -3148,16 +3194,6 @@ export default function TeamChatPage({
                             title="Chat-Menü"
                           >
                             <MoreVertical className="h-[19px] w-[19px]" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => router.push(backHref)}
-                            className="hidden h-10 w-10 rounded-full p-0 text-white/60 hover:bg-white/[0.08] hover:text-white sm:inline-flex"
-                            aria-label={backLabel}
-                            title={backLabel}
-                          >
-                            <Home className="h-[18px] w-[18px]" />
                           </Button>
                         </div>
                       </div>
@@ -3841,7 +3877,7 @@ export default function TeamChatPage({
           </div>
         </div>
         ) : appSection === "lineup" ? (
-          <ChatLineupPanel />
+          <ChatLineupPanel initialMatchId={urlMatchId} initialTeamId={urlTeamId} />
         ) : (
           <ChatUpdatesPanel onOpenLineup={() => setAppSection("lineup")} />
         )}
