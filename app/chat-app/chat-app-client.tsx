@@ -439,6 +439,23 @@ export default function TeamChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [appSection, setAppSection] = useState<"chats" | "updates" | "lineup">("chats");
+  const chatPresenceSessionRef = useRef<string>("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let sessionId = window.sessionStorage.getItem("emd_chat_presence_session") || "";
+    if (!sessionId) {
+      sessionId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      window.sessionStorage.setItem("emd_chat_presence_session", sessionId);
+    }
+
+    chatPresenceSessionRef.current = sessionId;
+  }, []);
+
 
   useEffect(() => {
     if (urlDraft && !nativeDraftApplied.current) {
@@ -471,6 +488,108 @@ export default function TeamChatPage() {
       }
     }
   }, [urlTabRaw, urlScope, urlRoomId]);
+
+  // WhatsApp-artig:
+  // Wenn GENAU dieser Chat sichtbar und die App im Vordergrund ist,
+  // melden wir das kurzlebig an den Server. Der Push-Endpunkt überspringt
+  // diesen Nutzer dann für genau diesen Raum.
+  useEffect(() => {
+    if (!session?.access_token || !profile?.user_id || !currentRoomId) return;
+    if (typeof window === "undefined") return;
+
+    let stopped = false;
+    let heartbeat: ReturnType<typeof setInterval> | null = null;
+
+    const isChatActuallyVisible = () => {
+      const mobileShowsChat = window.innerWidth >= 1024 || mobileChatOpen;
+      return (
+        appSection === "chats" &&
+        mobileShowsChat &&
+        document.visibilityState === "visible"
+      );
+    };
+
+    const sendPresence = async (active: boolean) => {
+      const sessionId = chatPresenceSessionRef.current;
+      if (!sessionId) return;
+
+      try {
+        await fetch("/api/chat/presence", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            room_id: currentRoomId,
+            scope: selectedScope,
+            active,
+          }),
+          keepalive: true,
+        });
+      } catch {
+        // Presence darf den Chat niemals stören.
+      }
+    };
+
+    const refreshPresence = () => {
+      if (stopped) return;
+      void sendPresence(isChatActuallyVisible());
+    };
+
+    refreshPresence();
+
+    const onVisibilityChange = () => refreshPresence();
+    const onFocus = () => refreshPresence();
+    const onBlur = () => {
+      // Ein kurzer Blur (z. B. Tastatur/Dateiauswahl) soll nicht sofort Push aktivieren.
+      window.setTimeout(() => {
+        if (!stopped) refreshPresence();
+      }, 500);
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+
+    heartbeat = setInterval(refreshPresence, 12000);
+
+    return () => {
+      stopped = true;
+      if (heartbeat) clearInterval(heartbeat);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
+
+      // Beim Raumwechsel / Verlassen diesen Session-Eintrag sofort inaktiv setzen.
+      const sessionId = chatPresenceSessionRef.current;
+      if (sessionId) {
+        fetch("/api/chat/presence", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            room_id: currentRoomId,
+            scope: selectedScope,
+            active: false,
+          }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    };
+  }, [
+    session?.access_token,
+    profile?.user_id,
+    currentRoomId,
+    selectedScope,
+    appSection,
+    mobileChatOpen,
+  ]);
+
   const [chatSearch, setChatSearch] = useState("");
   const [chatFilter, setChatFilter] = useState<ChatFilter>("all");
   const [favoriteChats, setFavoriteChats] = useState<Set<string>>(new Set());

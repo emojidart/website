@@ -345,6 +345,41 @@ export async function POST(request: NextRequest) {
 
     targetAuthUserIds = targetAuthUserIds.filter((uid) => uid !== senderAuthUserId)
 
+    // WhatsApp-artig: Wer GENAU diesen Chat gerade sichtbar offen hat,
+    // bekommt für diese Nachricht keine zusätzliche System-Push-Benachrichtigung.
+    // Alte Presence-Einträge zählen nach 35 Sekunden automatisch nicht mehr.
+    let activeViewerUserIds: string[] = []
+
+    if (targetAuthUserIds.length > 0) {
+      const activeSince = new Date(Date.now() - 35_000).toISOString()
+
+      const { data: activePresence, error: activePresenceError } = await supabase
+        .from("chat_active_presence")
+        .select("user_id")
+        .in("user_id", targetAuthUserIds)
+        .eq("room_id", room_id)
+        .eq("scope", scope)
+        .eq("is_active", true)
+        .gte("last_seen_at", activeSince)
+
+      if (activePresenceError) {
+        // Fail-open: Falls Presence einmal nicht erreichbar ist,
+        // funktionieren Push-Nachrichten weiterhin wie bisher.
+        console.warn("[push-chat] presence lookup failed:", activePresenceError.message)
+      } else {
+        activeViewerUserIds = uniqStrings(
+          ((activePresence as any[]) || []).map((row) => row.user_id)
+        )
+
+        if (activeViewerUserIds.length > 0) {
+          const activeSet = new Set(activeViewerUserIds)
+          targetAuthUserIds = targetAuthUserIds.filter((uid) => !activeSet.has(uid))
+        }
+      }
+    }
+
+    console.log("[push-chat] active viewers skipped:", activeViewerUserIds)
+
     console.log("[push-chat] senderAuthUserId filtered out:", senderAuthUserId)
     console.log("[push-chat] targetAuthUserIds AFTER sender filter:", targetAuthUserIds)
     console.log("[push-chat] targetAuthUserIds AFTER sender filter count:", targetAuthUserIds.length)
@@ -513,6 +548,7 @@ if (scope === "test") {
         senderAuthUserId,
         sender_profile_id,
         targetAuthUserIds,
+        activeViewerUserIds,
         tokenUserIds,
         usersWithoutToken,
         tokenCount: tokens.length,
