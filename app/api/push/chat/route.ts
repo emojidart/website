@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { sendPushAndCleanup } from "@/lib/sendPushAndCleanup"
+import { createHmac, randomUUID } from "node:crypto"
 
 type ChatScope = "team" | "match" | "captains" | "club" | "freizeit" | "vorstand" | "test"
 
@@ -45,6 +46,33 @@ function stableNotifIdFromTag(tag: string) {
 
 function uniqStrings(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter(Boolean) as string[]))
+}
+
+function base64UrlJson(value: unknown) {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url")
+}
+
+function makeReplyToken(payload: {
+  uid: string
+  room_id: string
+  scope: ChatScope
+  team_id?: string | null
+}) {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!secret) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY")
+
+  const body = base64UrlJson({
+    v: 1,
+    uid: payload.uid,
+    room_id: payload.room_id,
+    scope: payload.scope,
+    team_id: payload.team_id ?? null,
+    exp: Math.floor(Date.now() / 1000) + 15 * 60,
+    jti: randomUUID(),
+  })
+
+  const sig = createHmac("sha256", secret).update(body).digest("base64url")
+  return `${body}.${sig}`
 }
 
 export async function POST(request: NextRequest) {
@@ -144,12 +172,13 @@ export async function POST(request: NextRequest) {
     }
 
     let senderName = "Jemand"
+    let senderAvatarUrl: string | null = null
     const senderPlayerId = (senderProfile as any).player_id
 
     if (senderPlayerId) {
       const { data: cp, error: cpError } = await supabase
         .from("club_players")
-        .select("name")
+        .select("name,photo_url")
         .eq("id", senderPlayerId)
         .maybeSingle()
 
@@ -157,6 +186,7 @@ export async function POST(request: NextRequest) {
       console.log("[push-chat] sender club_player:", cp)
 
       if ((cp as any)?.name) senderName = (cp as any).name
+      if ((cp as any)?.photo_url) senderAvatarUrl = (cp as any).photo_url
     }
 
     console.log("[push-chat] senderName:", senderName)
@@ -387,31 +417,31 @@ export async function POST(request: NextRequest) {
     let clickUrl = "/chat-app"
 
 if (scope === "match") {
-  clickUrl = `/member-availability?match_id=${encodeURIComponent(room_id)}&team_id=${encodeURIComponent(teamId ?? "")}&chat=match`
+  clickUrl = `/chat-app?tab=aufstellung&match_id=${encodeURIComponent(room_id)}&team_id=${encodeURIComponent(teamId ?? "")}&chat=match`
 }
 
 if (scope === "team") {
-  clickUrl = `/chat-app?scope=team&room_id=${encodeURIComponent(room_id)}`
+  clickUrl = `/chat-app?tab=chats&scope=team&room_id=${encodeURIComponent(room_id)}`
 }
 
 if (scope === "club") {
-  clickUrl = `/chat-app?scope=club&room_id=${encodeURIComponent(room_id)}`
+  clickUrl = `/chat-app?tab=chats&scope=club&room_id=${encodeURIComponent(room_id)}`
 }
 
 if (scope === "freizeit") {
-  clickUrl = `/chat-app?scope=freizeit&room_id=${encodeURIComponent(room_id)}`
+  clickUrl = `/chat-app?tab=chats&scope=freizeit&room_id=${encodeURIComponent(room_id)}`
 }
 
 if (scope === "captains") {
-  clickUrl = `/chat-app?scope=captains&room_id=${encodeURIComponent(room_id)}`
+  clickUrl = `/chat-app?tab=chats&scope=captains&room_id=${encodeURIComponent(room_id)}`
 }
 
 if (scope === "vorstand") {
-  clickUrl = `/chat-app?scope=vorstand&room_id=${encodeURIComponent(room_id)}`
+  clickUrl = `/chat-app?tab=chats&scope=vorstand&room_id=${encodeURIComponent(room_id)}`
 }
 
 if (scope === "test") {
-  clickUrl = `/chat-app?scope=test&room_id=${encodeURIComponent(room_id)}`
+  clickUrl = `/chat-app?tab=chats&scope=test&room_id=${encodeURIComponent(room_id)}`
 }
 
     console.log("[push-chat] cleanMessage:", cleanMessage)
@@ -420,32 +450,63 @@ if (scope === "test") {
     console.log("[push-chat] notif_id:", notif_id)
     console.log("[push-chat] clickUrl:", clickUrl)
 
-    const result = await sendPushAndCleanup(tokens, {
-      data: {
-        room_id: String(room_id),
-        scope: String(scope),
-        clickUrl: String(clickUrl),
-        conversation: String(conversation),
-        senderName: String(senderName),
-        message: String(cleanMessage),
-        body: String(bodyLine),
-        tag: String(tag),
-        notif_id: String(notif_id),
-        iconUrl: iconUrl || "",
-        ts: String(Date.now()),
-      },
-      android: { priority: "high" },
-    })
+    // Für echte Android-Inline-Antworten bekommt jeder Empfänger einen
+    // kurzlebigen, signierten Reply-Token, der exakt an User + Raum + Scope gebunden ist.
+    const tokenRowsByUser = new Map<string, string[]>()
+    for (const row of (rows as any[]) || []) {
+      const uid = String(row?.user_id || "")
+      const token = String(row?.token || "")
+      if (!uid || !token) continue
+      const list = tokenRowsByUser.get(uid) ?? []
+      list.push(token)
+      tokenRowsByUser.set(uid, list)
+    }
 
-    console.log("[push-chat] sendPushAndCleanup result:", result)
-    console.log("[push-chat] success:", result.success)
-    console.log("[push-chat] failed:", result.failed)
+    let pushSuccess = 0
+    let pushFailed = 0
+
+    for (const [targetUserId, userTokensRaw] of tokenRowsByUser.entries()) {
+      const userTokens = uniqStrings(userTokensRaw)
+      if (userTokens.length === 0) continue
+
+      const replyToken = makeReplyToken({
+        uid: targetUserId,
+        room_id,
+        scope,
+        team_id: teamId,
+      })
+
+      const result = await sendPushAndCleanup(userTokens, {
+        data: {
+          room_id: String(room_id),
+          scope: String(scope),
+          clickUrl: String(clickUrl),
+          conversation: String(conversation),
+          senderName: String(senderName),
+          message: String(cleanMessage),
+          body: String(bodyLine),
+          tag: String(tag),
+          notif_id: String(notif_id),
+          iconUrl: iconUrl || "",
+          avatarUrl: senderAvatarUrl || "",
+          reply_token: replyToken,
+          ts: String(Date.now()),
+        },
+        android: { priority: "high" },
+      })
+
+      pushSuccess += Number(result.success || 0)
+      pushFailed += Number(result.failed || 0)
+    }
+
+    console.log("[push-chat] direct-reply push success:", pushSuccess)
+    console.log("[push-chat] direct-reply push failed:", pushFailed)
     console.log("=========== PUSH CHAT DEBUG END ===========")
 
     return NextResponse.json({
       success: true,
-      sent: result.success,
-      failed: result.failed,
+      sent: pushSuccess,
+      failed: pushFailed,
       debug: {
         scope,
         room_id,

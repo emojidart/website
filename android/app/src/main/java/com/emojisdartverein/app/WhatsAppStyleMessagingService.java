@@ -117,6 +117,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String iconUrl      = get(data, "iconUrl");
         String avatarUrl    = get(data, "avatarUrl");
         String clickUrl     = get(data, "clickUrl");
+        String replyToken   = get(data, "reply_token");
 
         if (TextUtils.isEmpty(conversation)) conversation = "Neue Nachricht";
         if (TextUtils.isEmpty(senderName)) senderName = "System";
@@ -182,14 +183,16 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
             style.addMessage(l.text, l.ts, p);
         }
 
-        String shortcutId = "chat_" + Math.abs(convoKey.hashCode());
-        publishConversationShortcut(shortcutId, conversation, clickUrl, avatar);
-
+        // Kein Conversation-Shortcut-Avatar:
+        // sonst zeigt Android zusätzlich zum Sender-Avatar oft noch ein zweites Bild.
         Intent replyIntentRaw = new Intent(this, ReplyReceiver.class);
         replyIntentRaw.setAction("REPLY_" + notifId + "_" + System.currentTimeMillis());
         replyIntentRaw.putExtra("scope", scope);
         replyIntentRaw.putExtra("room_id", roomId);
         replyIntentRaw.putExtra("clickUrl", clickUrl);
+        replyIntentRaw.putExtra("notif_id", notifId);
+        replyIntentRaw.putExtra("notif_tag", tag);
+        replyIntentRaw.putExtra("reply_token", replyToken);
         PendingIntent replyPendingIntent = PendingIntent.getBroadcast(
                 this, notifId + 700000, replyIntentRaw,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
@@ -213,8 +216,6 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setColor(orange)
                 .setColorized(true)
                 .setGroup(GROUP_KEY_CHAT)
-                .setShortcutId(shortcutId)
-                .setLocusId(new LocusIdCompat(shortcutId))
                 .addAction(replyAction);
 
         if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
@@ -297,6 +298,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String tag          = get(data, "tag");
         String notifIdStr   = get(data, "notif_id");
         String clickUrl     = get(data, "clickUrl");
+        String replyToken   = get(data, "reply_token");
 
         if (TextUtils.isEmpty(conversation)) conversation = "📅 Training";
         if (TextUtils.isEmpty(body)) body = "Es gibt ein neues Training.";
@@ -411,6 +413,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String tag          = get(data, "tag");
         String notifIdStr   = get(data, "notif_id");
         String clickUrl     = get(data, "clickUrl");
+        String replyToken   = get(data, "reply_token");
 
         if (TextUtils.isEmpty(conversation)) conversation = "🎂 Geburtstag";
 
