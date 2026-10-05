@@ -65,6 +65,8 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
   const [error, setError] = useState<string | null>(null);
   const [cardStatus, setCardStatus] = useState<Record<string, CardStatus>>({});
   const [availabilitySaving, setAvailabilitySaving] = useState<Record<string, boolean>>({});
+  const [publishingChat, setPublishingChat] = useState(false);
+  const [publishResult, setPublishResult] = useState<string | null>(null);
   const initialDeepLinkOpened = useRef(false);
 
   useEffect(() => {
@@ -254,6 +256,41 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
     });
   }
 
+  async function publishToTeamChat() {
+    if (!selectedMatch || !selectedTeamId || !profile?.id || !isCaptain || locked || publishingChat) return;
+
+    setPublishingChat(true);
+    setPublishResult(null);
+
+    try {
+      const res = await fetch("/api/push/team-match", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({
+          action: "publish",
+          team_id: selectedTeamId,
+          match_id: selectedMatch.id,
+          sender_profile_id: profile.id,
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) throw new Error(json?.error || "Veröffentlichen fehlgeschlagen.");
+
+      setPublishResult(json?.created ? "Im Team-Chat veröffentlicht." : "Bereits im Team-Chat – Push wurde erneut gesendet.");
+      setTimeout(() => setPublishResult(null), 3500);
+    } catch (e: any) {
+      console.error("publishToTeamChat error", e);
+      setPublishResult(e?.message || "Veröffentlichen fehlgeschlagen.");
+      setTimeout(() => setPublishResult(null), 4500);
+    } finally {
+      setPublishingChat(false);
+    }
+  }
+
   async function confirm() {
     if (!selectedMatch || !selectedTeamId || !profile?.id || !isCaptain || locked) return;
     if (starters.length < required) { setError(`Es fehlen noch ${required - starters.length} Starter.`); return; }
@@ -266,7 +303,23 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
       }
       const { error: ce } = await supabase.rpc("confirm_lineup", { p_match_id:selectedMatch.id, p_team_id:selectedTeamId });
       if (ce) throw ce;
-      await fetch("/api/push/lineup", { method:"POST", headers:{"Content-Type":"application/json", authorization:`Bearer ${session?.access_token ?? ""}`}, body:JSON.stringify({ team_id:selectedTeamId, match_id:selectedMatch.id, action:"confirmed", sender_profile_id:profile.id }) });
+      const teamInfoRes = await fetch("/api/push/team-match", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({
+          action: "confirmed",
+          team_id: selectedTeamId,
+          match_id: selectedMatch.id,
+          sender_profile_id: profile.id,
+        }),
+      });
+      const teamInfoJson = await teamInfoRes.json().catch(() => null);
+      if (!teamInfoRes.ok || !teamInfoJson?.success) {
+        throw new Error(teamInfoJson?.error || "Team-Info konnte nicht gesendet werden.");
+      }
       await loadLineup(selectedMatch, selectedTeamId);
       setCardStatus(prev => {
         const current = prev[selectedMatch.id];
@@ -382,6 +435,26 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
           {isCaptain && !locked && <div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-3 flex items-center gap-2 text-sm font-black text-white"><Users className="h-4 w-4 text-orange-300" />Spieler auswählen</div><div className="grid gap-2 sm:grid-cols-2">{players.map(p=>{const row=draft.find(x=>x.player_id===p.id); return <div key={p.id} className={`rounded-xl border p-3 ${row?"border-orange-300/15 bg-orange-500/[0.045]":"border-white/[0.06] bg-black/15"}`}><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={p.photo_url || undefined}/><AvatarFallback>{p.name.slice(0,1)}</AvatarFallback></Avatar><div className="min-w-0 flex-1 truncate text-sm font-bold text-white">{p.name}</div>{row && <Badge className={row.is_substitute?"bg-sky-500/10 text-sky-200":"bg-orange-500/10 text-orange-200"}>{row.is_substitute?"Ersatz":"Starter"}</Badge>}</div><div className="mt-2 grid grid-cols-2 gap-2">{!row?<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"starter")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Starter</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Ersatz</Button></>:<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"remove")} className="border-white/10 bg-white/[0.03] text-xs text-red-200">Raus</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,row.is_substitute?"starter":"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">{row.is_substitute?"Starter":"Ersatz"}</Button></>}</div></div>})}</div></div>}
 
           <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-2 text-sm font-black text-white">Starter ({starters.length})</div><div className="space-y-1.5">{starters.length?starters.map(x=><div key={x.player_id} className="rounded-xl bg-black/20 px-3 py-2 text-sm font-semibold text-white">{players.find(p=>p.id===x.player_id)?.name ?? x.club_players?.name ?? "Spieler"}</div>):<div className="text-xs text-white/30">Noch keine Starter</div>}</div></div><div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-2 text-sm font-black text-white">Ersatz ({subs.length})</div><div className="space-y-1.5">{subs.length?subs.map(x=><div key={x.player_id} className="rounded-xl bg-black/20 px-3 py-2 text-sm font-semibold text-white">{players.find(p=>p.id===x.player_id)?.name ?? x.club_players?.name ?? "Spieler"}</div>):<div className="text-xs text-white/30">Kein Ersatz</div>}</div></div></div>
+
+          {isCaptain && !locked && (
+            <div className="rounded-2xl border border-sky-300/10 bg-sky-500/[0.035] p-3">
+              <div className="text-sm font-black text-white">Team-Chat</div>
+              <div className="mt-1 text-xs font-medium leading-5 text-white/45">
+                Stelle dieses Spiel in den Team-Chat. Alle Teammitglieder bekommen eine Chat-Push und können dort direkt zu-, absagen oder „wenn nötig“ wählen.
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={()=>void publishToTeamChat()}
+                disabled={publishingChat}
+                className="mt-3 h-11 w-full rounded-xl border-sky-300/15 bg-sky-500/[0.07] font-black text-sky-100 hover:bg-sky-500/[0.12]"
+              >
+                {publishingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
+                Im Team-Chat veröffentlichen
+              </Button>
+              {publishResult ? <div className="mt-2 text-center text-xs font-semibold text-white/55">{publishResult}</div> : null}
+            </div>
+          )}
 
           {isCaptain && !locked && <Button onClick={confirm} disabled={saving || starters.length<required} className="h-12 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400 disabled:bg-white/10 disabled:text-white/25">{saving?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<CheckCircle2 className="mr-2 h-4 w-4"/>}{confirmed?"Änderungen bestätigen":"Aufstellung bestätigen"}</Button>}
         </div>
