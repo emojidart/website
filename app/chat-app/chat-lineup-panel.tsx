@@ -74,6 +74,8 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
   const [remindAllSending, setRemindAllSending] = useState(false);
   const [remindAllResult, setRemindAllResult] = useState<string | null>(null);
   const [confirmResult, setConfirmResult] = useState<string | null>(null);
+  const [emdAlertSending, setEmdAlertSending] = useState<"captain" | "co_captain" | "both" | null>(null);
+  const [emdAlertResult, setEmdAlertResult] = useState<string | null>(null);
   const initialDeepLinkOpened = useRef(false);
 
   useEffect(() => {
@@ -82,7 +84,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
       setLoading(true);
       const { data: p } = await supabase
         .from("user_profiles")
-        .select("id,user_id,player_id")
+        .select("id,user_id,player_id,is_admin")
         .eq("user_id", session.user.id)
         .maybeSingle();
       setProfile(p ?? null);
@@ -433,6 +435,51 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
     setRemindAllSending(false);
   }
 
+  async function sendEmdAlert(recipient: "captain" | "co_captain" | "both") {
+    if (!selectedMatch || !selectedTeamId || !session?.access_token || !profile?.is_admin || confirmed) return;
+    if (emdAlertSending) return;
+
+    setEmdAlertSending(recipient);
+    setEmdAlertResult(null);
+
+    try {
+      const res = await fetch("/api/push/lineup-confirmation-alert", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          match_id: selectedMatch.id,
+          team_id: selectedTeamId,
+          recipient,
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || "EMD ALERT konnte nicht gesendet werden.");
+      }
+
+      const who =
+        recipient === "captain"
+          ? "Captain"
+          : recipient === "co_captain"
+            ? "Co-Captain"
+            : "Captain & Co-Captain";
+
+      setEmdAlertResult(
+        `🚨 EMD ALERT an ${who} gesendet · ${json?.targetedUsers ?? 0} Empfänger`,
+      );
+      setTimeout(() => setEmdAlertResult(null), 8000);
+    } catch (e: any) {
+      setEmdAlertResult(e?.message || "EMD ALERT konnte nicht gesendet werden.");
+      setTimeout(() => setEmdAlertResult(null), 8000);
+    } finally {
+      setEmdAlertSending(null);
+    }
+  }
+
   async function confirm() {
     if (!selectedMatch || !selectedTeamId || !profile?.id || !isCaptain || locked) return;
     if (starters.length < required) {
@@ -774,6 +821,61 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
               ) : null}
             </div>
           )}
+
+          {profile?.is_admin && !confirmed ? (
+            <div className="space-y-3 rounded-2xl border border-red-300/20 bg-red-500/[0.07] p-3">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-black text-red-100">
+                  <Bell className="h-4 w-4 text-red-300" />
+                  🚨 EMD ALERT
+                </div>
+                <div className="mt-1 text-xs font-semibold leading-5 text-white/45">
+                  Großen Alarm direkt im Messenger anzeigen und zusätzlich den Alarm-Push senden.
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={!!emdAlertSending}
+                  onClick={()=>void sendEmdAlert("captain")}
+                  className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-[11px] font-black text-red-100"
+                >
+                  {emdAlertSending === "captain" ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+                  Captain
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={!!emdAlertSending}
+                  onClick={()=>void sendEmdAlert("co_captain")}
+                  className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-[11px] font-black text-red-100"
+                >
+                  {emdAlertSending === "co_captain" ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+                  Co-Captain
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!!emdAlertSending}
+                  onClick={()=>void sendEmdAlert("both")}
+                  className="h-10 rounded-xl bg-red-600 px-1 text-[11px] font-black text-white hover:bg-red-500"
+                >
+                  {emdAlertSending === "both" ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+                  Beide
+                </Button>
+              </div>
+
+              {emdAlertResult ? (
+                <div className="rounded-xl border border-red-300/15 bg-black/20 px-3 py-2 text-center text-xs font-black text-red-100">
+                  {emdAlertResult}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {confirmResult ? (
             <div className="rounded-2xl border border-emerald-300/15 bg-emerald-500/[0.08] p-3 text-center text-sm font-black text-emerald-200">

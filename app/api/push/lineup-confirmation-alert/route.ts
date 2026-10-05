@@ -226,11 +226,32 @@ export async function POST(request: NextRequest) {
     const whenText = [dateText, timeText].filter(Boolean).join(" · ")
 
     const clickUrl =
-      `/member-availability?match_id=${encodeURIComponent(matchId)}` +
+      `/chat-app?tab=aufstellung&match_id=${encodeURIComponent(matchId)}` +
       `&team_id=${encodeURIComponent(teamId)}` +
       `&emd_alert=lineup-confirmation`
 
     const tag = `emd-lineup-confirmation:${teamId}:${matchId}:${recipient}`
+
+    // Zusätzlich zum nativen Push einen kurzlebigen Live-Alarm für den offenen Messenger erzeugen.
+    // RLS sorgt dafür, dass nur die konkreten Empfänger diesen Datensatz sehen.
+    const liveAlertBody = `Aufstellung noch nicht bestätigt!\n${homeName} vs. ${awayName}\n${whenText}`
+    const { error: liveAlertError } = await supabase.from("emd_live_alerts").insert({
+      sent_by_user_id: authData.user.id,
+      sent_by_profile_id: adminProfile.id,
+      match_id: matchId,
+      team_id: teamId,
+      recipient_mode: recipient,
+      recipient_user_ids: userIds,
+      title: "🚨 EMD ALERT",
+      body: liveAlertBody,
+      click_url: clickUrl,
+      expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+    })
+
+    if (liveAlertError) {
+      console.error("[lineup-confirmation-alert] live alert insert failed:", liveAlertError)
+      // Fail-open: Der normale Push muss trotzdem weiter funktionieren.
+    }
 
     const multicast = await getFirebaseAdmin().messaging().sendEachForMulticast({
       tokens,

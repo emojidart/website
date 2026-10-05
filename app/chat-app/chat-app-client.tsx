@@ -52,6 +52,7 @@ import ChatUpdatesPanel from "./chat-updates-panel";
 import ChatMatchCard, { MATCH_CARD_PREFIX, parseChatMatchCardMessage } from "./chat-match-card";
 import ChatMatchDayBar from "./chat-match-day-bar";
 import ChatVoiceMessage from "./chat-voice-message";
+import ChatGlobalAlert from "./chat-global-alert";
 
 type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand" | "community" | "test";
 
@@ -3656,6 +3657,7 @@ export default function TeamChatPage() {
 
   return (
     <div className={`relative h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
+      <ChatGlobalAlert />
       <div className="pointer-events-none fixed inset-0 z-0 hidden">
         <div
           className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.18]"
