@@ -1788,10 +1788,10 @@ if (error || !profile) {
               </div>
               <Button
                 type="button"
-                onClick={openMessengerInstall}
-                className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-orange-500 px-5 font-black text-white shadow-[0_0_30px_rgba(249,115,22,.22)] transition hover:bg-orange-400 active:scale-[0.985]"
+                disabled
+                className="h-12 shrink-0 cursor-not-allowed rounded-2xl border border-white/10 bg-white/5 px-5 font-black text-white/45 shadow-none"
               >
-                <Download className="mr-2 h-4 w-4" /> Messenger installieren
+                <Download className="mr-2 h-4 w-4" /> Messenger demnächst verfügbar
               </Button>
             </div>
           </div>
