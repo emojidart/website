@@ -1219,13 +1219,34 @@ export default function TeamChatPage() {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+      const requestMicrophone = () =>
+        navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+
+      let stream: MediaStream;
+
+      try {
+        stream = await requestMicrophone();
+      } catch (firstError: any) {
+        // Android WebView:
+        // Beim allerersten Klick kann zuerst der native RECORD_AUDIO-Dialog erscheinen.
+        // Manche WebView-Versionen brechen dabei den ersten getUserMedia-Aufruf ab,
+        // obwohl der Benutzer gerade "Zulassen" gedrückt hat.
+        // Kurz warten und EINMAL automatisch erneut versuchen.
+        const permissionFlow =
+          firstError?.name === "NotAllowedError" ||
+          firstError?.name === "PermissionDeniedError";
+
+        if (!permissionFlow) throw firstError;
+
+        await new Promise((resolve) => setTimeout(resolve, 650));
+        stream = await requestMicrophone();
+      }
 
       const mimeCandidates = [
         "audio/webm;codecs=opus",
@@ -1285,6 +1306,14 @@ export default function TeamChatPage() {
 
       recorder.start(250);
       setVoiceRecording(true);
+      setVoiceSeconds(0);
+
+      // Sichtbare Bestätigung direkt nach erfolgreichem Mikrofonstart.
+      toast({
+        title: "🎤 Aufnahme läuft",
+        description: "Sprich jetzt. Danach Senden oder Löschen.",
+      });
+
       voiceTimerRef.current = setInterval(() => {
         const seconds = Math.floor((Date.now() - voiceStartedAtRef.current) / 1000);
         setVoiceSeconds(seconds);
