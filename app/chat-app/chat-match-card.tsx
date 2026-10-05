@@ -476,7 +476,7 @@ export default function ChatMatchCard({
           type="button"
           variant="outline"
           onClick={() =>
-            router.push(`/member-availability?match_id=${encodeURIComponent(matchId)}&team_id=${encodeURIComponent(teamId)}&tab=lineup`)
+            router.push(`/chat-app?tab=aufstellung&match_id=${encodeURIComponent(matchId)}&team_id=${encodeURIComponent(teamId)}`)
           }
           className="h-10 w-full rounded-xl border-white/10 bg-white/[0.03] text-xs font-black text-white/65"
         >
