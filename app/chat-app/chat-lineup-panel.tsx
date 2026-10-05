@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Calendar, CheckCircle2, Clock, Loader2, MapPin, ShieldCheck, Users } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, Clock, Loader2, MapPin, ShieldCheck, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ type Player = { id: string; name: string; photo_url: string | null };
 type LineupRow = { id: string; player_id: string; position: number; is_substitute: boolean; club_players?: Player | null };
 type Header = { status: string; current_version: number | null; confirmed_version: number | null; confirmed_at: string | null };
 type CardStatus = { teamId: string; myStatus: "yes" | "maybe" | "no" | null; open: number; yes: number; maybe: number; no: number; lineupConfirmed: boolean; starters: number; required: number };
+type AvailabilityRow = { player_id: string; status: "yes" | "maybe" | "no" };
 
 export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { initialMatchId?: string | null; initialTeamId?: string | null }) {
   const { session } = useAuth();
@@ -67,6 +68,12 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
   const [availabilitySaving, setAvailabilitySaving] = useState<Record<string, boolean>>({});
   const [publishingChat, setPublishingChat] = useState(false);
   const [publishResult, setPublishResult] = useState<string | null>(null);
+  const [availabilityRows, setAvailabilityRows] = useState<AvailabilityRow[]>([]);
+  const [remindSending, setRemindSending] = useState<Record<string, boolean>>({});
+  const [remindOk, setRemindOk] = useState<Record<string, boolean>>({});
+  const [remindAllSending, setRemindAllSending] = useState(false);
+  const [remindAllResult, setRemindAllResult] = useState<string | null>(null);
+  const [confirmResult, setConfirmResult] = useState<string | null>(null);
   const initialDeepLinkOpened = useRef(false);
 
   useEffect(() => {
@@ -151,6 +158,32 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
   const confirmed = header?.status === "confirmed" && header.confirmed_version != null && header.confirmed_version === header.current_version;
   const locked = selectedMatch ? Date.now() >= new Date(`${selectedMatch.match_date}T${(selectedMatch.match_time || "23:59").slice(0,5)}:00`).getTime() : false;
   const selectedCardStatus = selectedMatch ? cardStatus[selectedMatch.id] ?? null : null;
+  const availabilityByPlayer = useMemo(() => {
+    const map = new Map<string, "yes" | "maybe" | "no">();
+    for (const row of availabilityRows) map.set(row.player_id, row.status);
+    return map;
+  }, [availabilityRows]);
+  const openPlayerIds = useMemo(
+    () => players.map((p) => p.id).filter((id) => !availabilityByPlayer.has(id) && id !== profile?.player_id),
+    [players, availabilityByPlayer, profile?.player_id],
+  );
+
+  const teamAvailabilitySummary = useMemo(() => {
+    let yes = 0;
+    let maybe = 0;
+    let no = 0;
+    let open = 0;
+
+    for (const player of players) {
+      const status = availabilityByPlayer.get(player.id);
+      if (status === "yes") yes += 1;
+      else if (status === "maybe") maybe += 1;
+      else if (status === "no") no += 1;
+      else open += 1;
+    }
+
+    return { yes, maybe, no, open };
+  }, [players, availabilityByPlayer]);
 
   const matchName = (m: Match) => {
     const home = m.home_team_type === "opponent" ? m.home_opponent_team?.name : m.home_team?.name;
@@ -235,9 +268,13 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
     const { data: tm } = await supabase.from("team_members").select("player_id,club_players:club_players!team_members_player_id_fkey(id,name,photo_url)").eq("team_id", tid).is("left_at", null);
     const ps = (tm as any[] ?? []).filter(x => eligibleIds.has(x.player_id)).map(x => x.club_players).filter(Boolean) as Player[];
     setPlayers(ps);
-    const { data: lu } = await supabase.from("match_lineups").select("id,player_id,position,is_substitute,club_players:club_players(id,name,photo_url)").eq("match_id", m.id).eq("team_id", tid).order("position", { ascending: true });
+    const [{ data: lu }, { data: av }] = await Promise.all([
+      supabase.from("match_lineups").select("id,player_id,position,is_substitute,club_players:club_players(id,name,photo_url)").eq("match_id", m.id).eq("team_id", tid).order("position", { ascending: true }),
+      supabase.from("match_availability").select("player_id,status").eq("match_id", m.id).eq("team_id", tid),
+    ]);
     const rows = (lu as any[] ?? []) as LineupRow[];
     setSaved(rows); setDraft(rows);
+    setAvailabilityRows(((av as any[]) ?? []) as AvailabilityRow[]);
     const { data: lh } = await supabase.from("match_lineup_headers").select("status,current_version,confirmed_version,confirmed_at").eq("match_id", m.id).eq("team_id", tid).maybeSingle();
     setHeader((lh as any) ?? null);
   }
@@ -280,8 +317,12 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.success) throw new Error(json?.error || "Veröffentlichen fehlgeschlagen.");
 
-      setPublishResult(json?.created ? "Im Team-Chat veröffentlicht." : "Bereits im Team-Chat – Push wurde erneut gesendet.");
-      setTimeout(() => setPublishResult(null), 3500);
+      setPublishResult(
+        json?.created
+          ? "✓ Im Team-Chat veröffentlicht · Team wurde per Push informiert."
+          : "✓ Spiel war bereits im Chat · Team wurde erneut per Push informiert.",
+      );
+      setTimeout(() => setPublishResult(null), 8000);
     } catch (e: any) {
       console.error("publishToTeamChat error", e);
       setPublishResult(e?.message || "Veröffentlichen fehlgeschlagen.");
@@ -291,37 +332,156 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
     }
   }
 
-  async function confirm() {
+  async function sendReminder(playerId: string) {
     if (!selectedMatch || !selectedTeamId || !profile?.id || !isCaptain || locked) return;
-    if (starters.length < required) { setError(`Es fehlen noch ${required - starters.length} Starter.`); return; }
-    setSaving(true); setError(null);
+    if (playerId === profile.player_id || remindSending[playerId]) return;
+
+    setRemindSending((prev) => ({ ...prev, [playerId]: true }));
+    setRemindOk((prev) => ({ ...prev, [playerId]: false }));
+
     try {
-      await supabase.from("match_lineups").delete().eq("match_id", selectedMatch.id).eq("team_id", selectedTeamId);
-      if (draft.length) {
-        const { error: ie } = await supabase.from("match_lineups").insert(draft.map(x => ({ match_id:selectedMatch.id, team_id:selectedTeamId, player_id:x.player_id, position:x.is_substitute?0:x.position, is_substitute:x.is_substitute })));
-        if (ie) throw ie;
-      }
-      const { error: ce } = await supabase.rpc("confirm_lineup", { p_match_id:selectedMatch.id, p_team_id:selectedTeamId });
-      if (ce) throw ce;
-      const teamInfoRes = await fetch("/api/push/team-match", {
+      const res = await fetch("/api/push/team-match", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           authorization: `Bearer ${session?.access_token ?? ""}`,
         },
         body: JSON.stringify({
-          action: "confirmed",
+          action: "reminder",
           team_id: selectedTeamId,
           match_id: selectedMatch.id,
+          target_player_id: playerId,
           sender_profile_id: profile.id,
         }),
       });
-      const teamInfoJson = await teamInfoRes.json().catch(() => null);
-      if (!teamInfoRes.ok || !teamInfoJson?.success) {
-        throw new Error(teamInfoJson?.error || "Team-Info konnte nicht gesendet werden.");
+
+      const json = await res.json().catch(() => null);
+
+      if (json?.cooldown) {
+        setRemindAllResult(`⏱ Erinnerung erst wieder in ca. ${json.minutes_left ?? 30} Min. möglich.`);
+        setTimeout(() => setRemindAllResult(null), 6000);
+        return;
       }
+
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || "Erinnerung konnte nicht gesendet werden.");
+      }
+
+      setRemindOk((prev) => ({ ...prev, [playerId]: true }));
+      setTimeout(() => setRemindOk((prev) => ({ ...prev, [playerId]: false })), 5000);
+    } catch (e: any) {
+      console.error("sendReminder error", e);
+      setRemindAllResult(e?.message || "Erinnerung konnte nicht gesendet werden.");
+      setTimeout(() => setRemindAllResult(null), 6000);
+    } finally {
+      setRemindSending((prev) => ({ ...prev, [playerId]: false }));
+    }
+  }
+
+  async function remindAllOpen() {
+    if (!selectedMatch || !selectedTeamId || !profile?.id || !isCaptain || locked || remindAllSending) return;
+
+    if (openPlayerIds.length === 0) {
+      setRemindAllResult("✓ Niemand offen – alle haben bereits geantwortet.");
+      setTimeout(() => setRemindAllResult(null), 5000);
+      return;
+    }
+
+    setRemindAllSending(true);
+    setRemindAllResult(null);
+
+    let sent = 0;
+    let cooldown = 0;
+    let failed = 0;
+
+    for (const playerId of openPlayerIds) {
+      try {
+        const res = await fetch("/api/push/team-match", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${session?.access_token ?? ""}`,
+          },
+          body: JSON.stringify({
+            action: "reminder",
+            team_id: selectedTeamId,
+            match_id: selectedMatch.id,
+            target_player_id: playerId,
+            sender_profile_id: profile.id,
+          }),
+        });
+
+        const json = await res.json().catch(() => null);
+        if (json?.cooldown) {
+          cooldown += 1;
+        } else if (res.ok && json?.success) {
+          sent += 1;
+        } else {
+          failed += 1;
+        }
+      } catch {
+        failed += 1;
+      }
+    }
+
+    const parts = [];
+    if (sent) parts.push(`${sent} Erinnerung${sent === 1 ? "" : "en"} gesendet`);
+    if (cooldown) parts.push(`${cooldown} im 30-Min.-Cooldown`);
+    if (failed) parts.push(`${failed} fehlgeschlagen`);
+    setRemindAllResult(`✓ ${parts.join(" · ") || "Fertig"}`);
+    setTimeout(() => setRemindAllResult(null), 8000);
+    setRemindAllSending(false);
+  }
+
+  async function confirm() {
+    if (!selectedMatch || !selectedTeamId || !profile?.id || !isCaptain || locked) return;
+    if (starters.length < required) {
+      setError(`Es fehlen noch ${required - starters.length} Starter.`);
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    setConfirmResult(null);
+
+    try {
+      // 1) Aufstellung speichern
+      const { error: deleteError } = await supabase
+        .from("match_lineups")
+        .delete()
+        .eq("match_id", selectedMatch.id)
+        .eq("team_id", selectedTeamId);
+
+      if (deleteError) throw deleteError;
+
+      if (draft.length) {
+        const { error: insertError } = await supabase
+          .from("match_lineups")
+          .insert(
+            draft.map((x) => ({
+              match_id: selectedMatch.id,
+              team_id: selectedTeamId,
+              player_id: x.player_id,
+              position: x.is_substitute ? 0 : x.position,
+              is_substitute: x.is_substitute,
+            })),
+          );
+
+        if (insertError) throw insertError;
+      }
+
+      // 2) Bestätigung in Supabase setzen
+      const { error: confirmError } = await supabase.rpc("confirm_lineup", {
+        p_match_id: selectedMatch.id,
+        p_team_id: selectedTeamId,
+      });
+
+      if (confirmError) throw confirmError;
+
+      // Ab hier IST die Aufstellung gespeichert/bestätigt.
       await loadLineup(selectedMatch, selectedTeamId);
-      setCardStatus(prev => {
+
+      setCardStatus((prev) => {
         const current = prev[selectedMatch.id];
         if (!current) return prev;
         return {
@@ -329,13 +489,62 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
           [selectedMatch.id]: {
             ...current,
             lineupConfirmed: true,
-            starters: draft.filter(x => !x.is_substitute).length,
+            starters: draft.filter((x) => !x.is_substitute).length,
           },
         };
       });
-    } catch (e:any) {
-      setError(e?.message?.includes("Spielbeginn") ? "Spielbeginn erreicht – Aufstellung ist gesperrt." : "Aufstellung konnte nicht gespeichert werden.");
-    } finally { setSaving(false); }
+
+      // 3) Chat + Push separat behandeln.
+      // Ein Push-/Chat-Fehler darf NICHT mehr behaupten,
+      // dass die Aufstellung nicht gespeichert wurde.
+      try {
+        const teamInfoRes = await fetch("/api/push/team-match", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: `Bearer ${session?.access_token ?? ""}`,
+          },
+          body: JSON.stringify({
+            action: "confirmed",
+            team_id: selectedTeamId,
+            match_id: selectedMatch.id,
+            sender_profile_id: profile.id,
+          }),
+        });
+
+        const teamInfoJson = await teamInfoRes.json().catch(() => null);
+
+        if (!teamInfoRes.ok || !teamInfoJson?.success) {
+          throw new Error(teamInfoJson?.error || "Team-Info konnte nicht gesendet werden.");
+        }
+
+        setConfirmResult(
+          "✓ Aufstellung gespeichert & bestätigt · im Team-Chat gepostet · Team per Push informiert.",
+        );
+      } catch (notifyError: any) {
+        console.error("lineup confirmed, but team notification failed", notifyError);
+        setConfirmResult(
+          "✓ Aufstellung gespeichert & bestätigt. ⚠ Team-Chat/Push konnte nicht gesendet werden.",
+        );
+      }
+
+      setTimeout(() => setConfirmResult(null), 9000);
+    } catch (e: any) {
+      console.error("confirm lineup save error", e);
+
+      if (e?.message?.includes("Spielbeginn")) {
+        setError("Spielbeginn erreicht – Aufstellung ist gesperrt.");
+      } else {
+        const detail = String(e?.message || "").trim();
+        setError(
+          detail
+            ? `Aufstellung konnte nicht gespeichert werden: ${detail}`
+            : "Aufstellung konnte nicht gespeichert werden.",
+        );
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <div className="flex h-full items-center justify-center text-white/35"><Loader2 className="h-5 w-5 animate-spin" /></div>;
@@ -428,35 +637,151 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
             </div>
           )}
 
+          <div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm font-black text-white">
+                <Users className="h-4 w-4 text-orange-300" />
+                Rückmeldungen
+              </div>
+              <div className="text-[10px] font-bold text-white/35">
+                {players.length} Spieler
+              </div>
+            </div>
+
+            <div className="mb-3 grid grid-cols-4 gap-1.5">
+              <div className="rounded-xl bg-emerald-500/[0.08] px-2 py-2 text-center">
+                <div className="text-sm font-black text-emerald-200">{teamAvailabilitySummary.yes}</div>
+                <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-emerald-200/60">Zusage</div>
+              </div>
+              <div className="rounded-xl bg-amber-500/[0.08] px-2 py-2 text-center">
+                <div className="text-sm font-black text-amber-200">{teamAvailabilitySummary.maybe}</div>
+                <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-amber-200/60">Wenn nötig</div>
+              </div>
+              <div className="rounded-xl bg-red-500/[0.08] px-2 py-2 text-center">
+                <div className="text-sm font-black text-red-200">{teamAvailabilitySummary.no}</div>
+                <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-red-200/60">Absage</div>
+              </div>
+              <div className="rounded-xl bg-white/[0.04] px-2 py-2 text-center">
+                <div className="text-sm font-black text-white/55">{teamAvailabilitySummary.open}</div>
+                <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white/30">Offen</div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              {players.map((p) => {
+                const status = availabilityByPlayer.get(p.id);
+
+                return (
+                  <div key={p.id} className="flex items-center gap-2.5 rounded-xl bg-black/15 px-2.5 py-2">
+                    <Avatar className="h-8 w-8 shrink-0">
+                      <AvatarImage src={p.photo_url || undefined} />
+                      <AvatarFallback>{p.name.slice(0, 1)}</AvatarFallback>
+                    </Avatar>
+
+                    <div className="min-w-0 flex-1 truncate text-sm font-bold text-white">
+                      {p.name}
+                    </div>
+
+                    {status === "yes" ? (
+                      <Badge className="shrink-0 bg-emerald-500/10 text-emerald-200">Zusage</Badge>
+                    ) : status === "maybe" ? (
+                      <Badge className="shrink-0 bg-amber-500/10 text-amber-200">Wenn nötig</Badge>
+                    ) : status === "no" ? (
+                      <Badge className="shrink-0 bg-red-500/10 text-red-200">Absage</Badge>
+                    ) : (
+                      <Badge className="shrink-0 bg-white/[0.05] text-white/45">Offen</Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {locked && <div className="rounded-2xl border border-red-300/15 bg-red-500/[0.05] p-3 text-sm font-semibold text-red-200">Ab Spielbeginn ist die Aufstellung gesperrt.</div>}
           {!isCaptain && <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 text-sm text-white/50"><ShieldCheck className="mr-2 inline h-4 w-4 text-orange-300" />Nur Captain oder Co-Captain können ändern. Du siehst hier die aktuelle Aufstellung.</div>}
           {error && <div className="rounded-2xl border border-red-300/15 bg-red-500/[0.05] p-3 text-sm text-red-200">{error}</div>}
 
-          {isCaptain && !locked && <div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-3 flex items-center gap-2 text-sm font-black text-white"><Users className="h-4 w-4 text-orange-300" />Spieler auswählen</div><div className="grid gap-2 sm:grid-cols-2">{players.map(p=>{const row=draft.find(x=>x.player_id===p.id); return <div key={p.id} className={`rounded-xl border p-3 ${row?"border-orange-300/15 bg-orange-500/[0.045]":"border-white/[0.06] bg-black/15"}`}><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={p.photo_url || undefined}/><AvatarFallback>{p.name.slice(0,1)}</AvatarFallback></Avatar><div className="min-w-0 flex-1 truncate text-sm font-bold text-white">{p.name}</div>{row && <Badge className={row.is_substitute?"bg-sky-500/10 text-sky-200":"bg-orange-500/10 text-orange-200"}>{row.is_substitute?"Ersatz":"Starter"}</Badge>}</div><div className="mt-2 grid grid-cols-2 gap-2">{!row?<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"starter")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Starter</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Ersatz</Button></>:<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"remove")} className="border-white/10 bg-white/[0.03] text-xs text-red-200">Raus</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,row.is_substitute?"starter":"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">{row.is_substitute?"Starter":"Ersatz"}</Button></>}</div></div>})}</div></div>}
+          {isCaptain && !locked && <div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-3 flex items-center gap-2 text-sm font-black text-white"><Users className="h-4 w-4 text-orange-300" />Spieler auswählen</div><div className="grid gap-2 sm:grid-cols-2">{players.map(p=>{const row=draft.find(x=>x.player_id===p.id); return <div key={p.id} className={`rounded-xl border p-3 ${row?"border-orange-300/15 bg-orange-500/[0.045]":"border-white/[0.06] bg-black/15"}`}><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={p.photo_url || undefined}/><AvatarFallback>{p.name.slice(0,1)}</AvatarFallback></Avatar><div className="min-w-0 flex-1 truncate text-sm font-bold text-white">{p.name}</div>
+{availabilityByPlayer.get(p.id) === "yes" ? <Badge className="bg-emerald-500/10 text-emerald-200">Zusage</Badge> : availabilityByPlayer.get(p.id) === "maybe" ? <Badge className="bg-amber-500/10 text-amber-200">Wenn nötig</Badge> : availabilityByPlayer.get(p.id) === "no" ? <Badge className="bg-red-500/10 text-red-200">Absage</Badge> : <Badge className="bg-white/[0.05] text-white/45">Offen</Badge>}
+{row && <Badge className={row.is_substitute?"bg-sky-500/10 text-sky-200":"bg-orange-500/10 text-orange-200"}>{row.is_substitute?"Ersatz":"Starter"}</Badge>}</div>
+{!availabilityByPlayer.has(p.id) && p.id !== profile?.player_id ? (
+  <Button
+    type="button"
+    size="sm"
+    variant="outline"
+    disabled={!!remindSending[p.id]}
+    onClick={()=>void sendReminder(p.id)}
+    className={`mt-2 h-9 w-full border-white/10 text-xs font-black ${remindOk[p.id] ? "bg-emerald-500/10 text-emerald-200" : "bg-white/[0.03] text-white/65"}`}
+  >
+    {remindSending[p.id] ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : remindOk[p.id] ? <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> : <Bell className="mr-1.5 h-3.5 w-3.5" />}
+    {remindOk[p.id] ? "Erinnerung gesendet" : "Erinnern"}
+  </Button>
+) : null}
+<div className="mt-2 grid grid-cols-2 gap-2">{!row?<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"starter")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Starter</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Ersatz</Button></>:<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"remove")} className="border-white/10 bg-white/[0.03] text-xs text-red-200">Raus</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,row.is_substitute?"starter":"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">{row.is_substitute?"Starter":"Ersatz"}</Button></>}</div></div>})}</div></div>}
 
           <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-2 text-sm font-black text-white">Starter ({starters.length})</div><div className="space-y-1.5">{starters.length?starters.map(x=><div key={x.player_id} className="rounded-xl bg-black/20 px-3 py-2 text-sm font-semibold text-white">{players.find(p=>p.id===x.player_id)?.name ?? x.club_players?.name ?? "Spieler"}</div>):<div className="text-xs text-white/30">Noch keine Starter</div>}</div></div><div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-2 text-sm font-black text-white">Ersatz ({subs.length})</div><div className="space-y-1.5">{subs.length?subs.map(x=><div key={x.player_id} className="rounded-xl bg-black/20 px-3 py-2 text-sm font-semibold text-white">{players.find(p=>p.id===x.player_id)?.name ?? x.club_players?.name ?? "Spieler"}</div>):<div className="text-xs text-white/30">Kein Ersatz</div>}</div></div></div>
 
           {isCaptain && !locked && (
-            <div className="rounded-2xl border border-sky-300/10 bg-sky-500/[0.035] p-3">
-              <div className="text-sm font-black text-white">Team-Chat</div>
-              <div className="mt-1 text-xs font-medium leading-5 text-white/45">
-                Stelle dieses Spiel in den Team-Chat. Alle Teammitglieder bekommen eine Chat-Push und können dort direkt zu-, absagen oder „wenn nötig“ wählen.
+            <div className="space-y-3 rounded-2xl border border-sky-300/10 bg-sky-500/[0.035] p-3">
+              <div>
+                <div className="text-sm font-black text-white">Team-Chat & Erinnerungen</div>
+                <div className="mt-1 text-xs font-medium leading-5 text-white/45">
+                  Spiel veröffentlichen, Team per Push informieren und offene Rückmeldungen direkt hier erinnern.
+                </div>
               </div>
+
               <Button
                 type="button"
                 variant="outline"
                 onClick={()=>void publishToTeamChat()}
                 disabled={publishingChat}
-                className="mt-3 h-11 w-full rounded-xl border-sky-300/15 bg-sky-500/[0.07] font-black text-sky-100 hover:bg-sky-500/[0.12]"
+                className="h-11 w-full rounded-xl border-sky-300/15 bg-sky-500/[0.07] font-black text-sky-100 hover:bg-sky-500/[0.12]"
               >
                 {publishingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
-                Im Team-Chat veröffentlichen
+                {publishingChat ? "Wird veröffentlicht …" : "Im Team-Chat veröffentlichen"}
               </Button>
-              {publishResult ? <div className="mt-2 text-center text-xs font-semibold text-white/55">{publishResult}</div> : null}
+
+              {publishResult ? (
+                <div className="rounded-xl border border-emerald-300/15 bg-emerald-500/[0.08] px-3 py-2.5 text-center text-xs font-black text-emerald-200">
+                  {publishResult}
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-white/[0.07] bg-black/15 p-3">
+                <div>
+                  <div className="text-xs font-black text-white">Offene Rückmeldungen</div>
+                  <div className="mt-0.5 text-[11px] font-semibold text-white/40">
+                    {openPlayerIds.length === 0 ? "Alle haben bereits geantwortet." : `${openPlayerIds.length} Spieler noch offen`}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={()=>void remindAllOpen()}
+                  disabled={remindAllSending || openPlayerIds.length === 0}
+                  className="h-9 rounded-xl border-orange-300/15 bg-orange-500/[0.07] px-3 text-xs font-black text-orange-100"
+                >
+                  {remindAllSending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Bell className="mr-1.5 h-3.5 w-3.5" />}
+                  Alle erinnern
+                </Button>
+              </div>
+
+              {remindAllResult ? (
+                <div className="rounded-xl border border-white/[0.07] bg-white/[0.035] px-3 py-2 text-center text-xs font-bold text-white/65">
+                  {remindAllResult}
+                </div>
+              ) : null}
             </div>
           )}
 
-          {isCaptain && !locked && <Button onClick={confirm} disabled={saving || starters.length<required} className="h-12 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400 disabled:bg-white/10 disabled:text-white/25">{saving?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<CheckCircle2 className="mr-2 h-4 w-4"/>}{confirmed?"Änderungen bestätigen":"Aufstellung bestätigen"}</Button>}
+          {confirmResult ? (
+            <div className="rounded-2xl border border-emerald-300/15 bg-emerald-500/[0.08] p-3 text-center text-sm font-black text-emerald-200">
+              {confirmResult}
+            </div>
+          ) : null}
+
+          {isCaptain && !locked && <Button onClick={confirm} disabled={saving || starters.length<required} className="h-12 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400 disabled:bg-white/10 disabled:text-white/25">{saving?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<CheckCircle2 className="mr-2 h-4 w-4"/>}{saving ? "Wird bestätigt …" : confirmed ? "Änderungen bestätigen" : "Aufstellung bestätigen"}</Button>}
         </div>
       </div>
     </div>
