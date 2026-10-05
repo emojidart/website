@@ -1279,12 +1279,19 @@ const fetchProfile = async () => {
   const openMessengerInstall = async () => {
     if (typeof window === "undefined") return
 
+    console.log("Messenger install click", {
+      native: Capacitor.isNativePlatform(),
+      platform: Capacitor.getPlatform(),
+    })
+
     if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
       try {
-        await NativeMessengerShortcut.install()
+        const result = await NativeMessengerShortcut.install()
+        console.log("MessengerShortcut result:", result)
         return
       } catch (error) {
         console.error("Messenger shortcut native install failed:", error)
+        return
       }
     }
 
