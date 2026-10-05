@@ -271,6 +271,78 @@ export default function TeamChatPage() {
   const urlTeamId = searchParams.get("team_id");
   const urlDraft = searchParams.get("draft");
   const urlNativeReply = searchParams.get("native_reply");
+  const isMessengerApp = searchParams.get("source") === "messenger-app";
+
+  const [activationCode, setActivationCode] = useState("");
+  const [activationLoading, setActivationLoading] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
+
+  const activateMessenger = async () => {
+    const code = activationCode.replace(/\D/g, "").slice(0, 6);
+    if (code.length !== 6) {
+      setActivationError("Bitte einen 6-stelligen Aktivierungscode eingeben.");
+      return;
+    }
+
+    setActivationLoading(true);
+    setActivationError(null);
+
+    try {
+      let deviceId = "";
+      if (typeof window !== "undefined") {
+        deviceId = window.localStorage.getItem("emd_messenger_device_id") || "";
+        if (!deviceId) {
+          deviceId =
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+              ? crypto.randomUUID()
+              : `emd-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          window.localStorage.setItem("emd_messenger_device_id", deviceId);
+        }
+      }
+
+      const { data, error } = await supabase.functions.invoke("messenger-activation", {
+        body: {
+          action: "activate",
+          code,
+          deviceId,
+          deviceName: "EMD Messenger Android",
+          platform: "android",
+          appVersion: "1.0",
+        },
+      });
+
+      if (error) {
+        let message = error.message || "Aktivierung fehlgeschlagen.";
+        try {
+          const context = (error as any)?.context;
+          if (context?.json) {
+            const body = await context.json();
+            if (body?.error) message = body.error;
+          }
+        } catch {}
+        throw new Error(message);
+      }
+
+      if (!data?.tokenHash) {
+        throw new Error(data?.error || "Messenger-Sitzung konnte nicht erstellt werden.");
+      }
+
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: data.tokenHash,
+        type: "email",
+      });
+
+      if (verifyError) throw verifyError;
+
+      if (typeof window !== "undefined") {
+        window.location.replace("/chat-app?source=messenger-app");
+      }
+    } catch (error: any) {
+      setActivationError(error?.message || "Aktivierung fehlgeschlagen.");
+    } finally {
+      setActivationLoading(false);
+    }
+  };
 
   const deepLinkParams = {
     roomId: urlRoomId,
@@ -2871,6 +2943,68 @@ export default function TeamChatPage() {
   }
 
   if (!session) {
+    if (isMessengerApp) {
+      return (
+        <div className={`min-h-[100dvh] flex flex-col ${WA.appBg}`}>
+          <main className="flex-1 flex items-center justify-center p-4">
+            <Card className={`w-full max-w-md ${WA.card}`}>
+              <CardContent className="p-6 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/15 text-orange-300">
+                  <MessageCircle className="h-8 w-8" />
+                </div>
+
+                <h2 className="text-xl font-black text-white">EMD Messenger aktivieren</h2>
+                <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/45">
+                  Gib den einmaligen 6-stelligen Aktivierungscode aus deiner EMD Vereinsapp ein.
+                </p>
+
+                <div className="mt-6">
+                  <Input
+                    value={activationCode}
+                    onChange={(e) => {
+                      setActivationCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      setActivationError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !activationLoading) {
+                        e.preventDefault();
+                        activateMessenger();
+                      }
+                    }}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    placeholder="000000"
+                    disabled={activationLoading}
+                    className="h-14 rounded-2xl border border-white/[0.10] bg-[#202a33] text-center text-2xl font-black tracking-[0.32em] text-white placeholder:text-white/18 focus-visible:ring-1 focus-visible:ring-orange-400/40"
+                  />
+
+                  {activationError ? (
+                    <p className="mt-3 text-sm font-semibold text-red-300">
+                      {activationError}
+                    </p>
+                  ) : null}
+
+                  <Button
+                    type="button"
+                    onClick={activateMessenger}
+                    disabled={activationLoading || activationCode.length !== 6}
+                    className="mt-4 h-12 w-full rounded-2xl bg-orange-500 font-black text-white hover:bg-orange-500/90 disabled:bg-white/10 disabled:text-white/25"
+                  >
+                    {activationLoading ? "Wird aktiviert…" : "Messenger aktivieren"}
+                  </Button>
+                </div>
+
+                <p className="mt-5 text-xs leading-5 text-white/30">
+                  Der Code kann nur einmal verwendet werden. Nach erfolgreicher Aktivierung bleibt dieses Gerät angemeldet.
+                </p>
+              </CardContent>
+            </Card>
+          </main>
+        </div>
+      );
+    }
+
     return (
       <div className={`min-h-[100dvh] flex flex-col ${WA.appBg}`}>
         <main className="flex-1 flex items-center justify-center p-4">
