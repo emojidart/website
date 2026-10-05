@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="messenger_background">#050608</color>
+    <color name="messenger_status">#111820</color>
+</resources>
