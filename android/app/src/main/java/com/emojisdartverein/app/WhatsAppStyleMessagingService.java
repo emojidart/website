@@ -17,7 +17,12 @@ import android.text.TextUtils;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.Person;
+import androidx.core.app.RemoteInput;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.LocusIdCompat;
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
+import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -28,6 +33,9 @@ import java.net.URL;
 import java.util.Map;
 
 public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
+
+    private static final String MESSENGER_PACKAGE = "com.emojisdartverein.messenger";
+    private static final String EMD_WEB_ORIGIN = "https://emojisdartverein.com";
 
     private static final String CHANNEL_ID = "chat";
     private static final String CHANNEL_NAME = "Chat";
@@ -88,6 +96,11 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
             return;
         }
 
+        if ("lineup".equals(type) || "availability_reminder".equals(type) || "lineup_confirmation_alert".equals(type)) {
+            showGeneralSimple(remoteMessage);
+            return;
+        }
+
         // =========================
         // DEFAULT: CHAT / WHATSAPP STYLE
         // =========================
@@ -102,6 +115,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         String scope        = get(data, "scope");
         String roomId       = get(data, "room_id");
         String iconUrl      = get(data, "iconUrl");
+        String avatarUrl    = get(data, "avatarUrl");
         String clickUrl     = get(data, "clickUrl");
 
         if (TextUtils.isEmpty(conversation)) conversation = "Neue Nachricht";
@@ -124,11 +138,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         }
         if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
 
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setAction("OPEN_PUSH_" + notifId);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("path", clickUrl);
-        intent.setData(Uri.parse("emd://push" + clickUrl));
+        Intent intent = buildOpenIntent(clickUrl, notifId);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -147,20 +157,52 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         addLine(convoKey, new ChatLine(senderName, textToShow, now));
         java.util.ArrayDeque<ChatLine> lines = getLines(convoKey);
 
-        Person me = new Person.Builder().setName("Ich").build();
-        Person senderPerson = new Person.Builder().setName(senderName).build();
+        Bitmap avatar = fetchBitmap(avatarUrl);
+        if (avatar != null) {
+            avatar = scaleSquareCenterCrop(avatar, 192);
+            avatar = circleWithBorder(avatar, 0, 0x00000000);
+        } else {
+            // WhatsApp-style fallback: sender initials instead of the EMD app logo.
+            avatar = createInitialsAvatar(senderName, 192);
+        }
+
+        Person me = new Person.Builder().setName("Du").build();
+        Person.Builder senderBuilder = new Person.Builder().setName(senderName);
+        if (avatar != null) senderBuilder.setIcon(IconCompat.createWithBitmap(avatar));
+        Person senderPerson = senderBuilder.build();
 
         NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle(me)
                 .setConversationTitle(conversation)
                 .setGroupConversation(true);
 
         for (ChatLine l : lines) {
-            Person p = new Person.Builder().setName(l.sender).build();
+            Person p = l.sender.equals(senderName)
+                    ? senderPerson
+                    : new Person.Builder().setName(l.sender).build();
             style.addMessage(l.text, l.ts, p);
         }
 
+        String shortcutId = "chat_" + Math.abs(convoKey.hashCode());
+        publishConversationShortcut(shortcutId, conversation, clickUrl, avatar);
+
+        Intent replyIntentRaw = new Intent(this, ReplyReceiver.class);
+        replyIntentRaw.setAction("REPLY_" + notifId + "_" + System.currentTimeMillis());
+        replyIntentRaw.putExtra("scope", scope);
+        replyIntentRaw.putExtra("room_id", roomId);
+        replyIntentRaw.putExtra("clickUrl", clickUrl);
+        PendingIntent replyPendingIntent = PendingIntent.getBroadcast(
+                this, notifId + 700000, replyIntentRaw,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
+        );
+        RemoteInput remoteInput = new RemoteInput.Builder(ReplyReceiver.KEY_TEXT_REPLY)
+                .setLabel("Antworten")
+                .build();
+        NotificationCompat.Action replyAction = new NotificationCompat.Action.Builder(
+                R.mipmap.ic_launcher, "Antworten", replyPendingIntent
+        ).addRemoteInput(remoteInput).setAllowGeneratedReplies(true).build();
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_emd_messenger)
                 .setContentTitle(conversation)
                 .setContentText(senderName + ": " + firstLine(textToShow))
                 .setStyle(style)
@@ -170,14 +212,17 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setContentIntent(pendingIntent)
                 .setColor(orange)
                 .setColorized(true)
-                .setGroup(GROUP_KEY_CHAT);
+                .setGroup(GROUP_KEY_CHAT)
+                .setShortcutId(shortcutId)
+                .setLocusId(new LocusIdCompat(shortcutId))
+                .addAction(replyAction);
 
         if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
         else nm.notify(notifId, builder.build());
 
         int unread = incrementUnreadCounter(getApplicationContext());
         NotificationCompat.Builder summary = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_emd_messenger)
                 .setContentTitle("EMD Vereinsapp")
                 .setContentText(unread + " neue Nachrichten")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -190,6 +235,52 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setGroupSummary(true);
 
         nm.notify(SUMMARY_ID, summary.build());
+    }
+
+    // =========================
+    // LINEUP / AVAILABILITY SIMPLE NOTIFICATION
+    // =========================
+    private void showGeneralSimple(RemoteMessage remoteMessage) {
+        NotificationManagerCompat nm = NotificationManagerCompat.from(this);
+        if (!nm.areNotificationsEnabled()) return;
+
+        Map<String, String> data = remoteMessage.getData();
+        String conversation = firstNonEmpty(get(data, "conversation"), "EMD");
+        String body = firstNonEmpty(get(data, "body"), get(data, "message"));
+        String tag = get(data, "tag");
+        String notifIdStr = get(data, "notif_id");
+        String clickUrl = get(data, "clickUrl");
+        String iconUrl = get(data, "iconUrl");
+
+        if (TextUtils.isEmpty(body)) body = "Neue Information";
+        if (TextUtils.isEmpty(clickUrl)) clickUrl = "/chat-app?tab=aktuell";
+        if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
+
+        int orange = ContextCompat.getColor(this, R.color.emd_orange);
+        int notifId = safeInt(notifIdStr, stableIdFrom(tag));
+
+        Intent intent = buildOpenIntent(clickUrl, notifId);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, notifId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        ensureChannel();
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_emd_messenger)
+                .setContentTitle(conversation)
+                .setContentText(firstLine(body))
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setColor(orange);
+
+        Bitmap icon = fetchBitmap(iconUrl);
+        if (icon != null) builder.setLargeIcon(scaleSquareCenterCrop(icon, 192));
+
+        if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
+        else nm.notify(notifId, builder.build());
     }
 
     // =========================
@@ -216,11 +307,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         if (TextUtils.isEmpty(clickUrl)) clickUrl = "/training_event";
         if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
 
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setAction("OPEN_PUSH_" + notifId);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("path", clickUrl);
-        intent.setData(Uri.parse("emd://push" + clickUrl));
+        Intent intent = buildOpenIntent(clickUrl, notifId);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -272,11 +359,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         if (TextUtils.isEmpty(clickUrl)) clickUrl = "/member-home";
         if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
 
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setAction("OPEN_PUSH_" + notifId);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("path", clickUrl);
-        intent.setData(Uri.parse("emd://push" + clickUrl));
+        Intent intent = buildOpenIntent(clickUrl, notifId);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -340,11 +423,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         if (TextUtils.isEmpty(clickUrl)) clickUrl = "/vereinskalender-app";
         if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
 
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setAction("OPEN_PUSH_" + notifId);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("path", clickUrl);
-        intent.setData(Uri.parse("emd://push" + clickUrl));
+        Intent intent = buildOpenIntent(clickUrl, notifId);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -410,11 +489,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         if (TextUtils.isEmpty(clickUrl)) clickUrl = "/veranstaltungen";
         if (!clickUrl.startsWith("/")) clickUrl = "/" + clickUrl;
 
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setAction("OPEN_PUSH_" + notifId);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("path", clickUrl);
-        intent.setData(Uri.parse("emd://push" + clickUrl));
+        Intent intent = buildOpenIntent(clickUrl, notifId);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 this,
@@ -545,6 +620,56 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         } catch (Exception ignored) {}
     }
 
+    private boolean isMessengerInstalled() {
+        try {
+            getPackageManager().getPackageInfo(MESSENGER_PACKAGE, 0);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private Intent buildOpenIntent(String clickUrl, int notifId) {
+        String path = TextUtils.isEmpty(clickUrl) ? "/chat-app" : clickUrl;
+        if (!path.startsWith("/")) path = "/" + path;
+
+        // Alles innerhalb /chat-app gehört in die eigenständige EMD-Messenger-App.
+        // Fallback bleibt die Vereinsapp, falls der Messenger noch nicht installiert ist.
+        if (path.startsWith("/chat-app") && isMessengerInstalled()) {
+            Intent messengerIntent = new Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(EMD_WEB_ORIGIN + path)
+            );
+            messengerIntent.setPackage(MESSENGER_PACKAGE);
+            messengerIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            return messengerIntent;
+        }
+
+        Intent appIntent = new Intent(this, MainActivity.class);
+        appIntent.setAction("OPEN_PUSH_" + notifId);
+        appIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        appIntent.putExtra("path", path);
+        appIntent.setData(Uri.parse("emd://push" + path));
+        return appIntent;
+    }
+
+    private void publishConversationShortcut(String shortcutId, String conversation, String clickUrl, Bitmap avatar) {
+        try {
+            Intent shortcutIntent = buildOpenIntent(clickUrl, stableIdFrom("shortcut:" + shortcutId));
+
+            ShortcutInfoCompat.Builder b = new ShortcutInfoCompat.Builder(this, shortcutId)
+                    .setShortLabel(conversation)
+                    .setLongLabel(conversation)
+                    .setIntent(shortcutIntent)
+                    .setLongLived(true);
+            if (avatar != null) {
+                b.setIcon(IconCompat.createWithBitmap(avatar));
+            }
+
+            ShortcutManagerCompat.pushDynamicShortcut(this, b.build());
+        } catch (Exception ignored) {}
+    }
+
     private void ensureChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -666,6 +791,45 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
         int newH = Math.max(1, Math.round(h * ratio));
 
         return Bitmap.createScaledBitmap(src, newW, newH, true);
+    }
+
+    private static Bitmap createInitialsAvatar(String name, int size) {
+        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(out);
+
+        Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bg.setColor(0xFF25303A);
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, bg);
+
+        String initials = "?";
+        if (!TextUtils.isEmpty(name)) {
+            String clean = name.trim();
+            if (!clean.isEmpty()) {
+                String[] parts = clean.split("\\s+");
+                StringBuilder sb = new StringBuilder();
+
+                if (parts.length > 0 && !parts[0].isEmpty()) {
+                    sb.append(parts[0].substring(0, 1).toUpperCase());
+                }
+                if (parts.length > 1 && !parts[parts.length - 1].isEmpty()) {
+                    sb.append(parts[parts.length - 1].substring(0, 1).toUpperCase());
+                }
+
+                if (sb.length() > 0) initials = sb.toString();
+            }
+        }
+
+        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(0xFFF5B47B);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setFakeBoldText(true);
+        textPaint.setTextSize(size * 0.36f);
+
+        Paint.FontMetrics fm = textPaint.getFontMetrics();
+        float y = size / 2f - (fm.ascent + fm.descent) / 2f;
+        canvas.drawText(initials, size / 2f, y, textPaint);
+
+        return out;
     }
 
     private static Bitmap circleWithBorder(Bitmap src, int borderPx, int borderColor) {

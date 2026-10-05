@@ -8,7 +8,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.WindowInsets;
 import android.view.Window;
+import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.ValueCallback;
@@ -35,10 +38,60 @@ public class MainActivity extends Activity {
         Window window = getWindow();
         window.setStatusBarColor(Color.parseColor("#111820"));
         window.setNavigationBarColor(Color.parseColor("#050608"));
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+
+        /*
+         * WICHTIG:
+         * Die Systemleisten-Inset NICHT direkt als Padding auf die WebView setzen.
+         * Fixed/sticky Elemente in der Webseite rechnen sonst weiterhin mit dem
+         * vollen WebView-Viewport und landen auf Android 15 hinter der Navigation.
+         *
+         * Stattdessen bekommt ein nativer Root-Container das Status- und Bottom-Inset.
+         * Dadurch wird die WebView selbst wirklich kleiner und CSS bottom:0 /
+         * 100dvh endet oberhalb der Samsung-Navigationsleiste.
+         */
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(Color.parseColor("#050608"));
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.parseColor("#050608"));
-        setContentView(webView);
+        webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        webView.setVerticalScrollBarEnabled(false);
+        webView.setHorizontalScrollBarEnabled(false);
+
+        FrameLayout.LayoutParams webViewParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        );
+        root.addView(webView, webViewParams);
+        setContentView(root);
+
+        root.setOnApplyWindowInsetsListener((view, insets) -> {
+            int top = 0;
+            int bottom = 0;
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                android.graphics.Insets statusBars =
+                        insets.getInsets(WindowInsets.Type.statusBars());
+                android.graphics.Insets navBars =
+                        insets.getInsets(WindowInsets.Type.navigationBars());
+
+                top = statusBars.top;
+                bottom = navBars.bottom;
+            } else {
+                @SuppressWarnings("deprecation")
+                int legacyTop = insets.getSystemWindowInsetTop();
+                @SuppressWarnings("deprecation")
+                int legacyBottom = insets.getSystemWindowInsetBottom();
+
+                top = legacyTop;
+                bottom = legacyBottom;
+            }
+
+            view.setPadding(0, top, 0, bottom);
+            return insets;
+        });
+        root.requestApplyInsets();
 
         configureWebView();
 
@@ -59,6 +112,9 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+        settings.setSupportZoom(false);
 
         String currentUa = settings.getUserAgentString();
         settings.setUserAgentString(currentUa + " EMDMessenger/1.0");
