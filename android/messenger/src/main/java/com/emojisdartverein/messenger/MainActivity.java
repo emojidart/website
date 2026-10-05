@@ -1,8 +1,10 @@
 package com.emojisdartverein.messenger;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -14,6 +16,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
+import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -27,9 +30,11 @@ public class MainActivity extends Activity {
             "https://emojisdartverein.com/chat-app?source=messenger-app";
 
     private static final int FILE_CHOOSER_REQUEST = 7001;
+    private static final int MICROPHONE_PERMISSION_REQUEST = 7002;
 
     private WebView webView;
     private ValueCallback<Uri[]> fileChooserCallback;
+    private PermissionRequest pendingMicrophonePermissionRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,11 +47,11 @@ public class MainActivity extends Activity {
 
         /*
          * WICHTIG:
-         * Die Systemleisten-Inset NICHT direkt als Padding auf die WebView setzen.
+         * Den Systemleisten-Inset NICHT direkt als Padding auf die WebView setzen.
          * Fixed/sticky Elemente in der Webseite rechnen sonst weiterhin mit dem
          * vollen WebView-Viewport und landen auf Android 15 hinter der Navigation.
          *
-         * Stattdessen bekommt ein nativer Root-Container das Status- und Bottom-Inset.
+         * Stattdessen bekommt ein nativer Root-Container das Bottom-Inset.
          * Dadurch wird die WebView selbst wirklich kleiner und CSS bottom:0 /
          * 100dvh endet oberhalb der Samsung-Navigationsleiste.
          */
@@ -67,28 +72,19 @@ public class MainActivity extends Activity {
         setContentView(root);
 
         root.setOnApplyWindowInsetsListener((view, insets) -> {
-            int top = 0;
             int bottom = 0;
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                android.graphics.Insets statusBars =
-                        insets.getInsets(WindowInsets.Type.statusBars());
                 android.graphics.Insets navBars =
                         insets.getInsets(WindowInsets.Type.navigationBars());
-
-                top = statusBars.top;
                 bottom = navBars.bottom;
             } else {
                 @SuppressWarnings("deprecation")
-                int legacyTop = insets.getSystemWindowInsetTop();
-                @SuppressWarnings("deprecation")
                 int legacyBottom = insets.getSystemWindowInsetBottom();
-
-                top = legacyTop;
                 bottom = legacyBottom;
             }
 
-            view.setPadding(0, top, 0, bottom);
+            view.setPadding(0, 0, 0, bottom);
             return insets;
         });
         root.requestApplyInsets();
@@ -124,6 +120,44 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
 
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(PermissionRequest request) {
+                runOnUiThread(() -> {
+                    if (request == null || request.getOrigin() == null) return;
+
+                    Uri origin = request.getOrigin();
+                    boolean allowedOrigin =
+                            "https".equalsIgnoreCase(origin.getScheme())
+                                    && HOST.equalsIgnoreCase(origin.getHost());
+
+                    boolean asksForAudio = false;
+                    for (String resource : request.getResources()) {
+                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
+                            asksForAudio = true;
+                            break;
+                        }
+                    }
+
+                    if (!allowedOrigin || !asksForAudio) {
+                        request.deny();
+                        return;
+                    }
+
+                    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M
+                            || checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                            == PackageManager.PERMISSION_GRANTED) {
+                        request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                        return;
+                    }
+
+                    pendingMicrophonePermissionRequest = request;
+                    requestPermissions(
+                            new String[]{Manifest.permission.RECORD_AUDIO},
+                            MICROPHONE_PERMISSION_REQUEST
+                    );
+                });
+            }
+
             @Override
             public boolean onShowFileChooser(
                     WebView webView,
@@ -179,6 +213,31 @@ public class MainActivity extends Activity {
         });
 
         webView.setOnLongClickListener(v -> false);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode,
+            String[] permissions,
+            int[] grantResults
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode != MICROPHONE_PERMISSION_REQUEST) return;
+
+        PermissionRequest request = pendingMicrophonePermissionRequest;
+        pendingMicrophonePermissionRequest = null;
+        if (request == null) return;
+
+        boolean granted =
+                grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+
+        if (granted) {
+            request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+        } else {
+            request.deny();
+        }
     }
 
     private boolean handleNavigation(String url) {

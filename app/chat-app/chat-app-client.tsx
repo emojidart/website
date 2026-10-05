@@ -39,6 +39,8 @@ import {
   Trash2,
   Newspaper,
   ClipboardList,
+  Mic,
+  Square,
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, ChangeEvent } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -48,6 +50,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import ChatLineupPanel from "./chat-lineup-panel";
 import ChatUpdatesPanel from "./chat-updates-panel";
 import ChatMatchCard, { MATCH_CARD_PREFIX, parseChatMatchCardMessage } from "./chat-match-card";
+import ChatMatchDayBar from "./chat-match-day-bar";
+import ChatVoiceMessage from "./chat-voice-message";
 
 type ChatScope = "team" | "captains" | "club" | "freizeit" | "vorstand" | "community" | "test";
 
@@ -397,6 +401,17 @@ export default function TeamChatPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [roomReady, setRoomReady] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // WhatsApp-style Sprachnachrichten
+  const [voiceRecording, setVoiceRecording] = useState(false);
+  const [voiceSeconds, setVoiceSeconds] = useState(0);
+  const [voiceSending, setVoiceSending] = useState(false);
+  const voiceRecorderRef = useRef<MediaRecorder | null>(null);
+  const voiceStreamRef = useRef<MediaStream | null>(null);
+  const voiceChunksRef = useRef<Blob[]>([]);
+  const voiceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const voiceStartedAtRef = useRef<number>(0);
+  const voiceCancelRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesViewportRef = useRef<HTMLDivElement>(null);
@@ -885,6 +900,7 @@ export default function TeamChatPage() {
     if (!preview) return "Noch keine Nachrichten";
     if ((preview.message || "").startsWith(MATCH_CARD_PREFIX)) return "📋 Spiel & Zusage";
     if (preview.message_type === "poll") return "📊 Umfrage";
+    if (preview.attachment_type?.startsWith("audio/")) return "🎤 Sprachnachricht";
     if (preview.attachment_name) {
       if (preview.attachment_type?.startsWith("image/"))
         return `📷 ${preview.attachment_name}`;
@@ -1108,6 +1124,210 @@ export default function TeamChatPage() {
       attachment_size: file.size,
     };
   };
+
+
+  const stopVoiceTracks = () => {
+    voiceStreamRef.current?.getTracks().forEach((track) => track.stop());
+    voiceStreamRef.current = null;
+    if (voiceTimerRef.current) {
+      clearInterval(voiceTimerRef.current);
+      voiceTimerRef.current = null;
+    }
+  };
+
+  const formatVoiceDuration = (seconds: number) => {
+    const s = Math.max(0, Math.floor(seconds));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  };
+
+  const sendVoiceBlob = async (blob: Blob, seconds: number) => {
+    if (!profile?.id || !currentRoomId || voiceSending) return;
+    if (blob.size < 300) {
+      toast({
+        title: "Aufnahme zu kurz",
+        description: "Bitte etwas länger sprechen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setVoiceSending(true);
+    try {
+      const ext = blob.type.includes("mp4") ? "m4a" : "webm";
+      const file = new File(
+        [blob],
+        `sprachnachricht-${Date.now()}.${ext}`,
+        { type: blob.type || "audio/webm" },
+      );
+      const attachmentData = await uploadAttachment(file);
+
+      const { error } = await supabase.from("chat_messages").insert({
+        user_id: profile.id,
+        message: "",
+        room_id: currentRoomId,
+        scope: selectedScope,
+        reply_to_message_id: replyToMessage?.id ?? null,
+        ...attachmentData,
+        attachment_name: `Sprachnachricht · ${formatVoiceDuration(seconds)}`,
+      });
+
+      if (error) throw error;
+
+      setReplyToMessage(null);
+      setEditingMessage(null);
+      markCurrentAsVisited();
+      fetchLastMessagePreviews();
+
+      const token = session?.access_token;
+      if (token) {
+        fetch("/api/push/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            room_id: currentRoomId,
+            scope: selectedScope,
+            message: `🎤 Sprachnachricht · ${formatVoiceDuration(seconds)}`,
+            sender_profile_id: profile.id,
+          }),
+        }).catch(() => {});
+      }
+    } catch (error: any) {
+      console.error("voice message error", error);
+      toast({
+        title: "Sprachnachricht fehlgeschlagen",
+        description: error?.message || "Die Aufnahme konnte nicht gesendet werden.",
+        variant: "destructive",
+      });
+    } finally {
+      setVoiceSending(false);
+    }
+  };
+
+  const startVoiceRecording = async () => {
+    if (voiceRecording || voiceSending || sending || !profile?.id || !currentRoomId) return;
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      toast({
+        title: "Mikrofon nicht verfügbar",
+        description: "Auf diesem Gerät wird die Audioaufnahme noch nicht unterstützt.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      const mimeCandidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+      ];
+      const mimeType =
+        mimeCandidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) || "";
+
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+
+      voiceStreamRef.current = stream;
+      voiceRecorderRef.current = recorder;
+      voiceChunksRef.current = [];
+      voiceCancelRef.current = false;
+      voiceStartedAtRef.current = Date.now();
+      setVoiceSeconds(0);
+
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          voiceChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onerror = () => {
+        stopVoiceTracks();
+        setVoiceRecording(false);
+        toast({
+          title: "Mikrofonfehler",
+          description: "Die Aufnahme wurde unterbrochen.",
+          variant: "destructive",
+        });
+      };
+
+      recorder.onstop = async () => {
+        const seconds = Math.max(
+          1,
+          Math.round((Date.now() - voiceStartedAtRef.current) / 1000),
+        );
+        const blob = new Blob(voiceChunksRef.current, {
+          type: recorder.mimeType || mimeType || "audio/webm",
+        });
+        const shouldCancel = voiceCancelRef.current;
+
+        stopVoiceTracks();
+        voiceRecorderRef.current = null;
+        voiceChunksRef.current = [];
+        setVoiceRecording(false);
+        setVoiceSeconds(0);
+
+        if (!shouldCancel) {
+          await sendVoiceBlob(blob, seconds);
+        }
+      };
+
+      recorder.start(250);
+      setVoiceRecording(true);
+      voiceTimerRef.current = setInterval(() => {
+        const seconds = Math.floor((Date.now() - voiceStartedAtRef.current) / 1000);
+        setVoiceSeconds(seconds);
+
+        // Maximal 3 Minuten pro Sprachnachricht.
+        if (seconds >= 180 && voiceRecorderRef.current?.state === "recording") {
+          voiceRecorderRef.current.stop();
+        }
+      }, 250);
+    } catch (error: any) {
+      stopVoiceTracks();
+      setVoiceRecording(false);
+      const denied =
+        error?.name === "NotAllowedError" ||
+        error?.name === "PermissionDeniedError";
+
+      toast({
+        title: denied ? "Mikrofon nicht freigegeben" : "Aufnahme nicht möglich",
+        description: denied
+          ? "Bitte Mikrofonzugriff für den EMD Messenger erlauben."
+          : error?.message || "Das Mikrofon konnte nicht gestartet werden.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const finishVoiceRecording = (send: boolean) => {
+    const recorder = voiceRecorderRef.current;
+    if (!recorder || recorder.state === "inactive") return;
+    voiceCancelRef.current = !send;
+    recorder.stop();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (voiceRecorderRef.current && voiceRecorderRef.current.state !== "inactive") {
+        voiceCancelRef.current = true;
+        voiceRecorderRef.current.stop();
+      }
+      stopVoiceTracks();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadPollDataForMessages = async (messageRows: ChatMessage[]) => {
     const pollMessages = messageRows.filter((m) => m.message_type === "poll");
@@ -3478,6 +3698,24 @@ export default function TeamChatPage() {
                       </div>
                     </CardHeader>
 
+                    {selectedScope === "team" && selectedRoom?.team_id ? (
+                      <ChatMatchDayBar
+                        teamId={selectedRoom.team_id}
+                        onOpenLineup={(matchId, teamId) => {
+                          setAppSection("lineup");
+                          setMobileChatOpen(false);
+                          router.push(
+                            `/chat-app?tab=aufstellung&match_id=${encodeURIComponent(matchId)}&team_id=${encodeURIComponent(teamId)}`,
+                          );
+                        }}
+                        onOpenUpdates={() => {
+                          setAppSection("updates");
+                          setMobileChatOpen(false);
+                          router.push("/chat-app?tab=aktuell");
+                        }}
+                      />
+                    ) : null}
+
                     <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
                       {selectedScope === "team" && !selectedRoom ? (
                         <div
@@ -3666,6 +3904,14 @@ export default function TeamChatPage() {
                                               </div>
                                             </button>
                                           )}
+
+                                          {message.attachment_url &&
+                                            message.attachment_type?.startsWith("audio/") && (
+                                              <ChatVoiceMessage
+                                                src={message.attachment_url}
+                                                own={isOwnMessage}
+                                              />
+                                            )}
 
                                           {message.attachment_url &&
                                             isImageFile(
@@ -4062,6 +4308,37 @@ export default function TeamChatPage() {
                                 </div>
                               )}
 
+                              {voiceRecording ? (
+                                <div className="flex items-center gap-2 rounded-2xl border border-red-300/15 bg-red-500/[0.07] px-3 py-2.5">
+                                  <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-400" />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-xs font-black text-red-100">Sprachnachricht</div>
+                                    <div className="mt-0.5 font-mono text-[11px] font-bold text-white/55">
+                                      {formatVoiceDuration(voiceSeconds)} · Aufnahme läuft
+                                    </div>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => finishVoiceRecording(false)}
+                                    className="h-9 rounded-xl px-3 text-xs font-black text-white/55 hover:bg-white/[0.07] hover:text-white"
+                                  >
+                                    <Trash2 className="mr-1.5 h-4 w-4" />
+                                    Löschen
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => finishVoiceRecording(true)}
+                                    className="h-9 rounded-xl bg-orange-500 px-3 text-xs font-black text-white hover:bg-orange-400"
+                                  >
+                                    <Send className="mr-1.5 h-4 w-4" />
+                                    Senden
+                                  </Button>
+                                </div>
+                              ) : null}
+
                               <div className="relative flex items-end gap-1.5">
                                 <input
                                   ref={fileInputRef}
@@ -4138,6 +4415,27 @@ export default function TeamChatPage() {
                                   className={`flex-1 text-sm ${WA.input}`}
                                 />
 
+                                {!editingMessage &&
+                                  !voiceRecording &&
+                                  !newMessage.trim() &&
+                                  selectedFiles.length === 0 ? (
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      onClick={() => void startVoiceRecording()}
+                                      disabled={voiceSending || sending || !profile?.id}
+                                      className={`${WA.sendBtn} bg-[#25303a] text-orange-200 hover:bg-[#2d3944]`}
+                                      aria-label="Sprachnachricht aufnehmen"
+                                      title="Sprachnachricht"
+                                    >
+                                      {voiceSending ? (
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-b-white" />
+                                      ) : (
+                                        <Mic className="h-[19px] w-[19px]" />
+                                      )}
+                                    </Button>
+                                  ) : null}
+
                                 <Button
                                   onClick={submitComposer}
                                   disabled={
@@ -4148,7 +4446,13 @@ export default function TeamChatPage() {
                                         !profile?.id)
                                   }
                                   size="icon"
-                                  className={WA.sendBtn}
+                                  className={`${WA.sendBtn} ${
+                                    !editingMessage &&
+                                    !newMessage.trim() &&
+                                    selectedFiles.length === 0
+                                      ? "hidden"
+                                      : ""
+                                  }`}
                                 >
                                   {sending ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
