@@ -1272,15 +1272,15 @@ const fetchProfile = async () => {
   const openMessengerInstall = () => {
     if (typeof window === "undefined") return
 
-    const nativeBridge = (window as any).AndroidEMD
+    const apkUrl = "https://emojisdartverein.com/downloads/emd-messenger.apk"
 
-    if (nativeBridge?.openExternalMessengerPage) {
-      nativeBridge.openExternalMessengerPage()
-      return
-    }
-
-    // Normaler Browser/PC-Fallback
-    window.open("https://emojisdartverein.com/messenger", "_blank", "noopener,noreferrer")
+    const link = document.createElement("a")
+    link.href = apkUrl
+    link.download = "emd-messenger.apk"
+    link.rel = "noopener"
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   }
 
   const handleLogout = async () => {
