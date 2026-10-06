@@ -802,13 +802,12 @@ function TvHeader({
 }) {
   const kickerTone = accent === "red" ? "text-red-300/80" : accent === "cyan" ? "text-cyan-200/80" : "text-orange-300/80"
   return (
-    <header className="relative z-10 flex min-h-[12.4vh] items-center justify-between gap-8 py-[1.15vh]">
+    <header className="relative z-10 flex min-h-[12.4vh] items-center justify-between gap-8 overflow-hidden rounded-[1.7vw] border border-white/[.085] bg-black/30 px-[1.6vw] py-[1.7vh] shadow-[0_24px_70px_rgba(0,0,0,.25)] backdrop-blur-xl">
       <div className="min-w-0 py-[.35vh]">
         <div className={`text-[clamp(.68rem,.82vw,.9rem)] font-black uppercase tracking-[.32em] ${kickerTone}`}>{kicker}</div>
         <h1 className="mt-[.7vh] text-[clamp(2.8rem,4.6vw,5.45rem)] font-black leading-[.94] tracking-[-.065em] text-white">{title}</h1>
       </div>
       {right ? <div className="flex shrink-0 items-center self-stretch">{right}</div> : null}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-white/[.10] via-white/[.055] to-transparent" />
     </header>
   )
 }
