@@ -137,9 +137,11 @@ export default function AppThemeShell({ children }: { children: ReactNode }) {
     return <>{children}</>
   }
 
+  const disableTouchFx = pathname.startsWith("/chat-app")
+
   return (
     <div className="emd-app-theme-shell">
-      <AppTouchFeedback />
+      {!disableTouchFx && <AppTouchFeedback />}
       {children}
     </div>
   )

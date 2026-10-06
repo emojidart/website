@@ -72,19 +72,31 @@ public class MainActivity extends Activity {
         setContentView(root);
 
         root.setOnApplyWindowInsetsListener((view, insets) -> {
+            int top = 0;
             int bottom = 0;
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                android.graphics.Insets navBars =
-                        insets.getInsets(WindowInsets.Type.navigationBars());
-                bottom = navBars.bottom;
+                android.graphics.Insets bars = insets.getInsets(
+                        WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars()
+                );
+                top = bars.top;
+                bottom = bars.bottom;
             } else {
                 @SuppressWarnings("deprecation")
+                int legacyTop = insets.getSystemWindowInsetTop();
+                @SuppressWarnings("deprecation")
                 int legacyBottom = insets.getSystemWindowInsetBottom();
+                top = legacyTop;
                 bottom = legacyBottom;
             }
 
-            view.setPadding(0, 0, 0, bottom);
+            /*
+             * Android 15 erzwingt Edge-to-Edge stärker.
+             * Deshalb bekommt der NATIVE Root-Container oben UND unten die echten
+             * Systemleisten-Inset-Werte. So liegen Chatname, "Aktuell" und
+             * "Aufstellung" nie wieder unter/zu nah an der Statusleiste.
+             */
+            view.setPadding(0, top, 0, bottom);
             return insets;
         });
         root.requestApplyInsets();

@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
 
     const tag = `emd-lineup-confirmation:${teamId}:${matchId}:${recipient}`
 
-    // Zusätzlich zum nativen Push einen kurzlebigen Live-Alarm für den offenen Messenger erzeugen.
+    // Zusätzlich zum nativen Push einen persistenten Live-Alarm für den Messenger erzeugen.
     // RLS sorgt dafür, dass nur die konkreten Empfänger diesen Datensatz sehen.
     const liveAlertBody = `Aufstellung noch nicht bestätigt!\n${homeName} vs. ${awayName}\n${whenText}`
     const { error: liveAlertError } = await supabase.from("emd_live_alerts").insert({
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
       title: "🚨 EMD ALERT",
       body: liveAlertBody,
       click_url: clickUrl,
-      expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     })
 
     if (liveAlertError) {

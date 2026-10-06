@@ -29,6 +29,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(MessengerShortcutPlugin.class);
+        registerPlugin(MessengerDownloadPlugin.class);
         super.onCreate(savedInstanceState);
 
         // Native Capacitor plugin for Messenger shortcut.

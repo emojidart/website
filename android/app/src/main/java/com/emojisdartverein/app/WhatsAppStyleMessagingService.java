@@ -214,7 +214,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setColor(orange)
-                .setColorized(true)
+                .setColorized(false)
                 .setGroup(GROUP_KEY_CHAT)
                 .addAction(replyAction);
 
@@ -231,7 +231,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setColor(orange)
-                .setColorized(true)
+                .setColorized(false)
                 .setGroup(GROUP_KEY_CHAT)
                 .setGroupSummary(true);
 
@@ -330,7 +330,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setColor(orange)
-                .setColorized(true);
+                .setColorized(false);
 
         if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
         else nm.notify(notifId, builder.build());
@@ -382,7 +382,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setColor(orange)
-                .setColorized(true);
+                .setColorized(false);
 
         Bitmap bmp = fetchBitmap(imageUrl);
         if (bmp != null) {
@@ -447,7 +447,7 @@ public class WhatsAppStyleMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setColor(orange)
-                .setColorized(true);
+                .setColorized(false);
 
         if (!TextUtils.isEmpty(tag)) nm.notify(tag, notifId, builder.build());
         else nm.notify(notifId, builder.build());

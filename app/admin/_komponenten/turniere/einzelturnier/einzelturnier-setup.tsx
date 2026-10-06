@@ -107,6 +107,10 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
   const seriesId = searchParams.get("seriesId")
   const eventId = searchParams.get("eventId")
   const centralEventId = searchParams.get("centralEventId")
+
+  // Für Serien-Spieltage kommt die Anmeldung über eventId, für zentrale Turniere über centralEventId.
+  // Beide müssen dieselbe Registrierungslogik verwenden, sonst werden fälschlich event_id=NULL Datensätze geladen/gespeichert.
+  const registrationEventId = centralEventId ?? eventId
   const centralMode = searchParams.get("mode")
   const centralDoubleEntry = searchParams.get("doubleEntry")
   const centralDoubleMode = searchParams.get("doubleMode")
@@ -170,7 +174,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     fetchFrequentPlayers,
   } = useEinzelturnierSetupDaten({
     seriesId,
-    centralEventId,
+    centralEventId: registrationEventId,
     tournamentName,
     tournamentEntryFee,
     tournamentAccessType,
@@ -212,7 +216,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     tournamentAccessType,
     tournamentFormCompleted,
     allowDoubleEntry,
-    centralEventId,
+    centralEventId: registrationEventId,
     doublePlayer1Id,
     doublePlayer2Id,
     setDoublePlayer1Id,
@@ -280,7 +284,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     try {
       await cancelActiveTournamentData({
         tournamentId: activeTournament.tournamentId,
-        centralEventId,
+        centralEventId: registrationEventId,
       })
 
       setActiveTournament(null)

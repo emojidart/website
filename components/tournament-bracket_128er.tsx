@@ -1564,7 +1564,7 @@ const applyCompletedMatch = (
       await clearTournamentRegistration(seriesId, eventId)
 
       setSuccessDialogOpen(false)
-      router.push("/dko_tournament_registration")
+      router.push("/admin/einzelturnier")
     } catch (error) {
       console.error("Fehler beim Speichern zur Turnierserie:", error)
       alert("Fehler beim Speichern zur Turnierserie. Bitte versuche es erneut.")
@@ -2003,7 +2003,7 @@ const confirmMatch = async (matchId: number) => {
     await deleteRankingsFromDatabase(tournamentType, tournamentId)
     await deleteFreiloseFromDatabase(tournamentType, tournamentId)
     await clearTournamentRegistration(seriesId, eventId)
-    router.push("/dko_tournament_registration")
+    router.push("/admin/einzelturnier")
   }
 
   const resetMatch = async (matchId: number) => {
@@ -3018,7 +3018,7 @@ const openBeamer = () => {
                     await markTournamentAsCompleted(tournamentId)
                     await deleteFreiloseFromDatabase(tournamentType, tournamentId)
                     await clearTournamentRegistration(seriesId, eventId)
-                    router.push("/dko_tournament_registration")
+                    router.push("/admin/einzelturnier")
                   }}
                   disabled={Boolean(seriesId) && savingToSeries}
                   size="lg"

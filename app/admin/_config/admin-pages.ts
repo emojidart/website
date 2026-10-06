@@ -124,6 +124,7 @@ export const ADMIN_PAGES: AdminPageDefinition[] = [
     description: "Ergebnisse, Historie und Verwaltung",
     category: "tournaments",
     icon: Trophy,
+    showOnDashboard: false,
   },
   {
     key: "history",
@@ -147,6 +148,7 @@ export const ADMIN_PAGES: AdminPageDefinition[] = [
     description: "Einstufungen für den Members Cup verwalten",
     category: "tournaments",
     icon: Trophy,
+    showOnDashboard: false,
   },
   {
     key: "internal-events",
@@ -154,6 +156,7 @@ export const ADMIN_PAGES: AdminPageDefinition[] = [
     description: "Interne Specials und Anmeldungen verwalten",
     category: "tournaments",
     icon: UserPlus,
+    showOnDashboard: false,
   },
 
   {

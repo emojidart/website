@@ -1,7 +1,16 @@
 "use client"
 
-import { EinzelturnierSetup } from "@/app/admin/_komponenten/turniere/einzelturnier/einzelturnier-setup"
+import { useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 
-export default function Page() {
-  return <EinzelturnierSetup />
+export default function LegacyDkoTournamentRegistrationPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const query = searchParams.toString()
+    router.replace(`/admin/einzelturnier${query ? `?${query}` : ""}`)
+  }, [router, searchParams])
+
+  return null
 }

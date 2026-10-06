@@ -611,7 +611,7 @@ export default function EmdTvScreenPage() {
   }, [slides.length])
 
   useEffect(() => {
-    if (!assetsReady || brandBreak || active.dko || active.kratzer || slides.length <= 1 || currentSlide?.kind === "lineup") return
+    if (!assetsReady || brandBreak || active.dko || active.kratzer || slides.length <= 1 || currentSlide?.kind === "lineup" || currentSlide?.kind === "league-results") return
     const timer = window.setTimeout(advanceSlide, NORMAL_SLIDE_MS)
     return () => window.clearTimeout(timer)
   }, [assetsReady, brandBreak, active.dko, active.kratzer, currentSlide?.kind, slideIndex, slides.length, advanceSlide])
@@ -708,6 +708,25 @@ export default function EmdTvScreenPage() {
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#030303] text-white" onClick={tryFullscreen}>
+      <style jsx global>{`
+        @keyframes emdBroadcastWipe {
+          0% { transform: translate3d(-120%,0,0) skewX(-12deg); opacity: 0; }
+          10% { opacity: 1; }
+          55% { opacity: 1; }
+          100% { transform: translate3d(125%,0,0) skewX(-12deg); opacity: 0; }
+        }
+        @keyframes emdBroadcastLine {
+          0% { transform: scaleX(0); opacity: 0; }
+          25% { opacity: 1; }
+          70% { transform: scaleX(1); opacity: .9; }
+          100% { transform: scaleX(1); opacity: 0; }
+        }
+        .emd-broadcast-wipe { animation: emdBroadcastWipe .58s cubic-bezier(.2,.8,.2,1) both; will-change: transform, opacity; }
+        .emd-broadcast-line { animation: emdBroadcastLine .62s ease-out both; transform-origin: left center; will-change: transform, opacity; }
+        @media (prefers-reduced-motion: reduce) {
+          .emd-broadcast-wipe,.emd-broadcast-line { animation: none !important; }
+        }
+      `}</style>
       <div className="absolute inset-x-0 top-0 z-[80] flex h-[72px] items-center justify-between border-b border-white/[.06] bg-black/90 px-[3.2vw] shadow-[0_8px_30px_rgba(0,0,0,.35)]">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5">
@@ -736,31 +755,20 @@ export default function EmdTvScreenPage() {
           <iframe src="/beamer" title="EMD TV Live" className="h-full w-full border-0 bg-black" allow="autoplay; fullscreen" allowFullScreen />
         ) : brandBreak && loaded && assetsReady ? (
           <section className="absolute inset-0 overflow-hidden bg-[#030303]">
-            <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.25]" />
+            <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.80]" />
             <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.98),rgba(5,5,6,.91)_48%,rgba(17,8,2,.77))]" />
             <div className="absolute left-[-10vw] top-[10vh] h-[42vw] w-[42vw] rounded-full bg-orange-500/[.08] blur-[7vw]" />
             <div className="absolute inset-0 grid place-items-center px-[5vw] text-center">
-              <div className="relative flex min-h-[52vh] min-w-[58vw] items-center justify-center">
-                <div className="pointer-events-none absolute left-1/2 top-1/2 h-[39vh] w-[46vw] -translate-x-1/2 -translate-y-[48%]">
-                  {/* deutlich sichtbarer TV-Rahmen */}
-                  <div className="absolute left-1/2 top-[-7.4vh] h-[13vh] w-[2.6px] origin-bottom -translate-x-[5.7vw] rotate-[-43deg] rounded-full bg-gradient-to-t from-orange-300/55 via-white/50 to-white/10 shadow-[0_0_10px_rgba(251,146,60,.18)]" />
-                  <div className="absolute left-1/2 top-[-7.4vh] h-[13vh] w-[2.6px] origin-bottom translate-x-[5.7vw] rotate-[43deg] rounded-full bg-gradient-to-t from-orange-300/55 via-white/50 to-white/10 shadow-[0_0_10px_rgba(251,146,60,.18)]" />
-
-                  <div className="absolute inset-0 rounded-[3.6vw] border-[3px] border-white/[.17] bg-black/20 shadow-[inset_0_0_0_2px_rgba(251,146,60,.10),0_0_65px_rgba(251,146,60,.055)]" />
-                  <div className="absolute inset-[1.15vw] rounded-[2.55vw] border-[2px] border-orange-300/[.12]" />
-
-                  {/* TV-Standfüße */}
-                  <div className="absolute -bottom-[2.6vh] left-[8.8vw] h-[2.8vh] w-[5.6vw] -skew-x-[18deg] rounded-b-[10px] bg-gradient-to-b from-white/[.16] to-orange-400/[.12]" />
-                  <div className="absolute -bottom-[2.6vh] right-[8.8vw] h-[2.8vh] w-[5.6vw] skew-x-[18deg] rounded-b-[10px] bg-gradient-to-b from-white/[.16] to-orange-400/[.12]" />
-
-                  {/* kleiner Power-Punkt macht den Fernseher sofort erkennbar */}
-                  <div className="absolute bottom-[1.8vw] right-[2.2vw] h-[9px] w-[9px] rounded-full bg-orange-400/80 shadow-[0_0_14px_rgba(251,146,60,.8)]" />
-                </div>
-
+              <div className="relative flex min-h-[52vh] items-center justify-center">
                 <div className="relative z-10">
-                  <div className="text-[clamp(4rem,8vw,9rem)] font-black leading-none tracking-[-.075em] text-white drop-shadow-[0_6px_30px_rgba(0,0,0,.65)]">EMD <span className="text-orange-400">TV</span></div>
-                  <div className="mx-auto mt-[2.8vh] h-[4px] w-[11vw] bg-orange-400 shadow-[0_0_30px_rgba(251,146,60,.55)]" />
-                  <div className="mt-[2.6vh] text-[clamp(.72rem,1vw,1.05rem)] font-black uppercase tracking-[.42em] text-white/42">Emoji Darts · Salzburg</div>
+                  <div className="flex items-center justify-center gap-[1.5vw]">
+                    <div className="text-[clamp(5rem,10vw,11.5rem)] font-black leading-none tracking-[-.075em] text-white drop-shadow-[0_8px_38px_rgba(0,0,0,.75)]">
+                      EMD <span className="text-orange-400">TV</span>
+                    </div>
+                  </div>
+
+                  <div className="mx-auto mt-[3.2vh] h-[4px] w-[13vw] bg-orange-400 shadow-[0_0_34px_rgba(251,146,60,.60)]" />
+                  <div className="mt-[2.8vh] text-[clamp(.78rem,1.08vw,1.15rem)] font-black uppercase tracking-[.46em] text-white/46">Emoji Darts · Salzburg</div>
                 </div>
               </div>
             </div>
@@ -803,7 +811,7 @@ export default function EmdTvScreenPage() {
           <div className="absolute inset-0 overflow-hidden bg-[#030303]">
             <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.24]" />
             <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(0,0,0,.97),rgba(5,5,6,.88)_50%,rgba(17,8,2,.78))]" />
-            <div className="relative z-10 h-full"><SportdartsResultsTv games={tvResults.slice(0, 6)} /></div>
+            <div className="relative z-10 h-full"><SportdartsResultsTv games={tvResults.slice(0, 6)} onComplete={advanceSlide} /></div>
           </div>
         ) : (
           <>
@@ -956,6 +964,17 @@ export default function EmdTvScreenPage() {
       </div>
           </>
         )}
+
+        {!active.dko && !active.kratzer && loaded && assetsReady ? (
+          <div
+            key={`broadcast-${brandBreak ? "brand" : currentSlide?.kind || "none"}-${slideIndex}`}
+            className="pointer-events-none absolute inset-0 z-[70] overflow-hidden"
+            aria-hidden="true"
+          >
+            <div className="emd-broadcast-wipe absolute inset-y-0 left-0 w-[30%] bg-gradient-to-r from-transparent via-orange-400/70 to-orange-200/8 shadow-[0_0_40px_rgba(251,146,60,.18)]" />
+            <div className="emd-broadcast-line absolute left-[4vw] right-[4vw] top-[7px] h-[2px] bg-gradient-to-r from-orange-400 via-orange-300/70 to-transparent" />
+          </div>
+        ) : null}
       </div>
     </main>
   )

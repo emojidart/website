@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
+import ChatCarpool from "./chat-carpool";
 import { Button } from "@/components/ui/button";
 
 export const MATCH_CARD_PREFIX = "[[EMD_MATCH_CARD|";
@@ -471,6 +472,8 @@ export default function ChatMatchCard({
             ) : null}
           </div>
         ) : null}
+
+        <ChatCarpool matchId={matchId} teamId={teamId} locked={locked} />
 
         <Button
           type="button"

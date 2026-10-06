@@ -3657,7 +3657,21 @@ export default function TeamChatPage() {
 
   return (
     <div className={`relative h-[100dvh] flex flex-col overflow-hidden ${WA.appBg}`}>
-      <ChatGlobalAlert />
+      <ChatGlobalAlert
+        sectionKey={appSection}
+        onOpenLineup={(matchId, teamId) => {
+          setMobileChatOpen(false);
+          setAppSection("lineup");
+
+          const params = new URLSearchParams();
+          params.set("tab", "aufstellung");
+          if (matchId) params.set("match_id", matchId);
+          if (teamId) params.set("team_id", teamId);
+          if (isMessengerApp) params.set("source", "messenger-app");
+
+          router.replace(`/chat-app?${params.toString()}`);
+        }}
+      />
       <div className="pointer-events-none fixed inset-0 z-0 hidden">
         <div
           className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.18]"

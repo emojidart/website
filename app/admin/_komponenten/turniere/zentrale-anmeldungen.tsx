@@ -1209,7 +1209,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
           teamMode: mode === "dko" ? teamMode : "single",
           doubleMode: "0",
         })
-        router.push(`/dko_tournament_registration?${params.toString()}`)
+        router.push(`/admin/einzelturnier?${params.toString()}`)
         return
       }
 

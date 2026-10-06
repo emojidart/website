@@ -704,7 +704,7 @@ const todaysRegistrations = useMemo(() => {
                                 continueHref={
                                   isMembersChampionCup
                                     ? `/admin/members-champion-cup/auslosung?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
-                                    : `/dko_tournament_registration?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
+                                    : `/admin/einzelturnier?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
                                 }
                                 continueLabel={isMembersChampionCup ? "Auslosung öffnen" : "Turniertag starten"}
                               />
@@ -719,7 +719,7 @@ const todaysRegistrations = useMemo(() => {
                                   }
 
                                   router.push(
-                                    `/dko_tournament_registration?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
+                                    `/admin/einzelturnier?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
                                   )
                                 }}
                                 disabled={!canStart}

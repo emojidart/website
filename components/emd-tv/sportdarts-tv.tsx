@@ -167,6 +167,61 @@ function msUntilNextLiveWindow(date = new Date()) {
   return Math.max(1000, next.getTime() - date.getTime())
 }
 
+function tvPlayerImageUrl(src: string | null, width = 900, height = 1200, quality = 72) {
+  if (!src) return null
+  try {
+    const u = new URL(src)
+    const marker = "/storage/v1/object/public/"
+    if (!u.pathname.includes(marker)) return src
+    u.pathname = u.pathname.replace(marker, "/storage/v1/render/image/public/")
+    u.searchParams.set("width", String(width))
+    u.searchParams.set("height", String(height))
+    u.searchParams.set("quality", String(quality))
+    u.searchParams.set("resize", "contain")
+    return u.toString()
+  } catch {
+    return src
+  }
+}
+
+function preloadTvImage(src: string, fallbackSrc?: string, timeoutMs = 9000) {
+  return new Promise<HTMLImageElement | null>((resolve) => {
+    const img = new Image()
+    img.decoding = "sync"
+    img.loading = "eager"
+    img.fetchPriority = "high"
+    let done = false
+
+    const finish = async () => {
+      if (done) return
+      done = true
+      try { await img.decode?.() } catch {}
+      resolve(img)
+    }
+
+    const timeout = window.setTimeout(() => void finish(), timeoutMs)
+    img.onload = () => {
+      window.clearTimeout(timeout)
+      void finish()
+    }
+    img.onerror = () => {
+      if (fallbackSrc && img.src !== fallbackSrc) {
+        img.src = fallbackSrc
+        return
+      }
+      window.clearTimeout(timeout)
+      if (!done) {
+        done = true
+        resolve(null)
+      }
+    }
+    img.src = src
+  })
+}
+
+const tvGameDetailCache = new Map<string, GameDetail | null>()
+let clubPlayerPhotoCache: Map<string, string> | null = null
+
 function normalizeTeam(value?: string | null) {
   return (value || "")
     .replace(/&amp;/g, "&")
@@ -695,6 +750,45 @@ function TvBackdrop({ tone }: { tone: "live" | "orange" | "cyan" }) {
   )
 }
 
+function TvBroadcastMotion() {
+  return (
+    <style jsx global>{`
+      @keyframes emdTvEnter {
+        from { opacity: 0; transform: translate3d(0, 14px, 0) scale(.992); }
+        to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      }
+      @keyframes emdTvCardIn {
+        from { opacity: 0; transform: translate3d(28px, 0, 0) scale(.985); }
+        to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+      }
+      @keyframes emdTvScorePop {
+        0% { opacity: 0; transform: scale(.88); }
+        70% { opacity: 1; transform: scale(1.045); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      @keyframes emdTvWipe {
+        0% { transform: translate3d(-115%,0,0); opacity: 0; }
+        12% { opacity: 1; }
+        58% { opacity: 1; }
+        100% { transform: translate3d(115%,0,0); opacity: 0; }
+      }
+      @keyframes emdTvAccentSweep {
+        0% { transform: translate3d(-145%,0,0); opacity: 0; }
+        20% { opacity: .85; }
+        100% { transform: translate3d(250%,0,0); opacity: 0; }
+      }
+      .emd-tv-enter { animation: emdTvEnter .48s cubic-bezier(.2,.78,.2,1) both; will-change: transform, opacity; }
+      .emd-tv-card-in { animation: emdTvCardIn .44s cubic-bezier(.2,.78,.2,1) both; will-change: transform, opacity; }
+      .emd-tv-score-pop { animation: emdTvScorePop .42s cubic-bezier(.2,.8,.25,1) .16s both; will-change: transform, opacity; }
+      .emd-tv-wipe { animation: emdTvWipe .58s cubic-bezier(.2,.8,.2,1) both; will-change: transform, opacity; }
+      .emd-tv-accent-sweep { animation: emdTvAccentSweep .9s ease-out .42s both; will-change: transform, opacity; }
+      @media (prefers-reduced-motion: reduce) {
+        .emd-tv-enter,.emd-tv-card-in,.emd-tv-score-pop,.emd-tv-wipe,.emd-tv-accent-sweep { animation: none !important; }
+      }
+    `}</style>
+  )
+}
+
 function TvHeader({
   kicker,
   title,
@@ -721,14 +815,14 @@ function TvHeader({
 function ScoreBox({ home, away, live = false, upcoming = false }: { home: number | null; away: number | null; live?: boolean; upcoming?: boolean }) {
   if (upcoming) {
     return (
-      <div className="grid h-[7.6vh] min-h-[66px] w-[7.4vw] min-w-[112px] place-items-center rounded-[1.2vw] border border-orange-300/20 bg-orange-500/[.085] text-[clamp(1rem,1.35vw,1.6rem)] font-black uppercase tracking-[.2em] text-orange-200 shadow-[0_16px_42px_rgba(0,0,0,.28)]">
+      <div className="emd-tv-score-pop grid h-[7.6vh] min-h-[66px] w-[7.4vw] min-w-[112px] place-items-center rounded-[1.2vw] border border-orange-300/20 bg-orange-500/[.085] text-[clamp(1rem,1.35vw,1.6rem)] font-black uppercase tracking-[.2em] text-orange-200 shadow-[0_16px_42px_rgba(0,0,0,.28)]">
         VS
       </div>
     )
   }
 
   return (
-    <div className={`grid h-[7.6vh] min-h-[66px] w-[8.4vw] min-w-[126px] place-items-center rounded-[1.2vw] border px-[.8vw] text-[clamp(1.75rem,2.55vw,3rem)] font-black tabular-nums tracking-[-.07em] shadow-[0_16px_42px_rgba(0,0,0,.28)] ${live ? "border-red-300/20 bg-red-500/[.085] text-white" : "border-white/[.09] bg-black/35 text-white"}`}>
+    <div className={`emd-tv-score-pop grid h-[7.6vh] min-h-[66px] w-[8.4vw] min-w-[126px] place-items-center rounded-[1.2vw] border px-[.8vw] text-[clamp(1.75rem,2.55vw,3rem)] font-black tabular-nums tracking-[-.07em] shadow-[0_16px_42px_rgba(0,0,0,.28)] ${live ? "border-red-300/20 bg-red-500/[.085] text-white" : "border-white/[.09] bg-black/35 text-white"}`}>
       <div>{home ?? "–"}<span className="px-[.45vw] text-white/24">:</span>{away ?? "–"}</div>
     </div>
   )
@@ -747,10 +841,12 @@ function MatchCard({
   game,
   mode,
   prediction = null,
+  index = 0,
 }: {
   game: LiveGame | ResultGame
   mode: "live" | "upcoming" | "results"
   prediction?: EmdPrediction | null
+  index?: number
 }) {
   const live = mode === "live"
   const upcoming = mode === "upcoming"
@@ -760,7 +856,7 @@ function MatchCard({
   const accentText = live ? "text-red-200" : upcoming ? "text-orange-200" : "text-cyan-100"
 
   return (
-    <article className="group relative min-h-0 overflow-hidden rounded-[1.55vw] border border-white/[.085] bg-black/30 px-[1.5vw] py-[1.55vh] shadow-[0_24px_70px_rgba(0,0,0,.25)] backdrop-blur-xl">
+    <article style={{ animationDelay: `${Math.min(index, 6) * 80}ms` }} className="emd-tv-card-in group relative min-h-0 overflow-hidden rounded-[1.55vw] border border-white/[.085] bg-black/30 px-[1.5vw] py-[1.55vh] shadow-[0_24px_70px_rgba(0,0,0,.25)] backdrop-blur-xl">
       <div className={`absolute inset-y-[18%] left-0 w-[3px] rounded-r-full ${accent}`} />
       <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,.024),transparent_44%)]" />
 
@@ -807,7 +903,8 @@ function MatchCard({
 export function SportdartsLiveOverviewTv({ games, lastUpdated }: { games: LiveGame[]; lastUpdated: Date | null }) {
   const visible = games.slice(0, 6)
   return (
-    <section className="relative h-full overflow-hidden px-[3.2vw] py-[3.1vh] text-white">
+    <section className="emd-tv-enter relative h-full overflow-hidden px-[3.2vw] py-[3.1vh] text-white">
+      <TvBroadcastMotion />
       <TvBackdrop tone="live" />
       <div className="relative z-10 flex h-full flex-col">
         <TvHeader
@@ -823,7 +920,7 @@ export function SportdartsLiveOverviewTv({ games, lastUpdated }: { games: LiveGa
         />
 
         <div className="mt-[2.2vh] grid flex-1 grid-cols-2 grid-rows-3 gap-[1.15vw] min-h-0">
-          {visible.map((game) => <MatchCard key={game.gameId} game={game} mode="live" />)}
+          {visible.map((game, index) => <MatchCard key={game.gameId} game={game} mode="live" index={index} />)}
           {visible.length === 0 ? (
             <div className="col-span-2 row-span-3 grid place-items-center rounded-[1.7vw] border border-white/[.08] bg-black/25 text-[clamp(1.3rem,2vw,2.2rem)] font-black text-white/35">Keine LIVE-Spiele</div>
           ) : null}
@@ -1065,7 +1162,8 @@ function LeagueCards({
 }) {
   const upcoming = mode === "upcoming"
   return (
-    <section className="relative h-full overflow-hidden px-[3.5vw] pb-[3.4vh] pt-[3vh]">
+    <section className="emd-tv-enter relative h-full overflow-hidden px-[3.5vw] pb-[3.4vh] pt-[3vh]">
+      <TvBroadcastMotion />
       <TvBackdrop tone={upcoming ? "orange" : "cyan"} />
       <div className="relative z-10 flex h-full flex-col">
         <TvHeader
@@ -1076,12 +1174,13 @@ function LeagueCards({
         />
 
         <div className="mt-[2.3vh] grid min-h-0 flex-1 grid-cols-2 grid-rows-3 gap-[1.05vw]">
-          {games.slice(0, 6).map((game) => (
+          {games.slice(0, 6).map((game, index) => (
             <MatchCard
               key={game.gameId}
               game={game}
               mode={mode}
               prediction={mode === "upcoming" ? getPrediction?.(game.homeTeam, game.awayTeam) ?? null : null}
+              index={index}
             />
           ))}
         </div>
@@ -1100,6 +1199,515 @@ export function SportdartsUpcomingTv({
   return <LeagueCards games={games} mode="upcoming" getPrediction={getPrediction} />
 }
 
-export function SportdartsResultsTv({ games }: { games: ResultGame[] }) {
-  return <LeagueCards games={games} mode="results" />
+type PlayerOfMatchEntry = {
+  name: string
+  team: string
+  checks: number
 }
+
+function checksWon(value: string | null | undefined) {
+  const raw = String(value || "").trim()
+  if (!raw) return 0
+  const beforeSlash = raw.split("/")[0]?.trim() || ""
+  const match = beforeSlash.match(/\d+/)
+  return match ? Number(match[0]) : 0
+}
+
+function cleanSportdartsPlayerName(value?: string | null) {
+  return String(value || "")
+    .replace(/\s+-\s+\d+\s*$/, "")
+    .trim()
+}
+
+function calculatePlayersOfMatch(detail: GameDetail | null): PlayerOfMatchEntry[] {
+  if (!detail) return []
+
+  // Für PLAYER OF THE MATCH exakt die obere Sportdarts-Spielerliste verwenden.
+  // Dort liefert die TV-Detail-API jeden Spieler einzeln als homePlayers/awayPlayers
+  // und den Wert aus der Spalte "Checks" (z. B. "4 / 6").
+  const players: PlayerOfMatchEntry[] = [
+    ...(detail.homePlayers || []).map((player) => ({
+      name: cleanSportdartsPlayerName(player.player),
+      team: detail.homeTeam,
+      checks: checksWon(player.checks),
+    })),
+    ...(detail.awayPlayers || []).map((player) => ({
+      name: cleanSportdartsPlayerName(player.player),
+      team: detail.awayTeam,
+      checks: checksWon(player.checks),
+    })),
+  ].filter((player) => player.name && player.name !== "Offen")
+
+  if (!players.length) return []
+
+  // Immer die Top 3 anzeigen. So bleibt jede TV-Seite gleich aufgebaut,
+  // auch wenn Platz 1 einen klaren Vorsprung hat.
+  return players
+    .sort((a, b) => b.checks - a.checks || a.name.localeCompare(b.name, "de"))
+    .slice(0, 3)
+}
+
+function normalizePlayerName(value?: string | null) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " " )
+    .trim()
+    .replace(/\s+/g, " " )
+}
+
+
+function resolveClubPlayerPhoto(name: string, photoByPlayer: Map<string, string>) {
+  const key = normalizePlayerName(name)
+  const exact = photoByPlayer.get(key)
+  if (exact) return exact
+
+  // Sportdarts liefert bei manchen Paar-/Teamzeilen mehrere Namen ohne saubere Trennung.
+  // Dann trotzdem ein vorhandenes Vereinsfoto erkennen, statt fälschlich die Silhouette zu zeigen.
+  const matches = Array.from(photoByPlayer.entries())
+    .filter(([playerKey]) => playerKey.length >= 5 && (key.includes(playerKey) || playerKey.includes(key)))
+    .sort((a, b) => b[0].length - a[0].length)
+
+  return matches[0]?.[1] || null
+}
+
+function PlayerOfMatchTv({ game, detail, loading }: { game: ResultGame; detail: GameDetail | null; loading: boolean }) {
+  const players = calculatePlayersOfMatch(detail)
+  const plural = players.length > 1
+  const [photoByPlayer, setPhotoByPlayer] = useState<Map<string, string>>(new Map())
+
+  useEffect(() => {
+    let cancelled = false
+    if (!players.length) {
+      setPhotoByPlayer(new Map())
+      return
+    }
+
+    const loadPhotos = async () => {
+      const { data, error } = await supabase
+        .from("club_players")
+        .select("name,photo_url")
+        .eq("is_active", true)
+        .not("photo_url", "is", null)
+
+      if (cancelled || error) return
+      const next = new Map<string, string>()
+      ;((data || []) as Array<{ name: string; photo_url: string | null }>).forEach((row) => {
+        if (row.photo_url) next.set(normalizePlayerName(row.name), row.photo_url)
+      })
+      setPhotoByPlayer(next)
+    }
+
+    void loadPhotos()
+    return () => { cancelled = true }
+  }, [players.map((p) => `${p.team}:${p.name}:${p.checks}`).join("|")])
+
+  return (
+    <section className="relative h-full overflow-hidden px-[4vw] pb-[4vh] pt-[3.4vh] text-white">
+      <TvBackdrop tone="orange" />
+      <div className="relative z-10 flex h-full flex-col">
+        <TvHeader
+          kicker="EMD · SPORTDARTS LIGA"
+          title={<>{plural ? "PLAYERS" : "PLAYER"} <span className="text-orange-400">OF THE MATCH</span></>}
+          accent="orange"
+          right={<div className="text-right text-[clamp(.62rem,.78vw,.86rem)] font-black uppercase tracking-[.15em] text-white/34">{game.divisionName || "Sportdarts"} · ST {game.weekNumber || "–"}</div>}
+        />
+
+        <div className="mt-[3vh] flex items-center justify-center gap-[1.2vw] text-[clamp(1.15rem,1.7vw,2rem)] font-black text-white/64">
+          <span className={isEmdTeam(game.homeTeam) ? "text-orange-200" : ""}>{game.homeTeam}</span>
+          <span className="rounded-[1vw] border border-white/[.09] bg-black/35 px-[1.2vw] py-[.65vh] text-[clamp(1.65rem,2.4vw,2.8rem)] text-white">{game.homeScore ?? "–"} : {game.awayScore ?? "–"}</span>
+          <span className={isEmdTeam(game.awayTeam) ? "text-orange-200" : ""}>{game.awayTeam}</span>
+        </div>
+
+        <div className={`mx-auto mt-[4.2vh] grid w-full max-w-[86vw] flex-1 items-center gap-[1.4vw] ${players.length <= 1 ? "grid-cols-1 max-w-[48vw]" : players.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+          {players.length ? players.map((player, index) => {
+            const originalPhoto = resolveClubPlayerPhoto(player.name, photoByPlayer)
+            const photo = originalPhoto ? (tvPlayerImageUrl(originalPhoto, 900, 1200, 72) || originalPhoto) : null
+            return (
+            <article key={`${player.team}-${player.name}`} className="relative flex min-h-[47vh] overflow-hidden rounded-[2vw] border border-orange-300/[.14] bg-black/34 shadow-[0_32px_90px_rgba(0,0,0,.38)] backdrop-blur-xl">
+              <div className="absolute inset-x-[18%] top-0 z-20 h-[3px] bg-orange-400 shadow-[0_0_28px_rgba(251,146,60,.75)]" />
+              <div className="relative w-[45%] shrink-0 overflow-hidden bg-black/35">
+                {photo ? (
+                  <>
+                    <div className="absolute inset-[-10%] bg-cover bg-center opacity-30 blur-2xl" style={{ backgroundImage: `url('${photo}')` }} />
+                    <img src={photo} alt="" loading="eager" decoding="sync" className="absolute bottom-0 left-1/2 h-[92%] w-[92%] -translate-x-1/2 object-contain object-bottom drop-shadow-[0_24px_40px_rgba(0,0,0,.5)]" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_30%,rgba(251,146,60,.16),transparent_32%),linear-gradient(180deg,#111317,#050607)]">
+                    <div className="relative h-[58%] w-[56%] opacity-70">
+                      <div className="absolute left-1/2 top-[4%] h-[31%] w-[47%] -translate-x-1/2 rounded-full bg-white/[.12]" />
+                      <div className="absolute bottom-[2%] left-1/2 h-[62%] w-[92%] -translate-x-1/2 rounded-t-[48%] bg-white/[.09]" />
+                    </div>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black/65" />
+              </div>
+
+              <div className="relative z-10 flex min-w-0 flex-1 flex-col justify-center px-[1.8vw] py-[2.5vh] text-left">
+                <div className="text-[clamp(.62rem,.78vw,.86rem)] font-black uppercase tracking-[.28em] text-orange-300/72">{players.length > 1 ? `TOP ${index + 1}` : "MATCH HERO"}</div>
+                <div className="mt-[1.8vh] text-[clamp(1.75rem,3.2vw,4rem)] font-black uppercase leading-[.88] tracking-[-.065em] text-white">{player.name}</div>
+                <div className={`mt-[1.5vh] text-[clamp(.7rem,.92vw,1rem)] font-black uppercase tracking-[.17em] ${isEmdTeam(player.team) ? "text-orange-200" : "text-white/42"}`}>{player.team}</div>
+                <div className="mt-[2.5vh] h-px w-[38%] bg-white/10" />
+                <div className="mt-[2vh] flex items-end gap-[.8vw]">
+                  <div className="text-[clamp(3rem,5vw,6rem)] font-black leading-none tracking-[-.08em] text-orange-400">{player.checks}</div>
+                  <div className="pb-[.45vh] text-[clamp(.65rem,.82vw,.9rem)] font-black uppercase tracking-[.22em] text-white/42">Checks</div>
+                </div>
+              </div>
+            </article>
+            )
+          }) : (
+            <div className="grid h-full min-h-[38vh] place-items-center rounded-[2vw] border border-white/[.08] bg-black/28 text-center">
+              <div>
+                <Trophy className="mx-auto h-14 w-14 text-orange-300/35" />
+                <div className="mt-5 text-[clamp(1.2rem,1.8vw,2rem)] font-black text-white/42">{loading ? "Player of the Match wird ermittelt …" : "Keine Checks verfügbar"}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function playerOfMatchNameSize(name: string, count: number) {
+  const len = name.trim().length
+  if (count >= 3) {
+    if (len >= 22) return "clamp(1.35rem,2.05vw,2.45rem)"
+    if (len >= 16) return "clamp(1.55rem,2.35vw,2.8rem)"
+    return "clamp(1.75rem,2.7vw,3.25rem)"
+  }
+  if (count === 2) {
+    if (len >= 22) return "clamp(1.7rem,2.7vw,3.25rem)"
+    if (len >= 16) return "clamp(2rem,3.15vw,3.75rem)"
+    return "clamp(2.25rem,3.55vw,4.25rem)"
+  }
+  if (len >= 22) return "clamp(2.35rem,4.15vw,4.9rem)"
+  if (len >= 16) return "clamp(2.75rem,4.8vw,5.7rem)"
+  return "clamp(3.2rem,5.55vw,6.5rem)"
+}
+
+function PlayerOfMatchGamePage({
+  game,
+  detail,
+  photoByPlayer,
+  page,
+  total,
+}: {
+  game: ResultGame
+  detail: GameDetail | null
+  photoByPlayer: Map<string, string>
+  page: number
+  total: number
+}) {
+  const winners = calculatePlayersOfMatch(detail).slice(0, 3)
+  const count = Math.max(1, winners.length)
+
+  return (
+    <section key={`potm-${game.gameId}-${page}`} className="emd-tv-enter relative h-full overflow-hidden px-[3.6vw] pb-[3.7vh] pt-[3.1vh] text-white">
+      <TvBroadcastMotion />
+      <TvBackdrop tone="orange" />
+      <div className="pointer-events-none absolute inset-0 z-[60] overflow-hidden">
+        <div className="emd-tv-wipe absolute inset-y-0 left-0 w-[34%] skew-x-[-12deg] bg-gradient-to-r from-transparent via-orange-400/75 to-orange-300/15 shadow-[0_0_45px_rgba(251,146,60,.22)]" />
+      </div>
+      <div className="relative z-10 flex h-full flex-col">
+        <TvHeader
+          kicker="EMD · SPORTDARTS LIGA"
+          title={<>TOP 3 <span className="text-orange-400">OF THE MATCH</span></>}
+          accent="orange"
+          right={
+            <div className="text-right">
+              <div className="text-[clamp(.55rem,.67vw,.74rem)] font-black uppercase tracking-[.18em] text-orange-300/65">
+                SPIEL {page} / {total}
+              </div>
+              <div className="mt-[.4vh] text-[clamp(.58rem,.72vw,.8rem)] font-black uppercase tracking-[.12em] text-white/32">
+                {game.divisionName || "Sportdarts"} · ST {game.weekNumber || "–"}
+              </div>
+            </div>
+          }
+        />
+
+        <div className="mx-auto mt-[2.2vh] flex w-full max-w-[82vw] items-center justify-center gap-[1.1vw] text-[clamp(1rem,1.42vw,1.65rem)] font-black">
+          <span className={`max-w-[31vw] truncate text-right ${isEmdTeam(game.homeTeam) ? "text-orange-200" : "text-white/68"}`}>{game.homeTeam}</span>
+          <span className="emd-tv-score-pop shrink-0 rounded-[1vw] border border-white/[.10] bg-black/36 px-[1.1vw] py-[.6vh] text-[clamp(1.55rem,2.25vw,2.65rem)] tracking-[-.04em] text-white">
+            {game.homeScore ?? "–"} : {game.awayScore ?? "–"}
+          </span>
+          <span className={`max-w-[31vw] truncate ${isEmdTeam(game.awayTeam) ? "text-orange-200" : "text-white/68"}`}>{game.awayTeam}</span>
+        </div>
+
+        {winners.length ? (
+          <div className={`mx-auto mt-[2.6vh] grid min-h-0 w-full flex-1 items-stretch gap-[1.25vw] ${
+            "max-w-[92vw] grid-cols-3"
+          }`}>
+            {winners.map((player, index) => {
+              const originalPhoto = resolveClubPlayerPhoto(player.name, photoByPlayer)
+              const photo = originalPhoto ? (tvPlayerImageUrl(originalPhoto, 760, 1180, 68) || originalPhoto) : null
+
+              return (
+                <article
+                  key={`${game.gameId}-${player.team}-${player.name}`}
+                  style={{ animationDelay: `${120 + index * 105}ms` }}
+                  className="emd-tv-card-in relative min-h-0 overflow-hidden rounded-[2vw] border border-orange-300/[.13] bg-black/38 shadow-[0_30px_90px_rgba(0,0,0,.36)] backdrop-blur-xl"
+                >
+                  <div className="absolute inset-x-[15%] top-0 z-30 h-[3px] bg-orange-400 shadow-[0_0_26px_rgba(251,146,60,.7)]" />
+                  {index === 0 ? <div className="pointer-events-none absolute inset-0 z-40 overflow-hidden"><div className="emd-tv-accent-sweep absolute top-[18%] h-[18%] w-[48%] -rotate-6 bg-gradient-to-r from-transparent via-orange-300/18 to-transparent" /></div> : null}
+
+                  <div className={`${"absolute inset-x-0 top-0 h-[59%]"} overflow-hidden bg-black/28`}>
+                    {photo ? (
+                      <>
+                        <div
+                          className="absolute inset-0 scale-[1.03] bg-cover bg-center opacity-18 blur-[1vw]"
+                          style={{ backgroundImage: `url('${photo}')` }}
+                        />
+                        <img
+                          src={photo}
+                          alt=""
+                          loading="eager"
+                          decoding="sync"
+                          fetchPriority="high"
+                          draggable={false}
+                          className="absolute inset-0 h-full w-full object-contain object-top drop-shadow-[0_28px_42px_rgba(0,0,0,.5)]"
+                        />
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(251,146,60,.07),transparent_34%),linear-gradient(180deg,#0d0f12,#050607)]" />
+                    )}
+                    <div className={`${"absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/86"}`} />
+                  </div>
+
+                  <div className={`relative z-20 flex h-full min-w-0 flex-col ${
+                    "justify-end px-[1.35vw] pb-[2.1vh] pt-[59%] text-center"
+                  }`}>
+                    <div className="text-[clamp(.55rem,.68vw,.76rem)] font-black uppercase tracking-[.25em] text-orange-300/72">
+                      {`TOP ${index + 1}`}
+                    </div>
+                    <div
+                      className={`${"mt-[.7vh]"} break-words font-black uppercase leading-[.86] tracking-[-.06em] text-white`}
+                      style={{ fontSize: playerOfMatchNameSize(player.name, 3) }}
+                    >
+                      {player.name}
+                    </div>
+                    <div className={`mt-[.9vh] truncate text-[clamp(.58rem,.76vw,.84rem)] font-black uppercase tracking-[.12em] ${isEmdTeam(player.team) ? "text-orange-200" : "text-white/42"}`}>
+                      {player.team}
+                    </div>
+                    <div className={`mt-[1.25vh] flex items-end ${"justify-center"} gap-[.65vw]`}>
+                      <span className="text-[clamp(2.6rem,4.4vw,5.25rem)] font-black leading-none tracking-[-.08em] text-orange-400">{player.checks}</span>
+                      <span className="pb-[.35vh] text-[clamp(.52rem,.65vw,.72rem)] font-black uppercase tracking-[.16em] text-white/34">
+                        Checks
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="grid flex-1 place-items-center">
+            <div className="text-center text-white/35">
+              <Trophy className="mx-auto h-16 w-16 text-orange-300/30" />
+              <div className="mt-5 text-[clamp(1.2rem,1.8vw,2rem)] font-black">Keine Checks verfügbar</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+export function SportdartsResultsTv({
+  games,
+  onComplete,
+}: {
+  games: ResultGame[]
+  onComplete?: () => void
+}) {
+  const visibleGames = games.slice(0, 6)
+  const gameKey = visibleGames.map((game) => game.gameId).join("|")
+  const [details, setDetails] = useState<Map<string, GameDetail | null>>(new Map())
+  const [photoByPlayer, setPhotoByPlayer] = useState<Map<string, string>>(new Map())
+  const [detailsReady, setDetailsReady] = useState(false)
+  const [photosReady, setPhotosReady] = useState(false)
+  const [screenIndex, setScreenIndex] = useState(0)
+  const imageCacheRef = useRef<HTMLImageElement[]>([])
+  const completedRef = useRef(false)
+
+  useEffect(() => {
+    let cancelled = false
+    completedRef.current = false
+    setScreenIndex(0)
+    setDetailsReady(false)
+
+    if (!visibleGames.length) {
+      setDetails(new Map())
+      setDetailsReady(true)
+      return
+    }
+
+    const load = async () => {
+      const entries = await Promise.all(
+        visibleGames.map(async (game) => {
+          if (tvGameDetailCache.has(game.gameId)) {
+            return [game.gameId, tvGameDetailCache.get(game.gameId) ?? null] as const
+          }
+
+          try {
+            const response = await fetch(`/api/sportdarts/tv-game/${encodeURIComponent(game.gameId)}`, { cache: "no-store" })
+            const payload = await response.json()
+            if (!response.ok) throw new Error(payload?.error || "Spieler des Spiels konnte nicht geladen werden.")
+            const detail = payload as GameDetail
+            tvGameDetailCache.set(game.gameId, detail)
+            return [game.gameId, detail] as const
+          } catch (error) {
+            console.error(`EMD TV Player of the Match failed for ${game.gameId}`, error)
+            tvGameDetailCache.set(game.gameId, null)
+            return [game.gameId, null] as const
+          }
+        }),
+      )
+
+      if (!cancelled) {
+        setDetails(new Map(entries))
+        setDetailsReady(true)
+      }
+    }
+
+    void load()
+    return () => { cancelled = true }
+  }, [gameKey])
+
+  const potmGames = useMemo(
+    () => visibleGames.filter((game) => calculatePlayersOfMatch(details.get(game.gameId) || null).length > 0),
+    [gameKey, details],
+  )
+
+  const winnersKey = useMemo(
+    () => potmGames
+      .flatMap((game) => calculatePlayersOfMatch(details.get(game.gameId) || null))
+      .map((player) => normalizePlayerName(player.name))
+      .sort()
+      .join("|"),
+    [potmGames, details],
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    setPhotosReady(false)
+    imageCacheRef.current = []
+
+    if (!detailsReady) return
+
+    const loadPhotos = async () => {
+      let playerPhotos = clubPlayerPhotoCache
+
+      if (!playerPhotos) {
+        const { data, error } = await supabase
+          .from("club_players")
+          .select("name,photo_url")
+          .eq("is_active", true)
+          .not("photo_url", "is", null)
+
+        if (error) {
+          if (!cancelled) {
+            setPhotoByPlayer(new Map())
+            setPhotosReady(true)
+          }
+          return
+        }
+
+        playerPhotos = new Map<string, string>()
+        ;((data || []) as Array<{ name: string; photo_url: string | null }>).forEach((row) => {
+          if (row.photo_url) playerPhotos!.set(normalizePlayerName(row.name), row.photo_url)
+        })
+        clubPlayerPhotoCache = playerPhotos
+      }
+
+      if (cancelled) return
+      setPhotoByPlayer(new Map(playerPhotos))
+
+      const urls = Array.from(new Set(
+        potmGames
+          .flatMap((game) => calculatePlayersOfMatch(details.get(game.gameId) || null))
+          .map((player) => resolveClubPlayerPhoto(player.name, playerPhotos!))
+          .filter((value): value is string => Boolean(value))
+      ))
+
+      if (!urls.length) {
+        if (!cancelled) setPhotosReady(true)
+        return
+      }
+
+      const decoded = await Promise.all(
+        urls.map((original) => preloadTvImage(tvPlayerImageUrl(original, 760, 1180, 68) || original, original))
+      )
+
+      if (!cancelled) {
+        imageCacheRef.current = decoded.filter((img): img is HTMLImageElement => Boolean(img))
+        setPhotosReady(true)
+      }
+    }
+
+    void loadPhotos()
+    return () => {
+      cancelled = true
+      imageCacheRef.current = []
+    }
+  }, [detailsReady, winnersKey])
+
+  useEffect(() => {
+    if (!visibleGames.length) {
+      if (!completedRef.current) {
+        completedRef.current = true
+        onComplete?.()
+      }
+      return
+    }
+
+    // Ergebnisübersicht bleibt sichtbar, bis Detaildaten und Gewinner-Fotos vorbereitet sind.
+    if (screenIndex === 0) {
+      if (!detailsReady || !photosReady) return
+      const delay = potmGames.length ? 7000 : 9000
+      const timer = window.setTimeout(() => {
+        if (potmGames.length) {
+          setScreenIndex(1)
+        } else if (!completedRef.current) {
+          completedRef.current = true
+          onComplete?.()
+        }
+      }, delay)
+      return () => window.clearTimeout(timer)
+    }
+
+    const currentPotmIndex = screenIndex - 1
+    const isLast = currentPotmIndex >= potmGames.length - 1
+    const timer = window.setTimeout(() => {
+      if (isLast) {
+        if (!completedRef.current) {
+          completedRef.current = true
+          if (onComplete) onComplete()
+          else setScreenIndex(0)
+        }
+      } else {
+        setScreenIndex((index) => index + 1)
+      }
+    }, 6200)
+
+    return () => window.clearTimeout(timer)
+  }, [detailsReady, photosReady, onComplete, potmGames.length, screenIndex, visibleGames.length])
+
+  if (screenIndex === 0 || !potmGames.length) {
+    return <LeagueCards games={games} mode="results" />
+  }
+
+  const game = potmGames[Math.min(screenIndex - 1, potmGames.length - 1)]
+  return (
+    <PlayerOfMatchGamePage
+      game={game}
+      detail={details.get(game.gameId) || null}
+      photoByPlayer={photoByPlayer}
+      page={Math.min(screenIndex, potmGames.length)}
+      total={potmGames.length}
+    />
+  )
+}
+

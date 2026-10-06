@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Loader2, LockKeyhole } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -26,6 +27,9 @@ export function MembershipAccessGate({
   description = "Dieser Bereich ist in deiner aktuellen Mitgliedschaft nicht enthalten.",
   requireAll = true,
 }: MembershipAccessGateProps) {
+  const pathname = usePathname()
+  const isMessenger = pathname === "/chat-app" || pathname.startsWith("/chat-app/")
+
   const {
     loading,
     error,
@@ -38,6 +42,10 @@ export function MembershipAccessGate({
   const requiredCodes = Array.isArray(required) ? required : [required]
 
   if (loading) {
+    // Im EMD Messenger keinen sichtbaren Zwischenbildschirm anzeigen.
+    // Die Prüfung läuft weiter; sobald sie fertig ist, greift allowed/error wie bisher.
+    if (isMessenger) return <>{children}</>
+
     return (
       <div className="flex min-h-[320px] items-center justify-center">
         <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">

@@ -28,7 +28,7 @@ export const ADMIN_AREAS: readonly AdminAreaDefinition[] = [
     key: "turniere",
     title: "Turnierbereich",
     shortTitle: "Turniere",
-    description: "Turnier-Zentrale, Cups, Serien, Spielerdatenbank und interne Turniere.",
+    description: "Turnier-Zentrale und Spielerdatenbank.",
     icon: Trophy,
     pageKeys: [
       "tournament-center",

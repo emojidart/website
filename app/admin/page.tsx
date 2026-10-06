@@ -711,7 +711,19 @@ useEffect(() => {
 
   const dashboardCards = [
     ...ADMIN_PAGES
-      .filter((page) => page.showOnDashboard !== false && page.key !== "dashboard" && !["history", "campus-registrations", "credit-loader", "advent-quiz"].includes(page.key))
+      .filter((page) =>
+        page.showOnDashboard !== false &&
+        page.key !== "dashboard" &&
+        ![
+          "history",
+          "campus-registrations",
+          "credit-loader",
+          "advent-quiz",
+          "dart-competition",
+          "members-levels",
+          "internal-events",
+        ].includes(page.key)
+      )
       .filter((page) => !page.superAdminOnly || isSuperAdmin)
       .map((page) => ({
         title: page.title,
@@ -815,7 +827,7 @@ useEffect(() => {
           (page) =>
             page.category === category &&
             page.showInNavigation !== false &&
-            !["internal-events", "history", "campus-registrations", "credit-loader", "advent-quiz"].includes(page.key) &&
+            !["history", "campus-registrations", "credit-loader", "advent-quiz"].includes(page.key) &&
             (!page.superAdminOnly || isSuperAdmin),
         )
         .map((page) => ({
@@ -842,12 +854,6 @@ useEffect(() => {
           badge: overdueLeagueCount > 0 ? overdueLeagueCount : undefined,
         })
 
-        items.push({
-          key: "internal-events" as any,
-          label: "Interner Ligabetrieb",
-          icon: UserPlus,
-          badge: undefined,
-        })
 
         items.push({
           key: "league-mailbox" as any,
@@ -1459,7 +1465,7 @@ if (!hasAnyPermission) {
                               Kratzer-Turnier
                             </Button>
                           </Link>
-                          <Link href="/dko_tournament_registration">
+                          <Link href="/admin/einzelturnier">
                             <Button variant="outline" className="w-full justify-start bg-transparent">
                               <Trophy className="h-4 w-4 mr-2" />
                               DKO | Round Robin Turnier

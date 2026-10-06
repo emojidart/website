@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BellRing, CheckCircle2, ExternalLink } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,22 +10,37 @@ type LiveAlert = {
   id: string;
   created_at: string;
   expires_at: string;
+  match_id: string | null;
+  team_id: string | null;
   title: string;
   body: string;
   click_url: string | null;
   recipient_user_ids: string[] | null;
 };
 
-export default function ChatGlobalAlert() {
+const STORAGE_KEY = "emd_messenger_lineup_alert_pending";
+
+export default function ChatGlobalAlert({
+  sectionKey,
+  onOpenLineup,
+}: {
+  sectionKey: "chats" | "updates" | "lineup";
+  onOpenLineup: (matchId: string | null, teamId: string | null) => void;
+}) {
   const { session } = useAuth();
   const [alert, setAlert] = useState<LiveAlert | null>(null);
+
+  const activeAlertRef = useRef<LiveAlert | null>(null);
+  const dismissedSectionRef = useRef<string | null>(null);
+  const suppressNextSectionRef = useRef<string | null>(null);
+
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorRef = useRef<OscillatorNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const sirenTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const stopSiren = () => {
+  const stopSiren = useCallback(() => {
     if (sirenTimerRef.current) {
       clearInterval(sirenTimerRef.current);
       sirenTimerRef.current = null;
@@ -49,9 +64,9 @@ export default function ChatGlobalAlert() {
     try {
       navigator.vibrate?.(0);
     } catch {}
-  };
+  }, []);
 
-  const startSiren = async () => {
+  const startSiren = useCallback(async () => {
     stopSiren();
 
     try {
@@ -91,45 +106,122 @@ export default function ChatGlobalAlert() {
         }, 320);
       }
     } catch {
-      // Der visuelle Alarm bleibt immer sichtbar, auch wenn Audio blockiert wird.
+      // Visueller Alarm bleibt sichtbar, auch wenn WebAudio blockiert wird.
     }
 
     try {
       navigator.vibrate?.([500, 180, 500, 180, 1000, 250, 1000]);
     } catch {}
 
+    // Nur der Ton endet automatisch. Der Alarm selbst bleibt aktiv,
+    // bis die Aufstellung in Supabase bestätigt wurde.
     autoStopRef.current = setTimeout(stopSiren, 20000);
-  };
+  }, [stopSiren]);
 
-  const showAlert = (next: LiveAlert) => {
-    if (!next?.id) return;
-    if (new Date(next.expires_at).getTime() <= Date.now()) return;
-    setAlert(next);
-    void startSiren();
-  };
+  const persistAlert = useCallback((next: LiveAlert | null) => {
+    activeAlertRef.current = next;
+    try {
+      if (next) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {}
+  }, []);
 
+  const isLineupConfirmed = useCallback(async (next: LiveAlert) => {
+    if (!next.match_id || !next.team_id) return false;
+
+    const { data, error } = await supabase
+      .from("match_lineup_headers")
+      .select("status,current_version,confirmed_version")
+      .eq("match_id", next.match_id)
+      .eq("team_id", next.team_id)
+      .maybeSingle();
+
+    if (error) {
+      // Fail-open: Bei einem kurzen DB-Fehler darf ein echter Alarm nicht verschwinden.
+      return false;
+    }
+
+    return (
+      data?.status === "confirmed" &&
+      data?.confirmed_version != null &&
+      data?.confirmed_version === data?.current_version
+    );
+  }, []);
+
+  const clearResolvedAlert = useCallback(() => {
+    stopSiren();
+    setAlert(null);
+    persistAlert(null);
+    dismissedSectionRef.current = null;
+    suppressNextSectionRef.current = null;
+  }, [persistAlert, stopSiren]);
+
+  const showIfStillActive = useCallback(
+    async (next: LiveAlert, force = false) => {
+      if (!next?.id) return;
+
+      const confirmed = await isLineupConfirmed(next);
+      if (confirmed) {
+        clearResolvedAlert();
+        return;
+      }
+
+      persistAlert(next);
+
+      if (!force && dismissedSectionRef.current === sectionKey) {
+        return;
+      }
+
+      setAlert(next);
+      void startSiren();
+    },
+    [clearResolvedAlert, isLineupConfirmed, persistAlert, sectionKey, startSiren],
+  );
+
+  // Initial laden: zuerst lokaler Pending-Alarm, danach Supabase als Fallback.
   useEffect(() => {
     const uid = session?.user?.id;
     if (!uid) return;
 
     let cancelled = false;
 
-    const loadLatest = async () => {
+    const loadPending = async () => {
+      let stored: LiveAlert | null = null;
+
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        stored = raw ? (JSON.parse(raw) as LiveAlert) : null;
+      } catch {}
+
+      if (stored?.id) {
+        if (!cancelled) await showIfStillActive(stored, true);
+        return;
+      }
+
       const { data } = await supabase
         .from("emd_live_alerts")
-        .select("id,created_at,expires_at,title,body,click_url,recipient_user_ids")
+        .select("id,created_at,expires_at,match_id,team_id,title,body,click_url,recipient_user_ids")
         .contains("recipient_user_ids", [uid])
-        .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(20);
 
-      if (!cancelled && data) showAlert(data as LiveAlert);
+      for (const row of (data as LiveAlert[] | null) ?? []) {
+        if (cancelled) return;
+        const confirmed = await isLineupConfirmed(row);
+        if (!confirmed) {
+          persistAlert(row);
+          await showIfStillActive(row, true);
+          return;
+        }
+      }
     };
 
-    void loadLatest();
+    void loadPending();
 
-    const channel = supabase
+    const liveChannel = supabase
       .channel(`emd-live-alert-${uid}`)
       .on(
         "postgres_changes",
@@ -139,31 +231,117 @@ export default function ChatGlobalAlert() {
           const recipients = Array.isArray(next?.recipient_user_ids)
             ? next.recipient_user_ids
             : [];
-          if (recipients.includes(uid)) showAlert(next);
+
+          if (!recipients.includes(uid)) return;
+
+          dismissedSectionRef.current = null;
+          suppressNextSectionRef.current = null;
+          void showIfStillActive(next, true);
         },
       )
       .subscribe();
 
     return () => {
       cancelled = true;
-      stopSiren();
-      supabase.removeChannel(channel);
+      supabase.removeChannel(liveChannel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id]);
+  }, [
+    isLineupConfirmed,
+    persistAlert,
+    session?.user?.id,
+    showIfStillActive,
+  ]);
+
+  // Genau das gewünschte Verhalten:
+  // nach "Alarm bestätigen" ist er auf der aktuellen Seite weg,
+  // beim nächsten Wechsel Chats/Aktuell/Aufstellung kommt er wieder,
+  // solange die echte Aufstellung nicht bestätigt wurde.
+  useEffect(() => {
+    const pending = activeAlertRef.current;
+    if (!pending) return;
+
+    if (suppressNextSectionRef.current === sectionKey) {
+      suppressNextSectionRef.current = null;
+      dismissedSectionRef.current = sectionKey;
+      return;
+    }
+
+    if (dismissedSectionRef.current !== sectionKey) {
+      dismissedSectionRef.current = null;
+      void showIfStillActive(pending, true);
+    }
+  }, [sectionKey, showIfStillActive]);
+
+  // Sobald Captain/Co-Captain die Aufstellung wirklich bestätigt,
+  // verschwindet der Alarm endgültig. Polling ist absichtlich zusätzlich
+  // zu Realtime drin, damit das auch bei einer verpassten Realtime-Nachricht klappt.
+  useEffect(() => {
+    const check = async () => {
+      const pending = activeAlertRef.current;
+      if (!pending) return;
+
+      if (await isLineupConfirmed(pending)) {
+        clearResolvedAlert();
+      }
+    };
+
+    void check();
+    const timer = window.setInterval(() => void check(), 5000);
+
+    const headerChannel = supabase
+      .channel(`emd-alert-header-${session?.user?.id || "guest"}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "match_lineup_headers" },
+        (payload) => {
+          const pending = activeAlertRef.current;
+          const row = (payload.new || payload.old) as {
+            match_id?: string;
+            team_id?: string;
+          };
+
+          if (
+            pending?.match_id &&
+            pending?.team_id &&
+            row?.match_id === pending.match_id &&
+            row?.team_id === pending.team_id
+          ) {
+            void check();
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      window.clearInterval(timer);
+      supabase.removeChannel(headerChannel);
+    };
+  }, [clearResolvedAlert, isLineupConfirmed, session?.user?.id]);
+
+  // Component-Unmount: nur Sirene stoppen. Pending-Alarm bleibt gespeichert.
+  useEffect(() => {
+    return () => stopSiren();
+  }, [stopSiren]);
 
   if (!alert) return null;
 
-  const confirm = () => {
+  const acknowledge = () => {
     stopSiren();
+    dismissedSectionRef.current = sectionKey;
     setAlert(null);
   };
 
   const openTarget = () => {
-    const target = alert.click_url || "/chat-app?tab=aufstellung";
     stopSiren();
+
+    // Beim direkten Sprung zur Aufstellung nicht sofort denselben Dialog
+    // noch einmal darüber legen. Beim NÄCHSTEN Seitenwechsel erscheint er wieder,
+    // falls die Aufstellung weiterhin unbestätigt ist.
+    suppressNextSectionRef.current = "lineup";
+    dismissedSectionRef.current = sectionKey;
     setAlert(null);
-    window.location.href = target;
+
+    onOpenLineup(alert.match_id, alert.team_id);
   };
 
   return (
@@ -191,7 +369,7 @@ export default function ChatGlobalAlert() {
           <div className="mt-6 grid gap-2">
             <Button
               type="button"
-              onClick={confirm}
+              onClick={acknowledge}
               className="h-14 rounded-2xl bg-white text-base font-black text-red-700 hover:bg-red-50"
             >
               <CheckCircle2 className="mr-2 h-5 w-5" />
@@ -205,12 +383,12 @@ export default function ChatGlobalAlert() {
               className="h-12 rounded-2xl border-white/25 bg-white/5 font-black text-white hover:bg-white/10 hover:text-white"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
-              Aufstellung öffnen
+              Jetzt zur Aufstellung
             </Button>
           </div>
 
           <div className="mt-4 text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
-            Alarmton stoppt spätestens nach 20 Sekunden
+            Bleibt aktiv bis die Aufstellung bestätigt wurde
           </div>
         </div>
       </div>
