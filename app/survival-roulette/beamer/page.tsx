@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Activity,
@@ -254,7 +254,7 @@ function LiveMatchCard({
   )
 }
 
-export default function SurvivalRouletteBeamerPage() {
+function SurvivalRouletteBeamerContent() {
   const searchParams = useSearchParams()
   const tournamentId = searchParams.get("tournamentId") || ""
 
@@ -1258,5 +1258,24 @@ export default function SurvivalRouletteBeamerPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function SurvivalRouletteBeamerPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="grid min-h-screen place-items-center bg-slate-950 text-white">
+          <div className="text-center">
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-white/15 border-t-emerald-400" />
+            <div className="mt-4 text-sm font-bold text-slate-400">
+              Beamer wird verbunden…
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <SurvivalRouletteBeamerContent />
+    </Suspense>
   )
 }
