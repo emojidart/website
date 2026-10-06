@@ -110,7 +110,7 @@ export function EinzelturnierStart(props: Props) {
         </section>
       ) : null}
 
-      {registeredCount > 0 ? (
+      {!activeTournament && registeredCount > 0 ? (
         <section className="relative mb-6 overflow-hidden rounded-[30px] border border-orange-300/[0.22] bg-[linear-gradient(135deg,rgba(249,115,22,.10),rgba(12,14,18,.92)_34%,rgba(7,9,13,.90))] p-5 text-white shadow-[0_34px_110px_-66px_rgba(249,115,22,.40)] backdrop-blur-2xl sm:p-6 lg:p-7">
           <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-orange-500/[0.12] blur-[80px]" />
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">

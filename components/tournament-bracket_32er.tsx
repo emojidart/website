@@ -224,18 +224,11 @@ const deleteFreiloseFromDatabase = async (tournamentType: string, tournamentId: 
   }
 }
 
-const clearTournamentRegistration = async (seriesId?: string | null, eventId?: string | null) => {
-  try {
-    let query = supabase.from("dko_tournament_registration").delete().neq("id", 0)
-    if (seriesId) query = query.eq("series_id", seriesId)
-    if (eventId) query = query.eq("event_id", eventId)
-    const { error } = await query
-
-    if (error) throw error
-    console.log("[v0] Tournament registration cleared successfully")
-  } catch (error) {
-    console.error("Fehler beim Löschen der Registrierung:", error)
-  }
+const clearTournamentRegistration = async (_seriesId?: string | null, _eventId?: string | null) => {
+  // Voranmeldungen sind Eventdaten und dürfen beim Starten, Abschließen oder Abbrechen
+  // eines Turnierlaufs niemals automatisch gelöscht werden. Abmelden/Löschen passiert
+  // ausschließlich gezielt über die jeweilige Anmeldung.
+  return
 }
 
 const distributePlayersWithFreilose = (players: string[], bracketSize: number): string[] => {
@@ -645,7 +638,7 @@ const rebuildRankingsFromMatches = async ({
 }
 
 
-const markTournamentAsCompleted = async (tournamentId: string) => {
+const markTournamentAsCompleted = async (tournamentId: string, centralEventId?: string | null) => {
   try {
     console.log(`[v0] Marking tournament ${tournamentId} as completed`)
 
@@ -655,6 +648,14 @@ const markTournamentAsCompleted = async (tournamentId: string) => {
       .eq("tournament_id", tournamentId)
 
     if (error) throw error
+
+    if (centralEventId) {
+      const { error: centralEventError } = await supabase
+        .from("central_tournament_events")
+        .update({ status: "completed", updated_at: new Date().toISOString() })
+        .eq("id", centralEventId)
+      if (centralEventError) throw centralEventError
+    }
 
     console.log(`[v0] Tournament marked as completed successfully`)
   } catch (error) {
@@ -701,6 +702,7 @@ const isRemoteUpdateRef = useRef(false)
   const searchParams = useSearchParams()
   const seriesId = searchParams.get("seriesId")
   const eventId = searchParams.get("eventId")
+  const centralEventId = searchParams.get("centralEventId")
 
   const [announcementsEnabled, setAnnouncementsEnabled] = useState(false)
   const [playerIdMap, setPlayerIdMap] = useState<Record<string, string>>({})
@@ -1334,7 +1336,7 @@ useEffect(() => {
 
       if (historyError) throw historyError
 
-      await markTournamentAsCompleted(tournamentId)
+      await markTournamentAsCompleted(tournamentId, centralEventId)
       await deleteFreiloseFromDatabase(tournamentType, tournamentId)
       await clearTournamentRegistration(seriesId, eventId)
 
@@ -1508,7 +1510,7 @@ if (!rankingsRebuilt) {
 
     if (insertError) throw insertError
 
-    await markTournamentAsCompleted(tournamentId)
+    await markTournamentAsCompleted(tournamentId, centralEventId)
     await deleteFreiloseFromDatabase(tournamentType, tournamentId)
     await clearTournamentRegistration(seriesId, eventId)
 
@@ -1967,8 +1969,23 @@ const confirmMatch = async (matchId: number) => {
     await deleteMatchStatesFromDatabase(tournamentType, tournamentId)
     await deleteRankingsFromDatabase(tournamentType, tournamentId)
     await deleteFreiloseFromDatabase(tournamentType, tournamentId)
-    await clearTournamentRegistration(seriesId, eventId)
-    router.push("/admin/einzelturnier")
+    // Bei Serien-Abbruch bleiben die Voranmeldungen erhalten, damit derselbe Spieltag sauber neu gestartet werden kann.
+    if (!seriesId && !eventId) {
+      await clearTournamentRegistration(seriesId, eventId)
+    }
+    if (centralEventId) {
+      const { error: centralEventError } = await supabase
+        .from("central_tournament_events")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", centralEventId)
+      if (centralEventError) {
+        console.error("Fehler beim Zurücksetzen des Zentral-Turniers:", centralEventError)
+      }
+    }
+    try {
+      window.sessionStorage.setItem("emd-admin-current-view", "tournament-center")
+    } catch {}
+    router.push(seriesId && eventId ? "/admin/turnier_spieltage_starten" : "/admin")
   }
 
   const resetMatch = async (matchId: number) => {
@@ -2301,16 +2318,25 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           tournament_type: tournamentType,
           tournament_name: urlTournamentName ? decodeURIComponent(urlTournamentName) : "Unbenanntes Turnier",
           status: "active",
+          central_event_id: centralEventId || null,
+          series_id: seriesId || null,
+          series_event_id: eventId || null,
         })
 
         if (statusError && statusError.code !== "23505") {
           console.error("[v0] Error creating tournament status:", statusError)
         }
 
-        const { data, error } = await supabase
+        let registrationQuery = supabase
           .from("dko_tournament_registration")
           .select("player_name")
           .order("registered_at", { ascending: true })
+
+        if (eventId) registrationQuery = registrationQuery.eq("event_id", eventId)
+        else if (seriesId) registrationQuery = registrationQuery.eq("series_id", seriesId)
+        else registrationQuery = registrationQuery.is("event_id", null).is("series_id", null)
+
+        const { data, error } = await registrationQuery
 
         if (error) throw error
 
@@ -2865,7 +2891,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                       return
                     }
 
-                    await markTournamentAsCompleted(tournamentId)
+                    await markTournamentAsCompleted(tournamentId, centralEventId)
                     await deleteFreiloseFromDatabase(tournamentType, tournamentId)
                     await clearTournamentRegistration(seriesId, eventId)
                     router.push("/admin/einzelturnier")

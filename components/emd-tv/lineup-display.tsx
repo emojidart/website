@@ -148,9 +148,6 @@ export default function LineupDisplay({
     setScreenIndex(0)
 
     async function load() {
-      // Die Team-Introfolie bleibt mindestens 2,2 Sekunden sichtbar.
-      // Wenn das Vorladen länger dauert, bleibt sie automatisch länger stehen.
-      const minimumIntro = new Promise((resolve) => window.setTimeout(resolve, 2200))
       const [headerRes, matchRes, lineupRes, teamRes, memberRes, opponentRes] = await Promise.all([
         supabase
           .from("match_lineup_headers")
@@ -237,16 +234,16 @@ export default function LineupDisplay({
         .map((p) => p.club_players?.photo_url)
         .filter((value): value is string => Boolean(value))
 
-      const [decodedImages] = await Promise.all([
-        Promise.all(urls.map((src) => preloadImage(tvPlayerImageUrl(src) || src, src))),
-        minimumIntro,
-      ])
-      if (!cancelled) {
-        // Keep decoded player images alive for the whole lineup so Fire TV/Silk
-        // does not have to decode them again when the next player appears.
-        imageCacheRef.current = decodedImages.filter((img): img is HTMLImageElement => Boolean(img))
-        setReady(true)
-      }
+      // TV darf niemals auf Fotos warten. Daten sind da -> Lineup startet sofort.
+      if (!cancelled) setReady(true)
+
+      // Bilder parallel im Hintergrund warm halten. Durch das Vorladen im EMD-TV-Screen
+      // sind sie meistens bereits im Browsercache; langsame Fotos blockieren die Sequenz nicht mehr.
+      void Promise.all(urls.map((src) => preloadImage(tvPlayerImageUrl(src) || src, src))).then((decodedImages) => {
+        if (!cancelled) {
+          imageCacheRef.current = decodedImages.filter((img): img is HTMLImageElement => Boolean(img))
+        }
+      })
     }
 
     void load()
@@ -288,7 +285,7 @@ export default function LineupDisplay({
   useEffect(() => {
     if (!ready || screens.length < 2) return
     const final = screenIndex === screens.length - 1
-    const delay = screenIndex === 0 ? 7000 : final ? 7800 : 3600
+    const delay = screenIndex === 0 ? 3600 : final ? 5000 : 2600
     const timer = window.setTimeout(() => {
       if (final) {
         if (!completedRef.current) {

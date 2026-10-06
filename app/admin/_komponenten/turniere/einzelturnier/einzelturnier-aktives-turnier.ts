@@ -9,13 +9,44 @@ export type ActiveTournament = {
   incompleteMatches: number
 }
 
-export async function fetchActiveTournamentData(): Promise<ActiveTournament | null> {
-  const { data, error } = await supabase
+export async function fetchActiveTournamentData(opts?: { centralEventId?: string | null; seriesId?: string | null; eventId?: string | null }): Promise<ActiveTournament | null> {
+  const centralEventId = opts?.centralEventId ?? null
+  const seriesId = opts?.seriesId ?? null
+  const eventId = opts?.eventId ?? null
+  let centralEventTitle: string | null = null
+
+  // Niemals ein fremdes laufendes Turnier an eine ungebundene Setup-Seite hängen.
+  if (!centralEventId && !eventId) return null
+
+  if (centralEventId && !eventId) {
+    const { data: centralEvent, error: centralEventError } = await supabase
+      .from("central_tournament_events")
+      .select("title,status")
+      .eq("id", centralEventId)
+      .maybeSingle()
+
+    if (centralEventError) throw centralEventError
+    if (!centralEvent || centralEvent.status !== "started") return null
+    centralEventTitle = centralEvent.title || null
+  }
+
+  let query = supabase
     .from("tournaments_status")
-    .select("tournament_id, tournament_type, tournament_name, access_type")
+    .select("tournament_id, tournament_type, tournament_name, access_type, created_at, central_event_id, series_id, series_event_id")
     .eq("status", "active")
+    .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle()
+
+  if (eventId) {
+    query = query.eq("series_event_id", eventId)
+    if (seriesId) query = query.eq("series_id", seriesId)
+  } else if (centralEventId) {
+    query = query.eq("central_event_id", centralEventId)
+  } else if (centralEventTitle) {
+    query = query.eq("tournament_name", centralEventTitle)
+  }
+
+  const { data, error } = await query.maybeSingle()
 
   if (error) throw error
   if (!data) return null
@@ -32,6 +63,8 @@ export async function fetchActiveTournamentData(): Promise<ActiveTournament | nu
 export async function cancelActiveTournamentData(opts: {
   tournamentId: string
   centralEventId: string | null
+  seriesId?: string | null
+  eventId?: string | null
 }) {
   const { error: statusError } = await supabase
     .from("tournaments_status")
@@ -43,14 +76,16 @@ export async function cancelActiveTournamentData(opts: {
 
   if (statusError) throw statusError
 
-  let registrationDelete = supabase
-    .from("dko_tournament_registration")
-    .delete()
+  // WICHTIG: Beim Abbrechen eines laufenden Turniers werden KEINE Voranmeldungen gelöscht.
+  // Die Registrierungstabelle kann gleichzeitig Anmeldungen für andere Turniere/Serien enthalten.
+  // Ein Abbruch ändert ausschließlich den Laufstatus des betroffenen Turniers.
 
-  registrationDelete = opts.centralEventId
-    ? registrationDelete.eq("event_id", opts.centralEventId)
-    : registrationDelete.is("event_id", null)
+  if (opts.centralEventId) {
+    const { error: centralEventError } = await supabase
+      .from("central_tournament_events")
+      .update({ status: "cancelled", updated_at: new Date().toISOString() })
+      .eq("id", opts.centralEventId)
 
-  const { error: registrationError } = await registrationDelete
-  if (registrationError) throw registrationError
+    if (centralEventError) throw centralEventError
+  }
 }

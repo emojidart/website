@@ -802,12 +802,13 @@ function TvHeader({
 }) {
   const kickerTone = accent === "red" ? "text-red-300/80" : accent === "cyan" ? "text-cyan-200/80" : "text-orange-300/80"
   return (
-    <header className="relative z-10 flex items-end justify-between gap-8 border-b border-white/[.06] pb-[2.2vh]">
-      <div className="min-w-0">
+    <header className="relative z-10 flex min-h-[12.4vh] items-center justify-between gap-8 py-[1.15vh]">
+      <div className="min-w-0 py-[.35vh]">
         <div className={`text-[clamp(.68rem,.82vw,.9rem)] font-black uppercase tracking-[.32em] ${kickerTone}`}>{kicker}</div>
-        <h1 className="mt-[.8vh] text-[clamp(2.8rem,4.6vw,5.45rem)] font-black leading-[.88] tracking-[-.065em] text-white">{title}</h1>
+        <h1 className="mt-[.7vh] text-[clamp(2.8rem,4.6vw,5.45rem)] font-black leading-[.94] tracking-[-.065em] text-white">{title}</h1>
       </div>
-      {right ? <div className="shrink-0 pb-[.4vh]">{right}</div> : null}
+      {right ? <div className="flex shrink-0 items-center self-stretch">{right}</div> : null}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-white/[.10] via-white/[.055] to-transparent" />
     </header>
   )
 }
@@ -1069,7 +1070,6 @@ export function SportdartsLiveTv({ game, lastUpdated, testMode = false }: { game
         <div className="mt-[1.45vh] flex min-h-0 flex-1 flex-col">
           <div className="mb-[.8vh] flex items-center justify-between">
             <div className="text-[clamp(.62rem,.76vw,.86rem)] font-black uppercase tracking-[.24em] text-red-100/68">Paarungen · aktueller Spielplan</div>
-            {detailLoading ? <div className="text-[clamp(.55rem,.65vw,.72rem)] font-bold uppercase tracking-[.12em] text-white/24">Aktualisiert …</div> : null}
           </div>
 
           {visibleBlocks.length ? (
@@ -1098,7 +1098,7 @@ export function SportdartsLiveTv({ game, lastUpdated, testMode = false }: { game
             </div>
           ) : (
             <div className="grid flex-1 place-items-center rounded-[1.4vw] border border-white/[.07] bg-black/24 text-center text-[clamp(.85rem,1vw,1.1rem)] font-bold text-white/34">
-              {detailLoading ? "LIVE-Spielplan wird geladen …" : "Noch keine Paarungen verfügbar"}
+              {detailLoading ? "" : "Noch keine Paarungen verfügbar"}
             </div>
           )}
         </div>
@@ -1173,17 +1173,27 @@ function LeagueCards({
           right={upcoming ? <CalendarDays className="h-[2.4vw] w-[2.4vw] text-orange-300/38" /> : <Trophy className="h-[2.4vw] w-[2.4vw] text-cyan-200/38" />}
         />
 
-        <div className="mt-[2.3vh] grid min-h-0 flex-1 grid-cols-2 grid-rows-3 gap-[1.05vw]">
-          {games.slice(0, 6).map((game, index) => (
-            <MatchCard
-              key={game.gameId}
-              game={game}
-              mode={mode}
-              prediction={mode === "upcoming" ? getPrediction?.(game.homeTeam, game.awayTeam) ?? null : null}
-              index={index}
-            />
-          ))}
-        </div>
+        {games.length ? (
+          <div className="mt-[2.3vh] grid min-h-0 flex-1 grid-cols-2 grid-rows-3 gap-[1.05vw]">
+            {games.slice(0, 6).map((game, index) => (
+              <MatchCard
+                key={game.gameId}
+                game={game}
+                mode={mode}
+                prediction={mode === "upcoming" ? getPrediction?.(game.homeTeam, game.awayTeam) ?? null : null}
+                index={index}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            <div className="rounded-[2vw] border border-white/10 bg-white/[.035] px-[4vw] py-[4vh] text-center">
+              <div className="text-[clamp(1.8rem,3.2vw,4rem)] font-black tracking-[-.04em] text-white/82">
+                {upcoming ? "Derzeit keine kommenden Ligaspiele eingetragen" : "Derzeit keine letzten Ligaergebnisse verfügbar"}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   )
@@ -1577,6 +1587,8 @@ export function SportdartsResultsTv({
   }, [gameKey])
 
   const potmGames = useMemo(
+    // Zu JEDEM sichtbaren letzten Ergebnis die Top 3 zeigen, sofern Detaildaten vorhanden sind.
+    // Kein künstliches Limit auf nur ein Match mehr.
     () => visibleGames.filter((game) => calculatePlayersOfMatch(details.get(game.gameId) || null).length > 0),
     [gameKey, details],
   )
@@ -1656,25 +1668,28 @@ export function SportdartsResultsTv({
 
   useEffect(() => {
     if (!visibleGames.length) {
-      if (!completedRef.current) {
-        completedRef.current = true
-        onComplete?.()
-      }
-      return
+      // Die Ergebnisse-Seite bleibt auch bei einer vorübergehend leeren Antwort sichtbar,
+      // statt sofort unsichtbar übersprungen zu werden.
+      const timer = window.setTimeout(() => {
+        if (!completedRef.current) {
+          completedRef.current = true
+          onComplete?.()
+        }
+      }, 6500)
+      return () => window.clearTimeout(timer)
     }
 
-    // Ergebnisübersicht bleibt sichtbar, bis Detaildaten und Gewinner-Fotos vorbereitet sind.
+    // Ergebnisse sofort und mit fixer Dauer zeigen. Weder API-Details noch Spielerfotos
+    // dürfen den TV-Zyklus festhalten. Sind die Top-3-Daten rechtzeitig da, folgt die Top-3-Seite.
     if (screenIndex === 0) {
-      if (!detailsReady || !photosReady) return
-      const delay = potmGames.length ? 7000 : 9000
       const timer = window.setTimeout(() => {
-        if (potmGames.length) {
+        if (detailsReady && potmGames.length) {
           setScreenIndex(1)
         } else if (!completedRef.current) {
           completedRef.current = true
           onComplete?.()
         }
-      }, delay)
+      }, 8000)
       return () => window.clearTimeout(timer)
     }
 
@@ -1690,7 +1705,7 @@ export function SportdartsResultsTv({
       } else {
         setScreenIndex((index) => index + 1)
       }
-    }, 6200)
+    }, 4300)
 
     return () => window.clearTimeout(timer)
   }, [detailsReady, photosReady, onComplete, potmGames.length, screenIndex, visibleGames.length])

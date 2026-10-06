@@ -1,8 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { supabase } from "@/lib/supabase"
 import {
   buildDkoStartRoute,
+  buildTournamentContinueRoute,
   createRoundRobinWithSchedule,
   createTournamentIdCompat,
 } from "./einzelturnier-engine"
@@ -74,14 +76,42 @@ export function useEinzelturnierStartController(options: Options) {
       return
     }
 
-    if (centralEventId) {
-      try {
-        await markCentralEventStarted(centralEventId, tournamentMode)
-      } catch (error) {
-        console.error(
-          "Zentraler Turnierstatus konnte nicht gesetzt werden:",
-          error,
+    // Serien- und Zentral-Turniere dürfen pro Event nur einen aktiven Lauf haben.
+    // Wenn bereits einer existiert (z. B. nach Reload/Seite verlassen), öffnen wir genau diesen wieder.
+    if (eventId || centralEventId) {
+      let existingQuery = supabase
+        .from("tournaments_status")
+        .select("tournament_id,tournament_type,tournament_name,access_type")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+
+      if (eventId) {
+        existingQuery = existingQuery.eq("series_event_id", eventId)
+        if (seriesId) existingQuery = existingQuery.eq("series_id", seriesId)
+      } else if (centralEventId) {
+        existingQuery = existingQuery.eq("central_event_id", centralEventId)
+      }
+
+      const { data: existing, error: existingError } = await existingQuery.maybeSingle()
+      if (existingError) {
+        console.error("Aktives Turnier konnte nicht geprüft werden:", existingError)
+        alert("Turnierstatus konnte nicht geprüft werden. Bitte versuche es erneut.")
+        return
+      }
+
+      if (existing) {
+        push(
+          buildTournamentContinueRoute({
+            tournamentType: existing.tournament_type,
+            tournamentId: existing.tournament_id,
+            tournamentName: existing.tournament_name || tournamentName.trim(),
+            accessType: (existing.access_type || tournamentAccessType || "public") as TournamentAccessType,
+            seriesId,
+            eventId,
+          }),
         )
+        return
       }
     }
 
@@ -110,7 +140,14 @@ export function useEinzelturnierStartController(options: Options) {
           groupCount,
           players: rrPlayers,
           accessType: tournamentAccessType as Exclude<TournamentAccessType, "">,
+          centralEventId,
+          seriesId,
+          eventId,
         })
+
+        if (centralEventId) {
+          await markCentralEventStarted(centralEventId, "round_robin")
+        }
 
         push(
           `/roundrobin?roundRobinId=${roundRobinId}&tournamentName=${encodedName}&accessType=${encodeURIComponent(
@@ -130,10 +167,85 @@ export function useEinzelturnierStartController(options: Options) {
     }
 
     const tournamentId = createTournamentIdCompat()
+    const normalizedTournamentSize = [8, 16, 32, 64, 128].includes(tournamentSize)
+      ? tournamentSize
+      : 16
+    const tournamentType = `${normalizedTournamentSize}er_dko`
+
+    // Den Laufstatus schon VOR dem Seitenwechsel setzen. Dadurch erkennen EMD TV,
+    // Terminal und die Turnier-Zentrale das Turnier sofort – auch wenn die DKO-Seite
+    // noch lädt oder der Browser direkt danach verlassen wird.
+    try {
+      const { error: statusError } = await supabase.from("tournaments_status").insert({
+        tournament_id: tournamentId,
+        tournament_type: tournamentType,
+        tournament_name: tournamentName.trim(),
+        access_type: tournamentAccessType,
+        status: "active",
+        central_event_id: centralEventId || null,
+        series_id: seriesId || null,
+        series_event_id: eventId || null,
+      })
+
+      if (statusError && (statusError as any).code === "23505") {
+        let duplicateQuery = supabase
+          .from("tournaments_status")
+          .select("tournament_id,tournament_type,tournament_name,access_type")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
+
+        if (eventId) {
+          duplicateQuery = duplicateQuery.eq("series_event_id", eventId)
+          if (seriesId) duplicateQuery = duplicateQuery.eq("series_id", seriesId)
+        } else if (centralEventId) {
+          duplicateQuery = duplicateQuery.eq("central_event_id", centralEventId)
+        } else {
+          duplicateQuery = duplicateQuery.eq("tournament_id", tournamentId)
+        }
+
+        const { data: existing } = await duplicateQuery.maybeSingle()
+        if (existing) {
+          push(
+            buildTournamentContinueRoute({
+              tournamentType: existing.tournament_type,
+              tournamentId: existing.tournament_id,
+              tournamentName: existing.tournament_name || tournamentName.trim(),
+              accessType: (existing.access_type || tournamentAccessType || "public") as TournamentAccessType,
+              seriesId,
+              eventId,
+            }),
+          )
+          return
+        }
+      }
+
+      if (statusError) throw statusError
+    } catch (error) {
+      console.error("Turnier-Laufstatus konnte nicht gesetzt werden:", error)
+      alert("Turnier konnte nicht gestartet werden. Bitte versuche es erneut.")
+      return
+    }
+
+    if (centralEventId) {
+      try {
+        await markCentralEventStarted(centralEventId, "dko")
+      } catch (error) {
+        // Kein halbfertiger Zustand: falls die Zentrale nicht auf started gesetzt werden kann,
+        // den zuvor erzeugten aktiven Laufstatus wieder zurücknehmen.
+        await supabase
+          .from("tournaments_status")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .eq("tournament_id", tournamentId)
+        console.error("Zentraler Turnierstatus konnte nicht gesetzt werden:", error)
+        alert("Turnierstatus konnte nicht gespeichert werden. Bitte versuche es erneut.")
+        return
+      }
+    }
 
     push(
       buildDkoStartRoute({
-        tournamentSize,
+        tournamentSize: normalizedTournamentSize,
         tournamentId,
         tournamentName: tournamentName.trim(),
         accessType: tournamentAccessType,

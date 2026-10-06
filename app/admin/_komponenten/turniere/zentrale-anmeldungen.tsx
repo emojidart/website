@@ -30,6 +30,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getPlayerEligibilityFromMap, loadEligibilityMapData, type PlayerEligibility } from "./einzelturnier/einzelturnier-berechtigungen"
+import { loadCentralEventForSetup, markCentralEventStarted, syncCentralEventRegistrations } from "./einzelturnier/einzelturnier-central-event"
+import { buildDkoStartRoute, buildTournamentContinueRoute, createTournamentIdCompat } from "./einzelturnier/einzelturnier-engine"
 
 type EventStatus = "draft" | "open" | "closed" | "ready" | "started" | "completed" | "cancelled"
 type AccessType = "public" | "club_internal" | "club_external"
@@ -1152,8 +1154,50 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     }
   }
 
+  const openRunningCentralTournament = async () => {
+    if (!selectedEvent) return
+
+    const { data, error } = await supabase
+      .from("tournaments_status")
+      .select("tournament_id, tournament_type, tournament_name, access_type")
+      .eq("central_event_id", selectedEvent.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) throw error
+    if (!data) {
+      setMessage({
+        type: "error",
+        text: "Dieses Turnier ist als gestartet markiert, aber es wurde kein aktives Turnier gefunden. Es wird NICHT neu gestartet.",
+      })
+      return
+    }
+
+    let route = buildTournamentContinueRoute({
+      tournamentType: data.tournament_type,
+      tournamentId: data.tournament_id,
+      tournamentName: data.tournament_name || selectedEvent.title,
+      accessType: data.access_type || selectedEvent.access_type,
+      eventId: selectedEvent.id,
+    })
+    route += `${route.includes("?") ? "&" : "?"}centralEventId=${encodeURIComponent(selectedEvent.id)}`
+    router.push(route)
+  }
+
   const chooseMode = async (mode: StartMode) => {
     if (!selectedEvent || selectedEventIsPast) return
+
+    if (selectedEvent.status === "started") {
+      try {
+        await openRunningCentralTournament()
+      } catch (error: any) {
+        console.error("running central tournament open failed:", error)
+        setMessage({ type: "error", text: error?.message || "Laufendes Turnier konnte nicht geöffnet werden." })
+      }
+      return
+    }
 
     const active = selectedRegistrations.filter((row) => row.status === "registered")
     if (active.length < 2) {
@@ -1201,12 +1245,105 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
       if (error) throw error
 
-      if (mode === "dko" || mode === "round_robin") {
+      if (mode === "dko") {
+        // Falls dieses zentrale Event bereits ein aktives DKO hat, niemals ein neues erzeugen.
+        const { data: existingActive, error: existingError } = await supabase
+          .from("tournaments_status")
+          .select("tournament_id, tournament_type, tournament_name, access_type")
+          .eq("central_event_id", selectedEvent.id)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (existingError) throw existingError
+        if (existingActive) {
+          let route = buildTournamentContinueRoute({
+            tournamentType: existingActive.tournament_type,
+            tournamentId: existingActive.tournament_id,
+            tournamentName: existingActive.tournament_name || selectedEvent.title,
+            accessType: existingActive.access_type || selectedEvent.access_type,
+            eventId: selectedEvent.id,
+          })
+          route += `${route.includes("?") ? "&" : "?"}centralEventId=${encodeURIComponent(selectedEvent.id)}`
+          router.push(route)
+          return
+        }
+
+        // Zentrale Turniere sind hier bereits vollständig konfiguriert.
+        const centralSetup = await loadCentralEventForSetup(selectedEvent.id)
+        await syncCentralEventRegistrations({
+          centralEventId: selectedEvent.id,
+          event: centralSetup.event,
+          registrations: centralSetup.registrations,
+          teamMode,
+          tournamentMode: "dko",
+        })
+
+        const participantCount = teamMode === "single"
+          ? centralSetup.registrations.length
+          : Math.ceil(centralSetup.registrations.length / 2)
+        const tournamentSize = participantCount <= 8 ? 8 : participantCount <= 16 ? 16 : participantCount <= 32 ? 32 : participantCount <= 64 ? 64 : 128
+        const tournamentId = createTournamentIdCompat()
+        const tournamentType = `${tournamentSize}er_dko`
+
+        // Status VOR Navigation anlegen. Der DB-Index erlaubt pro zentralem Event nur EIN aktives Turnier.
+        const { error: statusError } = await supabase.from("tournaments_status").insert({
+          tournament_id: tournamentId,
+          tournament_type: tournamentType,
+          tournament_name: selectedEvent.title,
+          access_type: selectedEvent.access_type,
+          status: "active",
+          central_event_id: selectedEvent.id,
+        })
+
+        if (statusError) {
+          // Ein zweiter Klick / Reload darf niemals ein zweites Turnier starten.
+          if ((statusError as any).code === "23505") {
+            const { data: activeNow, error: activeNowError } = await supabase
+              .from("tournaments_status")
+              .select("tournament_id, tournament_type, tournament_name, access_type")
+              .eq("central_event_id", selectedEvent.id)
+              .eq("status", "active")
+              .limit(1)
+              .maybeSingle()
+            if (activeNowError) throw activeNowError
+            if (activeNow) {
+              let route = buildTournamentContinueRoute({
+                tournamentType: activeNow.tournament_type,
+                tournamentId: activeNow.tournament_id,
+                tournamentName: activeNow.tournament_name || selectedEvent.title,
+                accessType: activeNow.access_type || selectedEvent.access_type,
+                eventId: selectedEvent.id,
+              })
+              route += `${route.includes("?") ? "&" : "?"}centralEventId=${encodeURIComponent(selectedEvent.id)}`
+              router.push(route)
+              return
+            }
+          }
+          throw statusError
+        }
+
+        await markCentralEventStarted(selectedEvent.id, "dko")
+
+        let route = buildDkoStartRoute({
+          tournamentSize,
+          tournamentId,
+          tournamentName: selectedEvent.title,
+          accessType: selectedEvent.access_type,
+          eventId: selectedEvent.id,
+        })
+        route += `&centralEventId=${encodeURIComponent(selectedEvent.id)}`
+        router.push(route)
+        return
+      }
+
+      if (mode === "round_robin") {
         const params = new URLSearchParams({
           centralEventId: selectedEvent.id,
           mode,
-          doubleEntry: mode === "dko" && allowDoubleEntry ? "1" : "0",
-          teamMode: mode === "dko" ? teamMode : "single",
+          doubleEntry: "0",
+          teamMode: "single",
           doubleMode: "0",
         })
         router.push(`/admin/einzelturnier?${params.toString()}`)
@@ -1214,7 +1351,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       }
 
       if (mode === "kratzer") {
-        router.push("/kratzer-tournament")
+        router.push(`/kratzer-tournament?centralEventId=${encodeURIComponent(selectedEvent.id)}`)
         return
       }
 
@@ -1562,6 +1699,27 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               </div>
             </div>
 
+            {selectedEvent.status === "started" ? (
+              <div className="rounded-3xl border border-emerald-300/15 bg-emerald-500/[0.055] p-5 sm:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200/60">Turnier läuft</div>
+                    <div className="mt-2 text-xl font-black text-white">Dieses Turnier ist bereits gestartet.</div>
+                    <div className="mt-1 text-sm font-semibold text-white/45">Teilnehmer, Startgeld, Warteliste und Turniermodus sind während des laufenden Turniers gesperrt.</div>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => void openRunningCentralTournament()}
+                    className="h-11 rounded-xl bg-emerald-500 px-5 font-black text-black hover:bg-emerald-400"
+                  >
+                    <Play className="mr-2 h-4 w-4" />
+                    Zum laufenden Turnier
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            <div className={selectedEvent.status === "started" ? "hidden" : "contents"}>
             {deleteConfirmOpen ? (
               <div className="rounded-2xl border border-rose-300/15 bg-rose-500/[0.045] p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -2119,6 +2277,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 )}
               </div>
             ) : null}
+            </div>
           </div>
         ) : null}
     </section>

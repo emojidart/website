@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { MatchdayAttendance } from "@/app/admin/_komponenten/turniere/spieltag-anwesenheit"
+import { buildTournamentContinueRoute } from "@/app/admin/_komponenten/turniere/einzelturnier/einzelturnier-engine"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -44,6 +45,15 @@ type DkoSeriesEvent = {
   no_show_penalty_mode_override?: "none" | "delete_worst_result" | null
   notes: string | null
   dko_series?: DkoSeries | null
+}
+
+type ActiveSeriesRun = {
+  tournament_id: string
+  tournament_type: string
+  tournament_name: string
+  access_type: "public" | "club_internal" | "club_external" | null
+  series_id: string | null
+  series_event_id: string | null
 }
 
 type RegistrationRow = {
@@ -106,6 +116,7 @@ export function TournamentDaysManagement({ onBack }: { onBack?: () => void }) {
   // Registrierungen werden eindeutig dem Spieltag über event_id zugeordnet.
   const [registrationsByEvent, setRegistrationsByEvent] = useState<Record<string, RegistrationRow[]>>({})
   const [registrationsError, setRegistrationsError] = useState<string | null>(null)
+  const [activeRunsByEvent, setActiveRunsByEvent] = useState<Record<string, ActiveSeriesRun>>({})
 
   const todayKey = useMemo(() => {
     const now = new Date()
@@ -156,6 +167,19 @@ export function TournamentDaysManagement({ onBack }: { onBack?: () => void }) {
 
       if (eErr) throw eErr
       setEvents(((eData || []) as DkoSeriesEvent[]).filter((ev) => ev.dko_series?.is_active !== false))
+
+      const { data: activeData, error: activeErr } = await supabase
+        .from("tournaments_status")
+        .select("tournament_id,tournament_type,tournament_name,access_type,series_id,series_event_id")
+        .eq("status", "active")
+        .not("series_event_id", "is", null)
+
+      if (activeErr) throw activeErr
+      const activeMap: Record<string, ActiveSeriesRun> = {}
+      for (const row of (activeData || []) as ActiveSeriesRun[]) {
+        if (row.series_event_id) activeMap[row.series_event_id] = row
+      }
+      setActiveRunsByEvent(activeMap)
     } catch (e: any) {
       console.error(e)
       setErrorMsg(e?.message ?? "Fehler beim Laden.")
@@ -263,6 +287,7 @@ const todaysRegistrations = useMemo(() => {
       .channel("tournament_days_pretty_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "dko_series" }, () => fetchAll())
       .on("postgres_changes", { event: "*", schema: "public", table: "dko_series_events" }, () => fetchAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "tournaments_status" }, () => fetchAll())
       .subscribe()
 
     return () => {
@@ -602,6 +627,9 @@ const todaysRegistrations = useMemo(() => {
 
                       const regs = registrationsByEvent[ev.id] ?? []
                       const paidCount = regs.filter((r) => r.paid === true).length
+                      const activeRun = activeRunsByEvent[ev.id] ?? null
+                      const hasActiveRun = Boolean(activeRun)
+                      const canOpenOrStart = hasActiveRun || canStart
                       const effectiveNoShowPenalty =
                         ev.no_show_penalty_mode_override ??
                         series?.no_show_penalty_mode ??
@@ -612,7 +640,7 @@ const todaysRegistrations = useMemo(() => {
                         <div
                           key={ev.id}
                           className={`w-full overflow-hidden rounded-[30px] border bg-[linear-gradient(145deg,rgba(14,17,22,.96),rgba(7,9,13,.92))] text-white shadow-[0_28px_80px_-50px_rgba(0,0,0,.98)] transition-all hover:-translate-y-0.5 ${
-                            canStart ? "border-orange-300/30 ring-1 ring-orange-400/10 shadow-[0_24px_70px_-46px_rgba(249,115,22,.34)]" : "border-white/[0.08]"
+                            canOpenOrStart ? "border-orange-300/30 ring-1 ring-orange-400/10 shadow-[0_24px_70px_-46px_rgba(249,115,22,.34)]" : "border-white/[0.08]"
                           }`}
                         >
                           <div
@@ -692,7 +720,7 @@ const todaysRegistrations = useMemo(() => {
                               )}
                             </div>
 
-                            {canStart && attendanceRequired ? (
+                            {canStart && attendanceRequired && !hasActiveRun ? (
                               <MatchdayAttendance
                                 seriesId={ev.series_id}
                                 seriesName={seriesName}
@@ -706,11 +734,25 @@ const todaysRegistrations = useMemo(() => {
                                     ? `/admin/members-champion-cup/auslosung?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
                                     : `/admin/einzelturnier?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
                                 }
-                                continueLabel={isMembersChampionCup ? "Auslosung öffnen" : "Turniertag starten"}
+                                continueLabel={hasActiveRun ? "Laufendes Turnier öffnen" : isMembersChampionCup ? "Auslosung öffnen" : "Turniertag starten"}
                               />
                             ) : (
                               <Button
                                 onClick={() => {
+                                  if (activeRun) {
+                                    router.push(
+                                      buildTournamentContinueRoute({
+                                        tournamentType: activeRun.tournament_type,
+                                        tournamentId: activeRun.tournament_id,
+                                        tournamentName: activeRun.tournament_name || seriesName,
+                                        accessType: activeRun.access_type || "public",
+                                        seriesId: ev.series_id,
+                                        eventId: ev.id,
+                                      }),
+                                    )
+                                    return
+                                  }
+
                                   if (isMembersChampionCup) {
                                     router.push(
                                       `/admin/members-champion-cup/auslosung?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
@@ -722,14 +764,16 @@ const todaysRegistrations = useMemo(() => {
                                     `/admin/einzelturnier?seriesId=${encodeURIComponent(ev.series_id)}&eventId=${encodeURIComponent(ev.id)}`
                                   )
                                 }}
-                                disabled={!canStart}
+                                disabled={!canOpenOrStart}
                                 className={`flex min-h-[72px] w-full items-center justify-center gap-2 rounded-2xl py-5 text-base font-black transition-all ${
-                                  canStart
+                                  canOpenOrStart
                                     ? "border border-orange-300/25 bg-orange-500 text-white shadow-[0_14px_32px_-20px_rgba(249,115,22,.55)] hover:bg-orange-400 hover:-translate-y-0.5"
                                     : "cursor-not-allowed border border-white/[0.07] bg-white/[0.035] text-white/25"
                                 }`}
                                 title={
-                                  canStart
+                                  hasActiveRun
+                                    ? "Laufendes Turnier öffnen"
+                                    : canStart
                                     ? isMembersChampionCup
                                       ? "Members-Cup-Auslosung öffnen"
                                       : "Turniertag starten"
@@ -737,7 +781,7 @@ const todaysRegistrations = useMemo(() => {
                                 }
                               >
                                 <Play className="w-5 h-5" />
-                                {isMembersChampionCup ? "Auslosung öffnen" : "Turniertag starten"}
+                                {hasActiveRun ? "Laufendes Turnier öffnen" : isMembersChampionCup ? "Auslosung öffnen" : "Turniertag starten"}
                               </Button>
                             )}
                           </div>

@@ -78,6 +78,20 @@ function isMessengerPath(pathname: string) {
   return pathname === "/chat-app" || pathname.startsWith("/chat-app/")
 }
 
+function isTvDisplayPath(pathname: string) {
+  return (
+    pathname === "/emd-tv-screen" ||
+    pathname === "/beamer" ||
+    pathname === "/8erdko/beamer" ||
+    pathname === "/16erdko/beamer" ||
+    pathname === "/32erdko/beamer" ||
+    pathname === "/64erdko/beamer" ||
+    pathname === "/128erdko/beamer" ||
+    pathname === "/kratzer-tournament/beamer" ||
+    pathname === "/survival-roulette/beamer"
+  )
+}
+
 function LoadingScreen() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050608] px-4 text-white">
@@ -119,7 +133,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
         // Club Terminal is a separate public kiosk area.
         // Club Terminal and EMD Messenger are standalone areas and bypass this global guard.
         // The normal site keeps all existing auth/access checks unchanged.
-        if (isTerminalPath(pathname) || isMessengerPath(pathname)) {
+        if (isTerminalPath(pathname) || isMessengerPath(pathname) || isTvDisplayPath(pathname)) {
           if (mounted) setChecking(false)
           return
         }
@@ -280,6 +294,7 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
   if (
     isTerminalPath(pathname) ||
     isMessengerPath(pathname) ||
+    isTvDisplayPath(pathname) ||
     pathname === MEMBER_LOGIN_ROUTE ||
     pathname === GUEST_LOGIN_ROUTE
   ) {

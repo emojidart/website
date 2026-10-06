@@ -4,15 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Activity,
-  CheckCircle2,
-  Clock3,
-  Expand,
   Monitor,
   Radio,
   Trophy,
   Users,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { useDkoTvEvents, type DkoTvEvent } from "@/components/emd-tv/use-dko-tv-events"
 
 type DkoMatch = {
   id: number
@@ -49,8 +47,8 @@ type RankingRow = {
   eliminated_at?: string
 }
 
-const INTRO_MS = 1750
-const WINNER_FLASH_MS = 5000
+const INTRO_MS = 1800
+const WINNER_FLASH_MS = 2400
 
 const toMatch = (row: any): DkoMatch => ({
   id: Number(row.match_id),
@@ -71,53 +69,32 @@ function MatchIntro({
   tournamentName: string
 }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-[#050608] text-white">
-      <div className="absolute inset-0 opacity-90 [background:radial-gradient(circle_at_50%_38%,rgba(249,115,22,.16),transparent_32%),radial-gradient(circle_at_50%_100%,rgba(14,165,233,.10),transparent_42%)]" />
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[#050608] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(16,185,129,.14),transparent_42%)]" />
+      <div className="relative w-[min(94vw,1480px)] animate-[emdTvSimpleIn_.22s_ease-out_both] text-center">
+        <div className="text-[12px] font-black uppercase tracking-[0.24em] text-emerald-300">MATCH STARTET</div>
+        <div className="mt-2 truncate text-[clamp(14px,1.4vw,22px)] font-bold text-slate-500">{tournamentName}</div>
 
-      <div className="relative w-[min(92vw,1500px)]">
-        <div className="mb-5 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] font-black uppercase tracking-[0.18em] text-slate-300">
-            <Radio className="h-4 w-4 text-emerald-400" />
-            Match {item.matchId} startet
+        <div className="mt-7 grid items-center gap-4 md:grid-cols-[1fr_auto_1fr]">
+          <div className="min-w-0 rounded-[22px] border border-white/10 bg-white/[0.04] px-5 py-6 text-right">
+            <div className="truncate text-[clamp(30px,4vw,64px)] font-black leading-none tracking-[-0.05em]">{item.player1}</div>
           </div>
-          <div className="mt-3 text-sm font-bold text-slate-500">{tournamentName}</div>
-        </div>
 
-        <div className="grid items-center gap-5 md:grid-cols-[1fr_auto_1fr]">
-          <div className="animate-[dkoIntroLeft_.42s_cubic-bezier(.2,.8,.2,1)_both] rounded-[26px] border border-white/10 bg-black/35 p-5 backdrop-blur-xl text-right shadow-2xl backdrop-blur">
-            <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Spieler 1</div>
-            <div className="mt-3 break-words text-[clamp(30px,3vw,54px)] font-black leading-[0.96] tracking-[-0.045em]">
-              {item.player1}
+          <div className="shrink-0">
+            <div className="mx-auto grid h-20 w-20 place-items-center rounded-[22px] bg-emerald-400 text-2xl font-black text-slate-950">VS</div>
+            <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-lg font-black">
+              Board {item.machineNumber}
             </div>
           </div>
 
-          <div className="animate-[dkoIntroPop_.38s_.08s_cubic-bezier(.2,.9,.2,1.1)_both] text-center">
-            <div className="mx-auto grid h-20 w-20 place-items-center rounded-[28px] border border-emerald-300/20 bg-emerald-400 text-3xl font-black tracking-[-0.06em] text-slate-950 shadow-[0_22px_70px_-20px_rgba(16,185,129,.75)]">
-              VS
-            </div>
-            <div className="mx-auto mt-3 inline-flex min-w-40 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3">
-              <Monitor className="h-5 w-5 text-emerald-400" />
-              <span className="text-lg font-black">Automat {item.machineNumber}</span>
-            </div>
+          <div className="min-w-0 rounded-[22px] border border-white/10 bg-white/[0.04] px-5 py-6 text-left">
+            <div className="truncate text-[clamp(30px,4vw,64px)] font-black leading-none tracking-[-0.05em]">{item.player2}</div>
           </div>
-
-          <div className="animate-[dkoIntroRight_.42s_cubic-bezier(.2,.8,.2,1)_both] rounded-[26px] border border-white/10 bg-black/35 p-5 backdrop-blur-xl text-left shadow-2xl backdrop-blur">
-            <div className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">Spieler 2</div>
-            <div className="mt-3 break-words text-[clamp(30px,3vw,54px)] font-black leading-[0.96] tracking-[-0.045em]">
-              {item.player2}
-            </div>
-          </div>
-        </div>
-
-        <div className="mx-auto mt-6 h-1.5 max-w-xl overflow-hidden rounded-full bg-white/10">
-          <div className="h-full origin-left animate-[dkoIntroProgress_1.75s_linear_forwards] rounded-full bg-emerald-400" />
         </div>
       </div>
     </div>
   )
 }
-
-
 
 function getBracketSide(matchId: number) {
   const winnerIds = new Set([
@@ -213,59 +190,69 @@ function WinnerResultBanner({
   )
 }
 
+function WinnerOverlay({ item, tournamentName }: { item: WinnerFlash; tournamentName: string }) {
+  return (
+    <div className="fixed inset-0 z-[60] grid place-items-center bg-[#050608] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(249,115,22,.16),transparent_42%)]" />
+      <div className="relative w-[min(94vw,1380px)] animate-[emdTvSimpleIn_.22s_ease-out_both] text-center">
+        <div className="text-[12px] font-black uppercase tracking-[0.24em] text-orange-300">MATCH BEENDET</div>
+        <div className="mt-2 truncate text-[clamp(14px,1.4vw,22px)] font-bold text-slate-500">{tournamentName}</div>
+        <div className="mt-6 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-300">SIEGER</div>
+        <div className="mt-2 truncate text-[clamp(52px,7.2vw,116px)] font-black leading-none tracking-[-0.065em]">{item.winner}</div>
+
+        <div className="mx-auto mt-7 grid max-w-[900px] grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[22px] border border-white/10 bg-white/[0.04] px-5 py-4">
+          <div className="min-w-0 text-right">
+            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Gegner</div>
+            <div className="mt-1 truncate text-[clamp(18px,2vw,30px)] font-black text-slate-300">{item.loser}</div>
+          </div>
+          <div className="rounded-xl bg-orange-500 px-5 py-3 text-[clamp(26px,3vw,44px)] font-black tracking-[-0.06em] text-white">
+            {item.score1}:{item.score2}
+          </div>
+          <div className="min-w-0 text-left">
+            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Board</div>
+            <div className="mt-1 text-[clamp(18px,2vw,30px)] font-black text-orange-300">{item.machineNumber || "—"}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function LiveMatchCard({ match }: { match: DkoMatch }) {
   const bracketSide = getBracketSide(match.id)
 
   return (
     <div
-      className={`rounded-[20px] border ${bracketSide.border} bg-black/38 p-3 shadow-[0_18px_55px_-38px_rgba(249,115,22,.42)] backdrop-blur-xl transition-all duration-300`}
+      className={`min-w-0 rounded-[14px] border ${bracketSide.border} bg-black/40 px-3 py-2 shadow-[0_12px_34px_-28px_rgba(249,115,22,.42)] backdrop-blur-xl`}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.18em] text-emerald-300">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-          LIVE · Match {match.id}
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-400" />
+          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-300">M{match.id}</span>
+          <span className={`hidden rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] 2xl:inline-flex ${bracketSide.badge}`}>
+            {bracketSide.label}
+          </span>
         </div>
-
-        <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-sm font-black text-emerald-200">
-          Automat {match.machineNumber}
-        </div>
-      </div>
-
-      <div className="mt-2">
-        <span className={`inline-flex rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${bracketSide.badge}`}>
-          {bracketSide.label}
-        </span>
-      </div>
-
-      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2.5">
-        <div className="min-w-0 rounded-[16px] border border-white/8 bg-white/[0.03] p-2.5">
-          <div className="truncate text-[clamp(14px,1.05vw,19px)] font-bold leading-none text-white">
-            {match.player1}
-          </div>
-          <div className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">Spieler 1</div>
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-black text-slate-500">
-          VS
-        </div>
-
-        <div className="min-w-0 rounded-[16px] border border-white/8 bg-white/[0.03] p-2.5 text-right">
-          <div className="truncate text-[clamp(14px,1.05vw,19px)] font-bold leading-none text-white">
-            {match.player2}
-          </div>
-          <div className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">Spieler 2</div>
+        <div className="shrink-0 rounded-lg border border-emerald-300/20 bg-emerald-300/10 px-2 py-1 text-[10px] font-black text-emerald-200">
+          Board {match.machineNumber}
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-center gap-2">
-          <div className="min-w-14 rounded-xl border border-white/10 bg-black/45 px-3 py-1.5 text-center text-xl font-black">
-            {match.score1}
-          </div>
-          <span className="text-slate-600">:</span>
-          <div className="min-w-14 rounded-xl border border-white/10 bg-black/45 px-3 py-1.5 text-center text-xl font-black">
-            {match.score2}
-          </div>
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+        <div className="min-w-0 text-left">
+          <div className="truncate text-[clamp(13px,1vw,18px)] font-black leading-tight text-white">{match.player1}</div>
         </div>
+
+        <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-950/55 px-2 py-1">
+          <span className="min-w-4 text-center text-base font-black leading-none">{match.score1}</span>
+          <span className="text-[10px] font-black text-slate-600">:</span>
+          <span className="min-w-4 text-center text-base font-black leading-none">{match.score2}</span>
+        </div>
+
+        <div className="min-w-0 text-right">
+          <div className="truncate text-[clamp(13px,1vw,18px)] font-black leading-tight text-white">{match.player2}</div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -492,65 +479,117 @@ export default function DkoBeamerPage() {
   const [loading, setLoading] = useState(true)
   const [rankings, setRankings] = useState<RankingRow[]>([])
   const [activeView, setActiveView] = useState<"live" | "winners" | "losers" | "finals">("live")
-  const [autoRotate, setAutoRotate] = useState(true)
+  const autoRotate = true
   const previousFinalsAvailableRef = useRef(false)
   const previousLiveMatchIdsRef = useRef<string>("")
   const [introQueue, setIntroQueue] = useState<IntroItem[]>([])
   const [activeIntro, setActiveIntro] = useState<IntroItem | null>(null)
   const [winnerFlash, setWinnerFlash] = useState<WinnerFlash | null>(null)
-  const initializedRef = useRef(false)
+  const [winnerQueue, setWinnerQueue] = useState<WinnerFlash[]>([])
   const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const winnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const shownIntroKeysRef = useRef<Set<string>>(new Set())
+  const shownWinnerKeysRef = useRef<Set<string>>(new Set())
+  const matchesRef = useRef<Record<number, DkoMatch>>({})
 
   const enqueueIntro = useCallback((match: DkoMatch) => {
     if (!match.machineNumber || !match.player1 || !match.player2 || match.winner) return
 
-    setIntroQueue((prev) => {
-      const key = `${match.id}-${match.machineNumber}`
-      if (prev.some((item) => item.key === key)) return prev
-      return [
-        ...prev,
-        {
-          key,
-          matchId: match.id,
-          player1: match.player1,
-          player2: match.player2,
-          machineNumber: match.machineNumber!,
-        },
-      ]
-    })
+    const key = `${match.id}-${match.machineNumber}`
+    if (shownIntroKeysRef.current.has(key)) return
+    shownIntroKeysRef.current.add(key)
+
+    setIntroQueue((prev) => [
+      ...prev,
+      {
+        key,
+        matchId: match.id,
+        player1: match.player1,
+        player2: match.player2,
+        machineNumber: match.machineNumber!,
+      },
+    ])
   }, [])
 
   const showWinnerFlash = useCallback((match: DkoMatch) => {
     if (!match.winner) return
 
-    if (winnerTimerRef.current) {
-      clearTimeout(winnerTimerRef.current)
-    }
+    const key = `${match.id}-${match.winner}-${match.score1}-${match.score2}`
+    if (shownWinnerKeysRef.current.has(key)) return
+    shownWinnerKeysRef.current.add(key)
 
-    setWinnerFlash({
-      key: `${match.id}-${match.winner}-${Date.now()}`,
+    const item: WinnerFlash = {
+      key,
       matchId: match.id,
       winner: match.winner,
       loser: match.loser || (match.winner === match.player1 ? match.player2 : match.player1),
       score1: match.score1,
       score2: match.score2,
       machineNumber: match.machineNumber,
-    })
+    }
 
-    winnerTimerRef.current = setTimeout(() => {
-      setWinnerFlash(null)
-      winnerTimerRef.current = null
-    }, WINNER_FLASH_MS)
+    setWinnerQueue((prev) => [...prev, item])
   }, [])
 
+  const eventToMatch = useCallback((event: DkoTvEvent): DkoMatch => ({
+    id: Number(event.match_id),
+    player1: event.payload?.player1 || "",
+    player2: event.payload?.player2 || "",
+    score1: Number(event.payload?.score1 || 0),
+    score2: Number(event.payload?.score2 || 0),
+    winner: event.payload?.winner || undefined,
+    loser: event.payload?.loser || undefined,
+    machineNumber: event.payload?.machine_number || undefined,
+  }), [])
+
+  const onTvMatchStarted = useCallback((event: DkoTvEvent) => {
+    enqueueIntro(eventToMatch(event))
+  }, [enqueueIntro, eventToMatch])
+
+  const onTvMatchFinished = useCallback((event: DkoTvEvent) => {
+    showWinnerFlash(eventToMatch(event))
+  }, [eventToMatch, showWinnerFlash])
+
+  useDkoTvEvents({
+    tournamentId,
+    tournamentType,
+    onMatchStarted: onTvMatchStarted,
+    onMatchFinished: onTvMatchFinished,
+  })
+
   useEffect(() => {
-    if (activeIntro || introQueue.length === 0) return
+    if (activeIntro || winnerFlash || introQueue.length === 0) return
 
     const [next, ...rest] = introQueue
     setIntroQueue(rest)
     setActiveIntro(next)
-  }, [activeIntro, introQueue])
+  }, [activeIntro, introQueue, winnerFlash])
+
+  useEffect(() => {
+    if (activeIntro || winnerFlash || winnerQueue.length === 0) return
+
+    const [next, ...rest] = winnerQueue
+    setWinnerQueue(rest)
+    setWinnerFlash(next)
+  }, [activeIntro, winnerFlash, winnerQueue])
+
+  useEffect(() => {
+    if (!winnerFlash) return
+
+    if (winnerTimerRef.current) clearTimeout(winnerTimerRef.current)
+    winnerTimerRef.current = setTimeout(() => {
+      setWinnerFlash(null)
+      winnerTimerRef.current = null
+    }, WINNER_FLASH_MS)
+
+    return () => {
+      if (winnerTimerRef.current) {
+        clearTimeout(winnerTimerRef.current)
+        winnerTimerRef.current = null
+      }
+    }
+  }, [winnerFlash])
 
   useEffect(() => {
     if (!activeIntro) return
@@ -592,10 +631,10 @@ export default function DkoBeamerPage() {
           const match = toMatch(row)
           next[match.id] = match
         })
+        matchesRef.current = next
         setMatches(next)
       }
 
-      initializedRef.current = true
       setLoading(false)
     }
 
@@ -648,25 +687,21 @@ export default function DkoBeamerPage() {
 
           const nextMatch = toMatch(row)
 
-          setMatches((prev) => {
-            const previous = prev[nextMatch.id]
-            const wasRunning = Boolean(previous?.machineNumber && !previous?.winner)
-            const startsNow = Boolean(nextMatch.machineNumber && !nextMatch.winner && !wasRunning)
-            const winnerJustSet = Boolean(!previous?.winner && nextMatch.winner)
+          const previousMatch = matchesRef.current[nextMatch.id]
 
-            if (initializedRef.current && startsNow) {
-              enqueueIntro(nextMatch)
-            }
+          if (!previousMatch?.machineNumber && nextMatch.machineNumber && !nextMatch.winner) {
+            enqueueIntro(nextMatch)
+          }
+          if (!previousMatch?.winner && nextMatch.winner) {
+            showWinnerFlash(nextMatch)
+          }
 
-            if (initializedRef.current && winnerJustSet) {
-              showWinnerFlash(nextMatch)
-            }
-
-            return {
-              ...prev,
-              [nextMatch.id]: nextMatch,
-            }
-          })
+          const nextMatches = {
+            ...matchesRef.current,
+            [nextMatch.id]: nextMatch,
+          }
+          matchesRef.current = nextMatches
+          setMatches(nextMatches)
         },
       )
       .subscribe()
@@ -729,8 +764,6 @@ export default function DkoBeamerPage() {
     (match) => match.player1 && match.player2 && !match.winner && !match.machineNumber,
   )
   const completedMatches = allMatches.filter((match) => Boolean(match.winner))
-  const totalMatches = 127
-  const progress = Math.min(100, Math.round((completedMatches.length / totalMatches) * 100))
   const winner =
     matches[127]?.winner ||
     (matches[126]?.winner && matches[126]?.winner === matches[126]?.player1 ? matches[126]?.winner : undefined)
@@ -797,19 +830,6 @@ export default function DkoBeamerPage() {
     }
   }, [activeView, hasLosersView, hasFinalsView])
 
-  const selectView = (view: "live" | "winners" | "losers" | "finals") => {
-    setActiveView(view)
-  }
-
-  const openFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen()
-      } else {
-        await document.exitFullscreen()
-      }
-    } catch {}
-  }
 
   if (loading) {
     return (
@@ -842,109 +862,28 @@ export default function DkoBeamerPage() {
       />
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.52),rgba(4,6,9,.88)),radial-gradient(circle_at_7%_0%,rgba(249,115,22,.16),transparent_29%),radial-gradient(circle_at_100%_82%,rgba(14,165,233,.11),transparent_31%)]" />
       {activeIntro && <MatchIntro item={activeIntro} tournamentName={tournamentName} />}
+      {!activeIntro && winnerFlash && <WinnerOverlay item={winnerFlash} tournamentName={tournamentName} />}
 
       <style jsx global>{`
-        @keyframes dkoIntroLeft {
-          from { opacity: 0; transform: translate3d(-55px, 0, 0) scale(.985); }
-          to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
-        }
-        @keyframes dkoIntroRight {
-          from { opacity: 0; transform: translate3d(55px, 0, 0) scale(.985); }
-          to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
-        }
-        @keyframes dkoIntroPop {
-          from { opacity: 0; transform: scale(.72); }
+        @keyframes emdTvSimpleIn {
+          from { opacity: 0; transform: scale(.97); }
           to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes dkoIntroProgress {
-          from { transform: scaleX(0); }
-          to { transform: scaleX(1); }
         }
         html, body { overflow: hidden !important; background: #050608; }
         @media (min-width: 1200px) and (max-height: 900px) {
           .emd-tv-hide-short { display: none !important; }
         }
-        @keyframes dkoWinnerIn {
-          from { opacity: 0; transform: translateY(-18px) scale(.97); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
+        @media (min-width: 1200px) and (max-height: 760px) {
+          .emd-tv-live-title { display: none !important; }
         }
       `}</style>
 
-      <div className="relative mx-auto flex h-full w-full max-w-[1760px] flex-col px-4 py-3 lg:px-5 lg:py-4">
-        <header className="grid shrink-0 items-center gap-3 border-b border-white/10 pb-3 lg:grid-cols-[minmax(210px,.72fr)_minmax(300px,1.2fr)_auto]">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.2em] text-slate-500">
-              <Radio className="h-4 w-4 text-emerald-400" />
-              DKO Live
-            </div>
-            <h1 className="mt-1 truncate text-[clamp(22px,1.8vw,34px)] font-black tracking-[-0.045em]">
-              {tournamentName}
-            </h1>
-          </div>
-
-          <div className="min-w-0">
-            {!activeIntro && winnerFlash ? (
-              <WinnerResultBanner item={winnerFlash} />
-            ) : (
-              <div className="hidden h-[48px] lg:block" />
-            )}
-          </div>
-
-          <div className="flex items-center justify-end gap-2">
-            <div className="flex flex-wrap rounded-2xl border border-white/10 bg-white/[0.04] p-1">
-              {[
-                ["live", "LIVE"],
-                ["winners", "GEWINNER"],
-                ["losers", "VERLIERER"],
-                ["finals", "FINALE"],
-              ].map(([view, label]) => {
-                const disabled =
-                  (view === "losers" && !hasLosersView) ||
-                  (view === "finals" && !hasFinalsView)
-
-                return (
-                  <button
-                    key={view}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => selectView(view as "live" | "winners" | "losers" | "finals")}
-                    className={`rounded-xl px-2.5 py-1.5 text-[10px] font-bold transition ${
-                      activeView === view
-                        ? "bg-white text-slate-950"
-                        : disabled
-                          ? "cursor-not-allowed text-slate-700"
-                          : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setAutoRotate((prev) => !prev)}
-              className={`rounded-2xl border px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] transition ${
-                autoRotate
-                  ? "border-emerald-300/20 bg-emerald-400/10 text-emerald-300"
-                  : "border-white/10 bg-white/5 text-slate-500"
-              }`}
-              title="Automatischer Wechsel alle 10 Sekunden · neue Live-Matches und Finale werden sofort gezeigt"
-            >
-              AUTO 10s
-            </button>
-
-            <button
-              type="button"
-              onClick={openFullscreen}
-              className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white"
-              title="Vollbild"
-            >
-              <Expand className="h-5 w-5" />
-            </button>
-          </div>
-        </header>
+      <div className="relative mx-auto flex h-full w-full max-w-[1760px] flex-col px-3 py-2 lg:px-4 lg:py-2.5">
+        <div className="pointer-events-none absolute left-4 top-3 z-10 flex max-w-[70vw] items-center gap-2 rounded-full border border-white/10 bg-black/55 px-3 py-1.5">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
+          <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.16em] text-emerald-300">LIVE</span>
+          <span className="truncate text-[11px] font-black text-white/80">{tournamentName}</span>
+        </div>
 
         {winner ? (
           <section className="mt-4 min-h-0 flex-1 rounded-[32px] border border-amber-300/20 bg-[radial-gradient(circle_at_28%_32%,rgba(251,191,36,.14),transparent_30%),rgba(255,255,255,.025)] p-6 lg:p-8">
@@ -1040,40 +979,20 @@ export default function DkoBeamerPage() {
           <FinalsView matches={matches} />
         ) : (
           <>
-            <section className="mt-3 grid shrink-0 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: "LIVE", value: liveMatches.length, icon: Activity, accent: "text-emerald-400" },
-                { label: "Bereit", value: readyMatches.length, icon: Clock3, accent: "text-sky-400" },
-                { label: "Fertig", value: completedMatches.length, icon: CheckCircle2, accent: "text-slate-300" },
-                { label: "Fortschritt", value: `${progress}%`, icon: Trophy, accent: "text-amber-300" },
-              ].map(({ label, value, icon: Icon, accent }) => (
-                <div key={label} className="rounded-[18px] border border-white/10 bg-black/28 p-3 backdrop-blur-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">{label}</span>
-                    <Icon className={`h-4 w-4 ${accent}`} />
-                  </div>
-                  <div className="mt-1 text-2xl font-black tracking-[-0.04em]">{value}</div>
-                </div>
-              ))}
-            </section>
 
-            <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-emerald-400 transition-all duration-500" style={{ width: `${progress}%` }} />
-            </div>
-
-            <main className="mt-3 grid min-h-0 flex-1 gap-3 overflow-hidden xl:grid-cols-[1.55fr_.45fr]">
-              <section className="min-h-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/30 p-3.5 backdrop-blur-xl">
+            <main className="mt-2 grid min-h-0 flex-1 gap-2 overflow-hidden xl:grid-cols-[1.72fr_.28fr]">
+              <section className="min-h-0 overflow-hidden rounded-[18px] border border-white/10 bg-black/30 p-2.5 backdrop-blur-xl">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Live Center</div>
-                    <h2 className="mt-0.5 text-xl font-black tracking-[-0.035em]">Laufende Matches</h2>
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-400">Live Center</div>
+                    <h2 className="mt-0.5 text-base font-black tracking-[-0.03em]">Laufende Matches</h2>
                   </div>
                   <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black text-slate-400">
                     {liveMatches.length} aktiv
                   </div>
                 </div>
 
-                <div className="mt-3 grid gap-2.5 xl:grid-cols-2 2xl:grid-cols-3">
+                <div className={`mt-2 grid min-h-0 gap-2 ${liveMatches.length <= 2 ? "grid-cols-1" : liveMatches.length <= 4 ? "grid-cols-2" : "grid-cols-2 2xl:grid-cols-3"}`}>
                   {liveMatches.length === 0 && !winnerFlash ? (
                     <div className="col-span-full grid min-h-36 place-items-center rounded-[20px] border border-dashed border-white/10 bg-slate-950/30 text-center">
                       <div>
@@ -1092,23 +1011,23 @@ export default function DkoBeamerPage() {
                 </div>
               </section>
 
-              <aside className="min-h-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/30 p-3.5 backdrop-blur-xl">
+              <aside className="min-h-0 overflow-hidden rounded-[18px] border border-white/10 bg-black/30 p-2.5 backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-sky-400">Queue</div>
-                    <h2 className="mt-0.5 text-xl font-black tracking-[-0.035em]">Als Nächstes</h2>
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-sky-400">Queue</div>
+                    <h2 className="mt-0.5 text-base font-black tracking-[-0.03em]">Als Nächstes</h2>
                   </div>
                   <Users className="h-5 w-5 text-slate-600" />
                 </div>
 
-                <div className="mt-3 space-y-2">
+                <div className="mt-2 space-y-1.5">
                   {readyMatches.length === 0 ? (
                     <div className="rounded-[18px] border border-dashed border-white/10 p-4 text-center text-xs font-bold text-slate-600">
                       Kein startbereites Match
                     </div>
                   ) : (
                     readyMatches.slice(0, 6).map((match, index) => (
-                      <div key={match.id} className="rounded-[16px] border border-white/10 bg-black/32 p-2.5">
+                      <div key={match.id} className="rounded-[12px] border border-white/10 bg-black/32 px-2.5 py-2">
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-xs font-black uppercase tracking-[0.15em] text-slate-600">Match {match.id}</span>
                           {index === 0 && (

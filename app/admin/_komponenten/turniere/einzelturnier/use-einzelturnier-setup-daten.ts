@@ -51,6 +51,7 @@ type ActiveTournament = {
 
 type Options = {
   seriesId: string | null
+  eventId: string | null
   centralEventId: string | null
   tournamentName: string
   tournamentEntryFee: string
@@ -72,6 +73,7 @@ type Options = {
 export function useEinzelturnierSetupDaten(options: Options) {
   const {
     seriesId,
+    eventId,
     centralEventId,
     tournamentName,
     tournamentEntryFee,
@@ -155,7 +157,7 @@ export function useEinzelturnierSetupDaten(options: Options) {
 
   const checkForActiveTournament = async () => {
     try {
-      setActiveTournament(await fetchActiveTournamentData())
+      setActiveTournament(await fetchActiveTournamentData({ centralEventId, seriesId, eventId }))
     } catch (error) {
       console.error("Fehler beim Prüfen auf aktives Turnier:", error)
       setActiveTournament(null)

@@ -174,6 +174,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     fetchFrequentPlayers,
   } = useEinzelturnierSetupDaten({
     seriesId,
+    eventId,
     centralEventId: registrationEventId,
     tournamentName,
     tournamentEntryFee,
@@ -284,12 +285,17 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     try {
       await cancelActiveTournamentData({
         tournamentId: activeTournament.tournamentId,
-        centralEventId: registrationEventId,
+        centralEventId,
+        seriesId,
+        eventId,
       })
 
       setActiveTournament(null)
       setShowCancelActiveTournamentDialog(false)
-      await fetchRegisteredPlayers()
+      try {
+        window.sessionStorage.setItem("emd-admin-current-view", "tournament-center")
+      } catch {}
+      router.push(seriesId && eventId ? "/admin/turnier_spieltage_starten" : "/admin")
     } catch (error) {
       console.error("Fehler beim Abbrechen des aktiven Turniers:", error)
       alert("Fehler beim Abbrechen des Turniers. Bitte versuche es erneut.")
@@ -583,12 +589,13 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold sm:text-sm">
             <span className="rounded-full border border-white/10 bg-[#11151a] px-3 py-1.5 text-white/85">{registeredPlayers.length} registriert</span>
-            <span className={`rounded-full border px-3 py-1.5 ${tournamentFormCompleted ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-orange-400/30 bg-orange-400/10 text-orange-200"}`}>
-              {tournamentFormCompleted ? "Setup bereit" : "Setup offen"}
+            <span className={`rounded-full border px-3 py-1.5 ${activeTournament || tournamentFormCompleted ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-orange-400/30 bg-orange-400/10 text-orange-200"}`}>
+              {activeTournament ? "Turnier läuft" : tournamentFormCompleted ? "Setup bereit" : "Setup offen"}
             </span>
           </div>
         </div>
 
+        {!activeTournament ? (
         <EinzelturnierEinstellungen
           tournamentName={tournamentName}
           onTournamentNameChange={setTournamentName}
@@ -614,6 +621,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
           isSeriesPrefilled={isSeriesPrefilled}
           tournamentFormCompleted={tournamentFormCompleted}
         />
+        ) : null}
 
         <EinzelturnierStart
           activeTournament={activeTournament}
@@ -636,6 +644,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
           onStartTournament={handleStartTournament}
         />
 
+        {!activeTournament ? (
         <EinzelturnierSpieler
           loading={loading}
           playerViewMode={playerViewMode}
@@ -671,6 +680,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
           onTogglePaymentStatus={togglePaymentStatus}
           onUnregisterPlayer={handleUnregisterPlayer}
         />
+        ) : null}
         </div>
       </div>
     </div>

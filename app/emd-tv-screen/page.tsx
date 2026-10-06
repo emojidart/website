@@ -72,6 +72,7 @@ type LineupRow = {
   match_id: string
   team_id: string
   is_substitute: boolean
+  club_players?: { photo_url: string | null } | null
 }
 
 type TeamRow = {
@@ -227,6 +228,7 @@ export default function EmdTvScreenPage() {
   const [seriesEvents, setSeriesEvents] = useState<SeriesEvent[]>([])
   const [dachEvents, setDachEvents] = useState<DachEventRow[]>([])
   const [lineups, setLineups] = useState<LineupSlide[]>([])
+  const [lineupPhotoUrls, setLineupPhotoUrls] = useState<string[]>([])
   const [birthdays, setBirthdays] = useState<BirthdayPlayer[]>([])
   const [slideIndex, setSlideIndex] = useState(0)
   const [brandBreak, setBrandBreak] = useState(true)
@@ -281,7 +283,14 @@ export default function EmdTvScreenPage() {
     const [dkoStatusRes, kratzerStatusRes, tournamentRes, seriesRes, dachEventsRes, headersRes, birthdaysRes] = await Promise.all([
       supabase.from("tournaments_status").select("tournament_id").eq("status", "active").limit(1),
       supabase.from("kratzer_tournaments").select("id").eq("status", "running").order("created_at", { ascending: false }).limit(1),
-      supabase.from("tournaments").select("id,name,date,time,location,mode,photo_url").gte("date", today).order("date", { ascending: true }).order("time", { ascending: true }).limit(12),
+      supabase
+        .from("central_tournament_events")
+        .select("id,name:title,date:event_date,time:start_time,location,mode:selected_mode,status")
+        .gte("event_date", today)
+        .in("status", ["open", "ready", "started"])
+        .order("event_date", { ascending: true })
+        .order("start_time", { ascending: true })
+        .limit(12),
       supabase.from("dko_series").select("id,name,slug,image_path").eq("is_active", true).order("created_at", { ascending: false }),
       supabase.from("dach_events").select("id,name,event_type,start_date,end_date,event_time,location,city,country_code,photo_url,discipline").eq("event_status", "approved").gte("start_date", today).order("start_date", { ascending: true }).order("event_time", { ascending: true }).limit(10),
       supabase.from("match_lineup_headers").select("match_id,team_id,status,current_version,confirmed_version").eq("status", "confirmed"),
@@ -363,7 +372,7 @@ export default function EmdTvScreenPage() {
       const [matchesRes, teamsRes, lineupRes, opponentsRes] = await Promise.all([
         supabase.from("matches").select("id,match_date,match_time,status,dart_type,home_team_type,away_team_type,home_opponent_team_id,away_opponent_team_id,home_team:teams!matches_home_team_id_fkey(id,name),away_team:teams!matches_away_team_id_fkey(id,name)").in("id", matchIds).gte("match_date", today).neq("status", "completed"),
         supabase.from("teams").select("id,name,dart_type").in("id", teamIds),
-        supabase.from("match_lineups").select("match_id,team_id,is_substitute").in("match_id", matchIds).in("team_id", teamIds),
+        supabase.from("match_lineups").select("match_id,team_id,is_substitute,club_players:club_players(photo_url)").in("match_id", matchIds).in("team_id", teamIds),
         supabase.from("opponent_teams").select("id,name"),
       ])
       const matches = (matchesRes.data || []) as unknown as MatchRow[]
@@ -371,6 +380,7 @@ export default function EmdTvScreenPage() {
       const teamRows = (teamsRes.data || []) as TeamRow[]
       const teams = new Map(teamRows.map((t) => [t.id, t]))
       const lineupRows = (lineupRes.data || []) as LineupRow[]
+      setLineupPhotoUrls(Array.from(new Set(lineupRows.map((row) => row.club_players?.photo_url).filter((value): value is string => Boolean(value)))))
       const opponents = new Map(((opponentsRes.data || []) as Array<{ id: string; name: string }>).map((o) => [o.id, o.name]))
       const nowMs = Date.now()
 
@@ -415,14 +425,31 @@ export default function EmdTvScreenPage() {
       )
     } else {
       setLineups([])
+      setLineupPhotoUrls([])
     }
 
     setLoaded(true)
   }, [])
 
+  const refreshActiveTournamentStatus = useCallback(async () => {
+    const [dkoStatusRes, kratzerStatusRes] = await Promise.all([
+      supabase.from("tournaments_status").select("tournament_id").eq("status", "active").limit(1),
+      supabase.from("kratzer_tournaments").select("id").eq("status", "running").order("created_at", { ascending: false }).limit(1),
+    ])
+
+    if (!dkoStatusRes.error || !kratzerStatusRes.error) {
+      setActive((current) => ({
+        dko: dkoStatusRes.error ? current.dko : Boolean(dkoStatusRes.data?.length),
+        kratzer: kratzerStatusRes.error ? current.kratzer : Boolean(kratzerStatusRes.data?.length),
+      }))
+    }
+  }, [])
+
   useEffect(() => {
     void loadData()
+    void refreshActiveTournamentStatus()
     let refreshInterval: number | null = null
+    let activeStatusInterval: number | null = null
 
     const startFallbackRefresh = () => {
       if (refreshInterval) window.clearInterval(refreshInterval)
@@ -440,6 +467,7 @@ export default function EmdTvScreenPage() {
     }
 
     startFallbackRefresh()
+    activeStatusInterval = window.setInterval(() => void refreshActiveTournamentStatus(), 2000)
     document.addEventListener("visibilitychange", handleVisibility)
     const clockInterval = window.setInterval(() => setNow(new Date()), 1000)
     const channel = supabase
@@ -448,18 +476,19 @@ export default function EmdTvScreenPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "kratzer_tournaments" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "match_lineup_headers" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "dko_series_events" }, () => void loadData())
-      .on("postgres_changes", { event: "*", schema: "public", table: "tournaments" }, () => void loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "central_tournament_events" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "dach_events" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "club_players" }, () => void loadData())
       .subscribe()
 
     return () => {
       if (refreshInterval) window.clearInterval(refreshInterval)
+      if (activeStatusInterval) window.clearInterval(activeStatusInterval)
       window.clearInterval(clockInterval)
       document.removeEventListener("visibilitychange", handleVisibility)
       void supabase.removeChannel(channel)
     }
-  }, [loadData])
+  }, [loadData, refreshActiveTournamentStatus])
 
   const tournamentCards = useMemo<EventCard[]>(() => {
     return tournaments
@@ -571,16 +600,20 @@ export default function EmdTvScreenPage() {
       next.push({ kind: "sportdarts-live-overview" })
       tvLiveGames.forEach((_, index) => next.push({ kind: "sportdarts-live", index }))
     }
+    // Diese beiden EMD-Liga-Folien sind feste Bestandteile der TV-Rotation.
+    // Auch wenn Sportdarts vorübergehend leer antwortet, verschwinden die Seiten nicht einfach.
+    if (!sportdarts.loading || sportdarts.upcoming.length || tvResults.length) {
+      next.push({ kind: "league-upcoming" })
+      next.push({ kind: "league-results" })
+    }
     if (tournamentCards.length) {
       for (let offset = 0; offset < tournamentCards.length; offset += 4) next.push({ kind: "tournaments", offset })
     }
     if (seriesEvents.length) next.push({ kind: "series" })
     if (dachEvents.length) next.push({ kind: "veranstaltungen" })
-    if (sportdarts.upcoming.length) next.push({ kind: "league-upcoming" })
-    if (tvResults.length) next.push({ kind: "league-results" })
     lineups.forEach((lineup) => next.push({ kind: "lineup", lineup }))
     return next.length ? next : [{ kind: "tournaments", offset: 0 }]
-  }, [birthdays, dachEvents.length, hasTodaySlide, lineups, seriesEvents.length, tvLiveGames.length, tvResults.length, sportdarts.upcoming.length, tournamentCards.length, testMode])
+  }, [birthdays, dachEvents.length, hasTodaySlide, lineups, seriesEvents.length, tvLiveGames.length, tvResults.length, sportdarts.loading, sportdarts.upcoming.length, tournamentCards.length, testMode])
 
   const currentSlide = slides[slideIndex] || slides[0]
 
@@ -596,7 +629,7 @@ export default function EmdTvScreenPage() {
 
   useEffect(() => {
     if (!loaded || !assetsReady || active.dko || active.kratzer || !brandBreak) return
-    const timer = window.setTimeout(() => setBrandBreak(false), 5000)
+    const timer = window.setTimeout(() => setBrandBreak(false), 3000)
     return () => window.clearTimeout(timer)
   }, [loaded, assetsReady, active.dko, active.kratzer, brandBreak])
 
@@ -645,8 +678,13 @@ export default function EmdTvScreenPage() {
         if (url) urls.add(url)
       }
     })
+    // Aufstellungsbilder schon während der normalen EMD-TV-Rotation in den Browsercache laden.
+    lineupPhotoUrls.forEach((src) => {
+      const url = tvImageUrl(src, 900, 1200, 70, "contain")
+      if (url) urls.add(url)
+    })
     return Array.from(urls)
-  }, [birthdays, dachEvents, seriesEvents])
+  }, [birthdays, dachEvents, lineupPhotoUrls, seriesEvents])
 
   const preloadKey = useMemo(() => preloadImageUrls.slice().sort().join("|"), [preloadImageUrls])
 
@@ -708,25 +746,6 @@ export default function EmdTvScreenPage() {
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#030303] text-white" onClick={tryFullscreen}>
-      <style jsx global>{`
-        @keyframes emdBroadcastWipe {
-          0% { transform: translate3d(-120%,0,0) skewX(-12deg); opacity: 0; }
-          10% { opacity: 1; }
-          55% { opacity: 1; }
-          100% { transform: translate3d(125%,0,0) skewX(-12deg); opacity: 0; }
-        }
-        @keyframes emdBroadcastLine {
-          0% { transform: scaleX(0); opacity: 0; }
-          25% { opacity: 1; }
-          70% { transform: scaleX(1); opacity: .9; }
-          100% { transform: scaleX(1); opacity: 0; }
-        }
-        .emd-broadcast-wipe { animation: emdBroadcastWipe .58s cubic-bezier(.2,.8,.2,1) both; will-change: transform, opacity; }
-        .emd-broadcast-line { animation: emdBroadcastLine .62s ease-out both; transform-origin: left center; will-change: transform, opacity; }
-        @media (prefers-reduced-motion: reduce) {
-          .emd-broadcast-wipe,.emd-broadcast-line { animation: none !important; }
-        }
-      `}</style>
       <div className="absolute inset-x-0 top-0 z-[80] flex h-[72px] items-center justify-between border-b border-white/[.06] bg-black/90 px-[3.2vw] shadow-[0_8px_30px_rgba(0,0,0,.35)]">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5">
@@ -741,9 +760,6 @@ export default function EmdTvScreenPage() {
           <div className="h-6 w-px bg-white/10" />
           <div className="text-[clamp(.58rem,.72vw,.78rem)] font-black uppercase tracking-[.25em] text-white/35">Emoji Darts · Salzburg</div>
         </div>
-        {testMode ? (
-          <div className="absolute left-1/2 -translate-x-1/2 rounded-full border border-orange-300/20 bg-orange-500/10 px-4 py-2 text-[11px] font-black uppercase tracking-[.22em] text-orange-200">TESTMODUS · {testMode.toUpperCase()}</div>
-        ) : null}
         <div className="flex items-center gap-5 text-right">
           <div className="text-[clamp(.58rem,.72vw,.78rem)] font-bold uppercase tracking-[.16em] text-white/28">{formatLongDate(now)}</div>
           <div className="text-[clamp(1.35rem,1.9vw,2.2rem)] font-black tabular-nums tracking-[-.05em]">{new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit" }).format(now)}</div>
@@ -965,16 +981,6 @@ export default function EmdTvScreenPage() {
           </>
         )}
 
-        {!active.dko && !active.kratzer && loaded && assetsReady ? (
-          <div
-            key={`broadcast-${brandBreak ? "brand" : currentSlide?.kind || "none"}-${slideIndex}`}
-            className="pointer-events-none absolute inset-0 z-[70] overflow-hidden"
-            aria-hidden="true"
-          >
-            <div className="emd-broadcast-wipe absolute inset-y-0 left-0 w-[30%] bg-gradient-to-r from-transparent via-orange-400/70 to-orange-200/8 shadow-[0_0_40px_rgba(251,146,60,.18)]" />
-            <div className="emd-broadcast-line absolute left-[4vw] right-[4vw] top-[7px] h-[2px] bg-gradient-to-r from-orange-400 via-orange-300/70 to-transparent" />
-          </div>
-        ) : null}
       </div>
     </main>
   )

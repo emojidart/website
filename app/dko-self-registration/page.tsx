@@ -20,6 +20,7 @@ export default function DKOSelfRegistrationPage() {
   const [playerName, setPlayerName] = useState<string>("")
 
   const [alreadyRegistered, setAlreadyRegistered] = useState(false)
+  const [registrationId, setRegistrationId] = useState<number | null>(null)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   const canAct = useMemo(() => {
@@ -88,6 +89,7 @@ export default function DKOSelfRegistrationPage() {
         if (regErr) throw regErr
 
         setAlreadyRegistered((reg?.length ?? 0) > 0)
+        setRegistrationId(reg?.[0]?.id ?? null)
       } catch (e: any) {
         console.error(e)
         setMessage({ type: "error", text: `Fehler beim Laden: ${e.message}` })
@@ -141,10 +143,12 @@ export default function DKOSelfRegistrationPage() {
     setMessage(null)
 
     try {
-      const { error } = await supabase.from("dko_tournament_registration").delete().eq("player_id", playerId)
+      if (!registrationId) throw new Error("Keine eindeutige Anmeldung gefunden.")
+      const { error } = await supabase.from("dko_tournament_registration").delete().eq("id", registrationId)
       if (error) throw error
 
       setAlreadyRegistered(false)
+      setRegistrationId(null)
       setMessage({ type: "success", text: "Du wurdest abgemeldet." })
     } catch (e: any) {
       setMessage({ type: "error", text: `Fehler beim Abmelden: ${e.message}` })

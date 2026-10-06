@@ -20,6 +20,7 @@ import { useKratzerRegistration } from "@/hooks/kratzer/use-kratzer-registration
 import { useKratzerRecovery } from "@/hooks/kratzer/use-kratzer-recovery"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 
 import { supabase } from "@/lib/supabase"
 import type { KratzerPlayer, Board, TournamentSettings, TournamentState, GameMode } from "@/types/tournament"
@@ -73,6 +74,8 @@ const defaultPrizeMoneySettings: PrizeMoneySettings = {
 
 export function KratzerTournamentPage() {
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const centralEventId = searchParams.get("centralEventId")
 
   const { currentUser, setCurrentUser, loading, setLoading } = useKratzerAuth()
 
@@ -249,11 +252,19 @@ export function KratzerTournamentPage() {
           tournamentState.currentRound,
           resultsData,
         )
+
+        if (centralEventId) {
+          const { error: centralEventError } = await supabase
+            .from("central_tournament_events")
+            .update({ status: "completed", updated_at: new Date().toISOString() })
+            .eq("id", centralEventId)
+          if (centralEventError) console.error("Zentraler Turnierstatus konnte nicht abgeschlossen werden:", centralEventError)
+        }
       }
 
       showToast("success", `${winnerPlayer.name} ist der Turniersieger!`)
     },
-    [tournamentState, showToast],
+    [tournamentState, showToast, centralEventId],
   )
 
   const startNewRound = useCallback(async () => {
@@ -663,6 +674,13 @@ export function KratzerTournamentPage() {
       }))
 
       setIsTournamentRunning(true)
+      if (centralEventId) {
+        const { error: centralEventError } = await supabase
+          .from("central_tournament_events")
+          .update({ status: "started", selected_mode: "kratzer", updated_at: new Date().toISOString() })
+          .eq("id", centralEventId)
+        if (centralEventError) throw centralEventError
+      }
       showToast("success", "Turnier erfolgreich gestartet!")
       startNewRound()
     } catch (error: any) {
@@ -681,6 +699,7 @@ export function KratzerTournamentPage() {
     showToast,
     startNewRound,
     setLoading,
+    centralEventId,
   ])
 
   const executeNewRound = useCallback(async (gameMode?: GameMode) => {
@@ -754,10 +773,17 @@ export function KratzerTournamentPage() {
 
     showToast("info", "Turnier wird abgeschlossen und Daten finalisiert...")
     await updateKratzerTournamentStatus(tournamentState.tournamentId, "finished")
+    if (centralEventId) {
+      const { error: centralEventError } = await supabase
+        .from("central_tournament_events")
+        .update({ status: "completed", updated_at: new Date().toISOString() })
+        .eq("id", centralEventId)
+      if (centralEventError) throw centralEventError
+    }
     await clearRegisteredPlayers()
     showToast("success", "Turnier erfolgreich abgeschlossen.")
     window.location.href = "/admin"
-  }, [tournamentState.tournamentId, showToast])
+  }, [tournamentState.tournamentId, showToast, centralEventId])
 
   const confirmCancelTournament = useCallback(() => {
     setConfirmationModalConfig({
@@ -766,6 +792,13 @@ export function KratzerTournamentPage() {
       onConfirm: async () => {
         if (tournamentState.tournamentId) {
           await updateKratzerTournamentStatus(tournamentState.tournamentId, "cancelled")
+          if (centralEventId) {
+            const { error: centralEventError } = await supabase
+              .from("central_tournament_events")
+              .update({ status: "cancelled", updated_at: new Date().toISOString() })
+              .eq("id", centralEventId)
+            if (centralEventError) throw centralEventError
+          }
           await clearRegisteredPlayers()
           showToast("info", "Turnier abgebrochen.")
         }
@@ -777,7 +810,7 @@ export function KratzerTournamentPage() {
     })
 
     setIsConfirmationModalOpen(true)
-  }, [tournamentState.tournamentId, showToast, resetTournamentState])
+  }, [tournamentState.tournamentId, showToast, resetTournamentState, centralEventId])
 
   const handleSettingsChange = useCallback((key: keyof TournamentSettings, value: any) => {
     setTournamentState((prev) => ({

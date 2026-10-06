@@ -45,8 +45,11 @@ export async function createRoundRobinWithSchedule(opts: {
   groupCount: number
   players: RRPlayer[]
   accessType: Exclude<TournamentAccessType, "">
+  centralEventId?: string | null
+  seriesId?: string | null
+  eventId?: string | null
 }) {
-  const { name, groupCount, players, accessType } = opts
+  const { name, groupCount, players, accessType, centralEventId, seriesId, eventId } = opts
 
   const { data: roundRobin, error: roundRobinError } = await supabase
     .from("round_robin")
@@ -125,6 +128,9 @@ export async function createRoundRobinWithSchedule(opts: {
     tournament_name: name,
     access_type: accessType,
     status: "active",
+    central_event_id: centralEventId || null,
+    series_id: seriesId || null,
+    series_event_id: eventId || null,
   })
 
   if (statusError && (statusError as any).code !== "23505") throw statusError

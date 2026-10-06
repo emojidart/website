@@ -71,7 +71,12 @@ export default function TodayTv({
   ].filter((block) => block.items.length)
 
   const totalBlocks = blocks.length + (birthdays.length ? 1 : 0)
-  const gridClass = totalBlocks >= 5 ? "grid-cols-3" : "grid-cols-2"
+  const gridClass = totalBlocks >= 5 ? "grid-cols-3" : totalBlocks === 1 ? "grid-cols-1" : "grid-cols-2"
+  const gridSizeClass = totalBlocks === 1
+    ? "flex-none w-full max-w-[48vw] self-start auto-rows-min"
+    : totalBlocks === 2
+      ? "flex-none w-full auto-rows-min"
+      : "min-h-0 flex-1"
 
   return (
     <section className="relative h-full overflow-hidden px-[3.8vw] pb-[3.8vh] pt-[3.3vh]">
@@ -84,15 +89,18 @@ export default function TodayTv({
       </div>
 
       <div className="relative z-10 flex h-full flex-col">
-        <header className="flex items-end justify-between gap-8 border-b border-white/[.06] pb-[2.2vh]">
-          <div>
+        <header className="relative flex min-h-[12.4vh] items-center justify-between gap-8 py-[1.15vh]">
+          <div className="py-[.35vh]">
             <div className="text-[clamp(.68rem,.82vw,.9rem)] font-black uppercase tracking-[.32em] text-orange-300/80">EMD Club TV</div>
-            <h1 className="mt-[.8vh] text-[clamp(3rem,5vw,5.8rem)] font-black leading-[.88] tracking-[-.065em] text-white">HEUTE <span className="text-orange-400">IM EMD</span></h1>
+            <h1 className="mt-[.7vh] text-[clamp(3rem,5vw,5.8rem)] font-black leading-[.94] tracking-[-.065em] text-white">HEUTE <span className="text-orange-400">IM EMD</span></h1>
           </div>
-          <div className="rounded-full border border-white/[.08] bg-black/30 px-[1.1vw] py-[.75vh] text-[clamp(.58rem,.7vw,.76rem)] font-black uppercase tracking-[.17em] text-white/45 backdrop-blur-xl">Alles Wichtige auf einen Blick</div>
+          <div className="flex shrink-0 items-center self-stretch">
+            <div className="rounded-full border border-white/[.08] bg-black/30 px-[1.1vw] py-[.75vh] text-[clamp(.58rem,.7vw,.76rem)] font-black uppercase tracking-[.17em] text-white/45 backdrop-blur-xl">Alles Wichtige auf einen Blick</div>
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-white/[.10] via-white/[.055] to-transparent" />
         </header>
 
-        <div className={`mt-[2.4vh] grid min-h-0 flex-1 gap-[1.2vw] ${gridClass}`}>
+        <div className={`mt-[2.4vh] grid gap-[1.2vw] ${gridClass} ${gridSizeClass}`}>
           {blocks.map((block) => {
             const Icon = block.icon
             const orange = block.accent === "orange"
