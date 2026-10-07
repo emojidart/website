@@ -62,10 +62,17 @@ function splitPlayerLabel(value: string) {
 }
 
 function parseChecks(value: string) {
-  const match = value.match(/(\d+)\s*\/\s*(\d+)/)
+  // Sportdarts zeigt 0 Checks teilweise nur als "/ 3" statt "0 / 3" an.
+  // Ein einzelnes "/" bedeutet dagegen: keine auswertbare Einsatzstatistik.
+  const match = String(value || "").match(/(\d*)\s*\/\s*(\d*)/)
+  if (!match) return { checksMade: null, checksTotal: null }
+
+  const total = match[2] ? Number(match[2]) : null
+  if (total == null) return { checksMade: null, checksTotal: null }
+
   return {
-    checksMade: match ? Number(match[1]) : null,
-    checksTotal: match ? Number(match[2]) : null,
+    checksMade: match[1] ? Number(match[1]) : 0,
+    checksTotal: total,
   }
 }
 
@@ -157,12 +164,8 @@ function parseStructuredPlays(html: string) {
   // (<h5> und <form> direkt innerhalb eines <tr>). Deshalb ordnen wir jedes
   // Game-Formular über seine Position im Original-HTML dem zuletzt davor
   // vorkommenden Block-Heading zu. Das ist deutlich robuster als Tabellenindizes.
-  // Sportdarts verwendet je nach Liga/Spiel unterschiedliche Block-Bezeichnungen
-  // (z. B. "Block 4 - Team", "Teamblock", "Cricket" usw.). Deshalb nicht
-  // auf exakt "Block X" beschränken, sondern jede <h5><b>...</b></h5>-Überschrift
-  // erfassen und das Game-Formular dem zuletzt davor stehenden Heading zuordnen.
   const headings = Array.from(
-    html.matchAll(/<h5[^>]*>\s*<b[^>]*>\s*([\s\S]*?)\s*<\/b>\s*<\/h5>/gi),
+    html.matchAll(/<h5[^>]*>\s*<b[^>]*>\s*(Block\s+\d+|Teamblock)\s*<\/b>\s*<\/h5>/gi),
   ).map((match) => ({
     index: match.index ?? -1,
     block: decodeHtml(match[1] || ""),
@@ -185,8 +188,9 @@ function parseStructuredPlays(html: string) {
       }
     }
 
-    // Nicht wegen einer ungewohnten Sportdarts-Blockbezeichnung verwerfen.
-    // Entscheidend ist, dass es ein echtes Game-Formular mit Spieler-/Legdaten ist.
+    // Ein Sportdarts-Spiel muss einem echten Spielblock zugeordnet sein.
+    if (!/^(Block\s+\d+|Teamblock)$/i.test(block)) continue
+
     const formHtml = formMatch[0]
     const cells = Array.from(formHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi))
       .map((cell) => decodeHtml(cell[1]))
@@ -214,9 +218,7 @@ function parseStructuredPlays(html: string) {
       awayPlayer,
       homeLegs: Number(homeLegText),
       awayLegs: Number(awayLegText),
-      isTeamMatch:
-        Boolean(inputValue(formHtml, "SecondPlayerHome") || inputValue(formHtml, "SecondPlayerGuest")) ||
-        /team|cricket/i.test(block),
+      isTeamMatch: /teamblock/i.test(block),
     })
   }
 
@@ -300,6 +302,49 @@ function usedPlayerNumbers(plays: StructuredPlay[], side: "home" | "away") {
   return Array.from(values)
 }
 
+function officialPlayerLegs(
+  players: Array<{
+    playerNumber: string
+    checksMade: number | null
+    checksTotal: number | null
+  }>,
+  fallback: ReturnType<typeof aggregateSingles>,
+) {
+  const fallbackByNumber = new Map(fallback.map((row) => [row.playerNumber, row]))
+
+  return players.flatMap((player) => {
+    if (!player.playerNumber) return []
+
+    const fallbackRow = fallbackByNumber.get(player.playerNumber)
+
+    // Primärquelle: offizielle Checks-Tabelle von Sportdarts.
+    // "/ 3" wird durch parseChecks als 0/3 interpretiert.
+    if (player.checksTotal != null && player.checksTotal > 0) {
+      return [{
+        playerNumber: player.playerNumber,
+        singlesPlayed: fallbackRow?.singlesPlayed || 0,
+        legsWon: player.checksMade || 0,
+        legsLost: Math.max(0, player.checksTotal - (player.checksMade || 0)),
+      }]
+    }
+
+    // Nur wenn die Checks-Tabelle für diesen Spieler nichts liefert,
+    // darf der Blockparser als Fallback einspringen.
+    return fallbackRow ? [fallbackRow] : []
+  })
+}
+
+function officialUsedPlayerNumbers(
+  players: Array<{ playerNumber: string; checksTotal: number | null }>,
+  fallback: string[],
+) {
+  const fromChecks = players
+    .filter((player) => Boolean(player.playerNumber) && player.checksTotal != null && player.checksTotal > 0)
+    .map((player) => player.playerNumber)
+
+  return fromChecks.length > 0 ? Array.from(new Set(fromChecks)) : fallback
+}
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ gameId: string }> },
@@ -369,6 +414,15 @@ export async function GET(
     const structuredBlocks = blocksFromStructuredPlays(structuredPlays)
     const score = parseScoreSummary(html)
 
+    const homePlayers = homeLineup?.players || []
+    const awayPlayers = awayLineup?.players || []
+    const homeBlockLegs = aggregateSingles(structuredPlays, "home")
+    const awayBlockLegs = aggregateSingles(structuredPlays, "away")
+    const homeLegs = officialPlayerLegs(homePlayers, homeBlockLegs)
+    const awayLegs = officialPlayerLegs(awayPlayers, awayBlockLegs)
+    const usedHome = officialUsedPlayerNumbers(homePlayers, usedPlayerNumbers(structuredPlays, "home"))
+    const usedAway = officialUsedPlayerNumbers(awayPlayers, usedPlayerNumbers(structuredPlays, "away"))
+
     const homeTeam =
       homeLineup?.title.replace(/^\s*Heim\s*[-–:]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
     const awayTeam =
@@ -384,17 +438,19 @@ export async function GET(
       // Backward-compatible fields used by the existing LIVE/details view.
       // Bevorzugt werden die echten Sportdarts-Spielblöcke. Der alte Tabellenparser
       // bleibt nur als Fallback erhalten, falls Sportdarts sein Markup ändert.
-      homePlayers: homeLineup?.players || [],
-      awayPlayers: awayLineup?.players || [],
+      homePlayers,
+      awayPlayers,
       blocks: structuredBlocks.length ? structuredBlocks : blockTables,
 
       // New structured read-only sync data.
       singles: structuredPlays.filter((play) => !play.isTeamMatch),
       teamMatches: structuredPlays.filter((play) => play.isTeamMatch),
-      homePlayerLegs: aggregateSingles(structuredPlays, "home"),
-      awayPlayerLegs: aggregateSingles(structuredPlays, "away"),
-      usedHomePlayerNumbers: usedPlayerNumbers(structuredPlays, "home"),
-      usedAwayPlayerNumbers: usedPlayerNumbers(structuredPlays, "away"),
+      // Für Sync/Statistik ist die obere Sportdarts-Checks-Tabelle die Primärquelle.
+      // Die Spielblöcke dienen nur noch als Fallback.
+      homePlayerLegs: homeLegs,
+      awayPlayerLegs: awayLegs,
+      usedHomePlayerNumbers: usedHome,
+      usedAwayPlayerNumbers: usedAway,
     })
   } catch (error) {
     console.error("Sportdarts game detail failed:", error)

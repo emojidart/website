@@ -54,10 +54,17 @@ function parseNullableScore(value: string) {
 }
 
 function parseChecks(value: string) {
-  const match = String(value || "").match(/(\d+)\s*\/\s*(\d+)/)
+  // Sportdarts zeigt 0 Checks teilweise als "/ 3" statt "0 / 3".
+  // Ein einzelnes "/" ist keine auswertbare Statistik.
+  const match = String(value || "").match(/(\d*)\s*\/\s*(\d*)/)
+  if (!match) return { checksMade: null, checksTotal: null }
+
+  const total = match[2] ? Number(match[2]) : null
+  if (total == null) return { checksMade: null, checksTotal: null }
+
   return {
-    checksMade: match ? Number(match[1]) : null,
-    checksTotal: match ? Number(match[2]) : null,
+    checksMade: match[1] ? Number(match[1]) : 0,
+    checksTotal: total,
   }
 }
 
@@ -237,25 +244,25 @@ function aggregateOfficialChecks(
 ) {
   const fallbackByNumber = new Map(fallback.map((row) => [row.playerNumber, row]))
 
-  return players
-    .filter((player) => Boolean(player.playerNumber))
-    .map((player) => {
-      const fallbackRow = fallbackByNumber.get(player.playerNumber)
-      const hasOfficialChecks = player.checksMade != null && player.checksTotal != null
+  return players.flatMap((player) => {
+    if (!player.playerNumber) return []
 
-      if (!hasOfficialChecks) {
-        return fallbackRow || { playerNumber: player.playerNumber, legsWon: 0, legsLost: 0 }
-      }
+    const fallbackRow = fallbackByNumber.get(player.playerNumber)
 
-      return {
+    // Primärquelle: die offizielle Checks-Tabelle oben auf der Sportdarts-Spielseite.
+    // Sie ist stabiler als die unterschiedlich benannten Spielblöcke.
+    if (player.checksTotal != null && player.checksTotal > 0) {
+      const won = player.checksMade || 0
+      return [{
         playerNumber: player.playerNumber,
-        // Die Sportdarts-Checks-Tabelle ist die maßgebliche Spielerstatistik.
-        // Dadurch bleiben Steel-Teamspiele automatisch draußen, während E-Dart-
-        // Team/Cricket genau so zählt, wie Sportdarts es offiziell ausweist.
-        legsWon: player.checksMade!,
-        legsLost: Math.max(0, player.checksTotal! - player.checksMade!),
-      }
-    })
+        legsWon: won,
+        legsLost: Math.max(0, player.checksTotal - won),
+      }]
+    }
+
+    // Blockdaten nur noch als Fallback, falls Sportdarts keine Checks ausweist.
+    return fallbackRow ? [fallbackRow] : []
+  })
 }
 
 async function fetchOfficialResults(seasonId: number, divisionId: number) {
@@ -576,10 +583,17 @@ export async function POST(request: Request) {
       }
     }
 
-    const used = usedNumbers(detail.plays, ownSide)
+    const blockUsed = usedNumbers(detail.plays, ownSide)
     const singlesFallback = aggregateSingles(detail.plays, ownSide)
     const officialPlayers = ownSide === "home" ? detail.homePlayers : detail.awayPlayers
     const officialStats = aggregateOfficialChecks(officialPlayers, singlesFallback)
+
+    // Entscheidend ist die Checks-Tabelle. Nur wenn dort gar keine verwertbaren
+    // Spieler vorhanden sind, greifen wir auf die Blockdaten zurück.
+    const used = officialStats.length > 0
+      ? Array.from(new Set(officialStats.map((row) => row.playerNumber)))
+      : blockUsed
+
     const legsByNumber = new Map(officialStats.map((row) => [row.playerNumber, row]))
 
     const issues: Array<Record<string, unknown>> = []
