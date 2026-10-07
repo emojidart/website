@@ -9,6 +9,7 @@ export type TodayLeagueGame = {
   division: string
   weekNumber: number
   live: boolean
+  startAt?: number | null
   homeScore?: number | null
   awayScore?: number | null
 }
@@ -21,6 +22,21 @@ export type TodayItem = {
 }
 
 export type TodayBirthday = { id: string; name: string }
+
+function leagueStatus(game: TodayLeagueGame) {
+  if (game.live) return "LIVE"
+  if (!game.startAt) return "NOCH NICHT GESTARTET"
+
+  const minutes = Math.ceil((game.startAt - Date.now()) / 60_000)
+  if (minutes <= 15) return "GLEICH GEHT’S LOS"
+  if (minutes <= 60) return "STARTET IN KÜRZE"
+  return "NOCH NICHT GESTARTET"
+}
+
+function leagueTime(game: TodayLeagueGame) {
+  if (!game.startAt || game.live) return null
+  return new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit" }).format(new Date(game.startAt)) + " Uhr"
+}
 
 export default function TodayTv({
   leagueGames,
@@ -44,7 +60,8 @@ export default function TodayTv({
       items: leagueGames.slice(0, 3).map((g) => ({
         id: g.id,
         title: `${g.homeTeam}  ${g.live ? `${g.homeScore ?? "–"} : ${g.awayScore ?? "–"}` : "VS"}  ${g.awayTeam}`,
-        subtitle: `${g.division} · ST ${g.weekNumber || "–"}${g.live ? " · LIVE" : ""}`,
+        subtitle: `${g.division} · ST ${g.weekNumber || "–"} · ${leagueStatus(g)}`,
+        time: leagueTime(g),
       })),
     },
     {

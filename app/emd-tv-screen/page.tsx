@@ -147,6 +147,17 @@ type BirthdayPlayer = {
 
 type ActiveStatus = { dko: boolean; kratzer: boolean }
 
+type ListedLeagueGame = {
+  gameId: string
+  division: string
+  weekNumber: number
+  homeTeam: string
+  awayTeam: string
+  homeScore: number | null
+  awayScore: number | null
+  status: "started" | "scheduled" | "completed"
+}
+
 function todayIso() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
@@ -233,11 +244,50 @@ export default function EmdTvScreenPage() {
   const [slideIndex, setSlideIndex] = useState(0)
   const [brandBreak, setBrandBreak] = useState(true)
   const sportdarts = useSportdartsTvData()
+  const [listedLeagueGames, setListedLeagueGames] = useState<ListedLeagueGame[]>([])
+  const [todayMatchStarts, setTodayMatchStarts] = useState<Record<string, number>>({})
   const [testMode, setTestMode] = useState<"" | "live" | "today" | "results" | "all">("")
 
   useEffect(() => {
     const raw = new URLSearchParams(window.location.search).get("test")
     setTestMode(raw === "live" || raw === "today" || raw === "results" || raw === "all" ? raw : "")
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    let timer: number | null = null
+
+    const loadListedLeagueGames = async () => {
+      try {
+        const response = await fetch("/api/sportdarts/live", { cache: "no-store" })
+        const payload = await response.json()
+        if (!response.ok) throw new Error(payload?.error || "Sportdarts-Spiele konnten nicht geladen werden.")
+        if (!cancelled) setListedLeagueGames((payload?.games || []) as ListedLeagueGame[])
+      } catch (error) {
+        console.error("EMD TV listed league games failed", error)
+      }
+    }
+
+    const schedule = () => {
+      if (timer) window.clearInterval(timer)
+      timer = null
+      if (!document.hidden) timer = window.setInterval(() => void loadListedLeagueGames(), 60_000)
+    }
+
+    const handleVisibility = () => {
+      schedule()
+      if (!document.hidden) void loadListedLeagueGames()
+    }
+
+    void loadListedLeagueGames()
+    schedule()
+    document.addEventListener("visibilitychange", handleVisibility)
+
+    return () => {
+      cancelled = true
+      if (timer) window.clearInterval(timer)
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
   }, [])
 
   const testLiveEnabled = testMode === "live" || testMode === "all"
@@ -298,6 +348,49 @@ export default function EmdTvScreenPage() {
     ])
 
     setActive({ dko: Boolean(dkoStatusRes.data?.length), kratzer: Boolean(kratzerStatusRes.data?.length) })
+
+    // Startzeiten der heutigen EMD-Ligaspiele aus unserer eigenen Spielplanung.
+    // Sportdarts /live liefert den Status zuverlässig, aber nicht zwingend die Uhrzeit.
+    // Dadurch kann EMD TV vor dem Start zwischen „Noch nicht gestartet“,
+    // „Startet in Kürze“ und „Gleich geht’s los“ unterscheiden.
+    try {
+      const [todayMatchesRes, opponentsRes] = await Promise.all([
+        supabase
+          .from("matches")
+          .select("id,match_date,match_time,status,home_team_type,away_team_type,home_opponent_team_id,away_opponent_team_id,home_team:teams!matches_home_team_id_fkey(id,name),away_team:teams!matches_away_team_id_fkey(id,name)")
+          .eq("match_date", today)
+          .neq("status", "completed"),
+        supabase.from("opponent_teams").select("id,name"),
+      ])
+
+      if (!todayMatchesRes.error) {
+        const opponents = new Map(((opponentsRes.data || []) as Array<{ id: string; name: string }>).map((o) => [o.id, o.name]))
+        const starts: Record<string, number> = {}
+        ;((todayMatchesRes.data || []) as unknown as MatchRow[]).forEach((match) => {
+          if (!match.match_time) return
+          const startAt = new Date(`${match.match_date}T${match.match_time}`).getTime()
+          if (!Number.isFinite(startAt)) return
+
+          const sideName = (side: "home" | "away") => {
+            const type = side === "home" ? match.home_team_type : match.away_team_type
+            const oppId = side === "home" ? match.home_opponent_team_id : match.away_opponent_team_id
+            const own = side === "home" ? match.home_team : match.away_team
+            if (type === "opponent" && oppId) return opponents.get(oppId) || "GEGNER"
+            return own?.name || "UNBEKANNT"
+          }
+
+          const home = normalizeTeamName(sideName("home"))
+          const away = normalizeTeamName(sideName("away"))
+          if (home && away) {
+            starts[`${home}|${away}`] = startAt
+            starts[`${away}|${home}`] = startAt
+          }
+        })
+        setTodayMatchStarts(starts)
+      }
+    } catch (error) {
+      console.error("EMD TV match start times failed", error)
+    }
 
     if (!birthdaysRes.error) {
       const now = new Date()
@@ -511,17 +604,45 @@ export default function EmdTvScreenPage() {
   const todayKey = todayIso()
 
   const todayLeagueGames = useMemo(() => {
-    const live = sportdarts.ownLive.map((game) => ({
+    const ownNames = new Set(sportdarts.ownTeamNames.map(normalizeTeamName))
+    const gameStart = (homeTeam: string, awayTeam: string) =>
+      todayMatchStarts[`${normalizeTeamName(homeTeam)}|${normalizeTeamName(awayTeam)}`] ?? null
+
+    // Für "Heute im EMD" dieselbe Quelle wie auf der funktionierenden
+    // LIVE-Spiele-Seite verwenden. So erscheinen auch Spiele mit Status
+    // "scheduled" schon vor dem Anwurf und wechseln später automatisch auf LIVE.
+    const listed = listedLeagueGames
+      .filter((game) => game.status === "scheduled" || game.status === "started")
+      .filter((game) => {
+        if (!ownNames.size) return false
+        return ownNames.has(normalizeTeamName(game.homeTeam)) || ownNames.has(normalizeTeamName(game.awayTeam))
+      })
+      .map((game) => ({
+        id: `listed-${game.gameId}`,
+        homeTeam: game.homeTeam,
+        awayTeam: game.awayTeam,
+        division: game.division || "Sportdarts",
+        weekNumber: game.weekNumber,
+        live: game.status === "started",
+        startAt: gameStart(game.homeTeam, game.awayTeam),
+        homeScore: game.homeScore,
+        awayScore: game.awayScore,
+      }))
+
+    // Fallback: falls /api/sportdarts/live vorübergehend leer ist, bleiben die
+    // bisherigen Sportdarts-Daten für heutige Spiele weiterhin nutzbar.
+    const fallbackLive = sportdarts.ownLive.map((game) => ({
       id: `live-${game.gameId}`,
       homeTeam: game.homeTeam,
       awayTeam: game.awayTeam,
       division: game.division,
       weekNumber: game.weekNumber,
       live: true,
+      startAt: gameStart(game.homeTeam, game.awayTeam),
       homeScore: game.homeScore,
       awayScore: game.awayScore,
     }))
-    const upcoming = sportdarts.upcoming
+    const fallbackUpcoming = sportdarts.upcoming
       .filter((game) => game.date === todayKey)
       .map((game) => ({
         id: `up-${game.gameId}`,
@@ -530,17 +651,19 @@ export default function EmdTvScreenPage() {
         division: game.divisionName || "Sportdarts",
         weekNumber: game.weekNumber,
         live: false,
+        startAt: gameStart(game.homeTeam, game.awayTeam),
         homeScore: game.homeScore,
         awayScore: game.awayScore,
       }))
+
     const seen = new Set<string>()
-    return [...live, ...upcoming].filter((game) => {
-      const key = game.id.replace(/^(live|up)-/, "")
+    return [...listed, ...fallbackLive, ...fallbackUpcoming].filter((game) => {
+      const key = game.id.replace(/^(listed|live|up)-/, "")
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
-  }, [sportdarts.ownLive, sportdarts.upcoming, todayKey])
+  }, [listedLeagueGames, sportdarts.ownLive, sportdarts.ownTeamNames, sportdarts.upcoming, todayKey, todayMatchStarts])
 
   const todayTournaments = useMemo(() => tournaments
     .filter((item) => item.date === todayKey)
@@ -565,7 +688,7 @@ export default function EmdTvScreenPage() {
   const tvTodayLeagueGames = useMemo(() => {
     if (!testTodayEnabled) return todayLeagueGames
     return [
-      { id: "emd-tv-test-today-league", homeTeam: "Emoj!'s 4", awayTeam: "Habidere Lady's", division: "E-Dart Division 2", weekNumber: 7, live: testLiveEnabled, homeScore: 5, awayScore: 3 },
+      { id: "emd-tv-test-today-league", homeTeam: "Emoj!'s 4", awayTeam: "Habidere Lady's", division: "E-Dart Division 2", weekNumber: 7, live: testLiveEnabled, startAt: Date.now() + 45 * 60 * 1000, homeScore: 5, awayScore: 3 },
       ...todayLeagueGames.filter((game) => game.id !== "emd-tv-test-today-league"),
     ]
   }, [todayLeagueGames, testTodayEnabled, testLiveEnabled])
