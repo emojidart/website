@@ -711,17 +711,16 @@ export default function EmdVisionCameraPage() {
               ) : null}
 
               {calibrating && calibrationDraft ? (
-                <div className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/88 px-3 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(12px,env(safe-area-inset-top))] backdrop-blur-sm sm:items-center sm:p-4">
-                  <div className="my-auto w-full max-w-[430px] rounded-[22px] border border-orange-300/20 bg-[#090909] p-3 shadow-[0_30px_100px_rgba(0,0,0,.75)] sm:p-4">
+                <div className="fixed inset-0 z-[999] flex items-center justify-center overflow-y-auto bg-black/90 px-3 py-[max(10px,env(safe-area-inset-top))] pb-[max(14px,env(safe-area-inset-bottom))]">
+                  <div className="w-full max-w-[390px] max-h-[calc(100dvh-24px)] overflow-y-auto rounded-[20px] border border-orange-300/20 bg-[#090909] p-3 shadow-[0_30px_100px_rgba(0,0,0,.78)]">
                     <div className="text-center">
-                      <div className="text-[10px] font-black uppercase tracking-[.20em] text-orange-300/70 sm:text-[11px]">Feineinstellung</div>
-                      <div className="mt-0.5 text-lg font-black sm:mt-1 sm:text-xl">
+                      <div className="text-[10px] font-black uppercase tracking-[.18em] text-orange-300/70">Feineinstellung</div>
+                      <div className="mt-0.5 text-lg font-black">
                         {CALIBRATION_LABELS[Math.min(calibrationPoints.length, 4)]}
                       </div>
-                      <div className="mt-0.5 text-[11px] font-bold text-white/45 sm:mt-1 sm:text-xs">Punkt genau unter das Fadenkreuz schieben</div>
                     </div>
 
-                    <div className="mx-auto mt-2 aspect-square w-full max-w-[250px] overflow-hidden rounded-[16px] border border-white/[.10] bg-black sm:mt-3 sm:max-w-[320px]">
+                    <div className="mx-auto mt-2 aspect-square w-[min(54vw,210px)] overflow-hidden rounded-[14px] border border-white/[.10] bg-black">
                       <canvas
                         ref={magnifierCanvasRef}
                         className="h-full w-full touch-none"
@@ -740,55 +739,33 @@ export default function EmdVisionCameraPage() {
                       />
                     </div>
 
-                    <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:mt-3">
-                      <button
-                        onClick={() => setCalibrationZoom((z) => clamp(z - 1, 3, 9))}
-                        className="min-h-11 rounded-xl border border-white/[.08] bg-white/[.04] px-3 py-2.5 text-sm font-black"
-                      >
-                        − Zoom
-                      </button>
-                      <div className="min-w-10 px-1 text-center text-sm font-black text-orange-200">{calibrationZoom}×</div>
-                      <button
-                        onClick={() => setCalibrationZoom((z) => clamp(z + 1, 3, 9))}
-                        className="min-h-11 rounded-xl border border-white/[.08] bg-white/[.04] px-3 py-2.5 text-sm font-black"
-                      >
-                        + Zoom
-                      </button>
+                    <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                      <button onClick={() => setCalibrationZoom((z) => clamp(z - 1, 3, 9))} className="h-10 rounded-xl border border-white/[.08] bg-white/[.04] px-2 text-sm font-black">− Zoom</button>
+                      <div className="min-w-9 text-center text-sm font-black text-orange-200">{calibrationZoom}×</div>
+                      <button onClick={() => setCalibrationZoom((z) => clamp(z + 1, 3, 9))} className="h-10 rounded-xl border border-white/[.08] bg-white/[.04] px-2 text-sm font-black">+ Zoom</button>
                     </div>
 
-                    <div className="mx-auto mt-2 grid w-[174px] grid-cols-3 gap-1.5 sm:mt-3 sm:w-[192px] sm:gap-2">
+                    <div className="mx-auto mt-2 grid w-[148px] grid-cols-3 gap-1.5">
                       <div />
-                      <button onClick={() => moveCalibrationDraft(0, -nudgeStep)} className="grid min-h-11 place-items-center rounded-xl border border-white/[.09] bg-white/[.05] text-xl font-black">↑</button>
+                      <button onClick={() => moveCalibrationDraft(0, -nudgeStep)} className="grid h-10 place-items-center rounded-xl border border-white/[.09] bg-white/[.05] text-xl font-black">↑</button>
                       <div />
-                      <button onClick={() => moveCalibrationDraft(-nudgeStep, 0)} className="grid min-h-11 place-items-center rounded-xl border border-white/[.09] bg-white/[.05] text-xl font-black">←</button>
-                      <button
-                        onClick={() => setNudgeStep((s) => s === 1 ? 5 : 1)}
-                        className="min-h-11 rounded-xl border border-orange-300/15 bg-orange-500/[.07] px-1 text-xs font-black text-orange-100"
-                      >
-                        {nudgeStep === 1 ? "1 px" : "5 px"}
-                      </button>
-                      <button onClick={() => moveCalibrationDraft(nudgeStep, 0)} className="grid min-h-11 place-items-center rounded-xl border border-white/[.09] bg-white/[.05] text-xl font-black">→</button>
+                      <button onClick={() => moveCalibrationDraft(-nudgeStep, 0)} className="grid h-10 place-items-center rounded-xl border border-white/[.09] bg-white/[.05] text-xl font-black">←</button>
+                      <button onClick={() => setNudgeStep((s) => s === 1 ? 5 : 1)} className="h-10 rounded-xl border border-orange-300/15 bg-orange-500/[.07] px-1 text-[11px] font-black text-orange-100">{nudgeStep === 1 ? "1 px" : "5 px"}</button>
+                      <button onClick={() => moveCalibrationDraft(nudgeStep, 0)} className="grid h-10 place-items-center rounded-xl border border-white/[.09] bg-white/[.05] text-xl font-black">→</button>
                       <div />
-                      <button onClick={() => moveCalibrationDraft(0, nudgeStep)} className="grid min-h-11 place-items-center rounded-xl border border-white/[.09] bg-white/[.05] text-xl font-black">↓</button>
+                      <button onClick={() => moveCalibrationDraft(0, nudgeStep)} className="grid h-10 place-items-center rounded-xl border border-white/[.09] bg-white/[.05] text-xl font-black">↓</button>
                       <div />
                     </div>
 
-                    <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3">
+                    <div className="sticky bottom-0 mt-2 grid grid-cols-2 gap-2 bg-[#090909] pt-1">
                       <button
                         onClick={() => {
                           setCalibrationDraft(null)
                           setMessage(`${CALIBRATION_LABELS[calibrationPoints.length]} grob antippen`)
                         }}
-                        className="min-h-11 rounded-xl border border-white/[.09] bg-white/[.04] px-3 py-2.5 text-sm font-black"
-                      >
-                        Neu antippen
-                      </button>
-                      <button
-                        onClick={confirmCalibrationDraft}
-                        className="min-h-11 rounded-xl bg-orange-400 px-3 py-2.5 text-sm font-black text-black"
-                      >
-                        Punkt übernehmen
-                      </button>
+                        className="h-11 rounded-xl border border-white/[.09] bg-white/[.04] px-3 text-sm font-black"
+                      >Neu antippen</button>
+                      <button onClick={confirmCalibrationDraft} className="h-11 rounded-xl bg-orange-400 px-3 text-sm font-black text-black">Punkt übernehmen</button>
                     </div>
                   </div>
                 </div>
