@@ -157,8 +157,12 @@ function parseStructuredPlays(html: string) {
   // (<h5> und <form> direkt innerhalb eines <tr>). Deshalb ordnen wir jedes
   // Game-Formular über seine Position im Original-HTML dem zuletzt davor
   // vorkommenden Block-Heading zu. Das ist deutlich robuster als Tabellenindizes.
+  // Sportdarts verwendet je nach Liga/Spiel unterschiedliche Block-Bezeichnungen
+  // (z. B. "Block 4 - Team", "Teamblock", "Cricket" usw.). Deshalb nicht
+  // auf exakt "Block X" beschränken, sondern jede <h5><b>...</b></h5>-Überschrift
+  // erfassen und das Game-Formular dem zuletzt davor stehenden Heading zuordnen.
   const headings = Array.from(
-    html.matchAll(/<h5[^>]*>\s*<b[^>]*>\s*(Block\s+\d+|Teamblock)\s*<\/b>\s*<\/h5>/gi),
+    html.matchAll(/<h5[^>]*>\s*<b[^>]*>\s*([\s\S]*?)\s*<\/b>\s*<\/h5>/gi),
   ).map((match) => ({
     index: match.index ?? -1,
     block: decodeHtml(match[1] || ""),
@@ -181,9 +185,8 @@ function parseStructuredPlays(html: string) {
       }
     }
 
-    // Ein Sportdarts-Spiel muss einem echten Spielblock zugeordnet sein.
-    if (!/^(Block\s+\d+|Teamblock)$/i.test(block)) continue
-
+    // Nicht wegen einer ungewohnten Sportdarts-Blockbezeichnung verwerfen.
+    // Entscheidend ist, dass es ein echtes Game-Formular mit Spieler-/Legdaten ist.
     const formHtml = formMatch[0]
     const cells = Array.from(formHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi))
       .map((cell) => decodeHtml(cell[1]))
@@ -211,7 +214,9 @@ function parseStructuredPlays(html: string) {
       awayPlayer,
       homeLegs: Number(homeLegText),
       awayLegs: Number(awayLegText),
-      isTeamMatch: /teamblock/i.test(block),
+      isTeamMatch:
+        Boolean(inputValue(formHtml, "SecondPlayerHome") || inputValue(formHtml, "SecondPlayerGuest")) ||
+        /team|cricket/i.test(block),
     })
   }
 
