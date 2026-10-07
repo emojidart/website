@@ -352,7 +352,7 @@ export async function POST(request: Request) {
     const { data: match, error: matchError } = await supabase
       .from("matches")
       .select(`
-        id,season_id,match_date,dart_type,status,
+        id,season_id,match_date,original_date,dart_type,status,
         home_team_id,away_team_id,home_team_type,away_team_type,
         home_opponent_team_id,away_opponent_team_id
       `)
@@ -415,9 +415,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Sportdarts-Spiel gehört nicht zur hinterlegten Division." }, { status: 409 })
     }
 
-    if (officialResult.date !== match.match_date) {
+    const acceptedMatchDates = [match.match_date, match.original_date].filter(Boolean)
+    if (!acceptedMatchDates.includes(officialResult.date)) {
       return NextResponse.json(
-        { error: "Sportdarts-Datum stimmt nicht mit dem EMD-Spiel überein." },
+        { error: "Sportdarts-Datum stimmt weder mit dem aktuellen noch mit dem ursprünglichen EMD-Spieltermin überein." },
         { status: 409 },
       )
     }
@@ -552,6 +553,29 @@ export async function POST(request: Request) {
       }
     }
 
+    // Sportdarts ist nach dem Spiel die Quelle für den tatsächlichen Einsatz.
+    // Daher dürfen auch berechtigte Teamspieler zugeordnet werden, die von der
+    // vorab bestätigten EMD-Aufstellung abweichen (z.B. kurzfristiger Ersatz).
+    if (eligibilityChecked) {
+      const missingEligibleIds = Array.from(eligibleIds).filter(
+        (id) => !(players || []).some((player: any) => player.id === id),
+      )
+
+      if (missingEligibleIds.length > 0) {
+        const { data: eligiblePlayers, error: eligiblePlayersError } = await supabase
+          .from("club_players")
+          .select("id,name,player_number")
+          .in("id", missingEligibleIds)
+
+        if (eligiblePlayersError) throw eligiblePlayersError
+
+        for (const player of eligiblePlayers || []) {
+          const number = String(player.player_number ?? "").trim()
+          if (number && !byNumber.has(number)) byNumber.set(number, player)
+        }
+      }
+    }
+
     const used = usedNumbers(detail.plays, ownSide)
     const singlesFallback = aggregateSingles(detail.plays, ownSide)
     const officialPlayers = ownSide === "home" ? detail.homePlayers : detail.awayPlayers
@@ -601,10 +625,6 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!lineupConfirmed) {
-      issues.push({ reason: "Die EMD-Aufstellung ist nicht bestätigt oder wurde nachträglich geändert." })
-    }
-
     if (!eligibilityChecked) {
       issues.push({ reason: "Die Liga-/Abo-Berechtigung konnte nicht sicher geprüft werden." })
     }
@@ -615,7 +635,7 @@ export async function POST(request: Request) {
       if (!player) {
         issues.push({
           sportdarts_player_number: number,
-          reason: "Spieler wurde bei Sportdarts eingesetzt, steht aber nicht in der bestätigten EMD-Aufstellung.",
+          reason: "Sportdarts-Spieler konnte über die Spielernummer keinem berechtigten EMD-Spieler zugeordnet werden.",
         })
         continue
       }

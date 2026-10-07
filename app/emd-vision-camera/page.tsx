@@ -41,6 +41,7 @@ export default function EmdVisionCameraPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const magnifierCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
   const previousFrameRef = useRef<ImageData | null>(null)
@@ -58,6 +59,9 @@ export default function EmdVisionCameraPage() {
   const [calibration, setCalibration] = useState<Calibration | null>(null)
   const [calibrationPoints, setCalibrationPoints] = useState<Point[]>([])
   const [calibrating, setCalibrating] = useState(false)
+  const [calibrationDraft, setCalibrationDraft] = useState<Point | null>(null)
+  const [calibrationZoom, setCalibrationZoom] = useState(5)
+  const [nudgeStep, setNudgeStep] = useState(1)
   const [referenceReady, setReferenceReady] = useState(false)
   const [recognitionEnabled, setRecognitionEnabled] = useState(false)
   const [waitingForClear, setWaitingForClear] = useState(false)
@@ -431,32 +435,83 @@ export default function EmdVisionCameraPage() {
     calibrationForFrame,
   ])
 
-  const beginCalibration = () => {
-    setRecognitionEnabled(false)
-    setReferenceReady(false)
-    referenceFrameRef.current = null
-    previousFrameRef.current = null
-    setCalibrationPoints([])
-    setCalibrating(true)
-    setMessage(CALIBRATION_LABELS[0])
-  }
+  useEffect(() => {
+    if (!calibrating || !calibrationDraft) return
 
-  const onOverlayClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!calibrating) return
+    let raf = 0
 
-    const canvas = overlayCanvasRef.current
+    const drawMagnifier = () => {
+      const video = videoRef.current
+      const sample = sampleCanvasRef.current
+      const canvas = magnifierCanvasRef.current
+      if (!video || !sample || !canvas || !video.videoWidth || !video.videoHeight) {
+        raf = requestAnimationFrame(drawMagnifier)
+        return
+      }
+
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return
+
+      const size = 360
+      if (canvas.width !== size || canvas.height !== size) {
+        canvas.width = size
+        canvas.height = size
+      }
+
+      // calibrationDraft is stored in processing-frame coordinates. Convert it to video coordinates.
+      const videoX = calibrationDraft.x / Math.max(1, sample.width) * video.videoWidth
+      const videoY = calibrationDraft.y / Math.max(1, sample.height) * video.videoHeight
+      const sourceSize = Math.max(70, Math.min(video.videoWidth, video.videoHeight) / calibrationZoom)
+      const sx = clamp(videoX - sourceSize / 2, 0, Math.max(0, video.videoWidth - sourceSize))
+      const sy = clamp(videoY - sourceSize / 2, 0, Math.max(0, video.videoHeight - sourceSize))
+
+      ctx.clearRect(0, 0, size, size)
+      ctx.imageSmoothingEnabled = true
+      ctx.drawImage(video, sx, sy, sourceSize, sourceSize, 0, 0, size, size)
+
+      // Fixed crosshair: the point being saved is always exactly here.
+      const c = size / 2
+      ctx.save()
+      ctx.strokeStyle = "rgba(251,146,60,.98)"
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(c - 42, c)
+      ctx.lineTo(c + 42, c)
+      ctx.moveTo(c, c - 42)
+      ctx.lineTo(c, c + 42)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(c, c, 9, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+
+      raf = requestAnimationFrame(drawMagnifier)
+    }
+
+    raf = requestAnimationFrame(drawMagnifier)
+    return () => cancelAnimationFrame(raf)
+  }, [calibrating, calibrationDraft, calibrationZoom])
+
+  const moveCalibrationDraft = useCallback((dx: number, dy: number) => {
     const sample = sampleCanvasRef.current
-    if (!canvas || !sample) return
+    if (!sample) return
+    setCalibrationDraft((old) => old ? ({
+      x: clamp(old.x + dx, 0, sample.width - 1),
+      y: clamp(old.y + dy, 0, sample.height - 1),
+    }) : old)
+  }, [])
 
-    const rect = canvas.getBoundingClientRect()
-    const x = (event.clientX - rect.left) / rect.width * sample.width
-    const y = (event.clientY - rect.top) / rect.height * sample.height
+  const confirmCalibrationDraft = useCallback(() => {
+    if (!calibrationDraft) return
+    const sample = sampleCanvasRef.current
+    if (!sample) return
 
-    const next = [...calibrationPoints, { x, y }]
+    const next = [...calibrationPoints, calibrationDraft]
     setCalibrationPoints(next)
+    setCalibrationDraft(null)
 
     if (next.length < 5) {
-      setMessage(CALIBRATION_LABELS[next.length])
+      setMessage(`${CALIBRATION_LABELS[next.length]} grob antippen`)
       return
     }
 
@@ -475,6 +530,34 @@ export default function EmdVisionCameraPage() {
     setCalibrating(false)
     setMessage("Kalibrierung gespeichert")
     localStorage.setItem(CALIBRATION_KEY, JSON.stringify(nextCalibration))
+  }, [calibrationDraft, calibrationPoints])
+
+  const beginCalibration = () => {
+    setRecognitionEnabled(false)
+    setReferenceReady(false)
+    referenceFrameRef.current = null
+    previousFrameRef.current = null
+    setCalibrationPoints([])
+    setCalibrationDraft(null)
+    setCalibrationZoom(5)
+    setNudgeStep(1)
+    setCalibrating(true)
+    setMessage(`${CALIBRATION_LABELS[0]} grob antippen`)
+  }
+
+  const onOverlayClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!calibrating || calibrationDraft) return
+
+    const canvas = overlayCanvasRef.current
+    const sample = sampleCanvasRef.current
+    if (!canvas || !sample) return
+
+    const rect = canvas.getBoundingClientRect()
+    const x = (event.clientX - rect.left) / rect.width * sample.width
+    const y = (event.clientY - rect.top) / rect.height * sample.height
+
+    setCalibrationDraft({ x, y })
+    setMessage(`${CALIBRATION_LABELS[calibrationPoints.length]} fein einstellen`)
   }
 
   const captureReference = () => {
@@ -621,7 +704,93 @@ export default function EmdVisionCameraPage() {
 
               {calibrating ? (
                 <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-orange-300/20 bg-black/70 px-4 py-3 text-center font-black backdrop-blur-xl">
-                  {CALIBRATION_LABELS[Math.min(calibrationPoints.length, 4)]} antippen
+                  {calibrationDraft
+                    ? `${CALIBRATION_LABELS[Math.min(calibrationPoints.length, 4)]} fein einstellen`
+                    : `${CALIBRATION_LABELS[Math.min(calibrationPoints.length, 4)]} grob antippen`}
+                </div>
+              ) : null}
+
+              {calibrating && calibrationDraft ? (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/82 p-3 backdrop-blur-sm">
+                  <div className="w-full max-w-[430px] rounded-[24px] border border-orange-300/20 bg-[#090909] p-3 shadow-[0_30px_100px_rgba(0,0,0,.75)]">
+                    <div className="text-center">
+                      <div className="text-[11px] font-black uppercase tracking-[.22em] text-orange-300/70">Feineinstellung</div>
+                      <div className="mt-1 text-xl font-black">
+                        {CALIBRATION_LABELS[Math.min(calibrationPoints.length, 4)]}
+                      </div>
+                      <div className="mt-1 text-xs font-bold text-white/45">Punkt genau unter das Fadenkreuz schieben</div>
+                    </div>
+
+                    <div className="mx-auto mt-3 aspect-square w-full max-w-[360px] overflow-hidden rounded-[18px] border border-white/[.10] bg-black">
+                      <canvas
+                        ref={magnifierCanvasRef}
+                        className="h-full w-full touch-none"
+                        onClick={(event) => {
+                          const canvas = magnifierCanvasRef.current
+                          const sample = sampleCanvasRef.current
+                          if (!canvas || !sample) return
+                          const rect = canvas.getBoundingClientRect()
+                          const dxDisplay = event.clientX - (rect.left + rect.width / 2)
+                          const dyDisplay = event.clientY - (rect.top + rect.height / 2)
+                          const approxSourcePerDisplay = (Math.min(videoRef.current?.videoWidth || 1, videoRef.current?.videoHeight || 1) / calibrationZoom) / rect.width
+                          const sx = sample.width / Math.max(1, videoRef.current?.videoWidth || sample.width)
+                          const sy = sample.height / Math.max(1, videoRef.current?.videoHeight || sample.height)
+                          moveCalibrationDraft(dxDisplay * approxSourcePerDisplay * sx, dyDisplay * approxSourcePerDisplay * sy)
+                        }}
+                      />
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                      <button
+                        onClick={() => setCalibrationZoom((z) => clamp(z - 1, 3, 9))}
+                        className="rounded-xl border border-white/[.08] bg-white/[.04] px-3 py-3 text-sm font-black"
+                      >
+                        − Zoom
+                      </button>
+                      <div className="px-2 text-center text-sm font-black text-orange-200">{calibrationZoom}×</div>
+                      <button
+                        onClick={() => setCalibrationZoom((z) => clamp(z + 1, 3, 9))}
+                        className="rounded-xl border border-white/[.08] bg-white/[.04] px-3 py-3 text-sm font-black"
+                      >
+                        + Zoom
+                      </button>
+                    </div>
+
+                    <div className="mx-auto mt-3 grid w-[210px] grid-cols-3 gap-2">
+                      <div />
+                      <button onClick={() => moveCalibrationDraft(0, -nudgeStep)} className="rounded-xl border border-white/[.09] bg-white/[.05] py-3 text-xl font-black">↑</button>
+                      <div />
+                      <button onClick={() => moveCalibrationDraft(-nudgeStep, 0)} className="rounded-xl border border-white/[.09] bg-white/[.05] py-3 text-xl font-black">←</button>
+                      <button
+                        onClick={() => setNudgeStep((s) => s === 1 ? 5 : 1)}
+                        className="rounded-xl border border-orange-300/15 bg-orange-500/[.07] py-3 text-xs font-black text-orange-100"
+                      >
+                        {nudgeStep === 1 ? "1 px" : "5 px"}
+                      </button>
+                      <button onClick={() => moveCalibrationDraft(nudgeStep, 0)} className="rounded-xl border border-white/[.09] bg-white/[.05] py-3 text-xl font-black">→</button>
+                      <div />
+                      <button onClick={() => moveCalibrationDraft(0, nudgeStep)} className="rounded-xl border border-white/[.09] bg-white/[.05] py-3 text-xl font-black">↓</button>
+                      <div />
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => {
+                          setCalibrationDraft(null)
+                          setMessage(`${CALIBRATION_LABELS[calibrationPoints.length]} grob antippen`)
+                        }}
+                        className="rounded-xl border border-white/[.09] bg-white/[.04] px-4 py-3 text-sm font-black"
+                      >
+                        Neu antippen
+                      </button>
+                      <button
+                        onClick={confirmCalibrationDraft}
+                        className="rounded-xl bg-orange-400 px-4 py-3 text-sm font-black text-black"
+                      >
+                        Punkt übernehmen
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : null}
 
