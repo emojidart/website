@@ -215,6 +215,13 @@ const EMPTY_SPORTDARTS_EXTRA_STATS: SportdartsExtraStats = {
   semperit_outs: 0,
 }
 
+type SportdartsExtraEditRow = {
+  statId: string
+  playerId: string
+  playerName: string
+  stats: SportdartsExtraStats
+}
+
 type SportdartsGameCandidate = {
   gameId: string
   date: string
@@ -359,6 +366,12 @@ export default function DashboardPage() {
   const [sportdartsExtraEnabled, setSportdartsExtraEnabled] = useState(false)
   const [sportdartsExtraOpenPlayers, setSportdartsExtraOpenPlayers] = useState<Record<string, boolean>>({})
   const [sportdartsExtraStats, setSportdartsExtraStats] = useState<Record<string, SportdartsExtraStats>>({})
+  const [extraStatsEditOpen, setExtraStatsEditOpen] = useState(false)
+  const [extraStatsEditLoading, setExtraStatsEditLoading] = useState(false)
+  const [extraStatsEditSaving, setExtraStatsEditSaving] = useState(false)
+  const [extraStatsEditError, setExtraStatsEditError] = useState("")
+  const [extraStatsEditMatch, setExtraStatsEditMatch] = useState<Match | null>(null)
+  const [extraStatsEditRows, setExtraStatsEditRows] = useState<SportdartsExtraEditRow[]>([])
 
   const undoPostponement = async (matchId: string) => {
     try {
@@ -1789,9 +1802,22 @@ const discoverSportdartsCandidates = async (
   const opponentName = normalizeSportdartsTeamName(getOpponentNameForSportdartsMatch(match, ownTeamId))
   const ownSide: "home" | "away" = match.home_team_id === ownTeamId ? "home" : "away"
 
-  const sameDate = ((result?.games as any[]) || []).filter((game) => game.date === match.match_date)
+  // Bei verschobenen Spielen kann Sportdarts weiterhin das ursprüngliche
+  // Spieltagsdatum führen, während EMD bereits den neuen Termin gespeichert hat.
+  // Deshalb beide Daten akzeptieren; der aktuelle Termin hat Vorrang.
+  const acceptedDates = Array.from(
+    new Set([match.match_date, match.original_date].filter(Boolean) as string[]),
+  )
 
-  const exact = sameDate.filter((game) => {
+  const dateCandidates = ((result?.games as any[]) || [])
+    .filter((game) => acceptedDates.includes(game.date))
+    .sort((a, b) => {
+      const aCurrent = a.date === match.match_date ? 0 : 1
+      const bCurrent = b.date === match.match_date ? 0 : 1
+      return aCurrent - bCurrent
+    })
+
+  const exact = dateCandidates.filter((game) => {
     const sportOwn = normalizeSportdartsTeamName(ownSide === "home" ? game.homeTeam : game.awayTeam)
     const sportOpponent = normalizeSportdartsTeamName(ownSide === "home" ? game.awayTeam : game.homeTeam)
 
@@ -1802,9 +1828,9 @@ const discoverSportdartsCandidates = async (
     return exact.map((game) => ({ ...game, confidence: "exact" as const }))
   }
 
-  // Fallback: gleiches Datum + eigenes Team auf derselben Heim/Gast-Seite.
-  // Nur als Kandidat, niemals automatisch als sicherer Treffer behandeln.
-  const teamDate = sameDate.filter((game) => {
+  // Fallback: passendes aktuelles/ursprüngliches Datum + eigenes Team
+  // auf derselben Heim/Gast-Seite. Nur als Kandidat, niemals automatisch.
+  const teamDate = dateCandidates.filter((game) => {
     const sportOwn = normalizeSportdartsTeamName(ownSide === "home" ? game.homeTeam : game.awayTeam)
     return Boolean(ownTeamName) && sportOwn === ownTeamName
   })
@@ -1840,7 +1866,7 @@ const loadSportdartsSyncPreview = async (match: Match, selectedGameId?: string) 
 
       if (candidates.length === 0) {
         throw new Error(
-          "Kein passendes Sportdarts-Spiel gefunden. Geprüft wurden Division, Datum und eigenes Team.",
+          "Kein passendes Sportdarts-Spiel gefunden. Geprüft wurden Division, aktuelles/ursprüngliches Datum und eigenes Team.",
         )
       }
 
@@ -1921,6 +1947,7 @@ const loadSportdartsSyncPreview = async (match: Match, selectedGameId?: string) 
 
     let eligiblePlayerIds = new Set<string>()
     let eligibilityChecked = false
+    let eligiblePlayers: Array<{ id: string; name: string; player_number: string | number | null }> = []
 
     if (requiredModule) {
       const { data: eligibleRows, error: eligibleError } = await supabase.rpc(
@@ -1936,8 +1963,28 @@ const loadSportdartsSyncPreview = async (match: Match, selectedGameId?: string) 
         eligiblePlayerIds = new Set(
           ((eligibleRows as any[]) || []).map((row: any) => row.player_id).filter(Boolean),
         )
+
+        const eligibleIds = Array.from(eligiblePlayerIds)
+        if (eligibleIds.length > 0) {
+          const { data: eligiblePlayerRows, error: eligiblePlayerError } = await supabase
+            .from("club_players")
+            .select("id,name,player_number")
+            .in("id", eligibleIds)
+
+          if (eligiblePlayerError) throw eligiblePlayerError
+          eligiblePlayers = (eligiblePlayerRows as any[]) || []
+        }
       }
     }
+
+    // Die bestätigte EMD-Aufstellung bleibt ein Hinweis, ist aber nicht mehr
+    // die einzige Zuordnungsquelle. Entscheidend ist, wer laut Sportdarts
+    // tatsächlich gespielt hat und für das Team/Liga-Modul berechtigt ist.
+    const eligibleByNumber = new Map<string, { id: string; name: string; player_number: string | number | null }>()
+    eligiblePlayers.forEach((player) => {
+      const number = String(player.player_number ?? "").trim()
+      if (number) eligibleByNumber.set(number, player)
+    })
 
     const sportPlayers = ownSide === "home" ? detail.homePlayers || [] : detail.awayPlayers || []
     const usedNumbers: string[] =
@@ -1958,16 +2005,15 @@ const loadSportdartsSyncPreview = async (match: Match, selectedGameId?: string) 
 
     const previewPlayers: SportdartsSyncPlayer[] = Array.from(new Set(usedNumbers)).map((number) => {
       const sportPlayer = sportByNumber.get(number)
-      const localPlayer = localByNumber.get(number)
+      const lineupPlayer = localByNumber.get(number)
+      const localPlayer = lineupPlayer || eligibleByNumber.get(number)
       const leg = legsByNumber.get(number)
 
       let issue: string | null = null
-      if (!lineupConfirmed) {
-        issue = "Die EMD-Aufstellung ist nicht bestätigt oder wurde nach der Bestätigung geändert."
-      } else if (!localPlayer) {
-        issue = "Spieler wurde bei Sportdarts eingesetzt, steht aber nicht in der bestätigten EMD-Aufstellung."
-      } else if (!eligibilityChecked) {
+      if (!eligibilityChecked) {
         issue = "Die Abo-/Berechtigungsprüfung konnte nicht durchgeführt werden."
+      } else if (!localPlayer) {
+        issue = "Sportdarts-Spieler konnte über die Spielernummer keinem berechtigten EMD-Spieler zugeordnet werden."
       } else if (!eligiblePlayerIds.has(localPlayer.id)) {
         issue = "Spieler ist aktuell nicht für dieses Liga-Modul berechtigt."
       }
@@ -1977,7 +2023,7 @@ const loadSportdartsSyncPreview = async (match: Match, selectedGameId?: string) 
         sportdartsName: sportPlayer?.playerName || sportPlayer?.player || `Sportdarts #${number}`,
         localPlayerId: localPlayer?.id || null,
         localPlayerName: localPlayer?.name || null,
-        inConfirmedLineup: Boolean(localPlayer && lineupConfirmed),
+        inConfirmedLineup: Boolean(lineupPlayer && lineupConfirmed),
         eligibleNow: eligibilityChecked && localPlayer ? eligiblePlayerIds.has(localPlayer.id) : null,
         singlesPlayed: Number(leg?.singlesPlayed || 0),
         legsWon: Number(leg?.legsWon || 0),
@@ -1997,16 +2043,13 @@ const loadSportdartsSyncPreview = async (match: Match, selectedGameId?: string) 
     const blocked =
       !hasOfficialScore ||
       !hasUsedPlayers ||
-      !lineupConfirmed ||
       previewPlayers.some((player) => Boolean(player.issue))
 
     const blockReason = !hasOfficialScore
       ? "Sportdarts enthält noch keinen vollständigen offiziellen Endstand."
       : !hasUsedPlayers
         ? "Sportdarts enthält derzeit keine auswertbaren eingesetzten Spieler."
-        : !lineupConfirmed
-          ? "Die automatische Übernahme wäre gesperrt, weil keine aktuell bestätigte EMD-Aufstellung vorliegt."
-          : previewPlayers.find((player) => player.issue)?.issue || null
+        : previewPlayers.find((player) => player.issue)?.issue || null
 
     setSportdartsSyncCandidates([])
     setSportdartsSyncPreview({
@@ -2047,6 +2090,151 @@ const updateSportdartsExtraStat = (
 
 const getSportdartsExtraStats = (playerId: string) =>
   sportdartsExtraStats[playerId] || EMPTY_SPORTDARTS_EXTRA_STATS
+
+const openExtraStatsEditor = async (match: Match) => {
+  setExtraStatsEditOpen(true)
+  setExtraStatsEditLoading(true)
+  setExtraStatsEditSaving(false)
+  setExtraStatsEditError("")
+  setExtraStatsEditMatch(match)
+  setExtraStatsEditRows([])
+
+  try {
+    const { data, error } = await supabase
+      .from("leg_statistics")
+      .select(`
+        id,
+        player_id,
+        throws_180,
+        throws_171,
+        throws_high_tonne,
+        throws_tonne,
+        throws_shanghai,
+        throws_95_plus,
+        throws_bull,
+        throws_15,
+        throws_16,
+        throws_17,
+        throws_18,
+        throws_19,
+        throws_20,
+        throws_under_26,
+        throws_under_30,
+        semperit_outs,
+        player:club_players!leg_statistics_player_id_fkey(name)
+      `)
+      .eq("match_id", match.id)
+      .order("created_at", { ascending: true })
+
+    if (error) throw error
+
+    const rows: SportdartsExtraEditRow[] = (data || []).map((stat: any) => ({
+      statId: stat.id,
+      playerId: stat.player_id,
+      playerName: stat.player?.name || "Unbekannt",
+      stats: {
+        throws_180: Number(stat.throws_180 || 0),
+        throws_171: Number(stat.throws_171 || 0),
+        throws_high_tonne: Number(stat.throws_high_tonne || 0),
+        throws_tonne: Number(stat.throws_tonne || 0),
+        throws_shanghai: Number(stat.throws_shanghai || 0),
+        throws_95_plus: Number(stat.throws_95_plus || 0),
+        throws_bull: Number(stat.throws_bull || 0),
+        throws_15: Number(stat.throws_15 || 0),
+        throws_16: Number(stat.throws_16 || 0),
+        throws_17: Number(stat.throws_17 || 0),
+        throws_18: Number(stat.throws_18 || 0),
+        throws_19: Number(stat.throws_19 || 0),
+        throws_20: Number(stat.throws_20 || 0),
+        throws_under_26: Number(stat.throws_under_26 || 0),
+        throws_under_30: Number(stat.throws_under_30 || 0),
+        semperit_outs: Number(stat.semperit_outs || 0),
+      },
+    }))
+
+    setExtraStatsEditRows(rows)
+    if (rows.length === 0) {
+      setExtraStatsEditError("Für dieses Spiel wurden noch keine Spieler-Statistiken gespeichert.")
+    }
+  } catch (error: any) {
+    console.error("Error loading extra statistics:", error)
+    setExtraStatsEditError(error?.message || "Zusatzstatistiken konnten nicht geladen werden.")
+  } finally {
+    setExtraStatsEditLoading(false)
+  }
+}
+
+const updateExtraStatsEditValue = (
+  statId: string,
+  field: keyof SportdartsExtraStats,
+  value: number,
+) => {
+  setExtraStatsEditRows((rows) =>
+    rows.map((row) =>
+      row.statId === statId
+        ? {
+            ...row,
+            stats: {
+              ...row.stats,
+              [field]: Math.max(0, Number.isFinite(value) ? value : 0),
+            },
+          }
+        : row,
+    ),
+  )
+}
+
+const saveExtraStatsEdits = async () => {
+  if (!extraStatsEditMatch || extraStatsEditRows.length === 0) return
+
+  setExtraStatsEditSaving(true)
+  setExtraStatsEditError("")
+
+  try {
+    for (const row of extraStatsEditRows) {
+      const { error } = await supabase
+        .from("leg_statistics")
+        .update({
+          throws_180: row.stats.throws_180,
+          throws_171: row.stats.throws_171,
+          throws_high_tonne: row.stats.throws_high_tonne,
+          throws_tonne: row.stats.throws_tonne,
+          throws_shanghai: row.stats.throws_shanghai,
+          throws_95_plus: row.stats.throws_95_plus,
+          throws_bull: row.stats.throws_bull,
+          throws_15: row.stats.throws_15,
+          throws_16: row.stats.throws_16,
+          throws_17: row.stats.throws_17,
+          throws_18: row.stats.throws_18,
+          throws_19: row.stats.throws_19,
+          throws_20: row.stats.throws_20,
+          throws_under_26: row.stats.throws_under_26,
+          throws_under_30: row.stats.throws_under_30,
+          semperit_outs: row.stats.semperit_outs,
+        })
+        .eq("id", row.statId)
+        .eq("match_id", extraStatsEditMatch.id)
+
+      if (error) throw error
+    }
+
+    await Promise.all([fetchLigaStatistics(), fetchLegStatistics()])
+
+    toast({
+      title: "Zusatzstatistik gespeichert",
+      description: "Nur die EMD-Zusatzwerte wurden geändert. Ergebnis und Sportdarts-Legs bleiben unverändert.",
+    })
+
+    setExtraStatsEditOpen(false)
+    setExtraStatsEditMatch(null)
+    setExtraStatsEditRows([])
+  } catch (error: any) {
+    console.error("Error saving extra statistics:", error)
+    setExtraStatsEditError(error?.message || "Zusatzstatistiken konnten nicht gespeichert werden.")
+  } finally {
+    setExtraStatsEditSaving(false)
+  }
+}
 
 const submitSportdartsSync = async (mode: "apply" | "review") => {
   if (!sportdartsSyncMatch || !sportdartsSyncPreview) return
@@ -3279,6 +3467,16 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => void openExtraStatsEditor(match)}
+                            className="h-10 rounded-xl border-orange-300/25 bg-orange-500/[0.10] font-black text-orange-100 shadow-none hover:border-orange-300/45 hover:bg-orange-500/[0.16] hover:text-white"
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Zusatzstatistik
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => {
                               setSelectedMatchForTeamPhoto(match.id)
                               setIsTeamPhotoDialogOpen(true)
@@ -3501,6 +3699,146 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 	  
 	  
 
+      {/* EMD-Zusatzstatistik nachträglich bearbeiten */}
+      <Dialog
+        open={extraStatsEditOpen}
+        onOpenChange={(open) => {
+          setExtraStatsEditOpen(open)
+          if (!open) {
+            setExtraStatsEditError("")
+            setExtraStatsEditMatch(null)
+            setExtraStatsEditRows([])
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] w-[95vw] max-w-4xl overflow-y-auto rounded-[28px] border border-white/[0.10] bg-[#070a0f]/98 p-0 text-white shadow-[0_35px_130px_-45px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+          <DialogHeader className="border-b border-white/[0.08] px-4 py-4 text-left sm:px-5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-500/[0.10] text-orange-200">
+                <Edit className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <DialogTitle className="text-base font-black text-white sm:text-lg">
+                  Zusatzstatistik bearbeiten
+                </DialogTitle>
+                <DialogDescription className="mt-1 text-xs font-semibold text-white/45 sm:text-sm">
+                  Nur 180er, 171er, High Tonne, Tonne, Shanghai, 95+, Bull, 15–20er, Unter 26/30 und Semperit ändern. Ergebnis und Sportdarts-Legs bleiben unangetastet.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 p-4 sm:p-5">
+            {extraStatsEditMatch ? (
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 text-sm font-bold text-white/65">
+                {getTeamDisplayNameHelper(extraStatsEditMatch, true)} <span className="text-white/30">vs.</span>{" "}
+                {getTeamName(extraStatsEditMatch, false) || "Unbekannt"}
+                <span className="ml-2 text-white/30">· {formatMatchDate(extraStatsEditMatch.match_date)}</span>
+              </div>
+            ) : null}
+
+            {extraStatsEditLoading ? (
+              <div className="flex min-h-[180px] flex-col items-center justify-center gap-3 text-center">
+                <Loader2 className="h-7 w-7 animate-spin text-orange-300" />
+                <div className="text-sm font-bold text-white/65">Gespeicherte Zusatzstatistiken werden geladen…</div>
+              </div>
+            ) : extraStatsEditError ? (
+              <div className="rounded-2xl border border-red-400/25 bg-red-500/[0.08] p-4 text-sm font-semibold text-red-100">
+                {extraStatsEditError}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {extraStatsEditRows.map((row) => {
+                  const fields: Array<{ key: keyof SportdartsExtraStats; label: string }> = [
+                    { key: "throws_180", label: "180er" },
+                    { key: "throws_171", label: "171er" },
+                    { key: "throws_high_tonne", label: "High Tonne" },
+                    { key: "throws_tonne", label: "Tonne" },
+                    { key: "throws_shanghai", label: "Shanghai" },
+                    { key: "throws_95_plus", label: "95+" },
+                    { key: "throws_bull", label: "Bull" },
+                    { key: "throws_15", label: "15er" },
+                    { key: "throws_16", label: "16er" },
+                    { key: "throws_17", label: "17er" },
+                    { key: "throws_18", label: "18er" },
+                    { key: "throws_19", label: "19er" },
+                    { key: "throws_20", label: "20er" },
+                    { key: "throws_under_26", label: "Unter 26" },
+                    { key: "throws_under_30", label: "Unter 30" },
+                    { key: "semperit_outs", label: "Semperit" },
+                  ]
+
+                  return (
+                    <div key={row.statId} className="rounded-2xl border border-white/[0.08] bg-black/20 p-3.5">
+                      <div className="mb-3 text-sm font-black text-white">{row.playerName}</div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {fields.map((field) => (
+                          <label key={field.key} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-2.5">
+                            <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-white/40">
+                              {field.label}
+                            </span>
+                            <div className="mt-2 flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => updateExtraStatsEditValue(row.statId, field.key, row.stats[field.key] - 1)}
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black/30 text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
+                              >
+                                −
+                              </button>
+                              <input
+                                type="number"
+                                min={0}
+                                value={row.stats[field.key]}
+                                onChange={(event) =>
+                                  updateExtraStatsEditValue(
+                                    row.statId,
+                                    field.key,
+                                    Number.parseInt(event.target.value || "0", 10) || 0,
+                                  )
+                                }
+                                className="h-8 min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-[#070a0f] px-1 text-center text-sm font-black text-white outline-none focus:border-orange-300/35"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => updateExtraStatsEditValue(row.statId, field.key, row.stats[field.key] + 1)}
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black/30 text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="border-t border-white/[0.08] px-4 py-4 sm:px-5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setExtraStatsEditOpen(false)}
+              disabled={extraStatsEditSaving}
+              className="rounded-xl border-white/[0.10] bg-white/[0.035] font-bold text-white/70 hover:bg-white/[0.06] hover:text-white"
+            >
+              Abbrechen
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void saveExtraStatsEdits()}
+              disabled={extraStatsEditSaving || extraStatsEditLoading || extraStatsEditRows.length === 0}
+              className="rounded-xl bg-orange-500 font-black text-white hover:bg-orange-600 disabled:opacity-50"
+            >
+              {extraStatsEditSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+              Zusatzstatistik speichern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Sportdarts Sync – sichere Vorschau, schreibt bewusst NICHTS */}
       <Dialog
         open={sportdartsSyncOpen}
@@ -3653,12 +3991,12 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                             !sportdartsSyncPreview.awayScore
                             ? "Noch keine verwertbaren Sportdarts-Daten"
                             : "Prüfung erforderlich – Übernahme gesperrt"
-                          : "Aufstellung und Berechtigung stimmen"}
+                          : "Sportdarts-Zuordnung und Berechtigung stimmen"}
                       </div>
                       <div className="mt-1 text-sm font-semibold leading-5 text-white/55">
                         {sportdartsSyncPreview.blocked
                           ? sportdartsSyncPreview.blockReason || "Mindestens ein eingesetzter Spieler muss geprüft werden."
-                          : "Alle bei Sportdarts eingesetzten Spieler wurden in der bestätigten EMD-Aufstellung gefunden und die aktuelle Liga-Berechtigung konnte bestätigt werden."}
+                          : "Alle bei Sportdarts tatsächlich eingesetzten Spieler konnten einem berechtigten EMD-Spieler zugeordnet werden. Die Vorab-Aufstellung blockiert die Übernahme nicht mehr."}
                       </div>
                     </div>
                   </div>
