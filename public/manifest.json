@@ -1,7 +1,8 @@
 {
-  "name": "EMD VereinsApp",
-  "short_name": "EMD",
-  "description": "EMD Vereinsapp - Turniere, Spieler und Statistiken",
+  "name": "Emoj's Dartverein",
+  "short_name": "EMD VereinsApp",
+  "description": "EMD VereinsApp – Turniere, Spieler und Statistiken",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -17,6 +18,12 @@
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }
