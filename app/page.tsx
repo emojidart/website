@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/header"
 import { PushEnableBanner } from "@/components/push-enable-banner"
+import { InstallEmdApp } from "@/components/install-emd-app"
 import { Button } from "@/components/ui/button"
 import { createBrowserClient } from "@supabase/ssr"
 import {
@@ -186,6 +187,7 @@ export default function Home() {
       </div>
 
       <PushNotificationDialog />
+
 
       <StartseitenHero
         leagueMatchCount={myLeagueMatches.length}
@@ -916,6 +918,8 @@ export default function Home() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+      <InstallEmdApp />
       <a
         href="https://play.google.com/store/apps/details?id=com.emojisdartverein.app"
         target="_blank"
@@ -930,6 +934,7 @@ export default function Home() {
           className="h-12 w-auto sm:h-14"
         />
       </a>
+      </div>
     </div>
   </div>
 </section>
