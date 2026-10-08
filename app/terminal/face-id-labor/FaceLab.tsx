@@ -17,35 +17,50 @@ function openDB(): Promise<IDBDatabase> {
     req.onerror = () => reject(req.error)
   })
 }
-async function readFace(): Promise<DescriptorRecord | null> {
+async function readFaces(): Promise<DescriptorRecord[]> {
   const db = await openDB()
-  try { return await new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, "readonly"), req = tx.objectStore(STORE).get("jimmy")
-    req.onsuccess = () => resolve((req.result as DescriptorRecord | undefined) ?? null)
-    req.onerror = () => reject(req.error)
-  }) } finally { db.close() }
+  try {
+    return await new Promise((resolve, reject) => {
+      const req = db.transaction(STORE, "readonly").objectStore(STORE).getAll()
+      req.onsuccess = () => resolve((req.result as DescriptorRecord[]).filter(r => r?.name && Array.isArray(r.vector)))
+      req.onerror = () => reject(req.error)
+    })
+  } finally { db.close() }
 }
-async function writeFace(value: DescriptorRecord | null): Promise<void> {
+async function writeFace(value: DescriptorRecord): Promise<void> {
   const db = await openDB()
-  try { await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite")
-    if (value) tx.objectStore(STORE).put(value, "jimmy")
-    else tx.objectStore(STORE).delete("jimmy")
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
-    tx.onabort = () => reject(tx.error)
-  }) } finally { db.close() }
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite")
+      tx.objectStore(STORE).put(value, value.name.toLocaleLowerCase('de').trim())
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+      tx.onabort = () => reject(tx.error)
+    })
+  } finally { db.close() }
+}
+async function removeFace(name: string): Promise<void> {
+  const db = await openDB()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite")
+      tx.objectStore(STORE).delete(name.toLocaleLowerCase('de').trim())
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+      tx.onabort = () => reject(tx.error)
+    })
+  } finally { db.close() }
 }
 function distance(a: number[], b: Float32Array) {
   if (a.length !== b.length) return Infinity
   return Math.sqrt(a.reduce((sum, x, i) => sum + (x - b[i]) ** 2, 0))
 }
-function speak(message: string) {
-  if (!("speechSynthesis" in window)) return
-  window.speechSynthesis.cancel()
-  const voice = new SpeechSynthesisUtterance(message)
-  voice.lang = "de-DE"; voice.rate = 0.94
-  window.speechSynthesis.speak(voice)
+const VOICE_KEY = 'emd-face-lab-voice'
+function preferredVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+  return voices.find(v => v.name.includes('Google Deutsch')) ||
+    voices.find(v => v.name.includes('Google') && v.lang === 'de-DE') ||
+    voices.find(v => v.lang === 'de-DE' && !v.name.includes('Hedda')) ||
+    voices.find(v => v.lang.startsWith('de') && !v.name.includes('Hedda'))
 }
 export default function FaceLab() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -54,7 +69,11 @@ export default function FaceLab() {
   const [camera, setCamera] = useState(false)
   const [modelsReady, setModelsReady] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [saved, setSaved] = useState<DescriptorRecord | null>(null)
+  const [saved, setSaved] = useState<DescriptorRecord[]>([])
+  const [enrollName, setEnrollName] = useState('')
+  const [recognized, setRecognized] = useState('')
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [voiceName, setVoiceName] = useState('')
   const [status, setStatus] = useState("Starte mit deiner Frontkamera.")
   const [verified, setVerified] = useState(false)
   const [consent, setConsent] = useState(false)
@@ -69,9 +88,36 @@ export default function FaceLab() {
     setCamera(false)
   }, [])
   useEffect(() => {
-    readFace().then(setSaved).catch(() => setStatus("Lokale Speicherung ist in diesem Browser nicht verfügbar."))
-    return () => { streamRef.current?.getTracks().forEach(t => t.stop()); window.speechSynthesis?.cancel() }
+    readFaces().then(setSaved).catch(() => setStatus('Lokale Speicherung ist nicht verfügbar.'))
+    const loadVoices = () => setVoices(window.speechSynthesis?.getVoices() ?? [])
+    loadVoices()
+    window.speechSynthesis?.addEventListener('voiceschanged', loadVoices)
+    try { setVoiceName(localStorage.getItem(VOICE_KEY) || '') } catch { /* storage unavailable */ }
+    return () => {
+      streamRef.current?.getTracks().forEach(t => t.stop())
+      window.speechSynthesis?.cancel()
+      window.speechSynthesis?.removeEventListener('voiceschanged', loadVoices)
+    }
   }, [])
+  function speak(message: string) {
+    if (!('speechSynthesis' in window)) { setStatus('Auf diesem Gerät ist keine Sprachausgabe verfügbar.'); return }
+    const engine = window.speechSynthesis
+    const available = engine.getVoices()
+    const chosen = (voiceName ? available.find(v => `${v.name}|${v.lang}` === voiceName && v.lang.startsWith('de')) : undefined) || preferredVoice(available)
+    if (!chosen) { setStatus('Keine passende deutsche Stimme gefunden. Bitte auf dem Tablet eine deutsche TTS-Stimme installieren.'); return }
+    engine.cancel()
+    const messageSpeech = new SpeechSynthesisUtterance(message)
+    messageSpeech.lang = chosen.lang
+    messageSpeech.voice = chosen
+    messageSpeech.rate = 0.9
+    messageSpeech.pitch = 1
+    messageSpeech.volume = 1
+    engine.speak(messageSpeech)
+  }
+  function selectVoice(value: string) {
+    setVoiceName(value)
+    try { localStorage.setItem(VOICE_KEY, value) } catch { /* storage unavailable */ }
+  }
   async function loadModels() {
     if (apiRef.current) return apiRef.current
     setStatus("Gesichtsmodelle werden einmalig geladen (Internet erforderlich)…")
@@ -85,7 +131,7 @@ export default function FaceLab() {
     return api
   }
   async function startCamera() {
-    setVerified(false); setScore(null)
+    setVerified(false); setScore(null); setRecognized('')
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw Error("Kamera benötigt HTTPS oder localhost.")
       const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1280},height:{ideal:720}},audio:false})
@@ -108,7 +154,7 @@ export default function FaceLab() {
     return faces[0].descriptor
   }
   async function enroll() {
-    if (!consent || !camera || busyRef.current) return
+    if (!consent || !camera || busyRef.current || !enrollName.trim()) return
     busyRef.current = true; setLoading(true); setVerified(false); setProgress(0)
     try {
       const vectors: Float32Array[] = []
@@ -119,10 +165,15 @@ export default function FaceLab() {
         await new Promise(resolve => setTimeout(resolve, 550))
       }
       const avg = Array.from(vectors[0], (_, d) => vectors.reduce((sum, v) => sum + v[d], 0) / vectors.length)
-      const record: DescriptorRecord = { name:"Jimmy", vector:avg, createdAt:new Date().toISOString() }
+      const name = enrollName.trim().slice(0, 60)
+      const records = await readFaces()
+      const conflicting = records.map(r => ({ name: r.name, d: distance(r.vector, new Float32Array(avg)) }))
+        .find(r => r.name.toLocaleLowerCase('de') !== name.toLocaleLowerCase('de') && r.d < MAX_DISTANCE)
+      if (conflicting) throw Error(`Dieses Gesicht ähnelt einem bereits gespeicherten Profil (${conflicting.name}). Registrierung abgebrochen.`)
+      const record: DescriptorRecord = { name, vector:avg, createdAt:new Date().toISOString() }
       await writeFace(record)
-      setSaved(record); setStatus("Jimmy wurde auf diesem Gerät registriert. Kamera ausschalten und Wiedererkennung testen!")
-      speak("Jimmy ist gespeichert. Jetzt schauen wir, ob ich dich wiedererkenne!")
+      setSaved(await readFaces()); setStatus(`${name} wurde auf diesem Gerät registriert. Jetzt Wiedererkennung testen!`); setConsent(false)
+      speak(`${name} ist gespeichert. Mal sehen, ob ich dich wiedererkenne!`)
     } catch (e) { setStatus(e instanceof Error ? e.message : "Registrierung fehlgeschlagen.") }
     finally { setLoading(false); busyRef.current=false }
   }
@@ -130,23 +181,31 @@ export default function FaceLab() {
     if (!camera || busyRef.current) return
     busyRef.current = true; setLoading(true); setVerified(false); setScore(null)
     try {
-      const record = await readFace()
-      if (!record) throw Error("Zuerst Jimmy registrieren.")
-      setStatus("Vergleiche dein Gesicht mit der lokalen Registrierung…")
+      const records = await readFaces()
+      if (!records.length) throw Error('Zuerst mindestens eine Person registrieren.')
+      setStatus('Vergleiche Gesicht mit allen lokalen Profilen…')
       const descriptor = await capture()
-      const d = distance(record.vector,descriptor)
-      setScore(d)
-      if (d <= MAX_DISTANCE) {
-        setVerified(true); setStatus("Wiedererkennung erfolgreich – Jimmy (nur Test, keine sichere Identitätsprüfung).")
-        speak("Servus Jimmy! Ich hab dich erkannt. Na, schon wieder gewonnen?")
-      } else { setStatus("Kein sicherer Treffer. Bitte Licht und Position ändern oder erneut registrieren.") }
+      const sorted = records.map(record => ({record, d: distance(record.vector, descriptor)})).sort((a,b) => a.d-b.d)
+      const best = sorted[0]
+      setScore(best.d)
+      const runnerUp = sorted[1]
+      if (best.d <= MAX_DISTANCE && (!runnerUp || runnerUp.d - best.d >= 0.08)) {
+        setVerified(true); setRecognized(best.record.name)
+        setStatus(`Wiedererkennung: ${best.record.name} (nur Demo, keine sichere Identitätsprüfung).`)
+        speak(`Servus ${best.record.name}! Schön, dass du da bist. Bereit für deine nächste Partie?`)
+      } else {
+        setStatus(best.d > MAX_DISTANCE ? 'Kein Treffer – unbekannte Person.' : 'Nicht eindeutig – bitte noch einmal versuchen.')
+      }
     } catch(e) { setStatus(e instanceof Error ? e.message : "Erkennung fehlgeschlagen.") }
     finally { setLoading(false); busyRef.current=false }
   }
-  async function forget() {
-    if (busyRef.current || !window.confirm("Gesichtsprofil auf diesem Tablet löschen?")) return
-    try { await writeFace(null); setSaved(null);setVerified(false);setScore(null);setProgress(0);setStatus("Lokales Gesichtsprofil gelöscht.") }
-    catch { setStatus("Löschen nicht möglich. Bitte Browserdaten dieses Geräts prüfen.") }
+  async function forget(name: string) {
+    if (busyRef.current || !window.confirm(`Gesichtsprofil von ${name} auf diesem Gerät löschen?`)) return
+    try {
+      await removeFace(name)
+      setSaved(await readFaces()); setVerified(false); setRecognized(''); setScore(null); setProgress(0)
+      setStatus(`${name} wurde lokal gelöscht.`)
+    } catch { setStatus('Löschen nicht möglich. Bitte Browserdaten prüfen.') }
   }
   return <main className="min-h-screen bg-[#060910] px-4 py-8 text-white"><div className="mx-auto max-w-3xl space-y-5">
     <div><p className="text-xs font-bold uppercase tracking-[.2em] text-orange-400">EMD Autopilot · Privates Testlabor</p><h1 className="mt-2 text-3xl font-black">FACE ID – Wiedererkennung</h1><p className="mt-2 text-sm text-slate-400">Unverlinkte Testseite · keine Turnierdaten · kein Gesichtsupload</p></div>
@@ -160,20 +219,34 @@ export default function FaceLab() {
       {loading && <p className="text-sm text-slate-400">Bitte warten… {progress > 0 && progress < 5 ? `${progress}/5 Aufnahmen` : ""}</p>}
     </section>
     <section className="rounded-2xl border border-white/10 bg-[#101722] p-5 space-y-3">
-      <h2 className="text-xl font-bold">1 · Jimmy einmal registrieren</h2>
+      <h2 className="text-xl font-bold">1 · Spieler freiwillig registrieren</h2>
       <p className="text-sm text-slate-300">Fünf Gesichtsaufnahmen werden in einen numerischen Gesichtsabdruck umgerechnet und nur in diesem Browser (IndexedDB) gespeichert. Kein Foto wird gespeichert. Auch dieser Abdruck ist ein sensibles biometrisches Datum.</p>
-      <label className="flex gap-3 text-sm text-slate-300"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} className="accent-orange-500"/>Ich möchte mein eigenes Gesicht freiwillig auf diesem Testgerät registrieren.</label>
-      <button onClick={enroll} disabled={!camera||!consent||loading} className="rounded-xl bg-orange-600 px-5 py-3 font-bold disabled:opacity-40">{saved?"Jimmy neu registrieren":"Gesicht speichern"}</button>
-      {saved && <p className="text-sm text-green-300">✓ Jimmy auf diesem Gerät gespeichert</p>}
+      <input className="w-full rounded-xl border border-white/20 bg-[#070D15] p-3 text-white" placeholder="Vorname (z. B. Jimmy oder Anna)" value={enrollName} maxLength={60} onChange={e => setEnrollName(e.target.value)} />
+      <label className="flex gap-3 text-sm text-slate-300"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} className="accent-orange-500"/>Die Person vor der Kamera stimmt der lokalen Speicherung ihres Gesichtsabdrucks freiwillig zu.</label>
+      <button onClick={enroll} disabled={!camera||!consent||!enrollName.trim()||loading} className="rounded-xl bg-orange-600 px-5 py-3 font-bold disabled:opacity-40">{saved.some(p => p.name.toLocaleLowerCase('de') === enrollName.trim().toLocaleLowerCase('de')) ? "Profil neu aufnehmen" : "Gesicht speichern"}</button>
+      {saved.length > 0 && <p className="text-sm text-green-300">✓ Gespeichert: {saved.map(p => p.name).join(', ')}</p>}
     </section>
     <section className="rounded-2xl border border-white/10 bg-[#101722] p-5 space-y-3">
       <h2 className="text-xl font-bold">2 · Wiedererkennung testen</h2>
       <p className="text-sm text-slate-300">Kamera neu starten, davorstellen und auf „Mich erkennen“ drücken. Das System spricht nur bei einem Treffer.</p>
-      <button onClick={recognize} disabled={!saved||!camera||loading} className="rounded-xl bg-orange-600 px-5 py-3 font-bold disabled:opacity-40">🔎 Mich erkennen</button>
+      <button onClick={recognize} disabled={!saved.length||!camera||loading} className="rounded-xl bg-orange-600 px-5 py-3 font-bold disabled:opacity-40">🔎 Wer steht vor dem Tablet?</button>
       {score !== null && <p className="text-xs text-slate-400">Vergleichsdistanz: {score.toFixed(3)} (Schwelle: {MAX_DISTANCE.toFixed(2)}, kleiner = ähnlicher)</p>}
-      {verified && <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4"><p className="text-2xl font-black text-green-300">SERVUS JIMMY! 🎯</p><p className="text-sm text-white/80">Erkannt – jetzt kann der Spaß mit der Sprachausgabe losgehen.</p></div>}
+      {verified && <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4"><p className="text-2xl font-black text-green-300">SERVUS {recognized.toLocaleUpperCase("de")}! 🎯</p><p className="text-sm text-white/80">Erkannt – jetzt kann der Spaß mit der Sprachausgabe losgehen.</p></div>}
     </section>
-    <section className="rounded-2xl border border-rose-400/20 bg-[#101722] p-5 space-y-3"><h2 className="font-bold">3 · Testprofil löschen</h2><p className="text-sm text-slate-400">Nur auf diesem Gerät. Browserdaten löschen entfernt es ebenfalls. Kein Transfer auf andere Tablets.</p><button onClick={forget} disabled={!saved||loading} className="rounded-xl border border-rose-500/50 px-5 py-3 text-rose-200 disabled:opacity-40">Lokales Gesichtsprofil löschen</button></section>
-    <p className="text-xs text-slate-500">Nur Vorführung: Die Erkennung kann sich irren oder mit einem Foto getäuscht werden. Niemals zur Anmeldung, Auszahlung, PIN-Ersatz oder Ergebnisfreigabe benutzen. Die URL ist nicht verlinkt, aber ohne Zugangssperre öffentlich erreichbar.</p>
+    <section className="rounded-2xl border border-white/10 bg-[#101722] p-5 space-y-3">
+      <h2 className="font-bold">3 · Turniersprecher-Stimme</h2>
+      <p className="text-sm text-slate-300">Wie in deinen Turnieraufrufen: bevorzugt Google Deutsch, Geschwindigkeit 0,9. Nur deutsche Stimmen zur Auswahl, Hedda wird nicht automatisch gewählt.</p>
+      <select aria-label="Deutsche Stimme" className="w-full rounded-xl border border-white/20 bg-[#070D15] p-3" value={voiceName} onChange={e => selectVoice(e.target.value)}>
+        <option value="">Automatisch (Google Deutsch bevorzugen)</option>
+        {voices.filter(v => v.lang.startsWith('de')).map(v => <option key={`${v.name}|${v.lang}`} value={`${v.name}|${v.lang}`}>{v.name} ({v.lang})</option>)}
+      </select>
+      <button type="button" onClick={() => speak('Servus! Willkommen bei EMD. Die nächste Partie wird gleich aufgerufen!')} className="rounded-xl bg-orange-600 px-5 py-3 font-bold">🔊 Stimme testen</button>
+    </section>
+    <section className="rounded-2xl border border-rose-400/20 bg-[#101722] p-5 space-y-3">
+      <h2 className="font-bold">4 · Testprofile verwalten</h2>
+      <p className="text-sm text-slate-400">Gesichtsabdrücke bleiben nur in diesem Browser. Jede Person kann ihr Profil hier wieder löschen.</p>
+      {saved.length === 0 ? <p className="text-sm text-slate-400">Noch kein Profil vorhanden.</p> : saved.map(p => <div key={p.name} className="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-2"><span>{p.name}</span><button type="button" disabled={loading} onClick={() => forget(p.name)} className="rounded-lg border border-rose-500/50 px-3 py-2 text-sm text-rose-200">Löschen</button></div>)}
+    </section>
+    <p className="text-xs text-slate-500">Nur Vorführung: Das ist biometrische Verarbeitung. Registrierung nur mit freiwilliger Einwilligung; Zugang zur unverlinkten Seite ist nicht geschützt. Die Erkennung kann sich irren oder mit einem Foto getäuscht werden. Niemals zur Anmeldung, Auszahlung, PIN-Ersatz oder Ergebnisfreigabe benutzen. Die URL ist nicht verlinkt, aber ohne Zugangssperre öffentlich erreichbar.</p>
   </div></main>
 }
