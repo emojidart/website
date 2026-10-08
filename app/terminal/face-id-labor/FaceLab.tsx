@@ -6,7 +6,7 @@ type DescriptorRecord = { name: string; vector: number[]; createdAt: string }
 type FaceApi = typeof import("face-api.js")
 const DB = "emd-face-id-local-test"
 const STORE = "faces"
-const MODEL_URL = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights"
+const MODEL_URL = "/models"
 const MAX_DISTANCE = 0.43 // Conservative demo threshold, not an authentication guarantee
 
 function openDB(): Promise<IDBDatabase> {
