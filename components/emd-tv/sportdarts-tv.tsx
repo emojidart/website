@@ -101,23 +101,9 @@ function displayBlockTitle(raw: string, isTeam = false) {
 
 function structuredBlocks(detail: GameDetail | null): MatchBlock[] {
   if (!detail) return []
-  const plays = [...(detail.singles || []), ...(detail.teamMatches || [])]
-  if (!plays.length) return detail.blocks || []
-
-  const grouped = new Map<string, { title: string; matches: BlockMatch[] }>()
-  for (const play of plays) {
-    const key = `${play.isTeamMatch ? "team" : "single"}:${play.block || ""}`
-    if (!grouped.has(key)) {
-      grouped.set(key, { title: displayBlockTitle(play.block, play.isTeamMatch), matches: [] })
-    }
-    grouped.get(key)!.matches.push({
-      leftPlayer: play.homePlayer || "Offen",
-      leftScore: Number.isFinite(play.homeLegs) ? String(play.homeLegs) : "",
-      rightScore: Number.isFinite(play.awayLegs) ? String(play.awayLegs) : "",
-      rightPlayer: play.awayPlayer || "Offen",
-    })
-  }
-  return Array.from(grouped.values())
+  // The LIVE API already returns every block in its proper Sportdarts order.
+  if (detail.blocks?.length) return detail.blocks
+  return []
 }
 
 type Assignment = {
@@ -217,6 +203,29 @@ function preloadTvImage(src: string, fallbackSrc?: string, timeoutMs = 9000) {
     }
     img.src = src
   })
+}
+
+// Dieselbe Detailquelle wie die funktionierende LIVE-Seite verwenden.
+// Die bisherige TV-Route bleibt als Fallback für ältere Installationen erhalten.
+async function loadSportdartsLiveDetail(gameId: string): Promise<GameDetail> {
+  const routes = [
+    `/api/sportdarts/game/${encodeURIComponent(gameId)}`,
+    `/api/sportdarts/tv-game/${encodeURIComponent(gameId)}`,
+  ]
+  let lastError: unknown = null
+  for (const route of routes) {
+    try {
+      const response = await fetch(route, { cache: "no-store" })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json() as GameDetail
+      if (!data || typeof data !== "object") throw new Error("Keine Spieldaten")
+      if ((data.blocks?.length || 0) > 0 || (data.singles?.length || 0) > 0 || (data.teamMatches?.length || 0) > 0 || (data.homePlayers?.length || 0) > 0 || (data.awayPlayers?.length || 0) > 0) return data
+      // Gültige, aber noch leere Paarungen: alternativ zweite Quelle prüfen.
+      lastError = data
+    } catch (error) { lastError = error }
+  }
+  if (lastError && typeof lastError === "object" && "homeTeam" in lastError) return lastError as GameDetail
+  throw lastError || new Error("Spieldetails nicht verfügbar")
 }
 
 const tvGameDetailCache = new Map<string, GameDetail | null>()
@@ -991,10 +1000,8 @@ export function SportdartsLiveTv({ game, lastUpdated, testMode = false }: { game
           }
           if (!cancelled) setDetail(fake)
         } else {
-          const response = await fetch(`/api/sportdarts/tv-game/${encodeURIComponent(game.gameId)}`, { cache: "no-store" })
-          const payload = await response.json()
-          if (!response.ok) throw new Error(payload?.error || "LIVE-Details konnten nicht geladen werden.")
-          if (!cancelled) setDetail(payload as GameDetail)
+          const payload = await loadSportdartsLiveDetail(game.gameId)
+          if (!cancelled) setDetail(payload)
         }
       } catch (error) {
         console.error("EMD TV Sportdarts live detail failed", error)
@@ -1029,10 +1036,26 @@ export function SportdartsLiveTv({ game, lastUpdated, testMode = false }: { game
     }
   }, [game?.gameId, testMode])
 
+  // Render the Sportdarts pairs in source order without squeezing entire blocks
+  // into fixed-height cards. The TV page shows three complete rows at a time.
+  const pairings = structuredBlocks(detail).flatMap((block, blockIndex) =>
+    block.matches.map((match, matchIndex) => ({
+      ...match,
+      key: `${blockIndex}:${matchIndex}`,
+      sequence: blockIndex + 1,
+    })),
+  )
+  const rowsPerPage = 3
+  const pageCount = Math.max(1, Math.ceil(pairings.length / rowsPerPage))
+  const [pairPage, setPairPage] = useState(0)
+  useEffect(() => {
+    setPairPage(0)
+    if (pageCount < 2) return
+    const id = window.setInterval(() => setPairPage((current) => (current + 1) % pageCount), 8500)
+    return () => window.clearInterval(id)
+  }, [game?.gameId, pageCount])
+  const visiblePairs = pairings.slice(pairPage * rowsPerPage, (pairPage + 1) * rowsPerPage)
   if (!game) return null
-
-  const blocks = structuredBlocks(detail)
-  const visibleBlocks = blocks.slice(0, 6)
   const hasScore = (left: string, right: string) => {
     const l = String(left ?? "").trim()
     const r = String(right ?? "").trim()
@@ -1069,38 +1092,41 @@ export function SportdartsLiveTv({ game, lastUpdated, testMode = false }: { game
           </div>
         </div>
 
-        <div className="mt-[1.45vh] flex min-h-0 flex-1 flex-col">
-          <div className="mb-[.8vh] flex items-center justify-between">
-            <div className="text-[clamp(.62rem,.76vw,.86rem)] font-black uppercase tracking-[.24em] text-red-100/68">Paarungen · aktueller Spielplan</div>
+        <div className="mt-[1.4vh] flex min-h-0 flex-1 flex-col">
+          <div className="mb-[1vh] flex shrink-0 items-center justify-between gap-4">
+            <div className="text-[clamp(.7rem,.85vw,1rem)] font-black uppercase tracking-[.18em] text-red-100/75">Aktuelle Paarungen</div>
+            {pairings.length > 0 ? (
+              <div className="text-[clamp(.65rem,.82vw,.95rem)] font-bold text-white/55 tabular-nums">
+                {pairPage * rowsPerPage + 1}–{Math.min((pairPage + 1) * rowsPerPage, pairings.length)} / {pairings.length}
+              </div>
+            ) : null}
           </div>
-
-          {visibleBlocks.length ? (
-            <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-3 gap-[.8vw]">
-              {visibleBlocks.map((block, blockIndex) => (
-                <article key={`${block.title}-${blockIndex}`} className="min-h-0 overflow-hidden rounded-[1.35vw] border border-white/[.075] bg-black/30 px-[1.25vw] py-[1vh] backdrop-blur-xl">
-                  <div className="mb-[.55vh] flex items-center gap-2 border-b border-white/[.055] pb-[.5vh] text-[clamp(.55rem,.68vw,.76rem)] font-black uppercase tracking-[.12em] text-red-100/72">
-                    <Trophy className="h-[1.15em] w-[1.15em]" /> {block.title}
+          {visiblePairs.length > 0 ? (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.3vw] border border-white/[.10] bg-black/35">
+              <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_clamp(94px,10vw,170px)_minmax(0,1fr)] gap-[1.4vw] border-b border-white/[.09] px-[2vw] py-[1.15vh] text-[clamp(.68rem,.85vw,1.02rem)] font-black uppercase tracking-[.16em] text-white/45">
+                <span className="text-right">Heim</span><span className="text-center">Ergebnis</span><span>Gast</span>
+              </div>
+              {visiblePairs.map((match) => {
+                const played = hasScore(match.leftScore, match.rightScore)
+                const formatNames = (value: string) => String(value || "Offen").split(/\n+/).map((name) => name.trim()).filter(Boolean)
+                return (
+                  <div key={match.key} className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_clamp(94px,10vw,170px)_minmax(0,1fr)] items-center gap-[1.4vw] border-b border-white/[.07] px-[2vw] py-[1.2vh] last:border-b-0">
+                    <div className="min-w-0 text-right text-[clamp(1rem,1.55vw,1.9rem)] font-extrabold leading-[1.16] text-white/90">
+                      {formatNames(match.leftPlayer).map((name, i) => <div key={i} className="break-words">{name}</div>)}
+                    </div>
+                    <div className={`text-center font-black tabular-nums ${played ? "text-[clamp(1.6rem,2.5vw,3.1rem)] text-white" : "text-[clamp(.85rem,1.1vw,1.35rem)] tracking-[.12em] text-orange-300"}`}>
+                      {played ? <>{match.leftScore}<span className="px-[.35vw] text-white/30">:</span>{match.rightScore}</> : "OFFEN"}
+                    </div>
+                    <div className="min-w-0 text-left text-[clamp(1rem,1.55vw,1.9rem)] font-extrabold leading-[1.16] text-white/90">
+                      {formatNames(match.rightPlayer).map((name, i) => <div key={i} className="break-words">{name}</div>)}
+                    </div>
                   </div>
-                  <div className="divide-y divide-white/[.045]">
-                    {block.matches.slice(0, 4).map((match, matchIndex) => {
-                      const played = hasScore(match.leftScore, match.rightScore)
-                      return (
-                        <div key={`${match.leftPlayer}-${match.rightPlayer}-${matchIndex}`} className="grid grid-cols-[minmax(0,1fr)_86px_minmax(0,1fr)] items-center gap-[.65vw] py-[.47vh]">
-                          <div className="truncate text-right text-[clamp(.68rem,.88vw,1rem)] font-bold text-white/74">{match.leftPlayer || "Offen"}</div>
-                          <div className={`text-center font-black tabular-nums ${played ? "text-[clamp(.78rem,1.02vw,1.15rem)] text-white" : "text-[clamp(.54rem,.68vw,.76rem)] uppercase tracking-[.11em] text-orange-200/72"}`}>
-                            {played ? <>{match.leftScore}<span className="px-1 text-white/22">:</span>{match.rightScore}</> : "OFFEN"}
-                          </div>
-                          <div className="truncate text-left text-[clamp(.68rem,.88vw,1rem)] font-bold text-white/74">{match.rightPlayer || "Offen"}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </article>
-              ))}
+                )
+              })}
             </div>
           ) : (
-            <div className="grid flex-1 place-items-center rounded-[1.4vw] border border-white/[.07] bg-black/24 text-center text-[clamp(.85rem,1vw,1.1rem)] font-bold text-white/34">
-              {detailLoading ? "" : "Noch keine Paarungen verfügbar"}
+            <div className="grid flex-1 place-items-center rounded-[1.3vw] border border-white/[.07] bg-black/25 text-center text-[clamp(.9rem,1.2vw,1.4rem)] font-bold text-white/45">
+              {detailLoading ? "Lade Paarungen …" : "Noch keine Paarungen verfügbar"}
             </div>
           )}
         </div>
@@ -1559,15 +1585,12 @@ export function SportdartsResultsTv({
     const load = async () => {
       const entries = await Promise.all(
         visibleGames.map(async (game) => {
-          if (tvGameDetailCache.has(game.gameId)) {
+          if (false && tvGameDetailCache.has(game.gameId)) {
             return [game.gameId, tvGameDetailCache.get(game.gameId) ?? null] as const
           }
 
           try {
-            const response = await fetch(`/api/sportdarts/tv-game/${encodeURIComponent(game.gameId)}`, { cache: "no-store" })
-            const payload = await response.json()
-            if (!response.ok) throw new Error(payload?.error || "Spieler des Spiels konnte nicht geladen werden.")
-            const detail = payload as GameDetail
+            const detail = await loadSportdartsLiveDetail(game.gameId)
             tvGameDetailCache.set(game.gameId, detail)
             return [game.gameId, detail] as const
           } catch (error) {
