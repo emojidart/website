@@ -55,7 +55,7 @@ import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-import { DashboardTutorial } from "@/components/dashboard-tutorial"
+import { LeagueGuide } from "@/components/league-guide"
 // import { ChatLayout } from "@/components/chat/chat-layout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -2554,7 +2554,7 @@ const modalAwayName = modalMatch
     </div>
 
    <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] bg-transparent px-3 pb-24 pt-14 text-white sm:px-5 sm:pt-16 lg:px-7 lg:pb-12 xl:px-8">
-      <DashboardTutorial role={getUserRole()} />
+      {isLeadershipRole() && <LeagueGuide role={getUserRole() as "captain" | "co-captain"} />}
 
       <section className="relative mt-2 overflow-hidden rounded-[26px] border border-white/[0.09] bg-black/35 shadow-[0_32px_110px_-52px_rgba(0,0,0,.98)] backdrop-blur-2xl sm:mt-4 sm:rounded-[30px] xl:rounded-[32px]">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
