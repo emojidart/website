@@ -127,6 +127,11 @@ export default function AutoBeamerPage() {
     // aus Supabase erkannt, damit auch ein Fire TV Stick auf einem anderen
     // Gerät automatisch in die Beameransicht wechseln kann.
     if (activeTournament) {
+      // Survival has its own live beamer; it needs the Survival tournament UUID.
+      if (activeTournament.tournament_type.toLowerCase() === "survival") {
+        return `/survival-roulette/beamer?tournamentId=${encodeURIComponent(activeTournament.tournament_id)}`
+      }
+
       const route = DKO_BEAMER_ROUTES[activeTournament.tournament_type]
       if (!route) return null
 
@@ -157,7 +162,7 @@ export default function AutoBeamerPage() {
     )
   }
 
-  const unsupported = Boolean(activeTournament && !DKO_BEAMER_ROUTES[activeTournament.tournament_type])
+  const unsupported = Boolean(activeTournament && activeTournament.tournament_type.toLowerCase() !== "survival" && !DKO_BEAMER_ROUTES[activeTournament.tournament_type])
 
   return (
     <main className="relative grid min-h-[100svh] place-items-center overflow-hidden bg-[#050608] px-6 text-white">

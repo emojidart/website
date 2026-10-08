@@ -10,7 +10,7 @@ type TournamentAdminNavProps = {
 }
 
 const items = [
-  { href: "/admin/turnier_spieltage_starten", label: "Übersicht", icon: Trophy },
+  { href: "/admin/tournament-center", label: "Übersicht", icon: Trophy },
   { href: "/admin/einzelturnier", label: "Einzelturniere", icon: Target },
   { href: "/kratzer-tournament", label: "Kratzer", icon: ListChecks },
   { href: "/admin/survival-roulette", label: "Survival Roulette", icon: Flame },
@@ -41,7 +41,7 @@ export function TournamentAdminNav({ title, description }: TournamentAdminNavPro
               {items.map((item) => {
                 const active =
                   pathname === item.href ||
-                  (item.href === "/admin/turnier_spieltage_starten" && pathname === "/admin/tournament-center") ||
+                  (item.href === "/admin/tournament-center" && pathname === "/admin") ||
                   (item.href === "/admin/einzelturnier" && pathname?.startsWith("/admin/einzelturnier")) ||
                   (item.href === "/admin/survival-roulette" && pathname?.startsWith("/admin/survival-roulette")) ||
                   (item.href === "/admin/public-tournament-registrations" && pathname?.startsWith("/admin/public-tournament-registrations"))

@@ -372,6 +372,7 @@ export default function DashboardPage() {
   const [extraStatsEditError, setExtraStatsEditError] = useState("")
   const [extraStatsEditMatch, setExtraStatsEditMatch] = useState<Match | null>(null)
   const [extraStatsEditRows, setExtraStatsEditRows] = useState<SportdartsExtraEditRow[]>([])
+  const [matchesWithExtraStats, setMatchesWithExtraStats] = useState<Record<string, boolean>>({})
 
   const undoPostponement = async (matchId: string) => {
     try {
@@ -1308,6 +1309,24 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
 
       setOpponentTeams(opponentTeamsData || [])
       setMatches(enrichedMatches)
+      const finishedIds = enrichedMatches.filter((m) => m.status === "completed").map((m) => m.id)
+      if (finishedIds.length > 0) {
+        const fields = Object.keys(EMPTY_SPORTDARTS_EXTRA_STATS)
+        const [legacy, added] = await Promise.all([
+          supabase.from("leg_statistics").select(`match_id,${fields.join(",")}`).in("match_id", finishedIds),
+          supabase.from("match_player_extra_stats").select("match_id,stats").in("match_id", finishedIds),
+        ])
+        if (!legacy.error && !added.error) {
+          const active: Record<string, boolean> = {}
+          for (const row of (legacy.data || []) as any[]) {
+            if (fields.some((key) => Number(row[key] || 0) > 0)) active[row.match_id] = true
+          }
+          for (const row of (added.data || []) as any[]) {
+            if (Object.values(row.stats || {}).some((value) => Number(value) > 0)) active[row.match_id] = true
+          }
+          setMatchesWithExtraStats(active)
+        }
+      }
 
       console.log("[v0] Fetched enriched matches data:", enrichedMatches)
       if (enrichedMatches && enrichedMatches.length > 0) {
@@ -2098,66 +2117,44 @@ const openExtraStatsEditor = async (match: Match) => {
   setExtraStatsEditError("")
   setExtraStatsEditMatch(match)
   setExtraStatsEditRows([])
-
   try {
-    const { data, error } = await supabase
-      .from("leg_statistics")
-      .select(`
-        id,
-        player_id,
-        throws_180,
-        throws_171,
-        throws_high_tonne,
-        throws_tonne,
-        throws_shanghai,
-        throws_95_plus,
-        throws_bull,
-        throws_15,
-        throws_16,
-        throws_17,
-        throws_18,
-        throws_19,
-        throws_20,
-        throws_under_26,
-        throws_under_30,
-        semperit_outs,
-        player:club_players!leg_statistics_player_id_fkey(name)
-      `)
-      .eq("match_id", match.id)
-      .order("created_at", { ascending: true })
-
-    if (error) throw error
-
-    const rows: SportdartsExtraEditRow[] = (data || []).map((stat: any) => ({
-      statId: stat.id,
-      playerId: stat.player_id,
-      playerName: stat.player?.name || "Unbekannt",
-      stats: {
-        throws_180: Number(stat.throws_180 || 0),
-        throws_171: Number(stat.throws_171 || 0),
-        throws_high_tonne: Number(stat.throws_high_tonne || 0),
-        throws_tonne: Number(stat.throws_tonne || 0),
-        throws_shanghai: Number(stat.throws_shanghai || 0),
-        throws_95_plus: Number(stat.throws_95_plus || 0),
-        throws_bull: Number(stat.throws_bull || 0),
-        throws_15: Number(stat.throws_15 || 0),
-        throws_16: Number(stat.throws_16 || 0),
-        throws_17: Number(stat.throws_17 || 0),
-        throws_18: Number(stat.throws_18 || 0),
-        throws_19: Number(stat.throws_19 || 0),
-        throws_20: Number(stat.throws_20 || 0),
-        throws_under_26: Number(stat.throws_under_26 || 0),
-        throws_under_30: Number(stat.throws_under_30 || 0),
-        semperit_outs: Number(stat.semperit_outs || 0),
-      },
-    }))
-
-    setExtraStatsEditRows(rows)
-    if (rows.length === 0) {
-      setExtraStatsEditError("Für dieses Spiel wurden noch keine Spieler-Statistiken gespeichert.")
+    const [old, lineup, extras] = await Promise.all([
+      supabase.from("leg_statistics")
+        .select("*,player:club_players!leg_statistics_player_id_fkey(name)")
+        .eq("match_id", match.id).order("created_at", { ascending: true }),
+      supabase.from("match_lineups")
+        .select("player_id,team_id,player:club_players!match_lineups_player_id_fkey(name)")
+        .eq("match_id", match.id),
+      supabase.from("match_player_extra_stats")
+        .select("player_id,stats").eq("match_id", match.id),
+    ])
+    if (old.error) throw old.error
+    if (lineup.error) throw lineup.error
+    if (extras.error) throw extras.error
+    const byPlayer = new Map<string, SportdartsExtraEditRow>()
+    for (const record of (old.data || []) as any[]) {
+      if (!record.player_id) continue
+      byPlayer.set(record.player_id, {
+        statId: record.id, playerId: record.player_id,
+        playerName: record.player?.name || "Unbekannt",
+        stats: Object.fromEntries(Object.keys(EMPTY_SPORTDARTS_EXTRA_STATS).map((key) => [key, Number(record[key] || 0)])) as SportdartsExtraStats,
+      })
     }
+    for (const record of (lineup.data || []) as any[]) {
+      if (!record.player_id || byPlayer.has(record.player_id)) continue
+      byPlayer.set(record.player_id, {
+        statId: `new:${record.player_id}`, playerId: record.player_id,
+        playerName: record.player?.name || "Unbekannt",
+        stats: { ...EMPTY_SPORTDARTS_EXTRA_STATS },
+      })
+    }
+    for (const record of (extras.data || []) as any[]) {
+      const row = byPlayer.get(record.player_id)
+      if (row && record.stats) row.stats = { ...row.stats, ...record.stats }
+    }
+    setExtraStatsEditRows(Array.from(byPlayer.values()))
+    if (byPlayer.size === 0) setExtraStatsEditError("Keine Spieler für dieses Spiel gefunden. Bitte zuerst die Spieleraufstellung erfassen.")
   } catch (error: any) {
-    console.error("Error loading extra statistics:", error)
     setExtraStatsEditError(error?.message || "Zusatzstatistiken konnten nicht geladen werden.")
   } finally {
     setExtraStatsEditLoading(false)
@@ -2192,31 +2189,26 @@ const saveExtraStatsEdits = async () => {
 
   try {
     for (const row of extraStatsEditRows) {
-      const { error } = await supabase
-        .from("leg_statistics")
-        .update({
-          throws_180: row.stats.throws_180,
-          throws_171: row.stats.throws_171,
-          throws_high_tonne: row.stats.throws_high_tonne,
-          throws_tonne: row.stats.throws_tonne,
-          throws_shanghai: row.stats.throws_shanghai,
-          throws_95_plus: row.stats.throws_95_plus,
-          throws_bull: row.stats.throws_bull,
-          throws_15: row.stats.throws_15,
-          throws_16: row.stats.throws_16,
-          throws_17: row.stats.throws_17,
-          throws_18: row.stats.throws_18,
-          throws_19: row.stats.throws_19,
-          throws_20: row.stats.throws_20,
-          throws_under_26: row.stats.throws_under_26,
-          throws_under_30: row.stats.throws_under_30,
-          semperit_outs: row.stats.semperit_outs,
+      if (row.statId.startsWith("new:")) {
+        // Independent statistics: do not invent Sportdarts legs or match results.
+        if (!Object.values(row.stats).some((value) => value > 0)) continue
+        const { error } = await supabase.rpc("save_match_player_extra_stats", {
+          p_match_id: extraStatsEditMatch.id,
+          p_player_id: row.playerId,
+          p_stats: row.stats,
         })
-        .eq("id", row.statId)
-        .eq("match_id", extraStatsEditMatch.id)
-
-      if (error) throw error
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from("leg_statistics")
+          .update(row.stats)
+          .eq("id", row.statId).eq("match_id", extraStatsEditMatch.id)
+        if (error) throw error
+      }
     }
+    setMatchesWithExtraStats((prev) => ({
+      ...prev,
+      [extraStatsEditMatch.id]: extraStatsEditRows.some((row) => Object.values(row.stats).some((value) => value > 0)),
+    }))
 
     await Promise.all([fetchLigaStatistics(), fetchLegStatistics()])
 
@@ -3471,7 +3463,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                             className="h-10 rounded-xl border-orange-300/25 bg-orange-500/[0.10] font-black text-orange-100 shadow-none hover:border-orange-300/45 hover:bg-orange-500/[0.16] hover:text-white"
                           >
                             <Edit className="mr-2 h-4 w-4" />
-                            Zusatzstatistik
+                            {matchesWithExtraStats[match.id] ? "Statistik bearbeiten" : "Statistik anlegen"}
                           </Button>
 
                           <Button
@@ -3719,10 +3711,10 @@ const awayName = getTeamName(match, false) || "Unbekannt"
               </div>
               <div className="min-w-0">
                 <DialogTitle className="text-base font-black text-white sm:text-lg">
-                  Zusatzstatistik bearbeiten
+                  {extraStatsEditMatch && matchesWithExtraStats[extraStatsEditMatch.id] ? "Statistik bearbeiten" : "Statistik anlegen"}
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-xs font-semibold text-white/45 sm:text-sm">
-                  Nur 180er, 171er, High Tonne, Tonne, Shanghai, 95+, Bull, 15–20er, Unter 26/30 und Semperit ändern. Ergebnis und Sportdarts-Legs bleiben unangetastet.
+                  Nur 180er, 171er, High Tonne, Tonne, Shanghai, 95+, Bull, 15–20er, Unter 26/30 und Semperit erfassen oder ändern. Ergebnis und Sportdarts-Legs bleiben unangetastet.
                 </DialogDescription>
               </div>
             </div>

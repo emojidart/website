@@ -101,8 +101,12 @@ export default function SurvivalRouletteAdminPage() {
     setNotice({ title, message, tone })
   }
 
-  const draftKey = user?.id ? `survival_roulette_draft_${user.id}` : "survival_roulette_draft"
-  const backupKey = user?.id ? `survival_roulette_setup_backup_${user.id}` : "survival_roulette_setup_backup"
+  const draftKey = user?.id
+    ? `survival_roulette_draft_${user.id}${centralEventId ? `_event_${centralEventId}` : ""}`
+    : "survival_roulette_draft"
+  const backupKey = user?.id
+    ? `survival_roulette_setup_backup_${user.id}${centralEventId ? `_event_${centralEventId}` : ""}`
+    : "survival_roulette_setup_backup"
 
   const saveLocalBackup = (override?: Partial<{
     tournamentName: string
@@ -188,7 +192,7 @@ export default function SurvivalRouletteAdminPage() {
 
         if (activeTournamentError) throw activeTournamentError
 
-        if (activeTournament?.id) {
+        if (activeTournament?.id && !centralEventId) {
           if (typeof window !== "undefined") {
             localStorage.setItem(
               `survival_roulette_active_${user.id}`,
@@ -216,8 +220,9 @@ export default function SurvivalRouletteAdminPage() {
           draft = data
         }
 
-        // Fallback: recover the latest unfinished draft belonging to this admin.
-        if (!draft) {
+        // Never use an unrelated draft for a central event.
+        // Its own event-scoped key is the only draft that may be resumed.
+        if (!draft && !centralEventId) {
           const { data } = await supabase
             .from("survival_tournaments")
             .select("*")
@@ -275,6 +280,7 @@ export default function SurvivalRouletteAdminPage() {
 
           if (centralEventError) throw centralEventError
           if (centralRegistrationsError) throw centralRegistrationsError
+          if (!centralEvent) throw new Error("Das angelegte Turnier existiert nicht mehr.")
 
           if (centralEvent?.title) {
             resolvedTournamentName = String(centralEvent.title)
@@ -286,6 +292,26 @@ export default function SurvivalRouletteAdminPage() {
               player_id: String(row.player_id),
               player_name: String(row.player_name_snapshot || "Spieler"),
             }))
+
+          // Synchronize the exact central-event roster: never retain players
+          // imported from an older draft or subsequently removed centrally.
+          const expectedPlayerIds = new Set(resolvedPlayers.map((player) => player.player_id))
+          const { data: existingPlayers, error: existingPlayersError } = await supabase
+            .from("survival_players")
+            .select("player_id")
+            .eq("tournament_id", id)
+          if (existingPlayersError) throw existingPlayersError
+          const obsoleteIds = (existingPlayers || [])
+            .map((player: any) => String(player.player_id))
+            .filter((playerId: string) => !expectedPlayerIds.has(playerId))
+          if (obsoleteIds.length > 0) {
+            const { error: removeObsoleteError } = await supabase
+              .from("survival_players")
+              .delete()
+              .eq("tournament_id", id)
+              .in("player_id", obsoleteIds)
+            if (removeObsoleteError) throw removeObsoleteError
+          }
 
           if (resolvedPlayers.length > 0) {
             const { error: syncCentralPlayersError } = await supabase
@@ -341,6 +367,7 @@ export default function SurvivalRouletteAdminPage() {
         })
       } catch (error) {
         console.error("[Survival] Setup konnte online nicht initialisiert werden:", error)
+        alert("Survival-Setup konnte nicht vollständig geladen werden. Bitte Internetverbindung und Turnier prüfen, bevor du startest.")
         // Local backup remains visible. Do not wipe anything.
       } finally {
         setLoading(false)
@@ -349,7 +376,7 @@ export default function SurvivalRouletteAdminPage() {
 
     void initialize()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id])
+  }, [user?.id, centralEventId])
 
   const filteredPlayers = useMemo(() => {
     const search = searchTerm.trim().toLowerCase()
@@ -393,6 +420,10 @@ export default function SurvivalRouletteAdminPage() {
   }
 
   const registerSelectedPlayers = async () => {
+    if (centralEventId) {
+      alert("Bei angelegten Turnieren bitte die Teilnehmer in der Turnier-Zentrale ändern und das Survival-Setup danach neu öffnen.")
+      return
+    }
     if (selectedPlayers.size === 0) return
 
     const newPlayers = availablePlayers
@@ -445,6 +476,10 @@ export default function SurvivalRouletteAdminPage() {
   }
 
   const unregisterPlayer = async (playerId: string) => {
+    if (centralEventId) {
+      alert("Die Teilnehmer dieses Turniers werden zentral verwaltet. Bitte in der Turnier-Zentrale ändern.")
+      return
+    }
     const nextPlayers = registeredPlayers.filter((player) => player.player_id !== playerId)
     setRegisteredPlayers(nextPlayers)
     saveLocalBackup({ registeredPlayers: nextPlayers })
@@ -463,6 +498,11 @@ export default function SurvivalRouletteAdminPage() {
   }
 
   const clearRegistration = async () => {
+    if (centralEventId) {
+      setShowClearRegistration(false)
+      alert("Die Teilnehmer dieses Turniers werden zentral verwaltet. Bitte in der Turnier-Zentrale ändern.")
+      return
+    }
     if (startingTournament || registeredPlayers.length === 0) return
 
     if (!draftTournamentId) {
@@ -513,6 +553,22 @@ export default function SurvivalRouletteAdminPage() {
     setStartingTournament(true)
 
     try {
+      // A central event must use its current roster, not a stale browser snapshot.
+      if (centralEventId) {
+        const { data: currentRegistrations, error: registrationsError } = await supabase
+          .from("central_tournament_registrations")
+          .select("player_id")
+          .eq("event_id", centralEventId)
+          .eq("status", "registered")
+        if (registrationsError) throw registrationsError
+        const currentIds = new Set((currentRegistrations || []).map((row: any) => String(row.player_id)))
+        const localIds = new Set(registeredPlayers.map((player) => player.player_id))
+        if (currentIds.size !== localIds.size || [...currentIds].some((id) => !localIds.has(id))) {
+          alert("Die Anmeldungen im angelegten Turnier haben sich geändert. Bitte die Survival-Seite neu öffnen, damit niemand falsch eingeteilt wird.")
+          return
+        }
+      }
+
       // Ensure every locally visible player is also persisted before start.
       const { error: syncPlayersError } = await supabase
         .from("survival_players")
@@ -543,6 +599,8 @@ export default function SurvivalRouletteAdminPage() {
           updated_at: new Date().toISOString(),
         })
         .eq("id", draftTournamentId)
+        .eq("created_by", user.id)
+        .eq("status", "draft")
 
       if (tournamentError) throw tournamentError
 

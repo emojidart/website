@@ -252,6 +252,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [startingMode, setStartingMode] = useState<StartMode | null>(null)
+  const [newEventMode, setNewEventMode] = useState<StartMode | "">("")
   const [schemaMissing, setSchemaMissing] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -264,9 +265,22 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const [eligibilityLoading, setEligibilityLoading] = useState(false)
   const [allowDoubleEntry, setAllowDoubleEntry] = useState(false)
   const [teamMode, setTeamMode] = useState<TeamMode>("single")
+  // Survival verwendet eigenständige Einstellungen, keine DKO-Doppelnennungen.
+  const [survivalMachines, setSurvivalMachines] = useState(5)
   const [doubleTeams, setDoubleTeams] = useState<CentralDoubleTeam[]>([])
   const [fixedPlayer1RegistrationId, setFixedPlayer1RegistrationId] = useState("")
   const [fixedPlayer2RegistrationId, setFixedPlayer2RegistrationId] = useState("")
+
+  useEffect(() => {
+    if (!selectedEventId) return
+    try {
+      const raw = window.localStorage.getItem(`emd-survival-rules:${selectedEventId}`)
+      const settings = raw ? JSON.parse(raw) : {}
+      setSurvivalMachines(Number.isInteger(settings.machines) && settings.machines >= 1 && settings.machines <= 32 ? settings.machines : 5)
+    } catch {
+      setSurvivalMachines(5)
+    }
+  }, [selectedEventId])
 
   useEffect(() => {
     setVisiblePlayerCount(18)
@@ -275,6 +289,11 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   useEffect(() => {
     const event = events.find((item) => item.id === selectedEventId)
     if (!event) return
+    if (event.selected_mode === "survival") {
+      setAllowDoubleEntry(false)
+      setTeamMode("single")
+      return
+    }
 
     try {
       const stored = window.localStorage.getItem(`emd-central-rules:${event.id}`)
@@ -574,8 +593,11 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const todayKey = new Date().toISOString().slice(0, 10)
 
   const selectedEventIsPast = Boolean(
-    selectedEvent && (selectedEvent.event_date < todayKey || selectedEvent.status === "completed"),
+    selectedEvent && (selectedEvent.event_date < todayKey || ["completed", "cancelled"].includes(selectedEvent.status)),
   )
+
+  // Laufende, abgesagte und abgeschlossene Turniere sind hier nur lesbar.
+  const selectedEventLocked = Boolean(selectedEvent && ["started", "completed", "cancelled"].includes(selectedEvent.status))
 
   const selectedRegistrations = useMemo(
     () => registrations.filter((row) => row.event_id === selectedEventId),
@@ -585,6 +607,22 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const registeredRows = selectedRegistrations.filter((row) => row.status === "registered")
   const waitlistRows = selectedRegistrations.filter((row) => row.status === "waitlist")
   const withdrawnRows = selectedRegistrations.filter((row) => row.status === "withdrawn")
+  // Nur bestätigte Nennungen dürfen eine Auslosung starten. Warteliste und Abmeldungen sind ausgeschlossen.
+  const unpaidRegisteredRows = selectedEvent && Number(selectedEvent.entry_fee || 0) > 0
+    ? registeredRows.filter((row) => !row.paid)
+    : []
+  const unresolvedRegisteredRows = registeredRows.filter((row) => !row.player_id)
+  const selectedStartMode = selectedEvent?.selected_mode || newEventMode
+  const startBlockers = [
+    ...(!selectedStartMode ? ["Bitte zuerst einen Spielmodus auswählen."] : []),
+    ...(registeredRows.length < 2 ? ["Mindestens 2 angemeldete Spieler erforderlich."] : []),
+    ...(unresolvedRegisteredRows.length ? [`${unresolvedRegisteredRows.length} Spieler ohne eindeutige Zuordnung.`] : []),
+    ...(unpaidRegisteredRows.length ? [`${unpaidRegisteredRows.length} Zahlung${unpaidRegisteredRows.length === 1 ? "" : "en"} offen.`] : []),
+    ...(selectedStartMode === "survival" && (registeredRows.length < 4 || registeredRows.length % 4 !== 0)
+      ? [`Survival benötigt 4, 8, 12, 16 … Spieler (aktuell ${registeredRows.length}).`] : []),
+  ]
+  const canStartSelectedEvent = !selectedEventIsPast && !selectedEventLocked && !startingMode && !!selectedStartMode && startBlockers.length === 0
+
   const activePlayerIds = new Set(
     selectedRegistrations
       .filter((row) => row.status !== "withdrawn" && !!row.player_id)
@@ -692,29 +730,43 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const deleteSelectedEvent = async () => {
     if (!selectedEvent || !selectedEvent.is_spontaneous || ["ready", "started", "completed"].includes(selectedEvent.status)) return
 
+    const eventId = selectedEvent.id
     try {
       setSaving(true)
       setMessage(null)
 
-      const { error: registrationDeleteError } = await supabase
-        .from("central_tournament_registrations")
-        .delete()
-        .eq("event_id", selectedEvent.id)
+      // Prüfe nochmals in Supabase: keine Löschung bei zwischenzeitlich gestartetem Turnier.
+      const { data: freshEvent, error: freshError } = await supabase
+        .from("central_tournament_events")
+        .select("id,title,status,is_spontaneous")
+        .eq("id", eventId).maybeSingle()
+      if (freshError) throw freshError
+      if (!freshEvent || !freshEvent.is_spontaneous || ["ready", "started", "completed"].includes(freshEvent.status)) {
+        throw new Error("Der Turnierstatus hat sich geändert. Bitte neu laden; es wurde nichts gelöscht.")
+      }
+      const { data: activeLink, error: linkError } = await supabase
+        .from("tournaments_status")
+        .select("tournament_id").eq("central_event_id", eventId).eq("status", "active").limit(1)
+      if (linkError) throw linkError
+      if (activeLink?.length) throw new Error("Es existiert ein laufendes Turnier. Löschen gesperrt.")
 
-      if (registrationDeleteError) throw registrationDeleteError
-
-      const { error: centralDeleteError } = await supabase
+      // Der FK auf event_id entfernt ausschließlich Anmeldungen dieses Events.
+      // Ein Löschen des Events mit ON DELETE CASCADE erledigt diese Zuordnung atomar.
+      const { data: deleted, error: centralDeleteError } = await supabase
         .from("central_tournament_events")
         .delete()
-        .eq("id", selectedEvent.id)
-
+        .eq("id", eventId)
+        .eq("is_spontaneous", true)
+        .eq("status", freshEvent.status)
+        .select("id")
       if (centralDeleteError) throw centralDeleteError
+      if (deleted?.length !== 1) throw new Error("Turnier konnte nicht eindeutig gelöscht werden. Bitte neu laden.")
 
       setDeleteConfirmOpen(false)
       setSelectedEventId("")
       setActiveTab("planned")
       await load()
-      setMessage({ type: "success", text: `${selectedEvent.title} wurde gelöscht.` })
+      setMessage({ type: "success", text: `${freshEvent.title} und nur dessen eigene Anmeldungen wurden gelöscht.` })
     } catch (error: any) {
       setMessage({ type: "error", text: error?.message || "Turnier konnte nicht gelöscht werden." })
     } finally {
@@ -723,7 +775,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   }
 
   const updateSelectedAccessType = async (nextAccessType: AccessType) => {
-    if (!selectedEvent || selectedEventIsPast || saving) return
+    if (!selectedEvent || selectedEventIsPast || selectedEventLocked || saving) return
 
     try {
       setSaving(true)
@@ -755,7 +807,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   }
 
   const setEventStatus = async (status: EventStatus) => {
-    if (!selectedEvent) return
+    if (!selectedEvent || selectedEventLocked) return
 
     try {
       setSaving(true)
@@ -777,7 +829,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   }
 
   const markAllRegisteredPaid = async () => {
-    if (!selectedEvent || selectedEventIsPast || registeredRows.length === 0) return
+    if (!selectedEvent || selectedEventIsPast || selectedEventLocked || registeredRows.length === 0) return
 
     try {
       setSaving(true)
@@ -810,7 +862,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   }
 
   const addPlayer = async (player: Player) => {
-    if (!selectedEvent || selectedEventIsPast) return
+    if (!selectedEvent || selectedEventIsPast || selectedEventLocked) return
 
     const eligibility = playerEligibility(player)
     if (!eligibility.eligible) {
@@ -892,7 +944,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     row: CentralRegistration,
     patch: Partial<Pick<CentralRegistration, "status" | "paid">>,
   ) => {
-    if (selectedEventIsPast) return
+    if (selectedEventIsPast || selectedEventLocked) return
 
     try {
       setSaving(true)
@@ -914,7 +966,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   }
 
   const assignRegistrationPlayer = async (row: CentralRegistration, playerId: string) => {
-    if (selectedEventIsPast) return
+    if (selectedEventIsPast || selectedEventLocked) return
 
     const player = playerById.get(playerId)
     if (!player) return
@@ -977,7 +1029,46 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       )
     }
 
-    const active = selectedRegistrations.filter((row) => row.status === "registered")
+    if (!mode) return
+    // Sicherheitsprüfung auch bei Aufruf über andere UI-Wege und nach zwischenzeitlichen Änderungen.
+    const { data: latestEvent, error: eventCheckError } = await supabase
+      .from("central_tournament_events")
+      .select("id,status,entry_fee,selected_mode")
+      .eq("id", selectedEvent.id).single()
+    if (eventCheckError || !latestEvent) {
+      setMessage({ type: "error", text: "Turnierstatus konnte nicht kontrolliert werden. Bitte neu laden." })
+      return
+    }
+    if (latestEvent.status === "started" || latestEvent.status === "completed" || latestEvent.status === "cancelled") {
+      setMessage({ type: "error", text: "Das Turnier wurde bereits gestartet oder beendet. Bitte die Zentrale neu laden." })
+      return
+    }
+    const { data: latestRegistrations, error: registrationCheckError } = await supabase
+      .from("central_tournament_registrations")
+      .select("id,status,paid,player_id")
+      .eq("event_id", selectedEvent.id)
+    if (registrationCheckError || !latestRegistrations) {
+      setMessage({ type: "error", text: "Anmeldungen konnten nicht aktuell geprüft werden. Bitte erneut versuchen." })
+      return
+    }
+    const latestActive = latestRegistrations.filter((row) => row.status === "registered")
+    const localActive = selectedRegistrations.filter((row) => row.status === "registered")
+    if (latestActive.length !== localActive.length || latestActive.some((row) => {
+      const old = localActive.find((candidate) => candidate.id === row.id)
+      return !old || old.paid !== row.paid || old.player_id !== row.player_id
+    })) {
+      setMessage({ type: "error", text: "Die Teilnehmer oder Zahlungen wurden inzwischen geändert. Bitte Turnier neu öffnen und erneut prüfen." })
+      return
+    }
+    if (Number(latestEvent.entry_fee || 0) > 0 && latestActive.some((row) => !row.paid)) {
+      setMessage({ type: "error", text: "Start gesperrt: Nicht alle angemeldeten Teilnehmer haben bezahlt." })
+      return
+    }
+    if (mode === "survival" && (latestActive.length < 4 || latestActive.length % 4 !== 0)) {
+      setMessage({ type: "error", text: `Survival erfordert 4, 8, 12, 16 … Spieler (aktuell ${latestActive.length}).` })
+      return
+    }
+    const active = localActive
     if (active.length < 2) {
       throw new Error("Für Kratzer müssen mindestens 2 Spieler angemeldet sein.")
     }
@@ -1077,7 +1168,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   }
 
   const removeDoubleTeam = async (teamId: string) => {
-    if (!selectedEvent || selectedEventIsPast) return
+    if (!selectedEvent || selectedEventIsPast || selectedEventLocked) return
     try {
       setSaving(true)
       const { error } = await supabase
@@ -1175,6 +1266,18 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       return
     }
 
+    if (data.tournament_type === "survival") {
+      const { data: survival, error: survivalError } = await supabase.from("survival_tournaments")
+        .select("id,status").eq("id", data.tournament_id).maybeSingle()
+      if (survivalError) throw survivalError
+      if (!survival || !["draft", "active"].includes(survival.status)) {
+        setMessage({type:"error",text:"Das verknüpfte Survival-Turnier ist nicht mehr aktiv. Es wird kein neues Turnier erstellt."})
+        return
+      }
+      router.push(`/admin/survival-roulette/${survival.id}?centralEventId=${encodeURIComponent(selectedEvent.id)}`)
+      return
+    }
+
     let route = buildTournamentContinueRoute({
       tournamentType: data.tournament_type,
       tournamentId: data.tournament_id,
@@ -1187,7 +1290,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   }
 
   const chooseMode = async (mode: StartMode) => {
-    if (!selectedEvent || selectedEventIsPast) return
+    if (!selectedEvent || selectedEventIsPast || selectedEventLocked) return
 
     if (selectedEvent.status === "started") {
       try {
@@ -1218,7 +1321,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       setStartingMode(mode)
       setMessage(null)
 
-      if (mode !== "dko" && teamMode !== "single") {
+      if (mode !== "dko" && mode !== "survival" && teamMode !== "single") {
         throw new Error("Fixes oder gelostes Doppel ist nur für Doppel-KO vorgesehen. Stelle den Teammodus für Round Robin, Kratzer oder Survival auf Einzel.")
       }
 
@@ -1358,8 +1461,9 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       if (mode === "survival") {
         const params = new URLSearchParams({
           centralEventId: selectedEvent.id,
+          machines: String(survivalMachines),
         })
-        router.push(`/admin/survival-roulette?${params.toString()}`)
+        router.push(`/admin/survival-start?${params.toString()}`)
       }
     } catch (error: any) {
       console.error("central event start failed:", error)
@@ -1699,6 +1803,41 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               </div>
             </div>
 
+            {!selectedEventLocked && !selectedEventIsPast ? (
+              <div className="emd-admin-surface-lg border border-orange-300/15 p-4 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.14em] text-orange-300/65">Turnierstart · {selectedStartMode ? MODE_LABELS[selectedStartMode] : "Modus wählen"}</div>
+                    {!selectedEvent.selected_mode ? (
+                      <label className="mt-3 block text-sm font-semibold text-white/80">
+                        Spielmodus
+                        <select value={newEventMode} onChange={(e) => setNewEventMode(e.target.value as StartMode | "")}
+                          className="mt-1 block w-full max-w-xs rounded-xl border border-orange-300/20 bg-neutral-900 px-3 py-2 text-white">
+                          <option value="">Bitte auswählen</option>
+                          <option value="dko">Doppel-KO</option>
+                          <option value="round_robin">Round Robin</option>
+                          <option value="kratzer">Kratzer</option>
+                          <option value="survival">Survival Roulette</option>
+                        </select>
+                      </label>
+                    ) : null}
+                    <div className="mt-1 text-lg font-black text-white">{startBlockers.length ? "Noch nicht startbereit" : "Startbereit"}</div>
+                    <div className="mt-1 text-xs text-white/50">{registeredRows.length} angemeldet · {waitlistRows.length} Warteliste (nicht in der Auslosung) · {withdrawnRows.length} abgemeldet</div>
+                    {startBlockers.length > 0 ? (
+                      <div className="mt-3 space-y-1" role="status">
+                        {startBlockers.map((reason) => <p key={reason} className="text-sm font-semibold text-amber-300">• {reason}</p>)}
+                      </div>
+                    ) : <p className="mt-2 text-sm font-semibold text-emerald-300">Alle bekannten Startvoraussetzungen erfüllt.</p>}
+                  </div>
+                  <Button type="button" className="emd-admin-button-primary shrink-0" disabled={!canStartSelectedEvent}
+                    onClick={() => { if (selectedStartMode) void chooseMode(selectedStartMode) }}>
+                    {startingMode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                    {startingMode ? "Wird vorbereitet …" : "Turnier starten"}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
             {selectedEvent.status === "started" ? (
               <div className="rounded-3xl border border-emerald-300/15 bg-emerald-500/[0.055] p-5 sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1719,7 +1858,12 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               </div>
             ) : null}
 
-            <div className={selectedEvent.status === "started" ? "hidden" : "contents"}>
+            {selectedEventLocked && selectedEvent.status !== "started" ? (
+              <div className="rounded-2xl border border-amber-400/20 bg-amber-500/[0.06] px-4 py-3 text-sm font-semibold text-amber-100">
+                Dieses Turnier ist {selectedEvent.status === "cancelled" ? "abgesagt" : "abgeschlossen"}. Die Einstellungen und Anmeldungen sind schreibgeschützt.
+              </div>
+            ) : null}
+            <div className={selectedEventLocked ? "pointer-events-none select-text opacity-70 [&_button]:cursor-not-allowed [&_input]:cursor-not-allowed [&_select]:cursor-not-allowed" : "contents"}>
             {deleteConfirmOpen ? (
               <div className="rounded-2xl border border-rose-300/15 bg-rose-500/[0.045] p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1757,7 +1901,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               </div>
             ) : null}
 
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className={`grid gap-3 ${selectedEvent.selected_mode === "survival" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
               <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
                 <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/30">
                   <LockKeyhole className="h-3.5 w-3.5" /> Teilnahme
@@ -1797,6 +1941,36 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 </div>
               </div>
 
+              {selectedEvent.selected_mode === "survival" ? (
+                <div className="rounded-2xl border border-orange-400/20 bg-orange-500/[0.055] p-4">
+                  <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300">Survival Roulette · Einstellungen</div>
+                  <div className="mt-2 font-black text-white">Teams werden jede Runde neu gelost</div>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-white/55">Aktiver Modus: Gelostes Doppel. Einzel und fixes Doppel sind für eine spätere Erweiterung vorgesehen und derzeit nicht auswählbar.</p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
+                    <span className="rounded-lg border border-orange-400/35 bg-orange-500/20 px-3 py-2 text-orange-100">✓ Gelostes Doppel</span>
+                    <span className="rounded-lg border border-white/10 px-3 py-2 text-white/35">Einzel · später</span>
+                    <span className="rounded-lg border border-white/10 px-3 py-2 text-white/35">Fixes Doppel · später</span>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <label className="block text-xs font-bold text-white/75">Anzahl Automaten
+                      <input type="number" min={1} max={32} step={1} value={survivalMachines} disabled={selectedEventIsPast || !!startingMode}
+                        onChange={(e) => {
+                          const value = Math.min(32, Math.max(1, Number(e.target.value) || 1))
+                          setSurvivalMachines(value)
+                          window.localStorage.setItem(`emd-survival-rules:${selectedEvent.id}`, JSON.stringify({machines:value}))
+                        }}
+                        className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-orange-400/60" />
+                    </label>
+                    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs leading-5 text-white/70">
+                      <div className="font-bold text-white">Aktive Survival-Regeln</div>
+                      <div>2 Runden je Stage · Best of 3 (2 Legs zum Sieg)</div>
+                      <div>Sieg 3 · knappe Niederlage 1 · Niederlage 0 Punkte</div>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs font-semibold text-orange-100/65">Teilnehmer bleiben unten im Check-in. Der aktuelle Survival-Cut benötigt 4, 8, 12 … Spieler.</p>
+                </div>
+              ) : null}
+              {selectedEvent.selected_mode !== "survival" ? (
               <button
                 type="button"
                 disabled={selectedEventIsPast}
@@ -1814,7 +1988,8 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 </div>
                 <div className="mt-1 text-xs font-semibold leading-5 text-white/38">Nur für Doppel-KO. Bei Round Robin und Survival wird keine Doppelnennung verwendet.</div>
               </button>
-
+              ) : null}
+              {selectedEvent.selected_mode !== "survival" ? (
               <div className={`rounded-2xl border p-4 ${teamMode !== "single" ? "border-cyan-300/25 bg-cyan-500/[0.08]" : "border-white/[0.07] bg-white/[0.025]"}`}>
                 <div className="flex items-center gap-2">
                   <UsersRound className="h-4 w-4 text-cyan-200/70" />
@@ -1856,9 +2031,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                       : "Normales Einzelturnier."}
                 </div>
               </div>
+              ) : null}
             </div>
 
-            {teamMode === "fixed" && !selectedEventIsPast ? (
+            {selectedEvent.selected_mode !== "survival" && teamMode === "fixed" && !selectedEventIsPast ? (
               <div className="emd-admin-surface p-4 sm:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
@@ -2196,87 +2372,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               </div>
             </div>
 
-            {!selectedEventIsPast ? (
-              <div className="emd-admin-surface-lg overflow-hidden">
-                <div className="border-b border-white/[0.07] p-4 sm:p-5">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/[0.08]">
-                      <Target className="h-5 w-5 text-orange-200" />
-                    </div>
-                    <div>
-                      <div className="font-black text-white">
-                        {selectedEvent.selected_mode ? "Spielmodus" : "Spielmodus wählen"}
-                      </div>
-                      <p className="mt-1 text-sm leading-5 text-white/40">
-                        {selectedEvent.selected_mode
-                          ? `Bereit für ${MODE_LABELS[selectedEvent.selected_mode]}.`
-                          : "Wähle den Spielmodus, sobald die Teilnehmer feststehen."}
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
-                {selectedEvent.selected_mode ? (
-                  <div className="p-4 sm:p-5">
-                    <button
-                      type="button"
-                      onClick={() => void chooseMode(selectedEvent.selected_mode as StartMode)}
-                      disabled={!!startingMode || registeredRows.length < 2}
-                      className="emd-admin-card emd-admin-card-hover group flex min-h-[116px] w-full items-center justify-between gap-4 p-4 text-left disabled:cursor-not-allowed disabled:opacity-35"
-                    >
-                      <div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300/60">Aktueller Modus</div>
-                        <div className="mt-1 text-xl font-black text-white">{MODE_LABELS[selectedEvent.selected_mode]}</div>
-                        <div className="mt-1 text-xs font-semibold text-white/35">
-                          {registeredRows.length} Spieler · Turnier öffnen
-                        </div>
-                      </div>
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-orange-300/20 bg-orange-500/[0.10] text-orange-200">
-                        {startingMode === selectedEvent.selected_mode ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <Play className="h-5 w-5" />
-                        )}
-                      </div>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4 sm:p-5">
-                    {(
-                      [
-                        ["dko", "Doppel-KO", "Doppel-KO vorbereiten und anschließend die Auslosung öffnen."],
-                        ["round_robin", "Round Robin", "Gruppenphase vorbereiten und danach die Gruppen festlegen."],
-                        ["kratzer", "Kratzer", "Kratzer mit dem aktuellen Teilnehmerfeld starten."],
-                        ["survival", "Survival Roulette", "Survival Roulette mit diesen Teilnehmern starten."],
-                      ] as Array<[StartMode, string, string]>
-                    ).map(([mode, label, description]) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => void chooseMode(mode)}
-                        disabled={!!startingMode || registeredRows.length < 2}
-                        className="emd-admin-card emd-admin-card-hover group min-h-[150px] p-4 text-left disabled:cursor-not-allowed disabled:opacity-35"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-300/15 bg-orange-500/[0.07] text-orange-200">
-                            {startingMode === mode ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : mode === "kratzer" ? (
-                              <Users className="h-4 w-4" />
-                            ) : (
-                              <Trophy className="h-4 w-4" />
-                            )}
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-white/20 transition group-hover:translate-x-0.5 group-hover:text-white/55" />
-                        </div>
-                        <div className="mt-4 font-black text-white">{label}</div>
-                        <div className="mt-1 text-xs font-semibold leading-5 text-white/35">{description}</div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : null}
             </div>
           </div>
         ) : null}
