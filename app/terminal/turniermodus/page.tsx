@@ -500,9 +500,27 @@ export default function TerminalTournamentModePage() {
       }
       if (run !== faceRunRef.current) return
       setFaceMessage("Gesicht wird erkannt …")
-      const faces = await api.detectAllFaces(video, new api.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.55 })).withFaceLandmarks().withFaceDescriptors()
-      if (faces.length !== 1) throw new Error(faces.length > 1 ? "Bitte nur eine Person vor die Kamera stellen." : "Kein Gesicht gefunden. Bitte erneut versuchen.")
-      const response = await fetch("/api/spontaneous-dko-face-winner", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ tournament_id: active.tournament_id, tournament_type: active.tournament_type, match_id: active.match_id, vector: Array.from(faces[0].descriptor) }) })
+      // Gleiche fehlertolerante Kamera-Erfassung wie in „Mein EMD“:
+      // nicht nur ein einzelnes Kamerabild nach dem Countdown prüfen.
+      let descriptor: Float32Array | null = null
+      for (let attempt = 0; attempt < 12; attempt++) {
+        if (run !== faceRunRef.current) return
+        if (video.readyState < 2) {
+          await sleep(550)
+          continue
+        }
+        const faces = await api.detectAllFaces(video, new api.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.55 })).withFaceLandmarks().withFaceDescriptors()
+        if (run !== faceRunRef.current) return
+        if (faces.length === 1) {
+          descriptor = faces[0].descriptor
+          break
+        }
+        setFaceMessage(faces.length > 1 ? "Bitte nur den Sieger vor die Kamera stellen." : "Bitte gerade in die Kamera schauen – Gesicht wird gesucht …")
+        await sleep(700)
+      }
+      if (!descriptor) throw new Error("Kein eindeutiges Gesicht erkannt. Bitte erneut versuchen.")
+      setFaceMessage("Gesicht wird geprüft und Sieger bestätigt …")
+      const response = await fetch("/api/spontaneous-dko-face-winner", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ tournament_id: active.tournament_id, tournament_type: active.tournament_type, match_id: active.match_id, vector: Array.from(descriptor) }) })
       const result = await response.json()
       if (!response.ok || !result.ok) throw new Error(result.error || "Ergebnis wurde nicht gespeichert.")
       stopFaceCamera()

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import {
   buildDkoStartRoute,
@@ -54,8 +54,9 @@ export function useEinzelturnierStartController(options: Options) {
   } = options
 
   const [startingTournament, setStartingTournament] = useState(false)
+  const startClickLock = useRef(false)
 
-  const handleStartTournament = async () => {
+  const executeStartTournament = async () => {
     if (registeredPlayers.length === 0) {
       alert("Bitte registriere mindestens einen Spieler!")
       return
@@ -253,6 +254,18 @@ export function useEinzelturnierStartController(options: Options) {
         eventId,
       }),
     )
+  }
+
+  const handleStartTournament = async () => {
+    if (startClickLock.current) return
+    startClickLock.current = true
+    setStartingTournament(true)
+    try {
+      await executeStartTournament()
+    } finally {
+      startClickLock.current = false
+      setStartingTournament(false)
+    }
   }
 
   return {

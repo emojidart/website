@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   CalendarDays,
@@ -36,7 +36,7 @@ import { buildDkoStartRoute, buildTournamentContinueRoute, createTournamentIdCom
 type EventStatus = "draft" | "open" | "closed" | "ready" | "started" | "completed" | "cancelled"
 type AccessType = "public" | "club_internal" | "club_external"
 type RegistrationStatus = "registered" | "waitlist" | "withdrawn"
-type StartMode = "dko" | "round_robin" | "kratzer" | "survival"
+type StartMode = "dko" | "round_robin" | "kratzer" | "survival" | "survival_single"
 type TeamMode = "single" | "fixed" | "drawn"
 
 type CentralEvent = {
@@ -252,6 +252,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [startingMode, setStartingMode] = useState<StartMode | null>(null)
+  const startClickLock = useRef(false)
   const [newEventMode, setNewEventMode] = useState<StartMode | "">("")
   const [schemaMissing, setSchemaMissing] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -267,6 +268,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const [teamMode, setTeamMode] = useState<TeamMode>("single")
   // Survival verwendet eigenständige Einstellungen, keine DKO-Doppelnennungen.
   const [survivalMachines, setSurvivalMachines] = useState(5)
+  const [survivalVariant, setSurvivalVariant] = useState<"survival" | "survival_single">("survival")
   const [doubleTeams, setDoubleTeams] = useState<CentralDoubleTeam[]>([])
   const [fixedPlayer1RegistrationId, setFixedPlayer1RegistrationId] = useState("")
   const [fixedPlayer2RegistrationId, setFixedPlayer2RegistrationId] = useState("")
@@ -285,11 +287,29 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   useEffect(() => {
     setVisiblePlayerCount(18)
   }, [playerSearch, selectedEventId])
+  // Die gewählte Survival-Variante darf beim Nachladen der Anmeldungen nicht verloren gehen.
+  // Nur ein tatsächlicher Eventwechsel lädt die Einstellung neu.
+  useEffect(() => {
+    if (!selectedEventId) return
+    const current = events.find((event) => event.id === selectedEventId)
+    if (!current) return
+    if (current.selected_mode === "survival_single") {
+      setSurvivalVariant("survival_single")
+      return
+    }
+    try {
+      const saved = window.localStorage.getItem(`emd-survival-variant:${selectedEventId}`)
+      setSurvivalVariant(saved === "survival_single" ? "survival_single" : "survival")
+    } catch {
+      setSurvivalVariant("survival")
+    }
+  }, [selectedEventId])
+
 
   useEffect(() => {
     const event = events.find((item) => item.id === selectedEventId)
     if (!event) return
-    if (event.selected_mode === "survival") {
+    if ((event.selected_mode === "survival" || event.selected_mode === "survival_single")) {
       setAllowDoubleEntry(false)
       setTeamMode("single")
       return
@@ -612,12 +632,17 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     ? registeredRows.filter((row) => !row.paid)
     : []
   const unresolvedRegisteredRows = registeredRows.filter((row) => !row.player_id)
-  const selectedStartMode = selectedEvent?.selected_mode || newEventMode
+  const selectedStartMode = selectedEvent?.selected_mode === "survival"
+    ? survivalVariant
+    : (selectedEvent?.selected_mode || newEventMode)
+
   const startBlockers = [
     ...(!selectedStartMode ? ["Bitte zuerst einen Spielmodus auswählen."] : []),
     ...(registeredRows.length < 2 ? ["Mindestens 2 angemeldete Spieler erforderlich."] : []),
     ...(unresolvedRegisteredRows.length ? [`${unresolvedRegisteredRows.length} Spieler ohne eindeutige Zuordnung.`] : []),
     ...(unpaidRegisteredRows.length ? [`${unpaidRegisteredRows.length} Zahlung${unpaidRegisteredRows.length === 1 ? "" : "en"} offen.`] : []),
+    ...(selectedStartMode === "survival_single" && (registeredRows.length < 4 || registeredRows.length % 2 !== 0)
+      ? [`Survival Einzel benötigt mindestens 4 und eine gerade Spielerzahl (aktuell ${registeredRows.length}).`] : []),
     ...(selectedStartMode === "survival" && (registeredRows.length < 4 || registeredRows.length % 4 !== 0)
       ? [`Survival benötigt 4, 8, 12, 16 … Spieler (aktuell ${registeredRows.length}).`] : []),
   ]
@@ -1301,6 +1326,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   }
 
   const chooseMode = async (mode: StartMode) => {
+    if (startClickLock.current) return
     if (!selectedEvent || selectedEventIsPast || selectedEventLocked) return
 
     if (selectedEvent.status === "started") {
@@ -1328,11 +1354,12 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       return
     }
 
+    startClickLock.current = true
     try {
       setStartingMode(mode)
       setMessage(null)
 
-      if (mode !== "dko" && mode !== "survival" && teamMode !== "single") {
+      if (mode !== "dko" && mode !== "survival" && mode !== "survival_single" && teamMode !== "single") {
         throw new Error("Fixes oder gelostes Doppel ist nur für Doppel-KO vorgesehen. Stelle den Teammodus für Round Robin, Kratzer oder Survival auf Einzel.")
       }
 
@@ -1469,6 +1496,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
         return
       }
 
+      if (mode === "survival_single") {
+        router.push(`/admin/survival-einzel?centralEventId=${encodeURIComponent(selectedEvent.id)}`)
+        return
+      }
       if (mode === "survival") {
         const params = new URLSearchParams({
           centralEventId: selectedEvent.id,
@@ -1480,6 +1511,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       console.error("central event start failed:", error)
       setMessage({ type: "error", text: error?.message || "Turniermodus konnte nicht vorbereitet werden." })
     } finally {
+      startClickLock.current = false
       setStartingMode(null)
     }
   }
@@ -1828,7 +1860,8 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                           <option value="dko">Doppel-KO</option>
                           <option value="round_robin">Round Robin</option>
                           <option value="kratzer">Kratzer</option>
-                          <option value="survival">Survival Roulette</option>
+                          <option value="survival">Survival Doppel Roulette</option>
+                          <option value="survival_single">Survival Einzel Roulette</option>
                         </select>
                       </label>
                     ) : null}
@@ -1843,7 +1876,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                   <Button type="button" className="emd-admin-button-primary shrink-0" disabled={!canStartSelectedEvent}
                     onClick={() => { if (selectedStartMode) void chooseMode(selectedStartMode) }}>
                     {startingMode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-                    {startingMode ? "Wird vorbereitet …" : "Turnier starten"}
+                    {startingMode ? "Turnier wird gestartet … bitte nicht erneut klicken" : "Turnier starten"}
                   </Button>
                 </div>
               </div>
@@ -1912,7 +1945,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               </div>
             ) : null}
 
-            <div className={`grid gap-3 ${selectedEvent.selected_mode === "survival" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+            <div className={`grid gap-3 ${(selectedEvent.selected_mode === "survival" || selectedEvent.selected_mode === "survival_single") ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
               <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
                 <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/30">
                   <LockKeyhole className="h-3.5 w-3.5" /> Teilnahme
@@ -1952,15 +1985,23 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 </div>
               </div>
 
-              {selectedEvent.selected_mode === "survival" ? (
+              {(selectedEvent.selected_mode === "survival" || selectedEvent.selected_mode === "survival_single") ? (
                 <div className="rounded-2xl border border-orange-400/20 bg-orange-500/[0.055] p-4">
                   <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300">Survival Roulette · Einstellungen</div>
-                  <div className="mt-2 font-black text-white">Teams werden jede Runde neu gelost</div>
-                  <p className="mt-1 text-xs font-semibold leading-5 text-white/55">Aktiver Modus: Gelostes Doppel. Einzel und fixes Doppel sind für eine spätere Erweiterung vorgesehen und derzeit nicht auswählbar.</p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
-                    <span className="rounded-lg border border-orange-400/35 bg-orange-500/20 px-3 py-2 text-orange-100">✓ Gelostes Doppel</span>
-                    <span className="rounded-lg border border-white/10 px-3 py-2 text-white/35">Einzel · später</span>
-                    <span className="rounded-lg border border-white/10 px-3 py-2 text-white/35">Fixes Doppel · später</span>
+                  <div className="mt-2 font-black text-white">{selectedStartMode === "survival_single" ? "Einzel Roulette – neue Gegner jede Runde" : "Doppel Roulette – neue Teams jede Runde"}</div>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-white/55">Wähle die Survival-Variante vor dem Turnierstart. Bestehende Doppelturniere bleiben unverändert.</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {([ ["survival_single", "Einzel Roulette"], ["survival", "Doppel Roulette"] ] as const).map(([value,label]) => (
+                      <button type="button" key={value}
+                        disabled={selectedEvent.status === "started" || selectedEventLocked || !!startingMode || selectedEvent.selected_mode === "survival_single"}
+                        onClick={() => {
+                          setSurvivalVariant(value)
+                          try { window.localStorage.setItem(`emd-survival-variant:${selectedEvent.id}`, value) } catch {}
+                        }}
+                        className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${selectedStartMode === value ? "border-orange-400/40 bg-orange-500/20 text-orange-100" : "border-white/10 text-white/60"} disabled:opacity-60`}>
+                        {selectedStartMode === value ? "✓ " : ""}{label}
+                      </button>
+                    ))}
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label className="block text-xs font-bold text-white/75">Anzahl Automaten
@@ -1981,7 +2022,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                   <p className="mt-3 text-xs font-semibold text-orange-100/65">Teilnehmer bleiben unten im Check-in. Der aktuelle Survival-Cut benötigt 4, 8, 12 … Spieler.</p>
                 </div>
               ) : null}
-              {selectedEvent.selected_mode !== "survival" ? (
+              {(selectedEvent.selected_mode !== "survival" && selectedEvent.selected_mode !== "survival_single") ? (
               <button
                 type="button"
                 disabled={selectedEventIsPast}
@@ -2000,7 +2041,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 <div className="mt-1 text-xs font-semibold leading-5 text-white/38">Nur für Doppel-KO. Bei Round Robin und Survival wird keine Doppelnennung verwendet.</div>
               </button>
               ) : null}
-              {selectedEvent.selected_mode !== "survival" ? (
+              {(selectedEvent.selected_mode !== "survival" && selectedEvent.selected_mode !== "survival_single") ? (
               <div className={`rounded-2xl border p-4 ${teamMode !== "single" ? "border-cyan-300/25 bg-cyan-500/[0.08]" : "border-white/[0.07] bg-white/[0.025]"}`}>
                 <div className="flex items-center gap-2">
                   <UsersRound className="h-4 w-4 text-cyan-200/70" />
@@ -2045,7 +2086,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               ) : null}
             </div>
 
-            {selectedEvent.selected_mode !== "survival" && teamMode === "fixed" && !selectedEventIsPast ? (
+            {selectedEvent.selected_mode !== "survival" && selectedEvent.selected_mode !== "survival_single" && teamMode === "fixed" && !selectedEventIsPast ? (
               <div className="emd-admin-surface p-4 sm:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>

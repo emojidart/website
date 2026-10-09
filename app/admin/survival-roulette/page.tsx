@@ -77,6 +77,7 @@ export default function SurvivalRouletteAdminPage() {
   const [loading, setLoading] = useState(true)
   const [startingTournament, setStartingTournament] = useState(false)
   const [machineCount, setMachineCount] = useState(5)
+  const [legsToWin, setLegsToWin] = useState<2 | 3 | 4>(2)
   const [draftTournamentId, setDraftTournamentId] = useState<string | null>(null)
   const [isOnline, setIsOnline] = useState(true)
   const [notice, setNotice] = useState<{
@@ -111,6 +112,7 @@ export default function SurvivalRouletteAdminPage() {
   const saveLocalBackup = (override?: Partial<{
     tournamentName: string
     machineCount: number
+    legsToWin: number
     registeredPlayers: SurvivalPlayer[]
     draftTournamentId: string | null
   }>) => {
@@ -118,6 +120,7 @@ export default function SurvivalRouletteAdminPage() {
     const payload = {
       tournamentName,
       machineCount,
+      legsToWin,
       registeredPlayers,
       draftTournamentId,
       savedAt: new Date().toISOString(),
@@ -142,7 +145,7 @@ export default function SurvivalRouletteAdminPage() {
     if (typeof window === "undefined") return
     saveLocalBackup()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tournamentName, machineCount, registeredPlayers, draftTournamentId])
+  }, [tournamentName, machineCount, legsToWin, registeredPlayers, draftTournamentId])
 
   useEffect(() => {
     if (!user) return
@@ -158,6 +161,7 @@ export default function SurvivalRouletteAdminPage() {
             const parsed = JSON.parse(cached)
             if (parsed?.tournamentName) setTournamentName(String(parsed.tournamentName))
             if (Number(parsed?.machineCount) >= 1) setMachineCount(Number(parsed.machineCount))
+            if ([2, 3, 4].includes(Number(parsed?.legsToWin))) setLegsToWin(Number(parsed.legsToWin) as 2 | 3 | 4)
             if (Array.isArray(parsed?.registeredPlayers)) {
               setRegisteredPlayers(parsed.registeredPlayers)
             }
@@ -246,7 +250,7 @@ export default function SurvivalRouletteAdminPage() {
               win_points: 3,
               close_loss_points: 1,
               loss_points: 0,
-              legs_to_win: 2,
+              legs_to_win: legsToWin,
               created_by: user.id,
             })
             .select("*")
@@ -595,7 +599,7 @@ export default function SurvivalRouletteAdminPage() {
           win_points: 3,
           close_loss_points: 1,
           loss_points: 0,
-          legs_to_win: 2,
+          legs_to_win: legsToWin,
           updated_at: new Date().toISOString(),
         })
         .eq("id", draftTournamentId)
@@ -700,7 +704,7 @@ export default function SurvivalRouletteAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#080a10] text-white">
       <Header />
 
       <TournamentAdminNav
@@ -708,8 +712,8 @@ export default function SurvivalRouletteAdminPage() {
         description="Teilnehmer registrieren und Survival Roulette starten."
       />
 
-      <div className="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6 xl:px-10 2xl:px-12">
-        <div className="mb-5 flex flex-col gap-3 rounded-[24px] border border-slate-200/80 bg-slate-950 px-5 py-4 text-white shadow-[0_18px_55px_-42px_rgba(15,23,42,.9)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 xl:px-10 2xl:px-12">
+        <div className="mb-5 flex flex-col gap-3 rounded-[28px] border border-orange-500/25 bg-gradient-to-br from-[#21130f] via-[#16151a] to-[#090c14] px-6 py-6 text-white shadow-[0_18px_55px_-42px_rgba(15,23,42,.9)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             <div className="text-[11px] font-black uppercase tracking-[0.2em] text-orange-300">
               Turnier Setup
@@ -720,7 +724,7 @@ export default function SurvivalRouletteAdminPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold sm:text-sm">
-            <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
+            <span className="rounded-full border border-white/10 bg-[#11151e]/10 px-3 py-1.5">
               {registeredPlayers.length} registriert
             </span>
 
@@ -737,7 +741,7 @@ export default function SurvivalRouletteAdminPage() {
               className={`rounded-full border px-3 py-1.5 ${
                 validPlayerCount
                   ? "border-emerald-300/40 bg-emerald-400/15 text-emerald-100"
-                  : "border-orange-300/30 bg-orange-400/10 text-orange-100"
+                  : "border-orange-500/35/30 bg-orange-400/10 text-orange-100"
               }`}
             >
               {validPlayerCount
@@ -750,12 +754,12 @@ export default function SurvivalRouletteAdminPage() {
           </div>
         </div>
 
-        <div className="mb-6 overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-5 lg:p-7">
+        <div className="mb-6 overflow-hidden rounded-[28px] border border-white/10 bg-[#11151e] p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-5 lg:p-7">
           <div className="grid gap-5 xl:grid-cols-2 xl:gap-5">
             <div>
               <div className="mb-4 flex items-center gap-3">
-                <Trophy className="h-6 w-6 text-orange-600" />
-                <h3 className="text-xl font-bold text-gray-900">
+                <Trophy className="h-6 w-6 text-orange-400" />
+                <h3 className="text-xl font-bold text-white">
                   Turniername
                 </h3>
                 <span className="font-bold text-red-500">*</span>
@@ -767,51 +771,61 @@ export default function SurvivalRouletteAdminPage() {
                 onChange={(event) => setTournamentName(event.target.value)}
                 placeholder="z.B. Survival Roulette"
                 maxLength={100}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 text-base font-semibold text-slate-900 shadow-none outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
+                className="h-12 w-full rounded-2xl border border-white/10 bg-[#10131b] px-4 text-base font-semibold text-white shadow-none outline-none transition focus:border-orange-400 focus:bg-[#161b25] focus:ring-4 focus:ring-orange-500/20"
               />
 
-              <p className="mt-2 text-sm text-gray-600">Pflichtfeld!</p>
+              <p className="mt-2 text-sm text-slate-400">Pflichtfeld!</p>
             </div>
 
             <div>
               <div className="mb-4 flex items-center gap-3">
-                <Flame className="h-6 w-6 text-orange-600" />
-                <h3 className="text-xl font-bold text-gray-900">
+                <Flame className="h-6 w-6 text-orange-400" />
+                <h3 className="text-xl font-bold text-white">
                   Survival Modus
                 </h3>
               </div>
 
+              <div className="mb-4 rounded-2xl border border-orange-500/25 bg-[#11151e] p-4">
+                <label htmlFor="survival-best-of" className="mb-2 block text-sm font-black text-white">Legs pro Match</label>
+                <select id="survival-best-of" value={legsToWin} disabled={startingTournament}
+                  onChange={(event) => setLegsToWin(Number(event.target.value) as 2 | 3 | 4)}
+                  className="w-full rounded-xl border border-white/15 bg-[#11151e] px-3 py-3 font-bold text-white">
+                  <option value={2}>Best of 3 – 2 Legs zum Sieg</option>
+                  <option value={3}>Best of 5 – 3 Legs zum Sieg</option>
+                  <option value={4}>Best of 7 – 4 Legs zum Sieg</option>
+                </select>
+              </div>
               <div className="grid gap-2 sm:grid-cols-3">
-                <div className="rounded-2xl border border-orange-300 bg-orange-50 p-4">
-                  <div className="text-sm font-black text-gray-900">
+                <div className="rounded-2xl border border-orange-500/35 bg-orange-500/10 p-4">
+                  <div className="text-sm font-black text-white">
                     2 Runden
                   </div>
-                  <div className="mt-1 text-xs font-medium leading-4 text-gray-500">
+                  <div className="mt-1 text-xs font-medium leading-4 text-slate-400">
                     Mindestens 2 Spiele pro Stage vor dem Cut
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-                  <div className="text-sm font-black text-gray-900">
-                    Best of 3
+                <div className="rounded-2xl border border-white/10 bg-white/[.04] p-4">
+                  <div className="text-sm font-black text-white">
+                    Best of {legsToWin * 2 - 1}
                   </div>
-                  <div className="mt-1 text-xs font-medium leading-4 text-gray-500">
-                    2 Legs zum Sieg
+                  <div className="mt-1 text-xs font-medium leading-4 text-slate-400">
+                    {legsToWin} Legs zum Sieg
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-                  <div className="text-sm font-black text-gray-900">
+                <div className="rounded-2xl border border-white/10 bg-white/[.04] p-4">
+                  <div className="text-sm font-black text-white">
                     Punktewertung
                   </div>
-                  <div className="mt-1 text-xs font-medium leading-4 text-gray-500">
-                    Sieg 3 · 1:2-Niederlage 1 · 0:2-Niederlage 0 Punkte
+                  <div className="mt-1 text-xs font-medium leading-4 text-slate-400">
+                    Sieg 3 · knappe Niederlage 1 · deutliche Niederlage 0 Punkte
                   </div>
                 </div>
               </div>
 
               <div className="mt-4">
-                <label className="mb-2 block text-sm font-bold text-gray-900">
+                <label className="mb-2 block text-sm font-bold text-white">
                   Anzahl Automaten
                 </label>
                 <input
@@ -823,23 +837,23 @@ export default function SurvivalRouletteAdminPage() {
                     const value = Number(event.target.value)
                     setMachineCount(Number.isFinite(value) ? Math.max(1, Math.min(50, value)) : 1)
                   }}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 text-base font-semibold text-slate-900 shadow-none outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
+                  className="h-12 w-full rounded-2xl border border-white/10 bg-[#10131b] px-4 text-base font-semibold text-white shadow-none outline-none transition focus:border-orange-400 focus:bg-[#161b25] focus:ring-4 focus:ring-orange-500/20"
                 />
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-2 text-sm text-slate-400">
                   Wie viele Automaten stehen für dieses Turnier zur Verfügung?
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5">
+          <div className="mt-6 rounded-2xl border border-white/10 bg-[#10131b] px-4 py-3.5">
             {tournamentFormCompleted ? (
               <p className="flex items-center gap-2 font-semibold text-green-600">
                 <span className="h-2 w-2 rounded-full bg-green-600" />
                 ✓ Formular vollständig – Du kannst jetzt Spieler registrieren
               </p>
             ) : (
-              <p className="flex items-center gap-2 font-semibold text-orange-600">
+              <p className="flex items-center gap-2 font-semibold text-orange-400">
                 <AlertCircle className="h-4 w-4" />
                 Bitte Turniername und Automatenanzahl vollständig festlegen
               </p>
@@ -848,14 +862,14 @@ export default function SurvivalRouletteAdminPage() {
         </div>
 
         {registeredPlayers.length > 0 && (
-          <div className="mb-6 overflow-hidden rounded-[28px] border border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-amber-50/50 p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-5">
+          <div className="mb-6 overflow-hidden rounded-[28px] border border-orange-500/25 bg-gradient-to-br from-orange-50 via-white to-amber-50/50 p-5 shadow-[0_18px_55px_-42px_rgba(15,23,42,.45)] sm:p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-xl font-bold text-white">
                   Turnier bereit zum Starten
                 </h3>
 
-                <p className="mt-1 text-gray-600">
+                <p className="mt-1 text-slate-400">
                   {registeredPlayers.length} Spieler registriert
                 </p>
 
@@ -866,7 +880,7 @@ export default function SurvivalRouletteAdminPage() {
                         key={`${count}-${index}`}
                         className="flex items-center gap-2"
                       >
-                        <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
+                        <span className="rounded-full border border-orange-500/25 bg-[#11151e] px-3 py-1 text-xs font-black text-slate-200">
                           {index === 0
                             ? `${count} Start`
                             : index === route.length - 1
@@ -893,8 +907,8 @@ export default function SurvivalRouletteAdminPage() {
                 disabled={!canStart || startingTournament}
                 className={`flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-bold transition-colors ${
                   canStart && !startingTournament
-                    ? "bg-orange-500 text-white hover:bg-orange-600"
-                    : "cursor-not-allowed bg-gray-300 text-gray-500"
+                    ? "bg-orange-500/100 text-white hover:bg-orange-600"
+                    : "cursor-not-allowed bg-gray-300 text-slate-400"
                 }`}
               >
                 <Play className="h-5 w-5" />
@@ -934,7 +948,7 @@ export default function SurvivalRouletteAdminPage() {
             className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${
               validPlayerCount
                 ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-200"
-                : "border-orange-300/20 bg-orange-500/[0.08] text-orange-200"
+                : "border-orange-500/35/20 bg-orange-500/100/[0.08] text-orange-200"
             }`}
           >
             <div className="flex items-center gap-2">
@@ -952,21 +966,21 @@ export default function SurvivalRouletteAdminPage() {
       </div>
 
       {showClearRegistration ? (
-        <div className="fixed inset-0 z-[165] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_100px_-35px_rgba(15,23,42,.75)]">
+        <div className="fixed inset-0 z-[165] grid place-items-center bg-[#131720]/65 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md overflow-hidden rounded-[26px] border border-white/10 bg-[#11151e] shadow-[0_30px_100px_-35px_rgba(15,23,42,.75)]">
             <div className="border-b border-slate-100 px-5 py-4">
               <div className="flex items-center gap-3">
                 <div className="grid h-11 w-11 place-items-center rounded-2xl bg-rose-100 text-rose-600"><Trash2 className="h-5 w-5" /></div>
                 <div>
-                  <h3 className="text-base font-black text-slate-950">Registrierung leeren?</h3>
-                  <p className="mt-1 text-sm font-medium text-slate-500">{registeredPlayers.length} Spieler sind aktuell vorgemerkt.</p>
+                  <h3 className="text-base font-black text-white">Registrierung leeren?</h3>
+                  <p className="mt-1 text-sm font-medium text-slate-400">{registeredPlayers.length} Spieler sind aktuell vorgemerkt.</p>
                 </div>
               </div>
             </div>
             <div className="p-5">
-              <p className="text-sm font-medium leading-5 text-slate-600">Alle aktuell registrierten Spieler werden aus diesem Turnier entfernt. Turniername und Automatenanzahl bleiben erhalten.</p>
+              <p className="text-sm font-medium leading-5 text-slate-300">Alle aktuell registrierten Spieler werden aus diesem Turnier entfernt. Turniername und Automatenanzahl bleiben erhalten.</p>
               <div className="mt-5 grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => setShowClearRegistration(false)} disabled={startingTournament} className="rounded-xl border border-slate-200 bg-white px-4 py-3 font-black text-slate-700 hover:bg-slate-50 disabled:opacity-40">Abbrechen</button>
+                <button type="button" onClick={() => setShowClearRegistration(false)} disabled={startingTournament} className="rounded-xl border border-white/10 bg-[#11151e] px-4 py-3 font-black text-slate-200 hover:bg-[#11151e] disabled:opacity-40">Abbrechen</button>
                 <button type="button" onClick={() => void clearRegistration()} disabled={startingTournament} className="rounded-xl bg-rose-600 px-4 py-3 font-black text-white hover:bg-rose-700 disabled:opacity-50">{startingTournament ? "Wird geleert..." : "Alle entfernen"}</button>
               </div>
             </div>
@@ -975,8 +989,8 @@ export default function SurvivalRouletteAdminPage() {
       ) : null}
 
       {notice ? (
-        <div className="fixed inset-0 z-[170] grid place-items-center bg-slate-950/65 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_100px_-35px_rgba(15,23,42,.7)]">
+        <div className="fixed inset-0 z-[170] grid place-items-center bg-[#131720]/65 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md overflow-hidden rounded-[26px] border border-white/10 bg-[#11151e] shadow-[0_30px_100px_-35px_rgba(15,23,42,.7)]">
             <div className="px-6 pb-2 pt-6 text-center">
               <div className={`mx-auto grid h-12 w-12 place-items-center rounded-2xl ${
                 notice.tone === "error" ? "bg-rose-100 text-rose-600" :
@@ -985,11 +999,11 @@ export default function SurvivalRouletteAdminPage() {
               }`}>
                 <AlertCircle className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-base font-black text-slate-950">{notice.title}</h3>
-              <p className="mt-2 whitespace-pre-line text-sm font-medium leading-6 text-slate-500">{notice.message}</p>
+              <h3 className="mt-4 text-base font-black text-white">{notice.title}</h3>
+              <p className="mt-2 whitespace-pre-line text-sm font-medium leading-6 text-slate-400">{notice.message}</p>
             </div>
             <div className="p-5 pt-4">
-              <button type="button" onClick={() => setNotice(null)} className="w-full rounded-xl bg-slate-950 px-5 py-3 font-black text-white hover:bg-slate-800">OK</button>
+              <button type="button" onClick={() => setNotice(null)} className="w-full rounded-xl bg-[#131720] px-5 py-3 font-black text-white hover:bg-orange-500">OK</button>
             </div>
           </div>
         </div>

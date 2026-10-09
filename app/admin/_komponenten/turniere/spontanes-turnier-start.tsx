@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Dices, Flame, Loader2, Sparkles, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
-export type SpontaneousTournamentMode = "dko" | "round_robin" | "kratzer" | "survival"
+export type SpontaneousTournamentMode = "dko" | "round_robin" | "kratzer" | "survival" | "survival_single"
 
 export type SpontaneousTournamentDraft = {
   id: string
@@ -38,7 +38,7 @@ const modes = [
   {
     id: "survival" as const,
     title: "Survival Roulette",
-    description: "Survival-Turnier",
+    description: "Einzel oder gelostes Doppel",
     icon: Flame,
   },
 ]
@@ -46,6 +46,7 @@ const modes = [
 export function SpontanesTurnierStart({ onCreated }: Props) {
   const [name, setName] = useState("")
   const [mode, setMode] = useState<SpontaneousTournamentMode>("dko")
+  const [survivalType, setSurvivalType] = useState<"survival" | "survival_single">("survival")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
@@ -72,7 +73,7 @@ export function SpontanesTurnierStart({ onCreated }: Props) {
           entry_fee: 0,
           access_type: "public",
           status: "open",
-          selected_mode: mode,
+          selected_mode: mode === "survival" ? survivalType : mode,
         })
         .select("id")
         .single()
@@ -83,7 +84,7 @@ export function SpontanesTurnierStart({ onCreated }: Props) {
       onCreated({
         id: String(data.id),
         name: cleanName,
-        mode,
+        mode: mode === "survival" ? survivalType : mode,
       })
     } catch (err: any) {
       setError(err?.message || "Turnier konnte nicht angelegt werden.")
@@ -143,6 +144,21 @@ export function SpontanesTurnierStart({ onCreated }: Props) {
             })}
           </div>
         </div>
+
+        {mode === "survival" ? (
+          <div className="mt-5 rounded-2xl border border-orange-400/20 bg-orange-500/[0.05] p-4">
+            <div className="mb-3 text-sm font-black text-white">Survival-Variante wählen</div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {([ ["survival_single", "Einzel Roulette", "Neue Gegner in jeder Runde"], ["survival", "Doppel Roulette", "Neue Doppelpartner in jeder Runde"] ] as const).map(([value,title,description]) => (
+                <button type="button" key={value} onClick={() => setSurvivalType(value)}
+                  className={`rounded-xl border p-3 text-left ${survivalType === value ? "border-orange-400/45 bg-orange-500/15" : "border-white/10 bg-white/[0.025]"}`}>
+                  <div className="font-black text-white">{survivalType === value ? "✓ " : ""}{title}</div>
+                  <div className="mt-1 text-xs text-white/55">{description}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {error ? (
           <div className="mt-5 rounded-xl border border-rose-300/20 bg-rose-500/[0.08] px-4 py-3 text-sm font-bold text-rose-200">

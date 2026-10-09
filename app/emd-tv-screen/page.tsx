@@ -145,7 +145,7 @@ type BirthdayPlayer = {
   birthdate: string
 }
 
-type ActiveStatus = { dko: boolean; kratzer: boolean; survivalId: string | null }
+type ActiveStatus = { dko: boolean; kratzer: boolean; survivalId: string | null; survivalSingleId: string | null }
 
 type ListedLeagueGame = {
   gameId: string
@@ -234,7 +234,7 @@ export default function EmdTvScreenPage() {
   const preloadedKeyRef = useRef("")
   const preloadedImagesRef = useRef<HTMLImageElement[]>([])
   const [now, setNow] = useState(() => new Date())
-  const [active, setActive] = useState<ActiveStatus>({ dko: false, kratzer: false, survivalId: null })
+  const [active, setActive] = useState<ActiveStatus>({ dko: false, kratzer: false, survivalId: null, survivalSingleId: null })
   const [tournaments, setTournaments] = useState<TournamentRow[]>([])
   const [seriesEvents, setSeriesEvents] = useState<SeriesEvent[]>([])
   const [dachEvents, setDachEvents] = useState<DachEventRow[]>([])
@@ -330,10 +330,11 @@ export default function EmdTvScreenPage() {
   const loadData = useCallback(async () => {
     const today = todayIso()
 
-    const [dkoStatusRes, kratzerStatusRes, survivalStatusRes, tournamentRes, seriesRes, dachEventsRes, headersRes, birthdaysRes] = await Promise.all([
+    const [dkoStatusRes, kratzerStatusRes, survivalStatusRes, survivalSingleStatusRes, tournamentRes, seriesRes, dachEventsRes, headersRes, birthdaysRes] = await Promise.all([
       supabase.from("tournaments_status").select("tournament_id").eq("status", "active").limit(1),
       supabase.from("kratzer_tournaments").select("id").eq("status", "running").order("created_at", { ascending: false }).limit(1),
       supabase.from("survival_tournaments").select("id").eq("status", "active").order("created_at", { ascending: false }).limit(1),
+      supabase.from("survival_single_tournaments").select("id").eq("status", "active").limit(1),
       supabase
         .from("central_tournament_events")
         .select("id,name:title,date:event_date,time:start_time,location,mode:selected_mode,status")
@@ -348,7 +349,7 @@ export default function EmdTvScreenPage() {
       supabase.from("club_players").select("id,name,photo_url,birthdate").eq("is_active", true).not("birthdate", "is", null),
     ])
 
-    setActive((current) => ({ dko: dkoStatusRes.error ? current.dko : Boolean(dkoStatusRes.data?.length), kratzer: kratzerStatusRes.error ? current.kratzer : Boolean(kratzerStatusRes.data?.length), survivalId: survivalStatusRes.error ? current.survivalId : (survivalStatusRes.data?.[0]?.id ?? null) }))
+    setActive((current) => ({ dko: dkoStatusRes.error ? current.dko : Boolean(dkoStatusRes.data?.length), kratzer: kratzerStatusRes.error ? current.kratzer : Boolean(kratzerStatusRes.data?.length), survivalId: survivalStatusRes.error ? current.survivalId : (survivalStatusRes.data?.[0]?.id ?? null), survivalSingleId: survivalSingleStatusRes.error ? current.survivalSingleId : (survivalSingleStatusRes.data?.[0]?.id ?? null) }))
 
     // Startzeiten der heutigen EMD-Ligaspiele aus unserer eigenen Spielplanung.
     // Sportdarts /live liefert den Status zuverlässig, aber nicht zwingend die Uhrzeit.
@@ -526,17 +527,18 @@ export default function EmdTvScreenPage() {
   }, [])
 
   const refreshActiveTournamentStatus = useCallback(async () => {
-    const [dkoStatusRes, kratzerStatusRes, survivalStatusRes] = await Promise.all([
+    const [dkoStatusRes, kratzerStatusRes, survivalStatusRes, survivalSingleStatusRes] = await Promise.all([
       supabase.from("tournaments_status").select("tournament_id").eq("status", "active").limit(1),
       supabase.from("kratzer_tournaments").select("id").eq("status", "running").order("created_at", { ascending: false }).limit(1),
       supabase.from("survival_tournaments").select("id").eq("status", "active").order("created_at", { ascending: false }).limit(1),
+      supabase.from("survival_single_tournaments").select("id").eq("status", "active").limit(1),
     ])
 
-    if (!dkoStatusRes.error || !kratzerStatusRes.error || !survivalStatusRes.error) {
+    if (!dkoStatusRes.error || !kratzerStatusRes.error || !survivalStatusRes.error || !survivalSingleStatusRes.error) {
       setActive((current) => ({
         dko: dkoStatusRes.error ? current.dko : Boolean(dkoStatusRes.data?.length),
         kratzer: kratzerStatusRes.error ? current.kratzer : Boolean(kratzerStatusRes.data?.length),
-        survivalId: survivalStatusRes.error ? current.survivalId : (survivalStatusRes.data?.[0]?.id ?? null),
+        survivalId: survivalStatusRes.error ? current.survivalId : (survivalStatusRes.data?.[0]?.id ?? null), survivalSingleId: survivalSingleStatusRes.error ? current.survivalSingleId : (survivalSingleStatusRes.data?.[0]?.id ?? null),
       }))
     }
   }, [])
@@ -571,6 +573,7 @@ export default function EmdTvScreenPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "tournaments_status" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "kratzer_tournaments" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "survival_tournaments" }, () => void refreshActiveTournamentStatus())
+      .on("postgres_changes", { event: "*", schema: "public", table: "survival_single_tournaments" }, () => void refreshActiveTournamentStatus())
       .on("postgres_changes", { event: "*", schema: "public", table: "match_lineup_headers" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "dko_series_events" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "central_tournament_events" }, () => void loadData())
@@ -755,10 +758,10 @@ export default function EmdTvScreenPage() {
   }, [testMode])
 
   useEffect(() => {
-    if (!loaded || !assetsReady || active.dko || active.kratzer || Boolean(active.survivalId) || !brandBreak) return
+    if (!loaded || !assetsReady || active.dko || active.kratzer || (Boolean(active.survivalId) || Boolean(active.survivalSingleId)) || !brandBreak) return
     const timer = window.setTimeout(() => setBrandBreak(false), 3000)
     return () => window.clearTimeout(timer)
-  }, [loaded, assetsReady, active.dko, active.kratzer, active.survivalId, brandBreak])
+  }, [loaded, assetsReady, active.dko, active.kratzer, active.survivalId, active.survivalSingleId, brandBreak])
 
   const advanceSlide = useCallback(() => {
     setSlideIndex((i) => {
@@ -771,10 +774,10 @@ export default function EmdTvScreenPage() {
   }, [slides.length])
 
   useEffect(() => {
-    if (!assetsReady || brandBreak || active.dko || active.kratzer || Boolean(active.survivalId) || slides.length <= 1 || currentSlide?.kind === "lineup" || currentSlide?.kind === "league-results") return
+    if (!assetsReady || brandBreak || active.dko || active.kratzer || (Boolean(active.survivalId) || Boolean(active.survivalSingleId)) || slides.length <= 1 || currentSlide?.kind === "lineup" || currentSlide?.kind === "league-results") return
     const timer = window.setTimeout(advanceSlide, NORMAL_SLIDE_MS)
     return () => window.clearTimeout(timer)
-  }, [assetsReady, brandBreak, active.dko, active.kratzer, active.survivalId, currentSlide?.kind, slideIndex, slides.length, advanceSlide])
+  }, [assetsReady, brandBreak, active.dko, active.kratzer, active.survivalId, active.survivalSingleId, currentSlide?.kind, slideIndex, slides.length, advanceSlide])
 
   async function tryFullscreen() {
     if (document.fullscreenElement) return
@@ -894,8 +897,8 @@ export default function EmdTvScreenPage() {
       </div>
 
       <div className="absolute inset-x-0 bottom-0 top-[72px] overflow-hidden">
-        {active.dko || active.kratzer || Boolean(active.survivalId) ? (
-          <iframe key={active.survivalId && !active.dko && !active.kratzer ? `survival-${active.survivalId}` : "standard-beamer"} src={active.dko || active.kratzer ? "/beamer" : `/survival-roulette/beamer?tournamentId=${encodeURIComponent(active.survivalId || "")}`} title="EMD TV Live" className="h-full w-full border-0 bg-black" allow="autoplay; fullscreen" allowFullScreen />
+        {active.dko || active.kratzer || (Boolean(active.survivalId) || Boolean(active.survivalSingleId)) ? (
+          <iframe key={!active.dko && !active.kratzer ? (active.survivalId ? `survival-${active.survivalId}` : `survival-single-${active.survivalSingleId}`) : "standard-beamer"} src={active.dko || active.kratzer ? "/beamer" : active.survivalId ? `/survival-roulette/beamer?tournamentId=${encodeURIComponent(active.survivalId)}` : `/survival-einzel/beamer?tournamentId=${encodeURIComponent(active.survivalSingleId || "")}`} title="EMD TV Live" className="h-full w-full border-0 bg-black" allow="autoplay; fullscreen" allowFullScreen />
         ) : brandBreak && loaded && assetsReady ? (
           <section className="absolute inset-0 overflow-hidden bg-[#030303]">
             <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.80]" />
