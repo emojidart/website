@@ -2688,6 +2688,31 @@ if (error || !profile) {
         </button>
       </main>
 
+
+      {isTerminalPinDialogOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/85 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Terminal-Anmeldung einrichten" onClick={() => !terminalPinSaving && setIsTerminalPinDialogOpen(false)}>
+          <div className="my-auto w-full max-w-lg rounded-3xl border border-orange-400/25 bg-[#101722] p-5 text-white shadow-2xl sm:p-7" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div><p className="text-xs font-bold uppercase tracking-widest text-orange-300">Mein EMD</p><h2 className="mt-2 text-2xl font-black">Terminal-Anmeldung</h2><p className="mt-2 text-sm text-slate-300">PIN oder Muster für das Vereinsterminal festlegen bzw. ändern.</p></div>
+              <button type="button" onClick={() => setIsTerminalPinDialogOpen(false)} disabled={terminalPinSaving} aria-label="Schließen" className="rounded-xl border border-white/15 p-2 text-white/70 disabled:opacity-40"><X className="h-5 w-5"/></button>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button type="button" className={`rounded-xl border p-3 font-bold ${terminalAuthMethod === "pin" ? "border-orange-400 bg-orange-500/20" : "border-white/10 bg-white/5"}`} onClick={() => {setTerminalAuthMethod("pin");setTerminalPinMessage("")}}>4-stellige PIN</button>
+              <button type="button" className={`rounded-xl border p-3 font-bold ${terminalAuthMethod === "pattern" ? "border-orange-400 bg-orange-500/20" : "border-white/10 bg-white/5"}`} onClick={() => {setTerminalAuthMethod("pattern");setTerminalPinMessage("")}}>Entsperrmuster</button>
+            </div>
+            {terminalAuthMethod === "pin" ? (
+              <div className="mt-5 grid gap-3">
+                <label className="text-sm font-semibold">Neue PIN<input autoComplete="new-password" type="password" inputMode="numeric" pattern="[0-9]*" maxLength={4} value={terminalPin} onChange={e => setTerminalPin(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="4 Ziffern" className="mt-1 block w-full rounded-xl border border-white/15 bg-white/10 p-3 text-lg text-white outline-none focus:border-orange-400"/></label>
+                <label className="text-sm font-semibold">PIN wiederholen<input autoComplete="new-password" type="password" inputMode="numeric" pattern="[0-9]*" maxLength={4} value={terminalPinConfirm} onChange={e => setTerminalPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="PIN bestätigen" className="mt-1 block w-full rounded-xl border border-white/15 bg-white/10 p-3 text-lg text-white outline-none focus:border-orange-400"/></label>
+              </div>
+            ) : (
+              <div className="mt-5 space-y-4"><div><p className="mb-2 text-sm font-semibold">Neues Muster zeichnen</p><PatternPad value={terminalPattern} onChange={setTerminalPattern}/></div><div><p className="mb-2 text-sm font-semibold">Muster wiederholen</p><PatternPad value={terminalPatternConfirm} onChange={setTerminalPatternConfirm}/></div></div>
+            )}
+            {terminalPinMessage && <p role="status" className="mt-4 rounded-xl bg-white/10 p-3 text-sm text-orange-200">{terminalPinMessage}</p>}
+            <div className="mt-6 flex gap-3"><button type="button" disabled={terminalPinSaving} onClick={() => setIsTerminalPinDialogOpen(false)} className="flex-1 rounded-xl border border-white/15 px-4 py-3 font-bold disabled:opacity-40">Abbrechen</button><button type="button" disabled={terminalPinSaving} onClick={() => void saveTerminalAuth()} className="flex-1 rounded-xl bg-orange-600 px-4 py-3 font-black disabled:opacity-40">{terminalPinSaving ? "Speichern …" : "Speichern"}</button></div>
+          </div>
+        </div>
+      )}
       <MobileBottomNav />
     </div>
   )

@@ -32,6 +32,7 @@ type Props = {
   onVerified: (identity: VerifiedTerminalIdentity) => void | Promise<void>
   onCancel?: () => void
   compact?: boolean
+  initialIdentity?: TerminalIdentity | null
 }
 
 export default function TerminalIdentityAuth({
@@ -41,6 +42,7 @@ export default function TerminalIdentityAuth({
   onVerified,
   onCancel,
   compact = false,
+  initialIdentity = null,
 }: Props) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<TerminalIdentity[]>([])
@@ -50,6 +52,25 @@ export default function TerminalIdentityAuth({
   const [pattern, setPattern] = useState<number[]>([])
   const [checking, setChecking] = useState(false)
   const [message, setMessage] = useState("")
+
+  useEffect(() => {
+    if (!initialIdentity) return
+    // Re-check against Supabase: a locally stored facial profile is never trusted for auth method or current account status.
+    let cancelled = false
+    void (async () => {
+      try {
+        const { data, error } = await supabase.rpc("terminal_search_identities", { p_query: initialIdentity.name })
+        if (error) throw error
+        const current = ((data || []) as TerminalIdentity[]).find(p => p.identity_kind === initialIdentity.identity_kind && p.identity_id === initialIdentity.identity_id && allowedKinds.includes(p.identity_kind))
+        if (!cancelled) {
+          if (current?.has_terminal_auth) { setSelected(current); setMessage("") }
+          else setMessage("Profil nicht mehr verfügbar oder keine PIN eingerichtet. Bitte manuell anmelden.")
+        }
+      } catch { if (!cancelled) setMessage("Profilprüfung fehlgeschlagen. Bitte manuell anmelden.") }
+    })()
+    return () => { cancelled = true }
+  }, [initialIdentity?.identity_id, initialIdentity?.identity_kind])
+
 
   useEffect(() => {
     if (selected) return

@@ -11,7 +11,7 @@ import { RotateCcw, Check, Radio, Activity, Clock3, Trophy, MonitorUp } from "lu
 import { supabase } from "@/lib/supabase"
 import { calculateSeriesLegPoints, calculateSeriesPlacementPoints, calculateSeriesWinnerBonus, loadSeriesScoringRuntime } from "@/lib/tournament-series-scoring"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useSpeechAnnouncer, SpeechAnnouncerSettings } from "@/components/speech-announcer"
+import { useSpeechAnnouncer, SpeechAnnouncerSettings, prefetchMartinAnnouncement } from "@/components/speech-announcer"
 
 interface Match {
   id: number
@@ -921,6 +921,32 @@ useEffect(() => {
     return () => clearTimeout(timer)
 }, [matches, loading, tournamentType, tournamentId])
 
+  // Bereitet nur die naechsten zwei spielbaren Partien fuer den ersten freien
+  // Automaten vor. Der Browser-Cache verhindert wiederholte Berechnungen.
+  useEffect(() => {
+    if (!speechEnabled || loading || !tournamentId) return
+    const freeMachine = Array.from({ length: totalMachines }, (_, i) => i + 1)
+      .find(machine => !Object.values(matches).some(m => m.machineNumber === machine && !m.winner))
+    if (!freeMachine) return
+    Object.values(matches)
+      .filter(m => !m.winner && !m.machineNumber && m.player1 && m.player2 && !isFreilos(m.player1) && !isFreilos(m.player2))
+      .slice(0, 2)
+      .forEach(m => prefetchMartinAnnouncement(m.player1, m.player2, freeMachine))
+  }, [matches, speechEnabled, loading, tournamentId, totalMachines])
+
+  // Martin: Sobald ein Match einen Automaten hat, den 2. und 3. Aufruf
+  // leise vorab erzeugen. Gilt auch nach dem Neuladen eines Turniers.
+  // Keine Aenderung an Ergebnis-, Aufruf- oder Speicherlogik.
+  useEffect(() => {
+    if (!speechEnabled || loading || !tournamentId) return
+    Object.values(matches)
+      .filter(m => !m.winner && m.machineNumber && m.player1 && m.player2 && !isFreilos(m.player1) && !isFreilos(m.player2))
+      .forEach(m => {
+        if ((m.callCount || 1) < 2) prefetchMartinAnnouncement(m.player1, m.player2, m.machineNumber!, 2)
+        if ((m.callCount || 1) < 3) prefetchMartinAnnouncement(m.player1, m.player2, m.machineNumber!, 3)
+      })
+  }, [matches, speechEnabled, loading, tournamentId])
+
   const getAvailableMachines = (): number[] => {
     const usedMachines = Object.values(matches)
       .filter((m) => m.machineNumber !== undefined && !m.winner)
@@ -1514,6 +1540,13 @@ useEffect(() => {
     if (match.machineNumber) {
       alert(`Dieses Spiel läuft bereits auf Automat ${match.machineNumber}`)
       return
+    }
+    // Martin im Hintergrund vorbereiten, waehrend die Automatenauswahl offen ist.
+    // Beeinflusst weder Turnierdaten noch die eigentliche Automatenzuweisung.
+    if (speechEnabled) {
+      getAvailableMachines().slice(0, 2).forEach((machine) => {
+        prefetchMartinAnnouncement(match.player1, match.player2, machine)
+      })
     }
     setSelectedMatchId(matchId)
     setMachineDialogOpen(true)

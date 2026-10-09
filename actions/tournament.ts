@@ -471,6 +471,7 @@ export async function createKratzerTournament(
   initialPlayers: KratzerPlayer[],
   accessType: TournamentAccessType,
   _requestedUserId?: string,
+  centralEventId?: string | null,
 ): Promise<ServerActionResponse & { data?: { tournamentId: string } }> {
   const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
@@ -488,6 +489,7 @@ export async function createKratzerTournament(
       .select("id, created_at")
       .eq("user_id", userId)
       .eq("status", "running")
+      .filter("central_event_id", centralEventId ? "eq" : "is", centralEventId ?? "null")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -506,6 +508,7 @@ export async function createKratzerTournament(
       .from("kratzer_tournaments")
       .insert({
         user_id: userId,
+        central_event_id: centralEventId ?? null,
         name: `Kratzer-Turnier ${new Date().toLocaleDateString("de-DE")}`,
         status: "running",
         board_count: settings.boardCount,
@@ -673,7 +676,7 @@ export async function updateKratzerTournamentStatus(
   }
 }
 
-export async function getActiveKratzerTournament(): Promise<ServerActionResponse & { data?: any }> {
+export async function getActiveKratzerTournament(centralEventId?: string | null): Promise<ServerActionResponse & { data?: any }> {
   const supabase = createServerSupabaseClient(await cookies())
   const userId = await getCurrentUserId()
 
@@ -687,6 +690,7 @@ export async function getActiveKratzerTournament(): Promise<ServerActionResponse
       .select("*")
       .eq("user_id", userId)
       .eq("status", "running")
+      .filter("central_event_id", centralEventId ? "eq" : "is", centralEventId ?? "null")
       .order("created_at", { ascending: false })
       .limit(1)
 

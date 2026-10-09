@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   getActiveKratzerTournament,
   getLastKratzerTournamentRound,
@@ -11,6 +11,7 @@ import type { Board, TournamentSettings, TournamentState } from "@/types/tournam
 
 interface UseKratzerRecoveryProps {
   currentUser: any
+  centralEventId?: string | null
   showToast: (variant: "success" | "error" | "info" | "warning", description: string) => void
   setLoading: (loading: boolean) => void
   resetTournamentState: () => void
@@ -21,6 +22,7 @@ interface UseKratzerRecoveryProps {
 
 export function useKratzerRecovery({
   currentUser,
+  centralEventId,
   showToast,
   setLoading,
   resetTournamentState,
@@ -30,12 +32,13 @@ export function useKratzerRecovery({
 }: UseKratzerRecoveryProps) {
   const [activeTournamentExists, setActiveTournamentExists] = useState(false)
   const [recoveryTournamentData, setRecoveryTournamentData] = useState<any>(null)
+  const autoRestoreAttemptRef = useRef<string | null>(null)
 
   const checkForActiveTournament = useCallback(async () => {
     if (!currentUser?.id) return
 
     try {
-      const { data, success } = await getActiveKratzerTournament()
+      const { data, success } = await getActiveKratzerTournament(centralEventId)
 
       if (success && data) {
         setActiveTournamentExists(true)
@@ -50,7 +53,7 @@ export function useKratzerRecovery({
     } finally {
       setLoading(false)
     }
-  }, [currentUser, showToast, setLoading])
+  }, [currentUser, centralEventId, showToast, setLoading])
 
   const restoreTournament = useCallback(async () => {
     if (!recoveryTournamentData) return
@@ -118,7 +121,21 @@ export function useKratzerRecovery({
     resetTournamentState,
   ])
 
+  // Beim Einstieg aus der Turnierzentrale direkt den richtigen Spielstand laden.
+  // Der Ref verhindert doppelte Wiederherstellung bei React-Renderings.
+  useEffect(() => {
+    if (!centralEventId || !recoveryTournamentData?.id) return
+    const id = String(recoveryTournamentData.id)
+    if (autoRestoreAttemptRef.current === id) return
+    autoRestoreAttemptRef.current = id
+    void restoreTournament()
+  }, [centralEventId, recoveryTournamentData?.id, restoreTournament])
+
   const startNewTournamentFromRecovery = useCallback(async () => {
+    if (centralEventId) {
+      showToast("warning", "Bitte das laufende zentrale Turnier wiederherstellen. Es wird nichts automatisch abgebrochen.")
+      return
+    }
     if (recoveryTournamentData) {
       await updateKratzerTournamentStatus(recoveryTournamentData.id, "cancelled")
       showToast("info", "Altes Turnier wurde abgebrochen.")
@@ -128,7 +145,7 @@ export function useKratzerRecovery({
     setActiveTournamentExists(false)
     setRecoveryTournamentData(null)
     showToast("info", "Bereit für ein neues Turnier!")
-  }, [recoveryTournamentData, showToast, resetTournamentState])
+  }, [recoveryTournamentData, centralEventId, showToast, resetTournamentState])
 
   return {
     activeTournamentExists,

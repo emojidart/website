@@ -2,6 +2,7 @@
 
 import { RegistrationTab } from "@/components/kratzer/registration-tab"
 import { BoardComponent } from "@/components/kratzer/board-component"
+import { KratzerMartinStatus, useKratzerMartin } from "@/components/kratzer/kratzer-martin-announcer"
 import { RankingsTable } from "@/components/kratzer/rankings-table"
 import { NewRoundModal } from "@/components/kratzer/modals/new-round-modal"
 import { ConfirmationModal } from "@/components/kratzer/modals/confirmation-modal"
@@ -29,7 +30,6 @@ import {
   shuffleArray,
   getDefaultLives,
   createBoard,
-  speakText,
 } from "@/utils/tournament-utils"
 import {
   createKratzerTournament,
@@ -37,11 +37,9 @@ import {
   saveKratzerTournamentRound,
   updateKratzerTournamentStatus,
   addTournamentResult,
-  clearRegisteredPlayers,
 } from "@/actions/tournament"
 
 import { Header } from "@/components/header"
-import { TournamentAdminNav } from "@/app/admin/_komponenten/turniere/turnier-navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 
@@ -74,8 +72,12 @@ const defaultPrizeMoneySettings: PrizeMoneySettings = {
 
 export function KratzerTournamentPage() {
   const { toast } = useToast()
+  const { announceGroup, prefetchGroup, announcementBusy, announcementDisplay } = useKratzerMartin()
   const searchParams = useSearchParams()
   const centralEventId = searchParams.get("centralEventId")
+  const [centralRegistrations, setCentralRegistrations] = useState<any[]>([])
+  const [centralLoading, setCentralLoading] = useState(Boolean(centralEventId))
+  const [centralAccessType, setCentralAccessType] = useState<TournamentAccessType>("")
 
   const { currentUser, setCurrentUser, loading, setLoading } = useKratzerAuth()
 
@@ -91,6 +93,27 @@ export function KratzerTournamentPage() {
 
   const [isTournamentRunning, setIsTournamentRunning] = useState(false)
 
+  // Nur wenn Martin aktiviert ist: den ersten Gruppenaufruf nach der Auslosung
+  // im Hintergrund vorbereiten. Keine Auswirkung auf Turnier-/Ergebnislogik.
+  const prefetchSignatureRef = useRef("")
+  useEffect(() => {
+    if (!isTournamentRunning || !tournamentState.settings.speechEnabled) return
+    const boards = tournamentState.boards.filter(board => board.players.length > 0)
+    const signature = `${tournamentState.tournamentId}:${tournamentState.currentRound}:${boards.map(b => `${b.id}-${b.players.map(p => p.id).join("-")}`).join("|")}`
+    if (!boards.length || signature === prefetchSignatureRef.current) return
+    prefetchSignatureRef.current = signature
+    let cancelled = false
+    // Wenige Gruppen nacheinander, statt Martins TTS mit 5 parallelen Jobs zu blockieren.
+    void (async () => {
+      for (const board of boards) {
+        if (cancelled) break
+        await prefetchGroup(board)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isTournamentRunning, tournamentState.tournamentId, tournamentState.currentRound, tournamentState.boards, tournamentState.settings.speechEnabled, prefetchGroup])
+
+
   const [isNewRoundModalOpen, setIsNewRoundModalOpen] = useState(false)
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false)
   const [confirmationModalConfig, setConfirmationModalConfig] = useState({
@@ -103,7 +126,11 @@ export function KratzerTournamentPage() {
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false)
   const [isPrizeMoneyModalOpen, setIsPrizeMoneyModalOpen] = useState(false)
 
-  const [activeTab, setActiveTab] = useState<"register" | "tournament">("register")
+  const [activeTab, setActiveTab] = useState<"register" | "tournament">(centralEventId ? "tournament" : "register")
+
+  useEffect(() => {
+    if (centralEventId && isTournamentRunning) setActiveTab("tournament")
+  }, [centralEventId, isTournamentRunning])
   const [tournamentAccessType, setTournamentAccessType] = useState<TournamentAccessType>("")
 
   const timers = useRef<Record<number, NodeJS.Timeout>>({})
@@ -158,11 +185,51 @@ export function KratzerTournamentPage() {
     setIsConfirmationModalOpen,
   })
 
+  // Zentraler Event: ausschließlich Teilnehmer mit exakt dieser event_id verwenden.
   useEffect(() => {
-    if (!tournamentAccessType && registrationAccessType) {
+    if (!centralEventId || !currentUser?.id) return
+    let cancelled = false
+    const loadCentral = async () => {
+      setCentralLoading(true)
+      try {
+        const [eventResult, registrationsResult] = await Promise.all([
+          supabase.from("central_tournament_events").select("id,access_type,status").eq("id", centralEventId).single(),
+          supabase.from("central_tournament_registrations").select("player_id,player_name_snapshot,paid,status").eq("event_id", centralEventId),
+        ])
+        if (eventResult.error) throw eventResult.error
+        if (registrationsResult.error) throw registrationsResult.error
+        const active = (registrationsResult.data || []).filter((r: any) => !["cancelled", "canceled", "withdrawn", "abgemeldet", "deleted"].includes(String(r.status || "").toLowerCase()))
+        const ids = active.map((r: any) => r.player_id).filter(Boolean)
+        const playersResult = ids.length ? await supabase.from("spieldatenbank").select("id,name,ligastatus").in("id", ids) : { data: [], error: null }
+        if (playersResult.error) throw playersResult.error
+        const byId = new Map((playersResult.data || []).map((x: any) => [String(x.id), x]))
+        if (!cancelled) {
+          setCentralRegistrations(active.map((r: any) => {
+            const player: any = byId.get(String(r.player_id))
+            return { id: r.player_id, name: player?.name || r.player_name_snapshot, ligastatus: player?.ligastatus || "N/A", paid: !!r.paid }
+          }).filter((r: any) => r.id && r.name))
+          const type = String(eventResult.data?.access_type || "public") as TournamentAccessType
+          setCentralAccessType(type)
+          setTournamentAccessType(type)
+          setActiveTab("tournament")
+        }
+      } catch (error) {
+        console.error("Central Kratzer registration loading failed", error)
+        showToast("error", "Zentrale Anmeldungen konnten nicht geladen werden. Start gesperrt.")
+      } finally { if (!cancelled) setCentralLoading(false) }
+    }
+    void loadCentral()
+    return () => { cancelled = true }
+  }, [centralEventId, currentUser?.id])
+
+  const effectiveRegisteredPlayers = centralEventId ? centralRegistrations : registeredPlayers
+  const effectiveAccessType = centralEventId ? centralAccessType : tournamentAccessType
+
+  useEffect(() => {
+    if (!centralEventId && !tournamentAccessType && registrationAccessType) {
       setTournamentAccessType(registrationAccessType)
     }
-  }, [registrationAccessType, tournamentAccessType])
+  }, [registrationAccessType, tournamentAccessType, centralEventId])
 
   const handleLogout = useCallback(async () => {
     setLoading(true)
@@ -541,6 +608,8 @@ export function KratzerTournamentPage() {
       if (!board) return
 
       const startTime = initialStartTime || Date.now()
+      const suddenDeathEnabledForGame = tournamentState.settings.suddenDeathEnabled
+      const suddenDeathMinutesForGame = tournamentState.settings.suddenDeathTime
 
       setTournamentState((prev) => ({
         ...prev,
@@ -551,7 +620,7 @@ export function KratzerTournamentPage() {
 
       timers.current[boardId] = setInterval(() => {
         const elapsedTime = Date.now() - startTime
-        const timeLimit = tournamentState.settings.suddenDeathTime * 60 * 1000
+        const timeLimit = suddenDeathMinutesForGame * 60 * 1000
 
         const boardElement = document.querySelector(`[data-board-id="${boardId}"]`)
         const timerElement = boardElement?.querySelector(".board-timer")
@@ -559,7 +628,7 @@ export function KratzerTournamentPage() {
         if (timerElement) {
           timerElement.textContent = formatTime(elapsedTime)
 
-          if (tournamentState.settings.suddenDeathEnabled) {
+          if (suddenDeathEnabledForGame) {
             const remainingTime = timeLimit - elapsedTime
 
             timerElement.classList.remove("warning", "critical")
@@ -588,6 +657,7 @@ export function KratzerTournamentPage() {
     startNewTournamentFromRecovery,
   } = useKratzerRecovery({
     currentUser,
+    centralEventId,
     showToast,
     setLoading,
     resetTournamentState,
@@ -609,9 +679,9 @@ export function KratzerTournamentPage() {
 
     void Promise.all([
       checkForActiveTournament(),
-      loadRegisteredPlayersState(),
+      ...(centralEventId ? [] : [loadRegisteredPlayersState()]),
     ])
-  }, [currentUser?.id, checkForActiveTournament, loadRegisteredPlayersState])
+  }, [currentUser?.id, centralEventId, checkForActiveTournament, loadRegisteredPlayersState])
 
   const startTournament = useCallback(async () => {
     if (isTournamentRunning) {
@@ -624,18 +694,19 @@ export function KratzerTournamentPage() {
       return
     }
 
-    if (!tournamentAccessType) {
+    if (centralLoading) { showToast("warning", "Zentrale Anmeldung wird geladen."); return }
+    if (!effectiveAccessType) {
       showToast("warning", "Bitte zuerst die Turnierart auswählen.")
       setActiveTab("register")
       return
     }
 
-    if (registeredPlayers.length === 0) {
+    if (effectiveRegisteredPlayers.length === 0) {
       showToast("warning", "Keine Spieler registriert. Bitte registrieren Sie Spieler zuerst.")
       return
     }
 
-    const initialPlayers: KratzerPlayer[] = registeredPlayers.map((p) => ({
+    const initialPlayers: KratzerPlayer[] = effectiveRegisteredPlayers.map((p) => ({
       id: p.id,
       name: p.name,
       ligastatus: p.ligastatus || "N/A",
@@ -661,8 +732,9 @@ export function KratzerTournamentPage() {
       const { success, message, data } = await createKratzerTournament(
         tournamentState.settings,
         initialPlayers,
-        tournamentAccessType,
+        effectiveAccessType,
         currentUser.id,
+        centralEventId,
       )
 
       if (!success || !data?.tournamentId) throw new Error(message)
@@ -682,7 +754,7 @@ export function KratzerTournamentPage() {
         if (centralEventError) throw centralEventError
       }
       showToast("success", "Turnier erfolgreich gestartet!")
-      startNewRound()
+      setIsNewRoundModalOpen(true)
     } catch (error: any) {
       console.error("Error starting tournament:", error.message)
       showToast("error", `Fehler beim Starten des Turniers: ${error.message}`)
@@ -691,13 +763,13 @@ export function KratzerTournamentPage() {
     }
   }, [
     currentUser,
-    registeredPlayers,
+    effectiveRegisteredPlayers,
+    centralLoading,
     isTournamentRunning,
     tournamentState.tournamentFinished,
     tournamentState.settings,
-    tournamentAccessType,
+    effectiveAccessType,
     showToast,
-    startNewRound,
     setLoading,
     centralEventId,
   ])
@@ -754,12 +826,6 @@ export function KratzerTournamentPage() {
           : `Runde ${nextRoundNumber} gestartet!`,
       )
 
-      if (speechEnabled) {
-        speakText(
-          `Runde ${nextRoundNumber} wurde gestartet.${gameMode ? ` Gespielt wird ${gameMode}.` : ""} ${activePlayers.length} Spieler verbleibend.`,
-          speechEnabled,
-        )
-      }
     } catch (error: any) {
       console.error("Error executing new round:", error.message)
       showToast("error", `Fehler beim Starten der Runde: ${error.message}`)
@@ -780,8 +846,10 @@ export function KratzerTournamentPage() {
         .eq("id", centralEventId)
       if (centralEventError) throw centralEventError
     }
-    await clearRegisteredPlayers()
     showToast("success", "Turnier erfolgreich abgeschlossen.")
+    if (centralEventId) {
+      try { window.sessionStorage.setItem("emd-admin-current-view", "tournament-center") } catch {}
+    }
     window.location.href = "/admin"
   }, [tournamentState.tournamentId, showToast, centralEventId])
 
@@ -799,13 +867,15 @@ export function KratzerTournamentPage() {
               .eq("id", centralEventId)
             if (centralEventError) throw centralEventError
           }
-          await clearRegisteredPlayers()
           showToast("info", "Turnier abgebrochen.")
         }
 
         resetTournamentState()
         showToast("info", "Turnier abgebrochen.")
-        window.location.href = "/admin"
+        if (centralEventId) {
+      try { window.sessionStorage.setItem("emd-admin-current-view", "tournament-center") } catch {}
+    }
+    window.location.href = "/admin"
       },
     })
 
@@ -813,14 +883,29 @@ export function KratzerTournamentPage() {
   }, [tournamentState.tournamentId, showToast, resetTournamentState, centralEventId])
 
   const handleSettingsChange = useCallback((key: keyof TournamentSettings, value: any) => {
-    setTournamentState((prev) => ({
-      ...prev,
-      settings: {
-        ...prev.settings,
-        [key]: value,
-      },
-    }))
-  }, [])
+    if (key === "suddenDeathTime" && (!Number.isFinite(value) || value < 1 || value > 60)) return
+    if (!isTournamentRunning || !tournamentState.tournamentId || !["speechEnabled", "suddenDeathEnabled", "suddenDeathTime"].includes(key)) {
+      setTournamentState((prev) => ({ ...prev, settings: { ...prev.settings, [key]: value } }))
+      return
+    }
+
+    const dbColumn = key === "speechEnabled" ? "speech_enabled" : key === "suddenDeathEnabled" ? "sudden_death_enabled" : "sudden_death_time"
+    const tournamentId = tournamentState.tournamentId
+    // First save, then update UI: a failed save must never appear successful.
+    void (async () => {
+      const { error } = await supabase
+        .from("kratzer_tournaments")
+        .update({ [dbColumn]: value })
+        .eq("id", tournamentId)
+        .eq("status", "running")
+      if (error) {
+        showToast("error", `Einstellung konnte nicht gespeichert werden: ${error.message}`)
+        return
+      }
+      setTournamentState((prev) => ({ ...prev, settings: { ...prev.settings, [key]: value } }))
+      showToast("success", key === "speechEnabled" ? "Martin-Sprachausgabe gespeichert." : "Sudden Death gespeichert – gilt für neu gestartete Spiele.")
+    })()
+  }, [isTournamentRunning, tournamentState.tournamentId, showToast])
 
   const togglePause = useCallback(() => {
     setIsPauseModalOpen(true)
@@ -889,7 +974,8 @@ export function KratzerTournamentPage() {
   if (!currentUser) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-100">
-        <Header />
+        <KratzerMartinStatus display={announcementDisplay} />
+      <Header />
         <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
           <Card className="w-full max-w-md p-6 shadow-lg">
             <CardTitle className="text-2xl font-bold text-center mb-6">Zugriff erforderlich</CardTitle>
@@ -907,14 +993,12 @@ export function KratzerTournamentPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] text-slate-950">
+      <KratzerMartinStatus display={announcementDisplay} />
       <Header />
-      <TournamentAdminNav
-        title="Kratzer"
-        description="Spieler registrieren, Turnier steuern und Runden verwalten."
-      />
+
 
       <main className="mx-auto w-full max-w-[1920px] px-3 py-5 sm:px-5 lg:px-8 xl:px-10 2xl:px-12">
-        {activeTournamentExists && recoveryTournamentData && (
+        {!centralEventId && activeTournamentExists && recoveryTournamentData && (
           <RecoveryBanner
             recoveryTournamentData={recoveryTournamentData}
             onRestore={restoreTournament}
@@ -922,14 +1006,15 @@ export function KratzerTournamentPage() {
           />
         )}
 
-        <TournamentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        {!centralEventId && <TournamentTabs activeTab={activeTab} setActiveTab={setActiveTab} />}
+        
 
         {activeTab === "register" ? (
           <RegistrationTab
             currentUser={currentUser}
             tournamentAccessType={tournamentAccessType}
             setTournamentAccessType={setTournamentAccessType}
-            registeredPlayers={registeredPlayers}
+            registeredPlayers={effectiveRegisteredPlayers}
             selectedPlayersForRegistration={selectedPlayersForRegistration}
             setSelectedPlayersForRegistration={setSelectedPlayersForRegistration}
             handleRegisterPlayers={handleRegisterPlayers}
@@ -948,7 +1033,7 @@ export function KratzerTournamentPage() {
               loading={loading}
               activeTournamentExists={activeTournamentExists}
               currentRound={tournamentState.currentRound}
-              registeredPlayersCount={registeredPlayers.length}
+              registeredPlayersCount={effectiveRegisteredPlayers.length}
               onSettingsChange={handleSettingsChange}
               onStartTournament={startTournament}
               onStartNewRound={startNewRound}
@@ -1000,7 +1085,9 @@ export function KratzerTournamentPage() {
                       onStartGame={startBoardTimer}
                       onFinishGame={finishGame}
                       onCancelGame={cancelGame}
-                      onMakeCall={speakText}
+                      onMakeCall={() => {}}
+                      onAnnounceGroup={announceGroup}
+                      announcementBusy={announcementBusy}
                       currentRound={tournamentState.currentRound}
                     />
                   ))}

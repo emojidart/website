@@ -58,19 +58,19 @@ export function TournamentControlsCard({
           </div>
           <div className="rounded-[18px] border border-white/[0.08] bg-white/[0.025] p-3.5">
             <Label htmlFor="suddenDeathTime" className="text-xs font-black uppercase tracking-[0.12em] text-white/40">Zeitlimit (Minuten)</Label>
-            <Input id="suddenDeathTime" type="number" min="1" max="60" value={settings.suddenDeathTime} onChange={(e) => onSettingsChange("suddenDeathTime", Number.parseInt(e.target.value))} className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#0b0f15] text-base font-black text-white shadow-none hover:border-white/[0.16] focus-visible:ring-orange-500/30" disabled={isTournamentRunning || loading} />
+            <Input id="suddenDeathTime" type="number" min="1" max="60" value={settings.suddenDeathTime} onChange={(e) => onSettingsChange("suddenDeathTime", Number.parseInt(e.target.value))} className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#0b0f15] text-base font-black text-white shadow-none hover:border-white/[0.16] focus-visible:ring-orange-500/30" disabled={loading || tournamentFinished} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <label className={`flex cursor-pointer items-center gap-3 rounded-[18px] border p-3.5 transition ${settings.suddenDeathEnabled ? "border-slate-300 bg-slate-950 text-white" : "border-white/[0.08] bg-white/[0.025] text-white hover:border-orange-300/15 hover:bg-white/[0.045]"}`}>
-            <Checkbox id="suddenDeathMode" checked={settings.suddenDeathEnabled} onCheckedChange={(checked) => onSettingsChange("suddenDeathEnabled", checked)} disabled={isTournamentRunning || loading} />
+            <Checkbox id="suddenDeathMode" checked={settings.suddenDeathEnabled} onCheckedChange={(checked) => onSettingsChange("suddenDeathEnabled", checked)} disabled={loading || tournamentFinished} />
             <span className={`flex h-10 w-10 items-center justify-center rounded-[14px] ${settings.suddenDeathEnabled ? "bg-white/10 text-orange-400" : "bg-white/[0.05] text-white/45"}`}><Timer className="h-5 w-5" /></span>
             <span><span className="block font-black">Sudden Death</span><span className={`block text-xs font-semibold ${settings.suddenDeathEnabled ? "text-slate-400" : "text-slate-500"}`}>{settings.suddenDeathEnabled ? "Aktiv" : "Aus"}</span></span>
           </label>
 
           <label className={`flex cursor-pointer items-center gap-3 rounded-[18px] border p-3.5 transition ${settings.speechEnabled ? "border-slate-300 bg-slate-950 text-white" : "border-white/[0.08] bg-white/[0.025] text-white hover:border-orange-300/15 hover:bg-white/[0.045]"}`}>
-            <Checkbox id="speechOutput" checked={settings.speechEnabled} onCheckedChange={(checked) => onSettingsChange("speechEnabled", checked)} disabled={isTournamentRunning || loading || !("speechSynthesis" in window)} />
+            <Checkbox id="speechOutput" checked={settings.speechEnabled} onCheckedChange={(checked) => onSettingsChange("speechEnabled", checked)} disabled={loading || tournamentFinished} />
             <span className={`flex h-10 w-10 items-center justify-center rounded-[14px] ${settings.speechEnabled ? "bg-white/10 text-orange-400" : "bg-white/[0.05] text-white/45"}`}><Volume2 className="h-5 w-5" /></span>
             <span><span className="block font-black">Sprachausgabe</span><span className={`block text-xs font-semibold ${settings.speechEnabled ? "text-slate-400" : "text-slate-500"}`}>{settings.speechEnabled ? "Aktiv" : "Aus"}</span></span>
           </label>

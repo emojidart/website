@@ -5,7 +5,7 @@ import type { Board } from "@/types/tournament"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Dices } from "lucide-react"
+import { Dices, Mic2 } from "lucide-react"
 
 interface BoardComponentProps {
   board: Board | null | undefined
@@ -17,6 +17,8 @@ interface BoardComponentProps {
   onCancelGame: (boardId: number) => void
   onMakeCall: (text: string, enabled: boolean) => void
   currentRound: number
+  onAnnounceGroup: (board: Board, call: number) => Promise<boolean>
+  announcementBusy: boolean
 }
 
 export function BoardComponent({
@@ -29,9 +31,15 @@ export function BoardComponent({
   onCancelGame,
   onMakeCall,
   currentRound,
+  onAnnounceGroup,
+  announcementBusy,
 }: BoardComponentProps) {
   const [selectedPlayerNames, setSelectedPlayerNames] = useState<string[]>([])
   const [isGameActive, setIsGameActive] = useState(false)
+  const [completedCalls, setCompletedCalls] = useState(0)
+  const [requestingCall, setRequestingCall] = useState(false)
+
+  useEffect(() => { setCompletedCalls(0) }, [currentRound])
 
   const boardStartTime = board?.startTime ?? null
 
@@ -125,6 +133,35 @@ export function BoardComponent({
             <p className="text-sm font-medium text-white/40">
               Spiel gestartet: <span className="board-timer font-semibold">Lädt...</span>
             </p>
+          </div>
+        )}
+
+        {speechEnabled && board.players.length > 0 && (
+          <div className="mb-4 rounded-2xl border border-orange-400/20 bg-orange-500/[0.06] p-3">
+            <div className="mb-2 text-xs font-bold text-orange-200">🎤 Martin · Gruppenaufruf</div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={announcementBusy || requestingCall}
+              onClick={async () => {
+                if (announcementBusy || requestingCall) return
+                setRequestingCall(true)
+                try {
+                  const next = Math.min(completedCalls + 1, 3)
+                  const success = await onAnnounceGroup(board, next)
+                  if (success) setCompletedCalls(next)
+                } finally {
+                  setRequestingCall(false)
+                }
+              }}
+              className="w-full rounded-xl border-orange-300/20 bg-orange-500/10 text-orange-100 hover:bg-orange-500/20"
+            >
+              <Mic2 className="mr-2 h-4 w-4" />
+              {completedCalls === 0 ? "Spielergruppe aufrufen" : completedCalls === 1 ? "Zweiter Aufruf" : "Letzter Aufruf"}
+            </Button>
+            <div className="mt-2 text-center text-[11px] text-white/40">
+              {completedCalls === 3 ? "Letzter Aufruf kann wiederholt werden" : `Aufruf ${completedCalls} von 3 abgeschlossen`}
+            </div>
           </div>
         )}
 

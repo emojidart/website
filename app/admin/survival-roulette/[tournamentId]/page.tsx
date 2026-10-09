@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react"
 import { Header } from "@/components/header"
+import { useSurvivalMartin, prefetchSurvivalMartin } from "@/components/survival/survival-martin-announcer"
 import { supabase } from "@/lib/supabase"
 
 type PlayerRow = {
@@ -511,6 +512,20 @@ export default function SurvivalRouletteLivePage() {
       void supabase.removeChannel(channel)
     }
   }, [load, tournamentId])
+
+  const martin = useSurvivalMartin()
+
+  // Background synthesis only. Never speak automatically on draw/start/assignment.
+  useEffect(() => {
+    if (!martin.enabled) return
+    const names = new Map(players.map(p => [p.id, p.player_name]))
+    const live = matches.filter(m => m.status === "live" && m.machine_number)
+    for (const match of live.slice(0, 3)) {
+      const group = [match.team1_player1_id, match.team1_player2_id, match.team2_player1_id, match.team2_player2_id]
+        .map(id => names.get(id) || "")
+      if (group.every(Boolean)) prefetchSurvivalMartin(group, Number(match.machine_number), 1)
+    }
+  }, [martin.enabled, players, matches])
 
   const playerById = useMemo(
     () => new Map(players.map((p) => [p.id, p])),
@@ -1617,6 +1632,7 @@ export default function SurvivalRouletteLivePage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_22%),linear-gradient(180deg,#020617_0%,#06111f_55%,#020617_100%)] text-white">
       <Header />
+      {martin.status}
 
       <main className="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6 xl:px-10 2xl:px-12">
         <div className="mb-5 flex flex-col gap-4 rounded-[28px] border border-white/10 bg-[linear-gradient(135deg,rgba(2,6,23,.96),rgba(12,20,35,.92))] px-5 py-4 text-white shadow-[0_24px_70px_-38px_rgba(2,6,23,.95)] backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -1638,7 +1654,11 @@ export default function SurvivalRouletteLivePage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex cursor-pointer items-center gap-2 rounded-full border border-orange-400/30 bg-orange-500/10 px-3 py-2 text-xs font-bold text-orange-200">
+              <input type="checkbox" checked={martin.enabled} onChange={e => martin.toggle(e.target.checked)} className="accent-orange-500" />
+              Martin · Spieleraufrufe
+            </label>
             <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold">
               {players.length} Spieler
             </span>
@@ -1998,6 +2018,18 @@ export default function SurvivalRouletteLivePage() {
                               </div>
                             </div>
                           </div>
+
+                          {m.status === "live" && m.machine_number && martin.enabled ? (
+                            <div className="flex flex-wrap gap-2 border-t border-white/10 px-4 py-3">
+                              {[1, 2, 3].map(call => (
+                                <button key={call} type="button" disabled={martin.busy}
+                                  onClick={() => void martin.announce([a, b, c, d], Number(m.machine_number), call)}
+                                  className="rounded-xl border border-orange-400/30 bg-orange-500/10 px-3 py-2 text-xs font-extrabold text-orange-200 transition hover:bg-orange-500/20 disabled:opacity-40">
+                                  🎤 {call === 1 ? "Aufrufen" : call === 2 ? "2. Aufruf" : "Letzter Aufruf"}
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
 
                           {m.status === "ready" ? (
                             <div className="border-t border-white/10 bg-orange-500/10 px-4 py-3 text-center text-xs font-bold text-orange-200">

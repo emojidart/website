@@ -35,6 +35,8 @@ import {
 import TerminalLink from "../_components/TerminalLink"
 import TerminalIdentityAuth, { type VerifiedTerminalIdentity } from "../_components/TerminalIdentityAuth"
 import TerminalLoader from "../_components/TerminalLoader"
+import TerminalFaceCandidate from "../_components/TerminalFaceCandidate"
+import type { TerminalIdentity } from "../_components/TerminalIdentityAuth"
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,6 +48,7 @@ type ScannedMember = {
   playerId: string | null
   name: string
   photoUrl: string | null
+  identityKind?: "member" | "guest"
 }
 
 
@@ -100,6 +103,11 @@ type TerminalCupCard = {
 
 export default function TerminalPersonalPage() {
   const [pin, setPin] = useState("")
+  const [faceOpen, setFaceOpen] = useState(false)
+  const [faceCandidate, setFaceCandidate] = useState<TerminalIdentity | null>(null)
+  const [faceLogin, setFaceLogin] = useState(false)
+  const [unlockOpen, setUnlockOpen] = useState(false)
+  const [faceIdentity, setFaceIdentity] = useState<TerminalIdentity | null>(null)
   const [scannerOpen, setScannerOpen] = useState(false)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "starting" | "scanning" | "checking" | "error" | "found">("idle")
   const [scannerMessage, setScannerMessage] = useState("")
@@ -122,6 +130,25 @@ export default function TerminalPersonalPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const zxingControlsRef = useRef<{ stop: () => void } | null>(null)
   const scannedCodeRef = useRef<string>("")
+
+  // Shared-device privacy: end a personal session after 60 seconds without activity.
+  // Full navigation destroys all in-memory player/credit state; face descriptors stay in IndexedDB.
+  useEffect(() => {
+    if (!activeMember) return
+    let timer: ReturnType<typeof setTimeout>
+    const leave = () => window.location.replace("/terminal")
+    const reset = () => { window.clearTimeout(timer); timer = window.setTimeout(leave, 60_000) }
+    const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "wheel"]
+    for (const event of events) window.addEventListener(event, reset, { passive: true })
+    const onVisibility = () => { if (document.visibilityState === "visible") reset() }
+    document.addEventListener("visibilitychange", onVisibility)
+    reset()
+    return () => {
+      window.clearTimeout(timer)
+      for (const event of events) window.removeEventListener(event, reset)
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
+  }, [activeMember])
 
   const benefits = useMemo(
     () => [
@@ -378,6 +405,11 @@ export default function TerminalPersonalPage() {
 
   const logoutPersonalArea = () => {
     setActiveMember(null)
+    setFaceCandidate(null)
+    setFaceLogin(false)
+    setFaceIdentity(null)
+    setUnlockOpen(false)
+    setFaceOpen(false)
     setScannedMember(null)
     setCreditBalance(0)
     setCreditTransactions([])
@@ -389,17 +421,21 @@ export default function TerminalPersonalPage() {
   }
 
   const loginWithIdentity = async (identity: VerifiedTerminalIdentity) => {
-    if (identity.identity_kind !== "member" || !identity.player_id) return
+    if (!identity.player_id && identity.identity_kind === "member") return
 
     const resolvedMember: ScannedMember = {
       playerCode: "",
       playerId: identity.player_id,
-      name: identity.name || "EMD Mitglied",
+      name: identity.name || "EMD Spieler",
       photoUrl: identity.photo_url || null,
+      identityKind: identity.identity_kind,
     }
 
+    setFaceLogin(false)
+    setFaceIdentity(null)
+    setUnlockOpen(false)
     setPinOpening(true)
-    void loadPersonalData(resolvedMember)
+    if (identity.identity_kind === "member") void loadPersonalData(resolvedMember)
 
     window.setTimeout(() => {
       setActiveMember(resolvedMember)
@@ -612,6 +648,7 @@ export default function TerminalPersonalPage() {
   }
 
   const registerSeriesOnSite = async (card: TerminalCupCard) => {
+    if (faceLogin) { setUnlockOpen(true); return }
     if (!activeMember?.playerId || !card.series?.id || !card.event?.id) return
     if (!card.registrationOpen) return
 
@@ -653,6 +690,7 @@ export default function TerminalPersonalPage() {
   }
 
   const registerCupWithCredit = async (card: TerminalCupCard) => {
+    if (faceLogin) { setUnlockOpen(true); return }
     if (!activeMember?.playerId || !card.series?.id || !card.event?.id) return
     if (!card.registrationOpen) return
 
@@ -694,6 +732,7 @@ export default function TerminalPersonalPage() {
   }
 
   const unregisterCup = async (card: TerminalCupCard) => {
+    if (faceLogin) { setUnlockOpen(true); return }
     if (!activeMember?.playerId || !card.event?.id) return
     if (!card.unregisterOpen) return
 
@@ -755,6 +794,49 @@ export default function TerminalPersonalPage() {
     return <TerminalLoader label="Mein EMD wird geöffnet" />
   }
 
+  // Recognition opens the familiar personal view. Protected operations require PIN/pattern.
+  const faceProtected = faceLogin
+  const unlockPanel = unlockOpen && faceIdentity ? (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/85 p-3 backdrop-blur-md">
+      <div className="w-full max-w-2xl rounded-3xl border border-orange-400/30 bg-[#101720] p-4 sm:p-6">
+        <TerminalIdentityAuth
+          key={`${faceIdentity.identity_kind}:${faceIdentity.identity_id}`}
+          title="Geschützten Bereich öffnen"
+          subtitle="Bitte bestätige deine PIN oder dein Muster."
+          allowedKinds={[faceIdentity.identity_kind]}
+          initialIdentity={faceIdentity}
+          compact
+          onCancel={() => setUnlockOpen(false)}
+          onVerified={identity => {
+            if (identity.identity_id !== faceIdentity.identity_id || identity.identity_kind !== faceIdentity.identity_kind) return
+            setFaceLogin(false)
+            setUnlockOpen(false)
+            if (identity.identity_kind === "member") void loadPersonalData({playerCode:"",playerId:identity.player_id,name:identity.name,photoUrl:identity.photo_url,identityKind:identity.identity_kind})
+          }}
+        />
+      </div>
+    </div>
+  ) : null
+
+  if (activeMember?.identityKind === "guest") {
+    return <main className="min-h-[100svh] bg-[#050608] px-5 py-8 text-white">
+      {unlockPanel}
+      <div className="mx-auto max-w-3xl space-y-6">
+        <div className="text-xs font-black uppercase tracking-widest text-orange-300">EMD Club Terminal · Mein EMD</div>
+        <section className="rounded-3xl border border-orange-300/20 bg-[#111720] p-7">
+          <div className="text-sm text-orange-200">Gastprofil</div>
+          <div className="mt-4 flex items-center gap-4">
+            {activeMember.photoUrl ? <img src={activeMember.photoUrl} alt="" className="h-20 w-20 rounded-2xl object-cover" /> : <UserRound className="h-16 w-16 text-orange-200" />}
+            <h1 className="text-3xl font-black">Servus {activeMember.name}!</h1>
+          </div>
+          <p className="mt-5 text-sm text-white/60">Willkommen in deinem EMD-Gastprofil.</p>
+          <TerminalLink href="/terminal/face-id-labor?manage=1" label="Face ID Verwaltung öffnen" className="mt-5 flex min-h-16 items-center justify-center gap-3 rounded-2xl border border-orange-400/40 bg-orange-500/10 px-5 text-lg font-black text-orange-100"><Camera className="h-6 w-6" /> Face ID verwalten · PIN/Muster erforderlich</TerminalLink>
+          <button type="button" onClick={logoutPersonalArea} className="mt-6 rounded-xl bg-orange-500 px-6 py-3 font-bold">Abmelden</button>
+        </section>
+      </div>
+    </main>
+  }
+
   if (activeMember && personalSection === "registrations") {
     return (
       <main className="relative min-h-[100svh] overflow-x-hidden bg-[#050608] text-white">
@@ -764,6 +846,7 @@ export default function TerminalPersonalPage() {
         />
         <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.38),rgba(4,6,9,.84)),radial-gradient(circle_at_10%_0%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_100%_82%,rgba(14,165,233,.11),transparent_30%)]" />
 
+        {unlockPanel}
         <div className="relative mx-auto min-h-[100svh] max-w-[1500px] px-5 py-6 lg:px-8 lg:py-8">
           <header className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -905,7 +988,7 @@ export default function TerminalPersonalPage() {
                             </div>
 
                             {!card.registered ? (
-                              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
                                 <button
                                   type="button"
                                   disabled={!card.registrationOpen || busy}
@@ -966,6 +1049,7 @@ export default function TerminalPersonalPage() {
   if (activeMember) {
     return (
       <main className="relative min-h-[100svh] overflow-x-hidden bg-[#050608] text-white">
+        {unlockPanel}
         <div
           className="pointer-events-none fixed inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.58]"
           style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
@@ -1034,7 +1118,7 @@ export default function TerminalPersonalPage() {
                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Guthaben</span>
                   </div>
                   <div className="mt-3 text-4xl font-black">
-                    {personalLoading ? "…" : formatEuro(creditBalance)}
+                    {faceProtected ? "••••" : personalLoading ? "…" : formatEuro(creditBalance)}
                   </div>
                   <div className="mt-2 text-xs font-semibold text-white/35">
                     Für Turnieranmeldungen
@@ -1046,17 +1130,21 @@ export default function TerminalPersonalPage() {
                     <CreditCard className="h-5 w-5" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em]">Mitgliedskarte</span>
                   </div>
-                  <div className="mt-3 text-xl font-black">QR erkannt</div>
+                  <div className="mt-3 text-xl font-black">{faceProtected ? "Face ID erkannt" : "Zugang bestätigt"}</div>
                   <div className="mt-2 text-xs font-semibold text-white/35">
                     Persönlicher Terminal-Zugang aktiv
                   </div>
                 </div>
               </div>
 
+              {faceProtected && <button type="button" onClick={() => setUnlockOpen(true)} className="mt-5 flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl border border-orange-400/40 bg-orange-500/15 px-5 text-lg font-black text-orange-100"><KeyRound className="h-6 w-6" /> Geschützte Funktionen öffnen</button>}
+              <TerminalLink href="/terminal/face-id-labor?manage=1" label="Face ID Verwaltung öffnen" className="mt-5 flex min-h-16 items-center justify-center gap-3 rounded-2xl border border-orange-400/40 bg-orange-500/10 px-5 text-lg font-black text-orange-100"><Camera className="h-6 w-6" /> Face ID verwalten · PIN/Muster erforderlich</TerminalLink>
+
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={() => {
+                    if (faceProtected) { setUnlockOpen(true); return }
                     void loadCupRegistrations(activeMember)
                     switchPersonalSection("registrations")
                   }}
@@ -1072,7 +1160,7 @@ export default function TerminalPersonalPage() {
 
                 <button
                   type="button"
-                  onClick={() => void loadPersonalData(activeMember)}
+                  onClick={() => { if (faceProtected) { setUnlockOpen(true); return }; void loadPersonalData(activeMember) }}
                   className="flex min-h-24 items-center justify-between rounded-[26px] border border-white/10 bg-white/[0.035] px-5 text-left transition hover:bg-white/[0.06]"
                 >
                   <div>
@@ -1094,7 +1182,9 @@ export default function TerminalPersonalPage() {
               </div>
 
               <div className="mt-5 space-y-3">
-                {personalLoading ? (
+                {faceProtected ? (
+                  <button type="button" onClick={() => setUnlockOpen(true)} className="w-full rounded-2xl border border-orange-400/30 bg-orange-500/10 p-5 text-left text-sm font-bold text-orange-100">Mit PIN oder Muster öffnen</button>
+                ) : personalLoading ? (
                   <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 text-sm font-semibold text-white/40">
                     Daten werden geladen …
                   </div>
@@ -1150,12 +1240,30 @@ export default function TerminalPersonalPage() {
         </header>
 
         <section className="mt-8">
-          <TerminalIdentityAuth
-            title="Mitglied suchen"
-            subtitle="Gib deinen Namen ein, wähle dein Profil und bestätige mit deiner PIN oder deinem Muster."
-            allowedKinds={["member"]}
-            onVerified={loginWithIdentity}
-          />
+          {faceOpen ? (
+            <TerminalFaceCandidate onCandidate={person => {
+              setFaceCandidate(null)
+              setFaceIdentity(person)
+              setFaceLogin(true)
+              setUnlockOpen(false)
+              setPersonalSection("home")
+              setCreditBalance(0)
+              setCreditTransactions([])
+              setActiveMember({playerCode:"",playerId:person.player_id,name:person.name,photoUrl:person.photo_url,identityKind:person.identity_kind})
+              setFaceOpen(false)
+            }} onClose={() => setFaceOpen(false)} />
+          ) : <>
+            <button type="button" onClick={() => { setFaceCandidate(null); setFaceOpen(true) }} className="mx-auto mb-5 flex min-h-16 items-center gap-3 rounded-2xl bg-orange-500 px-6 text-lg font-black text-white">
+              <Camera className="h-6 w-6" /> Mit Face ID anmelden
+            </button>
+            <TerminalIdentityAuth
+              title="Spieler suchen"
+              subtitle="Mitglied oder Gast auswählen und mit PIN oder Muster bestätigen."
+              allowedKinds={["member", "guest"]}
+              initialIdentity={faceCandidate}
+              onVerified={loginWithIdentity}
+            />
+          </>}
         </section>
       </div>
     </main>

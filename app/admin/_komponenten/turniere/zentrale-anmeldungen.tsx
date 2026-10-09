@@ -702,11 +702,20 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
 
   const cancelSelectedEvent = async () => {
-    if (!selectedEvent || selectedEvent.is_spontaneous || ["ready", "started", "completed", "cancelled"].includes(selectedEvent.status)) return
+    if (!selectedEvent || selectedEvent.is_spontaneous || ["started", "completed", "cancelled"].includes(selectedEvent.status)) return
 
     try {
       setSaving(true)
       setMessage(null)
+
+      const { data: linkedKratzer, error: linkedKratzerError } = await supabase
+        .from("kratzer_tournaments")
+        .select("id")
+        .eq("central_event_id", selectedEvent.id)
+        .eq("status", "running")
+        .limit(1)
+      if (linkedKratzerError) throw linkedKratzerError
+      if (linkedKratzer?.length) throw new Error("Ein Kratzer-Turnier läuft bereits. Absagen ist gesperrt.")
 
       const { error } = await supabase
         .from("central_tournament_events")
@@ -728,7 +737,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   }
 
   const deleteSelectedEvent = async () => {
-    if (!selectedEvent || !selectedEvent.is_spontaneous || ["ready", "started", "completed"].includes(selectedEvent.status)) return
+    if (!selectedEvent || !selectedEvent.is_spontaneous || ["started", "completed"].includes(selectedEvent.status)) return
 
     const eventId = selectedEvent.id
     try {
@@ -741,7 +750,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
         .select("id,title,status,is_spontaneous")
         .eq("id", eventId).maybeSingle()
       if (freshError) throw freshError
-      if (!freshEvent || !freshEvent.is_spontaneous || ["ready", "started", "completed"].includes(freshEvent.status)) {
+      if (!freshEvent || !freshEvent.is_spontaneous || ["started", "completed"].includes(freshEvent.status)) {
         throw new Error("Der Turnierstatus hat sich geändert. Bitte neu laden; es wurde nichts gelöscht.")
       }
       const { data: activeLink, error: linkError } = await supabase
@@ -749,6 +758,14 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
         .select("tournament_id").eq("central_event_id", eventId).eq("status", "active").limit(1)
       if (linkError) throw linkError
       if (activeLink?.length) throw new Error("Es existiert ein laufendes Turnier. Löschen gesperrt.")
+      const { data: runningKratzer, error: runningKratzerError } = await supabase
+        .from("kratzer_tournaments")
+        .select("id")
+        .eq("central_event_id", eventId)
+        .eq("status", "running")
+        .limit(1)
+      if (runningKratzerError) throw runningKratzerError
+      if (runningKratzer?.length) throw new Error("Ein Kratzer-Turnier läuft bereits. Löschen ist gesperrt.")
 
       // Der FK auf event_id entfernt ausschließlich Anmeldungen dieses Events.
       // Ein Löschen des Events mit ON DELETE CASCADE erledigt diese Zuordnung atomar.
@@ -1016,20 +1033,6 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const prepareKratzer = async () => {
     if (!selectedEvent) return
 
-    const { data: existing, error: existingError } = await supabase
-      .from("kratzer_tournament_registrations")
-      .select("player_id")
-      .limit(1)
-
-    if (existingError) throw existingError
-
-    if ((existing || []).length > 0) {
-      throw new Error(
-        "Im Kratzer-Modul liegen bereits Anmeldungen. Aus Sicherheitsgründen wird nichts überschrieben. Bitte das bestehende Kratzer-Turnier zuerst abschließen oder die dortige Anmeldung leeren.",
-      )
-    }
-
-    if (!mode) return
     // Sicherheitsprüfung auch bei Aufruf über andere UI-Wege und nach zwischenzeitlichen Änderungen.
     const { data: latestEvent, error: eventCheckError } = await supabase
       .from("central_tournament_events")
@@ -1064,10 +1067,6 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       setMessage({ type: "error", text: "Start gesperrt: Nicht alle angemeldeten Teilnehmer haben bezahlt." })
       return
     }
-    if (mode === "survival" && (latestActive.length < 4 || latestActive.length % 4 !== 0)) {
-      setMessage({ type: "error", text: `Survival erfordert 4, 8, 12, 16 … Spieler (aktuell ${latestActive.length}).` })
-      return
-    }
     const active = localActive
     if (active.length < 2) {
       throw new Error("Für Kratzer müssen mindestens 2 Spieler angemeldet sein.")
@@ -1080,23 +1079,17 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       )
     }
 
-    const rows = active.map((row) => {
-      const player = row.player_id ? playerById.get(row.player_id) : undefined
-
-      return {
-        player_id: row.player_id as string,
-        player_name: player?.name || row.player_name_snapshot,
-        ligastatus: player?.ligastatus || null,
-        paid: row.paid,
-        access_type: selectedEvent.access_type,
+    // Die Kratzer-Seite lädt die Spieler anhand der centralEventId direkt aus
+    // central_tournament_registrations. Keine globale Anmeldung überschreiben
+    // und keine Einträge aus anderen Turnieren oder Serien löschen.
+    const duplicateIds = new Set<string>()
+    for (const row of active) {
+      if (!row.player_id || duplicateIds.has(row.player_id)) {
+        throw new Error("Kratzer benötigt eindeutig zugeordnete Spieler ohne Doppelnennungen.")
       }
-    })
+      duplicateIds.add(row.player_id)
+    }
 
-    const { error: insertError } = await supabase
-      .from("kratzer_tournament_registrations")
-      .insert(rows)
-
-    if (insertError) throw insertError
   }
 
   const reloadDoubleTeams = async () => {
@@ -1247,6 +1240,24 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
   const openRunningCentralTournament = async () => {
     if (!selectedEvent) return
+
+    if (selectedEvent.selected_mode === "kratzer") {
+      const { data: kratzer, error: kratzerError } = await supabase
+        .from("kratzer_tournaments")
+        .select("id,status")
+        .eq("central_event_id", selectedEvent.id)
+        .eq("status", "running")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (kratzerError) throw kratzerError
+      if (!kratzer) {
+        setMessage({ type: "error", text: "Dieses Kratzer-Turnier wurde nicht als laufend gefunden. Es wird kein neues Turnier gestartet." })
+        return
+      }
+      router.push(`/kratzer-tournament?centralEventId=${encodeURIComponent(selectedEvent.id)}`)
+      return
+    }
 
     const { data, error } = await supabase
       .from("tournaments_status")
@@ -1757,11 +1768,11 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                     onClick={() => setDeleteConfirmOpen(true)}
                     disabled={
                       saving ||
-                      ["ready", "started", "completed", "cancelled"].includes(selectedEvent.status)
+                      ["started", "completed", "cancelled"].includes(selectedEvent.status)
                     }
                     className="h-10 rounded-xl border-rose-300/15 bg-rose-500/[0.05] px-3.5 text-xs font-black text-rose-100/70 hover:bg-rose-500/[0.09] disabled:cursor-not-allowed disabled:opacity-35"
                     title={
-                      ["ready", "started", "completed", "cancelled"].includes(selectedEvent.status)
+                      ["started", "completed", "cancelled"].includes(selectedEvent.status)
                         ? "Dieses Turnier kann hier nicht mehr geändert werden."
                         : selectedEvent.is_spontaneous
                           ? "Spontanes Turnier dauerhaft löschen"
