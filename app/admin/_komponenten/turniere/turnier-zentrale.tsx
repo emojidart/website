@@ -397,6 +397,7 @@ export function AdminTournamentCenter({ onOpen, canOpen }: AdminTournamentCenter
             </p>
           </div>
           <ActionGrid cards={spontaneousCards} onInternalOpen={(target) => setEmbeddedView(target)} />
+
         </section>
       ) : null}
 

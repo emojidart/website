@@ -156,7 +156,7 @@ export function EinzelturnierStart(props: Props) {
               }`}
             >
               <Play className="h-5 w-5" />
-              {startingTournament ? "Starte..." : "Turnier starten"}
+              {startingTournament ? "Turnier wird gestartet …" : "Turnier starten"}
             </button>
           </div>
         </section>
