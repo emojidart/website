@@ -4,25 +4,6 @@ import { useEffect, useRef, useState } from "react"
 import type { TerminalIdentity } from "./TerminalIdentityAuth"
 
 type FaceRecord = { name: string; vector: number[]; identity_kind?: "member" | "guest"; identity_id?: string; player_id?: string | null; spieldatenbank_id?: string | null; photo_url?: string | null }
-const DB = "emd-face-id-local-test"
-const STORE = "faces"
-
-async function linkedProfiles(): Promise<FaceRecord[]> {
-  const db = await new Promise<IDBDatabase>((resolve, reject) => {
-    const req = indexedDB.open(DB, 1)
-    req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE) }
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
-  })
-  try {
-    return await new Promise((resolve, reject) => {
-      const req = db.transaction(STORE, "readonly").objectStore(STORE).getAll()
-      req.onsuccess = () => resolve(((req.result || []) as FaceRecord[]).filter(x => x.identity_kind && x.identity_id && Array.isArray(x.vector) && x.vector.length === 128))
-      req.onerror = () => reject(req.error)
-    })
-  } finally { db.close() }
-}
-
 export default function TerminalFaceCandidate({ onCandidate, onClose }: { onCandidate: (person: TerminalIdentity) => void; onClose: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -46,8 +27,6 @@ export default function TerminalFaceCandidate({ onCandidate, onClose }: { onCand
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw Error("Kamera braucht HTTPS oder localhost.")
       setStatus("Kamera wird gestartet …")
-      const records = await linkedProfiles()
-      if (!records.length) throw Error("Auf diesem Gerät ist noch kein EMD-Gesicht verknüpft. Bitte zuerst im Face-ID-Labor registrieren.")
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
       if (cancelled.current) { stream.getTracks().forEach(t => t.stop()); return }
       streamRef.current = stream
@@ -70,15 +49,14 @@ export default function TerminalFaceCandidate({ onCandidate, onClose }: { onCand
         if (cancelled.current) return
         if (detections.length === 1) {
           const descriptor = detections[0].descriptor
-          const sorted = records.map(record => ({ record, distance: Math.sqrt(record.vector.reduce((sum, v, i) => sum + (v - descriptor[i]) ** 2, 0)) })).sort((a, b) => a.distance - b.distance)
-          const first = sorted[0], second = sorted[1]
-          if (first.distance <= 0.43 && (!second || second.distance - first.distance >= 0.08)) {
-            const record = first.record
-            if (record.identity_kind && record.identity_id) {
-              stop()
-              onCandidate({ identity_kind: record.identity_kind, identity_id: record.identity_id, player_id: record.player_id ?? null, spieldatenbank_id: record.spieldatenbank_id ?? null, name: record.name, photo_url: record.photo_url ?? null, auth_method: "pin", has_terminal_auth: true })
-              return
-            }
+          const result=await fetch("/api/face-id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"match",vector:Array.from(descriptor)}),cache:"no-store"})
+          const data=await result.json()
+          if(!result.ok) throw Error(data.error||"Face ID nicht erreichbar.")
+          const record=data.match
+          if(record?.identity_kind && record?.identity_id){
+            stop()
+            onCandidate({identity_kind:record.identity_kind,identity_id:record.identity_id,player_id:record.player_id??null,spieldatenbank_id:record.spieldatenbank_id??null,name:record.name,photo_url:record.photo_url??null,auth_method:"pin",has_terminal_auth:true})
+            return
           }
           setStatus("Kein eindeutiger Treffer. Bitte gerade in die Kamera schauen oder manuell anmelden.")
         } else {

@@ -4,55 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import TerminalIdentityAuth, { type VerifiedTerminalIdentity } from "@/app/terminal/_components/TerminalIdentityAuth"
 
 type DescriptorRecord = { name: string; vector: number[]; createdAt: string; identity_kind?: "member" | "guest"; identity_id?: string; player_id?: string | null; spieldatenbank_id?: string | null; photo_url?: string | null }
-type LinkedIdentity = Pick<VerifiedTerminalIdentity, "identity_kind" | "identity_id" | "player_id" | "spieldatenbank_id" | "name" | "photo_url">
+type LinkedIdentity = VerifiedTerminalIdentity
 type FaceApi = typeof import("face-api.js")
-const DB = "emd-face-id-local-test"
-const STORE = "faces"
-const MODEL_URL = "/models"
-const MAX_DISTANCE = 0.43 // Conservative demo threshold, not an authentication guarantee
-
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB, 1)
-    req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE) }
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
-  })
+const MODEL_URL = "/models";
+const MAX_DISTANCE = 0.43;
+async function faceCall(body: Record<string, unknown>) {
+ const response = await fetch("/api/face-id", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body),cache:"no-store"});
+ const data=await response.json();if(!response.ok)throw Error(data.error||"Face-ID-Dienst nicht erreichbar.");return data;
 }
-async function readFaces(): Promise<DescriptorRecord[]> {
-  const db = await openDB()
-  try {
-    return await new Promise((resolve, reject) => {
-      const req = db.transaction(STORE, "readonly").objectStore(STORE).getAll()
-      req.onsuccess = () => resolve((req.result as DescriptorRecord[]).filter(r => r?.name && Array.isArray(r.vector)))
-      req.onerror = () => reject(req.error)
-    })
-  } finally { db.close() }
-}
-async function writeFace(value: DescriptorRecord): Promise<void> {
-  const db = await openDB()
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE, "readwrite")
-      tx.objectStore(STORE).put(value, value.identity_kind && value.identity_id ? `${value.identity_kind}:${value.identity_id}` : value.name.toLocaleLowerCase('de').trim())
-      tx.oncomplete = () => resolve()
-      tx.onerror = () => reject(tx.error)
-      tx.onabort = () => reject(tx.error)
-    })
-  } finally { db.close() }
-}
-async function removeFace(record: DescriptorRecord): Promise<void> {
-  const db = await openDB()
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE, "readwrite")
-      tx.objectStore(STORE).delete(record.identity_kind && record.identity_id ? `${record.identity_kind}:${record.identity_id}` : record.name.toLocaleLowerCase('de').trim())
-      tx.oncomplete = () => resolve()
-      tx.onerror = () => reject(tx.error)
-      tx.onabort = () => reject(tx.error)
-    })
-  } finally { db.close() }
-}
+async function readFaces():Promise<DescriptorRecord[]> {const r=await fetch("/api/face-id",{cache:"no-store"});const d=await r.json();if(!r.ok)throw Error(d.error||"Fehler");return d.faces||[];}
 function distance(a: number[], b: Float32Array) {
   if (a.length !== b.length) return Infinity
   return Math.sqrt(a.reduce((sum, x, i) => sum + (x - b[i]) ** 2, 0))
@@ -109,7 +69,7 @@ export default function FaceLab() {
     setCamera(false)
   }, [])
   useEffect(() => {
-    readFaces().then(setSaved).catch(() => setStatus('Lokale Speicherung ist nicht verfügbar.'))
+    readFaces().then(setSaved).catch(() => setStatus('Supabase Face ID ist nicht verfügbar.'))
     const loadVoices = () => setVoices(window.speechSynthesis?.getVoices() ?? [])
     loadVoices()
     window.speechSynthesis?.addEventListener('voiceschanged', loadVoices)
@@ -194,13 +154,8 @@ export default function FaceLab() {
       }
       const avg = Array.from(vectors[0], (_, d) => vectors.reduce((sum, v) => sum + v[d], 0) / vectors.length)
       const name = linkedIdentity.name.trim().slice(0, 60)
-      const records = await readFaces()
-      const conflicting = records.map(r => ({ name: r.name, d: distance(r.vector, new Float32Array(avg)) }))
-        .find(r => !(r.identity_kind === linkedIdentity.identity_kind && r.identity_id === linkedIdentity.identity_id) && r.d < MAX_DISTANCE)
-      if (conflicting) throw Error(`Dieses Gesicht ähnelt einem bereits gespeicherten Profil (${conflicting.name}). Registrierung abgebrochen.`)
-      const record: DescriptorRecord = { ...linkedIdentity, name, vector:avg, createdAt:new Date().toISOString() }
-      await writeFace(record)
-      setSaved(await readFaces()); setStatus(`${name} ist mit dem EMD-Profil verknüpft. Jetzt Wiedererkennung testen!`); setConsent(false); setLinkedIdentity(null)
+      await faceCall({action:"enroll",...linkedIdentity,vector:avg,consent:true})
+      setSaved(await readFaces()); setStatus(`${name} ist zentral mit dem EMD-Profil verknüpft. Jetzt Wiedererkennung testen!`); setConsent(false); setLinkedIdentity(null)
       speak(`${name} ist gespeichert. Mal sehen, ob ich dich wiedererkenne!`)
     } catch (e) { setStatus(e instanceof Error ? e.message : "Registrierung fehlgeschlagen.") }
     finally { setCountdown(null); setLoading(false); busyRef.current=false }
@@ -209,21 +164,13 @@ export default function FaceLab() {
     if (!camera || busyRef.current) return
     busyRef.current = true; setLoading(true); setVerified(false); setScore(null)
     try {
-      const records = await readFaces()
-      if (!records.length) throw Error('Zuerst mindestens eine Person registrieren.')
-      setStatus('Vergleiche Gesicht mit allen lokalen Profilen…')
+      setStatus('Vergleiche Gesicht zentral über Supabase…')
       const descriptor = await capture()
-      const sorted = records.map(record => ({record, d: distance(record.vector, descriptor)})).sort((a,b) => a.d-b.d)
-      const best = sorted[0]
-      setScore(best.d)
-      const runnerUp = sorted[1]
-      if (best.d <= MAX_DISTANCE && (!runnerUp || runnerUp.d - best.d >= 0.08)) {
-        setVerified(true); setRecognized(best.record.name); setRecognizedProfile(best.record.identity_id ? best.record : null)
-        setStatus(`Wiedererkennung: ${best.record.name} (nur Demo, keine sichere Identitätsprüfung).`)
-        speak(`Servus ${best.record.name}! Schön, dass du da bist. Bereit für deine nächste Partie?`)
-      } else {
-        setStatus(best.d > MAX_DISTANCE ? 'Kein Treffer – unbekannte Person.' : 'Nicht eindeutig – bitte noch einmal versuchen.')
-      }
+      const result = await faceCall({action:"match",vector:Array.from(descriptor)})
+      const profile:DescriptorRecord|null = result.match ? {...result.match,vector:[],createdAt:new Date().toISOString()} : null
+      setScore(typeof result.distance === "number" ? result.distance : null)
+      if(profile){setVerified(true);setRecognized(profile.name);setRecognizedProfile(profile);setStatus(`Wiedererkennung: ${profile.name} (PIN/Muster für geschützte Aktionen erforderlich).`);speak(`Servus ${profile.name}! Schön, dass du da bist.`)}
+      else setStatus('Kein eindeutiger Treffer – bitte mit PIN/Muster anmelden oder neu versuchen.')
     } catch(e) { setStatus(e instanceof Error ? e.message : "Erkennung fehlgeschlagen.") }
     finally { setLoading(false); busyRef.current=false }
   }
@@ -241,10 +188,10 @@ export default function FaceLab() {
       return
     }
     try {
-      await removeFace(target)
+      await faceCall({action:"delete",identity_kind:identity.identity_kind,identity_id:identity.identity_id,auth_method:identity.auth_method,secret:identity.secret})
       setSaved(await readFaces())
       setVerified(false); setRecognized(''); setRecognizedProfile(null); setScore(null); setProgress(0)
-      setStatus(`${target.name}: Face ID auf diesem Gerät gelöscht.`)
+      setStatus(`${target.name}: Face ID zentral gelöscht.`)
       setDeleteTarget(null); setDeleteError("")
     } catch { setDeleteError("Löschen fehlgeschlagen. Bitte erneut versuchen.") }
   }
@@ -262,20 +209,20 @@ export default function FaceLab() {
     </section>
     <section className="rounded-2xl border border-white/10 bg-[#101722] p-5 space-y-3">
       <h2 className="text-xl font-bold">1 · Spieler freiwillig registrieren</h2>
-      <p className="text-sm text-slate-300">Vor der Registrierung erscheint ein großer Countdown 3 · 2 · 1. Danach werden automatisch fünf Aufnahmen gemacht. Fünf Gesichtsaufnahmen werden in einen numerischen Gesichtsabdruck umgerechnet und nur in diesem Browser (IndexedDB) gespeichert. Kein Foto wird gespeichert. Auch dieser Abdruck ist ein sensibles biometrisches Datum.</p>
-      {identityPicker ? <div className="rounded-xl border border-orange-500/20 bg-black/20 p-2"><TerminalIdentityAuth title="EMD-Profil auswählen" subtitle="Spieler auswählen und persönlich mit PIN oder Muster bestätigen. Die PIN wird nicht für Face ID gespeichert." compact onCancel={() => setIdentityPicker(false)} onVerified={(identity) => { const { identity_kind, identity_id, player_id, spieldatenbank_id, name, photo_url } = identity; setLinkedIdentity({ identity_kind, identity_id, player_id, spieldatenbank_id, name, photo_url }); setIdentityPicker(false); setConsent(false); setStatus(`${name}: Profil bestätigt. Jetzt freiwillig Gesicht aufnehmen.`) }} /></div> : <button type="button" onClick={() => {setLinkedIdentity(null);setIdentityPicker(true)}} disabled={loading} className="rounded-xl border border-orange-500/50 px-5 py-3 font-bold">{linkedIdentity ? "Anderes EMD-Profil auswählen" : "EMD-Profil mit PIN/Muster auswählen"}</button>}
+      <p className="text-sm text-slate-300">Vor der Registrierung erscheint ein großer Countdown 3 · 2 · 1. Danach werden automatisch fünf Aufnahmen gemacht. Fünf Gesichtsaufnahmen werden in einen numerischen Gesichtsabdruck umgerechnet und zentral in Supabase gespeichert. Kein Foto wird gespeichert. Das Gesichtsmuster wird für alle EMD-Geräte hinterlegt. Auch dieser Abdruck ist ein sensibles biometrisches Datum.</p>
+      {identityPicker ? <div className="rounded-xl border border-orange-500/20 bg-black/20 p-2"><TerminalIdentityAuth title="EMD-Profil auswählen" subtitle="Spieler auswählen und persönlich mit PIN oder Muster bestätigen. Die PIN wird nicht für Face ID gespeichert." compact onCancel={() => setIdentityPicker(false)} onVerified={(identity) => { const { name } = identity; setLinkedIdentity(identity); setIdentityPicker(false); setConsent(false); setStatus(`${name}: Profil bestätigt. Jetzt freiwillig Gesicht aufnehmen.`) }} /></div> : <button type="button" onClick={() => {setLinkedIdentity(null);setIdentityPicker(true)}} disabled={loading} className="rounded-xl border border-orange-500/50 px-5 py-3 font-bold">{linkedIdentity ? "Anderes EMD-Profil auswählen" : "EMD-Profil mit PIN/Muster auswählen"}</button>}
       {linkedIdentity && <div className="rounded-xl border border-green-400/20 bg-green-500/10 p-4 text-sm"><div className="font-black">✓ {linkedIdentity.name}</div><div className="text-green-100/80">{linkedIdentity.identity_kind === 'member' ? 'EMD-Mitglied' : 'Gast'} · Identität bestätigt · {linkedIdentity.player_id ? 'Spieler-ID vorhanden' : 'Noch keine Spieler-ID zugeordnet'}</div></div>}
-      <label className="flex gap-3 text-sm text-slate-300"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} className="accent-orange-500"/>Ich bin die gerade bestätigte Person und stimme freiwillig zu, dass mein biometrischer Gesichtsabdruck auf diesem Tablet gespeichert wird.</label>
+      <label className="flex gap-3 text-sm text-slate-300"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)} className="accent-orange-500"/>Ich bin die gerade bestätigte Person und stimme freiwillig zu, dass mein biometrischer Gesichtsabdruck zentral in Supabase gespeichert wird.</label>
       <button onClick={enroll} disabled={!camera||!consent||!linkedIdentity||loading} className="rounded-xl bg-orange-600 px-5 py-3 font-bold disabled:opacity-40">Gesicht mit EMD-Profil verknüpfen</button>
       {linkedIdentity && saved.some(p => p.identity_id === linkedIdentity.identity_id && p.identity_kind === linkedIdentity.identity_kind) && <p className="text-sm text-amber-200">Dieses Profil hat bereits eine Face ID. Bei neuer Aufnahme wird der bisherige Abdruck erst nach erfolgreicher Aufnahme ersetzt.</p>}
-      {saved.length > 0 && <p className="text-sm text-green-300">✓ Lokal gespeichert: {saved.map(p => p.name).join(', ')}</p>}
+      {saved.length > 0 && <p className="text-sm text-green-300">✓ Zentral gespeichert: {saved.map(p => p.name).join(', ')}</p>}
     </section>
     <section className="rounded-2xl border border-white/10 bg-[#101722] p-5 space-y-3">
       <h2 className="text-xl font-bold">2 · Wiedererkennung testen</h2>
       <p className="text-sm text-slate-300">Kamera neu starten, davorstellen und auf „Mich erkennen“ drücken. Das System spricht nur bei einem Treffer.</p>
       <button onClick={recognize} disabled={!saved.length||!camera||loading} className="rounded-xl bg-orange-600 px-5 py-3 font-bold disabled:opacity-40">🔎 Wer steht vor dem Tablet?</button>
       {score !== null && <p className="text-xs text-slate-400">Vergleichsdistanz: {score.toFixed(3)} (Schwelle: {MAX_DISTANCE.toFixed(2)}, kleiner = ähnlicher)</p>}
-      {verified && <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4 space-y-3"><p className="text-2xl font-black text-green-300">SERVUS {recognized.toLocaleUpperCase("de")}! 🎯</p>{recognizedProfile ? <div className="flex gap-3 items-center">{recognizedProfile.photo_url && <img alt="" src={recognizedProfile.photo_url} className="h-16 w-16 rounded-xl object-cover" />}<div><p className="font-bold">{recognizedProfile.name}</p><p className="text-sm text-slate-300">{recognizedProfile.identity_kind === 'member' ? 'EMD-Mitglied' : 'Gast'} · Spieleransicht</p></div></div> : <p className="text-sm text-yellow-200">Altes Testprofil ohne bestätigte EMD-Verknüpfung. Bitte neu registrieren.</p>}<p className="text-xs text-slate-400">Face ID zeigt hier nur das lokale Spielerprofil. Die geschützten Bereiche von „Mein EMD“ bleiben ohne echte Anmeldung gesperrt.</p></div>}
+      {verified && <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4 space-y-3"><p className="text-2xl font-black text-green-300">SERVUS {recognized.toLocaleUpperCase("de")}! 🎯</p>{recognizedProfile ? <div className="flex gap-3 items-center">{recognizedProfile.photo_url && <img alt="" src={recognizedProfile.photo_url} className="h-16 w-16 rounded-xl object-cover" />}<div><p className="font-bold">{recognizedProfile.name}</p><p className="text-sm text-slate-300">{recognizedProfile.identity_kind === 'member' ? 'EMD-Mitglied' : 'Gast'} · Spieleransicht</p></div></div> : <p className="text-sm text-yellow-200">Altes Testprofil ohne bestätigte EMD-Verknüpfung. Bitte neu registrieren.</p>}<p className="text-xs text-slate-400">Face ID erkennt nur ein Profil als Kandidaten. Die geschützten Bereiche von „Mein EMD“ bleiben ohne echte Anmeldung gesperrt.</p></div>}
     </section>
     <section className="rounded-2xl border border-white/10 bg-[#101722] p-5 space-y-3">
       <h2 className="font-bold">3 · Turniersprecher-Stimme</h2>
@@ -288,10 +235,10 @@ export default function FaceLab() {
     </section>
     <section className="rounded-2xl border border-rose-400/20 bg-[#101722] p-5 space-y-3">
       <h2 className="font-bold">4 · Testprofile verwalten</h2>
-      <p className="text-sm text-slate-400">Gesichtsabdrücke bleiben nur in diesem Browser. Löschen und Neu-Einlernen nur nach erneuter PIN-/Musterbestätigung des betroffenen EMD-Profils. Alte unverknüpfte Testprofile sind hier gesperrt; sie können durch Löschen der Browser-Websitedaten entfernt werden.</p>
+      <p className="text-sm text-slate-400">Gesichtsabdrücke werden zentral in Supabase gespeichert. Löschen und Neu-Einlernen nur nach erneuter PIN-/Musterbestätigung des betroffenen EMD-Profils. Alte unverknüpfte Testprofile sind hier gesperrt; sie können durch Löschen der Browser-Websitedaten entfernt werden.</p>
       {saved.length === 0 ? <p className="text-sm text-slate-400">Noch kein Profil vorhanden.</p> : saved.map(p => <div key={p.identity_kind && p.identity_id ? `${p.identity_kind}:${p.identity_id}` : p.name} className="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-2"><div><div>{p.name}</div><div className="text-xs text-slate-400">{p.identity_id ? `${p.identity_kind === 'member' ? 'Mitglied' : 'Gast'} · EMD-verknüpft` : 'Altes Testprofil – nicht verknüpft'}</div></div><div className="flex flex-wrap gap-2"><button type="button" disabled={loading || !p.identity_id} onClick={() => { setLinkedIdentity(null); setIdentityPicker(true); setStatus(`Zum Neu-Einlernen ${p.name} mit PIN/Muster auswählen.`); window.scrollTo({top: 0, behavior: 'smooth'}) }} className="rounded-lg border border-orange-500/50 px-3 py-2 text-sm text-orange-100 disabled:opacity-40">Neu einlernen</button><button type="button" disabled={loading || !p.identity_id} onClick={() => { setDeleteError(''); setDeleteTarget(p) }} className="rounded-lg border border-rose-500/50 px-3 py-2 text-sm text-rose-200 disabled:opacity-40">Löschen</button></div></div>)}
     </section>
     {deleteTarget && <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 p-3 sm:p-8"><div className="mx-auto max-w-3xl rounded-3xl border border-rose-400/30 bg-[#0b1019] p-4 sm:p-6"><h2 className="mb-2 text-2xl font-black">Face ID löschen · {deleteTarget.name}</h2><p className="mb-4 text-sm text-slate-300">Aus Sicherheitsgründen musst du genau dieses EMD-Profil erneut mit PIN oder Muster bestätigen. Ein anderes Profil darf die Daten nicht löschen.</p>{deleteError && <p role="alert" className="mb-3 rounded-xl bg-red-950 p-3 text-red-200">{deleteError}</p>}<TerminalIdentityAuth key={`${deleteTarget.identity_kind}:${deleteTarget.identity_id}`} title="Identität bestätigen" subtitle={`Bitte ${deleteTarget.name} auswählen und PIN oder Muster eingeben.`} allowedKinds={deleteTarget.identity_kind ? [deleteTarget.identity_kind] : ['member','guest']} compact onCancel={() => {setDeleteTarget(null);setDeleteError('')}} onVerified={forgetVerified} /><button type="button" onClick={() => {setDeleteTarget(null);setDeleteError('')}} className="mt-4 rounded-xl border border-white/20 px-5 py-3 font-bold">Abbrechen</button></div></div>}
-    <p className="text-xs text-slate-500">Nur Vorführung: Das ist biometrische Verarbeitung. Registrierung nur mit freiwilliger Einwilligung; Zugang zur unverlinkten Seite ist nicht geschützt. Die Erkennung kann sich irren oder mit einem Foto getäuscht werden. Niemals zur Anmeldung, Auszahlung, PIN-Ersatz oder Ergebnisfreigabe benutzen. Die URL ist nicht verlinkt, aber ohne Zugangssperre öffentlich erreichbar.</p>
+    <p className="text-xs text-slate-500">Biometrische Verarbeitung: Registrierung nur mit freiwilliger Einwilligung; Zugang zur unverlinkten Seite ist nicht geschützt. Die Erkennung kann sich irren oder mit einem Foto getäuscht werden. Niemals zur Anmeldung, Auszahlung, PIN-Ersatz oder Ergebnisfreigabe benutzen. Die URL ist nicht verlinkt, aber ohne Zugangssperre öffentlich erreichbar.</p>
   </div></main>
 }
