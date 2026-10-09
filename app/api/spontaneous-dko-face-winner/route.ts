@@ -39,9 +39,11 @@ export async function POST(req: NextRequest) {
       .eq("tournament_id", tournamentId).eq("tournament_type", tournamentType).eq("status", "active").limit(2);
     if (se || statuses?.length !== 1) return json({ error: "Kein aktives DKO-Turnier." }, 403);
     const status = statuses[0];
-    if (status.series_id || status.series_event_id || !status.central_event_id) return json({ error: "Face-ID-Sieg nur bei spontanen DKO-Turnieren." }, 403);
-    const { data: event, error: ee } = await db.from("central_tournament_events").select("is_spontaneous").eq("id", status.central_event_id).single();
-    if (ee || event?.is_spontaneous !== true) return json({ error: "Kein spontanes Turnier." }, 403);
+    if (status.series_id || status.series_event_id) return json({ error: "Face-ID-Sieg nur bei spontanen DKO-Turnieren." }, 403);
+    if (status.central_event_id) {
+      const { data: event, error: ee } = await db.from("central_tournament_events").select("is_spontaneous").eq("id", status.central_event_id).single();
+      if (ee || event?.is_spontaneous !== true) return json({ error: "Kein spontanes Turnier." }, 403);
+    }
 
     const { data: match, error: me } = await db.from("dko_match_states")
       .select("id,player1,player2,player1_id,player2_id,winner,machine_number")

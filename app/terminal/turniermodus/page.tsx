@@ -229,7 +229,7 @@ export default function TerminalTournamentModePage() {
         : { data: [] as any[] }
       const spontaneousEvents = new Set((centralEvents || []).filter((e: any) => e.is_spontaneous === true).map((e: any) => String(e.id)))
       const faceEligibleKeys = new Set((data || []).filter((row: any) =>
-        /^\d+er_dko$/.test(String(row.tournament_type)) && !row.series_id && !row.series_event_id && row.central_event_id && spontaneousEvents.has(String(row.central_event_id))
+        /^\d+er_dko$/.test(String(row.tournament_type)) && !row.series_id && !row.series_event_id && (!row.central_event_id || spontaneousEvents.has(String(row.central_event_id)))
       ).map((row: any) => `${row.tournament_type}:${row.tournament_id}`))
 
       const ids = Array.from(
@@ -513,8 +513,8 @@ export default function TerminalTournamentModePage() {
     setPinMessage("")
     setVerifiedPin("")
     setSelectedRunningMatch(item)
-    setFaceMode(false)
-    setFaceMessage("")
+    setFaceMode(Boolean(item.faceWinnerEnabled))
+    setFaceMessage(item.faceWinnerEnabled ? "Bereit zur Siegererkennung." : "")
   }
 
   const openSelectedMatchWithPin = async () => {
@@ -1089,7 +1089,7 @@ export default function TerminalTournamentModePage() {
 
             {selectedRunningMatch.faceWinnerEnabled ? (
               <div className="mt-5 space-y-3">
-                <button type="button" onClick={() => { setFaceMode(true); setFaceMessage("Bereit zur Erkennung.") }} className="w-full rounded-2xl bg-orange-500 px-5 py-4 text-lg font-black text-white">Sieger per Face ID erkennen</button>
+                {!faceMode && <button type="button" onClick={() => { setFaceMode(true); setFaceMessage("Bereit zur Erkennung.") }} className="w-full rounded-2xl bg-orange-500 px-5 py-4 text-lg font-black text-white">Sieger per Face ID erkennen</button>}
                 {faceMode ? <div className="space-y-3 rounded-2xl border border-orange-300/20 bg-white/[0.04] p-3">
                   <p className="text-center text-sm font-bold">Nur der Sieger schaut in die Kamera. Keine Ergebniseingabe nötig.</p>
                   <video ref={faceVideoRef} playsInline autoPlay muted className="w-full rounded-xl bg-black aspect-video object-cover scale-x-[-1]" />
