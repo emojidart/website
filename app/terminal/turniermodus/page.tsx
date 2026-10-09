@@ -43,6 +43,7 @@ type RunningMatch = {
   score1: number
   score2: number
   machine_number: number
+  faceWinnerEnabled: boolean
 }
 
 type MatchCall = {
@@ -66,6 +67,12 @@ export default function TerminalTournamentModePage() {
   const [loadingLabel, setLoadingLabel] = useState<string | null>(null)
   const [runningMatches, setRunningMatches] = useState<RunningMatch[]>([])
   const [selectedRunningMatch, setSelectedRunningMatch] = useState<RunningMatch | null>(null)
+  const [faceMode, setFaceMode] = useState(false)
+  const [faceBusy, setFaceBusy] = useState(false)
+  const [faceMessage, setFaceMessage] = useState("")
+  const faceVideoRef = useRef<HTMLVideoElement | null>(null)
+  const faceStreamRef = useRef<MediaStream | null>(null)
+  const faceRunRef = useRef(0)
 
   const [match, setMatch] = useState<ActiveMatch | null>(null)
   const [score1, setScore1] = useState(0)
@@ -197,7 +204,7 @@ export default function TerminalTournamentModePage() {
     const refreshActiveTournaments = async () => {
       const { data, error } = await supabase
         .from("tournaments_status")
-        .select("tournament_id, tournament_type")
+        .select("tournament_id, tournament_type, central_event_id, series_id, series_event_id")
         .eq("status", "active")
 
       if (!mounted || error) return
@@ -215,6 +222,15 @@ export default function TerminalTournamentModePage() {
         setRunningMatches([])
         return
       }
+
+      const centralIds = Array.from(new Set((data || []).map((row: any) => row.central_event_id).filter(Boolean)))
+      const { data: centralEvents } = centralIds.length
+        ? await supabase.from("central_tournament_events").select("id,is_spontaneous").in("id", centralIds)
+        : { data: [] as any[] }
+      const spontaneousEvents = new Set((centralEvents || []).filter((e: any) => e.is_spontaneous === true).map((e: any) => String(e.id)))
+      const faceEligibleKeys = new Set((data || []).filter((row: any) =>
+        /^\d+er_dko$/.test(String(row.tournament_type)) && !row.series_id && !row.series_event_id && row.central_event_id && spontaneousEvents.has(String(row.central_event_id))
+      ).map((row: any) => `${row.tournament_type}:${row.tournament_id}`))
 
       const ids = Array.from(
         new Set(
@@ -264,6 +280,7 @@ export default function TerminalTournamentModePage() {
           score1: Number(row.score1 || 0),
           score2: Number(row.score2 || 0),
           machine_number: Number(row.machine_number),
+          faceWinnerEnabled: faceEligibleKeys.has(`${String(row.tournament_type)}:${String(row.tournament_id)}`),
         }))
         .sort((a: RunningMatch, b: RunningMatch) =>
           a.machine_number - b.machine_number || a.match_id - b.match_id,
@@ -420,6 +437,7 @@ export default function TerminalTournamentModePage() {
     setPin("")
     setPinMessage("")
     setSelectedRunningMatch(null)
+    stopFaceCamera()
     setVerifiedPin("")
     setMatch(null)
     setScore1(0)
@@ -442,11 +460,61 @@ export default function TerminalTournamentModePage() {
     setPinMessage("")
   }
 
+  const stopFaceCamera = () => {
+    faceRunRef.current++
+    faceStreamRef.current?.getTracks().forEach(track => track.stop())
+    faceStreamRef.current = null
+    if (faceVideoRef.current) faceVideoRef.current.srcObject = null
+    setFaceMode(false)
+    setFaceBusy(false)
+  }
+
+  const captureFaceWinner = async () => {
+    const active = selectedRunningMatch
+    if (!active?.faceWinnerEnabled || faceBusy) return
+    const run = ++faceRunRef.current
+    setFaceBusy(true)
+    setFaceMessage("Kamera wird vorbereitet …")
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+      faceStreamRef.current = stream
+      const video = faceVideoRef.current
+      if (!video) throw new Error("Kamera nicht bereit.")
+      video.srcObject = stream
+      await video.play()
+      const api = await import("face-api.js")
+      await Promise.all([api.nets.tinyFaceDetector.loadFromUri("/models"), api.nets.faceLandmark68Net.loadFromUri("/models"), api.nets.faceRecognitionNet.loadFromUri("/models")])
+      for (let i = 3; i >= 1; i--) {
+        if (run !== faceRunRef.current) return
+        setFaceMessage(`Bitte alleine in die Kamera schauen · ${i}`)
+        await sleep(1000)
+      }
+      if (run !== faceRunRef.current) return
+      setFaceMessage("Gesicht wird erkannt …")
+      const faces = await api.detectAllFaces(video, new api.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.55 })).withFaceLandmarks().withFaceDescriptors()
+      if (faces.length !== 1) throw new Error(faces.length > 1 ? "Bitte nur eine Person vor die Kamera stellen." : "Kein Gesicht gefunden. Bitte erneut versuchen.")
+      const response = await fetch("/api/spontaneous-dko-face-winner", { method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store", body: JSON.stringify({ tournament_id: active.tournament_id, tournament_type: active.tournament_type, match_id: active.match_id, vector: Array.from(faces[0].descriptor) }) })
+      const result = await response.json()
+      if (!response.ok || !result.ok) throw new Error(result.error || "Ergebnis wurde nicht gespeichert.")
+      stopFaceCamera()
+      setSelectedRunningMatch(null)
+      setSavedResult({ player1: active.player1, player2: active.player2, score1: result.winner === active.player1 ? 1 : 0, score2: result.winner === active.player2 ? 1 : 0 })
+      await sleep(2600)
+      resetToPin()
+    } catch (error) {
+      if (run === faceRunRef.current) setFaceMessage(error instanceof Error ? error.message : "Erkennung fehlgeschlagen.")
+    } finally {
+      if (run === faceRunRef.current) setFaceBusy(false)
+    }
+  }
+
   const selectRunningMatch = (item: RunningMatch) => {
     setPin("")
     setPinMessage("")
     setVerifiedPin("")
     setSelectedRunningMatch(item)
+    setFaceMode(false)
+    setFaceMessage("")
   }
 
   const openSelectedMatchWithPin = async () => {
@@ -995,11 +1063,12 @@ export default function TerminalTournamentModePage() {
                 <div className="text-[10px] font-black uppercase tracking-[0.24em] text-orange-300/70">
                   Board {selectedRunningMatch.machine_number} · Match #{selectedRunningMatch.match_id}
                 </div>
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">PIN eingeben</h2>
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">{faceMode ? "Sieger per Face ID" : "Ergebnis melden"}</h2>
               </div>
               <button
                 type="button"
                 onClick={() => {
+                  stopFaceCamera()
                   setSelectedRunningMatch(null)
                   setPin("")
                   setPinMessage("")
@@ -1018,8 +1087,21 @@ export default function TerminalTournamentModePage() {
               </div>
             </div>
 
+            {selectedRunningMatch.faceWinnerEnabled ? (
+              <div className="mt-5 space-y-3">
+                <button type="button" onClick={() => { setFaceMode(true); setFaceMessage("Bereit zur Erkennung.") }} className="w-full rounded-2xl bg-orange-500 px-5 py-4 text-lg font-black text-white">Sieger per Face ID erkennen</button>
+                {faceMode ? <div className="space-y-3 rounded-2xl border border-orange-300/20 bg-white/[0.04] p-3">
+                  <p className="text-center text-sm font-bold">Nur der Sieger schaut in die Kamera. Keine Ergebniseingabe nötig.</p>
+                  <video ref={faceVideoRef} playsInline autoPlay muted className="w-full rounded-xl bg-black aspect-video object-cover scale-x-[-1]" />
+                  <p role="status" className="text-center text-sm text-orange-200">{faceMessage}</p>
+                  <button type="button" disabled={faceBusy} onClick={() => void captureFaceWinner()} className="w-full rounded-xl bg-orange-500 py-4 font-black disabled:opacity-50">{faceBusy ? "Erkennung läuft …" : "Kamera starten · 3–2–1"}</button>
+                  <button type="button" onClick={() => { stopFaceCamera(); setFaceMessage("") }} className="w-full rounded-xl border border-white/20 py-3">Zurück</button>
+                </div> : null}
+                <p className="text-center text-xs text-white/45">Alternativ kannst du das Ergebnis weiterhin mit PIN eingeben.</p>
+              </div>
+            ) : null}
             <p className="mt-4 text-center text-sm font-semibold text-white/40">
-              Einer der beiden Spieler gibt seine 4-stellige Terminal-PIN ein. Die PIN wird nur für dieses ausgewählte Match akzeptiert.
+              {selectedRunningMatch.faceWinnerEnabled ? "PIN-Alternative: Einer der Spieler gibt seine Terminal-PIN ein." : "Einer der beiden Spieler gibt seine 4-stellige Terminal-PIN ein. Die PIN wird nur für dieses ausgewählte Match akzeptiert."}
             </p>
 
             <div className="mt-5 flex justify-center gap-3">
