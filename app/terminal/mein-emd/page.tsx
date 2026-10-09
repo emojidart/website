@@ -830,7 +830,7 @@ export default function TerminalPersonalPage() {
             <h1 className="text-3xl font-black">Servus {activeMember.name}!</h1>
           </div>
           <p className="mt-5 text-sm text-white/60">Willkommen in deinem EMD-Gastprofil.</p>
-          <TerminalLink href="/terminal/face-id-labor?manage=1" label="Face ID Verwaltung öffnen" className="mt-5 flex min-h-16 items-center justify-center gap-3 rounded-2xl border border-orange-400/40 bg-orange-500/10 px-5 text-lg font-black text-orange-100"><Camera className="h-6 w-6" /> Face ID verwalten · PIN/Muster erforderlich</TerminalLink>
+          <span onClick={() => { try { sessionStorage.setItem("emd_face_manage_self", JSON.stringify({name:activeMember?.name, playerId:activeMember?.playerId, kind:activeMember?.identityKind, at:Date.now()})) } catch {} }}><TerminalLink href="/terminal/face-id-labor?manage=1" label="Face ID Verwaltung öffnen" className="mt-5 flex min-h-16 items-center justify-center gap-3 rounded-2xl border border-orange-400/40 bg-orange-500/10 px-5 text-lg font-black text-orange-100"><Camera className="h-6 w-6" /> Face ID verwalten</TerminalLink></span>
           <button type="button" onClick={logoutPersonalArea} className="mt-6 rounded-xl bg-orange-500 px-6 py-3 font-bold">Abmelden</button>
         </section>
       </div>
@@ -1138,7 +1138,7 @@ export default function TerminalPersonalPage() {
               </div>
 
               {faceProtected && <button type="button" onClick={() => setUnlockOpen(true)} className="mt-5 flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl border border-orange-400/40 bg-orange-500/15 px-5 text-lg font-black text-orange-100"><KeyRound className="h-6 w-6" /> Geschützte Funktionen öffnen</button>}
-              <TerminalLink href="/terminal/face-id-labor?manage=1" label="Face ID Verwaltung öffnen" className="mt-5 flex min-h-16 items-center justify-center gap-3 rounded-2xl border border-orange-400/40 bg-orange-500/10 px-5 text-lg font-black text-orange-100"><Camera className="h-6 w-6" /> Face ID verwalten · PIN/Muster erforderlich</TerminalLink>
+              <span onClick={() => { try { sessionStorage.setItem("emd_face_manage_self", JSON.stringify({name:activeMember?.name, playerId:activeMember?.playerId, kind:activeMember?.identityKind, at:Date.now()})) } catch {} }}><TerminalLink href="/terminal/face-id-labor?manage=1" label="Face ID Verwaltung öffnen" className="mt-5 flex min-h-16 items-center justify-center gap-3 rounded-2xl border border-orange-400/40 bg-orange-500/10 px-5 text-lg font-black text-orange-100"><Camera className="h-6 w-6" /> Face ID verwalten</TerminalLink></span>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <button

@@ -33,6 +33,7 @@ type Props = {
   onCancel?: () => void
   compact?: boolean
   initialIdentity?: TerminalIdentity | null
+  lockIdentity?: boolean
 }
 
 export default function TerminalIdentityAuth({
@@ -43,6 +44,7 @@ export default function TerminalIdentityAuth({
   onCancel,
   compact = false,
   initialIdentity = null,
+  lockIdentity = false,
 }: Props) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<TerminalIdentity[]>([])
@@ -164,13 +166,13 @@ export default function TerminalIdentityAuth({
   if (selected) {
     return (
       <div className={`mx-auto w-full ${compact ? "max-w-2xl" : "max-w-4xl"}`}>
-        <button
+        {!lockIdentity && <button
           type="button"
           onClick={resetSelection}
           className="mb-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-white/50"
         >
           <ArrowLeft className="h-4 w-4" /> Anderes Profil
-        </button>
+        </button>}
 
         <div className="rounded-[34px] border border-orange-300/20 bg-black/35 p-6 backdrop-blur-2xl sm:p-8">
           <div className="flex items-center gap-4">
