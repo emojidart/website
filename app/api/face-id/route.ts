@@ -44,7 +44,30 @@ export async function GET(req: NextRequest) {
   } catch { return reply("Face-ID-Datenbank nicht verfügbar.",503); }
 }
 export async function POST(req: NextRequest) {
-  if (req.headers.get("origin") && new URL(req.headers.get("origin")!).host !== req.nextUrl.host) return reply("Nicht erlaubt.",403);
+  // Netlify can expose an internal req.nextUrl.host that differs from the public site.
+  // Permit only exact HTTPS site origins from trusted deployment configuration / request host.
+  const originHeader = req.headers.get("origin");
+  if (originHeader) {
+    let origin: URL;
+    try { origin = new URL(originHeader); } catch { return reply("Nicht erlaubt.", 403); }
+    const allowedHosts = new Set<string>();
+    const addHost = (value?: string | null) => {
+      if (!value) return;
+      try { allowedHosts.add(new URL(value).host.toLowerCase()); }
+      catch { /* Ignore malformed deployment configuration. */ }
+    };
+    addHost(process.env.URL);
+    addHost(process.env.DEPLOY_PRIME_URL);
+    addHost(process.env.NEXT_PUBLIC_SITE_URL);
+    addHost(process.env.NEXT_PUBLIC_APP_URL);
+    // For requests served under a custom domain, Netlify forwards the external host.
+    const host = req.headers.get("host")?.toLowerCase();
+    if (host) allowedHosts.add(host);
+    const forwardedHost = req.headers.get("x-forwarded-host")?.toLowerCase();
+    if (forwardedHost && host === forwardedHost) allowedHosts.add(forwardedHost);
+    if (origin.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && origin.protocol === "http:")) return reply("Nicht erlaubt.",403);
+    if (!allowedHosts.has(origin.host.toLowerCase())) return reply("Nicht erlaubt.",403);
+  }
   const body = await req.json().catch(()=>null);
   if (!body || typeof body.action !== "string") return reply("Ungültige Anfrage.");
   if(rateLimit(req,body.action === "match")) return reply("Zu viele Versuche.",429);
