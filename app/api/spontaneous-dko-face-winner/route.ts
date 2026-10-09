@@ -11,6 +11,28 @@ const json = (payload: object, status = 200) => NextResponse.json(payload, { sta
 const validVector = (v: unknown): v is number[] => Array.isArray(v) && v.length === 128 && v.every(x => typeof x === "number" && Number.isFinite(x) && Math.abs(x) < 10);
 const d = (a: number[], b: number[]) => Math.sqrt(a.reduce((s, x, i) => s + (x - b[i]) ** 2, 0));
 
+// Keine personenbezogenen Daten oder Gesichtsmuster ausliefern. Die Liste
+// enthält nur aktive, für Face-ID geeignete DKO-Turnierkennungen.
+export async function GET() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return json({ eligible: [] }, 503);
+  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: statuses, error } = await db.from("tournaments_status")
+    .select("tournament_id,tournament_type,central_event_id,series_id,series_event_id")
+    .eq("status", "active");
+  if (error) return json({ eligible: [] }, 503);
+  const possible = (statuses || []).filter(row => /^\d+er_dko$/.test(String(row.tournament_type)) && !row.series_id && !row.series_event_id);
+  const eventIds = [...new Set(possible.map(row => row.central_event_id).filter(Boolean))];
+  let spontaneous = new Set<string>();
+  if (eventIds.length) {
+    const { data: events, error: eventError } = await db.from("central_tournament_events")
+      .select("id,is_spontaneous").in("id", eventIds);
+    if (eventError) return json({ eligible: [] }, 503);
+    spontaneous = new Set((events || []).filter(e => e.is_spontaneous === true).map(e => String(e.id)));
+  }
+  return json({ eligible: possible.filter(row => !row.central_event_id || spontaneous.has(String(row.central_event_id)))
+    .map(row => `${row.tournament_type}:${row.tournament_id}`) });
+}
+
 export async function POST(req: NextRequest) {
   // Same-origin kiosk endpoint. Server checks all match permissions independently of client UI.
   const origin = req.headers.get("origin");

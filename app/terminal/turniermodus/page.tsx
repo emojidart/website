@@ -223,14 +223,23 @@ export default function TerminalTournamentModePage() {
         return
       }
 
-      const centralIds = Array.from(new Set((data || []).map((row: any) => row.central_event_id).filter(Boolean)))
-      const { data: centralEvents } = centralIds.length
-        ? await supabase.from("central_tournament_events").select("id,is_spontaneous").in("id", centralIds)
-        : { data: [] as any[] }
-      const spontaneousEvents = new Set((centralEvents || []).filter((e: any) => e.is_spontaneous === true).map((e: any) => String(e.id)))
-      const faceEligibleKeys = new Set((data || []).filter((row: any) =>
-        /^\d+er_dko$/.test(String(row.tournament_type)) && !row.series_id && !row.series_event_id && (!row.central_event_id || spontaneousEvents.has(String(row.central_event_id)))
-      ).map((row: any) => `${row.tournament_type}:${row.tournament_id}`))
+      // Face-ID-Freigabe serverseitig ermitteln: die Browser-RLS-Regeln können
+      // central_tournament_events.is_spontaneous ausblenden, obwohl das Event spontan ist.
+      // Der Server prüft bei jedem tatsächlichen Sieger-POST noch einmal unabhängig.
+      let faceEligibleKeys = new Set<string>()
+      try {
+        const eligibleResponse = await fetch("/api/spontaneous-dko-face-winner", {
+          method: "GET", cache: "no-store",
+        })
+        if (eligibleResponse.ok) {
+          const eligiblePayload = await eligibleResponse.json()
+          faceEligibleKeys = new Set<string>(
+            Array.isArray(eligiblePayload?.eligible) ? eligiblePayload.eligible.filter((x: unknown): x is string => typeof x === "string") : [],
+          )
+        }
+      } catch {
+        // Ausfallsicher: keine Face-ID-Freigabe ohne positive Serverantwort.
+      }
 
       const ids = Array.from(
         new Set(
