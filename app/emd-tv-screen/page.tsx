@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { CalendarDays, Clock3, MapPin, Play, Sparkles, Trophy, Tv2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import EmdLiveAnnouncementDisplay from "@/components/emd-live-announcement-display"
 import LineupDisplay from "@/components/emd-tv/lineup-display"
 import BirthdayTv from "@/components/emd-tv/birthday-tv"
 import TodayTv from "@/components/emd-tv/today-tv"
@@ -876,6 +877,7 @@ export default function EmdTvScreenPage() {
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#030303] text-white" onClick={tryFullscreen}>
+      <EmdLiveAnnouncementDisplay tv />
       <div className="absolute inset-x-0 top-0 z-[80] flex h-[72px] items-center justify-between border-b border-white/[.06] bg-black/90 px-[3.2vw] shadow-[0_8px_30px_rgba(0,0,0,.35)]">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5">
@@ -898,7 +900,7 @@ export default function EmdTvScreenPage() {
 
       <div className="absolute inset-x-0 bottom-0 top-[72px] overflow-hidden">
         {active.dko || active.kratzer || (Boolean(active.survivalId) || Boolean(active.survivalSingleId)) ? (
-          <iframe key={!active.dko && !active.kratzer ? (active.survivalId ? `survival-${active.survivalId}` : `survival-single-${active.survivalSingleId}`) : "standard-beamer"} src={active.dko || active.kratzer ? "/beamer" : active.survivalId ? `/survival-roulette/beamer?tournamentId=${encodeURIComponent(active.survivalId)}` : `/survival-einzel/beamer?tournamentId=${encodeURIComponent(active.survivalSingleId || "")}`} title="EMD TV Live" className="h-full w-full border-0 bg-black" allow="autoplay; fullscreen" allowFullScreen />
+          <iframe key={!active.dko && !active.kratzer ? (active.survivalId ? `survival-${active.survivalId}` : `survival-single-${active.survivalSingleId}`) : "standard-beamer"} src={active.dko || active.kratzer ? "/beamer?display=tv" : active.survivalId ? `/survival-roulette/beamer?tournamentId=${encodeURIComponent(active.survivalId)}` : `/survival-einzel/beamer?tournamentId=${encodeURIComponent(active.survivalSingleId || "")}`} title="EMD TV Live" className="h-full w-full border-0 bg-black" allow="autoplay; fullscreen" allowFullScreen />
         ) : brandBreak && loaded && assetsReady ? (
           <section className="absolute inset-0 overflow-hidden bg-[#030303]">
             <div className="absolute inset-0 bg-[url('/terminal/hero-startscreen.png')] bg-cover bg-center opacity-[.80]" />

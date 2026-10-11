@@ -2424,7 +2424,7 @@ const winnerName =
   matches[255].winner || (matches[254].winner === matches[254].player1 ? matches[254].winner : undefined)
 
 
-const openBeamer = () => {
+const openBeamer = async () => {
   if (!tournamentId) return
 
   const params = new URLSearchParams({
@@ -2433,12 +2433,24 @@ const openBeamer = () => {
     tournamentType,
   })
 
-  window.open(
-    `/128erdko/beamer?${params.toString()}`,
-    "dko-beamer-128",
-    "popup=yes,width=1600,height=900",
-  )
-}
+  const popup = window.open("", "dko-beamer", "popup=yes,width=1600,height=900")
+    let targetUrl = `/128erdko/beamer?${params.toString()}`
+    if (centralEventId) {
+      const { data: multiRuns, error: multiError } = await supabase
+        .from("tournaments_status")
+        .select("tournament_id,multi_dko_division")
+        .eq("central_event_id", centralEventId)
+        .eq("status", "active")
+        .in("multi_dko_division", ["herren", "damen"])
+      if (!multiError && multiRuns?.some(r => r.tournament_id === tournamentId) &&
+          multiRuns.some(r => r.multi_dko_division === "herren") &&
+          multiRuns.some(r => r.multi_dko_division === "damen")) {
+        targetUrl = `/beamer?centralEventId=${encodeURIComponent(centralEventId)}`
+      }
+    }
+    if (popup && !popup.closed) popup.location.href = targetUrl
+    else window.location.assign(targetUrl)
+  }
 
   if (loading) {
     return (
@@ -3154,18 +3166,33 @@ const openBeamer = () => {
         <DialogContent className="rounded-[26px] border border-white/10 bg-[#0b0e13]/98 text-white shadow-[0_35px_120px_-54px_rgba(0,0,0,.98)] backdrop-blur-2xl">
           <DialogHeader>
             <DialogTitle>Automat auswählen</DialogTitle>
-            <DialogDescription>Wähle einen verfügbaren Automaten für Match {selectedMatchId}</DialogDescription>
+            <DialogDescription>Grün = frei · Rot = belegt. Nur freie Automaten können ausgewählt werden. Match {selectedMatchId}</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-4 gap-2 py-4">
-            {availableMachines.length === 0 ? (
-              <p className="col-span-4 text-center text-muted-foreground">Keine Automaten verfügbar</p>
-            ) : (
-              availableMachines.map((num) => (
-                <Button key={num} onClick={() => assignMachine(num)} variant="outline" className="h-16 text-lg">
-                  {num}
-                </Button>
-              ))
-            )}
+          <div className="grid grid-cols-2 gap-2 py-4 sm:grid-cols-3">
+            {(multiMachinePool.allowed ?? Array.from({ length: totalMachines }, (_, i) => i + 1)).map((num) => {
+              const occupied = Object.values(matches).find((match) => match.machineNumber === num && !match.winner)
+              const free = !occupied && availableMachines.includes(num)
+              return (
+                <button
+                  key={num}
+                  type="button"
+                  disabled={!free}
+                  onClick={() => { if (free) void assignMachine(num) }}
+                  title={occupied ? `${occupied.player1 || "Spieler 1"} – ${occupied.player2 || "Spieler 2"}` : `Automat ${num} frei`}
+                  className={`min-h-[102px] rounded-2xl border p-3 text-left transition-colors ${free
+                    ? "border-emerald-500/40 bg-emerald-500/[0.10] hover:border-emerald-400 hover:bg-emerald-500/20"
+                    : "cursor-not-allowed border-rose-500/30 bg-rose-500/[0.08] opacity-80"}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xl font-black text-white">{num}</span>
+                    <span className={`text-[11px] font-bold ${free ? "text-emerald-300" : "text-rose-300"}`}>{free ? "● Frei" : "● Belegt"}</span>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs leading-snug text-white/60">
+                    {occupied ? `${occupied.player1 || "Spieler 1"} gegen ${occupied.player2 || "Spieler 2"}` : "Jetzt auswählen"}
+                  </p>
+                </button>
+              )
+            })}
           </div>
         </DialogContent>
       </Dialog>
