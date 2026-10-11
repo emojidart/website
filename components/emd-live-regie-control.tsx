@@ -17,10 +17,10 @@ const martinText = (a: Announcement, title: string) => {
   const minutes = Math.max(1, Math.ceil((Date.parse(a.ends_at) - Date.now()) / 60000))
   if (a.kind === "custom") return a.message || ""
   const suffix = minutes === 1 ? "einer Minute" : `${minutes} Minuten`
-  if (a.kind === "registration") return `Achtung, liebe Dartspieler! Der Anmeldeschluss ${part} für ${title} ist in ${suffix}. Bitte meldet euch rechtzeitig an!`
-  if (a.kind === "start") return `Achtung, liebe Dartfreunde! Das Turnier ${part} beginnt in ${suffix}. Bitte macht euch bereit!`
-  if (a.kind === "final") return `Liebe Dartfans! Das Finale ${part} beginnt in ${suffix}.`
-  return `Liebe Dartspieler! Die Siegerehrung beginnt in ${suffix}. Bitte haltet euch bereit!`
+  if (a.kind === "registration") return `Der Anmeldeschluss ${part} für ${title} ist in ${suffix}. Bitte meldet euch rechtzeitig an!`
+  if (a.kind === "start") return `Das Turnier ${part} beginnt in ${suffix}. Bitte macht euch bereit!`
+  if (a.kind === "final") return `Das Finale ${part} beginnt in ${suffix}.`
+  return `Die Siegerehrung beginnt in ${suffix}. Bitte haltet euch bereit!`
 }
 
 // Nur das Martin-Steuerfenster am Vereins-PC spielt Ton ab.
