@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
-// Genau wie Doppel: hinterlegte Martin-Aussprache aus der Spielerdatenbank.
+// Genau wie Doppel: hinterlegte NERO-Aussprache aus der Spielerdatenbank.
 const pronunciation = new Map<string, string>()
 let pronunciationLoading: Promise<void> | null = null
 async function loadPronunciation(): Promise<void> {
@@ -26,7 +26,7 @@ function spoken(name: string): string {
   return pronunciation.get(name.trim().toLocaleLowerCase("de")) || name
 }
 
-// Bereitet dieselbe Einzel-Ansage ohne Ton im Martin-Servercache vor.
+// Bereitet dieselbe Einzel-Ansage ohne Ton im NERO-Servercache vor.
 // Ein Fehler beim Vorladen darf niemals die Turnierleitung blockieren.
 export function prefetchSurvivalSingleMartin(
   players: string[],
@@ -47,7 +47,7 @@ export function prefetchSurvivalSingleMartin(
       prefetch: true,
     }),
   }).then((response) => {
-    if (!response.ok) throw new Error(`Martin-Vorladen HTTP ${response.status}`)
+    if (!response.ok) throw new Error(`NERO-Vorladen HTTP ${response.status}`)
     return response.blob()
   })).catch((error) => {
     console.warn("[EMD Martin Einzel] Vorladen nicht möglich:", error)
@@ -100,7 +100,7 @@ export function SurvivalSingleMartin({request,onHandled,onEnabledChange}:{reques
           method:"POST",headers:{"Content-Type":"application/json"},
           body:JSON.stringify({player1:spoken(players[0]),player2:spoken(players[1]),machine,call,speed:1})
         })
-        if(!response.ok){const detail=await response.json().catch(()=>null);throw new Error(detail?.error||`Martin HTTP ${response.status}`)}
+        if(!response.ok){const detail=await response.json().catch(()=>null);throw new Error(detail?.error||`NERO HTTP ${response.status}`)}
         const audio=await response.blob()
         if(cancelled)return
         url=URL.createObjectURL(audio)
@@ -132,8 +132,8 @@ export function SurvivalSingleMartin({request,onHandled,onEnabledChange}:{reques
 
   return <>
     <div className="rounded-xl border border-orange-500/20 bg-[#15100d] px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
-      <div><p className="text-sm font-extrabold text-orange-200">🎤 EMD Martin · Einzel Roulette</p><p className="text-xs text-zinc-400 mt-1">Ansagen bei Automatenzuweisung automatisch, wenn Martin eingeschaltet ist.</p></div>
-      <label className="text-sm font-bold flex items-center gap-2"><input type="checkbox" checked={enabled} disabled={busy} onChange={e=>{setEnabled(e.target.checked);onEnabledChange?.(e.target.checked);localStorage.setItem("emd_survival_martin_enabled",String(e.target.checked))}}/>Martin {enabled?"EIN":"AUS"}</label>
+      <div><p className="text-sm font-extrabold text-orange-200">🎤 EMD NERO · Einzel Roulette</p><p className="text-xs text-zinc-400 mt-1">Ansagen bei Automatenzuweisung automatisch, wenn NERO eingeschaltet ist.</p></div>
+      <label className="text-sm font-bold flex items-center gap-2"><input type="checkbox" checked={enabled} disabled={busy} onChange={e=>{setEnabled(e.target.checked);onEnabledChange?.(e.target.checked);localStorage.setItem("emd_survival_martin_enabled",String(e.target.checked))}}/>NERO {enabled?"EIN":"AUS"}</label>
     </div>
     {phase&&<div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-[9999] w-[min(355px,calc(100vw-40px))] rounded-[18px] border border-orange-400/40 bg-slate-900 px-[18px] py-[17px] text-white shadow-2xl pointer-events-none">
       <div className="flex items-center gap-2 text-xs font-extrabold tracking-widest text-orange-300">
@@ -143,7 +143,7 @@ export function SurvivalSingleMartin({request,onHandled,onEnabledChange}:{reques
           {[12,19,14,21].map((height,index)=><span key={index} className={`w-1 rounded-full bg-orange-400 ${phase==="playing"?"animate-pulse":""}`} style={{height}} />)}
         </span>
       </div>
-      <div className="mt-2 text-base font-black">{phase==="preparing"?"Ansage wird vorbereitet …":phase==="playing"?"Martin spricht 🎤":phase==="done"?"Ansage beendet ✓":"Martin nicht erreichbar"}</div>
+      <div className="mt-2 text-base font-black">{phase==="preparing"?"Ansage wird vorbereitet …":phase==="playing"?"NERO spricht 🎤":phase==="done"?"Ansage beendet ✓":"NERO nicht erreichbar"}</div>
       <div className="mt-1 text-sm text-slate-200">{playersLabel}</div>
       <div className="mt-1 text-xs text-slate-400">{details}</div>
     </div>}

@@ -138,7 +138,7 @@ export function BoardComponent({
 
         {speechEnabled && board.players.length > 0 && (
           <div className="mb-4 rounded-2xl border border-orange-400/20 bg-orange-500/[0.06] p-3">
-            <div className="mb-2 text-xs font-bold text-orange-200">🎤 Martin · Gruppenaufruf</div>
+            <div className="mb-2 text-xs font-bold text-orange-200">🎤 NERO · Gruppenaufruf</div>
             <Button
               type="button"
               variant="outline"
