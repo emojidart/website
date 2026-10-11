@@ -26,6 +26,8 @@ import { SpieldatenbankForm } from "@/app/admin/_komponenten/turniere/spieldaten
 import styles from "@/app/dko_tournament_registration/tournament-admin-theme.module.css"
 import { EinzelturnierEinstellungen } from "./einzelturnier-einstellungen"
 import { EinzelturnierSpieler } from "./einzelturnier-spieler"
+import { MultiDkoZuordnung } from "./multi-dko-zuordnung"
+import { MultiDkoSchnellwechsel } from "./multi-dko-schnellwechsel"
 import { EinzelturnierZahlungDialoge } from "./einzelturnier-zahlung-dialoge"
 import { EinzelturnierStart } from "./einzelturnier-start"
 import { buildTournamentContinueRoute } from "./einzelturnier-engine"
@@ -623,6 +625,25 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
         />
         ) : null}
 
+        <MultiDkoSchnellwechsel centralEventId={centralEventId} eventId={eventId} seriesId={seriesId} />
+
+        {!activeTournament && !doubleMode && tournamentMode === "dko" && (
+          <div className="space-y-2">
+            {!centralEventId && (
+              <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-xs font-semibold text-amber-200">
+                Keine zentrale Veranstaltungs-ID in der URL erkannt. Die Herren-/Damen-Einteilung ist hier sichtbar,
+                wird aber nur lokal gespeichert. Für Steinlechner bitte die Veranstaltung über die Turnier-Zentrale
+                mit centralEventId öffnen, damit Supabase-Speicherung und Vorbereitung verfügbar sind.
+              </div>
+            )}
+            <MultiDkoZuordnung
+              eventKey={centralEventId ?? eventId ?? `spontan:${tournamentName || "dko"}`}
+              centralEventId={centralEventId}
+              players={registeredPlayers}
+            />
+          </div>
+        )}
+
         <EinzelturnierStart
           activeTournament={activeTournament}
           showCancelDialog={showCancelActiveTournamentDialog}
@@ -645,6 +666,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
         />
 
         {!activeTournament ? (
+          <>
         <EinzelturnierSpieler
           loading={loading}
           playerViewMode={playerViewMode}
@@ -680,6 +702,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
           onTogglePaymentStatus={togglePaymentStatus}
           onUnregisterPlayer={handleUnregisterPlayer}
         />
+          </>
         ) : null}
         </div>
       </div>

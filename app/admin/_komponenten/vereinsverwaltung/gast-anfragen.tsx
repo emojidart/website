@@ -54,6 +54,8 @@ type ClubPlayerLink = {
   id: string
   name: string
   spieldatenbank_id: string | null
+  auth_user_id: string | null
+  user_id: string | null
 }
 
 type GuestMemberStatus = {
@@ -61,6 +63,10 @@ type GuestMemberStatus = {
   club_player_id: string
   club_player_name: string
   spieldatenbank_id: string
+}
+
+function normalizeMemberName(name: string | null | undefined) {
+  return (name || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("de-AT")
 }
 
 function getStatusLabel(status: string) {
@@ -167,8 +173,7 @@ export function GuestRequestsManagement() {
   const loadClubLinks = async () => {
     const { data, error } = await supabase
       .from("club_players")
-      .select("id,name,spieldatenbank_id")
-      .not("spieldatenbank_id", "is", null)
+      .select("id,name,spieldatenbank_id,auth_user_id,user_id")
 
     if (error) {
       console.error(error)
@@ -245,6 +250,14 @@ export function GuestRequestsManagement() {
 
     return map
   }, [guestMemberStatuses])
+
+  // A name match is only a candidate, never proof that the login belongs to the member.
+  const getPossibleClubMember = (request: GuestRequest) => {
+    const key = normalizeMemberName(request.full_name)
+    if (!key) return null
+    const matches = clubLinks.filter((member) => normalizeMemberName(member.name) === key)
+    return matches.length === 1 ? matches[0] : null
+  }
 
   const getMemberStatus = (request: GuestRequest) => {
     return guestMemberStatusByRequestId.get(request.id) || null
@@ -667,9 +680,11 @@ export function GuestRequestsManagement() {
             const linkedPlayer = getLinkedPlayer(request.linked_spieldatenbank_id)
             const memberStatus = getMemberStatus(request)
             const isNowClubMember = Boolean(memberStatus)
+            const possibleClubMember = !isNowClubMember ? getPossibleClubMember(request) : null
             const isEditingLink = Boolean(editingLinkByRequestId[request.id])
             const canLinkPlayer =
               !isNowClubMember &&
+              !possibleClubMember &&
               request.status === "approved" &&
               (!linkedPlayer || isEditingLink)
             const filteredPlayers = getFilteredPlayers(request)
@@ -701,6 +716,11 @@ export function GuestRequestsManagement() {
                               Über Mitgliedskonto verknüpft
                             </Badge>
                           </>
+                        ) : possibleClubMember ? (
+                          <Badge variant="outline" className="border-amber-300/20 bg-amber-500/10 text-amber-200">
+                            <ShieldAlert className="mr-1 h-3 w-3" />
+                            Mitglied vorhanden – Konto prüfen
+                          </Badge>
                         ) : linkedPlayer ? (
                           <Badge variant="outline" className="border-emerald-300/20 bg-emerald-500/10 text-emerald-200">
                             <LinkIcon className="mr-1 h-3 w-3" />
@@ -775,6 +795,22 @@ export function GuestRequestsManagement() {
                       </button>
                     </div>
                   </div>
+
+                  {possibleClubMember ? (
+                    <div className="mt-4 flex items-start gap-3 border-t border-[#202731] pt-4">
+                      <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-200" />
+                      <div>
+                        <div className="text-sm font-black text-amber-100">Bestehenden Mitgliedsdatensatz prüfen</div>
+                        <div className="mt-1 text-xs font-semibold leading-5 text-white/50">
+                          In der Vereinsverwaltung existiert bereits „{possibleClubMember.name}“.
+                          Der gleiche Name beweist noch keine Kontoverknüpfung. Bitte die Identität
+                          prüfen und den Gast-Login dem bestehenden Mitgliedskonto zuordnen.
+                          Keinen zweiten Spieler anlegen. Die normale Gast-Spieler-Zuordnung
+                          ist hierfür absichtlich gesperrt.
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
 
                   {isNowClubMember && memberStatus ? (
                     <div className="mt-4 flex items-start gap-3 border-t border-[#202731] pt-4">
