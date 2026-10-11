@@ -6,7 +6,7 @@ import { Header } from "@/components/header"
 import LiveDKOSection from "@/components/live-dko-section"
 import LiveKratzerSection from "@/components/live-kratzer-section"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { Trophy } from "lucide-react"
+import { Trophy, Radio } from "lucide-react"
 import { motion } from "framer-motion"
 
 const containerVariants = {
@@ -39,74 +39,35 @@ return (
         <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:68px_68px]" />
       </div>
 
-      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-[1500px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <motion.div
           className="w-full"
           variants={containerVariants}
           initial={false}
           animate="visible"
         >
-          {/* App Header Card */}
-          <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
-              <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-400/15 blur-[110px]" />
-              <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
-              <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
-                    <Trophy className="h-6 w-6 text-orange-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55 backdrop-blur-xl"><span className="h-2 w-2 rounded-full bg-orange-400" />Turniere · Live</div>
-                    <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
-                      Live Turniere
-                    </h1>
-                    <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">
-                      Verfolge alle aktiven Turniere in Echtzeit.
-                    </p>
-                  </div>
-                </div>
+          <motion.section variants={itemVariants} className="mb-4 sm:mb-5">
+            <div className="flex items-center gap-3 rounded-[20px] border border-white/10 bg-[#101620]/95 px-4 py-4 shadow-[0_16px_50px_-38px_rgba(0,0,0,.9)] sm:px-6 sm:py-5">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-orange-400/20 bg-orange-400/10">
+                <Radio className="h-5 w-5 text-orange-400" />
               </div>
-            </section>
-          </motion.div>
-
-          {/* Tabs Card */}
-          <motion.div variants={itemVariants}>
-            <div className="overflow-hidden rounded-[26px] border border-white/10 bg-black/30 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[30px]">
-              <div className="p-4 sm:p-5">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full max-w-xl grid-cols-2 rounded-[18px] border border-white/10 bg-white/5 p-1.5">
-                    <TabsTrigger
-                      value="dko"
-                      className="rounded-xl px-3 py-2.5 text-xs font-black text-white/45 transition data-[state=active]:bg-orange-400 data-[state=active]:text-white data-[state=active]:shadow-sm sm:text-sm"
-                    >
-                      DKO Turniere
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="kratzer"
-                      className="rounded-xl px-3 py-2.5 text-xs font-black text-white/45 transition data-[state=active]:bg-orange-400 data-[state=active]:text-white data-[state=active]:shadow-sm sm:text-sm"
-                    >
-                      Kratzer Turniere
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <div className="mt-4">
-                    <TabsContent value="dko" className="mt-0">
-                      <div className="rounded-[22px] border border-white/10 bg-white/5 p-2 sm:p-4 ">
-                        <LiveDKOSection />
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="kratzer" className="mt-0">
-                      <div className="rounded-[22px] border border-white/10 bg-white/5 p-2 sm:p-4 ">
-                        <LiveKratzerSection />
-                      </div>
-                    </TabsContent>
-                  </div>
-                </Tabs>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-extrabold uppercase tracking-[.17em] text-orange-300">EMD · Live Center</p>
+                <h1 className="mt-0.5 text-[clamp(20px,3vw,32px)] font-black tracking-[-.04em] text-white">Live Turniere</h1>
               </div>
+              <span className="shrink-0 rounded-lg border border-emerald-400/20 bg-emerald-400/[.08] px-2.5 py-1 text-[10px] font-extrabold text-emerald-300">● LIVE</span>
             </div>
+          </motion.section>
+
+          <motion.div variants={itemVariants}>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-xl border border-white/10 bg-[#101620] p-1.5 sm:max-w-[460px]">
+                <TabsTrigger value="dko" className="min-h-11 rounded-lg px-2 py-2.5 text-[13px] font-extrabold text-slate-400 data-[state=active]:bg-orange-500 data-[state=active]:text-white">Doppel-KO</TabsTrigger>
+                <TabsTrigger value="kratzer" className="min-h-11 rounded-lg px-2 py-2.5 text-[13px] font-extrabold text-slate-400 data-[state=active]:bg-orange-500 data-[state=active]:text-white">Kratzer</TabsTrigger>
+              </TabsList>
+              <TabsContent value="dko" className="mt-4"><LiveDKOSection /></TabsContent>
+              <TabsContent value="kratzer" className="mt-4"><LiveKratzerSection /></TabsContent>
+            </Tabs>
           </motion.div>
         </motion.div>
       </main>

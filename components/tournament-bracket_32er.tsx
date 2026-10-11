@@ -1,5 +1,9 @@
 "use client"
 
+import { finishCentralMultiDkoRun, isPreparedMultiDkoRun } from "@/lib/emd-multi-dko-lifecycle"
+import { useMultiDkoMachinePool } from "@/lib/emd-multi-dko-machine-pool"
+import { EmdMultiDkoQuickSwitch } from "@/components/emd-multi-dko-quick-switch"
+
 import { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -650,11 +654,16 @@ const markTournamentAsCompleted = async (tournamentId: string, centralEventId?: 
     if (error) throw error
 
     if (centralEventId) {
-      const { error: centralEventError } = await supabase
-        .from("central_tournament_events")
-        .update({ status: "completed", updated_at: new Date().toISOString() })
-        .eq("id", centralEventId)
-      if (centralEventError) throw centralEventError
+      // Isolierte Multi-DKO-Läufe beenden nur den eigenen Lauf; die Zentrale
+      // wird erst abgeschlossen, wenn kein zweiter aktiver Lauf übrig ist.
+      const handled = await finishCentralMultiDkoRun(tournamentId, centralEventId, "completed")
+      if (!handled) {
+        const { error: centralEventError } = await supabase
+          .from("central_tournament_events")
+          .update({ status: "completed", updated_at: new Date().toISOString() })
+          .eq("id", centralEventId)
+        if (centralEventError) throw centralEventError
+      }
     }
 
     console.log(`[v0] Tournament marked as completed successfully`)
@@ -688,6 +697,7 @@ const isRemoteUpdateRef = useRef(false)
   const [tournamentId, setTournamentId] = useState<string>("")
   const [tournamentName, setTournamentName] = useState<string>("")
   const [totalMachines, setTotalMachines] = useState<number>(10)
+  const multiMachinePool = useMultiDkoMachinePool(tournamentId)
   const [machineDialogOpen, setMachineDialogOpen] = useState(false)
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -1030,7 +1040,7 @@ useEffect(() => {
   // leise vorab laden. Keine Aenderungen an Turnier- oder Speicherlogik.
   useEffect(() => {
     if (!announcementsEnabled || loading || !tournamentId) return
-    const freeMachine = Array.from({ length: totalMachines }, (_, i) => i + 1)
+    const freeMachine = (multiMachinePool.allowed ?? Array.from({ length: totalMachines }, (_, i) => i + 1))
       .find(machine => !Object.values(matches).some(m => m.machineNumber === machine && !m.winner))
     if (!freeMachine) return
     Object.values(matches)
@@ -1055,7 +1065,7 @@ useEffect(() => {
       .filter((m) => m.machineNumber !== undefined && !m.winner)
       .map((m) => m.machineNumber!)
 
-    return Array.from({ length: totalMachines }, (_, i) => i + 1).filter((num) => !usedMachines.includes(num))
+    return (multiMachinePool.allowed ?? Array.from({ length: totalMachines }, (_, i) => i + 1)).filter((num) => !usedMachines.includes(num))
   }
 
   const fetchRankings = async () => {
@@ -1616,6 +1626,10 @@ if (!rankingsRebuilt) {
   
 
 const assignMachine = async (machineNumber: number) => {
+    if (multiMachinePool.isMulti && (!multiMachinePool.ready || !multiMachinePool.allowed?.includes(machineNumber))) {
+      alert("Dieser Automat ist für dieses DKO nicht freigegeben. Bitte Einstellungen prüfen.")
+      return
+    }
   if (selectedMatchId === null) return
   if (!tournamentId) return
 
@@ -2000,16 +2014,21 @@ const confirmMatch = async (matchId: number) => {
     await deleteRankingsFromDatabase(tournamentType, tournamentId)
     await deleteFreiloseFromDatabase(tournamentType, tournamentId)
     // Bei Serien-Abbruch bleiben die Voranmeldungen erhalten, damit derselbe Spieltag sauber neu gestartet werden kann.
-    if (!seriesId && !eventId) {
+    const preparedMultiDko = await isPreparedMultiDkoRun(tournamentId)
+    if (!seriesId && !eventId && !preparedMultiDko) {
       await clearTournamentRegistration(seriesId, eventId)
     }
     if (centralEventId) {
-      const { error: centralEventError } = await supabase
-        .from("central_tournament_events")
-        .update({ status: "cancelled", updated_at: new Date().toISOString() })
-        .eq("id", centralEventId)
-      if (centralEventError) {
-        console.error("Fehler beim Zurücksetzen des Zentral-Turniers:", centralEventError)
+      if (preparedMultiDko) {
+        await finishCentralMultiDkoRun(tournamentId, centralEventId, "cancelled")
+      } else {
+        const { error: centralEventError } = await supabase
+          .from("central_tournament_events")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .eq("id", centralEventId)
+        if (centralEventError) {
+          console.error("Fehler beim Zurücksetzen des Zentral-Turniers:", centralEventError)
+        }
       }
     }
     try {
@@ -2342,19 +2361,35 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
         }
 
         console.log("[v0] No saved state found - initializing new tournament")
-
-        const { error: statusError } = await supabase.from("tournaments_status").insert({
-          tournament_id: currentTournamentId,
-          tournament_type: tournamentType,
-          tournament_name: urlTournamentName ? decodeURIComponent(urlTournamentName) : "Unbenanntes Turnier",
-          status: "active",
-          central_event_id: centralEventId || null,
-          series_id: seriesId || null,
-          series_event_id: eventId || null,
-        })
-
-        if (statusError && statusError.code !== "23505") {
-          console.error("[v0] Error creating tournament status:", statusError)
+        // Ein vorbereitetes Multi-DKO wurde bereits atomar durch die Zentrale
+        // in tournaments_status gestartet. Die Engine darf keinen zweiten,
+        // unmarkierten Normalturnier-Eintrag erzeugen.
+        const multiDkoPrepared = await isPreparedMultiDkoRun(currentTournamentId)
+        if (multiDkoPrepared) {
+          const { data: runningRun, error: runningRunError } = await supabase
+            .from("tournaments_status")
+            .select("tournament_id,status,central_event_id,multi_dko_division")
+            .eq("tournament_id", currentTournamentId)
+            .eq("status", "active")
+            .maybeSingle()
+          if (runningRunError || !runningRun ||
+              runningRun.central_event_id !== centralEventId ||
+              !["herren", "damen"].includes(runningRun.multi_dko_division || "")) {
+            throw new Error("Multi-DKO-Startstatus fehlt oder passt nicht. Bitte zurück zur Turnierzentrale; kein neuer Start wurde angelegt.")
+          }
+        } else {
+          const { error: statusError } = await supabase.from("tournaments_status").insert({
+            tournament_id: currentTournamentId,
+            tournament_type: tournamentType,
+            tournament_name: urlTournamentName ? decodeURIComponent(urlTournamentName) : "Unbenanntes Turnier",
+            status: "active",
+            central_event_id: centralEventId || null,
+            series_id: seriesId || null,
+            series_event_id: eventId || null,
+          })
+          if (statusError && statusError.code !== "23505") {
+            console.error("[v0] Error creating tournament status:", statusError)
+          }
         }
 
         let registrationQuery = supabase
@@ -2366,7 +2401,30 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
         else if (seriesId) registrationQuery = registrationQuery.eq("series_id", seriesId)
         else registrationQuery = registrationQuery.is("event_id", null).is("series_id", null)
 
-        const { data, error } = await registrationQuery
+        // Multi-DKO: Pro Turnier-ID eingefrorene Teilnehmerliste bevorzugen.
+        // Ohne Snapshot bleibt der bisherige Einzel-DKO-Start 1:1 unverändert.
+        const { data: isolatedRoster, error: isolatedRosterError } = await supabase
+          .from("emd_dko_run_players")
+          .select("player_name")
+          .eq("tournament_id", currentTournamentId)
+          .order("seed_order", { ascending: true })
+
+        if (isolatedRosterError) throw isolatedRosterError
+
+        // Nur ein explizit vorbereiteter Lauf darf die isolierte Liste verwenden.
+        // Leere vorbereitete Läufe dürfen NIEMALS auf alle Teilnehmer zurückfallen.
+        const { data: preparedRun, error: preparedRunError } = await supabase
+          .from("emd_dko_prepared_runs")
+          .select("tournament_id")
+          .eq("tournament_id", currentTournamentId)
+          .maybeSingle()
+        if (preparedRunError) throw preparedRunError
+        if (preparedRun && !isolatedRoster?.length) {
+          throw new Error("Dieser Multi-DKO-Lauf hat keine Teilnehmerliste. Start aus Sicherheitsgründen gestoppt.")
+        }
+        const { data, error } = preparedRun
+          ? { data: isolatedRoster, error: null }
+          : await registrationQuery
 
         if (error) throw error
 
@@ -2492,6 +2550,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <EmdMultiDkoQuickSwitch tournamentId={tournamentId} centralEventId={centralEventId} />
             <label className="flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700">
               <input
                 type="checkbox"

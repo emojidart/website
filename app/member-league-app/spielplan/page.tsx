@@ -4039,22 +4039,16 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-1.5 sm:min-w-[260px]">
+                          <div className="grid grid-cols-2 gap-1.5 sm:min-w-[200px]">
                             <div className="rounded-xl border border-white/[0.07] bg-black/20 px-2 py-2 text-center">
-                              <div className="text-[9px] font-black uppercase text-white/30">Spiele</div>
-                              <div className="mt-0.5 text-sm font-black text-white">{player.singlesPlayed}</div>
+                              <div className="text-[9px] font-black uppercase text-white/30">Checks gemacht</div>
+                              <div className="mt-0.5 text-sm font-black text-white">{player.checksMade ?? "–"}</div>
                             </div>
                             <div className="rounded-xl border border-white/[0.07] bg-black/20 px-2 py-2 text-center">
-                              <div className="text-[9px] font-black uppercase text-white/30">Legs</div>
-                              <div className="mt-0.5 text-sm font-black text-white">
-                                {player.legsWon}:{player.legsLost}
-                              </div>
-                            </div>
-                            <div className="rounded-xl border border-white/[0.07] bg-black/20 px-2 py-2 text-center">
-                              <div className="text-[9px] font-black uppercase text-white/30">Checks</div>
+                              <div className="text-[9px] font-black uppercase text-white/30">Checks verloren</div>
                               <div className="mt-0.5 text-sm font-black text-white">
                                 {player.checksMade != null && player.checksTotal != null
-                                  ? `${player.checksMade}/${player.checksTotal}`
+                                  ? Math.max(0, player.checksTotal - player.checksMade)
                                   : "–"}
                               </div>
                             </div>

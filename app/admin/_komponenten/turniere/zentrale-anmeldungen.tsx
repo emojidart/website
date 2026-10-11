@@ -248,6 +248,26 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
   const [selectedEventId, setSelectedEventId] = useState("")
   const [activeTab, setActiveTab] = useState<"planned" | "today" | "past" | "event">("planned")
+  // Multi-DKO bleibt optional und ist pro Veranstaltung getrennt.
+  const [multiDkoEnabled, setMultiDkoEnabled] = useState(false)
+  const [multiDkoAssignments, setMultiDkoAssignments] = useState<Record<string, "herren" | "damen">>({})
+  const [multiDkoLoading, setMultiDkoLoading] = useState(true)
+  const [multiDkoSavingId, setMultiDkoSavingId] = useState<string | null>(null)
+  const [multiDkoError, setMultiDkoError] = useState("")
+  const [multiPrepared, setMultiPrepared] = useState<Record<string, { id: string; count: number }>>({})
+  const [multiPreparing, setMultiPreparing] = useState<"herren" | "damen" | null>(null)
+  const [multiStarting, setMultiStarting] = useState<"herren" | "damen" | null>(null)
+  const [multiActive, setMultiActive] = useState<Record<string, { id: string; type: string }>>({})
+  const [showDisableMultiDkoDialog, setShowDisableMultiDkoDialog] = useState(false)
+  // Nur Vor-Konfiguration. Die aktive DKO-Automatenvergabe bleibt bis zur Engine-Anbindung unverändert.
+  const [multiMachineSaving, setMultiMachineSaving] = useState(false)
+  const [multiMachineError, setMultiMachineError] = useState("")
+  const [multiMachineMode, setMultiMachineMode] = useState<"shared" | "fixed">("shared")
+  const [multiMachineCount, setMultiMachineCount] = useState(8)
+  const [multiMachineHerren, setMultiMachineHerren] = useState<number[]>([1, 2, 3, 4])
+  const [multiMachineDamen, setMultiMachineDamen] = useState<number[]>([5, 6, 7, 8])
+
+
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -624,6 +644,257 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     [registrations, selectedEventId],
   )
 
+  useEffect(() => {
+    let cancelled = false
+    setMultiDkoAssignments({})
+    setShowDisableMultiDkoDialog(false)
+    setMultiDkoEnabled(false)
+    setMultiDkoError("")
+    setMultiDkoLoading(true)
+    if (!selectedEventId) { setMultiDkoLoading(false); return }
+    supabase.from("emd_dko_registration_divisions")
+      .select("registration_id,division")
+      .eq("event_id", selectedEventId)
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) { setMultiDkoError(`Multi-DKO konnte nicht geladen werden: ${error.message}`); setMultiDkoLoading(false); return }
+        const next: Record<string, "herren" | "damen"> = {}
+        for (const r of data || []) if (r.division === "herren" || r.division === "damen") next[r.registration_id] = r.division
+        setMultiDkoAssignments(next)
+        // Eine bewusst gespeicherte AUS-Entscheidung hat Vorrang vor alten Zuordnungen.
+        // Bei älteren Veranstaltungen ohne Einstellung sind vorhandene Zuordnungen sichtbar.
+        const savedMode = window.localStorage.getItem(`emd-multi-dko-enabled:${selectedEventId}`)
+        setMultiDkoEnabled(savedMode === "1" || (savedMode === null && Object.keys(next).length > 0))
+        setMultiDkoLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [selectedEventId])
+
+  // Bereits vorbereitete Läufe laden. Der Teilnehmer-Snapshot darf danach nicht mehr verändert werden.
+  const reloadMultiPrepared = async (eventId: string) => {
+    const { data: runs, error } = await supabase.from("emd_dko_prepared_runs")
+      .select("tournament_id,division").eq("central_event_id", eventId)
+    if (error) throw error
+    const next: Record<string, { id: string; count: number }> = {}
+    for (const run of runs || []) {
+      if (run.division !== "herren" && run.division !== "damen") continue
+      const { count, error: countError } = await supabase.from("emd_dko_run_players")
+        .select("registration_id", { count: "exact", head: true }).eq("tournament_id", run.tournament_id)
+      if (countError) throw countError
+      next[run.division] = { id: run.tournament_id, count: count || 0 }
+    }
+    if (selectedEventId === eventId) setMultiPrepared(next)
+    return next
+  }
+
+  useEffect(() => {
+    setMultiPrepared({})
+    if (!selectedEventId) return
+    let ignore = false
+    void (async () => {
+      try {
+        const { data, error } = await supabase.from("emd_dko_prepared_runs")
+          .select("tournament_id,division").eq("central_event_id", selectedEventId)
+        if (error) throw error
+        const next: Record<string, { id: string; count: number }> = {}
+        for (const run of data || []) {
+          if (run.division !== "herren" && run.division !== "damen") continue
+          const { count, error: countError } = await supabase.from("emd_dko_run_players")
+            .select("registration_id", { count: "exact", head: true }).eq("tournament_id", run.tournament_id)
+          if (countError) throw countError
+          next[run.division] = { id: run.tournament_id, count: count || 0 }
+        }
+        if (!ignore) setMultiPrepared(next)
+      } catch (error: any) {
+        if (!ignore) setMultiDkoError(`Vorbereitete DKO konnten nicht geladen werden: ${error?.message || "Unbekannter Fehler"}`)
+      }
+    })()
+    return () => { ignore = true }
+  }, [selectedEventId])
+
+  // Aktive Läufe stets aus Supabase laden, damit ein Reload keine Doppelstarts erzeugt.
+  const reloadMultiActive = async (eventId: string) => {
+    const { data, error } = await supabase.from("tournaments_status")
+      .select("tournament_id,tournament_type,multi_dko_division")
+      .eq("central_event_id", eventId).eq("status", "active")
+    if (error) throw error
+    const next: Record<string, { id: string; type: string }> = {}
+    for (const run of data || []) {
+      if (run.multi_dko_division === "herren" || run.multi_dko_division === "damen") {
+        next[run.multi_dko_division] = { id: run.tournament_id, type: run.tournament_type }
+      }
+    }
+    if (selectedEventId === eventId) setMultiActive(next)
+    return next
+  }
+
+  useEffect(() => {
+    setMultiActive({})
+    if (!selectedEventId) return
+    let cancelled = false
+    void supabase.from("tournaments_status")
+      .select("tournament_id,tournament_type,multi_dko_division")
+      .eq("central_event_id", selectedEventId).eq("status", "active")
+      .then(({data,error}) => {
+        if (cancelled) return
+        if (error) { setMultiDkoError(`Laufende DKO konnten nicht geladen werden: ${error.message}`); return }
+        const next: Record<string, { id: string; type: string }> = {}
+        for (const run of data || []) {
+          if (run.multi_dko_division === "herren" || run.multi_dko_division === "damen") {
+            next[run.multi_dko_division] = { id: run.tournament_id, type: run.tournament_type }
+          }
+        }
+        setMultiActive(next)
+      })
+    return () => { cancelled = true }
+  }, [selectedEventId])
+
+  const startOrOpenMultiDivision = async (division: "herren" | "damen") => {
+    if (!selectedEvent || !multiPrepared[division] || multiStarting || multiPreparing || multiDkoLoading || multiDkoError) return
+    const eventId = selectedEvent.id
+    setMultiStarting(division)
+    try {
+      // Bereits aktive Gruppe nur öffnen. Kein erneuter Start und keine Statusänderung.
+      const knownActive = multiActive[division]
+      if (knownActive && knownActive.id === multiPrepared[division].id) {
+        const size = Number(String(knownActive.type).split("er_dko")[0])
+        if (![8, 16, 32, 64, 128].includes(size)) throw new Error("Unbekannte DKO-Größe.")
+        const route = buildDkoStartRoute({
+          tournamentSize: size,
+          tournamentId: knownActive.id,
+          tournamentName: `${selectedEvent.title} · ${division === "herren" ? "Herren" : "Damen"}`,
+          accessType: selectedEvent.access_type,
+          eventId,
+        })
+        router.push(`${route}&centralEventId=${encodeURIComponent(eventId)}`)
+        return
+      }
+      // Der Server prüft nochmals atomar: Teilnehmer, Zahlungen, Gruppenzuordnung,
+      // Automaten und bestehenden aktiven Lauf. Kein Client darf direkt Status schreiben.
+      const { data, error } = await supabase.rpc("emd_start_multi_dko", {
+        p_event_id: eventId,
+        p_division: division,
+      })
+      if (error) throw error
+      const run = Array.isArray(data) ? data[0] : data
+      if (!run?.tournament_id || !run?.tournament_type) throw new Error("Startbestätigung unvollständig. Kein zweites Turnier anlegen.")
+      await reloadMultiActive(eventId)
+      const size = Number(String(run.tournament_type).split("er_dko")[0])
+      if (![8,16,32,64,128].includes(size)) throw new Error("Unbekannte DKO-Größe. Bitte Turnierleitung verständigen.")
+      const name = `${selectedEvent.title} · ${division === "herren" ? "Herren" : "Damen"}`
+      let route = buildDkoStartRoute({
+        tournamentSize: size,
+        tournamentId: String(run.tournament_id),
+        tournamentName: name,
+        accessType: selectedEvent.access_type,
+        eventId,
+      })
+      route += `&centralEventId=${encodeURIComponent(eventId)}`
+      router.push(route)
+    } catch (error: any) {
+      setMultiDkoError(error?.message || "Multi-DKO konnte nicht gestartet werden. Bitte erneut öffnen.")
+    } finally {
+      setMultiStarting(null)
+    }
+  }
+
+  // Automaten-Einstellungen werden je Veranstaltung in Supabase gelesen.
+  useEffect(() => {
+    let cancelled = false
+    setMultiMachineError("")
+    setMultiMachineMode("shared")
+    setMultiMachineCount(8)
+    setMultiMachineHerren([1,2,3,4])
+    setMultiMachineDamen([5,6,7,8])
+    if (!selectedEventId) return
+    void (async () => {
+      const { data, error } = await supabase.from("emd_dko_machine_settings")
+        .select("mode,machine_count,herren,damen").eq("event_id",selectedEventId).maybeSingle()
+      if (cancelled) return
+      if (error) { setMultiMachineError(`Automaten konnten nicht geladen werden: ${error.message}`); return }
+      if (!data) return
+      const count = Number(data.machine_count)
+      const clean = (v: unknown): number[] => Array.isArray(v)
+        ? [...new Set(v.filter((n): n is number => Number.isInteger(n) && n>=1 && n<=count))].sort((a,b)=>a-b) : []
+      const herren = clean(data.herren)
+      const damen = clean(data.damen).filter(n=>!herren.includes(n))
+      setMultiMachineMode(data.mode === "fixed" ? "fixed" : "shared")
+      setMultiMachineCount(count)
+      setMultiMachineHerren(herren)
+      setMultiMachineDamen(damen)
+    })()
+    return () => {cancelled=true}
+  }, [selectedEventId])
+
+  const saveMultiMachineSettings = async (mode: "shared" | "fixed", count: number, herren: number[], damen: number[]) => {
+    if (!selectedEventId || multiMachineSaving) return
+    setMultiMachineSaving(true)
+    setMultiMachineError("")
+    const {error} = await supabase.from("emd_dko_machine_settings").upsert({
+      event_id:selectedEventId,mode,machine_count:count,herren,damen,updated_at:new Date().toISOString()
+    },{onConflict:"event_id"})
+    if (error) setMultiMachineError(`Automaten konnten nicht gespeichert werden: ${error.message}`)
+    setMultiMachineSaving(false)
+  }
+  const toggleMultiMachine = (division: "herren" | "damen", machine: number) => {
+    if (division === "herren") {
+      if (multiMachineSaving || multiPrepared.herren || multiPrepared.damen || multiMachineDamen.includes(machine)) return
+      const next = multiMachineHerren.includes(machine) ? multiMachineHerren.filter(n=>n!==machine) : [...multiMachineHerren,machine].sort((a,b)=>a-b)
+      setMultiMachineHerren(next)
+      saveMultiMachineSettings(multiMachineMode,multiMachineCount,next,multiMachineDamen)
+    } else {
+      if (multiMachineSaving || multiPrepared.herren || multiPrepared.damen || multiMachineHerren.includes(machine)) return
+      const next = multiMachineDamen.includes(machine) ? multiMachineDamen.filter(n=>n!==machine) : [...multiMachineDamen,machine].sort((a,b)=>a-b)
+      setMultiMachineDamen(next)
+      saveMultiMachineSettings(multiMachineMode,multiMachineCount,multiMachineHerren,next)
+    }
+  }
+
+  const changeMultiDkoAssignment = async (registrationId: string, division: "herren" | "damen" | "offen") => {
+    if (multiPrepared.herren || multiPrepared.damen) { setMultiDkoError("DKO bereits vorbereitet: Zuordnungen sind gesperrt, damit die festen Teilnehmerlisten unverändert bleiben."); return }
+    if (!selectedEventId || multiDkoLoading || multiDkoSavingId || selectedEventLocked || selectedEventIsPast) return
+    setMultiDkoSavingId(registrationId)
+    setMultiDkoError("")
+    try {
+      if (division === "offen") {
+        const { error } = await supabase.from("emd_dko_registration_divisions")
+          .delete().eq("event_id", selectedEventId).eq("registration_id", registrationId)
+        if (error) throw error
+        setMultiDkoAssignments(old => { const next = { ...old }; delete next[registrationId]; return next })
+      } else {
+        const { error } = await supabase.from("emd_dko_registration_divisions")
+          .upsert({ registration_id: registrationId, event_id: selectedEventId, division, updated_at: new Date().toISOString() }, { onConflict: "registration_id" })
+        if (error) throw error
+        setMultiDkoAssignments(old => ({ ...old, [registrationId]: division }))
+      }
+    } catch (error: any) {
+      setMultiDkoError(error?.message || "Zuordnung konnte nicht gespeichert werden. Bitte erneut versuchen.")
+    } finally { setMultiDkoSavingId(null) }
+  }
+
+  // Atomare Vorbereitung in Supabase: Kopf und Teilnehmer werden gemeinsam gespeichert.
+  // Der echte parallele Start bleibt bis zur gesicherten Engine-Anbindung gesperrt.
+  const prepareMultiDivision = async (division: "herren" | "damen") => {
+    if (!selectedEvent || !multiDkoEnabled || multiPreparing || multiDkoLoading || selectedEventLocked || selectedEventIsPast) return
+    setMultiPreparing(division)
+    setMultiDkoError("")
+    try {
+      const eventId = selectedEvent.id
+      const { data, error } = await supabase.rpc("emd_prepare_multi_dko", {
+        p_event_id: eventId,
+        p_division: division,
+      })
+      if (error) throw error
+      if (!data) throw new Error("Supabase hat keine Turnier-ID zurückgegeben.")
+      await reloadMultiPrepared(eventId)
+      setMessage({ type: "success", text: `${division === "herren" ? "Herren" : "Damen"}-DKO sicher vorbereitet. Noch nicht gestartet.` })
+    } catch (error: any) {
+      setMultiDkoError(error?.message || "DKO-Vorbereitung fehlgeschlagen. Es wurde kein unvollständiges Turnier gespeichert.")
+    } finally {
+      setMultiPreparing(null)
+    }
+  }
+
   const registeredRows = selectedRegistrations.filter((row) => row.status === "registered")
   const waitlistRows = selectedRegistrations.filter((row) => row.status === "waitlist")
   const withdrawnRows = selectedRegistrations.filter((row) => row.status === "withdrawn")
@@ -636,7 +907,16 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     ? survivalVariant
     : (selectedEvent?.selected_mode || newEventMode)
 
+  const multiDkoOpenCount = registeredRows.filter(row => !multiDkoAssignments[row.id]).length
+  const multiDkoHasAssignments = registeredRows.some(row => !!multiDkoAssignments[row.id])
+  const multiDkoActive = multiDkoEnabled
+  const multiDkoCounts = {
+    herren: registeredRows.filter(row => multiDkoAssignments[row.id] === "herren").length,
+    damen: registeredRows.filter(row => multiDkoAssignments[row.id] === "damen").length,
+  }
+
   const startBlockers = [
+    ...(multiDkoActive ? [multiDkoOpenCount > 0 ? `${multiDkoOpenCount} Spieler noch keinem DKO zugeordnet.` : "Multi-DKO: Separater Turnierstart noch nicht freigegeben."] : []),
     ...(!selectedStartMode ? ["Bitte zuerst einen Spielmodus auswählen."] : []),
     ...(registeredRows.length < 2 ? ["Mindestens 2 angemeldete Spieler erforderlich."] : []),
     ...(unresolvedRegisteredRows.length ? [`${unresolvedRegisteredRows.length} Spieler ohne eindeutige Zuordnung.`] : []),
@@ -646,7 +926,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     ...(selectedStartMode === "survival" && (registeredRows.length < 4 || registeredRows.length % 4 !== 0)
       ? [`Survival benötigt 4, 8, 12, 16 … Spieler (aktuell ${registeredRows.length}).`] : []),
   ]
-  const canStartSelectedEvent = !selectedEventIsPast && !selectedEventLocked && !startingMode && !!selectedStartMode && startBlockers.length === 0
+  const canStartSelectedEvent = !multiDkoLoading && !multiDkoError && !multiDkoActive && !selectedEventIsPast && !selectedEventLocked && !startingMode && !!selectedStartMode && startBlockers.length === 0
 
   const activePlayerIds = new Set(
     selectedRegistrations
@@ -905,6 +1185,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
   const addPlayer = async (player: Player) => {
     if (!selectedEvent || selectedEventIsPast || selectedEventLocked) return
+    if (multiPrepared.herren || multiPrepared.damen) { setMessage({type:"error",text:"DKO vorbereitet: Teilnehmerliste ist gesperrt."}); return }
 
     const eligibility = playerEligibility(player)
     if (!eligibility.eligible) {
@@ -987,6 +1268,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     patch: Partial<Pick<CentralRegistration, "status" | "paid">>,
   ) => {
     if (selectedEventIsPast || selectedEventLocked) return
+    if (multiPrepared.herren || multiPrepared.damen) { setMessage({type:"error",text:"DKO vorbereitet: Anmeldungen dürfen nicht mehr geändert werden."}); return }
 
     try {
       setSaving(true)
@@ -1328,6 +1610,13 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const chooseMode = async (mode: StartMode) => {
     if (startClickLock.current) return
     if (!selectedEvent || selectedEventIsPast || selectedEventLocked) return
+    // Fail closed: Der alte Start verwendet die Gesamtliste und darf kein Multi-DKO starten.
+    if (multiDkoLoading || multiDkoError || multiDkoActive) {
+      setMessage({ type: "error", text: multiDkoError || (multiDkoOpenCount > 0
+        ? `Start gesperrt: ${multiDkoOpenCount} Teilnehmer sind noch keinem DKO zugeordnet. Der parallele Start ist noch nicht freigeschaltet.`
+        : "Start gesperrt: Der bisherige Start würde Herren und Damen vermischen. Bitte den separaten Multi-DKO-Start abwarten.") })
+      return
+    }
 
     if (selectedEvent.status === "started") {
       try {
@@ -1527,6 +1816,29 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
   return (
     <section className="w-full min-w-0 space-y-4">
+      {showDisableMultiDkoDialog && selectedEvent && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowDisableMultiDkoDialog(false) }}>
+          <div role="alertdialog" aria-modal="true" aria-labelledby="emd-multi-dko-disable-title" aria-describedby="emd-multi-dko-disable-description" className="w-full max-w-md rounded-[26px] border border-white/10 bg-[#0b0e13] p-5 text-white shadow-[0_35px_120px_-45px_rgba(0,0,0,.98)] sm:p-7">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-500/10">
+              <UsersRound className="h-6 w-6 text-orange-300" />
+            </div>
+            <h3 id="emd-multi-dko-disable-title" className="text-xl font-black tracking-tight">Multi-DKO deaktivieren?</h3>
+            <p id="emd-multi-dko-disable-description" className="mt-3 text-sm leading-6 text-white/60">Die bisherigen Herren- und Damen-Zuordnungen bleiben gespeichert. Beim normalen Turnierstart werden wieder alle angemeldeten Teilnehmer gemeinsam berücksichtigt.</p>
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" autoFocus onClick={() => setShowDisableMultiDkoDialog(false)} className="min-h-11 rounded-xl border border-white/10 bg-white/[0.05] px-5 text-sm font-black text-white/85 transition hover:bg-white/10">Abbrechen</button>
+              <button type="button" onClick={() => {
+                if (selectedEventLocked || selectedEventIsPast || multiDkoLoading || multiDkoSavingId || startingMode !== null || multiPrepared.herren || multiPrepared.damen) {
+                  setShowDisableMultiDkoDialog(false)
+                  return
+                }
+                setMultiDkoEnabled(false)
+                window.localStorage.setItem(`emd-multi-dko-enabled:${selectedEvent.id}`, "0")
+                setShowDisableMultiDkoDialog(false)
+              }} className="min-h-11 rounded-xl bg-orange-500 px-5 text-sm font-black text-white transition hover:bg-orange-400">Multi-DKO deaktivieren</button>
+            </div>
+          </div>
+        </div>
+      )}
         <div className="emd-admin-hero emd-central-registration-hero">
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
@@ -1887,17 +2199,21 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200/60">Turnier läuft</div>
-                    <div className="mt-2 text-xl font-black text-white">Dieses Turnier ist bereits gestartet.</div>
-                    <div className="mt-1 text-sm font-semibold text-white/45">Teilnehmer, Startgeld, Warteliste und Turniermodus sind während des laufenden Turniers gesperrt.</div>
+                    <div className="mt-2 text-xl font-black text-white">{multiDkoActive ? "Multi-DKO · Turniere getrennt steuern" : "Dieses Turnier ist bereits gestartet."}</div>
+                    <div className="mt-1 text-sm font-semibold text-white/45">{multiDkoActive ? "Die Teilnehmer bleiben gesperrt. Unten kannst du Herren öffnen und das vorbereitete Damen-DKO separat starten." : "Teilnehmer, Startgeld, Warteliste und Turniermodus sind während des laufenden Turniers gesperrt."}</div>
                   </div>
-                  <Button
-                    type="button"
-                    onClick={() => void openRunningCentralTournament()}
-                    className="h-11 rounded-xl bg-emerald-500 px-5 font-black text-black hover:bg-emerald-400"
-                  >
-                    <Play className="mr-2 h-4 w-4" />
-                    Zum laufenden Turnier
-                  </Button>
+                  {!multiDkoActive ? (
+                    <Button
+                      type="button"
+                      onClick={() => void openRunningCentralTournament()}
+                      className="h-11 rounded-xl bg-emerald-500 px-5 font-black text-black hover:bg-emerald-400"
+                    >
+                      <Play className="mr-2 h-4 w-4" />
+                      Zum laufenden Turnier
+                    </Button>
+                  ) : (
+                    <span className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-xs font-black text-emerald-200">Herren und Damen unten getrennt öffnen / starten</span>
+                  )}
                 </div>
               </div>
             ) : null}
@@ -2137,6 +2453,136 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               </div>
             ) : null}
 
+            </div>
+            {/* Multi-DKO bleibt bedienbar: nur noch nicht gestartete Gruppen starten, aktive Gruppen öffnen. */}
+            {teamMode === "single" && (selectedStartMode === "dko" || !selectedStartMode) && (
+              <section className="emd-admin-surface p-4 sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="font-black text-white">Multi-DKO · Herren & Damen</div>
+                    <p className="mt-1 text-xs text-white/45">Alle Spieler bleiben unten in einer Liste. Turnier direkt in der Spielerzeile auswählen.</p>
+                  </div>
+                  <button type="button"
+                    disabled={multiDkoLoading || !!multiDkoSavingId || selectedEventLocked || selectedEventIsPast || startingMode !== null || Boolean(multiDkoError) || !!multiPrepared.herren || !!multiPrepared.damen}
+                    onClick={() => {
+                      const next = !multiDkoEnabled
+                      if (!next && (multiPrepared.herren || multiPrepared.damen)) {
+                        setMultiDkoError("Ein DKO ist bereits vorbereitet. Multi-DKO kann nicht mehr deaktiviert werden.")
+                        return
+                      }
+                      if (!next && multiDkoHasAssignments) {
+                        setShowDisableMultiDkoDialog(true)
+                        return
+                      }
+                      setMultiDkoEnabled(next)
+                      window.localStorage.setItem(`emd-multi-dko-enabled:${selectedEvent.id}`, next ? "1" : "0")
+                    }}
+                    className="rounded-xl border border-orange-300/25 bg-orange-500/10 px-4 py-2 text-xs font-black text-orange-100 disabled:opacity-45">
+                    {multiDkoActive ? "Multi-DKO deaktivieren" : "Multi-DKO aktivieren"}
+                  </button>
+                </div>
+                {multiDkoError ? <p role="alert" className="mt-3 text-sm text-rose-300">{multiDkoError}</p> : null}
+                {!multiDkoActive && multiDkoHasAssignments && !multiDkoLoading ? (
+                  <p className="mt-3 text-xs text-white/50">Multi-DKO ist aus. Alte Zuordnungen sind gespeichert, beeinflussen den normalen Turnierstart aber nicht.</p>
+                ) : null}
+                {multiDkoActive ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-black">
+                    <span className="rounded-lg border border-white/10 px-3 py-2 text-white/75">Herren {multiDkoCounts.herren}</span>
+                    <span className="rounded-lg border border-white/10 px-3 py-2 text-white/75">Damen {multiDkoCounts.damen}</span>
+                    <span className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-amber-200">Noch offen {multiDkoOpenCount}</span>
+                    <p className="w-full text-amber-200/85">{multiDkoOpenCount > 0
+                      ? `Start gesperrt: ${multiDkoOpenCount} Spieler noch nicht eingeteilt.`
+                      : "Alle eingeteilt. Herren und Damen können nach der Vorbereitung getrennt gestartet werden."}</p>
+                  </div>
+                ) : null}
+                {multiDkoActive ? (
+                  <div className="mt-4 rounded-2xl border border-orange-400/20 bg-orange-500/[0.04] p-4">
+                    <div className="font-black text-white">Getrennte DKO vorbereiten</div>
+                    <p className="mt-1 text-xs text-white/55">Erstellt pro Gruppe eine feste Teilnehmerliste. Noch kein Turnierstart. Sobald eine Gruppe vorbereitet ist, bleiben die Zuordnungen gesperrt.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(["herren", "damen"] as const).map(division => (
+                        <button type="button" key={division}
+                          disabled={!!multiPreparing || !!multiDkoSavingId || multiDkoLoading || multiDkoOpenCount > 0 || !!multiDkoError || !!multiPrepared[division] || selectedEventLocked || selectedEventIsPast}
+                          onClick={() => void prepareMultiDivision(division)}
+                          className="rounded-xl border border-orange-400/30 bg-orange-500/15 px-4 py-2 text-xs font-black text-orange-100 disabled:opacity-45">
+                          {multiPrepared[division] ? `${division === "herren" ? "Herren" : "Damen"} vorbereitet (${multiPrepared[division].count})` : multiPreparing === division ? "Wird vorbereitet …" : `${division === "herren" ? "Herren" : "Damen"} vorbereiten`}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {(["herren", "damen"] as const).map(division => {
+                        const active = multiActive[division]
+                        const ready = Boolean(multiPrepared[division])
+                        return <button type="button" key={`start-${division}`}
+                          disabled={!ready || !!multiStarting || !!multiPreparing || multiDkoLoading || !!multiDkoError || (multiDkoOpenCount > 0 && !active) || (!active && selectedEventIsPast)}
+                          onClick={() => void startOrOpenMultiDivision(division)}
+                          className="min-h-14 rounded-xl border border-orange-400/40 bg-orange-500 px-4 py-3 text-sm font-black text-white transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-40">
+                          {multiStarting === division ? "Wird geprüft …" : `${division === "herren" ? "Herren" : "Damen"} ${active ? "öffnen" : ready ? "starten" : "zuerst vorbereiten"}`}
+                        </button>
+                      })}
+                    </div>
+                    <p className="mt-2 text-xs text-white/50">Jede Gruppe startet mit ihrer eigenen Turnier-ID. Die Datenbank verhindert Doppelstarts und gemischte Teilnehmerlisten.</p>
+                  </div>
+                ) : null}
+                {multiDkoActive ? (
+                  <div className="mt-4 rounded-2xl border border-white/[0.08] bg-[#090d12] p-4">
+                    <div className="font-black text-white">Automaten für Herren & Damen</div>
+                    <p className="mt-1 text-xs text-white/45">Für beide Läufe gespeichert. Die Datenbank schützt die Automatenbelegung turnierübergreifend.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(["shared", "fixed"] as const).map(mode => (
+                        <button key={mode} type="button" disabled={selectedEventLocked || selectedEventIsPast || multiMachineSaving || !!multiPrepared.herren || !!multiPrepared.damen}
+                          onClick={() => {setMultiMachineMode(mode);saveMultiMachineSettings(mode,multiMachineCount,multiMachineHerren,multiMachineDamen)}}
+                          className={`rounded-xl border px-4 py-2 text-xs font-black transition disabled:opacity-40 ${multiMachineMode === mode ? "border-orange-400/40 bg-orange-500/15 text-orange-100" : "border-white/10 bg-white/[0.025] text-white/55"}`}>
+                          {mode === "shared" ? "Gemeinsam automatisch" : "Fest zuweisen"}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <label htmlFor="multi-dko-machine-count" className="text-xs font-bold text-white/65">Vorhandene Automaten</label>
+                      <select id="multi-dko-machine-count" value={multiMachineCount} disabled={selectedEventLocked || selectedEventIsPast || multiMachineSaving || !!multiPrepared.herren || !!multiPrepared.damen}
+                        onChange={e => {
+                          const count = Number(e.target.value)
+                          const herren = multiMachineHerren.filter(n=>n<=count)
+                          const damen = multiMachineDamen.filter(n=>n<=count)
+                          setMultiMachineCount(count);setMultiMachineHerren(herren);setMultiMachineDamen(damen)
+                          saveMultiMachineSettings(multiMachineMode,count,herren,damen)
+                        }}
+                        className="rounded-xl border border-white/10 bg-[#111820] px-3 py-2 text-sm font-bold text-white disabled:opacity-40">
+                        {Array.from({length:32},(_,i)=>i+1).map(n=><option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </div>
+                    {multiMachineMode === "shared" ? (
+                      <p className="mt-3 text-xs text-white/55">Gemeinsamer Pool: Beide Turniere dürfen später alle {multiMachineCount} Automaten nutzen. Eine zentrale Belegungsprüfung muss vor Freigabe noch eingebaut werden.</p>
+                    ) : (
+                      <div className="mt-4 space-y-4">
+                        {(["herren","damen"] as const).map(division => {
+                          const own = division === "herren" ? multiMachineHerren : multiMachineDamen
+                          const other = division === "herren" ? multiMachineDamen : multiMachineHerren
+                          return <div key={division}>
+                            <div className="mb-2 flex items-center justify-between text-xs font-black text-white/80"><span>{division === "herren" ? "Herren-DKO" : "Damen-DKO"}</span><span className="text-white/45">{own.length} zugewiesen</span></div>
+                            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+                              {Array.from({length:multiMachineCount},(_,i)=>i+1).map(n => <button key={n} type="button"
+                                disabled={other.includes(n) || selectedEventLocked || selectedEventIsPast || multiMachineSaving}
+                                onClick={() => toggleMultiMachine(division,n)}
+                                title={other.includes(n) ? "Beim anderen DKO zugewiesen" : `Automat ${n} ${own.includes(n)?"freigeben":"zuweisen"}`}
+                                aria-pressed={own.includes(n)}
+                                className={`min-h-10 rounded-xl border text-sm font-black transition disabled:cursor-not-allowed ${own.includes(n) ? "border-orange-400/45 bg-orange-500/20 text-orange-100" : other.includes(n) ? "border-white/5 bg-white/[0.015] text-white/20" : "border-white/10 bg-white/[0.035] text-white/70 hover:bg-white/10"}`}>{n}</button>)}
+                            </div>
+                          </div>
+                        })}
+                        {((multiDkoCounts.herren > 0 && multiMachineHerren.length===0) || (multiDkoCounts.damen > 0 && multiMachineDamen.length===0)) ? <p className="text-xs font-bold text-amber-200">Einteilung unvollständig: Jede besetzte Gruppe braucht mindestens einen Automaten.</p> : null}
+                        <p className="text-xs text-white/45">Grau gesperrte Automaten gehören bereits zum anderen DKO. Zum Verschieben zuerst dort freigeben.</p>
+                      </div>
+                    )}
+                    {multiMachineError ? <p role="alert" className="mt-3 text-xs font-bold text-rose-300">{multiMachineError}</p> : null}
+                    <p className="mt-4 border-t border-white/10 pt-3 text-xs font-semibold text-amber-200/80">Automaten-Einstellungen sind in Supabase gespeichert. Bei laufenden Partien verhindert die Datenbank die doppelte Belegung.</p>
+                  </div>
+                ) : null}
+              </section>
+            )}
+
+            <div className={selectedEventLocked ? "pointer-events-none select-text opacity-70 [&_button]:cursor-not-allowed [&_input]:cursor-not-allowed [&_select]:cursor-not-allowed" : "contents"}>
+
             <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,.85fr)]">
               <div className="emd-admin-surface min-w-0">
                 <div className="p-4 sm:p-5">
@@ -2288,6 +2734,22 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                               </div>
 
                               <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0">
+                                {multiDkoActive && row.status === "registered" && teamMode === "single" && (selectedStartMode === "dko" || !selectedStartMode) ? (
+                                  <label className="flex items-center gap-2 rounded-xl border border-orange-300/20 bg-orange-500/[0.06] px-2 py-1 text-xs font-bold text-white/75">
+                                    Spielt bei
+                                    <select
+                                      aria-label={`DKO für ${row.player_name_snapshot}`}
+                                      value={multiDkoAssignments[row.id] || "offen"}
+                                      disabled={selectedEventLocked || selectedEventIsPast || multiDkoLoading || !!multiDkoSavingId}
+                                      onChange={event => void changeMultiDkoAssignment(row.id, event.target.value as "herren" | "damen" | "offen")}
+                                      className="h-8 max-w-40 rounded-lg border border-white/15 bg-[#10151c] px-2 text-white"
+                                    >
+                                      <option value="offen">Bitte zuordnen</option>
+                                      <option value="herren">Herren-DKO</option>
+                                      <option value="damen">Damen-DKO</option>
+                                    </select>
+                                  </label>
+                                ) : null}
                                 <Button
                                   type="button"
                                   variant="outline"

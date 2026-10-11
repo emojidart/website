@@ -62,10 +62,13 @@ function splitPlayerLabel(value: string) {
 }
 
 function parseChecks(value: string) {
-  const match = value.match(/(\d+)\s*\/\s*(\d+)/)
+  // Sportdarts kann 0 Checks als "/ 3" ausgeben.
+  const match = String(value || "").match(/(\d*)\s*\/\s*(\d+)/)
+  const total = match ? Number(match[2]) : null
+  const made = match ? (match[1] ? Number(match[1]) : 0) : null
   return {
-    checksMade: match ? Number(match[1]) : null,
-    checksTotal: match ? Number(match[2]) : null,
+    checksMade: made,
+    checksTotal: total,
   }
 }
 
@@ -402,8 +405,22 @@ export async function GET(
         }>
       }>
 
+    // Die offizielle Checks-Liste ist die maßgebliche Quelle für die Übernahme.
+    // Spielmodi/Blockbezeichnungen dürfen sie nicht ausfiltern.
     const structuredPlays = parseStructuredPlays(html)
-    const structuredBlocks = blocksFromStructuredPlays(structuredPlays)
+    const officialUsed = (players: NonNullable<typeof homeLineup>["players"] | undefined) =>
+      (players || [])
+        .filter((player) => player.playerNumber && player.checksTotal != null && player.checksTotal > 0)
+        .map((player) => player.playerNumber)
+    const officialLegs = (players: NonNullable<typeof homeLineup>["players"] | undefined) =>
+      (players || [])
+        .filter((player) => player.playerNumber && player.checksTotal != null && player.checksTotal > 0)
+        .map((player) => ({
+          playerNumber: player.playerNumber,
+          singlesPlayed: 0, // Keine erfundene Zahl von Einzelspielen.
+          legsWon: player.checksMade ?? 0,
+          legsLost: Math.max(0, (player.checksTotal ?? 0) - (player.checksMade ?? 0)),
+        }))
     const score = parseScoreSummary(html)
 
     const homeTeam =
@@ -428,10 +445,10 @@ export async function GET(
       // New structured read-only sync data.
       singles: structuredPlays.filter((play) => !play.isTeamMatch),
       teamMatches: structuredPlays.filter((play) => play.isTeamMatch),
-      homePlayerLegs: aggregateSingles(structuredPlays, "home"),
-      awayPlayerLegs: aggregateSingles(structuredPlays, "away"),
-      usedHomePlayerNumbers: usedPlayerNumbers(structuredPlays, "home"),
-      usedAwayPlayerNumbers: usedPlayerNumbers(structuredPlays, "away"),
+      homePlayerLegs: officialLegs(homeLineup?.players),
+      awayPlayerLegs: officialLegs(awayLineup?.players),
+      usedHomePlayerNumbers: officialUsed(homeLineup?.players),
+      usedAwayPlayerNumbers: officialUsed(awayLineup?.players),
     })
   } catch (error) {
     console.error("Sportdarts game detail failed:", error)

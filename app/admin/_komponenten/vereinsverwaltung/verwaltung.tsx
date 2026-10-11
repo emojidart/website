@@ -58,7 +58,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   const members = useTeamMembers(user, safeOnDataSaved)
 
 
-  const [unlinkedGuestCount, setPendingGuestRequestsCount] = useState(0)
+  const [unlinkedGuestCount, setUnlinkedGuestCount] = useState(0)
   const [pendingJoinRequestsCount, setPendingJoinRequestsCount] = useState(0)
 
   const fetchUnlinkedGuestCount = useCallback(async () => {

@@ -1,10 +1,6 @@
 import { Suspense } from "react"
-import TournamentBracket from "@/components/tournament-bracket_16er"
+import { EmdDkoKeyedBracket } from "@/components/emd-dko-keyed-bracket"
 import { Header } from "@/components/header"
-
-function BracketContent() {
-  return <TournamentBracket />
-}
 
 export default function Home() {
   return (
@@ -12,7 +8,7 @@ export default function Home() {
       <Header />
       <main className="w-full pt-[64px]">
         <Suspense fallback={<div className="grid min-h-[50vh] place-items-center text-sm font-bold text-white/45">Turnier wird geladen…</div>}>
-          <BracketContent />
+          <EmdDkoKeyedBracket size={16} />
         </Suspense>
       </main>
     </div>
