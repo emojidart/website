@@ -85,7 +85,10 @@ export default function Home() {
     seriesItems,
     liveRegistrationItems,
     loading: dynamicSeriesLoading,
-  } = useStartseitenDynamischeSerien()
+  } = useStartseitenDynamischeSerien({
+    membershipLoading,
+    canSeeInternalTournaments,
+  })
   const { activeTournament } = useAktivesStartseitenTurnier()
   const {
     internalSignupEvents,
