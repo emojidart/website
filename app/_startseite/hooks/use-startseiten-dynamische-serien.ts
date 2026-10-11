@@ -115,7 +115,15 @@ function registrationState(series: SeriesRow, event: EventRow | null, now: Date)
   }
 }
 
-export function useStartseitenDynamischeSerien() {
+type StartseitenSerienAccess = {
+  membershipLoading: boolean
+  canSeeInternalTournaments: boolean
+}
+
+export function useStartseitenDynamischeSerien({
+  membershipLoading,
+  canSeeInternalTournaments,
+}: StartseitenSerienAccess) {
   const [seriesItems, setSeriesItems] = useState<StartseitenSerie[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -126,20 +134,6 @@ export function useStartseitenDynamischeSerien() {
       setLoading(true)
 
       try {
-        const { data: authData } = await supabase.auth.getUser()
-        const user = authData.user
-
-        let isMember = false
-        if (user?.id) {
-          const { data: memberRow } = await supabase
-            .from("club_players")
-            .select("id")
-            .eq("auth_user_id", user.id)
-            .eq("is_active", true)
-            .maybeSingle()
-          isMember = Boolean(memberRow?.id)
-        }
-
         const { data: seriesData, error: seriesError } = await supabase
           .from("dko_series")
           .select(
@@ -151,7 +145,7 @@ export function useStartseitenDynamischeSerien() {
         if (seriesError) throw seriesError
 
         const visibleSeries = ((seriesData || []) as SeriesRow[]).filter((item) => {
-          if (item.access_type === "club_internal") return isMember
+          if (item.access_type === "club_internal") return canSeeInternalTournaments
           return item.access_type === "public" || item.access_type === "club_external"
         })
 
@@ -228,6 +222,10 @@ export function useStartseitenDynamischeSerien() {
       }
     }
 
+    // Erst laden, wenn die zentrale Mitgliedschaftsprüfung fertig ist.
+    // Sonst werden interne Serien vorübergehend fälschlich ausgeblendet.
+    if (membershipLoading) return () => { mounted = false }
+
     void load()
 
     const channel = supabase
@@ -240,7 +238,7 @@ export function useStartseitenDynamischeSerien() {
       mounted = false
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [membershipLoading, canSeeInternalTournaments])
 
   return {
     seriesItems,
