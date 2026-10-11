@@ -903,7 +903,7 @@ export function KratzerTournamentPage() {
         return
       }
       setTournamentState((prev) => ({ ...prev, settings: { ...prev.settings, [key]: value } }))
-      showToast("success", key === "speechEnabled" ? "Martin-Sprachausgabe gespeichert." : "Sudden Death gespeichert – gilt für neu gestartete Spiele.")
+      showToast("success", key === "speechEnabled" ? "NERO-Sprachausgabe gespeichert." : "Sudden Death gespeichert – gilt für neu gestartete Spiele.")
     })()
   }, [isTournamentRunning, tournamentState.tournamentId, showToast])
 

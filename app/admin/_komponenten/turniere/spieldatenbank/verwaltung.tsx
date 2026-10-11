@@ -516,7 +516,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ player1: spokenName, player2: "Testspieler", machine: 1, call: 1, speed: 1 }),
       })
-      if (!response.ok) throw new Error(`Martin antwortet mit HTTP ${response.status}`)
+      if (!response.ok) throw new Error(`NERO antwortet mit HTTP ${response.status}`)
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const audio = new Audio(url)
@@ -524,8 +524,8 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
       audio.onerror = () => URL.revokeObjectURL(url)
       await audio.play()
     } catch (error) {
-      setMessage({ type: "error", text: "Martin-Test fehlgeschlagen. Läuft Martin auf diesem PC?" })
-      console.warn("Martin Aussprachetest:", error)
+      setMessage({ type: "error", text: "NERO-Test fehlgeschlagen. Läuft NERO auf diesem PC?" })
+      console.warn("NERO Aussprachetest:", error)
     } finally {
       setTestingPronunciation(false)
     }
@@ -1062,8 +1062,8 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                           </div>
 
                           <div className="rounded-[18px] border border-orange-500/25 bg-orange-500/[0.05] p-4 lg:col-span-2">
-                            <div className="mb-3 text-sm font-black text-orange-200">🎤 Martin · Namensaussprache</div>
-                            <Label className="text-white/70" htmlFor="tts-pronunciation">So soll Martin den Namen aussprechen (optional)</Label>
+                            <div className="mb-3 text-sm font-black text-orange-200">🎤 NERO · Namensaussprache</div>
+                            <Label className="text-white/70" htmlFor="tts-pronunciation">So soll NERO den Namen aussprechen (optional)</Label>
                             <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                               <Input
                                 id="tts-pronunciation"
@@ -1077,10 +1077,10 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                 disabled={testingPronunciation || !buildStoredName(firstName,lastName)}
                                 onClick={testMartinPronunciation}>
                                 {testingPronunciation ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                Mit Martin testen
+                                Mit NERO testen
                               </Button>
                             </div>
-                            <p className="mt-2 text-xs text-white/40">Der offizielle Spielername bleibt unverändert. Die Testansage verwendet Automat 1 und einen Testgegner. Ohne Eintrag verwendet Martin den offiziellen Namen.</p>
+                            <p className="mt-2 text-xs text-white/40">Der offizielle Spielername bleibt unverändert. Die Testansage verwendet Automat 1 und einen Testgegner. Ohne Eintrag verwendet NERO den offiziellen Namen.</p>
                           </div>
 
                           <div className="space-y-2 lg:col-span-2">

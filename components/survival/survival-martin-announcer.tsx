@@ -33,7 +33,7 @@ async function requestAudio(players: string[], machine: number, call: number, pr
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ kind: "survival", players: players.map(getSpoken), machine, call, speed: 1, prefetch }),
   })
-  if (!response.ok) throw new Error(`Martin HTTP ${response.status}: ${await response.text()}`)
+  if (!response.ok) throw new Error(`NERO HTTP ${response.status}: ${await response.text()}`)
   if (prefetch) return null
   return response.blob()
 }
@@ -120,7 +120,7 @@ export function useSurvivalMartin() {
           {[12, 19, 14, 21].map((height, index) => <span key={index} className={`w-1 rounded-full bg-orange-400 ${phase === "playing" ? "animate-pulse" : ""}`} style={{ height }} />)}
         </span>
       </div>
-      <div className="mt-2 text-base font-black">{phase === "preparing" ? "Ansage wird vorbereitet …" : phase === "playing" ? "Martin spricht 🎤" : phase === "done" ? "Ansage beendet ✓" : "Martin nicht erreichbar"}</div>
+      <div className="mt-2 text-base font-black">{phase === "preparing" ? "Ansage wird vorbereitet …" : phase === "playing" ? "NERO spricht 🎤" : phase === "done" ? "Ansage beendet ✓" : "NERO nicht erreichbar"}</div>
       <div className="mt-1 text-sm text-slate-200">{playersLabel}</div>
       <div className="mt-1 text-xs text-slate-400">{details}</div>
     </div>

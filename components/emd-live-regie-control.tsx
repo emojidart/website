@@ -32,7 +32,7 @@ const enqueueMartin = (text: string): Promise<void> => {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ kind: "announcement", text, speed: 1.0 }),
     })
-    if (!response.ok) throw new Error(`Martin antwortet mit HTTP ${response.status}. Ist der aktualisierte Martin-Server gestartet?`)
+    if (!response.ok) throw new Error(`NERO antwortet mit HTTP ${response.status}. Ist der aktualisierte NERO-Server gestartet?`)
     const objectUrl = URL.createObjectURL(await response.blob())
     try {
       const audio = new Audio(objectUrl)
@@ -96,7 +96,7 @@ export default function EmdLiveRegieControl({ eventId, title }: { eventId: strin
         setMartinBusy(true)
         // Das Browserfenster am Martin-PC muss zur automatischen Audioausgabe berechtigt sein.
         void enqueueMartin(martinText(data as Announcement, title))
-          .catch((e: Error) => setFeedback(`Ankündigung gespeichert, aber Martin: ${e.message}`))
+          .catch((e: Error) => setFeedback(`Ankündigung gespeichert, aber NERO: ${e.message}`))
           .finally(() => setMartinBusy(false))
       }
       if (!data?.auto_speak) setFeedback("Ankündigung hinzugefügt – Beamer und EMD TV zeigen die aktiven Meldungen abwechselnd.")
@@ -118,8 +118,8 @@ export default function EmdLiveRegieControl({ eventId, title }: { eventId: strin
   }
   const speak = async (a: Announcement) => {
     setMartinBusy(true); setFeedback("")
-    try { await enqueueMartin(martinText(a, title)); setFeedback("Martin hat die Durchsage abgespielt.") }
-    catch (e: any) { setFeedback(`Martin: ${e?.message || "Ansage nicht möglich"}`) }
+    try { await enqueueMartin(martinText(a, title)); setFeedback("NERO hat die Durchsage abgespielt.") }
+    catch (e: any) { setFeedback(`NERO: ${e?.message || "Ansage nicht möglich"}`) }
     finally { setMartinBusy(false) }
   }
   const active = current.filter(a => Date.parse(a.ends_at) > now)
@@ -161,13 +161,11 @@ export default function EmdLiveRegieControl({ eventId, title }: { eventId: strin
     </div>
     <label className="mt-3 flex items-center gap-2 rounded-lg border border-orange-400/20 bg-orange-400/5 p-3 text-sm text-white/85">
       <input type="checkbox" checked={autoSpeak} onChange={e => setAutoSpeak(e.target.checked)} className="h-4 w-4 accent-orange-500" />
-      Martin beim Hinzufügen automatisch einmal sprechen lassen (am Vereins-PC)
+      NERO beim Hinzufügen automatisch einmal sprechen lassen (am Vereins-PC)
     </label>
-    <p className="mt-2 text-xs text-amber-200/70">Martin spricht nur über den Browser am Vereins-PC mit laufendem Martin-Dienst. Automatisches Audio kann durch die Browser-Autoplay-Sperre blockiert werden; den Button „Martin sprechen“ kannst du jederzeit verwenden.</p>
-    <p className="mt-3 text-xs text-white/45">Mehrere Meldungen sind gleichzeitig möglich und wechseln auf beiden Bildschirmen automatisch. Countdowns schließen keine Anmeldung und starten kein Turnier.</p>
     <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => void publish()} disabled={busy || (kind === "custom" && !message.trim())} className="rounded-xl bg-orange-600 px-5 py-3 text-sm font-black text-white hover:bg-orange-500 disabled:opacity-40">{busy ? "Bitte warten ..." : "Ankündigung hinzufügen"}</button></div>
     <div className="mt-5 border-t border-white/10 pt-4"><div className="mb-3 flex items-center justify-between"><h4 className="text-sm font-bold">Aktive Ankündigungen</h4><span className="text-xs text-white/50">{active.length} aktiv</span></div>
-      {active.length === 0 ? <p className="text-sm text-white/45">Noch keine aktive Ankündigung.</p> : <div className="space-y-2">{active.map(a => <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1c2532] px-3 py-3"><div className="min-w-0"><p className="text-sm font-semibold">{kindName(a.kind)}{a.scope !== "all" ? ` · ${a.scope === "herren" ? "Herren" : "Damen"}` : ""}</p>{<p className="mt-1 text-xs text-orange-300/80">{a.display_mode === "permanent" ? "Dauerhaft" : a.display_mode === "once" ? `Einmalig · ${a.display_seconds} Sek.` : `Alle ${a.repeat_seconds} Sek. · ${a.display_seconds} Sek.`}</p>}{a.message && <p className="mt-1 max-w-md break-words text-xs text-white/60">{a.message}</p>}<p className="mt-1 text-xs text-emerald-300">Bis {new Date(a.ends_at).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}</p></div><div className="flex items-center gap-2"><button type="button" disabled={martinBusy} onClick={() => void speak(a)} className="rounded-lg border border-orange-400/40 px-3 py-2 text-xs font-bold text-orange-200 hover:bg-orange-400/10 disabled:opacity-40">🎙 Martin sprechen</button><button type="button" disabled={busy} onClick={() => void stop(a.id)} className="rounded-lg border border-rose-400/30 px-3 py-2 text-xs font-bold text-rose-200 hover:bg-rose-400/10 disabled:opacity-40">Beenden</button></div></div>)}</div>}
+      {active.length === 0 ? <p className="text-sm text-white/45">Noch keine aktive Ankündigung.</p> : <div className="space-y-2">{active.map(a => <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1c2532] px-3 py-3"><div className="min-w-0"><p className="text-sm font-semibold">{kindName(a.kind)}{a.scope !== "all" ? ` · ${a.scope === "herren" ? "Herren" : "Damen"}` : ""}</p>{<p className="mt-1 text-xs text-orange-300/80">{a.display_mode === "permanent" ? "Dauerhaft" : a.display_mode === "once" ? `Einmalig · ${a.display_seconds} Sek.` : `Alle ${a.repeat_seconds} Sek. · ${a.display_seconds} Sek.`}</p>}{a.message && <p className="mt-1 max-w-md break-words text-xs text-white/60">{a.message}</p>}<p className="mt-1 text-xs text-emerald-300">Bis {new Date(a.ends_at).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}</p></div><div className="flex items-center gap-2"><button type="button" disabled={martinBusy} onClick={() => void speak(a)} className="rounded-lg border border-orange-400/40 px-3 py-2 text-xs font-bold text-orange-200 hover:bg-orange-400/10 disabled:opacity-40">🎙 NERO sprechen</button><button type="button" disabled={busy} onClick={() => void stop(a.id)} className="rounded-lg border border-rose-400/30 px-3 py-2 text-xs font-bold text-rose-200 hover:bg-rose-400/10 disabled:opacity-40">Beenden</button></div></div>)}</div>}
     </div>
     {feedback && <p role="status" className="mt-3 text-xs text-white/75">{feedback}</p>}
   </section>

@@ -102,14 +102,14 @@ export function useKratzerMartin() {
       })
       if (!response.ok) {
         const body = await response.text()
-        throw new Error(`Martin HTTP ${response.status}: ${body.slice(0, 160)}`)
+        throw new Error(`NERO HTTP ${response.status}: ${body.slice(0, 160)}`)
       }
       const blob = await response.blob()
       const objectUrl = URL.createObjectURL(blob)
       urlRef.current = objectUrl
       const audio = new Audio(objectUrl)
       audioRef.current = audio
-      setDisplay({ phase: "playing", title: "Martin spricht …", detail })
+      setDisplay({ phase: "playing", title: "NERO spricht …", detail })
       await new Promise<void>((resolve, reject) => {
         audio.onended = () => resolve()
         audio.onerror = () => reject(new Error("Audio konnte nicht wiedergegeben werden."))
@@ -118,8 +118,8 @@ export function useKratzerMartin() {
       setDisplay({ phase: "done", title: "Ansage beendet", detail })
       return true
     } catch (error) {
-      console.error("Kratzer: Martin-Gruppenaufruf fehlgeschlagen", error)
-      setDisplay({ phase: "error", title: "Martin nicht erreichbar", detail: "Server prüfen und Aufruf erneut versuchen." })
+      console.error("Kratzer: NERO-Gruppenaufruf fehlgeschlagen", error)
+      setDisplay({ phase: "error", title: "NERO nicht erreichbar", detail: "Server prüfen und Aufruf erneut versuchen." })
       return false
     } finally {
       cleanAudio()

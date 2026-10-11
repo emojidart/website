@@ -30,14 +30,14 @@ function preparePronunciations(): Promise<void> {
   if (!pronunciationPromise) {
     pronunciationPromise = (async () => {
       const { data, error } = await supabase.from("spieldatenbank").select("name, tts_pronunciation")
-      if (error) { console.warn("Martin-Aussprache konnte nicht geladen werden:", error.message); return }
+      if (error) { console.warn("NERO-Aussprache konnte nicht geladen werden:", error.message); return }
       pronunciationMap.clear()
       for (const entry of data || []) {
         const official = String(entry.name || "").trim().toLocaleLowerCase("de")
         const spoken = String(entry.tts_pronunciation || "").trim()
         if (official && spoken) pronunciationMap.set(official, spoken)
       }
-    })().catch(error => console.warn("Martin-Aussprache:", error))
+    })().catch(error => console.warn("NERO-Aussprache:", error))
   }
   return pronunciationPromise
 }
@@ -69,7 +69,7 @@ function loadAudio(player1: string, player2: string, machine: number, call: numb
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ player1: getSpokenName(player1), player2: getSpokenName(player2), machine, call, speed: 1, prefetch }),
   })).then(async response => {
-    if (!response.ok) throw new Error(`Martin HTTP ${response.status}`)
+    if (!response.ok) throw new Error(`NERO HTTP ${response.status}`)
     return response.blob()
   }).then(blob => {
     saveCached(key, blob)
@@ -163,7 +163,7 @@ function showAnnouncementStatus(phase: "preparing" | "playing" | "done" | "error
   }
   if (statusHideTimer) { clearTimeout(statusHideTimer);statusHideTimer=null }
   panel.dataset.phase = phase
-  panel.querySelector(".emd-title")!.textContent = ({ preparing:"Ansage wird vorbereitet …", playing:"Martin spricht 🎤", done:"Ansage beendet ✓", error:"Ansage nicht verfügbar" } as const)[phase]
+  panel.querySelector(".emd-title")!.textContent = ({ preparing:"Ansage wird vorbereitet …", playing:"NERO spricht 🎤", done:"Ansage beendet ✓", error:"Ansage nicht verfügbar" } as const)[phase]
   panel.querySelector(".emd-players")!.textContent = players
   panel.querySelector(".emd-detail")!.textContent = detail
   if (phase === "done" || phase === "error") {
@@ -233,7 +233,7 @@ export function useSpeechAnnouncer({ enabled }: SpeechAnnouncerProps) {
 
       const browserFallback = () => {
         if (state.sequence !== sequence) return
-        if (!("speechSynthesis" in window)) { finishAnnouncement(players, detail + " · Martin nicht erreichbar", true); return }
+        if (!("speechSynthesis" in window)) { finishAnnouncement(players, detail + " · NERO nicht erreichbar", true); return }
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.lang = "de-DE"
         utterance.rate = 0.9
@@ -273,7 +273,7 @@ export function useSpeechAnnouncer({ enabled }: SpeechAnnouncerProps) {
           if (state.sequence === sequence) showAnnouncementStatus("playing", players, detail)
         }
         catch (error) {
-          console.warn("EMD Martin: Tonwiedergabe blockiert", error)
+          console.warn("EMD NERO: Tonwiedergabe blockiert", error)
           if (state.sequence === sequence) browserFallback()
         }
       }

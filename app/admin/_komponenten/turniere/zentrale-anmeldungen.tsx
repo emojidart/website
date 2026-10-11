@@ -2178,7 +2178,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
             <div className={eventView === "live" ? "" : "hidden"}>
               <div className="emd-admin-surface overflow-hidden p-4 sm:p-6">
-                <div className="mb-4"><h3 className="text-xl font-black text-white">Live-Regie</h3><p className="mt-1 text-sm text-white/50">Countdowns und Martin-Durchsagen für Beamer und EMD TV.</p></div>
+                <div className="mb-4"><h3 className="text-xl font-black text-white">Live-Regie</h3><p className="mt-1 text-sm text-white/50">Countdowns und NERO-Durchsagen für Beamer und EMD TV.</p></div>
                 <EmdLiveRegieControl key={selectedEvent.id} eventId={selectedEvent.id} title={selectedEvent.title} />
               </div>
             </div>
