@@ -55,7 +55,7 @@ export function EmdMultiDkoQuickSwitch({ tournamentId, centralEventId }: { tourn
 
   if (!current) return null
   return (
-    <div className="flex flex-wrap items-center gap-1 rounded-xl border border-orange-400/20 bg-orange-500/[0.06] p-1" aria-label="Multi-DKO Schnellwechsel">
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-orange-400/15 bg-[#0d1119] p-2 shadow-[0_14px_38px_-25px_rgba(0,0,0,.9)]" aria-label="Multi-DKO Schnellwechsel">
       {(["herren", "damen"] as const).map((division) => {
         const active = division === current
         const run = runs[division]
@@ -71,9 +71,9 @@ export function EmdMultiDkoQuickSwitch({ tournamentId, centralEventId }: { tourn
               // bracket when tournamentId changes, preserving the surrounding UI.
               startTransition(() => router.push(`${route}?${params.toString()}`, { scroll: false }))
             }}
-            className={`h-9 rounded-lg px-3 text-xs font-black transition sm:text-sm ${active ? "bg-orange-500 text-black" : run ? "bg-white/[0.07] text-white hover:bg-orange-500/20" : "cursor-not-allowed text-white/35"}`}
+            className={`min-h-11 min-w-[126px] rounded-xl border px-4 py-2 text-sm font-bold tracking-wide transition-all duration-200 ${active ? "border-orange-400/75 bg-gradient-to-r from-orange-500 to-amber-500 text-[#17100b] shadow-[0_3px_20px_-9px_rgba(249,115,22,.85)]" : run ? "border-white/10 bg-white/[0.055] text-white hover:border-orange-400/40 hover:bg-orange-500/10" : "cursor-not-allowed border-white/5 bg-white/[0.025] text-white/35"}`}
           >
-            {division === "herren" ? "Herren" : "Damen"}{active ? " · aktiv" : !run ? " · wartet" : " ↗"}
+            <span className="flex items-center justify-center gap-2"><span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-[#17100b]" : run ? "bg-emerald-400" : "bg-white/25"}`} />{division === "herren" ? "Herren" : "Damen"}<span className="text-[10px] font-semibold opacity-70">{active ? "AKTIV" : !run ? "WARTET" : "LIVE"}</span></span>
           </button>
         )
       })}

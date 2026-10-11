@@ -1,8 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Monitor, Radio, Trophy } from "lucide-react"
+import { Maximize2, Minimize2, Monitor, Radio, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import MultiDkoBeamerSwitcher from "@/components/emd-multi-dko-beamer-switcher"
+import EmdLiveAnnouncementDisplay from "@/components/emd-live-announcement-display"
 
 const KRATZER_SNAPSHOT_KEY = "emd:kratzer:beamer:snapshot"
 const KRATZER_CHANNEL = "emd-kratzer-beamer-v1"
@@ -12,6 +14,8 @@ type ActiveTournament = {
   tournament_id: string
   tournament_type: string
   tournament_name: string | null
+  central_event_id?: string | null
+  multi_dko_division?: "herren" | "damen" | null
 }
 
 const DKO_BEAMER_ROUTES: Record<string, string> = {
@@ -34,15 +38,57 @@ function readLocalKratzerRunning() {
   }
 }
 
+function BeamerFullscreenButton() {
+  const [fullscreen, setFullscreen] = useState(false)
+
+  useEffect(() => {
+    const sync = () => setFullscreen(Boolean(document.fullscreenElement))
+    sync()
+    document.addEventListener("fullscreenchange", sync)
+    return () => document.removeEventListener("fullscreenchange", sync)
+  }, [])
+
+  const toggle = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      } else {
+        await document.documentElement.requestFullscreen()
+      }
+    } catch (error) {
+      console.error("Beamer-Vollbild konnte nicht umgeschaltet werden:", error)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void toggle()}
+      title={fullscreen ? "Vollbild verlassen (Esc)" : "Beamer im Vollbild anzeigen"}
+      aria-label={fullscreen ? "Vollbild verlassen" : "Vollbild einschalten"}
+      className="fixed bottom-5 right-5 z-[100] flex items-center gap-2 rounded-xl border border-orange-400/30 bg-[#17100d]/95 px-4 py-3 text-sm font-bold text-orange-100 shadow-[0_12px_40px_rgba(0,0,0,.45)] transition-colors hover:bg-orange-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-400"
+    >
+      {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+      {fullscreen ? "Vollbild verlassen" : "Vollbild"}
+    </button>
+  )
+}
+
 export default function AutoBeamerPage() {
   const [activeTournament, setActiveTournament] = useState<ActiveTournament | null>(null)
   const [kratzerRunning, setKratzerRunning] = useState(false)
+  const [multiPair, setMultiPair] = useState<ActiveTournament[] | null>(null)
   const [loaded, setLoaded] = useState(false)
+  const [tvMode, setTvMode] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    setTvMode(new URLSearchParams(window.location.search).get("display") === "tv")
+  }, [])
 
   const refresh = useCallback(async () => {
     const localKratzer = readLocalKratzerRunning()
 
-    const [statusRes, kratzerRes] = await Promise.all([
+    const [statusRes, kratzerRes, multiRes] = await Promise.all([
       supabase
         .from("tournaments_status")
         .select("tournament_id, tournament_type, tournament_name")
@@ -56,6 +102,11 @@ export default function AutoBeamerPage() {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("tournaments_status")
+        .select("tournament_id,tournament_type,tournament_name,central_event_id,multi_dko_division")
+        .eq("status", "active")
+        .in("multi_dko_division", ["herren", "damen"]),
     ])
 
     if (statusRes.error) {
@@ -69,6 +120,28 @@ export default function AutoBeamerPage() {
       setKratzerRunning(localKratzer)
     } else {
       setKratzerRunning(Boolean(kratzerRes.data?.id) || localKratzer)
+    }
+
+    if (multiRes.error) {
+      console.error("Multi-DKO Beamer check failed:", multiRes.error)
+      setMultiPair(null)
+    } else {
+      const multi = (multiRes.data || []) as ActiveTournament[]
+      const grouped = new Map<string, ActiveTournament[]>()
+      for (const run of multi) {
+        if (!run.central_event_id || !DKO_BEAMER_ROUTES[run.tournament_type]) continue
+        const group = grouped.get(run.central_event_id) || []
+        group.push(run)
+        grouped.set(run.central_event_id, group)
+      }
+      // Nur ein tatsächliches Herren+Damen-Paar gemeinsam anzeigen.
+      const requestedEventId = new URLSearchParams(window.location.search).get("centralEventId")
+      const pair = [...grouped.entries()].filter(([id]) => !requestedEventId || requestedEventId === id).map(([, group]) => group).find(group =>
+        group.length === 2 &&
+        group.some(run => run.multi_dko_division === "herren") &&
+        group.some(run => run.multi_dko_division === "damen")
+      )
+      setMultiPair(pair || null)
     }
 
     setLoaded(true)
@@ -147,6 +220,17 @@ export default function AutoBeamerPage() {
     return null
   }, [activeTournament, kratzerRunning])
 
+  if (multiPair) {
+    return <><MultiDkoBeamerSwitcher tvMode={tvMode === true} runs={multiPair.map(run => ({
+      id: run.tournament_id,
+      division: run.multi_dko_division as "herren" | "damen",
+      name: run.tournament_name || "EMD Turnier",
+      url: `${DKO_BEAMER_ROUTES[run.tournament_type]}?${new URLSearchParams({
+        tournamentId: run.tournament_id, tournamentType: run.tournament_type, tournamentName: run.tournament_name || "EMD Turnier"
+      }).toString()}`,
+    }))} />{tvMode === false && <BeamerFullscreenButton />}{tvMode === false && <EmdLiveAnnouncementDisplay />}</>
+  }
+
   if (beamerUrl) {
     return (
       <main className="fixed inset-0 overflow-hidden bg-[#050608]">
@@ -158,6 +242,7 @@ export default function AutoBeamerPage() {
           allow="autoplay; fullscreen"
           allowFullScreen
         />
+        {tvMode === false && <BeamerFullscreenButton />}{tvMode === false && <EmdLiveAnnouncementDisplay />}
       </main>
     )
   }
@@ -166,6 +251,7 @@ export default function AutoBeamerPage() {
 
   return (
     <main className="relative grid min-h-[100svh] place-items-center overflow-hidden bg-[#050608] px-6 text-white">
+      {tvMode === false && <EmdLiveAnnouncementDisplay />}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(249,115,22,.16),transparent_34%),radial-gradient(circle_at_50%_100%,rgba(14,165,233,.10),transparent_42%)]" />
 
       <div className="relative w-full max-w-3xl rounded-[38px] border border-white/10 bg-black/35 px-7 py-10 text-center shadow-[0_30px_100px_rgba(0,0,0,.45)] backdrop-blur-2xl sm:px-12 sm:py-14">

@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
+import EmdLiveRegieControl from "@/components/emd-live-regie-control"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -248,6 +249,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
   const [selectedEventId, setSelectedEventId] = useState("")
   const [activeTab, setActiveTab] = useState<"planned" | "today" | "past" | "event">("planned")
+  const [eventView, setEventView] = useState<"participants" | "tournament" | "machines" | "live">("participants")
   // Multi-DKO bleibt optional und ist pro Veranstaltung getrennt.
   const [multiDkoEnabled, setMultiDkoEnabled] = useState(false)
   const [multiDkoAssignments, setMultiDkoAssignments] = useState<Record<string, "herren" | "damen">>({})
@@ -1812,6 +1814,8 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     setDeleteConfirmOpen(false)
     setPlayerSearch("")
     setActiveTab("event")
+    setEventView("participants")
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   return (
@@ -1880,7 +1884,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
           <div className="emd-admin-tabs-shell mx-auto flex max-w-[var(--emd-content-max)] gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
               type="button"
-              onClick={() => setActiveTab("planned")}
+              onClick={() => { setActiveTab("planned"); window.scrollTo({ top: 0, behavior: "smooth" }) }}
               className={`emd-admin-tab ${activeTab === "planned" ? "emd-admin-tab-active" : "emd-admin-tab-idle"}`}
             >
               <CalendarDays className="h-4 w-4" />
@@ -1890,7 +1894,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
             <button
               type="button"
-              onClick={() => setActiveTab("today")}
+              onClick={() => { setActiveTab("today"); window.scrollTo({ top: 0, behavior: "smooth" }) }}
               className={`emd-admin-tab ${activeTab === "today" ? "emd-admin-tab-active" : "emd-admin-tab-idle"}`}
             >
               <Clock3 className="h-4 w-4" />
@@ -1900,7 +1904,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
             <button
               type="button"
-              onClick={() => setActiveTab("past")}
+              onClick={() => { setActiveTab("past"); window.scrollTo({ top: 0, behavior: "smooth" }) }}
               className={`emd-admin-tab ${activeTab === "past" ? "emd-admin-tab-active" : "emd-admin-tab-idle"}`}
             >
               <Trophy className="h-4 w-4" />
@@ -2052,7 +2056,21 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
         {!schemaMissing && activeTab === "event" && selectedEvent ? (
           <div className="space-y-4">
-            <div className="emd-admin-surface-lg overflow-hidden">
+            <nav aria-label="Turnierbereiche" className="sticky top-2 z-20 grid grid-cols-2 gap-2 rounded-2xl border border-white/[0.09] bg-[#0d121a]/95 p-2 shadow-xl backdrop-blur-xl sm:grid-cols-4">
+              {([
+                { id: "participants", label: "Teilnehmer", icon: UsersRound },
+                { id: "tournament", label: "Turnier", icon: Trophy },
+                { id: "machines", label: "Automaten", icon: Target },
+                { id: "live", label: "Live-Regie", icon: Play },
+              ] as const).map(({ id, label, icon: Icon }) => (
+                <button key={id} type="button" aria-current={eventView === id ? "page" : undefined}
+                  onClick={() => setEventView(id)}
+                  className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-400 ${eventView === id ? "border-orange-400/30 bg-orange-500/15 text-orange-100" : "border-transparent bg-white/[0.035] text-white/55 hover:bg-white/[0.075] hover:text-white"}`}>
+                  <Icon className="h-4 w-4 shrink-0" />{label}
+                </button>
+              ))}
+            </nav>
+            <div id="emd-event-overview" className="emd-admin-surface-lg scroll-mt-40 overflow-hidden">
               <div className="flex flex-col gap-4 border-b border-white/[0.07] p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -2158,6 +2176,13 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               </div>
             </div>
 
+            <div className={eventView === "live" ? "" : "hidden"}>
+              <div className="emd-admin-surface overflow-hidden p-4 sm:p-6">
+                <div className="mb-4"><h3 className="text-xl font-black text-white">Live-Regie</h3><p className="mt-1 text-sm text-white/50">Countdowns und Martin-Durchsagen für Beamer und EMD TV.</p></div>
+                <EmdLiveRegieControl key={selectedEvent.id} eventId={selectedEvent.id} title={selectedEvent.title} />
+              </div>
+            </div>
+            <div className={eventView === "tournament" ? "space-y-4" : "hidden"}>
             {!selectedEventLocked && !selectedEventIsPast ? (
               <div className="emd-admin-surface-lg border border-orange-300/15 p-4 sm:p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -2200,7 +2225,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                   <div>
                     <div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200/60">Turnier läuft</div>
                     <div className="mt-2 text-xl font-black text-white">{multiDkoActive ? "Multi-DKO · Turniere getrennt steuern" : "Dieses Turnier ist bereits gestartet."}</div>
-                    <div className="mt-1 text-sm font-semibold text-white/45">{multiDkoActive ? "Die Teilnehmer bleiben gesperrt. Unten kannst du Herren öffnen und das vorbereitete Damen-DKO separat starten." : "Teilnehmer, Startgeld, Warteliste und Turniermodus sind während des laufenden Turniers gesperrt."}</div>
+                    <div className="mt-1 text-sm font-semibold text-white/45">{multiDkoActive ? "Die Teilnehmer bleiben gesperrt. Im Tab „Turnier“ kannst du Herren öffnen und das vorbereitete Damen-DKO separat starten." : "Teilnehmer, Startgeld, Warteliste und Turniermodus sind während des laufenden Turniers gesperrt."}</div>
                   </div>
                   {!multiDkoActive ? (
                     <Button
@@ -2212,7 +2237,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                       Zum laufenden Turnier
                     </Button>
                   ) : (
-                    <span className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-xs font-black text-emerald-200">Herren und Damen unten getrennt öffnen / starten</span>
+                    <span className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-xs font-black text-emerald-200">Herren und Damen im Tab „Turnier“ öffnen / starten</span>
                   )}
                 </div>
               </div>
@@ -2454,13 +2479,16 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
             ) : null}
 
             </div>
-            {/* Multi-DKO bleibt bedienbar: nur noch nicht gestartete Gruppen starten, aktive Gruppen öffnen. */}
+            </div>
+            {/* Getrennte Turniersteuerung */}
             {teamMode === "single" && (selectedStartMode === "dko" || !selectedStartMode) && (
-              <section className="emd-admin-surface p-4 sm:p-5">
+              <section id="emd-event-tournament" className={`emd-admin-surface border border-white/[0.10] p-4 shadow-[0_18px_60px_-45px_rgba(0,0,0,.8)] sm:p-6 ${eventView === "tournament" || eventView === "machines" ? "" : "hidden"}`}>
+                <div className={eventView === "tournament" ? "" : "hidden"}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="font-black text-white">Multi-DKO · Herren & Damen</div>
-                    <p className="mt-1 text-xs text-white/45">Alle Spieler bleiben unten in einer Liste. Turnier direkt in der Spielerzeile auswählen.</p>
+                    <div className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-orange-200/70">Turniersteuerung</div>
+                    <div className="mt-1 text-lg font-black text-white">Herren- & Damen-DKO</div>
+                    <p className="mt-1 text-xs text-white/45">Teile die Spieler in der Teilnehmerliste den Herren oder Damen zu.</p>
                   </div>
                   <button type="button"
                     disabled={multiDkoLoading || !!multiDkoSavingId || selectedEventLocked || selectedEventIsPast || startingMode !== null || Boolean(multiDkoError) || !!multiPrepared.herren || !!multiPrepared.damen}
@@ -2483,7 +2511,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 </div>
                 {multiDkoError ? <p role="alert" className="mt-3 text-sm text-rose-300">{multiDkoError}</p> : null}
                 {!multiDkoActive && multiDkoHasAssignments && !multiDkoLoading ? (
-                  <p className="mt-3 text-xs text-white/50">Multi-DKO ist aus. Alte Zuordnungen sind gespeichert, beeinflussen den normalen Turnierstart aber nicht.</p>
+                  <p className="mt-3 text-xs text-white/50">Der normale Turniermodus ist aktiv.</p>
                 ) : null}
                 {multiDkoActive ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-black">
@@ -2498,7 +2526,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 {multiDkoActive ? (
                   <div className="mt-4 rounded-2xl border border-orange-400/20 bg-orange-500/[0.04] p-4">
                     <div className="font-black text-white">Getrennte DKO vorbereiten</div>
-                    <p className="mt-1 text-xs text-white/55">Erstellt pro Gruppe eine feste Teilnehmerliste. Noch kein Turnierstart. Sobald eine Gruppe vorbereitet ist, bleiben die Zuordnungen gesperrt.</p>
+                    <p className="mt-1 text-xs text-white/55">Bereite zuerst die Teilnehmer vor. Anschließend kannst du Herren und Damen getrennt starten.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {(["herren", "damen"] as const).map(division => (
                         <button type="button" key={division}
@@ -2521,13 +2549,15 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                         </button>
                       })}
                     </div>
-                    <p className="mt-2 text-xs text-white/50">Jede Gruppe startet mit ihrer eigenen Turnier-ID. Die Datenbank verhindert Doppelstarts und gemischte Teilnehmerlisten.</p>
+                    <p className="mt-2 text-xs text-white/50">Herren und Damen starten unabhängig voneinander. Die Teilnehmer bleiben getrennt.</p>
                   </div>
                 ) : null}
+                </div>
+                <div className={eventView === "machines" ? "" : "hidden"}>
                 {multiDkoActive ? (
-                  <div className="mt-4 rounded-2xl border border-white/[0.08] bg-[#090d12] p-4">
+                  <div className="rounded-2xl border border-white/[0.08] bg-[#090d12] p-4">
                     <div className="font-black text-white">Automaten für Herren & Damen</div>
-                    <p className="mt-1 text-xs text-white/45">Für beide Läufe gespeichert. Die Datenbank schützt die Automatenbelegung turnierübergreifend.</p>
+                    <p className="mt-1 text-xs text-white/45">Lege fest, welche Automaten Herren und Damen verwenden dürfen.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {(["shared", "fixed"] as const).map(mode => (
                         <button key={mode} type="button" disabled={selectedEventLocked || selectedEventIsPast || multiMachineSaving || !!multiPrepared.herren || !!multiPrepared.damen}
@@ -2552,7 +2582,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                       </select>
                     </div>
                     {multiMachineMode === "shared" ? (
-                      <p className="mt-3 text-xs text-white/55">Gemeinsamer Pool: Beide Turniere dürfen später alle {multiMachineCount} Automaten nutzen. Eine zentrale Belegungsprüfung muss vor Freigabe noch eingebaut werden.</p>
+                      <p className="mt-3 text-xs text-white/55">Beide Turniere verwenden gemeinsam alle {multiMachineCount} verfügbaren Automaten.</p>
                     ) : (
                       <div className="mt-4 space-y-4">
                         {(["herren","damen"] as const).map(division => {
@@ -2575,21 +2605,25 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                       </div>
                     )}
                     {multiMachineError ? <p role="alert" className="mt-3 text-xs font-bold text-rose-300">{multiMachineError}</p> : null}
-                    <p className="mt-4 border-t border-white/10 pt-3 text-xs font-semibold text-amber-200/80">Automaten-Einstellungen sind in Supabase gespeichert. Bei laufenden Partien verhindert die Datenbank die doppelte Belegung.</p>
+                    <p className="mt-4 border-t border-white/10 pt-3 text-xs font-semibold text-amber-200/80">Die Automatenzuordnung wird automatisch gespeichert. Ein belegter Automat kann nicht doppelt vergeben werden.</p>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 text-sm text-white/60">Die getrennte Automatenzuordnung ist verfügbar, sobald du im Tab „Turnier“ das Herren-/Damen-DKO aktivierst.</div>
+                )}
+                </div>
               </section>
             )}
 
-            <div className={selectedEventLocked ? "pointer-events-none select-text opacity-70 [&_button]:cursor-not-allowed [&_input]:cursor-not-allowed [&_select]:cursor-not-allowed" : "contents"}>
+            <div className={`${eventView === "participants" ? "" : "hidden"} ${selectedEventLocked ? "pointer-events-none select-text opacity-70 [&_button]:cursor-not-allowed [&_input]:cursor-not-allowed [&_select]:cursor-not-allowed" : ""}`} >
 
             <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,.85fr)]">
-              <div className="emd-admin-surface min-w-0">
-                <div className="p-4 sm:p-5">
+              <div id="emd-event-registration" className="emd-admin-surface min-w-0 scroll-mt-40 border border-white/[0.10] shadow-[0_18px_60px_-45px_rgba(0,0,0,.8)]">
+                <div className="p-4 sm:p-6">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                      <div className="font-black text-white">Teilnehmer & Check-in</div>
-                      <div className="mt-1 text-xs text-white/35">Zahlung, Status und Warteliste direkt verwalten</div>
+                      <div className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-orange-200/70">Anmeldung</div>
+                      <div className="mt-1 text-lg font-black text-white">Teilnehmer & Check-in</div>
+                      <div className="mt-1 text-xs text-white/35">Anmeldungen, Zahlungen und Warteliste im Überblick</div>
                     </div>
                     <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
                       {registeredRows.length > 0 && registeredRows.some((row) => !row.paid) && !selectedEventIsPast ? (
