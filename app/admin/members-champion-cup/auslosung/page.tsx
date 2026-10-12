@@ -21,6 +21,7 @@ import {
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { supabase } from "@/lib/supabase"
+import { MEMBERS_CUP_DRAW_CHANNEL, type DrawShow } from "@/components/members-cup-draw-show"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -134,7 +135,7 @@ function getPlayerLevelBadge(player: DrawPlayer | GroupedDrawPlayer) {
 
   if (!group) {
     return (
-      <Badge variant="outline" className="rounded-lg bg-red-50 text-red-700 border-red-200">
+      <Badge variant="outline" className="rounded-lg bg-red-500/10 text-red-300 border-red-500/25">
         ohne Einstufung
       </Badge>
     )
@@ -143,7 +144,7 @@ function getPlayerLevelBadge(player: DrawPlayer | GroupedDrawPlayer) {
   const info = LEVEL_INFO[group]
 
   return (
-    <Badge variant="outline" className={`rounded-lg ${info.className}`}>
+    <Badge variant="outline" className={`rounded-lg border px-2 py-0.5 ${group === 1 ? "border-orange-400/25 bg-orange-500/10 text-orange-200" : group === 2 ? "border-sky-400/25 bg-sky-500/10 text-sky-200" : "border-violet-400/25 bg-violet-500/10 text-violet-200"}`}>
       {info.label} – {info.short}
     </Badge>
   )
@@ -151,12 +152,12 @@ function getPlayerLevelBadge(player: DrawPlayer | GroupedDrawPlayer) {
 
 function PlayerMiniCard({ player }: { player: DrawPlayer | GroupedDrawPlayer }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="font-black text-gray-900">{player.player_name}</div>
+    <div className="rounded-2xl border border-white/10 bg-[#11171e] p-4 shadow-sm">
+      <div className="font-black text-white">{player.player_name}</div>
       <div className="mt-2 flex flex-wrap gap-2">
         {getPlayerLevelBadge(player)}
         {typeof player.level?.average_points === "number" ? (
-          <Badge variant="outline" className="rounded-lg bg-white">
+          <Badge variant="outline" className="rounded-lg border-white/10 bg-[#1c252e] text-white/70">
             Ø {player.level.average_points.toLocaleString("de-AT")}
           </Badge>
         ) : null}
@@ -170,14 +171,49 @@ export default function AdminMembersChampionCupAuslosungPage() {
   const searchParams = useSearchParams()
   const requestedSeriesId = searchParams.get("seriesId")
   const requestedEventId = searchParams.get("eventId")
+
+  // Ein Ereignis fuer alle Anzeigen; gleicher Browser: storage + BroadcastChannel,
+  // andere Geraete: Supabase Realtime. Auslosung selbst wird nicht erneut berechnet.
+  const broadcastDraw = (names: string[], groupCount: number) => {
+    if (!requestedEventId || names.length === 0) return 0
+    const payload: DrawShow = {
+      id: `${requestedEventId}-full-${Date.now()}`,
+      eventId: requestedEventId,
+      stage: "full", names, groupCount,
+      startedAt: Date.now() + 2200,
+      stepMs: 3000,
+    }
+    const endAt = payload.startedAt + payload.stepMs * (payload.names.length + 2)
+    // Wiederaufnahme auch wenn Beamer kurz nach dem Klick geoeffnet wird.
+    try { window.localStorage.setItem(MEMBERS_CUP_DRAW_CHANNEL, JSON.stringify(payload)) } catch {}
+    try { const bc = new BroadcastChannel(MEMBERS_CUP_DRAW_CHANNEL); bc.postMessage(payload); bc.close() } catch {}
+    const channel = supabase.channel(MEMBERS_CUP_DRAW_CHANNEL)
+    channel.subscribe(status => {
+      if (status !== "SUBSCRIBED") return
+      const send = () => { void channel.send({ type: "broadcast", event: "draw", payload }) }
+      send()
+      const timer = window.setInterval(() => {
+        if (Date.now() >= endAt) { window.clearInterval(timer); void supabase.removeChannel(channel); return }
+        send()
+      }, 3500)
+    })
+    return endAt
+  }
+
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  const [roundRobinStarting, setRoundRobinStarting] = useState(false)
+  const [showEndsAt, setShowEndsAt] = useState(0)
+  const [showNow, setShowNow] = useState(Date.now())
+  useEffect(() => { const timer = window.setInterval(() => setShowNow(Date.now()), 300); return () => window.clearInterval(timer) }, [])
+  const showRunning = showEndsAt > showNow
 
   const [seriesName, setSeriesName] = useState("EMD Members Champion Cup")
   const [players, setPlayers] = useState<DrawPlayer[]>([])
   const [groupedPlayers, setGroupedPlayers] = useState<GroupedDrawPlayer[]>([])
   const [teams, setTeams] = useState<DrawTeam[]>([])
+  const [rrGroupCount, setRrGroupCount] = useState(2)
 
   const [groupsLocked, setGroupsLocked] = useState(false)
   const [teamsLocked, setTeamsLocked] = useState(false)
@@ -472,6 +508,20 @@ const handleCreateGroups = () => {
     const finalA = shuffleArray(resultA)
     const finalB = shuffleArray(resultB)
 
+    // Ein Klick: Gruppen bilden, dann sofort Teams bilden; die Show zeigt beides in Reihenfolge.
+    const shuffleB = shuffleArray(finalB)
+    const generatedTeams: DrawTeam[] = shuffleArray(finalA).map((playerA, index) => ({
+      teamNo: index + 1, playerA, playerB: shuffleB[index],
+    }))
+    const displayNames = [
+      ...finalA.map(p => `Gruppe A · ${p.player_name}`),
+      ...finalB.map(p => `Gruppe B · ${p.player_name}`),
+      ...generatedTeams.map(t => `TEAM ${t.teamNo} · ${t.playerA.player_name} + ${t.playerB.player_name}`),
+    ]
+    setShowEndsAt(broadcastDraw(displayNames, finalA.length + finalB.length))
+    setTeams(generatedTeams)
+    setTeamsLocked(true)
+    setTeamsDrawnAt(new Date().toLocaleString("de-AT"))
     setGroupedPlayers([...finalA, ...finalB])
     setGroupsLocked(true)
     setGroupsDrawnAt(new Date().toLocaleString("de-AT"))
@@ -524,6 +574,7 @@ const handleCreateGroups = () => {
         playerB: shuffledB[index],
       }))
 
+      // Die Partner sind bereits bei der Ein-Klick-Auslosung gezogen.
       setTeams(generatedTeams)
       setTeamsLocked(true)
       setTeamsDrawnAt(new Date().toLocaleString("de-AT"))
@@ -547,12 +598,25 @@ const handleCreateGroups = () => {
 
 
 const handleCreateRoundRobin = async () => {
+  if (showEndsAt > Date.now()) {
+    setMessage({ type: "info", text: "Die Auslosungs-Show läuft noch. Bitte bis zum Ende warten." })
+    return
+  }
+  if (!requestedSeriesId || !requestedEventId) {
+    setMessage({ type: "error", text: "Serie oder Spieltag fehlt in der URL. Bitte die Auslosung über den gewählten Spieltag starten." })
+    return
+  }
   if (teams.length === 0) {
     setMessage({ type: "error", text: "Bitte zuerst Partner-Teams auslosen." })
     return
   }
+  if (teams.length < rrGroupCount * 2) {
+    setMessage({ type: "error", text: "Für jede Round-Robin-Gruppe werden mindestens zwei Teams benötigt." })
+    return
+  }
 
   try {
+    setRoundRobinStarting(true)
     setActionLoading(true)
     setMessage(null)
 
@@ -571,32 +635,36 @@ const handleCreateRoundRobin = async () => {
 
     const roundRobinId = rr.id as string
 
-    const { data: groupData, error: groupError } = await supabase
+    // Die Partnerauslosung (A/B) ist NICHT die spätere Round-Robin-Gruppeneinteilung.
+    // Für Round Robin werden eigenständige Gruppen mit eigenen Begegnungen angelegt.
+    const shuffledTeams = shuffleArray(teams)
+    const teamGroups: DrawTeam[][] = Array.from({ length: rrGroupCount }, () => [])
+    shuffledTeams.forEach((team, index) => teamGroups[index % rrGroupCount].push(team))
+
+    const { data: createdGroups, error: groupError } = await supabase
       .from("round_robin_groups")
-      .insert({
+      .insert(teamGroups.map((_, index) => ({
         round_robin_id: roundRobinId,
-        group_no: 1,
-        name: "Gruppe 1",
-      })
-      .select("id")
-      .single()
+        group_no: index + 1,
+        name: `Gruppe ${index + 1}`,
+      })))
+      .select("id,group_no")
 
     if (groupError) throw groupError
+    if (!createdGroups || createdGroups.length !== rrGroupCount) {
+      throw new Error("Round-Robin-Gruppen konnten nicht vollständig erstellt werden.")
+    }
+    const groupIds = new Map(createdGroups.map((group) => [group.group_no, group.id as string]))
 
-    const groupId = groupData.id as string
+    const preparedTeams = teamGroups.flatMap((groupTeams, index) => groupTeams.map((team) => ({
+      team,
+      groupNo: index + 1,
+      groupId: groupIds.get(index + 1)!,
+      teamId: crypto.randomUUID(),
+      teamName: `${team.playerA.player_name} / ${team.playerB.player_name}`,
+    })))
 
-    const preparedTeams = teams.map((team) => {
-      const teamId = crypto.randomUUID()
-      const teamName = `${team.playerA.player_name} / ${team.playerB.player_name}`
-
-      return {
-        team,
-        teamId,
-        teamName,
-      }
-    })
-
-    const teamRows = preparedTeams.map(({ team, teamId, teamName }) => ({
+    const teamRows = preparedTeams.map(({ team, groupId, teamId, teamName }) => ({
       group_id: groupId,
       player_id: teamId,
       player_name: teamName,
@@ -626,26 +694,40 @@ const handleCreateRoundRobin = async () => {
 
     if (teamMembersError) throw teamMembersError
 
-    const rrPlayers = preparedTeams.map(({ teamId, teamName }) => ({
-      id: teamId,
-      name: teamName,
-    }))
+    const matchRows: Array<{
+      round_robin_id: string
+      group_id: string
+      round_no: number
+      match_no: number
+      player1_id: string
+      player1_name: string
+      player2_id: string
+      player2_name: string
+      planned_machine: null
+    }> = []
 
-    const matchRows: any[] = []
-
-    for (let i = 0; i < rrPlayers.length; i++) {
-      for (let j = i + 1; j < rrPlayers.length; j++) {
-        matchRows.push({
-          round_robin_id: roundRobinId,
-          group_id: groupId,
-          round_no: i + 1,
-          match_no: j,
-          player1_id: rrPlayers[i].id,
-          player1_name: rrPlayers[i].name,
-          player2_id: rrPlayers[j].id,
-          player2_name: rrPlayers[j].name,
-          planned_machine: null,
-        })
+    for (let groupIndex = 0; groupIndex < rrGroupCount; groupIndex++) {
+      const groupNo = groupIndex + 1
+      const groupPlayers = preparedTeams
+        .filter((team) => team.groupNo === groupNo)
+        .map(({ teamId, teamName }) => ({ id: teamId, name: teamName }))
+      const groupId = groupIds.get(groupNo)!
+      const rounds = generateRoundRobinPairs(groupPlayers)
+      let matchNo = 0
+      for (const round of rounds) {
+        for (const pair of round.pairs) {
+          matchRows.push({
+            round_robin_id: roundRobinId,
+            group_id: groupId,
+            round_no: round.roundNo,
+            match_no: ++matchNo,
+            player1_id: pair.a.id,
+            player1_name: pair.a.name,
+            player2_id: pair.b.id,
+            player2_name: pair.b.name,
+            planned_machine: null,
+          })
+        }
       }
     }
 
@@ -675,11 +757,12 @@ const handleCreateRoundRobin = async () => {
 	const encodedName = encodeURIComponent(tournamentName)
 
 router.push(
-  `/roundrobin?roundRobinId=${roundRobinId}&tournamentName=${encodedName}`
+  `/roundrobin?roundRobinId=${roundRobinId}&tournamentName=${encodedName}&seriesId=${encodeURIComponent(requestedSeriesId)}&eventId=${encodeURIComponent(requestedEventId)}`
 )
 
 return
   } catch (error: any) {
+    setRoundRobinStarting(false)
     console.error("create round robin error:", error)
     setMessage({
       type: "error",
@@ -711,7 +794,7 @@ return
         <main className="pt-20 px-4">
           <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white shadow-sm p-6 flex items-center gap-3">
             <Loader2 className="w-5 h-5 animate-spin text-orange-600" />
-            <p className="text-gray-700 font-medium">Lade Adminbereich...</p>
+            <p className="text-white/70 font-medium">Lade Adminbereich...</p>
           </div>
         </main>
         <MobileBottomNav />
@@ -727,7 +810,7 @@ return
           <Card className="mx-auto w-full max-w-md p-6 shadow-lg rounded-2xl">
             <CardTitle className="text-2xl font-bold text-center mb-6">Zugriff verweigert</CardTitle>
             <CardContent className="text-center space-y-4">
-              <p className="text-gray-700">Du benötigst Admin-Rechte, um die Members Champion Cup Auslosung zu öffnen.</p>
+              <p className="text-white/70">Du benötigst Admin-Rechte, um die Members Champion Cup Auslosung zu öffnen.</p>
               <Button onClick={() => router.push("/admin")} className="w-full rounded-xl">
                 Zurück zur Admin-Seite
               </Button>
@@ -740,12 +823,12 @@ return
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24 md:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-[#15100d] via-[#0c1117] to-[#071923] text-white font-sans pb-24 md:pb-0">
       <Header />
 
       <main className="pt-16 sm:pt-14">
         <motion.div
-          className="mx-auto w-full px-4 py-6 sm:py-8 max-w-7xl"
+          className="mx-auto w-full px-4 py-6 sm:px-6 sm:py-8 max-w-[1480px]"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -753,7 +836,7 @@ return
           <motion.div variants={itemVariants} className="mb-5">
             <Link
               href="/admin/turnier_spieltage_starten"
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#10151b] px-4 py-2 text-sm font-bold text-white/75 transition-colors hover:bg-white/10 hover:text-white"
             >
               <ArrowLeft className="w-4 h-4" />
               Zurück
@@ -761,16 +844,16 @@ return
           </motion.div>
 
           <motion.div variants={itemVariants} className="mb-6">
-            <div className="rounded-3xl border border-gray-200 bg-white shadow-md overflow-hidden">
+            <div className="rounded-[28px] border border-orange-500/20 bg-gradient-to-br from-[#1b120d] via-[#0c1015] to-[#0a1720] shadow-[0_24px_70px_-45px_rgba(0,0,0,.9)] overflow-hidden">
               <div className="p-5 sm:p-7">
                 <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
                   <div className="flex items-start gap-4">
-                    <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
+                    <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-[0_10px_24px_-12px_rgba(234,88,12,.8)]">
                       <Crown className="h-6 w-6" />
                     </div>
 
                     <div>
-                      <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
+                      <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-500/10 text-orange-300 border border-orange-500/25">
                         EMD MEMBERS CHAMPION CUP
                       </div>
 
@@ -778,19 +861,20 @@ return
                         2-Stufen Partner-Auslosung
                       </h1>
 
-                      <p className="mt-2 text-sm text-gray-600 max-w-3xl">
+                      <p className="mt-2 text-sm text-white/60 max-w-3xl leading-relaxed">
                         Schritt 1: Tabelle 2 wird per Zufall auf Gruppe A/B verteilt. Schritt 2: Danach werden die
                         Partner aus Gruppe A und Gruppe B ausgelost.
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <Button
                       type="button"
                       variant="outline"
+                      className="border-white/15 bg-[#11171e] text-white hover:bg-white/10 hover:text-white"
                       onClick={() => void loadData()}
-                      disabled={loading || actionLoading || groupsLocked || teamsLocked}
+                      disabled={loading || actionLoading || showRunning || groupsLocked || teamsLocked}
                     >
                       {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
                       Neu laden
@@ -799,25 +883,15 @@ return
                     <Button
                       type="button"
                       onClick={handleCreateGroups}
-                      disabled={!canCreateGroups || loading || actionLoading}
+                      disabled={!canCreateGroups || loading || actionLoading || showRunning}
                       className="bg-orange-600 hover:bg-orange-700"
                     >
                       {groupsLocked ? <Lock className="w-4 h-4 mr-2" /> : <Shuffle className="w-4 h-4 mr-2" />}
-                      {groupsLocked ? "Gruppen fixiert" : "1. Gruppen auslosen"}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      onClick={handleDrawTeams}
-                      disabled={!canDrawTeams || actionLoading}
-                      className="bg-gray-900 hover:bg-black"
-                    >
-                      {teamsLocked ? <Lock className="w-4 h-4 mr-2" /> : <Trophy className="w-4 h-4 mr-2" />}
-                      {teamsLocked ? "Partner fixiert" : "2. Partner auslosen"}
+                      {showRunning ? "Auslosung läuft …" : groupsLocked ? "Auslosung fixiert" : "Auslosung starten"}
                     </Button>
 
                     {(groupsLocked || teamsLocked) && !teamsLocked ? (
-                      <Button type="button" variant="outline" onClick={resetDrawLocal} disabled={actionLoading}>
+                      <Button type="button" variant="outline" className="border-white/15 bg-[#11171e] text-white hover:bg-white/10" onClick={resetDrawLocal} disabled={actionLoading || showRunning}>
                         Zurücksetzen
                       </Button>
                     ) : null}
@@ -829,11 +903,18 @@ return
             </div>
           </motion.div>
 
+          {showRunning && (
+            <div className="mb-5 rounded-2xl border border-orange-500/40 bg-orange-500/10 p-5" role="status" aria-live="polite">
+              <div className="flex items-center gap-3 font-bold text-orange-200"><Loader2 className="h-5 w-5 animate-spin" /> Auslosung läuft auf Beamer / EMD TV</div>
+              <p className="mt-2 text-sm text-white/75">Bitte warten, bis alle Gruppen und Partner gezeigt wurden. Round Robin wird danach freigeschaltet.</p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-orange-500 transition-all duration-300" style={{ width: `${Math.min(100, Math.max(0, (1 - (showEndsAt - showNow) / (3000 * (players.length + players.length / 2 + 2))) * 100))}%` }} /></div>
+            </div>
+          )}
           {(groupsLocked || teamsLocked) && (
-            <motion.div variants={itemVariants} className="mb-5 rounded-2xl border border-green-200 bg-green-50 p-4">
+            <motion.div variants={itemVariants} className="mb-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.08] p-4">
               <div className="flex items-start gap-3">
-                <Lock className="w-5 h-5 text-green-700 mt-0.5" />
-                <div className="text-sm text-green-900">
+                <Lock className="w-5 h-5 text-emerald-400 mt-0.5" />
+                <div className="text-sm text-emerald-100">
                   <div className="font-black">Auslosungsstatus</div>
                   <div>Gruppen: {groupsLocked ? `fixiert${groupsDrawnAt ? ` am ${groupsDrawnAt}` : ""}` : "offen"}</div>
                   <div>Partner: {teamsLocked ? `fixiert${teamsDrawnAt ? ` am ${teamsDrawnAt}` : ""}` : "offen"}</div>
@@ -847,10 +928,10 @@ return
               variants={itemVariants}
               className={
                 message.type === "success"
-                  ? "mb-5 rounded-2xl border border-green-200 bg-green-50 p-4 text-green-800 font-semibold"
+                  ? "mb-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.08] p-4 text-emerald-200 font-semibold"
                   : message.type === "error"
-                    ? "mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 font-semibold"
-                    : "mb-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-800 font-semibold"
+                    ? "mb-5 rounded-2xl border border-red-500/25 bg-red-500/[0.08] p-4 text-red-200 font-semibold"
+                    : "mb-5 rounded-2xl border border-sky-500/25 bg-sky-500/[0.08] p-4 text-sky-200 font-semibold"
               }
             >
               {message.text}
@@ -858,13 +939,13 @@ return
           ) : null}
 
           {loading ? (
-            <motion.div variants={itemVariants} className="rounded-2xl border bg-white p-6 text-center shadow-sm">
+            <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-[#10151b] p-6 text-center shadow-sm">
               <Loader2 className="mx-auto h-7 w-7 animate-spin text-orange-600" />
-              <div className="mt-2 text-sm font-semibold text-gray-600">Auslosungsdaten werden geladen...</div>
+              <div className="mt-2 text-sm font-semibold text-white/60">Auslosungsdaten werden geladen...</div>
             </motion.div>
           ) : (
             <>
-              <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+              <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
                 <StatCard label="Angemeldet" value={players.length} />
                 <StatCard label="Tabelle 1" value={table1Players.length} />
                 <StatCard label="Tabelle 2" value={table2Players.length} />
@@ -887,7 +968,7 @@ return
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
                 <motion.div variants={itemVariants}>
-                  <Card className="rounded-2xl border-gray-200 shadow-sm">
+                  <Card className="rounded-2xl border-white/10 bg-[#0d1218] text-white shadow-sm">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Users className="w-5 h-5 text-orange-600" />
@@ -900,8 +981,8 @@ return
                       <PlayerGroup title="Tabelle 3 – Schwach / fix Gruppe B" players={table3Players} />
 
                       {unsetPlayers.length > 0 ? (
-                        <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
-                          <div className="flex items-center gap-2 font-black text-red-900 mb-3">
+                        <div className="rounded-2xl border border-red-500/25 bg-red-500/[0.08] p-4">
+                          <div className="flex items-center gap-2 font-black text-red-200 mb-3">
                             <AlertTriangle className="w-5 h-5" />
                             Ohne Einstufung
                           </div>
@@ -917,7 +998,7 @@ return
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
-                  <Card className="rounded-2xl border-gray-200 shadow-sm">
+                  <Card className="rounded-2xl border-white/10 bg-[#0d1218] text-white shadow-sm">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Shuffle className="w-5 h-5 text-orange-600" />
@@ -926,7 +1007,7 @@ return
                     </CardHeader>
                     <CardContent>
                       {groupedPlayers.length === 0 ? (
-                        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-white/60">
                           Noch keine Gruppen ausgelost. Klicke zuerst auf „1. Gruppen auslosen“.
                         </div>
                       ) : (
@@ -941,7 +1022,7 @@ return
               </div>
 
               <motion.div variants={itemVariants}>
-                <Card className="rounded-2xl border-gray-200 shadow-sm">
+                <Card className="rounded-2xl border-white/10 bg-[#0d1218] text-white shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Trophy className="w-5 h-5 text-orange-600" />
@@ -950,26 +1031,26 @@ return
                   </CardHeader>
                   <CardContent>
                     {teams.length === 0 ? (
-                      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-white/60">
                         Noch keine Teams ausgelost. Nach der Gruppenbildung auf „2. Partner auslosen“ klicken.
                       </div>
                     ) : (
                       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {teams.map((team) => (
-                          <div key={team.teamNo} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                            <div className="text-xs font-black text-orange-700 mb-3">Team {team.teamNo}</div>
+                          <div key={team.teamNo} className="rounded-2xl border border-white/10 bg-[#11171e] p-4 shadow-sm">
+                            <div className="text-xs font-black text-orange-300 mb-3">Team {team.teamNo}</div>
 
-                            <div className="rounded-xl border border-orange-100 bg-orange-50 p-3">
-                              <div className="text-[11px] font-black text-orange-700">Gruppe A</div>
-                              <div className="font-black text-gray-900">{team.playerA.player_name}</div>
+                            <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.07] p-3">
+                              <div className="text-[11px] font-black text-orange-300">Gruppe A</div>
+                              <div className="font-black text-white">{team.playerA.player_name}</div>
                               <div className="mt-2">{getPlayerLevelBadge(team.playerA)}</div>
                             </div>
 
-                            <div className="my-2 text-center text-xs font-black text-gray-400">+</div>
+                            <div className="my-2 text-center text-xs font-black text-white/40">+</div>
 
-                            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
-                              <div className="text-[11px] font-black text-emerald-700">Gruppe B</div>
-                              <div className="font-black text-gray-900">{team.playerB.player_name}</div>
+                            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] p-3">
+                              <div className="text-[11px] font-black text-emerald-300">Gruppe B</div>
+                              <div className="font-black text-white">{team.playerB.player_name}</div>
                               <div className="mt-2">{getPlayerLevelBadge(team.playerB)}</div>
                             </div>
                           </div>
@@ -977,10 +1058,34 @@ return
                       </div>
                     )}
 
+                    <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                      <div className="mb-3 text-sm font-semibold text-white">Round-Robin-Gruppen</div>
+                      <p className="mb-4 text-xs leading-relaxed text-white/55">Nach der Partner-Auslosung: Wie viele Gruppen sollen spielen? Die Teams werden gleichmäßig und zufällig auf die Gruppen verteilt.</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([1, 2, 4] as const).map((count) => {
+                          const valid = teams.length >= count * 2
+                          return (
+                            <button
+                              key={count}
+                              type="button"
+                              disabled={!valid || actionLoading || showRunning}
+                              onClick={() => setRrGroupCount(count)}
+                              aria-pressed={rrGroupCount === count}
+                              className={`rounded-xl border px-3 py-3 text-center transition-colors ${rrGroupCount === count ? "border-orange-500 bg-orange-500/15 text-orange-200" : "border-white/10 bg-[#0b1118] text-white/70 hover:border-white/25"} disabled:cursor-not-allowed disabled:opacity-35`}
+                            >
+                              <span className="block text-base font-semibold">{count} {count === 1 ? "Gruppe" : "Gruppen"}</span>
+                              <span className="mt-1 block text-xs opacity-70">{Math.floor(teams.length / count)}{teams.length % count ? `–${Math.ceil(teams.length / count)}` : ""} Teams je Gruppe</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <p className="mt-3 text-xs text-white/50">{rrGroupCount} {rrGroupCount === 1 ? "Gruppe" : "Gruppen"} · {teams.length} Doppel-Teams · {Array.from({length:rrGroupCount},(_,i)=>{const n=Math.floor(teams.length/rrGroupCount)+(i < teams.length % rrGroupCount ? 1 : 0);return n*(n-1)/2}).reduce((a,b)=>a+b,0)} Gruppenspiele</p>
+                    </div>
+
                     <Button
                       type="button"
                       onClick={handleCreateRoundRobin}
-                      disabled={teams.length === 0 || actionLoading}
+                      disabled={teams.length < rrGroupCount * 2 || actionLoading || showRunning}
                       className="mt-5 w-full rounded-xl bg-orange-600 hover:bg-orange-700"
                     >
                       {actionLoading ? (
@@ -988,7 +1093,7 @@ return
                       ) : (
                         <Trophy className="w-4 h-4 mr-2" />
                       )}
-                      Teams in Round Robin übernehmen
+                      {showRunning ? "Bitte warten – Auslosung läuft" : "Teams in Round Robin übernehmen"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -998,6 +1103,50 @@ return
         </motion.div>
       </main>
 
+      {roundRobinStarting && (
+        <div role="status" aria-live="polite" className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#05080e]/95 px-4 backdrop-blur-xl">
+          <div className="w-full max-w-xl rounded-[28px] border border-orange-500/30 bg-[#10161e] p-8 text-center shadow-[0_30px_100px_rgba(0,0,0,.65)] sm:p-12">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-400"><Loader2 className="h-9 w-9 animate-spin" /></div>
+            <p className="text-xs font-black uppercase tracking-[.22em] text-orange-400">EMD Members Champion Cup</p>
+            <h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">Round Robin wird vorbereitet</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-300">Teams, Spielplan und Begegnungen werden erstellt. Bitte warten und nicht erneut klicken.</p>
+            <div className="relative mt-8 h-2 overflow-hidden rounded-full bg-white/10"><div className="absolute inset-y-0 w-1/3 animate-pulse rounded-full bg-orange-500" /></div>
+            <p className="mt-4 text-xs text-slate-400">Die Turnieransicht öffnet sich automatisch.</p>
+          </div>
+        </div>
+      )}
+      {showRunning && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#03070c]/95 px-4 py-6 backdrop-blur-xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="members-cup-show-title"
+          aria-describedby="members-cup-show-description"
+        >
+          <div className="w-full max-w-xl rounded-[28px] border border-orange-500/30 bg-gradient-to-br from-[#19150f] via-[#10161e] to-[#0a1820] p-6 shadow-[0_30px_100px_rgba(0,0,0,.75)] sm:p-9">
+            <div className="mb-6 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-500/30 bg-orange-500/10">
+                <Shuffle className="h-8 w-8 animate-pulse text-orange-400" />
+              </div>
+            </div>
+            <p className="text-center text-xs font-black uppercase tracking-[.18em] text-orange-400">EMD Members Champion Cup</p>
+            <h2 id="members-cup-show-title" className="mt-3 text-center text-2xl font-black text-white sm:text-3xl">Auslosung läuft</h2>
+            <p id="members-cup-show-description" className="mt-3 text-center text-sm leading-relaxed text-white/65">
+              Gruppen und Partner werden gerade auf Beamer und EMD TV präsentiert. Die Ergebnisse werden erst nach der vollständigen Show freigegeben.
+            </p>
+            <div className="mt-8 h-3 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-600 to-orange-400 transition-[width] duration-300"
+                style={{ width: `${Math.min(100, Math.max(0, (1 - (showEndsAt - showNow) / (3000 * (players.length + players.length / 2 + 2))) * 100))}%` }}
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-orange-200">
+              <Loader2 className="h-4 w-4 animate-spin" /> Bitte warten – die Show läuft
+            </div>
+            <p className="mt-6 text-center text-xs text-white/40">Bitte diese Seite geöffnet lassen. Die Auslosung wird automatisch freigegeben.</p>
+          </div>
+        </div>
+      )}
       <MobileBottomNav />
     </div>
   )
@@ -1047,12 +1196,12 @@ function StatusBox({
   }
 
   return (
-    <div className={good ? "rounded-2xl border border-green-200 bg-green-50 p-4" : "rounded-2xl border border-red-200 bg-red-50 p-4"}>
+    <div className={good ? "rounded-2xl border border-emerald-500/25 bg-[#0d211d] p-4" : "rounded-2xl border border-red-500/25 bg-[#241417] p-4"}>
       <div className="flex items-start gap-3">
-        {good ? <CheckCircle2 className="w-6 h-6 text-green-700 shrink-0 mt-0.5" /> : <XCircle className="w-6 h-6 text-red-700 shrink-0 mt-0.5" />}
+        {good ? <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" /> : <XCircle className="w-6 h-6 text-red-400 shrink-0 mt-0.5" />}
         <div>
-          <div className={good ? "font-black text-green-900" : "font-black text-red-900"}>{title}</div>
-          <div className="mt-1 text-sm text-gray-700">{text}</div>
+          <div className={good ? "font-black text-emerald-200" : "font-black text-red-200"}>{title}</div>
+          <div className="mt-1 text-sm text-white/70">{text}</div>
         </div>
       </div>
     </div>
@@ -1061,9 +1210,9 @@ function StatusBox({
 
 function StatCard({ label, value, danger = false }: { label: string; value: number; danger?: boolean }) {
   return (
-    <Card className={danger ? "rounded-2xl border-red-200 bg-red-50 shadow-sm" : "rounded-2xl border-gray-200 shadow-sm"}>
+    <Card className={danger ? "rounded-2xl border-red-500/30 bg-[#1b1115] text-white shadow-sm" : "rounded-2xl border-white/10 bg-[#0d1218] text-white shadow-sm"}>
       <CardContent className="p-4">
-        <div className={danger ? "text-xs sm:text-sm text-red-700 font-semibold" : "text-xs sm:text-sm text-gray-500"}>
+        <div className={danger ? "text-xs sm:text-sm text-red-400 font-semibold" : "text-xs sm:text-sm text-white/50"}>
           {label}
         </div>
         <div className={danger ? "text-2xl sm:text-3xl font-black mt-1 text-red-800" : "text-2xl sm:text-3xl font-black mt-1"}>
@@ -1078,14 +1227,14 @@ function PlayerGroup({ title, players }: { title: string; players: DrawPlayer[] 
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <div className="font-black text-gray-900">{title}</div>
+        <div className="font-black text-white">{title}</div>
         <Badge variant="outline" className="rounded-lg">
           {players.length} Spieler
         </Badge>
       </div>
 
       {players.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-white/50">
           Keine Spieler in dieser Tabelle.
         </div>
       ) : (
@@ -1110,10 +1259,10 @@ function GroupBox({
 }) {
   const boxClass =
     tone === "orange"
-      ? "rounded-2xl border border-orange-200 bg-orange-50 p-4"
-      : "rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
+      ? "rounded-2xl border border-orange-500/25 bg-orange-500/[0.07] p-4"
+      : "rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.07] p-4"
 
-  const titleClass = tone === "orange" ? "font-black text-orange-900 mb-3" : "font-black text-emerald-900 mb-3"
+  const titleClass = tone === "orange" ? "font-black text-orange-200 mb-3" : "font-black text-emerald-200 mb-3"
 
   return (
     <div className={boxClass}>
@@ -1123,9 +1272,9 @@ function GroupBox({
 
       <div className="space-y-3">
         {players.map((player, index) => (
-          <div key={player.id} className="rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
-            <div className="text-xs font-black text-gray-400 mb-1">#{index + 1}</div>
-            <div className="font-black text-gray-900">{player.player_name}</div>
+          <div key={player.id} className="rounded-2xl border border-white/10 bg-[#11171e] p-4 shadow-sm">
+            <div className="text-xs font-black text-white/40 mb-1">#{index + 1}</div>
+            <div className="font-black text-white">{player.player_name}</div>
             <div className="mt-2 flex flex-wrap gap-2">{getPlayerLevelBadge(player)}</div>
           </div>
         ))}

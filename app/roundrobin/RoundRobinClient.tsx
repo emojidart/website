@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { calculateSeriesLegPoints, calculateSeriesPlacementPoints, calculateSeriesWinnerBonus, loadSeriesScoringRuntime } from "@/lib/tournament-series-scoring"
@@ -318,7 +318,6 @@ export default function RoundRobinClient() {
   const [groups, setGroups] = useState<RRGroupRow[]>([])
   const [matches, setMatches] = useState<RRMatchRow[]>([])
 
-  const isRemoteUpdateRef = useRef(false)
 
   const [totalMachines, setTotalMachines] = useState<number>(10)
   const [machineDialogOpen, setMachineDialogOpen] = useState(false)
@@ -341,6 +340,7 @@ export default function RoundRobinClient() {
 
   // ---- UI: group tabs
   const [activeGroupId, setActiveGroupId] = useState<string>("")
+  const [viewTab, setViewTab] = useState<"center" | "schedule" | "standings" | "final">("center")
 
   // ---- Playoff UI
   const [playoffSize, setPlayoffSize] = useState<PlayoffSize>(4)
@@ -522,14 +522,10 @@ export default function RoundRobinClient() {
   // ---- save (debounced) group states
   useEffect(() => {
     if (loading || !roundRobinId) return
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false
-      return
-    }
 
     const t = setTimeout(async () => {
       try {
-        const rows = Object.values(matchStates).map((m) => ({
+        const rows = Object.values(matchStates).filter((m) => m._localUpdate).map((m) => ({
           tournament_type: tournamentTypeGroup,
           tournament_id: roundRobinId,
           match_id: m.id,
@@ -547,6 +543,9 @@ export default function RoundRobinClient() {
 
         if (rows.length === 0) return
 
+        // Nur den gespeicherten Stand quittieren. Neue Eingaben während der
+        // laufenden Anfrage bleiben als geändert markiert und werden nachgespeichert.
+        const savedSnapshot = matchStates
         const { error } = await supabase.from("dko_match_states").upsert(rows, {
   onConflict: "tournament_type,tournament_id,match_id",
 })
@@ -558,7 +557,7 @@ setMatchStates((prev) => {
 
   Object.entries(prev).forEach(([key, match]) => {
     const id = Number(key)
-    if (match._localUpdate) {
+    if (match._localUpdate && match === savedSnapshot[id]) {
       changed = true
       next[id] = {
         ...match,
@@ -583,14 +582,10 @@ setMatchStates((prev) => {
   // ---- save (debounced) playoff states
   useEffect(() => {
     if (loading || !roundRobinId) return
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false
-      return
-    }
 
     const t = setTimeout(async () => {
       try {
-        const rows = Object.values(playoffStates).map((m) => ({
+        const rows = Object.values(playoffStates).filter((m) => m._localUpdate).map((m) => ({
           tournament_type: tournamentTypePlayoff,
           tournament_id: roundRobinId,
           match_id: m.id,
@@ -608,6 +603,9 @@ setMatchStates((prev) => {
 
         if (rows.length === 0) return
 
+        // Nur den gespeicherten Stand quittieren. Neue Eingaben während der
+        // laufenden Anfrage bleiben als geändert markiert und werden nachgespeichert.
+        const savedSnapshot = playoffStates
         const { error } = await supabase.from("dko_match_states").upsert(rows, {
   onConflict: "tournament_type,tournament_id,match_id",
 })
@@ -619,7 +617,7 @@ setPlayoffStates((prev) => {
 
   Object.entries(prev).forEach(([key, match]) => {
     const id = Number(key)
-    if (match._localUpdate) {
+    if (match._localUpdate && match === savedSnapshot[id]) {
       changed = true
       next[id] = {
         ...match,
@@ -1298,7 +1296,6 @@ function buildPairings(size: PlayoffSize, players: Qualifier[]) {
 const assignMachine = (machineNumber: number) => {
   if (selectedMatchId == null) return
 
-  isRemoteUpdateRef.current = true
 
   let matchToAnnounce: MatchState | null = null
 
@@ -1338,9 +1335,6 @@ const assignMachine = (machineNumber: number) => {
   setMachineDialogOpen(false)
   setSelectedMatchId(null)
 
-  setTimeout(() => {
-    isRemoteUpdateRef.current = false
-  }, 500)
 }
   
   
@@ -1379,7 +1373,6 @@ const updateScore = (
 }
 
 const confirmMatch = (scope: "group" | "playoff", matchId: number, fallback?: MatchState) => {
-  isRemoteUpdateRef.current = true
 
   const s =
     scope === "playoff"
@@ -1387,7 +1380,6 @@ const confirmMatch = (scope: "group" | "playoff", matchId: number, fallback?: Ma
       : matchStates[matchId] || fallback || emptyState(matchId)
 
   if (s.score1 === s.score2) {
-    isRemoteUpdateRef.current = false
     alert("Unentschieden ist nicht erlaubt!")
     return
   }
@@ -1412,16 +1404,12 @@ const confirmMatch = (scope: "group" | "playoff", matchId: number, fallback?: Ma
     setMatchStates((prev) => ({ ...prev, [matchId]: next }))
   }
 
-  setTimeout(() => {
-    isRemoteUpdateRef.current = false
-  }, 500)
 }
   
   
   
   
 const resetMatch = (scope: "group" | "playoff", matchId: number, fallback?: MatchState) => {
-  isRemoteUpdateRef.current = true
 
   const s =
     scope === "playoff"
@@ -1445,9 +1433,6 @@ const resetMatch = (scope: "group" | "playoff", matchId: number, fallback?: Matc
     setMatchStates((prev) => ({ ...prev, [matchId]: next }))
   }
 
-  setTimeout(() => {
-    isRemoteUpdateRef.current = false
-  }, 500)
 }
   
   
@@ -1911,6 +1896,10 @@ const resultSaveReady =
   
   const handleAutomaticFinishTournament = async () => {
     if (!roundRobinId) return
+    if (seriesId && !eventId) {
+      alert("Spieltag-ID fehlt. Aus Sicherheitsgründen ist der Abschluss gesperrt. Bitte Turnier mit gültiger eventId starten.")
+      return
+    }
 
     if (!resultSaveReady) {
       setFinishConfirmOpen(false)
@@ -1948,6 +1937,10 @@ const resultSaveReady =
 
   const handleFinishTournament = async () => {
   if (!roundRobinId) return
+  if (seriesId && !eventId) {
+    alert("Spieltag-ID fehlt. Abschluss abgebrochen, um Anmeldungen anderer Spieltage zu schützen.")
+    return
+  }
 
   try {
     setFinishingTournament(true)
@@ -2015,7 +2008,7 @@ const resultSaveReady =
     setSuccessOpen(true)
 
     window.setTimeout(() => {
-      router.push(`/dko_tournament_registration${seriesId ? `?seriesId=${encodeURIComponent(seriesId)}${eventId ? `&eventId=${encodeURIComponent(eventId)}` : ""}` : ""}`)
+      router.push("/admin/turnier_spieltage_starten")
     }, 1400)
   } catch (error: any) {
     console.error("[RR] finish tournament error:", error)
@@ -2038,7 +2031,7 @@ const resultSaveReady =
               <AlertCircle className="w-5 h-5 text-orange-600" />
               <p className="font-black text-gray-900">Kein roundRobinId in der URL.</p>
             </div>
-            <Button variant="outline" onClick={() => router.push("/dko_tournament_registration")}>
+            <Button variant="outline" onClick={() => router.push("/admin/turnier_spieltage_starten")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Zurück
             </Button>
@@ -2050,36 +2043,75 @@ const resultSaveReady =
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[#070b11] text-white">
         <Header />
-        <div className="flex items-center justify-center py-16">
-          <Card className="p-8 rounded-2xl shadow-lg border-2 border-white">
-            <div className="flex items-center gap-3">
-              <RefreshCcw className="w-5 h-5 text-orange-600 animate-spin" />
-              <p className="font-semibold text-gray-700">Lade Round Robin…</p>
-            </div>
-          </Card>
+        <div className="flex min-h-[70vh] items-center justify-center px-4">
+          <div className="w-full max-w-xl rounded-[28px] border border-orange-500/25 bg-[#10161e] px-7 py-12 text-center shadow-2xl">
+            <RefreshCcw className="mx-auto mb-6 h-12 w-12 animate-spin text-orange-500" />
+            <p className="text-xs font-bold uppercase tracking-[.22em] text-orange-400">EMD Members Champion Cup</p>
+            <h2 className="mt-4 text-2xl font-black">Turnierplan wird geladen</h2>
+            <p className="mt-3 text-sm text-slate-400">Gruppen, Automaten und Begegnungen werden vorbereitet.</p>
+            <div className="mt-7 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-1/2 animate-pulse rounded-full bg-orange-500" /></div>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="emd-round-robin min-h-screen bg-[#070b11] text-white">
+      <style jsx global>{`
+        .emd-round-robin .bg-white, .emd-round-robin .bg-orange-50, .emd-round-robin .bg-orange-100, .emd-round-robin .bg-green-50, .emd-round-robin .bg-green-100, .emd-round-robin .bg-gray-50 { background-color: #111820 !important; }
+        .emd-round-robin .from-orange-50 { --tw-gradient-from: #111820 !important; --tw-gradient-to: #11182000 !important; }
+        .emd-round-robin .to-orange-100 { --tw-gradient-to: #17202b !important; }
+        .emd-round-robin .text-gray-900, .emd-round-robin .text-gray-800, .emd-round-robin .text-gray-700, .emd-round-robin .text-orange-800, .emd-round-robin .text-orange-900 { color: #f3f5f9 !important; }
+        .emd-round-robin .text-gray-600, .emd-round-robin .text-gray-500 { color: #a4afbc !important; }
+        .emd-round-robin .border-white, .emd-round-robin .border-orange-100, .emd-round-robin .border-orange-200, .emd-round-robin .border-gray-200 { border-color: #27313d !important; }
+        .emd-round-robin input, .emd-round-robin select { background-color: #0b1017; color: #f8fafc; border-color: #334155; }
+        .emd-round-robin .bg-gradient-to-br.from-orange-500 { background: linear-gradient(110deg,#24170f,#101720 55%,#0c1821) !important; border-bottom: 1px solid #70360f; }
+        .emd-round-robin .shadow-lg { box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+        /* Einheitliche ruhige EMD-Oberfläche statt alter heller Karten. */
+        .emd-round-robin { background: #080d14; }
+        .emd-round-robin .bg-gradient-to-br.from-orange-500 { background: #111820 !important; border-bottom: 1px solid #26313d; }
+        .emd-round-robin main > .grid > *, .emd-round-robin main > .rounded-2xl { background: #111820 !important; border-color: #253241 !important; }
+        .emd-round-robin .bg-green-50, .emd-round-robin .bg-green-100 { background: #0e2724 !important; }
+        .emd-round-robin main button:disabled { color: #c4cbd4 !important; background-color: #303944 !important; opacity: .8; }
+        .emd-round-robin main [role="switch"] { background-color: #344253; border: 1px solid #607082; }
+        .emd-round-robin main [role="switch"][data-state="checked"] { background-color: #f97316; }
+        .emd-round-robin main .text-white { color: #f8fafc; }
+
+        .emd-round-robin .bg-orange-50, .emd-round-robin .bg-orange-100 { background: #241b14 !important; }
+        .emd-round-robin .text-green-700, .emd-round-robin .text-green-800, .emd-round-robin .text-green-900 { color: #6ee7b7 !important; }
+        .emd-round-robin .text-orange-700, .emd-round-robin .text-orange-800, .emd-round-robin .text-orange-900 { color: #fdba74 !important; }
+        .emd-round-robin .bg-gray-50 { background: #0c131b !important; }
+        .emd-round-robin .border-2 { border-width: 1px; }
+        .emd-round-robin .shadow-sm { box-shadow: none; }
+        .emd-round-robin button, .emd-round-robin input { transition: background-color .15s, border-color .15s; }
+        .emd-round-robin .truncate { min-width: 0; }
+        .emd-round-robin main .font-black { font-weight: 650; }
+        .emd-round-robin main .text-2xl { font-size: 1.35rem; line-height: 1.75rem; }
+        .emd-round-robin main .text-xl { font-size: 1.15rem; line-height: 1.6rem; }
+        .emd-round-robin main .bg-yellow-50 { background: #241c11 !important; }
+        .emd-round-robin main .text-yellow-900 { color: #fcd9a4 !important; }
+        .emd-round-robin main .border-yellow-200 { border-color: #6d4c22 !important; }
+        .emd-round-robin main .bg-red-100, .emd-round-robin main .bg-red-50 { background: #302024 !important; }
+        .emd-round-robin main .text-red-700 { color: #fda4af !important; }
+        .emd-round-robin main { padding-bottom: 80px; }
+        @media (max-width: 640px) { .emd-round-robin main { padding-inline: 12px; } }
+
+      `}</style>
       <Header />
 
-
-
       {/* HERO */}
-      <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white py-14 px-4 sm:px-6 lg:px-8">
+      <div className="mt-[64px] bg-gradient-to-br from-orange-500 to-orange-600 text-white py-5 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div className="flex items-center gap-4">
-              <div className="inline-flex items-center justify-center w-14 h-14 bg-white/20 rounded-2xl">
-                <Layers className="w-7 h-7" />
+              <div className="inline-flex items-center justify-center w-10 h-10 bg-white/10 rounded-xl">
+                <Layers className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight line-clamp-2" title={tournamentName}>{tournamentName}</h1>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-tight line-clamp-2" title={tournamentName}>{tournamentName}</h1>
                 <div className="flex items-center gap-3 mt-2 flex-wrap">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-black">
                     <Users className="w-4 h-4" />
@@ -2098,20 +2130,20 @@ const resultSaveReady =
             </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-end">
-  <div className="rounded-2xl bg-white px-4 py-3 shadow-md">
+  <div className="rounded-xl border border-[#334155] bg-[#111820] px-3 py-2">
     <SpeechAnnouncerSettings enabled={speechEnabled} onToggle={setSpeechEnabled} />
   </div>
 
   <Button
     variant="outline"
-    className="border-white/40 text-white bg-white/10 hover:bg-white/20"
-    onClick={() => router.push("/dko_tournament_registration")}
+    className="border-[#334155] text-white bg-[#151d28] hover:bg-[#243041]"
+    onClick={() => router.push("/admin/turnier_spieltage_starten")}
   >
     <ArrowLeft className="w-4 h-4 mr-2" />
     Zurück
   </Button>
 
-  <Button className="bg-white text-orange-600 hover:bg-white/90 font-black" onClick={loadAll}>
+  <Button className="bg-[#f97316] text-white hover:bg-[#ea580c] font-semibold" onClick={loadAll}>
     <RefreshCcw className="w-4 h-4 mr-2" />
     Reload
   </Button>
@@ -2120,12 +2152,37 @@ const resultSaveReady =
         </div>
       </div>
 
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="mx-auto w-full max-w-[1480px] px-4 sm:px-6 lg:px-8 py-5 space-y-4">
 
 
+        <nav aria-label="Turnierbereiche" className="sticky top-[64px] z-20 rounded-2xl border border-[#293441] bg-[#0b121b]/95 p-2 shadow-lg backdrop-blur-lg">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {([
+              ["center", "Match Center"],
+              ["schedule", "Spielplan"],
+              ["standings", "Tabelle"],
+              ["final", "Finalrunde & Abschluss"],
+            ] as const).map(([key, label]) => (
+              <button key={key} type="button" onClick={() => setViewTab(key)}
+                aria-current={viewTab === key ? "page" : undefined}
+                className={cn("min-h-11 rounded-xl px-3 py-2 text-sm font-semibold transition-colors", viewTab === key ? "bg-orange-600 text-white shadow-sm" : "text-slate-300 hover:bg-white/[0.07] hover:text-white")}>{label}</button>
+            ))}
+          </div>
+          {(viewTab === "schedule" || viewTab === "standings") && groups.length > 1 && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[#293441] pt-2">
+              <span className="mr-1 text-xs text-slate-400">Gruppe:</span>
+              {groups.map(g => (
+                <button type="button" key={g.id} onClick={() => setActiveGroupId(g.id)}
+                  className={cn("rounded-lg px-3 py-1.5 text-xs font-semibold", activeGroupId === g.id ? "bg-orange-600 text-white" : "border border-[#344254] text-slate-300 hover:bg-white/[0.06]")}>{g.name}</button>
+              ))}
+            </div>
+          )}
+        </nav>
+        {viewTab === "center" && (
+          <div>
         {/* TOP GRID */}
-        <div className="grid lg:grid-cols-3 gap-6 items-start">
-          <Card className="rounded-2xl border-2 border-white shadow-lg p-5 bg-gradient-to-br from-orange-50 to-orange-100">
+        <div className="grid lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1fr)_minmax(0,1.25fr)] gap-3 items-start">
+          <Card className="rounded-2xl border border-white shadow-sm p-4 bg-gradient-to-br from-orange-50 to-orange-100">
             <div className="flex items-center gap-3 mb-3">
               <Users className="w-5 h-5 text-orange-600" />
               <h2 className="text-lg font-black text-gray-900">Gruppen</h2>
@@ -2151,7 +2208,7 @@ const resultSaveReady =
             </div>
           </Card>
 
-          <Card className="rounded-2xl border-2 border-white shadow-lg p-5 bg-white">
+          <Card className="rounded-2xl border border-white shadow-sm p-4 bg-white">
             <div className="flex items-center gap-3 mb-3">
               <Trophy className="w-5 h-5 text-orange-600" />
               <h2 className="text-lg font-black text-gray-900">Status</h2>
@@ -2197,7 +2254,7 @@ const resultSaveReady =
           </Card>
 		  
 		  
-		  <Card className="rounded-2xl border-2 border-white shadow-lg p-5 bg-white">
+		  <Card className="rounded-2xl border border-white shadow-sm p-4 bg-white">
   <div className="flex items-center justify-between mb-3">
     <div className="flex items-center gap-3">
       <Monitor className="w-5 h-5 text-orange-600" />
@@ -2222,7 +2279,7 @@ const resultSaveReady =
     <span className="text-sm font-semibold text-gray-600">Stk</span>
   </div>
 
-  <div className="mt-4 flex flex-wrap gap-2 max-h-[120px] overflow-auto">
+  <div className="mt-4 flex flex-wrap gap-2">
     {availableMachines.slice(0, 16).map((n) => (
       <span
         key={n}
@@ -2257,8 +2314,8 @@ const resultSaveReady =
       Gerade kein Match frei (Spieler sind beschäftigt oder alles läuft/fertig).
     </div>
   ) : (
-    <div className="mt-3 space-y-2 max-h-[120px] overflow-auto pr-1">
-      {playableMatches.slice(0, 3).map((m) => (
+    <div className="mt-3 space-y-2">
+      {playableMatches.slice(0, 4).map((m) => (
         <div key={m.id} className="rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -2266,9 +2323,9 @@ const resultSaveReady =
                 Runde {m.round_no} · Match {m.match_no}
               </div>
               <div className="text-sm font-black text-gray-900 leading-tight" title={`${m.state.player1} vs ${m.state.player2}`}>
-                <div className="truncate">{shortTeamName(m.state.player1)}</div>
+                <div className="break-words font-semibold leading-snug">{shortTeamName(m.state.player1)}</div>
                 <div className="text-[10px] font-black text-orange-600 uppercase leading-none my-0.5">vs</div>
-                <div className="truncate">{shortTeamName(m.state.player2)}</div>
+                <div className="break-words font-semibold leading-snug">{shortTeamName(m.state.player2)}</div>
               </div>
             </div>
 
@@ -2284,6 +2341,9 @@ const resultSaveReady =
       ))}
     </div>
   )}
+  {playableMatches.length > 4 && (
+    <p className="mt-3 text-xs text-slate-400">+ {playableMatches.length - 4} weitere spielbare Begegnungen im Tab „Spielplan“</p>
+  )}
 </div>
 
 </Card>   
@@ -2295,8 +2355,150 @@ const resultSaveReady =
 
 
 
+        <section className="mt-4 rounded-2xl border border-[#293441] bg-[#111820] p-4 sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div><h2 className="text-lg font-semibold text-white">Match Center</h2><p className="text-sm text-slate-400">Laufende Matches verwalten und Ergebnisse direkt eintragen.</p></div>
+            <span className="rounded-full border border-[#344254] px-3 py-1 text-xs text-slate-300">{matchesForActiveGroup.filter(m => Boolean(m.state.machineNumber) && !m.state.winner).length} laufen</span>
+          </div>
+          {matchesForActiveGroup.filter(m => Boolean(m.state.machineNumber) && !m.state.winner).length ? (
+            <div className="grid gap-3 xl:grid-cols-2">
+              {matchesForActiveGroup.filter(m => Boolean(m.state.machineNumber) && !m.state.winner).map(m => (
+                <RRMatchCard key={m.id} matchNo={m.match_no} player1={m.state.player1} player2={m.state.player2}
+                  score1={m.state.score1} score2={m.state.score2} winner={m.state.winner} loser={m.state.loser}
+                  machineNumber={m.state.machineNumber} onStart={() => startMatch("group", m.id, m.state)}
+                  onReset={() => resetMatch("group", m.id, m.state)} onConfirm={() => confirmMatch("group", m.id, m.state)}
+                  onScore={(p, score) => updateScore("group", m.id, p, score, m.state)} />
+              ))}
+            </div>
+          ) : <div className="rounded-xl border border-dashed border-[#344254] p-5 text-center text-sm text-slate-400">Noch kein Match läuft. Starte eine Begegnung oben bei „Spielbar jetzt“.</div>}
+        </section>
+          </div>
+        )}
+        {viewTab === "schedule" && (
+          <div>
+        {/* Spielplan */}
+        <Card className="rounded-2xl border border-white shadow-sm p-5 bg-white">
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+            <div>
+              <h2 className="text-2xl font-black text-gray-900">Spielplan · {activeGroup?.name ?? "—"}</h2>
+              <p className="text-sm text-gray-600 font-semibold">
+                {matchesForActiveGroup.length} Matches · {roundsForActiveGroup.length} Runden
+              </p>
+            </div>
+          </div>
+
+          {roundsForActiveGroup.length === 0 ? (
+            <div className="py-10 text-center text-gray-500 font-semibold">Keine Matches gefunden.</div>
+          ) : (
+            <div className="space-y-6">
+              {roundsForActiveGroup.map((rn) => {
+                const roundMatches = matchesForActiveGroup.filter((x) => x.round_no === rn)
+                const done = roundMatches.filter((m) => Boolean(m.state.winner)).length
+                return (
+                  <div key={`${activeGroupId}-r${rn}`} className="space-y-3">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <h3 className="text-lg font-black text-orange-600 border-b-2 border-orange-600 pb-2">Runde {rn}</h3>
+                      <div className="text-sm font-black text-gray-600">
+                        {done}/{roundMatches.length} fertig
+                      </div>
+                    </div>
+
+                    <div className="grid xl:grid-cols-2 gap-3">
+                      {roundMatches.map((m) => (
+                        <RRMatchCard
+                          key={m.id}
+                          matchNo={m.match_no}
+                          player1={m.state.player1}
+                          player2={m.state.player2}
+                          score1={m.state.score1}
+                          score2={m.state.score2}
+                          winner={m.state.winner}
+                          loser={m.state.loser}
+                          machineNumber={m.state.machineNumber}
+                          onStart={() => startMatch("group", m.id, m.state)}
+                          onReset={() => resetMatch("group", m.id, m.state)}
+                          onConfirm={() => confirmMatch("group", m.id, m.state)}
+                          onScore={(p, s) => updateScore("group", m.id, p, s, m.state)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Card>
+
+          </div>
+        )}
+        {viewTab === "standings" && (
+          <div>
+        {/* Tabelle */}
+        <Card className="rounded-2xl border border-white shadow-sm p-5 bg-white">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-2xl font-black text-gray-900">Tabelle · {activeGroup?.name ?? "—"}</h2>
+              <p className="text-sm text-gray-600 font-semibold">
+  Sieg = 2 Punkte · Gleichstand → Leg-Differenz entscheidet
+</p>
+
+            </div>
+          </div>
+
+          {standingsForActiveGroup.length === 0 ? (
+            <div className="mt-4 text-gray-500 font-semibold">Noch keine Ergebnisse.</div>
+          ) : (
+            <div className="mt-4 overflow-auto">
+              <div className="min-w-[720px]">
+                <div className="grid grid-cols-12 text-xs font-black text-gray-500 px-3 pb-2">
+                  <div className="col-span-5">Spieler</div>
+                  <div className="col-span-1 text-center">SP</div>
+                  <div className="col-span-1 text-center">W</div>
+                  <div className="col-span-1 text-center">L</div>
+                  <div className="col-span-2 text-center">Legs</div>
+                  <div className="col-span-2 text-center">P</div>
+                </div>
+
+                <div className="space-y-2">
+                  {standingsForActiveGroup.map((r, idx) => {
+                    const pts = ptsFrom(r.w)
+                    return (
+                      <div
+                        key={r.name}
+                        className={cn(
+                          "grid grid-cols-12 items-center rounded-2xl border-2 px-3 py-3 shadow-sm",
+                          idx === 0 ? "bg-orange-50 border-orange-200" : "bg-white border-white",
+                        )}
+                      >
+                        <div className="col-span-5 font-black text-gray-900 truncate flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white text-xs font-black">
+                            {idx + 1}
+                          </span>
+                          <span className="truncate" title={r.name}>{shortTeamName(r.name)}</span>
+                        </div>
+                        <div className="col-span-1 text-center font-bold">{r.played}</div>
+                        <div className="col-span-1 text-center font-bold text-green-700">{r.w}</div>
+                        <div className="col-span-1 text-center font-bold text-red-700">{r.l}</div>
+                        <div className="col-span-2 text-center font-bold">
+                          {r.legsFor}-{r.legsAgainst}
+                        </div>
+                        <div className="col-span-2 text-center font-black text-orange-600 text-lg">{pts}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+
+          </div>
+        )}
+        {viewTab === "final" && (
+          <div className="space-y-4">
+        {/* Verwaltung erst nach dem Spielplan: keine Änderung an den Aktionen */}
         {/* FINALRUNDE PANEL - CLEAN */}
-        <Card className="rounded-2xl border-2 border-orange-100 shadow-lg p-5 bg-white">
+        <Card className="rounded-2xl border border-orange-100 shadow-sm p-5 bg-white">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
@@ -2548,7 +2750,7 @@ const resultSaveReady =
         </Card>
 
         {/* TURNIER ABSCHLIESSEN */}
-        <Card className="rounded-2xl border-2 border-orange-100 shadow-lg p-5 bg-white">
+        <Card className="rounded-2xl border border-orange-100 shadow-sm p-5 bg-white">
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
               <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
@@ -2619,117 +2821,9 @@ const resultSaveReady =
           </div>
         </Card>
 
-        {/* Tabelle */}
-        <Card className="rounded-2xl border-2 border-white shadow-lg p-6 bg-white">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h2 className="text-2xl font-black text-gray-900">Tabelle · {activeGroup?.name ?? "—"}</h2>
-              <p className="text-sm text-gray-600 font-semibold">
-  Sieg = 2 Punkte · Gleichstand → Leg-Differenz entscheidet
-</p>
 
-            </div>
           </div>
-
-          {standingsForActiveGroup.length === 0 ? (
-            <div className="mt-4 text-gray-500 font-semibold">Noch keine Ergebnisse.</div>
-          ) : (
-            <div className="mt-4 overflow-auto">
-              <div className="min-w-[720px]">
-                <div className="grid grid-cols-12 text-xs font-black text-gray-500 px-3 pb-2">
-                  <div className="col-span-5">Spieler</div>
-                  <div className="col-span-1 text-center">SP</div>
-                  <div className="col-span-1 text-center">W</div>
-                  <div className="col-span-1 text-center">L</div>
-                  <div className="col-span-2 text-center">Legs</div>
-                  <div className="col-span-2 text-center">P</div>
-                </div>
-
-                <div className="space-y-2">
-                  {standingsForActiveGroup.map((r, idx) => {
-                    const pts = ptsFrom(r.w)
-                    return (
-                      <div
-                        key={r.name}
-                        className={cn(
-                          "grid grid-cols-12 items-center rounded-2xl border-2 px-3 py-3 shadow-sm",
-                          idx === 0 ? "bg-orange-50 border-orange-200" : "bg-white border-white",
-                        )}
-                      >
-                        <div className="col-span-5 font-black text-gray-900 truncate flex items-center gap-2">
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white text-xs font-black">
-                            {idx + 1}
-                          </span>
-                          <span className="truncate" title={r.name}>{shortTeamName(r.name)}</span>
-                        </div>
-                        <div className="col-span-1 text-center font-bold">{r.played}</div>
-                        <div className="col-span-1 text-center font-bold text-green-700">{r.w}</div>
-                        <div className="col-span-1 text-center font-bold text-red-700">{r.l}</div>
-                        <div className="col-span-2 text-center font-bold">
-                          {r.legsFor}-{r.legsAgainst}
-                        </div>
-                        <div className="col-span-2 text-center font-black text-orange-600 text-lg">{pts}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Spielplan */}
-        <Card className="rounded-2xl border-2 border-white shadow-lg p-6 bg-white">
-          <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-            <div>
-              <h2 className="text-2xl font-black text-gray-900">Spielplan · {activeGroup?.name ?? "—"}</h2>
-              <p className="text-sm text-gray-600 font-semibold">
-                {matchesForActiveGroup.length} Matches · {roundsForActiveGroup.length} Runden
-              </p>
-            </div>
-          </div>
-
-          {roundsForActiveGroup.length === 0 ? (
-            <div className="py-10 text-center text-gray-500 font-semibold">Keine Matches gefunden.</div>
-          ) : (
-            <div className="space-y-8">
-              {roundsForActiveGroup.map((rn) => {
-                const roundMatches = matchesForActiveGroup.filter((x) => x.round_no === rn)
-                const done = roundMatches.filter((m) => Boolean(m.state.winner)).length
-                return (
-                  <div key={`${activeGroupId}-r${rn}`} className="space-y-3">
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <h3 className="text-lg font-black text-orange-600 border-b-2 border-orange-600 pb-2">Runde {rn}</h3>
-                      <div className="text-sm font-black text-gray-600">
-                        {done}/{roundMatches.length} fertig
-                      </div>
-                    </div>
-
-                    <div className="grid xl:grid-cols-2 gap-4">
-                      {roundMatches.map((m) => (
-                        <RRMatchCard
-                          key={m.id}
-                          matchNo={m.match_no}
-                          player1={m.state.player1}
-                          player2={m.state.player2}
-                          score1={m.state.score1}
-                          score2={m.state.score2}
-                          winner={m.state.winner}
-                          loser={m.state.loser}
-                          machineNumber={m.state.machineNumber}
-                          onStart={() => startMatch("group", m.id, m.state)}
-                          onReset={() => resetMatch("group", m.id, m.state)}
-                          onConfirm={() => confirmMatch("group", m.id, m.state)}
-                          onScore={(p, s) => updateScore("group", m.id, p, s, m.state)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </Card>
+        )}
       </main>
 
       <Dialog open={machineDialogOpen} onOpenChange={setMachineDialogOpen}>

@@ -229,23 +229,25 @@ function ToggleRow({
   onChange,
   title,
   text,
+  dark = false,
 }: {
   checked: boolean
   onChange: (checked: boolean) => void
   title: string
   text?: string
+  dark?: boolean
 }) {
   return (
-    <label className="emd-series-toggle flex cursor-pointer items-center justify-between gap-4 rounded-2xl p-4">
+    <label className={dark ? "flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/[0.12] bg-white/[0.04] p-3 sm:p-4" : "emd-series-toggle flex cursor-pointer items-center justify-between gap-4 rounded-2xl p-4"}>
       <span className="min-w-0">
-        <span className="block text-sm font-black text-slate-900">{title}</span>
-        {text ? <span className="mt-0.5 block text-xs leading-5 text-slate-500">{text}</span> : null}
+        <span className={dark ? "block text-sm font-bold text-white" : "block text-sm font-black text-slate-900"}>{title}</span>
+        {text ? <span className={dark ? "mt-1 block text-xs leading-5 text-slate-300" : "mt-0.5 block text-xs leading-5 text-slate-500"}>{text}</span> : null}
       </span>
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-5 w-5 shrink-0"
+        className={dark ? "h-5 w-5 shrink-0 accent-orange-500" : "h-5 w-5 shrink-0"}
       />
     </label>
   )
@@ -2291,25 +2293,25 @@ export function AdminTournamentSeriesManagement() {
         </Dialog>
 
         <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
-          <DialogContent className="emd-admin-modal max-w-xl rounded-3xl">
+          <DialogContent className="emd-admin-modal !w-[calc(100vw-1.5rem)] !max-w-2xl !max-h-[90dvh] !overflow-y-auto !overflow-x-hidden rounded-2xl !border !border-white/15 !bg-[#130e1d] !p-4 !text-white shadow-2xl sm:!p-6">
             <DialogHeader>
-              <DialogTitle>{editEvent ? "Termin bearbeiten" : "Neuer Termin"}</DialogTitle>
+              <DialogTitle className="!text-white text-xl font-bold">{editEvent ? "Termin bearbeiten" : "Neuer Termin"}</DialogTitle>
             </DialogHeader>
 
-            <div className="grid gap-4 py-2">
-              <div className="grid gap-2">
+            <div className="grid min-w-0 gap-5 py-2 [&_label]:!text-slate-100 [&_input]:!min-w-0 [&_input]:!border-white/15 [&_input]:!bg-[#0b0e14] [&_input]:!text-white [&_input]:placeholder:!text-slate-400 [&_input]:focus-visible:!ring-orange-500">
+              <div className="grid min-w-0 gap-2">
                 <Label>Titel (optional)</Label>
                 <Input value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} placeholder="z. B. Spieltag 4" />
               </div>
 
-              <div className="grid gap-2">
+              <div className="grid min-w-0 gap-2">
                 <Label className="font-semibold">Ursprünglicher Termin *</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="grid gap-2">
+                <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="grid min-w-0 gap-2">
                     <Label>Datum *</Label>
                     <Input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid min-w-0 gap-2">
                     <Label>Uhrzeit *</Label>
                     <Input type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)} />
                   </div>
@@ -2328,27 +2330,28 @@ export function AdminTournamentSeriesManagement() {
                     setEventRescheduledTime("")
                   }
                 }}
+                dark
                 title="Termin verschoben"
                 text="Bei Aktivierung kannst du einen neuen Termin eintragen."
               />
 
               {eventIsRescheduled ? (
-                <div className="grid gap-2">
+                <div className="grid min-w-0 gap-2">
                   <Label className="font-semibold">Neuer Termin *</Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
                     <Input type="date" value={eventRescheduledDate} onChange={(e) => setEventRescheduledDate(e.target.value)} />
                     <Input type="time" value={eventRescheduledTime} onChange={(e) => setEventRescheduledTime(e.target.value)} />
                   </div>
                 </div>
               ) : null}
 
-              <div className="grid gap-2">
+              <div className="grid min-w-0 gap-2">
                 <Label>Ort</Label>
                 <Input value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} placeholder="z. B. Linzer Bundesstraße 16, Salzburg" />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
+              <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                <div className="grid min-w-0 gap-2">
                   <Label>Anmeldeschluss Minuten vor Start</Label>
                   <Input
                     type="number"
@@ -2359,31 +2362,32 @@ export function AdminTournamentSeriesManagement() {
                   />
                 </div>
 
-                <div className="pt-6">
+                <div className="sm:pt-6">
                   <ToggleRow
                     checked={eventIsMatchday}
                     onChange={setEventIsMatchday}
+                    dark
                     title="Spieltag"
                     text="Deaktivieren, wenn an diesem Termin nicht gespielt wird."
                   />
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+              <div className="min-w-0 rounded-2xl border border-white/[0.12] bg-white/[0.035] p-3 sm:p-4">
                 <div className="mb-3">
                   <div className="font-black text-white/90">Turniermodus für diesen Spieltag</div>
-                  <div className="mt-1 text-sm text-white/45">
+                  <div className="mt-1 text-sm text-slate-300">
                     Leer lassen, wenn der Serienstandard gelten soll.
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="grid gap-2">
+                <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid min-w-0 gap-2">
                     <Label>Spielsystem</Label>
                     <select
                       value={eventTournamentFormatOverride}
                       onChange={(e) => setEventTournamentFormatOverride(e.target.value)}
-                      className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                      className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-[#0b0e14] px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 [&_option]:!bg-[#0b0e14] [&_option]:!text-white"
                     >
                       <option value="">Serienstandard</option>
                       {TOURNAMENT_FORMAT_OPTIONS.map((option) => (
@@ -2392,7 +2396,7 @@ export function AdminTournamentSeriesManagement() {
                     </select>
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid min-w-0 gap-2">
                     <Label>Spieler / Teams</Label>
                     <select
                       value={eventTeamModeOverride}
@@ -2401,7 +2405,7 @@ export function AdminTournamentSeriesManagement() {
                         setEventTeamModeOverride(next)
                         if (next === "single") setEventDrawMethodOverride("none")
                       }}
-                      className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                      className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-[#0b0e14] px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 [&_option]:!bg-[#0b0e14] [&_option]:!text-white"
                     >
                       <option value="">Serienstandard</option>
                       {TEAM_MODE_OPTIONS.map((option) => (
@@ -2410,13 +2414,13 @@ export function AdminTournamentSeriesManagement() {
                     </select>
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid min-w-0 gap-2">
                     <Label>Auslosung</Label>
                     <select
                       value={eventDrawMethodOverride}
                       disabled={eventTeamModeOverride === "single"}
                       onChange={(e) => setEventDrawMethodOverride(e.target.value)}
-                      className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm disabled:opacity-50"
+                      className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-[#0b0e14] px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 disabled:opacity-50 [&_option]:!bg-[#0b0e14] [&_option]:!text-white"
                     >
                       <option value="">Serienstandard</option>
                       {DRAW_METHOD_OPTIONS.map((option) => (
@@ -2427,30 +2431,30 @@ export function AdminTournamentSeriesManagement() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
-                <div className="grid gap-2">
+              <div className="min-w-0 rounded-2xl border border-white/[0.12] bg-white/[0.035] p-3 sm:p-4">
+                <div className="grid min-w-0 gap-2">
                   <Label>No-Show-Regel für diesen Spieltag</Label>
                   <select
                     value={eventNoShowPenaltyOverride}
                     onChange={(e) => setEventNoShowPenaltyOverride(e.target.value)}
-                    className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                    className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-[#0b0e14] px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 [&_option]:!bg-[#0b0e14] [&_option]:!text-white"
                   >
                     <option value="">Serienstandard</option>
                     <option value="none">Keine No-Show-Strafe</option>
                     <option value="delete_worst_result">Schlechtestes Ergebnis streichen</option>
                   </select>
-                  <p className="text-xs text-white/45">
+                  <p className="text-xs leading-5 text-slate-300">
                     Nur wenn hier bzw. in der Serie eine No-Show-Regel aktiv ist, erscheint am Turniertag die Anwesenheitsprüfung.
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-2">
+              <div className="grid min-w-0 gap-2">
                 <Label>Notiz</Label>
                 <Input value={eventNotes} onChange={(e) => setEventNotes(e.target.value)} placeholder="optional" />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex flex-wrap justify-end gap-2 border-t border-white/10 pt-4">
                 <Button
                   variant="outline"
                   onClick={() => {

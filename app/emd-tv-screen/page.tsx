@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { CalendarDays, Clock3, MapPin, Play, Sparkles, Trophy, Tv2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import MembersCupDrawShow from "@/components/members-cup-draw-show"
 import EmdLiveAnnouncementDisplay from "@/components/emd-live-announcement-display"
 import LineupDisplay from "@/components/emd-tv/lineup-display"
 import BirthdayTv from "@/components/emd-tv/birthday-tv"
@@ -878,6 +879,7 @@ export default function EmdTvScreenPage() {
   return (
     <main className="fixed inset-0 overflow-hidden bg-[#030303] text-white" onClick={tryFullscreen}>
       <EmdLiveAnnouncementDisplay tv />
+      <MembersCupDrawShow />
       <div className="absolute inset-x-0 top-0 z-[80] flex h-[72px] items-center justify-between border-b border-white/[.06] bg-black/90 px-[3.2vw] shadow-[0_8px_30px_rgba(0,0,0,.35)]">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5">

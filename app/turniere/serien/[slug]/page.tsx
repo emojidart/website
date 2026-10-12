@@ -21,6 +21,37 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 )
 
+// Mitgliedschaft über direkte Login-Verknüpfung ODER das bestehende Spielerprofil prüfen.
+// club_players.user_id ist nur der Ersteller des Datensatzes und kein Login-Nachweis.
+async function hasActiveClubMembership(authUserId: string): Promise<boolean> {
+  const { data: directPlayer } = await supabase
+    .from("club_players")
+    .select("id")
+    .eq("auth_user_id", authUserId)
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle()
+
+  if (directPlayer?.id) return true
+
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("player_id")
+    .eq("user_id", authUserId)
+    .maybeSingle()
+
+  if (!profile?.player_id) return false
+
+  const { data: linkedPlayer } = await supabase
+    .from("club_players")
+    .select("id")
+    .eq("id", profile.player_id)
+    .eq("is_active", true)
+    .maybeSingle()
+
+  return Boolean(linkedPlayer?.id)
+}
+
 type Series = {
   id: string
   name: string
@@ -92,14 +123,9 @@ export default function DynamicSeriesHubPage() {
           return
         }
 
-        const { data: clubPlayer } = await supabase
-          .from("club_players")
-          .select("id")
-          .eq("auth_user_id", user.id)
-          .eq("is_active", true)
-          .maybeSingle()
+        const hasMembership = await hasActiveClubMembership(user.id)
 
-        if (!clubPlayer?.id) {
+        if (!hasMembership) {
           setAllowed(false)
           setSeries(loaded)
           setLoading(false)
