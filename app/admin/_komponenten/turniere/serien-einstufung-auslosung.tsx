@@ -394,6 +394,13 @@ export function SeriesLevelDrawManagement({
             </div>
           ) : null}
 
+          <a
+            href={`/admin/members-champion-cup/simulation?seriesId=${encodeURIComponent(seriesId)}`}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-200 hover:bg-emerald-500/20"
+          >
+            <Users className="h-4 w-4" /> Sicherer Testmodus (ohne Speicherung)
+          </a>
+
           <Button
             type="button"
             onClick={openDraw}
@@ -430,16 +437,16 @@ export function SeriesLevelDrawManagement({
               return (
                 <div
                   key={player.id}
-                  className="grid gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 xl:grid-cols-[minmax(180px,1fr)_180px_150px_minmax(180px,1fr)_110px] xl:items-end"
+                  className="grid min-w-0 gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:grid-cols-2 xl:grid-cols-4"
                 >
-                  <div>
-                    <div className="text-sm font-black text-white/90">{player.name}</div>
+                  <div className="min-w-0 sm:col-span-2 xl:col-span-4">
+                    <div className="break-words text-sm font-black text-white/90">{player.name}</div>
                     <div className="mt-1 text-xs text-white/35">
                       {current ? `${LEVELS[current.level_group].label} · gespeichert` : "Noch nicht eingestuft"}
                     </div>
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid min-w-0 gap-2">
                     <Label>Tabelle</Label>
                     <select
                       value={String(draft.level_group)}
@@ -452,7 +459,7 @@ export function SeriesLevelDrawManagement({
                           },
                         }))
                       }
-                      className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                      className="h-10 w-full min-w-0 rounded-xl border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-orange-400"
                     >
                       <option value="1">Tabelle 1 – Stark</option>
                       <option value="2">Tabelle 2 – Mitte</option>
@@ -460,7 +467,7 @@ export function SeriesLevelDrawManagement({
                     </select>
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid min-w-0 gap-2">
                     <Label>Ø Punkte</Label>
                     <Input
                       inputMode="decimal"
@@ -475,10 +482,11 @@ export function SeriesLevelDrawManagement({
                         }))
                       }
                       placeholder="optional"
+                      className="w-full min-w-0"
                     />
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid min-w-0 gap-2">
                     <Label>Notiz</Label>
                     <Input
                       value={draft.notes}
@@ -492,6 +500,7 @@ export function SeriesLevelDrawManagement({
                         }))
                       }
                       placeholder="optional"
+                      className="w-full min-w-0"
                     />
                   </div>
 
@@ -499,7 +508,7 @@ export function SeriesLevelDrawManagement({
                     type="button"
                     onClick={() => void savePlayer(player)}
                     disabled={savingPlayerId === String(player.id)}
-                    className="emd-admin-button-primary"
+                    className="emd-admin-button-primary w-full min-w-0 self-end whitespace-nowrap sm:col-span-2 xl:col-span-1"
                   >
                     {savingPlayerId === String(player.id) ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Maximize2, Minimize2, Monitor, Radio, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import MembersCupDrawShow from "@/components/members-cup-draw-show"
 import MultiDkoBeamerSwitcher from "@/components/emd-multi-dko-beamer-switcher"
 import EmdLiveAnnouncementDisplay from "@/components/emd-live-announcement-display"
 
@@ -200,6 +201,10 @@ export default function AutoBeamerPage() {
     // aus Supabase erkannt, damit auch ein Fire TV Stick auf einem anderen
     // Gerät automatisch in die Beameransicht wechseln kann.
     if (activeTournament) {
+      if (activeTournament.tournament_type.toLowerCase() === "round_robin") {
+        return `/roundrobin/beamer?roundRobinId=${encodeURIComponent(activeTournament.tournament_id)}&tournamentName=${encodeURIComponent(activeTournament.tournament_name || "Round Robin")}`
+      }
+
       // Survival has its own live beamer; it needs the Survival tournament UUID.
       if (activeTournament.tournament_type.toLowerCase() === "survival") {
         return `/survival-roulette/beamer?tournamentId=${encodeURIComponent(activeTournament.tournament_id)}`
@@ -228,7 +233,7 @@ export default function AutoBeamerPage() {
       url: `${DKO_BEAMER_ROUTES[run.tournament_type]}?${new URLSearchParams({
         tournamentId: run.tournament_id, tournamentType: run.tournament_type, tournamentName: run.tournament_name || "EMD Turnier"
       }).toString()}`,
-    }))} />{tvMode === false && <BeamerFullscreenButton />}{tvMode === false && <EmdLiveAnnouncementDisplay />}</>
+    }))} />{tvMode === false && <BeamerFullscreenButton />}{tvMode === false && <EmdLiveAnnouncementDisplay />}<MembersCupDrawShow /></>
   }
 
   if (beamerUrl) {
@@ -242,7 +247,7 @@ export default function AutoBeamerPage() {
           allow="autoplay; fullscreen"
           allowFullScreen
         />
-        {tvMode === false && <BeamerFullscreenButton />}{tvMode === false && <EmdLiveAnnouncementDisplay />}
+        {tvMode === false && <BeamerFullscreenButton />}{tvMode === false && <EmdLiveAnnouncementDisplay />}<MembersCupDrawShow />
       </main>
     )
   }
@@ -251,7 +256,7 @@ export default function AutoBeamerPage() {
 
   return (
     <main className="relative grid min-h-[100svh] place-items-center overflow-hidden bg-[#050608] px-6 text-white">
-      {tvMode === false && <EmdLiveAnnouncementDisplay />}
+      {tvMode === false && <EmdLiveAnnouncementDisplay />}<MembersCupDrawShow />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(249,115,22,.16),transparent_34%),radial-gradient(circle_at_50%_100%,rgba(14,165,233,.10),transparent_42%)]" />
 
       <div className="relative w-full max-w-3xl rounded-[38px] border border-white/10 bg-black/35 px-7 py-10 text-center shadow-[0_30px_100px_rgba(0,0,0,.45)] backdrop-blur-2xl sm:px-12 sm:py-14">

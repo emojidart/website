@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -202,6 +202,17 @@ const [loadingBoardAttachments, setLoadingBoardAttachments] = useState(false)
   const [teams, setTeams] = useState<string[]>(["Alle Teams"])
   const [clubTeams, setClubTeams] = useState<ClubTeam[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [listLimit, setListLimit] = useState(36)
+  const dayAgendaRef = useRef<HTMLDivElement | null>(null)
+  const selectCalendarDay = (date: Date) => {
+    setSelectedDate(date)
+    // Mobile: erst die Tageskarten aktualisieren, dann unter den fixierten Header scrollen.
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => dayAgendaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }))
+      })
+    }
+  }
   const [isMultiItemDialogOpen, setIsMultiItemDialogOpen] = useState(false)
   const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false)
   const [mobileSelectedDate, setMobileSelectedDate] = useState<Date | null>(null)
@@ -1551,7 +1562,7 @@ const toggleInvitePlayer = (playerId: string) => {
   }
 
   return (
-      <div className="calendar-premium relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans flex flex-col pb-20">
+      <div className="calendar-premium relative isolate min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans flex flex-col pb-20">
 
       <Header variant="app" title="Vereinskalender" subtitle="Mein EMD" backHref="/member-profile-app" />
 
@@ -1564,8 +1575,8 @@ const toggleInvitePlayer = (playerId: string) => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.17),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(14,165,233,.11),transparent_27%),radial-gradient(circle_at_52%_82%,rgba(168,85,247,.06),transparent_24%)]" />
       </div>
 
-     <main className="w-full pt-14 sm:pt-16">
-      <div className="w-full max-w-none overflow-x-hidden px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
+     <main className="relative z-10 w-full pt-14 sm:pt-16">
+      <div className="mx-auto w-full max-w-[1680px] px-3 py-4 pb-24 sm:px-5 sm:py-6 sm:pb-12 lg:px-7 xl:px-8">
 
 
 
@@ -1574,14 +1585,14 @@ const toggleInvitePlayer = (playerId: string) => {
           <section className="relative mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/[0.14] blur-3xl" />
             <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-sky-500/[0.07] blur-3xl" />
-            <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
+            <div className="relative p-4 sm:p-5 lg:p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08]">
-                  <CalendarDays className="h-6 w-6 text-orange-400" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-300/[0.14] bg-orange-500/[0.08]">
+                  <CalendarDays className="h-5 w-5 text-orange-400" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Vereinskalender</h1>
-                  <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">Alle Liga-Spiele und Termine von Emoj!'s Dartverein</p>
+                  <h1 className="text-[25px] font-extrabold tracking-[-0.035em] text-white sm:text-[32px]">Vereinskalender</h1>
+                  <p className="mt-1 text-xs font-medium text-white/50 sm:text-sm">Alle Liga-Spiele und Termine von Emoj!'s Dartverein</p>
                 </div>
               </div>
             </div>
@@ -1609,7 +1620,7 @@ const toggleInvitePlayer = (playerId: string) => {
                                 onClick={() => openMatchDialog(match)}
                                 className="w-full text-left"
                               >
-                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-black/30 p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]/30">
+                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-black/30 p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]">
                                   <div className="min-w-0">
                                     <div className="truncate text-sm font-black text-white">
                                       🎯 {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
@@ -1642,7 +1653,7 @@ const toggleInvitePlayer = (playerId: string) => {
                                 onClick={() => openEventDialog(ev)}
                                 className="w-full text-left"
                               >
-                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-black/30 p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]/30">
+                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-black/30 p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]">
                                   <div className="min-w-0">
                                     <div className="truncate text-sm font-black text-white">
                                       {ev.event_type === "Geburtstag" ? "🎂" : ev.event_type === "Turnier" ? "🏆" : "📅"}{" "}
@@ -1694,78 +1705,54 @@ const toggleInvitePlayer = (playerId: string) => {
             </div>
           )}
 
-          <div className="mb-4 sm:mb-5">
-            <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl transition duration-300 hover:border-orange-300/[0.14]">
-              <CardContent className="p-3">
-                <div className="flex flex-col gap-3">
-                  <div className="flex justify-center">
-                    <div className="flex rounded-2xl border border-white/[0.08] bg-black/35 p-1">
-                      <Button
-                        variant={viewMode === "month" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setViewMode("month")}
-                        className="flex items-center gap-2 rounded-xl border-0 text-xs font-black"
-                      >
-                        <Calendar className="h-4 w-4" />
-                        Monat
-                      </Button>
-                      <Button
-                        variant={viewMode === "list" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setViewMode("list")}
-                        className="flex items-center gap-2 rounded-xl border-0 text-xs font-black"
-                      >
-                        <Filter className="h-4 w-4" />
-                        Liste
-                      </Button>
-                      <Button
-                        variant={viewMode === "browse" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setViewMode("browse")}
-                        className="flex items-center gap-2 rounded-xl border-0 text-xs font-black"
-                      >
-                        <Users className="h-4 w-4" />
-                        Übersicht
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
+          <section className="mb-5 rounded-[23px] border border-white/[0.09] bg-[#090d13]/85 p-3 shadow-[0_18px_55px_-36px_rgba(0,0,0,.95)] sm:p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] pb-3">
+              <div>
+                <div className="text-sm font-bold text-white">Kalenderansicht</div>
+                <div className="mt-0.5 text-[11px] text-white/40">Termine gezielt finden und verwalten</div>
+              </div>
+              <div className="inline-flex max-w-full rounded-xl border border-white/10 bg-black/35 p-1">
+                <Button variant={viewMode === "month" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("month")} className="h-9 gap-1.5 rounded-lg px-3 text-xs font-bold"><Calendar className="h-3.5 w-3.5" />Monat</Button>
+                <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" onClick={() => { setListLimit(36); setViewMode("list") }} className="h-9 gap-1.5 rounded-lg px-3 text-xs font-bold"><Filter className="h-3.5 w-3.5" />Liste</Button>
+                <Button variant={viewMode === "browse" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("browse")} className="h-9 gap-1.5 rounded-lg px-3 text-xs font-bold"><Users className="h-3.5 w-3.5" />Übersicht</Button>
+              </div>
+            </div>
+            <div className="calendar-filter-grid mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
                     <Select value={selectedItemType} onValueChange={setSelectedItemType}>
-                      <SelectTrigger className="h-11 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
+                      <SelectTrigger className="h-10 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
                         <SelectValue placeholder="Typ auswählen" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Alle" className="text-sm">
+                        <SelectItem value="Alle" className="text-xs">
                           Alle Termine
                         </SelectItem>
-                        <SelectItem value="Spiele" className="text-sm">
+                        <SelectItem value="Spiele" className="text-xs">
                           <div className="flex items-center gap-2">
                             <Target className="h-4 w-4 text-orange-200" />
                             Nur Spiele
                           </div>
                         </SelectItem>
-                        <SelectItem value="Turniere" className="text-sm">
+                        <SelectItem value="Turniere" className="text-xs">
                           <div className="flex items-center gap-2">
                             <Trophy className="h-4 w-4 text-violet-200" />
                             Nur Turniere
                           </div>
                         </SelectItem>
-                        <SelectItem value="Events" className="text-sm">
+                        <SelectItem value="Events" className="text-xs">
                           <div className="flex items-center gap-2">
                             <CalendarDays className="h-4 w-4 text-green-600" />
                             Nur Events
                           </div>
                         </SelectItem>
 						
-						<SelectItem value="Feiertage" className="text-sm">
+						<SelectItem value="Feiertage" className="text-xs">
   <div className="flex items-center gap-2">
     <CalendarDays className="h-4 w-4 text-red-200" />
     Nur Feiertage
   </div>
 </SelectItem>
 
-                        <SelectItem value="Urlaube" className="text-sm">
+                        <SelectItem value="Urlaube" className="text-xs">
                           <div className="flex items-center gap-2">
                             <Sun className="h-4 w-4 text-sky-200" />
                             Nur Urlaube
@@ -1773,7 +1760,7 @@ const toggleInvitePlayer = (playerId: string) => {
                         </SelectItem>
 
                         {}
-                        <SelectItem value="Geburtstage" className="text-sm">
+                        <SelectItem value="Geburtstage" className="text-xs">
                           <div className="flex items-center gap-2">
                             <Cake className="h-4 w-4 text-pink-200" />
                             Nur Geburtstage
@@ -1783,12 +1770,12 @@ const toggleInvitePlayer = (playerId: string) => {
                     </Select>
 
                     <Select value={selectedLeague} onValueChange={setSelectedLeague}>
-                      <SelectTrigger className="h-11 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
+                      <SelectTrigger className="h-10 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
                         <SelectValue placeholder="Liga auswählen" />
                       </SelectTrigger>
                       <SelectContent>
                         {leagues.map((league) => (
-                          <SelectItem key={league} value={league} className="text-sm">
+                          <SelectItem key={league} value={league} className="text-xs">
                             {league}
                           </SelectItem>
                         ))}
@@ -1796,12 +1783,12 @@ const toggleInvitePlayer = (playerId: string) => {
                     </Select>
 
                     <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                      <SelectTrigger className="h-11 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
+                      <SelectTrigger className="h-10 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
                         <SelectValue placeholder="Team auswählen" />
                       </SelectTrigger>
                       <SelectContent>
                         {teams.map((team) => (
-                          <SelectItem key={team} value={team} className="text-sm">
+                          <SelectItem key={team} value={team} className="text-xs">
                             {team}
                           </SelectItem>
                         ))}
@@ -1809,19 +1796,19 @@ const toggleInvitePlayer = (playerId: string) => {
                     </Select>
 
                     <Select value={selectedResultType} onValueChange={setSelectedResultType}>
-                      <SelectTrigger className="h-11 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
+                      <SelectTrigger className="h-10 w-full rounded-xl border-white/[0.09] bg-[#080c12]/95 text-sm text-white shadow-none">
                         <SelectValue placeholder="Ergebnis-Typ auswählen" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Alle" className="text-sm">
+                        <SelectItem value="Alle" className="text-xs">
                           Alle Ergebnisse
                         </SelectItem>
-                        <SelectItem value="Gespielt" className="text-sm">
+                        <SelectItem value="Gespielt" className="text-xs">
                           <div className="flex items-center gap-2">
                             <Badge className="bg-emerald-500/[0.10] text-emerald-200 border-emerald-300/[0.16] text-xs">Gespielt</Badge>
                           </div>
                         </SelectItem>
-                        <SelectItem value="Geplant" className="text-sm">
+                        <SelectItem value="Geplant" className="text-xs">
                           <div className="flex items-center gap-2">
                             <Badge className="bg-sky-500/[0.10] text-sky-200 border-sky-300/[0.16] text-xs">Geplant</Badge>
                           </div>
@@ -1829,89 +1816,23 @@ const toggleInvitePlayer = (playerId: string) => {
                       </SelectContent>
                     </Select>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
+            </div>
+            <div className="calendar-action-row mt-3 flex flex-wrap items-center gap-2 border-t border-white/[0.07] pt-3">
+              <Button variant="outline" size="sm" onClick={() => {
                         setSelectedItemType("Alle")
                         setSelectedLeague("Alle Ligen")
                         setSelectedTeam("Alle Teams")
                         setSelectedResultType("Alle")
-                      }}
-                      className="w-full bg-black/30 hover:bg-white/[0.035] border-white/[0.08] text-xs"
-                    >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Zurücksetzen
-                    </Button>
-					
-					
-					
-					{isVorstand && (
-  <Button
-    variant="default"
-    size="sm"
-    onClick={() => {
-  setBoardTitle("")
-  setBoardDesc("")
-  setBoardDate("")
-  setBoardTime("")
-  setBoardFiles(null)
-  setInvitePlayerIds([])
-  setInviteSearch("")
-  setIsBoardDialogOpen(true)
-}}
-    className="w-full h-11 rounded-2xl text-sm font-semibold shadow-sm bg-black hover:bg-black/90"
-  >
-    <Plus className="h-4 w-4 mr-2" />
-    Vorstand Termin
-  </Button>
-)}
-					
-
-<div className="flex flex-col gap-2">
-  <Button
-    variant="default"
-    size="sm"
-    onClick={() => {
-      setEditingVacationId(null)
-      setVacationStart("")
-      setVacationEnd("")
-      setVacationNote("")
-      setIsVacationDialogOpen(true)
-    }}
-    className="w-full h-11 rounded-2xl text-sm font-semibold shadow-sm"
-  >
-    <Plus className="h-4 w-4 mr-2" />
-    Urlaub eintragen
-  </Button>
-
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={() => {
-  setEditingPrivateEntryId(null)
-  setPrivateTitle("")
-  setPrivateStart("")
-  setPrivateEnd("")
-  setPrivateTime("")
-  setPrivateNote("")
-  setIsPrivateDialogOpen(true)
-}}
-    className="w-full h-11 rounded-2xl text-sm font-semibold shadow-sm"
-  >
-    🔒 Privaten Termin
-  </Button>
-</div>
-					
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
+                      }} className="h-9 rounded-xl border-white/10 bg-white/[0.035] px-3 text-xs text-white/75 hover:bg-white/[0.08]"><RotateCcw className="mr-1.5 h-3.5 w-3.5"/>Filter zurücksetzen</Button>
+              <div className="hidden flex-1 sm:block" />
+              {isVorstand && <Button size="sm" onClick={() => {setBoardTitle("");setBoardDesc("");setBoardDate("");setBoardTime("");setBoardFiles(null);setInvitePlayerIds([]);setInviteSearch("");setIsBoardDialogOpen(true)}} className="h-9 rounded-xl bg-white/[0.08] px-3 text-xs font-semibold text-white hover:bg-white/[0.14]"><Plus className="mr-1.5 h-3.5 w-3.5"/>Vorstandstermin</Button>}
+              <Button size="sm" onClick={() => {setEditingVacationId(null);setVacationStart("");setVacationEnd("");setVacationNote("");setIsVacationDialogOpen(true)}} className="h-9 rounded-xl bg-orange-500 px-3 text-xs font-bold text-white hover:bg-orange-600"><Sun className="mr-1.5 h-3.5 w-3.5"/>Urlaub eintragen</Button>
+              <Button variant="outline" size="sm" onClick={() => {setEditingPrivateEntryId(null);setPrivateTitle("");setPrivateStart("");setPrivateEnd("");setPrivateTime("");setPrivateNote("");setIsPrivateDialogOpen(true)}} className="h-9 rounded-xl border-white/10 bg-white/[0.035] px-3 text-xs font-semibold text-white hover:bg-white/[0.08]"><Plus className="mr-1.5 h-3.5 w-3.5"/>Privater Termin</Button>
+            </div>
+          </section>
 
           {viewMode === "browse" && (
-            <div className="space-y-4">
+            <div className="calendar-browse space-y-4">
               <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl transition duration-300 hover:border-orange-300/[0.14]">
                 <CardHeader className="pb-2 px-2 sm:px-6">
 
@@ -2083,155 +2004,113 @@ const toggleInvitePlayer = (playerId: string) => {
           )}
 
           {viewMode === "month" && (
-  <Card className="w-full overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
-
-
-              <CardHeader className="pb-3 px-2 sm:px-6">
-
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl lg:text-3xl font-bold">
-
-                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")} className="rounded-xl border-white/[0.09] bg-white/[0.035] text-white hover:bg-white/[0.07] hover:text-white">
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())} className="rounded-xl border-orange-300/[0.15] bg-orange-500/[0.08] font-black text-orange-100 hover:bg-orange-500/[0.14] hover:text-white">
-                      Heute
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigateMonth("next")} className="rounded-xl border-white/[0.09] bg-white/[0.035] text-white hover:bg-white/[0.07] hover:text-white">
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+            <section className="overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#0a0d12]/90 shadow-[0_24px_70px_-42px_rgba(0,0,0,.9)]">
+              <div className="flex flex-col gap-4 border-b border-white/[0.07] px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div className="min-w-0">
+                  <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400/85">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-400" /> EMD · Monatsübersicht
                   </div>
+                  <h2 className="text-[25px] font-black tracking-tight text-white sm:text-[30px]">
+                    {monthNames[currentDate.getMonth()]} <span className="font-medium text-white/45">{currentDate.getFullYear()}</span>
+                  </h2>
+                  <p className="mt-1 text-xs text-white/40">Spiele, Turniere und alles rund um deinen Verein</p>
                 </div>
-              </CardHeader>
-              <CardContent className="p-2 sm:p-6">
-
-                <div className="grid grid-cols-7 gap-1 mb-2">
-                  {dayNames.map((day) => (
-                    <div key={day} className="text-center text-xs font-medium text-white/35 p-2">
-                      {day}
-                    </div>
-                  ))}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button aria-label="Vorheriger Monat" onClick={() => navigateMonth("prev")} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/75 transition hover:bg-white/10 hover:text-white"><ChevronLeft className="h-4 w-4" /></button>
+                  <button onClick={() => { setCurrentDate(new Date()); setSelectedDate(new Date()) }} className="h-10 rounded-xl border border-orange-400/25 bg-orange-500/10 px-5 text-xs font-bold text-orange-200 transition hover:bg-orange-500/20">Heute</button>
+                  <button aria-label="Nächster Monat" onClick={() => navigateMonth("next")} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/75 transition hover:bg-white/10 hover:text-white"><ChevronRight className="h-4 w-4" /></button>
                 </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {Array.from({ length: 42 }, (_, index) => {
-                    const day = getDaysInMonth(currentDate)[index]
-                    const isToday = day?.toDateString() === new Date().toDateString()
+              </div>
+              <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_390px]">
+              <div className="px-2 pb-3 pt-3 sm:px-4 sm:pb-5 sm:pt-5">
+                <div className="mb-2 grid grid-cols-7 gap-1.5 sm:gap-2">
+                  {dayNames.map((day, i) => <div key={day} className={`py-2 text-center text-[10px] font-bold uppercase tracking-wider sm:text-xs ${i >= 5 ? "text-orange-300/65" : "text-white/40"}`}>{day}</div>)}
+                </div>
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                  {getDaysInMonth(currentDate).slice(0, 42).map((day, index) => {
                     const itemsForDay = day ? getItemsForDate(day) : []
-
+                    const isToday = Boolean(day && day.toDateString() === new Date().toDateString())
+                    const isSelected = Boolean(day && selectedDate && day.toDateString() === selectedDate.toDateString())
+                    const isWeekend = index % 7 >= 5
                     return (
-                      <div
-                        key={index}
-                        className={`p-1 border border-white/[0.08] rounded-lg transition-colors overflow-hidden ${
-                          isToday ? "bg-orange-500/[0.08] border-orange-300" : "bg-black/30 hover:bg-white/[0.035]"
-                        } 
-                        h-24 sm:h-28 lg:h-40
- cursor-pointer`}
+                      <button key={index} type="button" disabled={!day} aria-label={day ? `${day.getDate()}. ${monthNames[day.getMonth()]}, ${itemsForDay.length} Termine` : undefined}
                         onClick={() => {
-                          if (day && itemsForDay.length > 0) {
-                            if (window.innerWidth < 768) {
-                              handleMobileTileClick(day, itemsForDay)
-                            } else {
-                              if (itemsForDay.length === 1) {
-                                handleItemClick(itemsForDay[0])
-                              } else {
-                                openMultiItemDialogDialog(day, itemsForDay)
-                              }
-                            }
-                          }
+                          if (!day) return
+                          selectCalendarDay(day)
                         }}
-                      >
-                        {day && (
-                          <div className={`text-sm font-medium mb-1 ${isToday ? "text-orange-200" : "text-white"}`}>
-                            {day.getDate()}
+                        className={`group relative flex min-h-[65px] min-w-0 flex-col overflow-hidden rounded-[13px] border px-1.5 py-2 text-left transition-all duration-200 sm:min-h-[116px] sm:rounded-[16px] sm:p-3 lg:min-h-[146px] ${!day ? "border-transparent bg-white/[0.012] opacity-30" : isSelected ? "border-orange-400/60 bg-orange-500/[0.10] ring-1 ring-orange-400/10" : isToday ? "border-orange-400/35 bg-orange-500/[0.065]" : "border-white/[0.065] bg-white/[0.025] hover:border-white/[0.18] hover:bg-white/[0.055]"}`}>
+                        {day && <>
+                          <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold sm:h-8 sm:w-8 sm:text-sm ${isToday ? "bg-orange-500 text-white shadow-[0_3px_15px_rgba(249,115,22,.24)]" : isWeekend ? "text-white/65" : "text-white/90"}`}>{day.getDate()}</span>
+                          <div className="mt-auto flex max-w-full flex-wrap items-center gap-1 pb-1 sm:hidden">
+                            {itemsForDay.slice(0, 4).map((item, idx) => {
+                              const category = "match_date" in item ? "match" : (item as Event).event_type
+                              const color = category === "match" ? "bg-orange-400" : category === "Geburtstag" ? "bg-pink-400" : category === "Turnier" ? "bg-violet-400" : category === "Urlaub" ? "bg-sky-400" : "bg-emerald-400"
+                              return <span key={idx} className={`h-1.5 w-1.5 rounded-full ${color}`} />
+                            })}
+                            {itemsForDay.length > 4 && <span className="text-[9px] text-white/45">+{itemsForDay.length-4}</span>}
                           </div>
-                        )}
-
-                        <div className="space-y-1 overflow-hidden">
-                          <div className="block">
-                      <div className="block">
-  <div className="space-y-1 mt-1">
-    {itemsForDay.slice(0, 3).map((item, idx) => {
-      const isMatch = "match_date" in item
-
-      let bg = "bg-gray-400"
-      let text = ""
-
-      if (isMatch) {
-        bg = "bg-orange-500"
-        const time = formatTimeWithoutSeconds((item as any).match_time)
-
-const shortenTeam = (name: string, max = 14) => {
-  const cleaned = (name || "").replace(/\s+/g, " ").trim()
-  if (!cleaned) return "Team"
-  return cleaned.length > max ? cleaned.slice(0, max - 1) + "…" : cleaned
-}
-
-const homeName = getTeamDisplayName(item, true) || "Team"
-const awayName = getTeamDisplayName(item, false) || "Team"
-
-const homeShort = shortenTeam(homeName, 14)
-const awayShort = shortenTeam(awayName, 14)
-
-
-text = `${normalizeTimeHHMM((item as any).match_time)} Uhr ${homeShort} vs ${awayShort}`
-
-
-
-      } else {
-        const ev: any = item
-        if (ev.event_type === "Feiertag") bg = "bg-red-500/85"
-else if (ev.event_type === "Urlaub") bg = "bg-sky-500/85"
-else if (ev.event_type === "Turnier") bg = "bg-violet-500/85"
-else if (ev.event_type === "Geburtstag") bg = "bg-pink-500/85"
-else bg = "bg-emerald-500/85"
-
-        text = ev.name || "Termin"
-      }
-
-     return (
-  <div
-    key={idx}
-    className={`${bg} text-white text-[11px] font-medium px-1 py-0.5 rounded-sm`}
-    title={text}
-  >
-   
-  <span
-  className="block leading-tight overflow-hidden"
-  style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
->
-  {isMatch
-    ? `${normalizeTimeHHMM((item as any).match_time)} ${getTeamDisplayName(item, true)} vs ${getTeamDisplayName(item, false)}`
-    : text}
-</span>
- 
-   
-   
-   
-  </div>
-)
-
-    })}
-
-    {itemsForDay.length > 3 && (
-      <div className="text-[11px] font-medium text-white/35 px-0.5">
-        +{itemsForDay.length - 3} mehr
-      </div>
-    )}
-  </div>
-</div>
-
-                            
+                          <div className="mt-2 hidden w-full min-w-0 space-y-1.5 sm:block">
+                            {itemsForDay.slice(0, 2).map((item, idx) => {
+                              const isMatch = "match_date" in item
+                              const eventType = isMatch ? "match" : (item as Event).event_type
+                              const dot = eventType === "match" ? "bg-orange-400" : eventType === "Turnier" ? "bg-violet-400" : eventType === "Geburtstag" ? "bg-pink-400" : eventType === "Urlaub" ? "bg-sky-400" : "bg-emerald-400"
+                              const name = isMatch ? `${getTeamDisplayName(item as Match, true)} vs ${getTeamDisplayName(item as Match, false)}` : (item as Event).name
+                              const time = isMatch ? normalizeTimeHHMM((item as Match).match_time) : ((item as Event).start_time && (item as Event).event_type !== "Urlaub" && (item as Event).event_type !== "Geburtstag" ? normalizeTimeHHMM((item as Event).start_time!) : "")
+                              return <div key={idx} title={`${time} ${name}`} className="min-w-0 rounded-lg border border-white/[0.035] bg-black/20 px-2 py-1.5">
+                                <div className="flex min-w-0 items-center gap-1.5"><span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} /><span className="truncate text-[10px] font-semibold leading-snug text-white/80 lg:text-[11px]">{name}</span></div>
+                                {time && <div className="ml-3 mt-0.5 text-[9px] font-medium text-white/35">{time} Uhr</div>}
+                              </div>
+                            })}
+                            {itemsForDay.length > 2 && <div className="pl-1 text-[10px] font-semibold text-orange-300/85">+{itemsForDay.length - 2} weitere</div>}
                           </div>
-                        </div>
-                      </div>
+                        </>}
+                      </button>
                     )
                   })}
                 </div>
-              </CardContent>
-            </Card>
+                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-white/[0.065] pt-4 text-[11px] text-white/55">
+                  {[["bg-orange-400", "Ligaspiele"], ["bg-violet-400", "Turniere"], ["bg-emerald-400", "Termine"], ["bg-pink-400", "Geburtstage"], ["bg-sky-400", "Urlaub"]].map(([dot, name]) => <span key={name} className="inline-flex items-center gap-1.5"><span className={`h-2 w-2 rounded-full ${dot}`} />{name}</span>)}
+                </div>
+                <div ref={dayAgendaRef} id="emd-day-agenda" className="mt-5 scroll-mt-24 rounded-[18px] border border-white/[0.08] bg-white/[0.025] p-3 lg:hidden">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div><div className="text-[10px] font-bold uppercase tracking-[0.14em] text-orange-300/80">Tagesübersicht</div><h3 className="mt-1 text-base font-extrabold text-white">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() ? `${selectedDate.getDate()}. ${monthNames[selectedDate.getMonth()]}` : "Tag auswählen"}</h3></div>
+                    <CalendarDays className="h-5 w-5 text-white/25" />
+                  </div>
+                  {selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() && getItemsForDate(selectedDate).length ? (
+                    <div className="space-y-2">{getItemsForDate(selectedDate).map((item, idx) => {
+                      const isMatch = "match_date" in item
+                      const name = isMatch ? `${getTeamDisplayName(item as Match, true)} vs ${getTeamDisplayName(item as Match, false)}` : (item as Event).name
+                      const time = isMatch ? (item as Match).match_time : (item as Event).start_time
+                      return <button type="button" key={`${item.id}-${idx}`} onClick={() => handleItemClick(item)} className="flex w-full min-w-0 items-center gap-3 rounded-xl border border-white/[0.075] bg-[#10151d] px-3 py-3 text-left transition hover:border-orange-400/25">
+                        <span className={`h-9 w-1 shrink-0 rounded-full ${isMatch ? "bg-orange-400" : (item as Event).event_type === "Turnier" ? "bg-violet-400" : (item as Event).event_type === "Geburtstag" ? "bg-pink-400" : (item as Event).event_type === "Urlaub" ? "bg-sky-400" : "bg-emerald-400"}`} />
+                        <span className="min-w-0 flex-1"><span className="block text-xs font-bold leading-snug text-white">{name}</span><span className="mt-1 block text-[11px] text-white/45">{isMatch ? "Ligaspiel" : (item as Event).event_type}{time && time !== "00:00:00" ? ` · ${normalizeTimeHHMM(time)} Uhr` : ""}</span></span>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-white/30" />
+                      </button>
+                    })}</div>
+                  ) : <p className="py-3 text-xs text-white/40">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() ? "Keine Termine an diesem Tag." : "Tippe auf einen Tag, um alle Termine zu sehen."}</p>}
+                </div>
+              </div>
+              <aside className="hidden min-w-0 border-l border-white/[0.08] bg-white/[0.018] p-5 lg:block">
+                <div className="sticky top-24">
+                  <div className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-300">Tagesübersicht</div>
+                  <h3 className="mb-1 text-xl font-black text-white">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() ? selectedDate.toLocaleDateString("de-DE", { day: "numeric", month: "long" }) : "Tag auswählen"}</h3>
+                  <p className="mb-5 text-xs text-white/40">Tag im Kalender auswählen, um Termine zu sehen.</p>
+                  <div className="max-h-[650px] space-y-2 overflow-y-auto pr-1">
+                    {selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() && getItemsForDate(selectedDate).length > 0 ? getItemsForDate(selectedDate).map((item, idx) => {
+                      const match = "match_date" in item
+                      const name = match ? `${getTeamDisplayName(item as Match, true)} vs ${getTeamDisplayName(item as Match, false)}` : (item as Event).name
+                      const time = match ? (item as Match).match_time : (item as Event).start_time
+                      const kind = match ? "Ligaspiel" : (item as Event).event_type
+                      return <button type="button" key={`${item.id}-${idx}`} onClick={() => handleItemClick(item)} className="flex w-full items-start gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.035] p-3.5 text-left transition hover:border-orange-400/35 hover:bg-orange-500/[0.06]">
+                        <span className={`mt-1 h-8 w-1 shrink-0 rounded-full ${match ? "bg-orange-400" : kind === "Turnier" ? "bg-violet-400" : kind === "Geburtstag" ? "bg-pink-400" : kind === "Urlaub" ? "bg-sky-400" : "bg-emerald-400"}`} />
+                        <span className="min-w-0 flex-1"><span className="block text-sm font-bold leading-snug text-white">{name}</span><span className="mt-1.5 block text-xs text-white/45">{kind}{time && time !== "00:00:00" ? ` · ${normalizeTimeHHMM(time)} Uhr` : ""}</span></span><ChevronRight className="mt-2 h-4 w-4 shrink-0 text-white/40" />
+                      </button>
+                    }) : <p className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center text-sm text-white/40">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() ? "Keine Termine an diesem Tag." : "Wähle ein Datum im Kalender."}</p>}
+                  </div>
+                </div>
+              </aside>
+              </div>
+            </section>
           )}
 
           {viewMode === "list" && (
@@ -2299,10 +2178,11 @@ const dateB =
                     }
                     return keyB.localeCompare(keyA) // past: newest first
                   })
+                  .slice(0, listLimit)
                   .map((item) => {
                     if (isEvent(item)) {
                       return (
-                        <Card key={item.id} className="shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)] border-0 bg-black/30 hover:shadow-none backdrop-blur-xl transition-shadow">
+                        <Card key={item.id} className="calendar-list-card shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)] border border-white/[0.09] rounded-[22px] bg-[#0a0e14]/90 hover:border-orange-400/20 transition-colors">
                           <CardContent className="p-4 sm:p-5">
                             <div className="flex flex-col gap-3">
                               <div className="flex-1 min-w-0">
@@ -2395,7 +2275,7 @@ const dateB =
                     } else {
                       const match = item as Match
                       return (
-                        <Card key={match.id} className="shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)] border-0 bg-black/30 hover:shadow-none backdrop-blur-xl transition-shadow">
+                        <Card key={match.id} className="calendar-list-card shadow-[0_14px_42px_-34px_rgba(15,23,42,0.5)] border border-white/[0.09] rounded-[22px] bg-[#0a0e14]/90 hover:border-orange-400/20 transition-colors">
                           <CardContent className="p-4 sm:p-5">
                             <div className="flex flex-col gap-3">
                               <div className="flex-1 min-w-0">
@@ -2496,14 +2376,17 @@ const dateB =
                     }
                   })
               })()}
+              <div className="flex justify-center pt-4">
+                <button type="button" onClick={() => setListLimit((n) => n + 36)} className="rounded-xl border border-white/15 bg-white/[0.055] px-6 py-3 text-sm font-bold text-white transition hover:border-orange-400/40 hover:bg-orange-500/10">Weitere Termine laden</button>
+              </div>
             </div>
           )}
 
           <Dialog open={isMatchDialogOpen} onOpenChange={setIsMatchDialogOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
+            <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
               <DialogHeader>
-                <DialogTitle className="text-lg">Spiel Details</DialogTitle>
-                <DialogDescription className="text-sm">Detaillierte Informationen zum Spiel</DialogDescription>
+                <DialogTitle className="text-lg font-extrabold tracking-tight">Spiel Details</DialogTitle>
+                <DialogDescription className="text-sm text-white/50">Detaillierte Informationen zum Spiel</DialogDescription>
               </DialogHeader>
 
               {selectedMatch && (
@@ -2635,11 +2518,11 @@ const dateB =
 
 
           <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
+            <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
 
               <DialogHeader>
-                <DialogTitle className="text-lg">Event Details</DialogTitle>
-                <DialogDescription className="text-sm">Detaillierte Informationen zum Event</DialogDescription>
+                <DialogTitle className="text-lg font-extrabold tracking-tight">Event Details</DialogTitle>
+                <DialogDescription className="text-sm text-white/50">Detaillierte Informationen zum Event</DialogDescription>
               </DialogHeader>
 
               {selectedEvent && (
@@ -2861,9 +2744,9 @@ const dateB =
           </Dialog>
 
           <Dialog open={isMultiItemDialogOpen} onOpenChange={setIsMultiItemDialogOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
+            <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
               <DialogHeader>
-                <DialogTitle className="text-lg">
+                <DialogTitle className="text-lg font-extrabold tracking-tight">
                   Termine am{" "}
                   {selectedDate?.toLocaleDateString("de-DE", {
                     weekday: "long",
@@ -2872,7 +2755,7 @@ const dateB =
                     year: "numeric",
                   })}
                 </DialogTitle>
-                <DialogDescription className="text-sm">Alle Termine an diesem Tag</DialogDescription>
+                <DialogDescription className="text-sm text-white/50">Alle Termine an diesem Tag</DialogDescription>
               </DialogHeader>
 
               {selectedDate && (
@@ -2934,10 +2817,10 @@ const dateB =
           </Dialog>
 
           <Dialog open={isConfirmDeleteBoardOpen} onOpenChange={setIsConfirmDeleteBoardOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md calendar-dialog">
+  <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
-      <DialogTitle className="text-lg">Vorstand-Termin wirklich löschen?</DialogTitle>
-      <DialogDescription className="text-sm">
+      <DialogTitle className="text-lg font-extrabold tracking-tight">Vorstand-Termin wirklich löschen?</DialogTitle>
+      <DialogDescription className="text-sm text-white/50">
         Dieser Termin wird dauerhaft entfernt (inkl. Einladungen & Dateien).
       </DialogDescription>
     </DialogHeader>
@@ -2986,10 +2869,10 @@ const dateB =
 </Dialog>
 
           <Dialog open={isVacationDialogOpen} onOpenChange={setIsVacationDialogOpen}>
-            <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
+            <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
               <DialogHeader>
-                <DialogTitle className="text-lg">{editingVacationId ? "Urlaub bearbeiten" : "Urlaub eintragen"}</DialogTitle>
-                <DialogDescription className="text-sm">Für alle sichtbar im Vereins-Kalender</DialogDescription>
+                <DialogTitle className="text-lg font-extrabold tracking-tight">{editingVacationId ? "Urlaub bearbeiten" : "Urlaub eintragen"}</DialogTitle>
+                <DialogDescription className="text-sm text-white/50">Für alle sichtbar im Vereins-Kalender</DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4">
@@ -3049,12 +2932,12 @@ const dateB =
 		  
 		  
 		<Dialog open={isPrivateDialogOpen} onOpenChange={setIsPrivateDialogOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
+  <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
-      <DialogTitle className="text-lg">
+      <DialogTitle className="text-lg font-extrabold tracking-tight">
         {editingPrivateEntryId ? "Privaten Termin bearbeiten" : "Privaten Termin eintragen"}
       </DialogTitle>
-      <DialogDescription className="text-sm">
+      <DialogDescription className="text-sm text-white/50">
         Nur für dich sichtbar
       </DialogDescription>
     </DialogHeader>
@@ -3129,10 +3012,10 @@ const dateB =
 		  
 		  
 		  <Dialog open={isConfirmDeletePrivateOpen} onOpenChange={setIsConfirmDeletePrivateOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md calendar-dialog">
+  <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
-      <DialogTitle className="text-lg">Privaten Termin wirklich löschen?</DialogTitle>
-      <DialogDescription className="text-sm">
+      <DialogTitle className="text-lg font-extrabold tracking-tight">Privaten Termin wirklich löschen?</DialogTitle>
+      <DialogDescription className="text-sm text-white/50">
         Dieser private Termin wird dauerhaft entfernt.
       </DialogDescription>
     </DialogHeader>
@@ -3171,10 +3054,10 @@ const dateB =
 		  
 		  
 		  <Dialog open={isBoardDialogOpen} onOpenChange={setIsBoardDialogOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
+  <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
-      <DialogTitle className="text-lg">Vorstand Termin eintragen</DialogTitle>
-      <DialogDescription className="text-sm">Nur für Vorstand sichtbar</DialogDescription>
+      <DialogTitle className="text-lg font-extrabold tracking-tight">Vorstand Termin eintragen</DialogTitle>
+      <DialogDescription className="text-sm text-white/50">Nur für Vorstand sichtbar</DialogDescription>
     </DialogHeader>
 
     <div className="space-y-4">
@@ -3375,10 +3258,10 @@ const dateB =
         </div>
 		
 			  <Dialog open={isLineupDialogOpen} onOpenChange={setIsLineupDialogOpen}>
-  <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-auto sm:max-w-md max-h-[80dvh] overflow-y-auto calendar-dialog">
+  <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
-      <DialogTitle className="text-lg">Aufstellung</DialogTitle>
-      <DialogDescription className="text-sm">
+      <DialogTitle className="text-lg font-extrabold tracking-tight">Aufstellung</DialogTitle>
+      <DialogDescription className="text-sm text-white/50">
         {selectedMatch ? `${getTeamDisplayName(selectedMatch, true)} vs ${getTeamDisplayName(selectedMatch, false)}` : ""}
       </DialogDescription>
     </DialogHeader>
@@ -3413,6 +3296,26 @@ const dateB =
 
 
       <style jsx global>{`
+        /* Calendar layout: same page shell as Unsere Teams; no full-width panels. */
+        .calendar-premium > main > div { width:100% !important; max-width:1680px !important; margin-inline:auto !important; box-sizing:border-box; }
+        .calendar-premium > main { position:relative !important; z-index:1 !important; }
+        .calendar-premium .calendar-filter-grid { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:10px !important; }
+        .calendar-premium .calendar-filter-grid > * { min-width:0 !important; width:100% !important; }
+        .calendar-premium .calendar-action-row { display:flex !important; gap:9px !important; align-items:center !important; }
+        .calendar-premium .calendar-action-row button { width:auto !important; flex:none !important; min-height:38px !important; }
+        .calendar-premium .calendar-list-card { background:rgba(8,12,19,.94) !important; border:1px solid rgba(255,255,255,.10) !important; border-radius:22px !important; color:#fff !important; }
+        .calendar-premium .calendar-list-card p, .calendar-premium .calendar-list-card span { color:rgba(255,255,255,.74); }
+        .calendar-premium .calendar-list-card h3 { color:#fff !important; }
+        .calendar-premium .calendar-list-card button { width:auto !important; min-width:130px; min-height:38px; padding-inline:18px !important; }
+        .calendar-premium .calendar-browse { width:100% !important; min-width:0 !important; }
+        .calendar-premium .calendar-browse > * { background:rgba(8,12,19,.92) !important; border-color:rgba(255,255,255,.10) !important; }
+        .calendar-premium .calendar-browse button { background:rgba(255,255,255,.045) !important; color:#fff !important; border:1px solid rgba(255,255,255,.12) !important; }
+        .calendar-premium [role=combobox] { color:#fff !important; background:#0b1119 !important; opacity:1 !important; }
+        .calendar-premium [role=combobox] span { color:#fff !important; opacity:1 !important; }
+        .calendar-premium section, .calendar-premium .calendar-browse, .calendar-premium .calendar-list-card { visibility:visible !important; opacity:1 !important; }
+        @media(max-width:1199px) { .calendar-premium .calendar-filter-grid {grid-template-columns:repeat(2,minmax(0,1fr)) !important;} }
+        @media(max-width:639px) { .calendar-premium .calendar-filter-grid {grid-template-columns:minmax(0,1fr) !important;} .calendar-premium .calendar-action-row button { flex:1 1 calc(50% - 9px) !important; } }
+
         .calendar-premium input,
         .calendar-premium textarea,
         .calendar-dialog input,
@@ -3441,6 +3344,20 @@ const dateB =
         .calendar-dialog h2,
         .calendar-dialog h3 { color: white !important; }
         .calendar-dialog label { color: rgba(255,255,255,.55) !important; }
+        .calendar-dialog [role="dialog"] { color: white; }
+        .calendar-dialog button { transition: background-color .18s ease, border-color .18s ease, transform .18s ease; }
+        .calendar-dialog button:active { transform: scale(.985); }
+        .calendar-dialog input, .calendar-dialog textarea { border-radius: 12px !important; min-height: 42px; }
+        .calendar-dialog [role="combobox"] { background: #0b1119 !important; border: 1px solid rgba(255,255,255,.10) !important; border-radius: 12px; }
+        .calendar-dialog [role="separator"] { background: rgba(255,255,255,.09); }
+        .calendar-dialog [data-slot="dialog-header"] { padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 6px; }
+        .calendar-dialog [data-slot="dialog-title"] { letter-spacing: -.025em; font-size: 19px; font-weight: 800; }
+        .calendar-dialog [data-slot="dialog-description"] { color: rgba(255,255,255,.52); }
+        .calendar-dialog [data-slot="badge"] { border-radius: 8px; }
+        .calendar-dialog::-webkit-scrollbar { width: 5px; }
+        .calendar-dialog::-webkit-scrollbar-thumb { background: rgba(255,255,255,.17); border-radius: 10px; }
+        @media (max-width: 639px) { .calendar-dialog { border-radius: 20px !important; padding: 18px !important; } }
+
       `}</style>
 
       <MobileBottomNav />

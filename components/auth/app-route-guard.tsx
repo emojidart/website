@@ -128,7 +128,9 @@ export function AppRouteGuard({ children }: { children: React.ReactNode }) {
 
     const checkAccess = async () => {
       try {
-        setChecking(true)
+        // Bei Navigation innerhalb einer bereits freigegebenen Sitzung
+        // die aktuelle Seite sichtbar lassen. Die Prüfung läuft im Hintergrund.
+        // Der anfängliche Ladezustand bleibt bestehen (checking=true).
 
         // Club Terminal is a separate public kiosk area.
         // Club Terminal and EMD Messenger are standalone areas and bypass this global guard.
