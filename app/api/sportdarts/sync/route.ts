@@ -308,7 +308,9 @@ async function addReview(
     details: Record<string, unknown>
   },
 ) {
-  await supabase.from("sportdarts_sync_reviews").insert({
+  const requestKey = `${data.matchId}:${data.gameId}:${data.reason}`
+  const { error: reviewError } = await supabase.from("sportdarts_sync_reviews").insert({
+    request_key: requestKey,
     match_id: data.matchId,
     sportdarts_game_id: data.gameId,
     team_id: data.teamId,
@@ -317,6 +319,10 @@ async function addReview(
     reason: data.reason,
     details: data.details,
   })
+  // A unique key makes repeated submissions idempotent, including concurrent requests.
+  if (reviewError && reviewError.code !== "23505") {
+    throw new Error(`Prüffall konnte nicht gespeichert werden: ${reviewError.message}`)
+  }
 }
 
 export async function POST(request: Request) {
@@ -390,6 +396,11 @@ export async function POST(request: Request) {
         { error: "Nur Captain oder Co-Captain des beteiligten Teams darf Sportdarts übernehmen." },
         { status: 403 },
       )
+    }
+
+    // A completed match is immutable through the sync endpoint, including repeated clicks.
+    if (match.status === "completed") {
+      return NextResponse.json({ error: "Begegnung bereits abgeschlossen – keine erneute Übernahme möglich." }, { status: 409 })
     }
 
     const ownTeamId = leadership.team_id as string
@@ -560,28 +571,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Sportdarts ist nach dem Spiel die Quelle für den tatsächlichen Einsatz.
-    // Daher dürfen auch berechtigte Teamspieler zugeordnet werden, die von der
-    // vorab bestätigten EMD-Aufstellung abweichen (z.B. kurzfristiger Ersatz).
-    if (eligibilityChecked) {
-      const missingEligibleIds = Array.from(eligibleIds).filter(
-        (id) => !(players || []).some((player: any) => player.id === id),
-      )
-
-      if (missingEligibleIds.length > 0) {
-        const { data: eligiblePlayers, error: eligiblePlayersError } = await supabase
-          .from("club_players")
-          .select("id,name,player_number")
-          .in("id", missingEligibleIds)
-
-        if (eligiblePlayersError) throw eligiblePlayersError
-
-        for (const player of eligiblePlayers || []) {
-          const number = String(player.player_number ?? "").trim()
-          if (number && !byNumber.has(number)) byNumber.set(number, player)
-        }
-      }
-    }
+    // No fallback to eligible team players who are not in the confirmed lineup.
+    // Late substitutes require a corrected, confirmed lineup before importing.
 
     const blockUsed = usedNumbers(detail.plays, ownSide)
     const singlesFallback = aggregateSingles(detail.plays, ownSide)
@@ -639,6 +630,9 @@ export async function POST(request: Request) {
       }
     }
 
+    if (!lineupConfirmed) {
+      issues.push({ reason: "Aufstellung nicht bestätigt oder nach der Bestätigung verändert." })
+    }
     if (!eligibilityChecked) {
       issues.push({ reason: "Die Liga-/Abo-Berechtigung konnte nicht sicher geprüft werden." })
     }
@@ -652,6 +646,15 @@ export async function POST(request: Request) {
           reason: "Sportdarts-Spieler konnte über die Spielernummer keinem berechtigten EMD-Spieler zugeordnet werden.",
         })
         continue
+      }
+
+      if (!lineupIds.includes(player.id)) {
+        issues.push({
+          player_id: player.id,
+          player_name: player.name,
+          sportdarts_player_number: number,
+          reason: "Spieler steht nicht in der bestätigten EMD-Aufstellung.",
+        })
       }
 
       if (!eligibleIds.has(player.id)) {
@@ -686,6 +689,10 @@ export async function POST(request: Request) {
       }
     }
 
+    if (playerStats.length === 0) {
+      issues.push({ reason: "Keine vollständig zugeordneten Spielerstatistiken vorhanden." })
+    }
+
     if (issues.length > 0 || mode === "review") {
       const reason =
         issues[0]?.reason?.toString() ||
@@ -716,7 +723,7 @@ export async function POST(request: Request) {
       })
     }
 
-    const { data: applyData, error: applyError } = await supabase.rpc("apply_sportdarts_sync", {
+    const { data: applyData, error: applyError } = await supabase.rpc("apply_sportdarts_sync_guarded", {
       p_match_id: matchId,
       p_home_score: officialResult.homeScore,
       p_away_score: officialResult.awayScore,

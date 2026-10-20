@@ -256,6 +256,7 @@ export function TournamentRegistrationPanel({
                   <div
                     key={player.id}
                     role="button"
+                    aria-pressed={selected}
                     tabIndex={playerEligible ? 0 : -1}
                     onClick={() => playerEligible && onToggleSelected(player.id)}
                     onKeyDown={(event) => {
@@ -268,20 +269,23 @@ export function TournamentRegistrationPanel({
                       !playerEligible
                         ? "cursor-not-allowed border-white/[0.07] bg-white/[0.018] opacity-45"
                         : selected
-                          ? "cursor-pointer border-orange-300/30 bg-orange-500/[0.10]"
+                          ? "cursor-pointer border-orange-500 bg-orange-500/20 ring-2 ring-orange-500/50"
                           : "cursor-pointer border-white/[0.08] bg-white/[0.025] hover:border-orange-300/15 hover:bg-white/[0.045]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={selected}
-                        disabled={!playerEligible}
-                        className="shrink-0"
-                        onClick={(event) => event.stopPropagation()}
-                        onCheckedChange={() => playerEligible && onToggleSelected(player.id)}
-                      />
+                      <span
+                        aria-hidden="true"
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition ${
+                          selected ? "border-orange-500 bg-orange-500 text-white" : "border-orange-500/60 bg-transparent"
+                        }`}
+                      >
+                        {selected ? <CheckCircle2 className="h-5 w-5" strokeWidth={3} /> : null}
+                      </span>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-semibold text-white/85">{player.name}</div>
+                        <div className={`truncate font-semibold ${selected ? "text-orange-200" : "text-white/85"}`}>
+                          {player.name}{selected ? " · Ausgewählt" : ""}
+                        </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/40">
                           {player.featuredMeta && showFeaturedTabs && sourceMode === "featured" ? <span>{player.featuredMeta}</span> : null}
                           {player.meta ? <span>{player.meta}</span> : null}

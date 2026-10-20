@@ -164,22 +164,16 @@ export async function POST(request: Request) {
       membershipId = newMembership.id
     }
 
-    const { error: deleteError } = await supabase
-      .from("member_membership_modules")
-      .delete()
-      .eq("membership_id", membershipId)
-    if (deleteError) throw deleteError
-
-    const { error: insertError } = await supabase.from("member_membership_modules").insert(
-      requestRows.map((row) => ({
-        membership_id: membershipId,
+    const { error: syncError } = await supabase.rpc("sync_membership_modules_atomic", {
+      p_membership_id: membershipId,
+      p_rows: requestRows.map((row) => ({
         module_id: row.module_id,
         monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
         semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
         annual_price_snapshot: Number(row.annual_price_snapshot || 0),
       })),
-    )
-    if (insertError) throw insertError
+    })
+    if (syncError) throw syncError
 
     // Sobald eine reguläre Mitgliedschaft aktiv wird, endet die Testphase vollständig.
     await endActiveTrialsForPlayer(supabase, changeRequest.player_id)

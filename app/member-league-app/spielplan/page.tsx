@@ -2229,7 +2229,7 @@ const saveExtraStatsEdits = async () => {
 }
 
 const submitSportdartsSync = async (mode: "apply" | "review") => {
-  if (!sportdartsSyncMatch || !sportdartsSyncPreview) return
+  if (!sportdartsSyncMatch || !sportdartsSyncPreview || sportdartsSyncActionLoading) return
 
   setSportdartsSyncActionLoading(true)
 

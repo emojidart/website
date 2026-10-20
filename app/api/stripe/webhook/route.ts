@@ -330,26 +330,16 @@ async function applyPendingStripeChangeFromSubscription(
 
   if (membershipError) throw membershipError
 
-  const { error: deleteError } = await supabase
-    .from("member_membership_modules")
-    .delete()
-    .eq("membership_id", changeRequest.current_membership_id)
-
-  if (deleteError) throw deleteError
-
-  const { error: insertError } = await supabase
-    .from("member_membership_modules")
-    .insert(
-      requestRows.map((row) => ({
-        membership_id: changeRequest.current_membership_id,
-        module_id: row.module_id,
-        monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
-        semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
-        annual_price_snapshot: Number(row.annual_price_snapshot || 0),
-      })),
-    )
-
-  if (insertError) throw insertError
+  const { error: syncModulesError } = await supabase.rpc("sync_membership_modules_atomic", {
+    p_membership_id: changeRequest.current_membership_id,
+    p_rows: requestRows.map((row) => ({
+      module_id: row.module_id,
+      monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+      semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
+      annual_price_snapshot: Number(row.annual_price_snapshot || 0),
+    })),
+  })
+  if (syncModulesError) throw syncModulesError
 
   await endActiveTrialsForPlayer(supabase, changeRequest.player_id)
 
@@ -542,26 +532,16 @@ export async function POST(request: Request) {
         membershipId = newMembership.id
       }
 
-      const { error: deleteError } = await supabase
-        .from("member_membership_modules")
-        .delete()
-        .eq("membership_id", membershipId)
-
-      if (deleteError) throw deleteError
-
-      const { error: insertError } = await supabase
-        .from("member_membership_modules")
-        .insert(
-          requestRows.map((row) => ({
-            membership_id: membershipId,
-            module_id: row.module_id,
-            monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
-            semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
-            annual_price_snapshot: Number(row.annual_price_snapshot || 0),
-          })),
-        )
-
-      if (insertError) throw insertError
+      const { error: syncModulesError } = await supabase.rpc("sync_membership_modules_atomic", {
+        p_membership_id: membershipId,
+        p_rows: requestRows.map((row) => ({
+          module_id: row.module_id,
+          monthly_price_snapshot: Number(row.monthly_price_snapshot || 0),
+          semiannual_price_snapshot: Number(row.semiannual_price_snapshot || 0),
+          annual_price_snapshot: Number(row.annual_price_snapshot || 0),
+        })),
+      })
+      if (syncModulesError) throw syncModulesError
 
       await endActiveTrialsForPlayer(supabase, changeRequest.player_id)
 
@@ -595,12 +575,14 @@ export async function POST(request: Request) {
       const subscription = event.data.object as Stripe.Subscription
       const status = subscription.status
 
-      const membershipStatus =
-        status === "active" || status === "trialing"
-          ? "active"
-          : status === "canceled"
-            ? "cancelled"
-            : "paused"
+      const { data: currentMembership } = await supabase.from("member_memberships")
+        .select("payment_grace_until,payment_failed_at")
+        .eq("stripe_subscription_id", subscription.id).maybeSingle()
+      const graceDeadline = currentMembership?.payment_grace_until ? Date.parse(currentMembership.payment_grace_until) : 0
+      const membershipStatus = status === "canceled" ? "cancelled"
+        : currentMembership?.payment_failed_at
+          ? (graceDeadline > Date.now() ? "active" : "paused")
+        : (status === "active" || status === "trialing" ? "active" : "paused")
 
       const { error } = await supabase
         .from("member_memberships")
@@ -648,77 +630,62 @@ export async function POST(request: Request) {
 
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object as any
-      const subscriptionId =
-        typeof invoice.subscription === "string"
-          ? invoice.subscription
-          : invoice.subscription?.id ||
-            invoice.parent?.subscription_details?.subscription ||
-            null
-
-      if (subscriptionId) {
-        const { data: membership, error: membershipLookupError } = await supabase
+      const subscriptionId = stripeAnyId(invoice.subscription) ||
+        stripeAnyId(invoice.parent?.subscription_details?.subscription)
+      if (subscriptionId && invoice.billing_reason !== "subscription_create") {
+        const { data: membership, error: lookupError } = await supabase
           .from("member_memberships")
-          .select("id")
+          .select("id,payment_failed_at,payment_grace_until,status")
           .eq("stripe_subscription_id", subscriptionId)
           .maybeSingle()
-
-        if (membershipLookupError) throw membershipLookupError
-
-        let isPendingPackageChange = false
-
-        if (membership?.id) {
-          const { data: pendingChange, error: pendingChangeError } = await supabase
+        if (lookupError) throw lookupError
+        if (membership) {
+          const { data: pendingChange, error: pendingError } = await supabase
             .from("membership_change_requests")
             .select("id")
             .eq("current_membership_id", membership.id)
             .eq("payment_method", "stripe")
             .eq("requested_status", "pending")
-            .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle()
-
-          if (pendingChangeError) throw pendingChangeError
-          isPendingPackageChange = !!pendingChange?.id
-        }
-
-        if (!isPendingPackageChange) {
-          // Nur eine echte fehlgeschlagene reguläre Abo-Rechnung pausiert
-          // die aktive Mitgliedschaft. Eine fehlgeschlagene Paket-Erweiterung
-          // darf das bereits bezahlte bisherige Paket nicht sperren.
-          const { error } = await supabase
-            .from("member_memberships")
-            .update({
-              status: "paused",
+          if (pendingError) throw pendingError
+          if (!pendingChange) {
+            // Frist wird nur beim ERSTEN Zahlungsausfall gesetzt, nicht bei erneutem Retry.
+            const firstFailure = membership.payment_failed_at || new Date().toISOString()
+            const deadline = membership.payment_grace_until || new Date(Date.parse(firstFailure) + 14 * 24 * 60 * 60 * 1000).toISOString()
+            const { error } = await supabase.from("member_memberships").update({
+              status: new Date(deadline).getTime() > Date.now() ? "active" : "paused",
               stripe_status: "payment_failed",
+              payment_failed_at: firstFailure,
+              payment_grace_until: deadline,
+              payment_failed_invoice_id: invoice.id || null,
               updated_at: new Date().toISOString(),
-            })
-            .eq("stripe_subscription_id", subscriptionId)
-
-          if (error) throw error
+            }).eq("id", membership.id)
+            if (error) throw error
+          }
         }
       }
     }
 
     if (event.type === "invoice.paid") {
       const invoice = event.data.object as any
-      const subscriptionId =
-        stripeAnyId(invoice.subscription) ||
-        stripeAnyId(invoice.parent?.subscription_details?.subscription) ||
-        null
-
+      const subscriptionId = stripeAnyId(invoice.subscription) ||
+        stripeAnyId(invoice.parent?.subscription_details?.subscription)
       if (subscriptionId) {
-        const { error } = await supabase
-          .from("member_memberships")
-          .update({
-            status: "active",
-            stripe_status: "active",
+        // Ein einziger bezahlter Monat löscht alte Schulden nicht.
+        const outstanding = await stripe.invoices.list({ subscription: subscriptionId, status: "open", limit: 100 })
+        const remaining = outstanding.data.filter((item) => Number(item.amount_remaining || 0) > 0)
+        const { error } = await supabase.from("member_memberships").update(
+          remaining.length === 0 ? {
+            status: "active", stripe_status: "active", payment_failed_at: null,
+            payment_grace_until: null, payment_failed_invoice_id: null,
             updated_at: new Date().toISOString(),
-          })
-          .eq("stripe_subscription_id", subscriptionId)
-
+          } : {
+            stripe_status: "payment_failed", updated_at: new Date().toISOString(),
+          }
+        ).eq("stripe_subscription_id", subscriptionId)
         if (error) throw error
       }
-
       await recordStripeInvoicePayment(stripe, supabase, invoice, event.id)
     }
 

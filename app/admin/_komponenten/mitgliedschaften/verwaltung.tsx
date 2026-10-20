@@ -642,28 +642,18 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
         membershipId = data.id
       }
 
-      // Module bewusst komplett neu schreiben:
-      // So entspricht die DB exakt der aktuellen Auswahl.
-      const { error: deleteError } = await supabase
-        .from("member_membership_modules")
-        .delete()
-        .eq("membership_id", membershipId)
-
-      if (deleteError) throw deleteError
-
+      // Atomar synchronisieren: unveränderte Freischaltungen bleiben erhalten.
       const rows = selectedModules.map((module) => ({
-        membership_id: membershipId,
         module_id: module.id,
         monthly_price_snapshot: Number(module.monthly_price),
         semiannual_price_snapshot: Number(module.semiannual_price),
         annual_price_snapshot: Number(module.annual_price),
       }))
-
-      const { error: insertError } = await supabase
-        .from("member_membership_modules")
-        .insert(rows)
-
-      if (insertError) throw insertError
+      const { error: syncError } = await supabase.rpc("sync_membership_modules_for_admin", {
+        p_membership_id: membershipId,
+        p_rows: rows,
+      })
+      if (syncError) throw syncError
 
       if (status === "active") {
         await endActiveTrialsForPlayer(selectedPlayerId)

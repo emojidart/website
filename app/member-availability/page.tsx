@@ -1103,7 +1103,12 @@ function MemberAvailabilityInner() {
     setTimeout(() => setRemindAllResult(null), 3500)
   }
 
-  const upcomingMatches = matches.filter((m) => m.status !== "completed")
+  // Nur zukünftige/heutige Begegnungen als "Kommende" anzeigen.
+  // Historische Spiele können in der DB weiterhin "scheduled" sein,
+  // besonders nach einem Saisonwechsel; sie dürfen nicht als bevorstehend erscheinen.
+  const now = new Date()
+  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+  const upcomingMatches = matches.filter((m) => m.status !== "completed" && m.match_date >= todayLocal)
   const completedMatches = matches.filter((m) => m.status === "completed")
 
   const starters = useMemo(

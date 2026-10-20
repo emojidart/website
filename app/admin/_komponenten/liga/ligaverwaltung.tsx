@@ -30,6 +30,7 @@ import {
   Settings,
   ClipboardList,
   BellRing,
+  ShieldAlert,
   Inbox,
   CheckCircle2,
   XCircle,
@@ -37,6 +38,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { LeagueSyncReviews } from "@/components/league-sync-reviews"
 import { vv } from "@/app/admin/_komponenten/vereinsverwaltung/vereinsverwaltung-styles"
 
 const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
@@ -94,7 +96,7 @@ interface Match {
   dart_type: "steeldart" | "edart"
 }
 
-type TabKey = "overview" | "matches" | "lineups" | "overdue" | "teams" | "venues"
+type TabKey = "overview" | "matches" | "lineups" | "overdue" | "reviews" | "teams" | "venues"
 
 type LineupAlertRecipient = "captain" | "co_captain" | "both"
 
@@ -1864,6 +1866,7 @@ const createMatch = useCallback(async () => {
                 ["matches", "Spiele", Calendar],
                 ["lineups", "Aufstellungen & Zusagen", ClipboardList],
                 ["overdue", "Überfällig", BellRing],
+                ["reviews", "Prüffälle", ShieldAlert],
                 ["teams", "Mannschaften", Users],
                 ["venues", "Lokale", MapPin],
               ].map(([key, label, Icon]: any) => (
@@ -1884,6 +1887,7 @@ const createMatch = useCallback(async () => {
           </div>
 
           <div className="space-y-5">
+            <TabsContent value="reviews" className="mt-0"><LeagueSyncReviews onOpenMailbox={onOpenMailbox} /></TabsContent>
               {/* OVERVIEW */}
               <TabsContent value="overview" className="mt-0 space-y-5">
                 <section className={vv.surface}>
