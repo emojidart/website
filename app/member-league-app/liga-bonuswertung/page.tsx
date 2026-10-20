@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ShieldCheck } from "lucide-react"
+import { ShieldCheck, BookOpen, ListChecks, Euro, Users, Info } from "lucide-react"
 
 interface BonusConfig {
   under26: number
@@ -34,6 +34,51 @@ type Season = {
   type: string | null
   year: number | null
   is_active: boolean | null
+}
+
+
+function BonusHelp() {
+  const steps = [
+    { icon: ListChecks, title: "1. Saison und Team wählen", description: "Wähle oben die Saison und gegebenenfalls deine Mannschaft. E-Dart und Steeldart werden getrennt geführt." },
+    { icon: Euro, title: "2. Beträge konfigurieren", description: "Unter Einstellungen legst du die Beträge für Unter 26, Unter 30 und Semperit fest. Sie gelten für die normale Fehlwurfwertung." },
+    { icon: Users, title: "3. Spieler individuell einstellen", description: "Unter Spielereinstellungen auf „Einstellen“ klicken. Ohne Fixbetrag gilt die normale Fehlwurfberechnung; alternativ kannst du einen festen Betrag je Mannschaftsbegegnung speichern." },
+  ]
+  return (
+    <section aria-labelledby="bonus-help-title" className="mb-5 overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/30 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[28px]">
+      <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08]">
+            <BookOpen className="h-5 w-5 text-orange-300" />
+          </div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-xs">So funktioniert’s</div>
+            <h2 id="bonus-help-title" className="mt-0.5 text-lg font-black tracking-tight text-white sm:text-xl">Deine Liga-Bonuswertung</h2>
+          </div>
+        </div>
+        <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-white/50">
+          Behalte die Bonusgelder deiner Mannschaft im Blick: automatisch nach Fehlwürfen oder mit einem individuellen Fixbetrag pro Ligaeinsatz.
+        </p>
+      </div>
+      <div className="grid gap-2.5 p-3.5 md:grid-cols-3 sm:p-4">
+        {steps.map((step) => {
+          const Icon = step.icon
+          return (
+            <div key={step.title} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3.5">
+              <div className="flex items-center gap-2">
+                <Icon className="h-4 w-4 shrink-0 text-orange-300" />
+                <h3 className="text-sm font-black text-white">{step.title}</h3>
+              </div>
+              <p className="mt-2 text-xs font-medium leading-5 text-white/50">{step.description}</p>
+            </div>
+          )
+        })}
+      </div>
+      <div className="mx-3.5 mb-3.5 flex items-start gap-2 rounded-xl border border-sky-300/15 bg-sky-500/[0.05] p-3 text-xs font-medium leading-5 text-white/60 sm:mx-4 sm:mb-4">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
+        <p><strong className="text-white">Wichtig beim Fixbetrag:</strong> Eine abgeschlossene Mannschaftsbegegnung zählt für einen eingesetzten Spieler genau einmal – auch als Ersatzspieler. Mehrere Einzel, Doppel oder Legs am selben Ligaabend erhöhen den Fixbetrag nicht. Wer nicht eingesetzt wurde, zahlt standardmäßig nichts; optional lässt sich die Berechnung für alle abgeschlossenen Ligaabende aktivieren. Die Fehlwurfstatistik bleibt trotzdem sichtbar.</p>
+      </div>
+    </section>
+  )
 }
 
 export default function MemberBonusPage() {
@@ -61,6 +106,38 @@ export default function MemberBonusPage() {
     under30: 0.5,
     semperit: 0.5,
   })
+
+  const [playerRates, setPlayerRates] = useState<Record<string, number>>({})
+  const [chargeAbsentByPlayer, setChargeAbsentByPlayer] = useState<Record<string, boolean>>({})
+  const [completedTeamMatches, setCompletedTeamMatches] = useState<any[]>([])
+  const [lineupAppearances, setLineupAppearances] = useState<any[]>([])
+  const [ratesError, setRatesError] = useState("")
+  const [ratesSaving, setRatesSaving] = useState(false)
+
+  const loadRates = async () => {
+    if (!session?.user) return
+    const { data, error } = await supabase.from("league_bonus_fixed_rates")
+      .select("team_id,season_id,player_id,amount,charge_when_absent")
+      .in("team_id", teamIds.length ? teamIds : ["00000000-0000-0000-0000-000000000000"])
+    if (error) { setRatesError("Fixbeträge konnten nicht geladen werden. Bitte die SQL-Migration ausführen."); return }
+    setRatesError("")
+    setPlayerRates(Object.fromEntries((data || []).map((r: any) => [`${r.team_id}:${r.season_id}:${r.player_id}`, Number(r.amount)])))
+    setChargeAbsentByPlayer(Object.fromEntries((data || []).map((r: any) => [`${r.team_id}:${r.season_id}:${r.player_id}`, Boolean(r.charge_when_absent)])))
+  }
+
+  const savePlayerRate = async (teamId: string, playerId: string, rate: number | null, chargeWhenAbsent = false) => {
+    if (!selectedSeasonId || selectedSeasonId === "all") { setRatesError("Bitte zuerst eine konkrete Saison auswählen."); return }
+    if (rate !== null && (!Number.isFinite(rate) || rate < 0)) return
+    setRatesSaving(true)
+    const query = supabase.from("league_bonus_fixed_rates")
+    const result = rate === null
+      ? await query.delete().eq("team_id",teamId).eq("season_id",selectedSeasonId).eq("player_id",playerId)
+      : await query.upsert({team_id: teamId, season_id: selectedSeasonId, player_id:playerId, amount:rate, charge_when_absent:chargeWhenAbsent}, {onConflict:"team_id,season_id,player_id"})
+    setRatesSaving(false)
+    if (result.error) { setRatesError(`Speichern fehlgeschlagen: ${result.error.message}`); return }
+    setRatesError("")
+    await loadRates()
+  }
 
   const [profile, setProfile] = useState<any>(null)
   const [teamMemberships, setTeamMemberships] = useState<any[]>([])
@@ -113,6 +190,8 @@ export default function MemberBonusPage() {
     void fetchAllTeamStatistics(teamIds, teamMembers)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeasonId, teamIdsKey, teamMembers.length])
+
+  useEffect(() => { if (teamIds.length) void loadRates() }, [teamIdsKey, selectedSeasonId, session?.user?.id])
 
   const fetchUserData = async () => {
     if (!session?.user) return
@@ -249,9 +328,16 @@ export default function MemberBonusPage() {
         }
       }
 
-      const mergedMembers = members.map((m: any) => ({
+      const teamsById = new Map(visibleTeamData.map((membership: any) => [membership.team_id, membership.teams]))
+      // Exactly one settings entry per player and team, even when membership rows repeat.
+      const uniqueMembers = Array.from(new Map(
+        members.filter((m: any) => m.player_id && m.team_id)
+          .map((m: any) => [`${m.team_id}:${m.player_id}`, m]),
+      ).values())
+      const mergedMembers = uniqueMembers.map((m: any) => ({
         ...m,
         club_players: playersById.get(m.player_id) || null,
+        team: teamsById.get(m.team_id) || null,
       }))
 
       setTeamMembers(mergedMembers)
@@ -277,6 +363,7 @@ export default function MemberBonusPage() {
   try {
     if (teamIdsToLoad.length === 0) {
       setLegStatistics([])
+      setLineupAppearances([])
       return
     }
 
@@ -336,9 +423,40 @@ export default function MemberBonusPage() {
     if (error) throw error
 
     setLegStatistics(data || [])
+
+    // Confirmed lineup, including substitutes, once per completed team encounter.
+    let matchQuery = supabase.from("matches")
+      .select("id,season_id,dart_type,home_team_id,away_team_id,status")
+      .eq("status", "completed")
+      .or(`home_team_id.in.(${teamIdsToLoad.join(",")}),away_team_id.in.(${teamIdsToLoad.join(",")})`)
+    if (selectedSeasonId !== "all") matchQuery = matchQuery.eq("season_id",selectedSeasonId)
+    const {data: games, error: gamesError} = await matchQuery
+    if (gamesError) throw gamesError
+    const ids = (games || []).map((m:any)=>m.id)
+    // Completed team encounters are the billing basis for opt-in absent-player charges.
+    setCompletedTeamMatches((games || []).flatMap((m:any) => [m.home_team_id, m.away_team_id].filter((teamId:string)=>teamIdsToLoad.includes(teamId)).map((teamId:string)=>({team_id:teamId,match_id:m.id,dart_type:m.dart_type}))))
+    if (!ids.length) { setLineupAppearances([]); return }
+    const [{data: headers,error: headerError},{data: lineups,error: lineupError}] = await Promise.all([
+      supabase.from("match_lineup_headers").select("match_id,team_id,status,current_version,confirmed_version").in("match_id",ids),
+      supabase.from("match_lineups").select("match_id,team_id,player_id,is_substitute").in("match_id",ids).in("team_id",teamIdsToLoad),
+    ])
+    if (headerError) throw headerError
+    if (lineupError) throw lineupError
+    const confirmed = new Set((headers || []).filter((h:any)=>h.status === "confirmed" && h.current_version != null && h.current_version === h.confirmed_version).map((h:any)=>`${h.match_id}:${h.team_id}`))
+    const gameById = new Map((games || []).map((m:any)=>[m.id,m]))
+    const unique = new Map<string,any>()
+    for (const row of lineups || []) {
+      if (!confirmed.has(`${row.match_id}:${row.team_id}`)) continue
+      const match:any = gameById.get(row.match_id)
+      if (!match || !activePlayerIds.includes(row.player_id)) continue
+      unique.set(`${row.match_id}:${row.team_id}:${row.player_id}`, {...row, match})
+    }
+    setLineupAppearances([...unique.values()])
   } catch (err: any) {
     console.error("[bonus] Error fetching team leg statistics:", err)
     setLegStatistics([])
+    setLineupAppearances([])
+    setCompletedTeamMatches([])
   } finally {
     setLegStatsLoading(false)
   }
@@ -517,6 +635,8 @@ export default function MemberBonusPage() {
               </div>
           </section>
 
+          <BonusHelp />
+
           <BonusSection
             legStatistics={getFilteredStatisticsByTeam()}
             legStatsLoading={legStatsLoading}
@@ -526,6 +646,15 @@ export default function MemberBonusPage() {
             tempBonusConfig={tempBonusConfig}
             setTempBonusConfig={setTempBonusConfig}
             saveBonusConfig={saveBonusConfig}
+            teamMembers={teamMembers.filter((m:any)=>selectedTeamId === "all" || m.team_id === selectedTeamId)}
+            selectedSeasonId={selectedSeasonId}
+            playerRates={playerRates}
+            chargeAbsentByPlayer={chargeAbsentByPlayer}
+            completedTeamMatches={completedTeamMatches.filter((m:any)=>selectedTeamId === "all" || m.team_id === selectedTeamId)}
+            lineupAppearances={lineupAppearances.filter((row:any)=>selectedTeamId === "all" || row.team_id === selectedTeamId)}
+            ratesError={ratesError}
+            ratesSaving={ratesSaving}
+            savePlayerRate={savePlayerRate}
           />
         </div>
       </main>

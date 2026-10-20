@@ -140,7 +140,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     open: false,
   })
   const [showSuccessModal, setShowSuccessModal] = useState<{ open: boolean; playerCount?: number }>({ open: false })
-  const [showErrorModal, setShowErrorModal] = useState<{ open: boolean }>({ open: false })
+  const [showErrorModal, setShowErrorModal] = useState<{ open: boolean; message?: string }>({ open: false })
 
   const [showCreditConfirmModal, setShowCreditConfirmModal] = useState<{
     open: boolean
@@ -220,6 +220,7 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
     tournamentFormCompleted,
     allowDoubleEntry,
     centralEventId: registrationEventId,
+    seriesId,
     doublePlayer1Id,
     doublePlayer2Id,
     setDoublePlayer1Id,
@@ -482,7 +483,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
             </div>
             <h3 className="mb-2 text-center text-2xl font-black tracking-tight text-white">Fehler</h3>
             <p className="mb-6 text-center text-white/50">
-              Ein Fehler ist aufgetreten. Der Spieler könnte bereits registriert sein.
+              {showErrorModal.message || "Die Registrierung ist fehlgeschlagen. Bitte versuche es erneut."}
             </p>
             <Button
               onClick={() => setShowErrorModal({ open: false })}
@@ -627,7 +628,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
         <MultiDkoSchnellwechsel centralEventId={centralEventId} eventId={eventId} seriesId={seriesId} />
 
-        {!activeTournament && !doubleMode && tournamentMode === "dko" && (
+        {!activeTournament && !doubleMode && tournamentMode === "dko" && Boolean(centralEventId) && (
           <div className="space-y-2">
             {!centralEventId && (
               <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-xs font-semibold text-amber-200">
@@ -668,6 +669,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
         {!activeTournament ? (
           <>
         <EinzelturnierSpieler
+          seriesMode={Boolean(seriesId && eventId && !centralEventId)}
           loading={loading}
           playerViewMode={playerViewMode}
           onPlayerViewModeChange={setPlayerViewMode}
@@ -684,7 +686,8 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
           eligibilityLoading={eligibilityLoading}
           isRegisteringPlayers={isRegisteringPlayers}
           registrationProgress={registrationProgress}
-          onRegisterPlayers={handleRegisterPlayers}
+          onRegisterPlayers={() => void handleRegisterPlayers()}
+          onQuickAddPlayer={seriesId && eventId && !centralEventId ? (playerId) => void handleRegisterPlayers(playerId) : undefined}
           doubleMode={doubleMode}
           doublePlayer1Id={doublePlayer1Id}
           onDoublePlayer1Change={setDoublePlayer1Id}

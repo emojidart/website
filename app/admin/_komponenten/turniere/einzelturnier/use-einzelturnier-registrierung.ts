@@ -41,13 +41,13 @@ type RegisteredPlayer = {
 type CreditConfirm = {
   open: boolean
   players?: Array<{
-    id: number
+    id: number | string
     name: string
     currentBalance: number
     newBalance: number
     clubPlayerId: string
   }>
-  playersWithoutCredit?: number[]
+  playersWithoutCredit?: Array<number | string>
   entryFee?: number
 }
 
@@ -70,6 +70,7 @@ type Options = {
   tournamentFormCompleted: boolean
   allowDoubleEntry: boolean
   centralEventId: string | null
+  seriesId: string | null
   doublePlayer1Id: string
   doublePlayer2Id: string
   setDoublePlayer1Id: Dispatch<SetStateAction<string>>
@@ -82,7 +83,7 @@ type Options = {
   setShowCreditConfirmModal: Dispatch<SetStateAction<CreditConfirm>>
   setShowAlreadyRegisteredModal: Dispatch<SetStateAction<{ open: boolean; playerName?: string }>>
   setShowSuccessModal: Dispatch<SetStateAction<{ open: boolean; playerCount?: number }>>
-  setShowErrorModal: Dispatch<SetStateAction<{ open: boolean }>>
+  setShowErrorModal: Dispatch<SetStateAction<{ open: boolean; message?: string }>>
   showRefundConfirmModal: RefundConfirm
   setShowRefundConfirmModal: Dispatch<SetStateAction<RefundConfirm>>
   setShowRefundSuccessModal: Dispatch<
@@ -105,6 +106,7 @@ export function useEinzelturnierRegistrierung(options: Options) {
     tournamentFormCompleted,
     allowDoubleEntry,
     centralEventId,
+    seriesId,
     doublePlayer1Id,
     doublePlayer2Id,
     setDoublePlayer1Id,
@@ -131,7 +133,7 @@ export function useEinzelturnierRegistrierung(options: Options) {
   const [markingAllPaid, setMarkingAllPaid] = useState(false)
 
   const buildRegistrationPayload = (
-    playerId: number,
+    playerId: number | string,
     playerName: string,
     useDoubleEntry: boolean,
   ) => {
@@ -142,16 +144,18 @@ export function useEinzelturnierRegistrierung(options: Options) {
       }
     }
 
-    const nextDouble = getNextDoubleEntryData(playerId, playerName, registeredPlayers)
+    const numericId = Number(playerId)
+    if (!Number.isFinite(numericId)) throw new Error("Doppeleintrag erfordert eine numerische Spieler-ID.")
+    const nextDouble = getNextDoubleEntryData(numericId, playerName, registeredPlayers)
     return {
       player_id: nextDouble.syntheticPlayerId,
       player_name: nextDouble.syntheticPlayerName,
     }
   }
 
-  const registerPlayersDirectly = async (playerIds: number[], entryFee: number) => {
+  const registerPlayersDirectly = async (playerIds: Array<number | string>, entryFee: number) => {
     try {
-      const successfullyRegistered: number[] = []
+      const successfullyRegistered: Array<number | string> = []
       let processed = 0
       setRegistrationProgress({ done: 0, total: playerIds.length })
 
@@ -159,8 +163,10 @@ export function useEinzelturnierRegistrierung(options: Options) {
         processed += 1
         setRegistrationProgress({ done: processed, total: playerIds.length })
 
-        const player = availablePlayers.find((item) => item.id === playerId)
-        if (!player) continue
+        const player = availablePlayers.find((item) => String(item.id) === String(playerId))
+        if (!player) {
+          throw new Error(`Spieler-ID ${playerId} ist nicht im geladenen Spielerstamm (Anzahl: ${availablePlayers.length}).`)
+        }
 
         const eligibility = await verifyPlayerEligibility(playerId, tournamentAccessType)
         if (!eligibility.eligible) {
@@ -189,6 +195,7 @@ export function useEinzelturnierRegistrierung(options: Options) {
           deductedFromCredit: false,
           accessType: tournamentAccessType,
           eventId: centralEventId,
+          seriesId,
         })
 
         if (registerError) {
@@ -228,14 +235,13 @@ export function useEinzelturnierRegistrierung(options: Options) {
         code: error?.code,
         full: error,
       })
-      alert(
-        `Fehler:\nmessage=${error?.message ?? "-"}\ncode=${error?.code ?? "-"}\ndetails=${error?.details ?? "-"}\nhint=${error?.hint ?? "-"}`,
-      )
-      setShowErrorModal({ open: true })
+
+      setShowErrorModal({ open: true, message: [error?.message, error?.code && `Code: ${error.code}`, error?.details].filter(Boolean).join(" · ") || "Registrierung fehlgeschlagen. Bitte Datenbankberechtigungen und Turnierdaten prüfen." })
     }
   }
 
-  const handleRegisterPlayers = async () => {
+  const handleRegisterPlayers = async (singlePlayerId?: number | string) => {
+    const targetIds = singlePlayerId !== undefined ? [singlePlayerId] : Array.from(selectedPlayers)
     if (registrationBusyRef.current) return
 
     if (!tournamentFormCompleted) {
@@ -243,22 +249,22 @@ export function useEinzelturnierRegistrierung(options: Options) {
       return
     }
 
-    if (selectedPlayers.size === 0) return
+    if (targetIds.length === 0) return
 
     registrationBusyRef.current = true
     setIsRegisteringPlayers(true)
-    setRegistrationProgress({ done: 0, total: selectedPlayers.size })
+    setRegistrationProgress({ done: 0, total: targetIds.length })
 
     try {
-      const eligible = await ensurePlayersEligible(Array.from(selectedPlayers))
+      const eligible = await ensurePlayersEligible(targetIds)
       if (!eligible) return
 
       const entryFee = Number.parseFloat(tournamentEntryFee) || 0
       const playersWithCredit: NonNullable<CreditConfirm["players"]> = []
-      const playersWithoutCredit: number[] = []
+      const playersWithoutCredit: Array<number | string> = []
 
-      for (const playerId of selectedPlayers) {
-        const player = availablePlayers.find((item) => item.id === playerId)
+      for (const playerId of targetIds) {
+        const player = availablePlayers.find((item) => String(item.id) === String(playerId))
         if (!player) continue
 
         if (entryFee > 0) {
@@ -290,11 +296,11 @@ export function useEinzelturnierRegistrierung(options: Options) {
       } else if (playersWithoutCredit.length > 0) {
         await registerPlayersDirectly(playersWithoutCredit, entryFee)
       } else {
-        setShowErrorModal({ open: true })
+        setShowErrorModal({ open: true, message: `Keine registrierbaren Spieler gefunden. Gewählte IDs: ${targetIds.join(", ")}. Im geladenen Spielerstamm: ${availablePlayers.length}. Bitte prüfen, ob die Spieler-ID beim Klick korrekt übergeben wird.` })
       }
-    } catch (error) {
-      console.error("[v0] Error in handleRegisterPlayers:", error)
-      setShowErrorModal({ open: true })
+    } catch (error: any) {
+      console.error("[EMD] Error in handleRegisterPlayers:", error)
+      setShowErrorModal({ open: true, message: [error?.message, error?.code && `Code: ${error.code}`, error?.details].filter(Boolean).join(" · ") || "Registrierung fehlgeschlagen." })
     } finally {
       registrationBusyRef.current = false
       setIsRegisteringPlayers(false)
@@ -394,6 +400,7 @@ export function useEinzelturnierRegistrierung(options: Options) {
           deductedFromCredit: true,
           accessType: tournamentAccessType,
           eventId: centralEventId,
+          seriesId,
         })
 
         if (registerError) {
@@ -427,7 +434,7 @@ export function useEinzelturnierRegistrierung(options: Options) {
           total: totalToRegister,
         })
 
-        const player = availablePlayers.find((item) => item.id === playerId)
+        const player = availablePlayers.find((item) => String(item.id) === String(playerId))
         if (!player) continue
 
         const eligibility = await verifyPlayerEligibility(
@@ -463,6 +470,7 @@ export function useEinzelturnierRegistrierung(options: Options) {
           deductedFromCredit: false,
           accessType: tournamentAccessType,
           eventId: centralEventId,
+          seriesId,
         })
 
         if (registerError) {
@@ -491,7 +499,7 @@ export function useEinzelturnierRegistrierung(options: Options) {
       setShowSuccessModal({ open: true, playerCount: totalRegistered })
     } catch (error) {
       console.error("[v0] Error in registerPlayersWithCreditDeduction:", error)
-      setShowErrorModal({ open: true })
+      setShowErrorModal({ open: true, message: error instanceof Error ? error.message : String(error) })
     } finally {
       registrationBusyRef.current = false
       setIsRegisteringPlayers(false)
@@ -583,6 +591,7 @@ export function useEinzelturnierRegistrierung(options: Options) {
         deductedFromCredit: false,
         accessType: tournamentAccessType,
         eventId: centralEventId,
+        seriesId,
       })
 
       if (error) throw error
@@ -596,7 +605,7 @@ export function useEinzelturnierRegistrierung(options: Options) {
       setShowSuccessModal({ open: true, playerCount: 1 })
     } catch (error) {
       console.error("Fehler beim Registrieren des Doppelteams:", error)
-      setShowErrorModal({ open: true })
+      setShowErrorModal({ open: true, message: error instanceof Error ? error.message : String(error) })
     } finally {
       registrationBusyRef.current = false
       setIsRegisteringPlayers(false)

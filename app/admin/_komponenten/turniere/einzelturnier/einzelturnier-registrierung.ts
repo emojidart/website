@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase"
 import { stripDoubleSuffix } from "./einzelturnier-helfer"
 import type { TournamentAccessType } from "./einzelturnier-berechtigungen"
 
-export async function findPlayerCredit(spieldatenbankId: number) {
+export async function findPlayerCredit(spieldatenbankId: number | string) {
   const { data: clubPlayer, error: clubPlayerError } = await supabase
     .from("club_players")
     .select("id")
@@ -35,6 +35,7 @@ export async function insertTournamentRegistration(opts: {
   deductedFromCredit: boolean
   accessType: TournamentAccessType
   eventId: string | null
+  seriesId?: string | null
 }) {
   const { error } = await supabase.from("dko_tournament_registration").insert({
     player_id: opts.playerId,
@@ -42,8 +43,9 @@ export async function insertTournamentRegistration(opts: {
     paid: opts.paid,
     entry_fee: opts.entryFee,
     deducted_from_credit: opts.deductedFromCredit,
-    payment_method: "admin",
+    payment_method: opts.seriesId ? "on_site" : "admin",
     access_type: opts.accessType,
+    series_id: opts.seriesId || null,
     event_id: opts.eventId || null,
   })
 

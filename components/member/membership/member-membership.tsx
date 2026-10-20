@@ -1,5 +1,7 @@
 "use client"
 
+import { MembershipPaymentNotice } from "@/components/member/membership-payment-notice"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
@@ -921,6 +923,8 @@ export function MemberMembership() {
           </div>
         </div>
       </section>
+
+      <MembershipPaymentNotice />
 
       {routeNotice &&
       !(

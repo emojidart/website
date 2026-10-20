@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Euro, Settings } from "lucide-react"
+import { useState } from "react"
 
 interface BonusConfig {
   under26: number
@@ -33,6 +34,15 @@ interface BonusSectionProps {
   tempBonusConfig: BonusConfig
   setTempBonusConfig: (config: BonusConfig | ((prev: BonusConfig) => BonusConfig)) => void
   saveBonusConfig: () => void
+  teamMembers: any[]
+  selectedSeasonId: string
+  playerRates: Record<string, number>
+  lineupAppearances: any[]
+  chargeAbsentByPlayer: Record<string,boolean>
+  completedTeamMatches: any[]
+  ratesError: string
+  ratesSaving: boolean
+  savePlayerRate: (teamId: string, playerId: string, rate: number | null, chargeWhenAbsent?: boolean) => Promise<void>
 }
 
 export function BonusSection({
@@ -44,7 +54,39 @@ export function BonusSection({
   tempBonusConfig,
   setTempBonusConfig,
   saveBonusConfig,
+  teamMembers,
+  selectedSeasonId,
+  playerRates,
+  lineupAppearances,
+  chargeAbsentByPlayer,
+  completedTeamMatches,
+  ratesError,
+  ratesSaving,
+  savePlayerRate,
 }: BonusSectionProps) {
+  const [editingPlayer, setEditingPlayer] = useState("")
+  const [settingsDartType, setSettingsDartType] = useState<"all" | "edart" | "steeldart">("all")
+  const [editingRate, setEditingRate] = useState("10")
+  const [editingMode, setEditingMode] = useState("fixed")
+  const [editingChargeAbsent, setEditingChargeAbsent] = useState(false)
+  const euro = (n: number) => n.toFixed(2).replace(".", ",") + " €"
+  const getPlayerRate = (playerId: string, teamId: string) => playerRates[`${teamId}:${selectedSeasonId}:${playerId}`]
+  const rateTeamFor = (playerId: string, dartType?: string) => teamMembers.find((m:any)=>m.player_id===playerId && (!dartType || String(m.team?.dart_type||"").toLowerCase().replace(/[-_\s]/g, "")===dartType) && getPlayerRate(playerId,m.team_id)!==undefined)
+  const ratesByPlayer = (playerId: string, dartType?: string) => { const m=rateTeamFor(playerId,dartType); return m ? getPlayerRate(playerId,m.team_id) : undefined }
+  const billableFor = (playerId: string, dartType?: string) => {
+    const m = rateTeamFor(playerId,dartType)
+    if (!m) return appearancesFor(playerId,dartType)
+    const key=`${m.team_id}:${selectedSeasonId}:${playerId}`
+    return chargeAbsentByPlayer[key]
+      ? new Set(completedTeamMatches.filter((r:any)=>r.team_id===m.team_id).map((r:any)=>r.match_id)).size
+      : new Set(lineupAppearances.filter((r:any)=>r.team_id===m.team_id && r.player_id===playerId).map((r:any)=>r.match_id)).size
+  }
+  const appearancesFor = (playerId: string, dartType?: string) => new Set(lineupAppearances.filter((r:any)=>r.player_id === playerId && (!dartType || String(r.match?.dart_type).toLowerCase().replace(/[-_\s]/g,"") === dartType)).map((r:any)=>`${r.match_id}:${r.team_id}`)).size
+  const settingsMembers = Array.from(new Map(
+    teamMembers
+      .filter((m: any) => m.club_players?.name && (settingsDartType === "all" || String(m.team?.dart_type || "").toLowerCase().replace(/[-_\s]/g, "") === settingsDartType))
+      .map((m: any) => [`${m.team_id}:${m.player_id}`, m]),
+  ).values()).sort((a: any, b: any) => String(a.team?.dart_type || "").localeCompare(String(b.team?.dart_type || "")) || String(a.club_players.name).localeCompare(String(b.club_players.name), "de"))
   const normalizeNumber = (value: any) => {
     const n = Number(value)
     return Number.isFinite(n) ? n : 0
@@ -97,6 +139,19 @@ export function BonusSection({
       penaltyStats[playerId].semperit += normalizeNumber(stat?.semperit_outs)
     })
 
+    // Fixed-rate players may have no penalty/leg statistics at all.
+    for (const row of lineupAppearances) {
+      if (dartType && String(row.match?.dart_type).toLowerCase().replace(/[-_\s]/g, "") !== dartType) continue
+      if (!penaltyStats[row.player_id]) {
+        const member = teamMembers.find((m:any)=>m.player_id === row.player_id)
+        penaltyStats[row.player_id] = {under26:0,under30:0,semperit:0,playerName:member?.club_players?.name || "Unbekannt",photoUrl:member?.club_players?.photo_url || null}
+      }
+    }
+    for (const member of teamMembers) {
+      if (dartType && String(member.team?.dart_type||"").toLowerCase().replace(/[-_\s]/g, "") !== dartType) continue
+      if (getPlayerRate(member.player_id,member.team_id) === undefined || penaltyStats[member.player_id]) continue
+      penaltyStats[member.player_id] = {under26:0,under30:0,semperit:0,playerName:member.club_players?.name||"Unbekannt",photoUrl:member.club_players?.photo_url||null}
+    }
     return Object.entries(penaltyStats)
       .map(([playerId, stats]) => ({
         playerId,
@@ -106,12 +161,15 @@ export function BonusSection({
         under30: stats.under30,
         semperit: stats.semperit,
         totalPenalties: stats.under26 + stats.under30 + stats.semperit,
-        totalCost:
-          stats.under26 * bonusConfig.under26 +
+        fixedRate: ratesByPlayer(playerId, dartType),
+        appearances: appearancesFor(playerId, dartType),
+        totalCost: ratesByPlayer(playerId, dartType) !== undefined
+          ? (ratesByPlayer(playerId, dartType) as number) * billableFor(playerId, dartType)
+          : stats.under26 * bonusConfig.under26 +
           stats.under30 * bonusConfig.under30 +
           stats.semperit * bonusConfig.semperit,
       }))
-      .filter((player) => player.totalPenalties > 0)
+      .filter((player) => player.totalPenalties > 0 || player.fixedRate !== undefined)
   }
 
   const renderStatisticsTable = (dartType?: "edart" | "steeldart") => {
@@ -164,6 +222,7 @@ export function BonusSection({
                   <span className="hidden sm:inline">Gesamt</span>
                   <span className="sm:hidden">Total</span>
                 </TableHead>
+                <TableHead className="font-bold text-center text-gray-700">Einsätze</TableHead>
                 <TableHead className="font-bold text-center text-gray-700 w-[70px] sm:w-[110px]">
                   <span className="hidden sm:inline">Kosten (€)</span>
                   <span className="sm:hidden">€</span>
@@ -216,6 +275,7 @@ export function BonusSection({
                     </Badge>
                   </TableCell>
 
+                  <TableCell className="text-center text-sm">{penalty.appearances}{penalty.fixedRate !== undefined ? <div className="text-[10px] text-orange-600">Fix {euro(penalty.fixedRate)}</div> : null}</TableCell>
                   <TableCell className="text-center">
                     <span className="font-bold text-red-700 text-sm">{penalty.totalCost.toFixed(2)}€</span>
                   </TableCell>
@@ -287,6 +347,39 @@ export function BonusSection({
         </CardHeader>
 
         <CardContent className="p-4 sm:p-6 pt-0">
+          {ratesError ? <p className="mb-3 text-sm text-red-600">{ratesError}</p> : null}
+          <div className="mb-5 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-gray-900">
+            <p className="mb-2 font-bold">Fixbetrag je Spieler und Ligaabend</p>
+            <p className="mb-3 text-xs text-gray-600">Standardmäßig zählt nur ein tatsächlicher Einsatz, auch als Ersatzspieler. Optional können alle abgeschlossenen Ligaabende der Mannschaft berechnet werden. Nie pro Leg.</p>
+            {selectedSeasonId === "all" ? <p className="text-sm text-red-700">Zum Bearbeiten eine Saison auswählen.</p> : null}
+            <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Dartart filtern">
+              {([ ["all", "Alle"], ["edart", "E-Dart"], ["steeldart", "Steeldart"] ] as const).map(([value, label]) => (
+                <Button key={value} size="sm" variant={settingsDartType === value ? "default" : "outline"} onClick={() => { setSettingsDartType(value); setEditingPlayer("") }}>{label}</Button>
+              ))}
+            </div>
+            <div className="space-y-2">
+              {settingsMembers.map((member:any)=> {
+                const key = `${member.team_id}:${member.player_id}`
+                const rate = getPlayerRate(member.player_id,member.team_id)
+                const editing = editingPlayer === key
+                const count = new Set(lineupAppearances.filter((r:any)=>r.player_id === member.player_id && r.team_id === member.team_id).map((r:any)=>r.match_id)).size
+                const totalNights = new Set(completedTeamMatches.filter((r:any)=>r.team_id === member.team_id).map((r:any)=>r.match_id)).size
+                const chargeAbsent = chargeAbsentByPlayer[`${member.team_id}:${selectedSeasonId}:${member.player_id}`] || false
+                return <div key={key} className="rounded-xl bg-white border p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div><p className="font-semibold text-sm">{member.club_players.name} <span className="ml-2 text-xs font-normal text-orange-700">{String(member.team?.dart_type || "").toLowerCase().replace(/[-_\s]/g, "") === "steeldart" ? "Steeldart" : "E-Dart"}</span></p><p className="text-xs text-gray-500">{member.team?.name ? `${member.team.name} · ` : ""}{count} Einsätze · {rate === undefined ? "Fehlwürfe" : `Fix ${euro(rate)} / Abend · ${euro(rate*(chargeAbsent ? totalNights : count))}${chargeAbsent ? " (alle Ligaabende)" : ""}`}</p></div>
+                    <Button size="sm" variant="outline" disabled={selectedSeasonId === "all"} onClick={()=>{setEditingPlayer(editing ? "" : key);setEditingMode(rate === undefined ? "penalty" : "fixed");setEditingRate(String(rate ?? 10));setEditingChargeAbsent(chargeAbsent)}}>Einstellen</Button>
+                  </div>
+                  {editing ? <div className="mt-3 space-y-2">
+                    <select aria-label="Abrechnungsart" className="w-full rounded-lg border bg-white p-2 text-sm" value={editingMode} onChange={e=>setEditingMode(e.target.value)}><option value="penalty">Normal nach Fehlwürfen</option><option value="fixed">Fixbetrag pro Ligaabend</option></select>
+                    {editingMode === "fixed" ? <><Input aria-label="Euro pro Ligaabend" type="number" min="0" step="0.01" value={editingRate} onChange={e=>setEditingRate(e.target.value)} />
+                    <label className="flex items-start gap-3 rounded-xl border border-orange-100 bg-orange-50/70 p-3 text-sm"><input type="checkbox" className="mt-1 h-4 w-4 accent-orange-600" checked={editingChargeAbsent} onChange={e=>setEditingChargeAbsent(e.target.checked)} /><span><strong>Auch ohne Einsatz berechnen</strong><span className="mt-1 block text-xs text-gray-600">Bei jeder abgeschlossenen Mannschaftsbegegnung berechnen, auch wenn der Spieler nicht in der Aufstellung stand. Standard: aus.</span></span></label></> : null}
+                    <Button size="sm" disabled={ratesSaving || (editingMode === "fixed" && (editingRate.trim() === "" || !Number.isFinite(Number(editingRate)) || Number(editingRate)<0))} onClick={async()=>{await savePlayerRate(member.team_id,member.player_id,editingMode === "fixed" ? Math.round(Number(editingRate)*100)/100 : null, editingMode === "fixed" && editingChargeAbsent);setEditingPlayer("")}}>Speichern</Button>
+                  </div> : null}
+                </div>
+              })}
+            </div>
+          </div>
           {legStatsLoading ? (
             <div className="py-10 text-center">
               <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
