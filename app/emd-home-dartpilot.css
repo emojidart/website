@@ -1,0 +1,66 @@
+/* EMD 2026 – DartPilot-inspirierter Startseiten-Pilot.
+   Absichtlich NUR .emd-dartpilot-home: keine Änderungen an Login, TV, DKO etc.
+   Werte hier sind Ausgangspunkt für spätere globale Design-Tokens. */
+.emd-dartpilot-home {
+  --emd-home-bg: #101f38;
+  --emd-home-bg-lift: #1d3658;
+  --emd-home-panel: #203957;
+  --emd-home-panel-hover: #2b496c;
+  --emd-home-line: rgba(162,202,242,.29);
+  --emd-home-text: #f5f9ff;
+  --emd-home-muted: #cadbef;
+  --emd-home-accent: #ffac62;
+  --emd-content-max: 1340px;
+  isolation: isolate;
+  background: radial-gradient(ellipse 60% 44% at 7% 7%,rgba(44,112,179,.48),transparent 80%),
+              radial-gradient(ellipse 45% 38% at 90% 30%,rgba(35,83,148,.27),transparent 80%),
+              linear-gradient(125deg,#1c3659 0%,#122743 55%,#0e2039 100%) !important;
+  color: var(--emd-home-text);
+  font-size: 17px;
+  line-height: 1.55;
+}
+/* Alte dunkelgraue Seitenmaske vollständig entfernen. */
+.emd-home-page.emd-dartpilot-home::before { display:none !important; }
+.emd-dartpilot-home .emd-home-hero {
+  border: 1px solid rgba(153,197,240,.38) !important;
+  box-shadow: 0 24px 56px -32px rgba(2,13,28,.78),0 1px 0 rgba(255,255,255,.10) inset !important;
+}
+/* Hero-Bild kontrastreich und klar: KEIN grauer Überzug. */
+.emd-dartpilot-home .emd-home-hero > div[class*="bg-[linear-gradient"] {
+  background-image: linear-gradient(90deg,rgba(9,19,35,.83) 0%,rgba(8,22,39,.64) 46%,rgba(8,19,36,.19) 100%) !important;
+}
+.emd-dartpilot-home .emd-home-stat-card {
+  background: linear-gradient(145deg,rgba(31,60,95,.94),rgba(22,43,73,.93)) !important;
+  border:1px solid rgba(167,208,247,.35) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 16px 32px -20px #041222 !important;
+}
+.emd-dartpilot-home .emd-home-secondary-action {background:rgba(25,52,85,.91) !important;border-color:rgba(172,211,249,.43) !important;}
+.emd-dartpilot-home .emd-home-primary-action {background:linear-gradient(130deg,#a95118,#cf742f) !important;border-color:#ffc28a !important;}
+/* Bestehende dunkle Karten und Tailwind-Hintergründe – Blau statt Schwarz/Grau. */
+.emd-dartpilot-home :is(article,section,div,a,button)[class*="bg-[#08"],
+.emd-dartpilot-home :is(article,section,div,a,button)[class*="bg-[#0b"],
+.emd-dartpilot-home :is(article,section,div,a,button)[class*="bg-[#07"],
+.emd-dartpilot-home :is(article,section,div,a,button)[class*="bg-[#10"] {
+  background-color:var(--emd-home-panel) !important;
+  border-color:var(--emd-home-line) !important;
+}
+.emd-dartpilot-home :is(.bg-white,.bg-white\/90,.bg-slate-50,.bg-gray-50,.bg-slate-50\/70,.bg-slate-50\/80) {
+  background:linear-gradient(140deg,#284769,#203956) !important;
+  border-color:var(--emd-home-line) !important;
+  box-shadow:0 15px 34px -26px rgba(1,10,25,.8) !important;
+}
+.emd-dartpilot-home :is(.text-white\/30,.text-white\/35,.text-white\/40,.text-white\/45,.text-white\/50,.text-gray-400,.text-gray-500,.text-slate-400,.text-slate-500) {color:var(--emd-home-muted) !important;}
+.emd-dartpilot-home :is(h2,h3){letter-spacing:-.025em;line-height:1.18;}
+.emd-dartpilot-home h2{font-size:clamp(1.4rem,2.2vw,1.8rem);}
+.emd-dartpilot-home :is(a,button,[role="button"]):focus-visible{outline:3px solid var(--emd-home-accent);outline-offset:3px;}
+@media(max-width:639px){
+  .emd-dartpilot-home{font-size:16px;line-height:1.6;}
+  .emd-dartpilot-home .emd-home-hero{border-radius:22px;}
+  .emd-dartpilot-home .emd-home-hero > div[class*="bg-cover"]{background-position:63% center;}
+  .emd-dartpilot-home .emd-home-hero > div[class*="bg-[linear-gradient"]{background-image:linear-gradient(180deg,rgba(6,19,38,.78),rgba(8,19,36,.52) 52%,rgba(6,19,38,.80)) !important;}
+  .emd-dartpilot-home .emd-home-stat-card{padding:12px !important;border-radius:16px !important;}
+  .emd-dartpilot-home :is(.text-\[9px\],.text-\[10px\],.text-\[11px\]){font-size:12px !important;letter-spacing:.04em;}
+  .emd-dartpilot-home :is(.text-xs,.text-sm){font-size:14px !important;line-height:1.5;}
+  .emd-dartpilot-home :is(.emd-home-primary-action,.emd-home-secondary-action){min-height:52px;padding-inline:15px;}
+  .emd-dartpilot-home :is(input,select,textarea){font-size:16px;}
+}

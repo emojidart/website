@@ -1,0 +1,59 @@
+/* EMD Startseite — DartPilot-inspirierte, bewusst seitenlokale Designbasis. */
+.emd-home-page {
+  --emd-home-bg:#222e43;
+  --emd-home-card:#1d293b;
+  --emd-home-inner:#26354d;
+  --emd-home-border:rgba(178,198,224,.17);
+  --emd-home-text:#f5f7fd;
+  --emd-home-muted:#b6c3d5;
+  --emd-home-accent:#ad94fc;
+  background:var(--emd-home-bg)!important;
+  color:var(--emd-home-text);
+  font-size:16px;
+  line-height:1.55;
+  min-height:100vh;
+}
+.emd-home-page .emd-home-intro { padding-top:24px; }
+.emd-home-intro-card { display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.7fr);overflow:hidden; border:1px solid var(--emd-home-border);border-radius:32px;background:var(--emd-home-card);min-height:340px; }
+.emd-home-intro-copy { padding:clamp(24px,4vw,48px);align-self:center;position:relative;z-index:1; }
+.emd-home-eyebrow {display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.16em;font-weight:800;color:#bbaafa;}
+.emd-home-intro-copy h1 {font-size:clamp(35px,4vw,58px);line-height:1.12;letter-spacing:-.045em;font-weight:850;max-width:580px;margin:18px 0 12px;color:#f6f8fd;}
+.emd-home-intro-copy h1 span {color:#c0acff;}
+.emd-home-intro-copy p {font-size:clamp(16px,1.4vw,19px);line-height:1.55;color:var(--emd-home-muted);max-width:540px;font-weight:500;}
+.emd-home-intro-photo {background:linear-gradient(90deg,#1d293b 0%,rgba(29,41,59,.12) 50%),url('/terminal/hero-startscreen.png') 67% center / cover no-repeat; min-height:340px;}
+.emd-home-actions {display:flex;flex-wrap:wrap;gap:12px;margin-top:26px;}
+.emd-home-action {border:1px solid var(--emd-home-border);border-radius:17px;min-height:54px;padding:11px 18px;display:inline-flex;gap:12px;align-items:center;justify-content:center;font-size:16px;font-weight:750;transition:background .15s ease;}
+.emd-home-action-primary {background:#7c3aed;color:#fff;}
+.emd-home-action-primary:hover {background:#6d28d9;}
+.emd-home-action-secondary {background:var(--emd-home-inner);color:#f6f8fd;}
+.emd-home-action-secondary:hover {background:#344561;}
+.emd-home-stat-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:18px;}
+.emd-home-page .emd-home-stat-card {display:flex;align-items:center;gap:16px;background:var(--emd-home-card)!important;border:1px solid var(--emd-home-border)!important;padding:23px 25px;border-radius:28px;box-shadow:none!important;transform:none!important;}
+.emd-home-stat-card > svg {color:#beaaff;flex-shrink:0;}
+.emd-home-stat-card div {display:flex;flex-direction:column;gap:0;}
+.emd-home-stat-card strong {font-size:30px;line-height:1.05;color:var(--emd-home-text);font-weight:850;}
+.emd-home-stat-card span {font-size:15px;color:var(--emd-home-muted);font-weight:650;}
+/* Standardoberflächen auf dieser Seite mit einer ruhigen, einheitlichen Karte. */
+.emd-home-page :is(.bg-white,.bg-slate-50,.bg-gray-50) {background:var(--emd-home-card)!important;}
+.emd-home-page .bg-white {background:var(--emd-home-card)!important;border-color:var(--emd-home-border)!important;}
+.emd-home-page :is(.text-gray-950,.text-gray-900,.text-gray-800,.text-slate-950,.text-slate-900,.text-slate-800) {color:var(--emd-home-text)!important;}
+.emd-home-page :is(.text-gray-700,.text-gray-600,.text-slate-700,.text-slate-600,.text-gray-500,.text-slate-500) {color:var(--emd-home-muted)!important;}
+.emd-home-page :is(.border-gray-200,.border-gray-300,.border-slate-200) {border-color:var(--emd-home-border)!important;}
+.emd-home-page button {font-size:max(15px,1em);}
+.emd-home-page :is(button,a) {touch-action:manipulation;}
+@media(max-width:767px){
+  .emd-home-page {font-size:17px;}
+  .emd-home-page .emd-home-intro {padding-left:16px;padding-right:16px;}
+  .emd-home-intro-card {display:flex;flex-direction:column;min-height:0;border-radius:28px;}
+  .emd-home-intro-copy {padding:27px 23px 24px;}
+  .emd-home-intro-copy h1 {font-size:clamp(32px,8.3vw,45px);margin:15px 0;}
+  .emd-home-intro-copy p {font-size:17px;line-height:1.5;}
+  .emd-home-intro-photo {min-height:132px;background:linear-gradient(0deg,rgba(29,41,59,.18),rgba(29,41,59,.10)),url('/terminal/hero-startscreen.png') 70% 40% / cover no-repeat;}
+  .emd-home-actions {display:grid;grid-template-columns:1fr;margin-top:22px;}
+  .emd-home-action {width:100%;min-height:56px;justify-content:space-between;padding:12px 17px;font-size:17px;}
+  .emd-home-stat-grid {gap:10px;margin-top:12px;grid-template-columns:repeat(3,minmax(0,1fr));}
+  .emd-home-page .emd-home-stat-card {padding:15px 9px;gap:9px;border-radius:21px;flex-direction:column;align-items:center;text-align:center;min-width:0;}
+  .emd-home-stat-card strong {font-size:27px;}
+  .emd-home-stat-card span {font-size:13px;}
+  .emd-home-page section {scroll-margin-top:74px;}
+}

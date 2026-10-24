@@ -46,7 +46,7 @@ export function DeineNaechstenLigaspiele({
   return (
     <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pt-5 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
       <div className="space-y-4">
-        <section className="mb-6">
+        <section className="emd-saas-section mb-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -54,11 +54,11 @@ export function DeineNaechstenLigaspiele({
               </div>
 
               <div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-600">
+                <div className="text-sm font-bold uppercase tracking-normal text-orange-600 emd-saas-copy emd-saas-tag">
                   Liga
                 </div>
 
-                <h2 className="text-lg font-black leading-tight text-gray-950 sm:text-xl">
+                <h2 className="text-lg font-semibold leading-tight text-gray-950 sm:text-xl emd-saas-heading">
                   Deine nächsten Spiele
                 </h2>
               </div>
@@ -66,7 +66,7 @@ export function DeineNaechstenLigaspiele({
 
             <Button
               variant="ghost"
-              className="h-9 rounded-xl px-3 font-bold text-gray-600 hover:bg-white hover:text-orange-700"
+              className="h-9 rounded-xl px-3 font-bold text-gray-600 hover:bg-white hover:text-orange-700 emd-saas-card emd-saas-copy emd-saas-button"
               onClick={() => (window.location.href = "/member-availability")}
             >
               Alle
@@ -74,14 +74,14 @@ export function DeineNaechstenLigaspiele({
           </div>
 
           {loading ? (
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-500">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm emd-saas-card">
+              <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-500 emd-saas-copy">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Deine Ligaspiele werden geladen...
               </div>
             </div>
           ) : matches.length === 0 ? (
-            <div className="rounded-3xl border border-gray-200/80 bg-white p-7 text-center shadow-sm">
+            <div className="rounded-3xl border border-gray-200/80 bg-white p-7 text-center shadow-sm emd-saas-card">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-50">
                 <Calendar className="h-5 w-5 text-gray-400" />
               </div>
@@ -90,7 +90,7 @@ export function DeineNaechstenLigaspiele({
                 Aktuell kein Ligaspiel geplant
               </p>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-500 emd-saas-copy">
                 Sobald ein neues Spiel angesetzt ist, erscheint es hier.
               </p>
             </div>
@@ -103,21 +103,21 @@ export function DeineNaechstenLigaspiele({
                 return (
                   <div
                     key={match.id}
-                    className="group overflow-hidden rounded-[26px] border border-slate-200/90 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_65px_-45px_rgba(15,23,42,0.62)]"
+                    className="group overflow-hidden rounded-[26px] border border-slate-200/90 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_65px_-45px_rgba(15,23,42,0.62)] emd-saas-card"
                   >
                     <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3.5">
                       <Badge
                         variant="outline"
                         className={
                           isSteel
-                            ? "rounded-full border-slate-200 bg-slate-900 px-3 py-1 text-[11px] font-black tracking-wide text-white"
-                            : "rounded-full border-orange-200 bg-orange-600 px-3 py-1 text-[11px] font-black tracking-wide text-white"
+                            ? "rounded-full border-slate-200 bg-slate-900 px-3 py-1 text-sm font-semibold tracking-wide text-white"
+                            : "rounded-full border-orange-200 bg-orange-600 px-3 py-1 text-sm font-semibold tracking-wide text-white"
                         }
                       >
                         {isSteel ? "STEELDART" : "E-DART"}
                       </Badge>
 
-                      <div className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-gray-600 ring-1 ring-gray-200">
+                      <div className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-gray-600 ring-1 ring-gray-200 emd-saas-card emd-saas-copy emd-saas-tag">
                         <Calendar className="h-3.5 w-3.5 text-orange-600" />
                         {new Date(match.match_date).toLocaleDateString("de-DE", {
                           day: "2-digit",
@@ -131,14 +131,14 @@ export function DeineNaechstenLigaspiele({
                     </div>
 
                     <div className="p-4">
-                      <div className="text-xl font-black leading-tight tracking-tight text-gray-950">
+                      <div className="text-xl font-semibold leading-tight tracking-tight text-gray-950 emd-saas-heading">
                         {getTeamName(match, true)}{" "}
                         <span className="font-semibold text-gray-400">vs</span>{" "}
                         {getTeamName(match, false)}
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3">
-                        <div className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 emd-saas-card">
+                        <div className="text-xs font-bold uppercase tracking-wide text-gray-500 emd-saas-copy">
                           Deine Antwort
                         </div>
 
@@ -146,28 +146,28 @@ export function DeineNaechstenLigaspiele({
                           {match.my_status === "yes" ? (
                             <Badge
                               variant="outline"
-                              className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700"
+                              className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700 emd-saas-tag"
                             >
                               Zugesagt ✓
                             </Badge>
                           ) : match.my_status === "maybe" ? (
                             <Badge
                               variant="outline"
-                              className="rounded-full border-amber-200 bg-amber-50 text-amber-700"
+                              className="rounded-full border-amber-200 bg-amber-50 text-amber-700 emd-saas-tag"
                             >
                               Vielleicht
                             </Badge>
                           ) : match.my_status === "no" ? (
                             <Badge
                               variant="outline"
-                              className="rounded-full border-rose-200 bg-rose-50 text-rose-700"
+                              className="rounded-full border-rose-200 bg-rose-50 text-rose-700 emd-saas-tag"
                             >
                               Abgesagt
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
-                              className="rounded-full border-amber-300 bg-amber-50 text-amber-800"
+                              className="rounded-full border-amber-300 bg-amber-50 text-amber-800 emd-saas-tag"
                             >
                               Noch keine Antwort
                             </Badge>
@@ -176,7 +176,7 @@ export function DeineNaechstenLigaspiele({
                       </div>
 
                       {match.my_status === "none" ? (
-                        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm font-bold text-amber-900">
+                        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm font-bold text-amber-900 emd-saas-card emd-saas-copy">
                           <Bell className="h-4 w-4 shrink-0" />
                           Bitte noch zu- oder absagen – wichtig für die Aufstellung.
                         </div>
@@ -188,7 +188,7 @@ export function DeineNaechstenLigaspiele({
                           size="sm"
                           disabled={!!saving}
                           onClick={() => void onSetAvailability(match, "yes")}
-                          className="rounded-xl border border-emerald-200 bg-white px-2 font-black text-slate-800 shadow-none hover:bg-emerald-50 hover:text-emerald-800"
+                          className="rounded-xl border border-emerald-200 bg-white px-2 font-semibold text-slate-800 shadow-none hover:bg-emerald-50 hover:text-emerald-800 emd-saas-card emd-saas-button"
                         >
                           {saving === `${match.id}-yes` ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -202,7 +202,7 @@ export function DeineNaechstenLigaspiele({
                           size="sm"
                           disabled={!!saving}
                           onClick={() => void onSetAvailability(match, "maybe")}
-                          className="rounded-xl border border-amber-200 bg-white px-2 font-black text-slate-800 shadow-none hover:bg-amber-50 hover:text-amber-800"
+                          className="rounded-xl border border-amber-200 bg-white px-2 font-semibold text-slate-800 shadow-none hover:bg-amber-50 hover:text-amber-800 emd-saas-card emd-saas-button"
                         >
                           {saving === `${match.id}-maybe` ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -216,7 +216,7 @@ export function DeineNaechstenLigaspiele({
                           size="sm"
                           disabled={!!saving}
                           onClick={() => void onSetAvailability(match, "no")}
-                          className="rounded-xl border border-rose-200 bg-white px-2 font-black text-slate-800 shadow-none hover:bg-rose-50 hover:text-rose-800"
+                          className="rounded-xl border border-rose-200 bg-white px-2 font-semibold text-slate-800 shadow-none hover:bg-rose-50 hover:text-rose-800 emd-saas-card emd-saas-button"
                         >
                           {saving === `${match.id}-no` ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -229,7 +229,7 @@ export function DeineNaechstenLigaspiele({
                       <Button
                         type="button"
                         variant="outline"
-                        className="mt-3 w-full rounded-xl border-slate-200 bg-slate-950 font-black text-white hover:bg-slate-800 hover:text-white"
+                        className="mt-3 w-full rounded-xl border-slate-200 bg-slate-950 font-semibold text-white hover:bg-slate-800 hover:text-white"
                         onClick={() =>
                           (window.location.href = `/member-availability?match_id=${match.id}&team_id=${match.my_team_id}`)
                         }

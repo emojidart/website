@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { CheckCircle2, Coins, Mail, Phone, UserRound, Users, WalletCards } from "lucide-react"
+import { CheckCircle2, Coins, Mail, UserRound, Users, WalletCards } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,11 @@ type Props = { eventId: string }
 type Info = {
   event: any
   participantCount: number
-  participants: { id: string; name: string }[]
+  participants: { id: string; name: string; division?: "men" | "women" | null }[]
+  capacity?: {
+    men: { max: number; reserved: number; registered: number; onlineFree: number; onlineFull: boolean }
+    women: { max: number; reserved: number; registered: number; onlineFree: number; onlineFull: boolean }
+  } | null
   registrationSource?: "central" | "legacy-external"
   centralEventId?: string | null
 }
@@ -26,9 +30,8 @@ export function PublicTournamentRegistration({ eventId }: Props) {
   const [prefillType, setPrefillType] = useState<PrefillType>(null)
 
   const [fullName, setFullName] = useState("")
-  const [playerName, setPlayerName] = useState("")
   const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
+  const [division, setDivision] = useState<"men" | "women" | "">("")
   const [message, setMessage] = useState("")
   const [success, setSuccess] = useState(false)
   const [creditBalance, setCreditBalance] = useState(0)
@@ -73,7 +76,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
       if (profile?.is_guest) {
         const { data: guest, error: guestError } = await supabase
           .from("guest_requests")
-          .select("full_name,player_name,email,phone")
+          .select("full_name,player_name,email")
           .eq("auth_user_id", user.id)
           .maybeSingle()
 
@@ -82,16 +85,14 @@ export function PublicTournamentRegistration({ eventId }: Props) {
         }
 
         if (guest) {
-          setFullName((old) => old || guest.full_name || "")
-          setPlayerName((old) => old || guest.player_name || "")
+          setFullName((old) => old || guest.full_name || guest.player_name || "")
           setEmail((old) => old || guest.email || user.email || "")
-          setPhone((old) => old || guest.phone || "")
           setPrefillType("guest")
           return
         }
       }
 
-      // Normales Mitglied: Spielername aus club_players, E-Mail aus Auth-Session.
+      // Normales Mitglied: Name aus club_players, E-Mail aus Auth-Session.
       const { data: memberProfile, error: memberProfileError } = await supabase
         .from("user_profiles")
         .select(`
@@ -133,7 +134,6 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
       if (linkedName || user.email) {
         setFullName((old) => old || linkedName)
-        setPlayerName((old) => old || linkedName)
         setEmail((old) => old || user.email || "")
         setPrefillType("member")
       }
@@ -164,6 +164,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
     // Eingeloggte Vereinsmitglieder + internes EMD-Turnier:
     // Zahlung/Anmeldung atomar direkt im zentralen Turniersystem.
     if (
+      !info.event?.registration_split_by_gender &&
       prefillType === "member" &&
       info.registrationSource === "central" &&
       info.centralEventId
@@ -210,7 +211,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
     const r = await fetch("/api/public-tournament-registration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventId, fullName, playerName, email, phone }),
+      body: JSON.stringify({ eventId, fullName, email, division }),
     })
 
     const d = await r.json().catch(() => null)
@@ -243,12 +244,24 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
   if (!info || info.event.registration_mode !== "public_form") return null
 
-  const full = Boolean(
-    info.event.max_participants && info.participantCount >= info.event.max_participants,
-  )
+  const splitByGender = Boolean(info.event?.registration_split_by_gender && info.capacity)
+  const selectedCapacity =
+    division === "men"
+      ? info.capacity?.men
+      : division === "women"
+        ? info.capacity?.women
+        : null
+
+  const full = splitByGender
+    ? Boolean(selectedCapacity?.onlineFull)
+    : Boolean(
+        info.event.max_participants &&
+          info.participantCount >= info.event.max_participants,
+      )
 
   const entryFee = Math.max(0, Number(info.event?.entry_fee || 0))
   const isCentralMember =
+    !splitByGender &&
     prefillType === "member" &&
     info.registrationSource === "central" &&
     Boolean(info.centralEventId)
@@ -256,112 +269,147 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
   return (
     <div className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
-      <Card className="rounded-3xl border-orange-200 shadow-sm">
+      <Card className="rounded-[30px] border border-white/[0.08] bg-black/45 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
         <CardContent className="p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-orange-600">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-orange-300/80">
                 Online-Anmeldung
               </div>
-              <h2 className="mt-1 text-2xl font-black">Jetzt Platz sichern</h2>
+              <h2 className="mt-1 text-2xl font-black text-white">
+                Jetzt Platz sichern
+              </h2>
             </div>
 
-            <div className="rounded-2xl bg-orange-50 px-3 py-2 text-center">
-              <div className="text-xl font-black text-orange-700">
+            <div className="shrink-0 rounded-2xl border border-white/[0.10] bg-white/[0.06] px-3 py-2 text-center">
+              <div className="text-xl font-black text-white">
                 {info.participantCount}
                 {info.event.max_participants ? ` / ${info.event.max_participants}` : ""}
               </div>
-              <div className="text-[11px] font-bold text-orange-600">angemeldet</div>
+              <div className="text-[11px] font-bold text-white/55">angemeldet</div>
             </div>
           </div>
 
+          {splitByGender ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {([
+                ["men", "Herren-Einzel", info.capacity?.men],
+                ["women", "Damen-Einzel", info.capacity?.women],
+              ] as const).map(([key, label, cap]) => {
+                const selected = division === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      setDivision(key)
+                      setMessage("")
+                      setSuccess(false)
+                    }}
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      selected
+                        ? "border-orange-400 bg-orange-500/12 ring-1 ring-orange-400/30"
+                        : "border-white/[0.10] bg-white/[0.04] hover:bg-white/[0.07]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="font-black text-white">🎯 {label}</div>
+                      {selected ? (
+                        <CheckCircle2 className="h-5 w-5 text-orange-300" />
+                      ) : null}
+                    </div>
+                    <div className="mt-3 text-2xl font-black text-white">
+                      {cap?.registered ?? 0} / {cap?.max ?? 0}
+                    </div>
+                    <div className="mt-2 grid gap-1 text-xs font-bold">
+                      <div className="text-emerald-300">
+                        🟢 {cap?.onlineFree ?? 0} Online-Plätze frei
+                      </div>
+                      <div className="text-white/55">
+                        🔒 {cap?.reserved ?? 0} Plätze reserviert
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+              <p className="sm:col-span-2 text-xs font-semibold leading-relaxed text-white/45">
+                Für angekündigte Teilnehmer des Veranstaltungsortes ist vorübergehend ein begrenztes Platzkontingent reserviert. Nicht benötigte Plätze werden wieder freigegeben.
+              </p>
+            </div>
+          ) : null}
+
           {!info.event.registration_enabled || full ? (
-            <div className="mt-5 rounded-2xl bg-slate-100 p-4 text-center font-bold text-slate-700">
+            <div className="mt-5 rounded-2xl border border-white/[0.08] bg-white/[0.05] p-4 text-center font-bold text-white/75">
               {full
                 ? "Das Turnier ist aktuell voll."
                 : "Die Online-Anmeldung ist geschlossen."}
             </div>
           ) : (
-            <form onSubmit={submit} className="mt-5 grid gap-3 sm:grid-cols-2">
+            <form onSubmit={submit} className="mt-5 grid gap-4">
+              {splitByGender && !division ? (
+                <div className="rounded-2xl border border-orange-400/20 bg-orange-500/10 px-4 py-3 text-sm font-bold text-orange-200">
+                  Bitte zuerst Herren-Einzel oder Damen-Einzel auswählen.
+                </div>
+              ) : null}
               {prefillType ? (
-                <div className="sm:col-span-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                  <div className="flex items-center gap-2 text-sm font-black text-emerald-800">
+                <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3">
+                  <div className="flex items-center gap-2 text-sm font-black text-emerald-300">
                     <CheckCircle2 className="h-4 w-4" />
                     Daten aus deinem {prefillType === "guest" ? "Gastkonto" : "Konto"} übernommen
                   </div>
-                  <div className="mt-1 text-xs font-semibold text-emerald-700">
+                  <div className="mt-1 text-xs font-semibold text-emerald-200/75">
                     Bitte kurz prüfen. Du kannst die Angaben vor der Anmeldung noch ändern.
                   </div>
                 </div>
               ) : null}
 
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-bold text-slate-600">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.10em] text-white/55">
                   Vor- und Nachname *
                 </label>
                 <div className="relative">
-                  <UserRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <UserRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
                   <Input
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="h-11 rounded-xl pl-10"
+                    className="h-12 rounded-2xl border-white/[0.12] bg-[#080b10] pl-10 text-white shadow-none placeholder:text-white/25 focus-visible:border-orange-400/70 focus-visible:ring-orange-400/20"
                     disabled={prefillLoading}
+                    placeholder="Vor- und Nachname"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-bold text-slate-600">
-                  Spielername
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.10em] text-white/55">
+                  E-Mail *
                 </label>
-                <Input
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  className="h-11 rounded-xl"
-                  placeholder="optional"
-                  disabled={prefillLoading}
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-bold text-slate-600">Telefon</label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="h-11 rounded-xl pl-10"
-                    placeholder="optional"
-                    disabled={prefillLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-bold text-slate-600">E-Mail *</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
                   <Input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 rounded-xl pl-10"
+                    className="h-12 rounded-2xl border-white/[0.12] bg-[#080b10] pl-10 text-white shadow-none placeholder:text-white/25 focus-visible:border-orange-400/70 focus-visible:ring-orange-400/20"
                     disabled={prefillLoading}
+                    placeholder="deine@email.at"
                   />
                 </div>
               </div>
 
-              <div className="sm:col-span-2 rounded-2xl border border-orange-200 bg-orange-50/70 p-4">
+              <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 font-black text-slate-900">
-                    <WalletCards className="h-4 w-4 text-orange-600" />
+                  <div className="flex items-center gap-2 font-black text-white">
+                    <WalletCards className="h-4 w-4 text-orange-300" />
                     Startgeld
                   </div>
-                  <div className="text-lg font-black text-slate-900">
+                  <div className="text-lg font-black text-white">
                     {entryFee > 0
-                      ? entryFee.toLocaleString("de-AT", { style: "currency", currency: "EUR" })
+                      ? entryFee.toLocaleString("de-AT", {
+                          style: "currency",
+                          currency: "EUR",
+                        })
                       : "Kostenlos"}
                   </div>
                 </div>
@@ -374,12 +422,12 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                         onClick={() => setPaymentMode("on_site")}
                         className={`rounded-xl border px-3 py-3 text-left transition ${
                           paymentMode === "on_site"
-                            ? "border-orange-400 bg-white shadow-sm"
-                            : "border-slate-200 bg-white/70 hover:bg-white"
+                            ? "border-orange-400/80 bg-orange-500/10 shadow-sm"
+                            : "border-white/[0.10] bg-black/20 hover:bg-white/[0.06]"
                         }`}
                       >
-                        <div className="font-black text-slate-900">Vor Ort bezahlen</div>
-                        <div className="mt-1 text-xs font-semibold text-slate-500">
+                        <div className="font-black text-white">Vor Ort bezahlen</div>
+                        <div className="mt-1 text-xs font-semibold text-white/55">
                           Anmeldung jetzt, Zahlung beim Turnier.
                         </div>
                       </button>
@@ -390,26 +438,34 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                         onClick={() => setPaymentMode("credit")}
                         className={`rounded-xl border px-3 py-3 text-left transition ${
                           paymentMode === "credit"
-                            ? "border-emerald-400 bg-emerald-50 shadow-sm"
-                            : "border-slate-200 bg-white/70"
-                        } ${!canUseCredit ? "cursor-not-allowed opacity-45" : "hover:bg-emerald-50"}`}
+                            ? "border-emerald-400/80 bg-emerald-500/10 shadow-sm"
+                            : "border-white/[0.10] bg-black/20"
+                        } ${
+                          !canUseCredit
+                            ? "cursor-not-allowed opacity-45"
+                            : "hover:bg-emerald-500/10"
+                        }`}
                       >
-                        <div className="flex items-center gap-2 font-black text-slate-900">
-                          <Coins className="h-4 w-4 text-emerald-600" />
+                        <div className="flex items-center gap-2 font-black text-white">
+                          <Coins className="h-4 w-4 text-emerald-300" />
                           Vom Guthaben
                         </div>
-                        <div className="mt-1 text-xs font-semibold text-slate-500">
-                          Verfügbar: {creditBalance.toLocaleString("de-AT", { style: "currency", currency: "EUR" })}
+                        <div className="mt-1 text-xs font-semibold text-white/55">
+                          Verfügbar:{" "}
+                          {creditBalance.toLocaleString("de-AT", {
+                            style: "currency",
+                            currency: "EUR",
+                          })}
                         </div>
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-2 text-xs font-semibold text-slate-600">
+                    <div className="mt-2 text-xs font-semibold text-white/60">
                       Das Startgeld wird vor Ort bezahlt.
                     </div>
                   )
                 ) : (
-                  <div className="mt-2 text-xs font-semibold text-emerald-700">
+                  <div className="mt-2 text-xs font-semibold text-emerald-300">
                     Für dieses Turnier ist kein Startgeld hinterlegt.
                   </div>
                 )}
@@ -417,10 +473,10 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
               {message ? (
                 <div
-                  className={`sm:col-span-2 rounded-xl border p-3 text-sm font-semibold ${
+                  className={`rounded-xl border p-3 text-sm font-semibold ${
                     success
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-red-200 bg-red-50 text-red-700"
+                      ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"
+                      : "border-red-400/25 bg-red-500/10 text-red-200"
                   }`}
                 >
                   {success ? <CheckCircle2 className="mr-2 inline h-4 w-4" /> : null}
@@ -429,8 +485,8 @@ export function PublicTournamentRegistration({ eventId }: Props) {
               ) : null}
 
               <Button
-                disabled={saving || prefillLoading}
-                className="sm:col-span-2 h-12 rounded-xl bg-orange-600 font-black hover:bg-orange-700"
+                disabled={saving || prefillLoading || (splitByGender && !division)}
+                className="h-12 rounded-2xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-400 disabled:bg-orange-500/50"
               >
                 {prefillLoading
                   ? "Kontodaten werden geladen…"
@@ -439,7 +495,10 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                     : entryFee <= 0
                       ? "Kostenlos anmelden"
                       : isCentralMember && paymentMode === "credit"
-                        ? `Anmelden & ${entryFee.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} abbuchen`
+                        ? `Anmelden & ${entryFee.toLocaleString("de-AT", {
+                            style: "currency",
+                            currency: "EUR",
+                          })} abbuchen`
                         : "Verbindlich anmelden"}
               </Button>
             </form>
@@ -447,11 +506,11 @@ export function PublicTournamentRegistration({ eventId }: Props) {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl">
+      <Card className="rounded-[30px] border border-white/[0.08] bg-black/45 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
         <CardContent className="p-5 sm:p-6">
           <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-orange-600" />
-            <h2 className="text-xl font-black">Teilnehmer</h2>
+            <Users className="h-5 w-5 text-orange-300" />
+            <h2 className="text-xl font-black text-white">Teilnehmer</h2>
           </div>
 
           {info.event.show_participants ? (
@@ -460,20 +519,20 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                 info.participants.map((p, i) => (
                   <div
                     key={p.id}
-                    className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2"
+                    className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2"
                   >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-black text-black">
                       {i + 1}
                     </span>
-                    <span className="font-bold text-slate-800">{p.name}</span>
+                    <span className="font-bold text-white/90">{p.name}</span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-slate-500">Noch keine Anmeldungen.</p>
+                <p className="text-sm text-white/50">Noch keine Anmeldungen.</p>
               )}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-slate-500">
+            <p className="mt-4 text-sm text-white/50">
               Die Teilnehmerliste ist für dieses Turnier nicht öffentlich.
             </p>
           )}

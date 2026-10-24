@@ -1,0 +1,102 @@
+/* EMD Startseite · DartPilot Referenz V4
+   Ausschließlich auf .emd-home-page begrenzt. Keine Logik verändert.
+   Design-Werte lassen sich später zentral für weitere Seiten übernehmen. */
+.emd-home-page {
+  --emd-dp-bg: #222e43;
+  --emd-dp-surface: #1d293a;
+  --emd-dp-surface-raised: #25334a;
+  --emd-dp-border: #3a485d;
+  --emd-dp-text: #f3f6fc;
+  --emd-dp-muted: #aab7ca;
+  --emd-dp-accent: #f3a45a;
+  --emd-dp-link: #74b7ff;
+  background: var(--emd-dp-bg) !important;
+  color: var(--emd-dp-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+/* Reference look: flat, coherent navy; no grey/radial page gradient */
+body:has(.emd-home-page),html:has(.emd-home-page){background:#222e43 !important}
+.emd-home-page section {scroll-margin-top: 90px}
+.emd-home-page .emd-home-hero {
+  border-color: var(--emd-dp-border) !important;
+  border-radius: 30px !important;
+  box-shadow: none !important;
+}
+.emd-home-page .emd-home-stat-card {
+  background: rgba(29,41,58,.95) !important;
+  border: 1px solid #526078 !important;
+  border-radius: 23px !important;
+  box-shadow: none !important;
+}
+.emd-home-page .emd-home-stat-card [class*="text-white/38"] {color:#b9c5d6 !important}
+.emd-home-page .emd-home-primary-action {
+  background:#b76b31 !important;
+  border:1px solid #e5a873 !important;
+  border-radius:17px !important;
+}
+.emd-home-page .emd-home-secondary-action {
+  background:#2a3a51 !important;
+  border:1px solid #526177 !important;
+  border-radius:17px !important;
+}
+/* Override inline dark card utility backgrounds only inside home sections. */
+.emd-home-page section [class*="bg-[#080d14]"],
+.emd-home-page section [class*="bg-[#0b1017]"],
+.emd-home-page section [class*="bg-[#080f18]"],
+.emd-home-page section [class*="bg-[#090e15]"] {
+  background: var(--emd-dp-surface) !important;
+  border:1px solid var(--emd-dp-border) !important;
+  box-shadow:none !important;
+}
+.emd-home-page section [class*="bg-white/[0.025]"],
+.emd-home-page section [class*="bg-white/[0.035]"],
+.emd-home-page section [class*="bg-white/[0.04]"] {background:var(--emd-dp-surface-raised) !important}
+.emd-home-page section [class*="text-white/35"],
+.emd-home-page section [class*="text-white/38"],
+.emd-home-page section [class*="text-white/40"],
+.emd-home-page section [class*="text-white/45"],
+.emd-home-page section [class*="text-white/55"] {color:var(--emd-dp-muted) !important}
+.emd-home-page section h2 {font-size:clamp(1.5rem,2.5vw,2rem);line-height:1.18;letter-spacing:-.025em}
+.emd-home-page section h3 {font-size:clamp(1.12rem,2vw,1.3rem);line-height:1.3}
+.emd-home-page section [class*="text-[10px]"],
+.emd-home-page section [class*="text-[9px]"]{font-size:12px !important;letter-spacing:.085em}
+.emd-home-page section button {min-height:46px}
+.emd-home-page section button:focus-visible,
+.emd-home-page section a:focus-visible {outline:3px solid #80bdff;outline-offset:3px}
+/* Explicit special areas kept visually consistent */
+.emd-home-page section [class*="bg-[linear-gradient"] {border-color:var(--emd-dp-border)}
+.emd-home-page footer {background:#1a2537 !important;border-top:1px solid var(--emd-dp-border) !important}
+.emd-home-page footer [class*="text-gray"] {color:#b5c2d4 !important}
+.emd-home-page footer [class*="border-gray"] {border-color:#46566d !important}
+.emd-home-page footer [class*="bg-gray"] {background:#2a3a51 !important}
+@media (max-width: 640px) {
+  .emd-home-page {font-size:17px;line-height:1.55}
+  .emd-home-page section {padding-left:16px !important;padding-right:16px !important}
+  .emd-home-page section h2 {font-size:25px !important;line-height:1.19}
+  .emd-home-page section h3 {font-size:20px !important}
+  .emd-home-page section p {font-size:15.5px;line-height:1.6}
+  .emd-home-page section button {min-height:50px;font-size:15.5px}
+  .emd-home-page .emd-home-hero {min-height:0 !important;border-radius:26px !important}
+  /* Keep photo as an accent on mobile, not as a giant hard-to-read poster */
+  .emd-home-page .emd-home-hero > div:first-child {height:250px;bottom:auto;background-position:65% 28% !important;opacity:.67}
+  .emd-home-page .emd-home-hero > div:nth-child(2){background:linear-gradient(180deg,rgba(29,41,58,.05) 0%,#1d293a 250px,#1d293a 100%) !important}
+  .emd-home-page .emd-home-hero > div:nth-child(3){opacity:.18}
+  .emd-home-page .emd-home-hero > div.relative {min-height:0 !important;padding:20px !important;padding-top:34px !important;gap:105px}
+  .emd-home-page .emd-home-hero h1 {font-size:clamp(2.15rem,8vw,3rem) !important;line-height:1.04 !important;letter-spacing:-.045em !important;max-width:360px}
+  .emd-home-page .emd-home-hero p {color:#d9e2ef !important;font-size:16px !important;line-height:1.55 !important}
+  .emd-home-page .emd-home-hero .grid.grid-cols-3 {gap:9px !important}
+  .emd-home-page .emd-home-stat-card {padding:13px !important;min-width:0}
+  .emd-home-page .emd-home-stat-card [class*="text-2xl"] {font-size:28px !important}
+  .emd-home-page .emd-home-stat-card [class*="uppercase"] {font-size:11px !important;letter-spacing:.03em !important;overflow-wrap:anywhere}
+  .emd-home-page section [class*="rounded-[22px]"],
+  .emd-home-page section [class*="rounded-[26px]"],
+  .emd-home-page section [class*="rounded-[28px]"] {border-radius:25px !important}
+  .emd-home-page section [class*="text-[11px]"]{font-size:13px !important}
+  .emd-home-page section [class*="text-xs"]{font-size:13px !important}
+  .emd-home-page section [class*="text-sm"]{font-size:15px !important}
+  .emd-home-page section [class*="p-4"] { /* respect component spacing */ }
+}

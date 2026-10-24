@@ -33,23 +33,23 @@ export function CountdownTimer({ targetDate }: { targetDate: Date }) {
   return (
     <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 text-center">
       <div>
-        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.days}</div>
-        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Tage</div>
+        <div className="text-2xl sm:text-3xl lg:text-4xl font-semibold">{timeLeft.days}</div>
+        <div className="text-sm sm:text-xs lg:text-sm opacity-90 mt-1">Tage</div>
       </div>
       <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
       <div>
-        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.hours}</div>
-        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Std</div>
+        <div className="text-2xl sm:text-3xl lg:text-4xl font-semibold">{timeLeft.hours}</div>
+        <div className="text-sm sm:text-xs lg:text-sm opacity-90 mt-1">Std</div>
       </div>
       <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
       <div>
-        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.minutes}</div>
-        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Min</div>
+        <div className="text-2xl sm:text-3xl lg:text-4xl font-semibold">{timeLeft.minutes}</div>
+        <div className="text-sm sm:text-xs lg:text-sm opacity-90 mt-1">Min</div>
       </div>
       <div className="text-xl sm:text-2xl lg:text-4xl font-bold">:</div>
       <div>
-        <div className="text-2xl sm:text-3xl lg:text-4xl font-black">{timeLeft.seconds}</div>
-        <div className="text-[10px] sm:text-xs lg:text-sm opacity-90 mt-1">Sek</div>
+        <div className="text-2xl sm:text-3xl lg:text-4xl font-semibold">{timeLeft.seconds}</div>
+        <div className="text-sm sm:text-xs lg:text-sm opacity-90 mt-1">Sek</div>
       </div>
     </div>
   )

@@ -17,6 +17,54 @@ function emailOk(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) }
 function tokenHash(token: string) { return createHash("sha256").update(token).digest("hex") }
 function esc(v: string) { return v.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;") }
 
+
+function capacityInfo(event: any, regs: any[]) {
+  if (!event?.registration_split_by_gender) return null
+
+  const menMax = Math.max(0, Number(event.men_max_participants || 0))
+  const womenMax = Math.max(0, Number(event.women_max_participants || 0))
+  const menReserved = Math.min(menMax, Math.max(0, Number(event.men_reserved_slots || 0)))
+  const womenReserved = Math.min(womenMax, Math.max(0, Number(event.women_reserved_slots || 0)))
+
+  const menRegistered = regs.filter((r: any) => r.division === "men").length
+  const womenRegistered = regs.filter((r: any) => r.division === "women").length
+
+  const menOnlineLimit = Math.max(0, menMax - menReserved)
+  const womenOnlineLimit = Math.max(0, womenMax - womenReserved)
+
+  return {
+    men: {
+      max: menMax,
+      reserved: menReserved,
+      registered: menRegistered,
+      onlineFree: Math.max(0, menOnlineLimit - menRegistered),
+      onlineFull: menMax > 0 && menRegistered >= menOnlineLimit,
+    },
+    women: {
+      max: womenMax,
+      reserved: womenReserved,
+      registered: womenRegistered,
+      onlineFree: Math.max(0, womenOnlineLimit - womenRegistered),
+      onlineFull: womenMax > 0 && womenRegistered >= womenOnlineLimit,
+    },
+  }
+}
+
+function divisionLimit(event: any, division: string) {
+  if (!event?.registration_split_by_gender) return null
+  if (division === "men") {
+    const max = Math.max(0, Number(event.men_max_participants || 0))
+    const reserved = Math.min(max, Math.max(0, Number(event.men_reserved_slots || 0)))
+    return Math.max(0, max - reserved)
+  }
+  if (division === "women") {
+    const max = Math.max(0, Number(event.women_max_participants || 0))
+    const reserved = Math.min(max, Math.max(0, Number(event.women_reserved_slots || 0)))
+    return Math.max(0, max - reserved)
+  }
+  return null
+}
+
 export async function GET(request: Request) {
   const eventId = new URL(request.url).searchParams.get("eventId")
   if (!eventId) return NextResponse.json({ error: "eventId fehlt." }, { status: 400 })
@@ -25,7 +73,7 @@ export async function GET(request: Request) {
 
   const { data: event, error } = await supabase
     .from("dach_events")
-    .select("id,name,event_date,start_date,end_date,event_time,max_participants,registration_enabled,registration_mode,show_participants,event_status,internal_event_id,entry_fee")
+    .select("id,name,event_date,start_date,end_date,event_time,max_participants,registration_enabled,registration_mode,show_participants,event_status,internal_event_id,entry_fee,registration_split_by_gender,men_max_participants,women_max_participants,men_reserved_slots,women_reserved_slots")
     .eq("id", eventId)
     .eq("event_status", "approved")
     .maybeSingle()
@@ -49,7 +97,7 @@ export async function GET(request: Request) {
     if (centralEvent?.id) {
       const { data: regs, error: regsError } = await supabase
         .from("central_tournament_registrations")
-        .select("id,player_name_snapshot,registered_at,status")
+        .select("id,player_name_snapshot,registered_at,status,division")
         .eq("event_id", centralEvent.id)
         .eq("status", "registered")
         .order("registered_at", { ascending: true })
@@ -62,6 +110,7 @@ export async function GET(request: Request) {
         ? (regs || []).map((r: any) => ({
             id: r.id,
             name: r.player_name_snapshot || "Teilnehmer",
+            division: r.division || null,
           }))
         : []
 
@@ -72,6 +121,7 @@ export async function GET(request: Request) {
         },
         participantCount: (regs || []).length,
         participants,
+        capacity: capacityInfo(event, regs || []),
         registrationSource: "central",
         centralEventId: centralEvent.id,
       })
@@ -81,7 +131,7 @@ export async function GET(request: Request) {
   // Fallback nur für externe / nicht intern verknüpfte DACH-Turniere.
   const { data: regs } = await supabase
     .from("public_event_registrations")
-    .select("id,full_name,player_name,registered_at")
+    .select("id,full_name,player_name,registered_at,division")
     .eq("event_id", eventId)
     .eq("status", "active")
     .order("registered_at", { ascending: true })
@@ -90,6 +140,7 @@ export async function GET(request: Request) {
     ? (regs || []).map((r: any) => ({
         id: r.id,
         name: r.player_name || r.full_name,
+        division: r.division || null,
       }))
     : []
 
@@ -97,6 +148,7 @@ export async function GET(request: Request) {
     event,
     participantCount: (regs || []).length,
     participants,
+    capacity: capacityInfo(event, regs || []),
     registrationSource: "legacy-external",
   })
 }
@@ -109,6 +161,7 @@ export async function POST(request: Request) {
     const playerName = clean(body.playerName)
     const email = clean(body.email).toLowerCase()
     const phone = clean(body.phone)
+    const division = clean(body.division)
 
     if (!eventId || !fullName || !emailOk(email)) {
       return NextResponse.json(
@@ -121,7 +174,7 @@ export async function POST(request: Request) {
 
     const { data: event } = await supabase
       .from("dach_events")
-      .select("id,name,start_date,event_date,event_time,max_participants,registration_enabled,registration_mode,event_status,internal_event_id,entry_fee")
+      .select("id,name,start_date,event_date,event_time,max_participants,registration_enabled,registration_mode,event_status,internal_event_id,entry_fee,registration_split_by_gender,men_max_participants,women_max_participants,men_reserved_slots,women_reserved_slots")
       .eq("id", eventId)
       .eq("event_status", "approved")
       .maybeSingle()
@@ -133,6 +186,16 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Die Online-Anmeldung ist für dieses Turnier nicht geöffnet." },
+        { status: 400 },
+      )
+    }
+
+    if (
+      event.registration_split_by_gender &&
+      !["men", "women"].includes(division)
+    ) {
+      return NextResponse.json(
+        { error: "Bitte Herren-Einzel oder Damen-Einzel auswählen." },
         { status: 400 },
       )
     }
@@ -161,15 +224,37 @@ export async function POST(request: Request) {
         )
       }
 
-      const { count: registeredCount } = await supabase
-        .from("central_tournament_registrations")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", centralEvent.id)
-        .eq("status", "registered")
+      if (event.registration_split_by_gender) {
+        const onlineLimit = divisionLimit(event, division)
+        const { count: divisionCount } = await supabase
+          .from("central_tournament_registrations")
+          .select("id", { count: "exact", head: true })
+          .eq("event_id", centralEvent.id)
+          .eq("status", "registered")
+          .eq("division", division)
 
-      const limit = centralEvent.max_participants || event.max_participants || null
-      if (limit && (registeredCount || 0) >= limit) {
-        return NextResponse.json({ error: "Das Turnier ist bereits voll." }, { status: 409 })
+        if (onlineLimit != null && (divisionCount || 0) >= onlineLimit) {
+          return NextResponse.json(
+            {
+              error:
+                division === "men"
+                  ? "Die Online-Plätze für das Herren-Einzel sind aktuell vergeben."
+                  : "Die Online-Plätze für das Damen-Einzel sind aktuell vergeben.",
+            },
+            { status: 409 },
+          )
+        }
+      } else {
+        const { count: registeredCount } = await supabase
+          .from("central_tournament_registrations")
+          .select("id", { count: "exact", head: true })
+          .eq("event_id", centralEvent.id)
+          .eq("status", "registered")
+
+        const limit = centralEvent.max_participants || event.max_participants || null
+        if (limit && (registeredCount || 0) >= limit) {
+          return NextResponse.json({ error: "Das Turnier ist bereits voll." }, { status: 409 })
+        }
       }
 
       const { data: existingRows, error: existingError } = await supabase
@@ -213,6 +298,7 @@ export async function POST(request: Request) {
         source: "public",
         contact_email: email,
         contact_phone: phone || null,
+        division: event.registration_split_by_gender ? division : null,
         registered_at: now,
         updated_at: now,
         entry_no: 1,
@@ -254,14 +340,36 @@ export async function POST(request: Request) {
     }
 
     // Fallback ausschließlich für externe / nicht intern verknüpfte DACH-Turniere.
-    const { count } = await supabase
-      .from("public_event_registrations")
-      .select("id", { count: "exact", head: true })
-      .eq("event_id", eventId)
-      .eq("status", "active")
+    if (event.registration_split_by_gender) {
+      const onlineLimit = divisionLimit(event, division)
+      const { count: divisionCount } = await supabase
+        .from("public_event_registrations")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", eventId)
+        .eq("status", "active")
+        .eq("division", division)
 
-    if (event.max_participants && (count || 0) >= event.max_participants) {
-      return NextResponse.json({ error: "Das Turnier ist bereits voll." }, { status: 409 })
+      if (onlineLimit != null && (divisionCount || 0) >= onlineLimit) {
+        return NextResponse.json(
+          {
+            error:
+              division === "men"
+                ? "Die Online-Plätze für das Herren-Einzel sind aktuell vergeben."
+                : "Die Online-Plätze für das Damen-Einzel sind aktuell vergeben.",
+          },
+          { status: 409 },
+        )
+      }
+    } else {
+      const { count } = await supabase
+        .from("public_event_registrations")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", eventId)
+        .eq("status", "active")
+
+      if (event.max_participants && (count || 0) >= event.max_participants) {
+        return NextResponse.json({ error: "Das Turnier ist bereits voll." }, { status: 409 })
+      }
     }
 
     const { data: existing } = await supabase
@@ -285,6 +393,7 @@ export async function POST(request: Request) {
       player_name: playerName || null,
       email,
       phone: phone || null,
+      division: event.registration_split_by_gender ? division : null,
       status: "active",
       cancellation_token_hash: tokenHash(rawToken),
       registered_at: new Date().toISOString(),

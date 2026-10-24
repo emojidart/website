@@ -27,7 +27,7 @@ export function HeuteImVerein({
 
   return (
     <div className="mx-auto mt-3 w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8 xl:px-10">
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg emd-saas-card">
         <div className="h-1.5 bg-gradient-to-r from-slate-900 via-orange-500 to-slate-900" />
 
         <div className="p-4 sm:p-5">
@@ -38,11 +38,11 @@ export function HeuteImVerein({
               </div>
 
               <div>
-                <div className="text-xs font-black uppercase tracking-wider text-orange-700">
+                <div className="text-xs font-semibold uppercase tracking-wider text-orange-700 emd-saas-copy emd-saas-tag">
                   Heute im Verein
                 </div>
 
-                <div className="text-lg font-black text-gray-900 sm:text-xl">
+                <div className="text-lg font-semibold text-gray-900 sm:text-xl emd-saas-heading">
                   {events.length === 1
                     ? events[0].name
                     : `${events.length} Veranstaltungen heute`}
@@ -52,13 +52,13 @@ export function HeuteImVerein({
                   {events.map((event) => (
                     <div
                       key={`${event.type}-${event.id}`}
-                      className="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"
+                      className="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 emd-saas-card"
                     >
-                      <div className="text-sm font-black text-gray-900">
+                      <div className="text-sm font-semibold text-gray-900 emd-saas-copy">
                         {event.name}
                       </div>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-gray-600">
+                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-gray-600 emd-saas-copy">
                         <span className="inline-flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5 text-orange-700" />
                           {ensureUhr(event.time)}
@@ -70,13 +70,13 @@ export function HeuteImVerein({
                         </span>
 
                         {event.type === "tournament" && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 font-black text-orange-800">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 font-semibold text-orange-800 emd-saas-card emd-saas-tag">
                             Turnier
                           </span>
                         )}
 
                         {event.type === "event" && event.eventType && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 font-black text-slate-800">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 font-semibold text-slate-800 emd-saas-card emd-saas-tag">
                             {getEventTypeLabel(event.eventType)}
                           </span>
                         )}
@@ -89,7 +89,7 @@ export function HeuteImVerein({
 
             <Button
               type="button"
-              className="w-full rounded-xl bg-slate-950 font-black text-white shadow-sm hover:bg-slate-800 sm:w-auto"
+              className="w-full rounded-xl bg-slate-950 font-semibold text-white shadow-sm hover:bg-slate-800 sm:w-auto"
               onClick={() => {
                 if (events.length === 1) {
                   window.location.href = getDetailsHref(events[0])

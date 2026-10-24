@@ -1,0 +1,86 @@
+/* EMD Startseite 2026 — isolierter Design-Pilot.
+   Zentrale Tokens; keine Änderungen an Supabase, Routing oder Spiel-Logik. */
+body:has(.emd-home-page) .emd-app-theme-shell {
+  --home-bg: #111e31;
+  --home-card: #1c2c43;
+  --home-card-raised: #243751;
+  --home-border: #344963;
+  --home-text: #f2f6fc;
+  --home-muted: #b9c9dc;
+  --home-accent: #f7a65c;
+  --home-radius: 20px;
+  background: var(--home-bg) !important;
+  background-image: none !important;
+  color: var(--home-text);
+}
+body:has(.emd-home-page) .emd-app-theme-shell::before { display: none !important; }
+.emd-home-page {
+  background: var(--home-bg) !important;
+  color: var(--home-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-x: clip;
+}
+/* Festes Designraster — dieselbe Breite und derselbe Innenabstand auf jeder Sektion. */
+.emd-home-page section > div { min-width: 0; }
+.emd-home-page h1,.emd-home-page h2,.emd-home-page h3 {
+  font-family: inherit;
+  letter-spacing: -.025em;
+  line-height: 1.17;
+  text-wrap: balance;
+}
+.emd-home-page h2 { font-size: clamp(1.25rem, 2vw, 1.65rem); font-weight: 750; }
+.emd-home-page h3 { font-size: 1.125rem; font-weight: 700; }
+/* Uniforme Karten: keine Transparenz und keine glänzenden Glas-Effekte. */
+.emd-home-page :is(.emd-home-hero,.emd-home-stat-card) {
+  background: var(--home-card) !important;
+  border: 1px solid var(--home-border) !important;
+  box-shadow: 0 8px 24px rgba(3,11,25,.12) !important;
+  backdrop-filter: none !important;
+}
+.emd-home-page :is(.bg-white,.bg-slate-50,.bg-gray-50,.bg-slate-900,.bg-slate-950,.bg-black\/20,.bg-black\/25,.bg-black\/28,.bg-white\/\[0\.025\],.bg-white\/\[0\.04\],.bg-white\/\[0\.05\]) {
+  background: var(--home-card) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+}
+.emd-home-page :is(.border-gray-200,.border-slate-200,.border-slate-100,.border-white\/10) { border-color: var(--home-border) !important; }
+.emd-home-page :is(.text-slate-950,.text-slate-900,.text-slate-800,.text-gray-900,.text-gray-800,.text-gray-700) { color: var(--home-text) !important; }
+.emd-home-page :is(.text-gray-600,.text-gray-500,.text-slate-600,.text-slate-500,.text-white\/40,.text-white\/45,.text-white\/55,.text-white\/58) { color: var(--home-muted) !important; }
+.emd-home-page .emd-home-hero { min-height: 0 !important; border-radius: var(--home-radius) !important; overflow: hidden; }
+.emd-home-page .emd-home-hero > div:first-child { opacity: .20; background-position: right center; }
+.emd-home-page .emd-home-hero > div:nth-child(2) { background: linear-gradient(90deg,#1c2c43 5%,rgba(28,44,67,.93) 55%,rgba(28,44,67,.75)) !important; }
+.emd-home-page .emd-home-hero > div:nth-child(3),
+.emd-home-page .emd-home-hero > div:nth-child(4),
+.emd-home-page .emd-home-hero > div:nth-child(5),
+.emd-home-page .emd-home-hero > div:nth-child(6) { display: none !important; }
+.emd-home-page .emd-home-hero > div:last-child { min-height: 0 !important; padding: clamp(20px, 4vw, 42px); gap: 38px; }
+.emd-home-page .emd-home-hero h1 { font-size: clamp(2.15rem, 4.2vw, 4.1rem); font-weight: 800; letter-spacing: -.05em; line-height: 1.03; text-transform: none; }
+.emd-home-page .emd-home-hero h1 span { background: none !important; -webkit-text-fill-color: var(--home-text) !important; color: var(--home-text) !important; }
+.emd-home-page .emd-home-stat-card { border-radius: 16px !important; min-width: 0; padding: 16px !important; }
+.emd-home-page .emd-home-stat-card .text-2xl { font-size: 1.85rem; }
+.emd-home-page :is(button,a[role="button"]) { font-family: inherit; }
+.emd-home-page :is(.emd-home-primary-action,.emd-home-secondary-action) {
+  min-height: 50px !important; border-radius: 13px !important;
+  background: var(--home-card-raised) !important; border: 1px solid var(--home-border) !important;
+  backdrop-filter: none !important; box-shadow: none !important;
+  font-size: 15px; font-weight: 700;
+}
+.emd-home-page .emd-home-primary-action { background: #bd743a !important; border-color: #dc934f !important; color: #fff !important; }
+.emd-home-page .emd-home-primary-action > span:first-child { display: none !important; }
+.emd-home-page button:focus-visible,.emd-home-page a:focus-visible { outline: 3px solid var(--home-accent); outline-offset: 3px; }
+/* Karten / Aufzählungen: konsistente Form auch bei direkt gesetzten Tailwind-Klassen. */
+.emd-home-page :is(.rounded-3xl,.rounded-\[26px\],.rounded-\[28px\],.rounded-\[22px\]) { border-radius: var(--home-radius); }
+.emd-home-page .backdrop-blur-xl,.emd-home-page .backdrop-blur-2xl { backdrop-filter: none !important; }
+@media (max-width: 639px) {
+  .emd-home-page { font-size: 16px !important; }
+  .emd-home-page > section { padding-left: 16px !important; padding-right: 16px !important; }
+  .emd-home-page .emd-home-hero > div:last-child { padding: 22px 18px !important; gap: 24px; }
+  .emd-home-page .emd-home-hero h1 { font-size: clamp(2rem, 9vw, 2.6rem); }
+  .emd-home-page .emd-home-hero p { font-size: 16px !important; line-height: 1.55; }
+  .emd-home-page .emd-home-hero .grid.grid-cols-3 { gap: 8px; }
+  .emd-home-page .emd-home-stat-card { padding: 12px 9px !important; }
+  .emd-home-page .emd-home-stat-card .uppercase { font-size: 11px !important; letter-spacing: 0 !important; overflow-wrap: anywhere; }
+  .emd-home-page .emd-home-hero :is(.emd-home-primary-action,.emd-home-secondary-action) { width: 100%; min-height: 52px !important; }
+  .emd-home-page :is(button,a[role="button"]) { min-height: 44px; }
+}

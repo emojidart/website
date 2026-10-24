@@ -18,7 +18,7 @@ export function InterneTurnierAnmeldekarte({
   return (
     <Link
       href={`/internal-events/${event.id}`}
-      className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md emd-saas-card"
     >
       <div className="grid h-full sm:grid-cols-[240px_1fr]">
         <div className="relative overflow-hidden bg-black">
@@ -36,24 +36,24 @@ export function InterneTurnierAnmeldekarte({
             </div>
           )}
 
-          <div className="absolute left-3 top-3 z-10 rounded-full bg-orange-600 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+          <div className="absolute left-3 top-3 z-10 rounded-full bg-orange-600 px-3 py-1 text-sm font-semibold uppercase tracking-wide text-white emd-saas-card emd-saas-copy emd-saas-button emd-saas-tag">
             Anmeldung offen
           </div>
         </div>
 
         <div className="relative z-10 flex min-w-0 flex-col justify-between bg-white p-5">
           <div>
-            <div className="text-xl font-black leading-tight text-slate-950">
+            <div className="text-xl font-semibold leading-tight text-slate-950 emd-saas-heading">
               {event.title}
             </div>
 
             {event.subtitle ? (
-              <div className="mt-1 text-sm font-semibold text-slate-500">
+              <div className="mt-1 text-sm font-semibold text-slate-500 emd-saas-copy">
                 {event.subtitle}
               </div>
             ) : null}
 
-            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-slate-500">
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-slate-500 emd-saas-copy">
               <span className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 text-orange-600" />
                 {formatInternalEventDateRange(
@@ -89,7 +89,7 @@ export function InterneTurnierAnmeldekarte({
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div>
                     <div
-                      className={`text-[10px] font-black uppercase tracking-widest ${
+                      className={`text-sm font-semibold uppercase tracking-widest ${
                         event.draw_mode === "onsite"
                           ? "text-amber-700"
                           : "text-sky-700"
@@ -98,13 +98,13 @@ export function InterneTurnierAnmeldekarte({
                       Auslosung
                     </div>
 
-                    <div className="mt-1 text-sm font-black text-slate-950">
+                    <div className="mt-1 text-sm font-semibold text-slate-950 emd-saas-copy">
                       {event.draw_datetime
                         ? formatInternalEventDrawDateTime(event.draw_datetime)
                         : "Termin folgt"}
                     </div>
 
-                    <div className="mt-0.5 text-xs font-bold text-slate-600">
+                    <div className="mt-0.5 text-xs font-bold text-slate-600 emd-saas-copy">
                       {event.draw_mode === "onsite" ? "Live vor Ort" : "Online"}
                       {event.draw_mode === "onsite" &&
                       event.draw_attendance_required
@@ -114,11 +114,11 @@ export function InterneTurnierAnmeldekarte({
                   </div>
 
                   <div className="border-t border-black/10 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-orange-700">
+                    <div className="text-sm font-semibold uppercase tracking-widest text-orange-700 emd-saas-copy emd-saas-tag">
                       Turnier
                     </div>
 
-                    <div className="mt-1 text-sm font-black text-slate-950">
+                    <div className="mt-1 text-sm font-semibold text-slate-950 emd-saas-copy">
                       {formatInternalEventDateRange(
                         event.event_date,
                         event.end_date,
@@ -126,7 +126,7 @@ export function InterneTurnierAnmeldekarte({
                       )}
                     </div>
 
-                    <div className="mt-0.5 text-xs font-bold text-slate-600">
+                    <div className="mt-0.5 text-xs font-bold text-slate-600 emd-saas-copy">
                       {event.start_time
                         ? `Beginn ${event.start_time.slice(0, 5)} Uhr`
                         : "Spieltermine laut Spielplan"}
@@ -138,11 +138,11 @@ export function InterneTurnierAnmeldekarte({
           </div>
 
           <div className="mt-5 flex items-center justify-between gap-3">
-            <span className="rounded-full bg-orange-50 px-3 py-1.5 text-[11px] font-black text-orange-700">
+            <span className="rounded-full bg-orange-50 px-3 py-1.5 text-sm font-semibold text-orange-700 emd-saas-card emd-saas-copy emd-saas-tag">
               Paket Interne Turniere
             </span>
 
-            <span className="flex items-center gap-1.5 text-sm font-black text-orange-700">
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-orange-700 emd-saas-copy">
               Zur Anmeldung
               <ArrowRight className="h-4 w-4" />
             </span>
