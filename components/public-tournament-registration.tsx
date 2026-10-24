@@ -252,6 +252,14 @@ export function PublicTournamentRegistration({ eventId }: Props) {
         ? info.capacity?.women
         : null
 
+  const reservedTotal = splitByGender
+    ? (info.capacity?.men.reserved || 0) + (info.capacity?.women.reserved || 0)
+    : 0
+
+  const occupiedOrReservedTotal = splitByGender
+    ? info.participantCount + reservedTotal
+    : info.participantCount
+
   const full = splitByGender
     ? Boolean(selectedCapacity?.onlineFull)
     : Boolean(
@@ -283,10 +291,22 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
             <div className="shrink-0 rounded-2xl border border-white/[0.10] bg-white/[0.06] px-3 py-2 text-center">
               <div className="text-xl font-black text-white">
-                {info.participantCount}
+                {occupiedOrReservedTotal}
                 {info.event.max_participants ? ` / ${info.event.max_participants}` : ""}
               </div>
-              <div className="text-[11px] font-bold text-white/55">angemeldet</div>
+
+              {splitByGender ? (
+                <>
+                  <div className="text-[11px] font-bold text-white/55">
+                    belegt / reserviert
+                  </div>
+                  <div className="mt-1 text-[10px] font-semibold text-white/40">
+                    {info.participantCount} angemeldet · {reservedTotal} reserviert
+                  </div>
+                </>
+              ) : (
+                <div className="text-[11px] font-bold text-white/55">angemeldet</div>
+              )}
             </div>
           </div>
 
