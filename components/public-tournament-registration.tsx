@@ -339,15 +339,13 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                       ) : null}
                     </div>
                     <div className="mt-3 text-2xl font-black text-white">
-                      {cap?.registered ?? 0} / {cap?.max ?? 0}
+                      {(cap?.registered ?? 0) + (cap?.reserved ?? 0)} / {cap?.max ?? 0}
                     </div>
-                    <div className="mt-2 grid gap-1 text-xs font-bold">
-                      <div className="text-emerald-300">
-                        🟢 {cap?.onlineFree ?? 0} Online-Plätze frei
-                      </div>
-                      <div className="text-white/55">
-                        🔒 {cap?.reserved ?? 0} Plätze reserviert
-                      </div>
+                    <div className="mt-1 text-xs font-semibold text-white/45">
+                      {cap?.registered ?? 0} angemeldet · {cap?.reserved ?? 0} reserviert
+                    </div>
+                    <div className="mt-2 text-xs font-bold text-emerald-300">
+                      🟢 {cap?.onlineFree ?? 0} Online-Plätze frei
                     </div>
                   </button>
                 )
