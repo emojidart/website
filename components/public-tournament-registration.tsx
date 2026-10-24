@@ -353,7 +353,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                 )
               })}
               <p className="sm:col-span-2 text-xs font-semibold leading-relaxed text-white/45">
-                Für angekündigte Teilnehmer des Veranstaltungsortes ist vorübergehend ein begrenztes Platzkontingent reserviert. Nicht benötigte Plätze werden wieder freigegeben.
+                Ein begrenztes Kontingent ist für bereits im Lokal vorgemerkte Teilnehmer reserviert. Nicht in Anspruch genommene Plätze können kurzfristig wieder als Restplätze verfügbar werden.
               </p>
             </div>
           ) : null}
