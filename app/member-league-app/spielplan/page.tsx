@@ -42,6 +42,7 @@ import {
   RotateCcw,
   Phone,
   ChevronDown,
+  ChevronRight,
 } from "lucide-react"
 import {
   Dialog,
@@ -2068,12 +2069,15 @@ const loadSportdartsSyncPreview = async (match: Match, selectedGameId?: string) 
 
     const blocked =
       !hasOfficialScore ||
+      !detail.officialChecksComplete ||
       !hasUsedPlayers ||
       !hasCompleteOfficialChecks ||
       previewPlayers.some((player) => Boolean(player.issue))
 
     const blockReason = !hasOfficialScore
       ? "Sportdarts enthält noch keinen vollständigen offiziellen Endstand."
+      : !detail.officialChecksComplete
+        ? "Noch keine vollständigen offiziellen SportDarts-Checks vorhanden. Eine Übernahme ist derzeit gesperrt."
       : !hasUsedPlayers
         ? "Sportdarts enthält derzeit keine auswertbaren eingesetzten Spieler."
         : !hasCompleteOfficialChecks

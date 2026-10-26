@@ -435,17 +435,18 @@ export async function GET(
           legsWon: player.checksMade ?? 0,
           legsLost: Math.max(0, (player.checksTotal ?? 0) - (player.checksMade ?? 0)),
         }))
-    // Bei unbekannten Zahlen NICHT auf Null ausweichen oder Werte aus Blöcken raten.
-    // Auch Spieler mit 0 / 0 dürfen für die Vorschau sichtbar bleiben.
-    if (!homeLineup || !awayLineup || !homeLineup.players.length || !awayLineup.players.length ||
-        [...homeLineup.players, ...awayLineup.players].some((player) =>
-          !player.playerNumber || player.checksMade === null || player.checksTotal === null
-        )) {
-      return NextResponse.json(
-        { error: "Die offiziellen SportDarts-Checks oder Spielernummern sind unvollständig. Keine Übernahme möglich." },
-        { status: 502 },
+    // Unvollständige Ergebnisse sind bei noch nicht gespielten Matches normal.
+    // Den Spielbericht trotzdem für die Vorschau liefern; den Import separat sperren.
+    // 0 / 0 ist für nicht eingesetzte Spieler ein gültiger Tabellenwert.
+    const officialChecksComplete = Boolean(
+      homeLineup && awayLineup && homeLineup.players.length && awayLineup.players.length &&
+      [...homeLineup.players, ...awayLineup.players].every((player) =>
+        Boolean(player.playerNumber) &&
+        player.checksMade !== null && player.checksTotal !== null &&
+        player.checksMade >= 0 && player.checksTotal >= 0 &&
+        player.checksMade <= player.checksTotal
       )
-    }
+    )
     const score = parseScoreSummary(html)
 
     const homeTeam =
@@ -455,6 +456,7 @@ export async function GET(
 
     return NextResponse.json({
       gameId,
+      officialChecksComplete,
       homeTeam,
       awayTeam,
       homeScore: score.homeScore,
