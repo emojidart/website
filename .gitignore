@@ -28,6 +28,10 @@ next-env.d.ts
 
 # Secrets
 lib/*firebase-adminsdk*.json
+*firebase-adminsdk*.json
+*service-account*.json
+lib.zip
+**/lib.zip
 *.pem
 *.p12
 *.key
