@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const SPORTDARTS_RESULTS_URL = "https://www.sportdartsliga.at/ligasystem/games/results"
+const SPORTDARTS_RESULTS_URL = "https://www.sportdartsliga.at/ligasystem/results"
 const SPORTDARTS_GAME_URL = "https://www.sportdartsliga.at/ligasystem/games/view"
 
 function adminClient() {
@@ -238,63 +238,66 @@ function aggregateSingles(plays: ReturnType<typeof parseGame>["plays"], side: "h
   return Array.from(map.values())
 }
 
-function aggregateOfficialChecks(
-  players: ReturnType<typeof parseGame>["homePlayers"],
-  fallback: ReturnType<typeof aggregateSingles>,
-) {
-  const fallbackByNumber = new Map(fallback.map((row) => [row.playerNumber, row]))
-
+function aggregateOfficialChecks(players: ReturnType<typeof parseGame>["homePlayers"]) {
+  // Ausschließlich die offizielle Checks-Tabelle ist für persönliche Legs maßgeblich.
+  // Weder Team- noch Einzelblöcke dürfen fehlende Zahlen ersetzen.
   return players.flatMap((player) => {
-    if (!player.playerNumber) return []
-
-    const fallbackRow = fallbackByNumber.get(player.playerNumber)
-
-    // Primärquelle: die offizielle Checks-Tabelle oben auf der Sportdarts-Spielseite.
-    // Sie ist stabiler als die unterschiedlich benannten Spielblöcke.
-    if (player.checksTotal != null && player.checksTotal > 0) {
-      const won = player.checksMade || 0
-      return [{
-        playerNumber: player.playerNumber,
-        legsWon: won,
-        legsLost: Math.max(0, player.checksTotal - won),
-      }]
-    }
-
-    // Blockdaten nur noch als Fallback, falls Sportdarts keine Checks ausweist.
-    return fallbackRow ? [fallbackRow] : []
+    if (!player.playerNumber || player.checksMade == null || player.checksTotal == null) return []
+    if (!Number.isInteger(player.checksMade) || !Number.isInteger(player.checksTotal)) return []
+    if (player.checksMade < 0 || player.checksTotal < 0 || player.checksMade > player.checksTotal) return []
+    if (player.checksTotal === 0) return [] // Aufgestellt, aber nicht eingesetzt.
+    return [{
+      playerNumber: player.playerNumber,
+      legsWon: player.checksMade,
+      legsLost: player.checksTotal - player.checksMade,
+    }]
   })
 }
 
-async function fetchOfficialResults(seasonId: number, divisionId: number) {
-  const form = new URLSearchParams()
-  form.set("mySeasonsSelec", String(seasonId))
-  form.set("myDivisionsSelec", String(divisionId))
+const SPORTDARTS_HEADERS = {
+  Accept: "text/html,application/xhtml+xml",
+  "User-Agent": "Mozilla/5.0 (compatible; EMDLeagueSync/1.0)",
+}
 
-  const response = await fetch(SPORTDARTS_RESULTS_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": "Mozilla/5.0 EMD-League/1.0",
-    },
-    body: form.toString(),
+async function fetchOfficialResults(seasonId: number, divisionId: number) {
+  const url = new URL(SPORTDARTS_RESULTS_URL)
+  url.searchParams.set("mySeasonsSelec", String(seasonId))
+  url.searchParams.set("myDivisionsSelec", String(divisionId))
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: SPORTDARTS_HEADERS,
     cache: "no-store",
   })
-
-  if (!response.ok) throw new Error(`Sportdarts antwortet mit HTTP ${response.status}.`)
-  return parseResults(await response.text())
+  if (!response.ok) throw new Error(`Sportdarts-Ergebnisse antworten mit HTTP ${response.status}.`)
+  const html = await response.text()
+  // Falsche Division bzw. eine überraschende Login-/Fehlerseite darf nie als
+  // gültige (leere) Ergebnismenge interpretiert werden.
+  const selectedSeason = html.match(/<option\b(?=[^>]*\bvalue=["'](\d+)["'])(?=[^>]*\bselected\b)[^>]*>/i)
+  const selectedDivision = html.match(/<select\b[^>]*\bid=["']myDivisionsSelec["'][^>]*>([\s\S]*?)<\/select>/i)?.[1]
+    ?.match(/<option\b(?=[^>]*\bvalue=["'](\d+)["'])(?=[^>]*\bselected\b)[^>]*>/i)
+  if (!html.includes("<!-- Games Table -->") ||
+      (selectedSeason && Number(selectedSeason[1]) !== seasonId) ||
+      (selectedDivision && Number(selectedDivision[1]) !== divisionId)) {
+    throw new Error("Sportdarts liefert keine bestätigte Ergebnisliste für die gewählte Division.")
+  }
+  const games = parseResults(html)
+  if (games.length === 0) throw new Error("Sportdarts-Ergebnisliste ist leer oder hat ein unbekanntes Format.")
+  return games
 }
 
 async function fetchOfficialGame(gameId: string) {
   const response = await fetch(`${SPORTDARTS_GAME_URL}/${gameId}`, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 EMD-League/1.0",
-      Accept: "text/html,application/xhtml+xml",
-    },
+    method: "GET",
+    headers: SPORTDARTS_HEADERS,
     cache: "no-store",
   })
-
   if (!response.ok) throw new Error(`Sportdarts-Spiel antwortet mit HTTP ${response.status}.`)
-  return parseGame(await response.text())
+  const html = await response.text()
+  if (!/Punktestand:/i.test(html) || !/Checks/i.test(html)) {
+    throw new Error("Sportdarts-Spielbericht hat ein unerwartetes Format.")
+  }
+  return parseGame(html)
 }
 
 async function addReview(
@@ -415,9 +418,7 @@ export async function POST(request: Request) {
     if (assignmentError) throw assignmentError
 
     const assignment =
-      (assignments || []).find((row: any) => row.season_id === match.season_id) ||
-      (assignments || [])[0] ||
-      null
+      (assignments || []).find((row: any) => row.season_id === match.season_id) || null
 
     if (!assignment?.sportdarts_season_id || !assignment?.sportdarts_division_id) {
       return NextResponse.json({ error: "Keine Sportdarts-Division für dieses Team hinterlegt." }, { status: 409 })
@@ -574,17 +575,9 @@ export async function POST(request: Request) {
     // No fallback to eligible team players who are not in the confirmed lineup.
     // Late substitutes require a corrected, confirmed lineup before importing.
 
-    const blockUsed = usedNumbers(detail.plays, ownSide)
-    const singlesFallback = aggregateSingles(detail.plays, ownSide)
     const officialPlayers = ownSide === "home" ? detail.homePlayers : detail.awayPlayers
-    const officialStats = aggregateOfficialChecks(officialPlayers, singlesFallback)
-
-    // Entscheidend ist die Checks-Tabelle. Nur wenn dort gar keine verwertbaren
-    // Spieler vorhanden sind, greifen wir auf die Blockdaten zurück.
-    const used = officialStats.length > 0
-      ? Array.from(new Set(officialStats.map((row) => row.playerNumber)))
-      : blockUsed
-
+    const officialStats = aggregateOfficialChecks(officialPlayers)
+    const used = officialStats.map((row) => row.playerNumber)
     const legsByNumber = new Map(officialStats.map((row) => [row.playerNumber, row]))
 
     const issues: Array<Record<string, unknown>> = []
@@ -628,6 +621,31 @@ export async function POST(request: Request) {
         }
         requestedExtrasByPlayer.set(playerId, clean)
       }
+    }
+
+    // Sicherheitsstopp: Keine Teilübernahme bei ungültigen/fehlenden offiziellen
+    // Checks und keine doppelte Spielernummer. 0/0 bleibt erlaubt (nicht eingesetzt).
+    if (!officialPlayers.length || !used.length) {
+      issues.push({ reason: "Keine verwertbaren offiziellen Sportdarts-Checks vorhanden." })
+    }
+    const seenNumbers = new Set<string>()
+    for (const player of officialPlayers) {
+      const total = player.checksTotal
+      const made = player.checksMade
+      if (!player.playerNumber || total == null || made == null ||
+          !Number.isInteger(total) || !Number.isInteger(made) ||
+          total < 0 || made < 0 || made > total || seenNumbers.has(player.playerNumber)) {
+        issues.push({ player: player.playerName, reason: "Ungültige oder doppelte offizielle Sportdarts-Spielerstatistik." })
+      }
+      if (player.playerNumber) seenNumbers.add(player.playerNumber)
+    }
+    if (!Number.isFinite(detail.homeScore) || !Number.isFinite(detail.awayScore) ||
+        detail.homeScore !== officialResult.homeScore || detail.awayScore !== officialResult.awayScore) {
+      issues.push({ reason: "Der Endstand im Sportdarts-Spielbericht stimmt nicht mit der Ergebnisliste überein." })
+    }
+    if (normalizeName(detail.homeTeam) !== normalizeName(officialResult.homeTeam) ||
+        normalizeName(detail.awayTeam) !== normalizeName(officialResult.awayTeam)) {
+      issues.push({ reason: "Die Mannschaftsnamen im Sportdarts-Spielbericht stimmen nicht mit der Ergebnisliste überein." })
     }
 
     if (!lineupConfirmed) {

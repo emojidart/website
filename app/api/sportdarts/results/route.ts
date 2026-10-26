@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server"
 
-const SPORTDARTS_RESULTS_URL = "https://www.sportdartsliga.at/ligasystem/games/results"
+const SPORTDARTS_RESULTS_URL = "https://www.sportdartsliga.at/ligasystem/results"
+const SPORTDARTS_LEGACY_RESULTS_URL = "https://www.sportdartsliga.at/ligasystem/games/results"
+const BROWSER_HEADERS = {
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language": "de-AT,de;q=0.9,en;q=0.7",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+}
+
 
 function decodeHtml(value: string) {
   return value
@@ -30,10 +37,10 @@ function parseNullableScore(value: string) {
 }
 
 function parseGames(html: string) {
+  // SportDarts verwendet je nach Version eine kommentierte oder eine normale Tabelle.
   const tableMatch = html.match(/<!--\s*Games Table\s*-->([\s\S]*?)<\/table>/i)
-  if (!tableMatch) return []
-
-  const rows = Array.from(tableMatch[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi))
+  const section = tableMatch?.[1] ?? html
+  const rows = Array.from(section.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi))
   const games: Array<{
     gameId: string
     weekNumber: number
@@ -102,29 +109,46 @@ export async function POST(request: Request) {
     form.set("mySeasonsSelec", String(seasonId))
     form.set("myDivisionsSelec", String(divisionId))
 
-    const response = await fetch(SPORTDARTS_RESULTS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Mozilla/5.0 EMD-League/1.0",
-      },
-      body: form.toString(),
-      cache: "no-store",
-    })
+    // Zuerst die reguläre öffentliche Ergebnisansicht (wie im Browser).
+    // Die alte POST-Adresse bleibt nur ein Fallback, falls sie noch funktioniert.
+    const query = new URLSearchParams(form.toString())
+    const attempts: Array<() => Promise<Response>> = [
+      () => fetch(`${SPORTDARTS_RESULTS_URL}?${query.toString()}`, {
+        method: "GET", headers: BROWSER_HEADERS, cache: "no-store",
+      }),
+      () => fetch(SPORTDARTS_LEGACY_RESULTS_URL, {
+        method: "POST",
+        headers: { ...BROWSER_HEADERS, "Content-Type": "application/x-www-form-urlencoded" },
+        body: form.toString(), cache: "no-store",
+      }),
+    ]
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: `Sportdarts antwortet mit HTTP ${response.status}.` },
-        { status: 502 },
-      )
+    const issues: string[] = []
+    for (let i = 0; i < attempts.length; i++) {
+      let response: Response
+      try { response = await attempts[i]() } catch {
+        issues.push(`Quelle ${i + 1}: Netzwerkfehler`)
+        continue
+      }
+      if (!response.ok) {
+        issues.push(`Quelle ${i + 1}: HTTP ${response.status}`)
+        continue
+      }
+      const html = await response.text()
+      const games = parseGames(html)
+      // Nie einen erfolgreichen HTTP-Status als Erfolg werten, wenn die Seite
+      // kein einziges Spiel enthält (z.B. Login-, Blockier- oder Standardseite).
+      if (!games.length) {
+        issues.push(`Quelle ${i + 1}: keine lesbaren Spiele – HTML möglicherweise geändert`)
+        continue
+      }
+      return NextResponse.json({ seasonId, divisionId, games })
     }
 
-    const html = await response.text()
-    return NextResponse.json({
-      seasonId,
-      divisionId,
-      games: parseGames(html),
-    })
+    return NextResponse.json(
+      { error: `SportDarts-Ergebnisse nicht lesbar: ${issues.join("; ")}. Keine Daten gespeichert.` },
+      { status: 502 },
+    )
   } catch (error) {
     console.error("Sportdarts results route failed:", error)
     return NextResponse.json(

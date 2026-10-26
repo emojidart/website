@@ -62,14 +62,16 @@ function splitPlayerLabel(value: string) {
 }
 
 function parseChecks(value: string) {
-  // Sportdarts kann 0 Checks als "/ 3" ausgeben.
-  const match = String(value || "").match(/(\d*)\s*\/\s*(\d+)/)
-  const total = match ? Number(match[2]) : null
-  const made = match ? (match[1] ? Number(match[1]) : 0) : null
-  return {
-    checksMade: made,
-    checksTotal: total,
+  // Die offizielle SportDarts-Tabelle ist die einzige Quelle der Spieler-Checks.
+  // Leere Angaben sind unbekannt, nicht 0. Ein echtes "0 / 0" ist gültig.
+  const match = String(value || "").trim().match(/^(\d*)\s*\/\s*(\d+)$/)
+  if (!match) return { checksMade: null, checksTotal: null }
+  const made = match[1] ? Number(match[1]) : 0
+  const total = Number(match[2])
+  if (!Number.isSafeInteger(made) || !Number.isSafeInteger(total) || made > total) {
+    return { checksMade: null, checksTotal: null }
   }
+  return { checksMade: made, checksTotal: total }
 }
 
 function parseLineupTable(rows: string[][]) {
@@ -236,31 +238,39 @@ function formatLivePlayerCell(raw: string) {
 }
 
 function parseLiveDisplayBlocks(html: string) {
-  // Group by the actual HTML sections, not by sport mode, division or block name.
-  // Sportdarts supports both named blocks and headings without any block number.
-  const headings = Array.from(html.matchAll(/<h5\b[^>]*>\s*<b\b[^>]*>([\s\S]*?)<\/b>\s*<\/h5>/gi))
-    .map(m => ({ at: m.index ?? 0, title: decodeHtml(m[1]).trim() }))
+  // Public match reports may contain plain HTML tables instead of GameSelector forms.
+  // Parse the visible result blocks directly; this is display-only and does not
+  // create player identities, wins, or statistics for the official sync.
   const groups: Array<{ title: string; matches: Array<{ leftPlayer: string; leftScore: string; rightScore: string; rightPlayer: string }> }> = []
-  let lastHeadingPosition = -1
-  for (const match of html.matchAll(/<form\b[^>]*id=["']Game(\d+)Selector["'][^>]*>[\s\S]*?<\/form>/gi)) {
-    const position = match.index ?? 0
-    const heading = headings.filter(h => h.at <= position).at(-1)
-    if (!heading) continue
-    const cells = Array.from(match[0].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)).map(c => c[1])
-    if (cells.length < 4 || !decodeHtml(cells[0]) || !decodeHtml(cells[cells.length - 1])) continue
-    if (heading.at !== lastHeadingPosition) {
-      groups.push({ title: `Abschnitt ${groups.length + 1}`, matches: [] })
-      lastHeadingPosition = heading.at
+  const headingMatches = Array.from(html.matchAll(/<h5\b[^>]*>\s*<b\b[^>]*>([\s\S]*?)<\/b>\s*<\/h5>/gi))
+  for (let i = 0; i < headingMatches.length; i++) {
+    const heading = headingMatches[i]
+    const title = decodeHtml(heading[1]).trim()
+    if (!/^(?:Block\s*\d+|Teamblock|.*?\s+-\s+Block\s*\d+|Block\s*\d+\s+-\s+.*)$/i.test(title)) continue
+    const begin = (heading.index ?? 0) + heading[0].length
+    const end = i + 1 < headingMatches.length ? headingMatches[i + 1].index ?? html.length : html.length
+    const section = html.slice(begin, end)
+    const table = section.match(/<table\b[^>]*>([\s\S]*?)<\/table>/i)?.[1]
+    if (!table) continue
+    const matches: Array<{ leftPlayer: string; leftScore: string; rightScore: string; rightPlayer: string }> = []
+    for (const row of table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
+      const cells = Array.from(row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)).map(m => m[1])
+      if (cells.length < 4) continue
+      const leftPlayer = formatLivePlayerCell(cells[0])
+      const rightPlayer = formatLivePlayerCell(cells[cells.length - 1])
+      const leftScore = decodeHtml(cells[1])
+      const rightScore = decodeHtml(cells[2])
+      if (!leftPlayer || !rightPlayer) continue
+      matches.push({
+        leftPlayer,
+        leftScore: /^\d+$/.test(leftScore) ? leftScore : "-",
+        rightScore: /^\d+$/.test(rightScore) ? rightScore : "-",
+        rightPlayer,
+      })
     }
-    const score = (cell: string) => decodeHtml(cell).match(/^\d+/)?.[0] ?? "-"
-    groups[groups.length - 1].matches.push({
-      leftPlayer: formatLivePlayerCell(cells[0]),
-      leftScore: score(cells[1]),
-      rightScore: score(cells[2]),
-      rightPlayer: formatLivePlayerCell(cells[cells.length - 1]),
-    })
+    if (matches.length) groups.push({ title, matches })
   }
-  return groups.filter(group => group.matches.length > 0)
+  return groups
 }
 
 function blocksFromStructuredPlays(plays: StructuredPlay[]) {
@@ -353,8 +363,9 @@ export async function GET(
     const response = await fetch(`${BASE_URL}/ligasystem/games/view/${gameId}`, {
       method: "GET",
       headers: {
-        "User-Agent": "Mozilla/5.0 EMD-League/1.0",
-        Accept: "text/html,application/xhtml+xml",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "de-AT,de;q=0.9,en;q=0.7",
       },
       cache: "no-store",
     })
@@ -367,6 +378,9 @@ export async function GET(
     }
 
     const html = await response.text()
+    if (!/Punktestand|Checks|Game\d+Selector/i.test(html)) {
+      return NextResponse.json({ error: "SportDarts liefert keinen lesbaren Spielbericht. Keine Daten gespeichert." }, { status: 502 })
+    }
     const tables = findTables(html)
 
     const lineupTables = tables
@@ -421,6 +435,17 @@ export async function GET(
           legsWon: player.checksMade ?? 0,
           legsLost: Math.max(0, (player.checksTotal ?? 0) - (player.checksMade ?? 0)),
         }))
+    // Bei unbekannten Zahlen NICHT auf Null ausweichen oder Werte aus Blöcken raten.
+    // Auch Spieler mit 0 / 0 dürfen für die Vorschau sichtbar bleiben.
+    if (!homeLineup || !awayLineup || !homeLineup.players.length || !awayLineup.players.length ||
+        [...homeLineup.players, ...awayLineup.players].some((player) =>
+          !player.playerNumber || player.checksMade === null || player.checksTotal === null
+        )) {
+      return NextResponse.json(
+        { error: "Die offiziellen SportDarts-Checks oder Spielernummern sind unvollständig. Keine Übernahme möglich." },
+        { status: 502 },
+      )
+    }
     const score = parseScoreSummary(html)
 
     const homeTeam =

@@ -2058,17 +2058,27 @@ const loadSportdartsSyncPreview = async (match: Match, selectedGameId?: string) 
       String(detail.awayScore ?? "").trim() !== ""
 
     const hasUsedPlayers = previewPlayers.length > 0
+    const hasCompleteOfficialChecks = previewPlayers.every((player) =>
+      player.checksMade !== null && player.checksTotal !== null &&
+      Number.isSafeInteger(player.checksMade) && Number.isSafeInteger(player.checksTotal) &&
+      player.checksMade >= 0 && player.checksTotal > 0 && player.checksMade <= player.checksTotal &&
+      player.legsWon === player.checksMade &&
+      player.legsLost === player.checksTotal - player.checksMade
+    )
 
     const blocked =
       !hasOfficialScore ||
       !hasUsedPlayers ||
+      !hasCompleteOfficialChecks ||
       previewPlayers.some((player) => Boolean(player.issue))
 
     const blockReason = !hasOfficialScore
       ? "Sportdarts enthält noch keinen vollständigen offiziellen Endstand."
       : !hasUsedPlayers
         ? "Sportdarts enthält derzeit keine auswertbaren eingesetzten Spieler."
-        : previewPlayers.find((player) => player.issue)?.issue || null
+        : !hasCompleteOfficialChecks
+          ? "Offizielle SportDarts-Checks sind unvollständig oder widersprüchlich. Keine Übernahme möglich."
+          : previewPlayers.find((player) => player.issue)?.issue || null
 
     setSportdartsSyncCandidates([])
     setSportdartsSyncPreview({
