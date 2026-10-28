@@ -408,6 +408,21 @@ export function EventsManagement({ user }: EventsManagementProps) {
     if (error) throw error
   }
 
+  const syncCentralTournament = async (eventId: string) => {
+    if (form.event_type !== "tournament" || !form.publish_in_dach || form.is_emd_organizer === false) return
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    if (authError || !session?.access_token) throw new Error("Anmeldung abgelaufen. Bitte erneut anmelden.")
+    const response = await fetch("/api/admin/sync-central-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ eventId }),
+    })
+    const result = await response.json().catch(() => null)
+    if (!response.ok || !result?.ok) {
+      throw new Error(result?.error || "Die zentrale Turnieranmeldung konnte nicht vorbereitet werden.")
+    }
+  }
+
   const loadDachLinkForEvent = async (eventId: string) => {
     const { data, error } = await supabase
       .from("dach_events")
@@ -698,6 +713,7 @@ const eventData = {
         if (error) throw error
 
         await syncTournamentToDach(editingEventId, eventData)
+        await syncCentralTournament(editingEventId)
         await sendPushToAll({ eventId: editingEventId, action: "updated" })
 
         setFormMessage({
@@ -720,6 +736,7 @@ const eventData = {
         if (!newEventId) throw new Error("Neue Veranstaltungs-ID konnte nicht gelesen werden.")
 
         await syncTournamentToDach(newEventId, eventData)
+        await syncCentralTournament(newEventId)
         await sendPushToAll({ eventId: newEventId, action: "created" })
 
         setFormMessage({

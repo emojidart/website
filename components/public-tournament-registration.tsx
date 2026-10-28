@@ -36,6 +36,40 @@ export function PublicTournamentRegistration({ eventId }: Props) {
   const [success, setSuccess] = useState(false)
   const [creditBalance, setCreditBalance] = useState(0)
   const [paymentMode, setPaymentMode] = useState<"on_site" | "credit">("on_site")
+  const [own, setOwn] = useState<{ registered: boolean; name?: string; canCancel?: boolean } | null>(null)
+  const [ownLoading, setOwnLoading] = useState(true)
+
+  async function loadOwn() {
+    setOwnLoading(true)
+    try {
+      const { data } = await supabase.auth.getSession()
+      if (!data.session?.access_token) { setOwn(null); return }
+      const r = await fetch(`/api/public-tournament-registration/my-registration?eventId=${encodeURIComponent(eventId)}`, {
+        headers: { Authorization: `Bearer ${data.session.access_token}` }, cache: "no-store",
+      })
+      if (r.ok) setOwn(await r.json())
+      else setOwn(null)
+    } finally { setOwnLoading(false) }
+  }
+
+  async function unregister() {
+    if (!window.confirm("Möchtest du dich wirklich von diesem Turnier abmelden?")) return
+    setSaving(true)
+    setMessage("")
+    try {
+      const { data } = await supabase.auth.getSession()
+      if (!data.session?.access_token) throw new Error("Bitte einloggen.")
+      const r = await fetch(`/api/public-tournament-registration/my-registration?eventId=${encodeURIComponent(eventId)}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${data.session.access_token}` },
+      })
+      const body = await r.json().catch(() => null)
+      if (!r.ok) throw new Error(body?.error || "Abmeldung fehlgeschlagen.")
+      setSuccess(true)
+      setMessage("Deine Abmeldung wurde gespeichert.")
+      await Promise.all([load(), loadOwn()])
+    } catch (err) { setSuccess(false); setMessage(err instanceof Error ? err.message : "Abmeldung fehlgeschlagen.") }
+    finally { setSaving(false) }
+  }
 
   async function load() {
     setLoading(true)
@@ -148,6 +182,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
   useEffect(() => {
     void load()
     void prefillFromAccount()
+    void loadOwn()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId])
 
@@ -200,7 +235,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
             : "Du bist angemeldet.",
       )
 
-      await load()
+      await Promise.all([load(), loadOwn()])
       setSaving(false)
       return
     }
@@ -228,7 +263,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
         ? `Du bist angemeldet. Das Startgeld von ${entryFee.toLocaleString("de-AT", { style: "currency", currency: "EUR" })} wird vor Ort bezahlt.`
         : "Du bist angemeldet.",
     )
-    await load()
+    await Promise.all([load(), loadOwn()])
     setSaving(false)
   }
 
@@ -356,7 +391,23 @@ export function PublicTournamentRegistration({ eventId }: Props) {
             </div>
           ) : null}
 
-          {!info.event.registration_enabled || full ? (
+          {own?.registered ? (
+            <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-500/10 p-5">
+              <p className="font-black text-emerald-200">✓ Du bist bereits angemeldet!</p>
+              <p className="mt-1 text-sm text-white/75">{own.name}</p>
+              {own.canCancel ? (
+                <Button type="button" variant="outline" disabled={saving} onClick={unregister}
+                  className="mt-4 border-red-400/40 text-red-300 hover:bg-red-500/10">
+                  {saving ? "Bitte warten…" : "Vom Turnier abmelden"}
+                </Button>
+              ) : (
+                <p className="mt-3 text-xs text-white/60">Für eine Abmeldung bitte die Turnierleitung kontaktieren.</p>
+              )}
+              {message ? <p className="mt-3 text-sm text-white">{message}</p> : null}
+            </div>
+          ) : ownLoading ? (
+            <div className="mt-5 text-sm text-white/60">Anmeldestatus wird geprüft…</div>
+          ) : !info.event.registration_enabled || full ? (
             <div className="mt-5 rounded-2xl border border-white/[0.08] bg-white/[0.05] p-4 text-center font-bold text-white/75">
               {full
                 ? "Das Turnier ist aktuell voll."
