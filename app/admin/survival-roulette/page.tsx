@@ -77,6 +77,7 @@ export default function SurvivalRouletteAdminPage() {
   const [loading, setLoading] = useState(true)
   const [startingTournament, setStartingTournament] = useState(false)
   const [machineCount, setMachineCount] = useState(5)
+  const [roundsPerStage, setRoundsPerStage] = useState(2)
   const [legsToWin, setLegsToWin] = useState<2 | 3 | 4>(2)
   const [draftTournamentId, setDraftTournamentId] = useState<string | null>(null)
   const [isOnline, setIsOnline] = useState(true)
@@ -113,6 +114,7 @@ export default function SurvivalRouletteAdminPage() {
     tournamentName: string
     machineCount: number
     legsToWin: number
+    roundsPerStage: number
     registeredPlayers: SurvivalPlayer[]
     draftTournamentId: string | null
   }>) => {
@@ -121,6 +123,7 @@ export default function SurvivalRouletteAdminPage() {
       tournamentName,
       machineCount,
       legsToWin,
+      roundsPerStage,
       registeredPlayers,
       draftTournamentId,
       savedAt: new Date().toISOString(),
@@ -145,7 +148,7 @@ export default function SurvivalRouletteAdminPage() {
     if (typeof window === "undefined") return
     saveLocalBackup()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tournamentName, machineCount, legsToWin, registeredPlayers, draftTournamentId])
+  }, [tournamentName, machineCount, legsToWin, roundsPerStage, registeredPlayers, draftTournamentId])
 
   useEffect(() => {
     if (!user) return
@@ -161,6 +164,7 @@ export default function SurvivalRouletteAdminPage() {
             const parsed = JSON.parse(cached)
             if (parsed?.tournamentName) setTournamentName(String(parsed.tournamentName))
             if (Number(parsed?.machineCount) >= 1) setMachineCount(Number(parsed.machineCount))
+            if (Number.isInteger(parsed?.roundsPerStage) && parsed.roundsPerStage >= 2 && parsed.roundsPerStage <= 8) setRoundsPerStage(parsed.roundsPerStage)
             if ([2, 3, 4].includes(Number(parsed?.legsToWin))) setLegsToWin(Number(parsed.legsToWin) as 2 | 3 | 4)
             if (Array.isArray(parsed?.registeredPlayers)) {
               setRegisteredPlayers(parsed.registeredPlayers)
@@ -246,7 +250,7 @@ export default function SurvivalRouletteAdminPage() {
               status: "draft",
               current_stage: 1,
               machine_count: machineCount,
-              rounds_per_stage: 2,
+              rounds_per_stage: roundsPerStage,
               win_points: 3,
               close_loss_points: 1,
               loss_points: 0,
@@ -595,7 +599,7 @@ export default function SurvivalRouletteAdminPage() {
           status: "draft",
           current_stage: 1,
           machine_count: machineCount,
-          rounds_per_stage: 2,
+          rounds_per_stage: roundsPerStage,
           win_points: 3,
           close_loss_points: 1,
           loss_points: 0,
@@ -621,7 +625,7 @@ export default function SurvivalRouletteAdminPage() {
         stage_no: index + 1,
         starting_players: startingPlayers,
         qualifying_players: route[index + 1] ?? 4,
-        rounds_planned: startingPlayers === 4 ? 3 : 2,
+        rounds_planned: startingPlayers === 4 ? Math.max(3, roundsPerStage) : roundsPerStage,
         status: index === 0 ? "active" : "pending",
       }))
 
@@ -798,10 +802,15 @@ export default function SurvivalRouletteAdminPage() {
               <div className="grid gap-2 sm:grid-cols-3">
                 <div className="rounded-2xl border border-orange-500/35 bg-orange-500/10 p-4">
                   <div className="text-sm font-black text-white">
-                    2 Runden
+                    {roundsPerStage} Runden
                   </div>
+                  <select aria-label="Runden je Stage" value={roundsPerStage} disabled={startingTournament}
+                    onChange={event => setRoundsPerStage(Number(event.target.value))}
+                    className="mt-2 w-full rounded-lg border border-white/20 bg-[#11151e] p-2 text-white">
+                    {[2,3,4,5,6,7,8].map(value => <option key={value} value={value}>{value} Runden</option>)}
+                  </select>
                   <div className="mt-1 text-xs font-medium leading-4 text-slate-400">
-                    Mindestens 2 Spiele pro Stage vor dem Cut
+                    Runden pro Stage vor dem Cut
                   </div>
                 </div>
 

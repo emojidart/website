@@ -134,6 +134,7 @@ export function SurvivalSingleMartin({request,onHandled,onEnabledChange}:{reques
     <div className="rounded-xl border border-orange-500/20 bg-[#15100d] px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
       <div><p className="text-sm font-extrabold text-orange-200">🎤 EMD NERO · Einzel Roulette</p><p className="text-xs text-zinc-400 mt-1">Ansagen bei Automatenzuweisung automatisch, wenn NERO eingeschaltet ist.</p></div>
       <label className="text-sm font-bold flex items-center gap-2"><input type="checkbox" checked={enabled} disabled={busy} onChange={e=>{setEnabled(e.target.checked);onEnabledChange?.(e.target.checked);localStorage.setItem("emd_survival_martin_enabled",String(e.target.checked))}}/>NERO {enabled?"EIN":"AUS"}</label>
+      <select aria-label="Turniersprecher" value={speaker} onChange={e=>{const v=e.target.value==="volt"?"volt":"nero";setSpeaker(v);speakerRef.current=v;localStorage.setItem(EMD_SPEAKER_KEY,v)}} className="rounded-lg border border-orange-500/30 bg-[#21130f] px-3 py-2 text-sm font-bold text-white"><option value="nero">NERO</option><option value="volt">VOLT</option></select>
     </div>
     {phase&&<div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-[9999] w-[min(355px,calc(100vw-40px))] rounded-[18px] border border-orange-400/40 bg-slate-900 px-[18px] py-[17px] text-white shadow-2xl pointer-events-none">
       <div className="flex items-center gap-2 text-xs font-extrabold tracking-widest text-orange-300">
@@ -143,7 +144,7 @@ export function SurvivalSingleMartin({request,onHandled,onEnabledChange}:{reques
           {[12,19,14,21].map((height,index)=><span key={index} className={`w-1 rounded-full bg-orange-400 ${phase==="playing"?"animate-pulse":""}`} style={{height}} />)}
         </span>
       </div>
-      <div className="mt-2 text-base font-black">{phase==="preparing"?"Ansage wird vorbereitet …":phase==="playing"?"NERO spricht 🎤":phase==="done"?"Ansage beendet ✓":"NERO nicht erreichbar"}</div>
+      <div className="mt-2 text-base font-black">{phase==="preparing"?"Ansage wird vorbereitet …":phase==="playing"?`${speaker==="volt"?"VOLT":"NERO"} spricht 🎤`:phase==="done"?"Ansage beendet ✓":"NERO nicht erreichbar"}</div>
       <div className="mt-1 text-sm text-slate-200">{playersLabel}</div>
       <div className="mt-1 text-xs text-slate-400">{details}</div>
     </div>}

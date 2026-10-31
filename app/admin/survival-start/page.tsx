@@ -27,6 +27,8 @@ export default function SurvivalCentralStart() {
   const search = useSearchParams()
   const centralEventId = search.get("centralEventId")
   const machineParam = Number(search.get("machines"))
+  const roundParam = Number(search.get("rounds"))
+  const roundsPerStage = Number.isInteger(roundParam) && roundParam >= 2 && roundParam <= 8 ? roundParam : 2
   const machineCount = Number.isInteger(machineParam) && machineParam >= 1 && machineParam <= 32 ? machineParam : 5
   const { user, isAdmin, loading: authLoading, adminLoading } = useAuth()
   const started = useRef(false)
@@ -110,7 +112,7 @@ export default function SurvivalCentralStart() {
         setStatus("Survival-Turnier wird vorbereitet …")
         const { data: draft, error: createError } = await supabase.from("survival_tournaments").insert({
           name: String(event.title || "Survival Roulette"), status: "draft", current_stage: 1,
-          machine_count: machineCount, rounds_per_stage: 2,
+          machine_count: machineCount, rounds_per_stage: roundsPerStage,
           win_points: 3, close_loss_points: 1, loss_points: 0, legs_to_win: 2,
           created_by: user.id,
         }).select("id").single()
@@ -127,7 +129,7 @@ export default function SurvivalCentralStart() {
         const { error: cutError } = await supabase.from("survival_stage_cuts").insert(route.map((count, index) => ({
           tournament_id: createdId, stage_no: index + 1,
           starting_players: count, qualifying_players: route[index + 1] ?? 4,
-          rounds_planned: count === 4 ? 3 : 2, status: index === 0 ? "active" : "pending",
+          rounds_planned: count === 4 ? Math.max(3, roundsPerStage) : roundsPerStage, status: index === 0 ? "active" : "pending",
         })))
         if (cutError) throw cutError
         // Wie DKO: dauerhafte zentrale Zuordnung, nicht nur Browser-Storage.
@@ -148,7 +150,7 @@ export default function SurvivalCentralStart() {
       }
     }
     void run()
-  }, [user, isAdmin, authLoading, adminLoading, centralEventId, router])
+  }, [user, isAdmin, authLoading, adminLoading, centralEventId, router, machineCount, roundsPerStage])
 
   return (
     <main className="min-h-screen bg-[#080b10] p-5 pt-24 text-white">

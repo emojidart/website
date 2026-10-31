@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { EMD_SPEAKER_KEY, selectedEmdSpeaker, requestVolt, type EmdSpeaker } from "./emd-volt"
 
 type Phase = "preparing" | "playing" | "done" | "error" | null
 const SERVER = "http://127.0.0.1:8765/speak"
@@ -49,6 +50,7 @@ export function prefetchSurvivalMartin(players: string[], machine: number, call 
 
 export function useSurvivalMartin() {
   const [enabled, setEnabled] = useState(false)
+  const [speaker, setSpeaker] = useState<EmdSpeaker>("nero")
   const [busy, setBusy] = useState(false)
   const [phase, setPhase] = useState<Phase>(null)
   const [playersLabel, setPlayersLabel] = useState("")
@@ -58,7 +60,7 @@ export function useSurvivalMartin() {
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const busyRef = useRef(false)
 
-  useEffect(() => { setEnabled(localStorage.getItem("emd_survival_martin_enabled") === "true") }, [])
+  useEffect(() => { setEnabled(localStorage.getItem("emd_survival_martin_enabled") === "true"); setSpeaker(selectedEmdSpeaker()) }, [])
   useEffect(() => () => {
     seq.current += 1
     audioRef.current?.pause()
@@ -69,6 +71,7 @@ export function useSurvivalMartin() {
     localStorage.setItem("emd_survival_martin_enabled", String(value))
   }, [])
 
+  const chooseSpeaker = useCallback((value: EmdSpeaker) => { setSpeaker(value); localStorage.setItem(EMD_SPEAKER_KEY, value) }, [])
   const announce = useCallback(async (players: string[], machine: number, call = 1) => {
     if (!enabled || busyRef.current || !machine || players.length !== 4 || !players.every(Boolean)) return
     busyRef.current = true
@@ -83,9 +86,11 @@ export function useSurvivalMartin() {
     let url: string | null = null
     try {
       const key = getKey(players, machine, call)
-      const audioBlob = cache.get(key) || await requestAudio(players, machine, call, false)
+      let audioBlob: Blob | null = null
+      if (speaker === "volt") { try { audioBlob = await requestVolt(players, machine, call) } catch (error) { console.warn("VOLT nicht erreichbar, NERO übernimmt", error) } }
+      if (!audioBlob) audioBlob = cache.get(key) || await requestAudio(players, machine, call, false)
       if (!audioBlob || current !== seq.current) return
-      cache.set(key, audioBlob)
+      if (speaker === "nero") cache.set(key, audioBlob)
       if (cache.size > 25) cache.delete(cache.keys().next().value!)
       url = URL.createObjectURL(audioBlob)
       const audio = new Audio(url)
@@ -109,7 +114,7 @@ export function useSurvivalMartin() {
         hideTimer.current = setTimeout(() => setPhase(null), 2200)
       }
     }
-  }, [enabled])
+  }, [enabled, speaker])
 
   const status = phase ? (
     <div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-[9999] w-[min(355px,calc(100vw-40px))] rounded-[18px] border border-orange-400/40 bg-slate-900 px-[18px] py-[17px] text-white shadow-2xl pointer-events-none">
@@ -120,10 +125,10 @@ export function useSurvivalMartin() {
           {[12, 19, 14, 21].map((height, index) => <span key={index} className={`w-1 rounded-full bg-orange-400 ${phase === "playing" ? "animate-pulse" : ""}`} style={{ height }} />)}
         </span>
       </div>
-      <div className="mt-2 text-base font-black">{phase === "preparing" ? "Ansage wird vorbereitet …" : phase === "playing" ? "NERO spricht 🎤" : phase === "done" ? "Ansage beendet ✓" : "NERO nicht erreichbar"}</div>
+      <div className="mt-2 text-base font-black">{phase === "preparing" ? "Ansage wird vorbereitet …" : phase === "playing" ? `${speaker === "volt" ? "VOLT" : "NERO"} spricht 🎤` : phase === "done" ? "Ansage beendet ✓" : "NERO nicht erreichbar"}</div>
       <div className="mt-1 text-sm text-slate-200">{playersLabel}</div>
       <div className="mt-1 text-xs text-slate-400">{details}</div>
     </div>
   ) : null
-  return { enabled, toggle, announce, busy, status }
+  return { enabled, toggle, speaker, chooseSpeaker, announce, busy, status }
 }

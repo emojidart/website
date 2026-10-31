@@ -290,6 +290,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
   const [teamMode, setTeamMode] = useState<TeamMode>("single")
   // Survival verwendet eigenständige Einstellungen, keine DKO-Doppelnennungen.
   const [survivalMachines, setSurvivalMachines] = useState(5)
+  const [survivalRounds, setSurvivalRounds] = useState(2)
   const [survivalVariant, setSurvivalVariant] = useState<"survival" | "survival_single">("survival")
   const [doubleTeams, setDoubleTeams] = useState<CentralDoubleTeam[]>([])
   const [fixedPlayer1RegistrationId, setFixedPlayer1RegistrationId] = useState("")
@@ -301,8 +302,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
       const raw = window.localStorage.getItem(`emd-survival-rules:${selectedEventId}`)
       const settings = raw ? JSON.parse(raw) : {}
       setSurvivalMachines(Number.isInteger(settings.machines) && settings.machines >= 1 && settings.machines <= 32 ? settings.machines : 5)
+      setSurvivalRounds(Number.isInteger(settings.rounds) && settings.rounds >= 2 && settings.rounds <= 8 ? settings.rounds : 2)
     } catch {
       setSurvivalMachines(5)
+      setSurvivalRounds(2)
     }
   }, [selectedEventId])
 
@@ -1802,6 +1805,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
         const params = new URLSearchParams({
           centralEventId: selectedEvent.id,
           machines: String(survivalMachines),
+          rounds: String(survivalRounds),
         })
         router.push(`/admin/survival-start?${params.toString()}`)
       }
@@ -2363,13 +2367,24 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                         onChange={(e) => {
                           const value = Math.min(32, Math.max(1, Number(e.target.value) || 1))
                           setSurvivalMachines(value)
-                          window.localStorage.setItem(`emd-survival-rules:${selectedEvent.id}`, JSON.stringify({machines:value}))
+                          window.localStorage.setItem(`emd-survival-rules:${selectedEvent.id}`, JSON.stringify({machines:value, rounds:survivalRounds}))
                         }}
                         className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-orange-400/60" />
                     </label>
+                    <label className="block text-xs font-bold text-white/75">Runden je Stage vor dem Cut
+                      <select value={survivalRounds} disabled={selectedEventIsPast || !!startingMode}
+                        onChange={(e) => {
+                          const value = Number(e.target.value)
+                          setSurvivalRounds(value)
+                          window.localStorage.setItem(`emd-survival-rules:${selectedEvent.id}`, JSON.stringify({machines:survivalMachines, rounds:value}))
+                        }}
+                        className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-white outline-none focus:border-orange-400/60">
+                        {[2,3,4,5,6,7,8].map(value => <option key={value} value={value}>{value} Runden</option>)}
+                      </select>
+                    </label>
                     <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs leading-5 text-white/70">
                       <div className="font-bold text-white">Aktive Survival-Regeln</div>
-                      <div>2 Runden je Stage · Best of 3 (2 Legs zum Sieg)</div>
+                      <div>{survivalRounds} Runden je Stage · Best of 3 (2 Legs zum Sieg)</div>
                       <div>Sieg 3 · knappe Niederlage 1 · Niederlage 0 Punkte</div>
                     </div>
                   </div>

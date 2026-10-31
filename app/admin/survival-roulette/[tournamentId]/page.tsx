@@ -1692,8 +1692,11 @@ export default function SurvivalRouletteLivePage() {
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex cursor-pointer items-center gap-2 rounded-full border border-orange-400/30 bg-orange-500/10 px-3 py-2 text-xs font-bold text-orange-200">
               <input type="checkbox" checked={martin.enabled} onChange={e => martin.toggle(e.target.checked)} className="accent-orange-500" />
-              NERO · Spieleraufrufe
+              Spieleraufrufe {martin.enabled ? "EIN" : "AUS"}
             </label>
+            <select aria-label="Turniersprecher" value={martin.speaker} onChange={e => martin.chooseSpeaker(e.target.value === "volt" ? "volt" : "nero")} className="rounded-full border border-orange-400/30 bg-[#21130f] px-3 py-2 text-xs font-bold text-orange-200">
+              <option value="nero">NERO</option><option value="volt">VOLT</option>
+            </select>
             <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-bold">
               {players.length} Spieler
             </span>
