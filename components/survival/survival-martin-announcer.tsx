@@ -87,15 +87,19 @@ export function useSurvivalMartin() {
     try {
       const key = getKey(players, machine, call)
       let audioBlob: Blob | null = null
-      if (speaker === "volt") { try { audioBlob = await requestVolt(players, machine, call) } catch (error) { console.warn("VOLT nicht erreichbar, NERO übernimmt", error) } }
+      let voltSucceeded = false
+      if (speaker === "volt") { try { audioBlob = await requestVolt(players, machine, call); voltSucceeded = true } catch (error) { console.warn("VOLT nicht erreichbar, NERO übernimmt", error) } }
       if (!audioBlob) audioBlob = cache.get(key) || await requestAudio(players, machine, call, false)
       if (!audioBlob || current !== seq.current) return
       if (speaker === "nero") cache.set(key, audioBlob)
       if (cache.size > 25) cache.delete(cache.keys().next().value!)
       url = URL.createObjectURL(audioBlob)
       const audio = new Audio(url)
+      // VOLT wie in DartPilot schneller abspielen; NERO unverändert lassen.
+      if (voltSucceeded) audio.playbackRate = 1.35
       audioRef.current = audio
       await audio.play()
+      window.dispatchEvent(new CustomEvent("emd-survival-announcement", { detail: { playing: true } }))
       if (current !== seq.current) return
       setPhase("playing")
       await new Promise<void>((resolve, reject) => {
@@ -107,6 +111,7 @@ export function useSurvivalMartin() {
       console.error("Survival Martin: Aufruf fehlgeschlagen", error)
       if (current === seq.current) setPhase("error")
     } finally {
+      window.dispatchEvent(new CustomEvent("emd-survival-announcement", { detail: { playing: false } }))
       if (url) URL.revokeObjectURL(url)
       if (current === seq.current) {
         busyRef.current = false

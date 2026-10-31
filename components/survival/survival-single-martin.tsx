@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { EMD_SPEAKER_KEY, selectedEmdSpeaker, requestVolt, type EmdSpeaker } from "./emd-volt"
 
 // Genau wie Doppel: hinterlegte NERO-Aussprache aus der Spielerdatenbank.
 const pronunciation = new Map<string, string>()
@@ -59,6 +60,8 @@ type Phase = "preparing" | "playing" | "done" | "error" | null
 
 export function SurvivalSingleMartin({request,onHandled,onEnabledChange}:{request:Request;onHandled:()=>void;onEnabledChange?:(enabled:boolean)=>void}) {
   const [enabled,setEnabled]=useState(false)
+  const [speaker,setSpeaker]=useState<EmdSpeaker>("nero")
+  const speakerRef=useRef<EmdSpeaker>("nero")
   const [busy,setBusy]=useState(false)
   const [phase,setPhase]=useState<Phase>(null)
   const [playersLabel,setPlayersLabel]=useState("")
@@ -70,6 +73,9 @@ export function SurvivalSingleMartin({request,onHandled,onEnabledChange}:{reques
 
   useEffect(()=>{
     const saved=localStorage.getItem("emd_survival_martin_enabled")==="true"
+    const savedSpeaker = selectedEmdSpeaker()
+    setSpeaker(savedSpeaker)
+    speakerRef.current = savedSpeaker
     setEnabled(saved)
     onEnabledChange?.(saved)
     return ()=>{
@@ -95,16 +101,31 @@ export function SurvivalSingleMartin({request,onHandled,onEnabledChange}:{reques
       setDetails(`Automat ${machine} · ${call===1?"Erster":call===2?"Zweiter":"Letzter"} Aufruf`)
       setPhase("preparing")
       try{
-        await loadPronunciation()
-        const response=await fetch("http://127.0.0.1:8765/speak",{
-          method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({player1:spoken(players[0]),player2:spoken(players[1]),machine,call,speed:1})
-        })
-        if(!response.ok){const detail=await response.json().catch(()=>null);throw new Error(detail?.error||`NERO HTTP ${response.status}`)}
-        const audio=await response.blob()
+        const useVolt = speakerRef.current === "volt"
+        let audio: Blob | null = null
+        let voltSucceeded = false
+        if (useVolt) {
+          try {
+            audio = await requestVolt(players, machine, call)
+            voltSucceeded = true
+          } catch (error) {
+            console.warn("VOLT nicht erreichbar, NERO übernimmt", error)
+          }
+        }
+        if (!audio) {
+          await loadPronunciation()
+          const response=await fetch("http://127.0.0.1:8765/speak",{
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({player1:spoken(players[0]),player2:spoken(players[1]),machine,call,speed:1})
+          })
+          if(!response.ok){const detail=await response.json().catch(()=>null);throw new Error(detail?.error||`NERO HTTP ${response.status}`)}
+          audio=await response.blob()
+        }
         if(cancelled)return
         url=URL.createObjectURL(audio)
         const player=new Audio(url)
+        // Nur erfolgreiche VOLT-Audioantwort beschleunigen, nicht den NERO-Fallback.
+        if (voltSucceeded) player.playbackRate = 1.35
         audioRef.current=player
         await player.play()
         if(cancelled)return

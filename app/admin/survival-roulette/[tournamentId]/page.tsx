@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { Header } from "@/components/header"
 import { useSurvivalMartin, prefetchSurvivalMartin } from "@/components/survival/survival-martin-announcer"
+import { EmdYouTubePlayer } from "@/components/survival/emd-youtube-player"
 import { supabase } from "@/lib/supabase"
 
 type PlayerRow = {
@@ -1711,6 +1712,8 @@ export default function SurvivalRouletteLivePage() {
             </span>
           </div>
         </div>
+
+        <EmdYouTubePlayer />
 
         {!hasAnyRound ? (
           <section className="mb-6 overflow-hidden rounded-[28px] border border-orange-400/25 bg-gradient-to-br from-[#21130f] via-[#16151a] to-[#090c14] p-5 shadow-[0_24px_70px_-38px_rgba(120,53,15,.55)] backdrop-blur lg:p-8">
