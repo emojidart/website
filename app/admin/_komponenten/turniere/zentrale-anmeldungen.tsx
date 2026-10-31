@@ -627,6 +627,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
   const playerById = useMemo(() => new Map(players.map((player) => [player.id, player])), [players])
 
+  useEffect(() => {
+    setNewEventMode("")
+  }, [selectedEventId])
+
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === selectedEventId) || null,
     [events, selectedEventId],
@@ -905,9 +909,12 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     ? registeredRows.filter((row) => !row.paid)
     : []
   const unresolvedRegisteredRows = registeredRows.filter((row) => !row.player_id)
-  const selectedStartMode = selectedEvent?.selected_mode === "survival"
+  // Die Auswahl im Formular ist bis zum tatsächlichen Start maßgeblich.
+  // Vorher nichts in der Datenbank verändern: Anmeldungen bleiben unberührt.
+  const selectedModeChoice = newEventMode || selectedEvent?.selected_mode || ""
+  const selectedStartMode = selectedModeChoice === "survival"
     ? survivalVariant
-    : (selectedEvent?.selected_mode || newEventMode)
+    : selectedModeChoice
 
   const multiDkoOpenCount = registeredRows.filter(row => !multiDkoAssignments[row.id]).length
   const multiDkoHasAssignments = registeredRows.some(row => !!multiDkoAssignments[row.id])
@@ -1809,6 +1816,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
   const openEvent = (eventId: string) => {
     setSelectedEventId(eventId)
+    setNewEventMode("")
     setRegistrationSearch("")
     setRegistrationFilter("all")
     setDeleteConfirmOpen(false)
@@ -2188,20 +2196,24 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="text-xs font-black uppercase tracking-[0.14em] text-orange-300/65">Turnierstart · {selectedStartMode ? MODE_LABELS[selectedStartMode] : "Modus wählen"}</div>
-                    {!selectedEvent.selected_mode ? (
-                      <label className="mt-3 block text-sm font-semibold text-white/80">
-                        Spielmodus
-                        <select value={newEventMode} onChange={(e) => setNewEventMode(e.target.value as StartMode | "")}
-                          className="mt-1 block w-full max-w-xs rounded-xl border border-orange-300/20 bg-neutral-900 px-3 py-2 text-white">
-                          <option value="">Bitte auswählen</option>
-                          <option value="dko">Doppel-KO</option>
-                          <option value="round_robin">Round Robin</option>
-                          <option value="kratzer">Kratzer</option>
-                          <option value="survival">Survival Doppel Roulette</option>
-                          <option value="survival_single">Survival Einzel Roulette</option>
-                        </select>
-                      </label>
-                    ) : null}
+                    <label className="mt-3 block text-sm font-semibold text-white/80">
+                      Spielmodus (bis zum Turnierstart änderbar)
+                      <select value={selectedModeChoice} disabled={!!startingMode || multiDkoActive || !!multiPrepared.herren || !!multiPrepared.damen}
+                        onChange={(e) => {
+                          const next = e.target.value as StartMode | ""
+                          setNewEventMode(next)
+                          if (next === "survival" || next === "survival_single") setSurvivalVariant(next)
+                        }}
+                        className="mt-1 block w-full max-w-xs rounded-xl border border-orange-300/20 bg-neutral-900 px-3 py-2 text-white disabled:opacity-50">
+                        <option value="">Bitte auswählen</option>
+                        <option value="dko">Doppel-KO</option>
+                        <option value="round_robin">Round Robin</option>
+                        <option value="kratzer">Kratzer</option>
+                        <option value="survival">Survival Doppel Roulette</option>
+                        <option value="survival_single">Survival Einzel Roulette</option>
+                      </select>
+                      <span className="mt-1 block text-xs text-white/45">Die Änderung wird erst beim Turnierstart gespeichert. Teilnehmer und Zahlungen bleiben erhalten.</span>
+                    </label>
                     <div className="mt-1 text-lg font-black text-white">{startBlockers.length ? "Noch nicht startbereit" : "Startbereit"}</div>
                     <div className="mt-1 text-xs text-white/50">{registeredRows.length} angemeldet · {waitlistRows.length} Warteliste (nicht in der Auslosung) · {withdrawnRows.length} abgemeldet</div>
                     {startBlockers.length > 0 ? (
@@ -2326,7 +2338,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 </div>
               </div>
 
-              {(selectedEvent.selected_mode === "survival" || selectedEvent.selected_mode === "survival_single") ? (
+              {(selectedStartMode === "survival" || selectedStartMode === "survival_single") ? (
                 <div className="rounded-2xl border border-orange-400/20 bg-orange-500/[0.055] p-4">
                   <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300">Survival Roulette · Einstellungen</div>
                   <div className="mt-2 font-black text-white">{selectedStartMode === "survival_single" ? "Einzel Roulette – neue Gegner jede Runde" : "Doppel Roulette – neue Teams jede Runde"}</div>
@@ -2334,9 +2346,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     {([ ["survival_single", "Einzel Roulette"], ["survival", "Doppel Roulette"] ] as const).map(([value,label]) => (
                       <button type="button" key={value}
-                        disabled={selectedEvent.status === "started" || selectedEventLocked || !!startingMode || selectedEvent.selected_mode === "survival_single"}
+                        disabled={selectedEvent.status === "started" || selectedEventLocked || !!startingMode}
                         onClick={() => {
                           setSurvivalVariant(value)
+                          setNewEventMode(value)
                           try { window.localStorage.setItem(`emd-survival-variant:${selectedEvent.id}`, value) } catch {}
                         }}
                         className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${selectedStartMode === value ? "border-orange-400/40 bg-orange-500/20 text-orange-100" : "border-white/10 text-white/60"} disabled:opacity-60`}>
@@ -2363,7 +2376,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                   <p className="mt-3 text-xs font-semibold text-orange-100/65">Teilnehmer bleiben unten im Check-in. Der aktuelle Survival-Cut benötigt 4, 8, 12 … Spieler.</p>
                 </div>
               ) : null}
-              {(selectedEvent.selected_mode !== "survival" && selectedEvent.selected_mode !== "survival_single") ? (
+              {(selectedStartMode !== "survival" && selectedStartMode !== "survival_single") ? (
               <button
                 type="button"
                 disabled={selectedEventIsPast}
@@ -2382,7 +2395,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 <div className="mt-1 text-xs font-semibold leading-5 text-white/38">Nur für Doppel-KO. Bei Round Robin und Survival wird keine Doppelnennung verwendet.</div>
               </button>
               ) : null}
-              {(selectedEvent.selected_mode !== "survival" && selectedEvent.selected_mode !== "survival_single") ? (
+              {(selectedStartMode !== "survival" && selectedStartMode !== "survival_single") ? (
               <div className={`rounded-2xl border p-4 ${teamMode !== "single" ? "border-cyan-300/25 bg-cyan-500/[0.08]" : "border-white/[0.07] bg-white/[0.025]"}`}>
                 <div className="flex items-center gap-2">
                   <UsersRound className="h-4 w-4 text-cyan-200/70" />
