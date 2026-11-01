@@ -68,7 +68,52 @@ function parseChecks(value: string) {
   }
 }
 
+function parseModernResults(html: string) {
+  // Neues SportDarts-Layout: Spielwochen als <details>, Spiele als .sp-game-row.
+  const weeks = Array.from(html.matchAll(/<details\b[^>]*class=["'][^"']*\bsp-week\b[^"']*["'][^>]*>([\s\S]*?)<\/details>/gi))
+  if (weeks.length) {
+    const games: Array<{
+      gameId: string
+      weekNumber: number
+      date: string
+      homeTeam: string
+      awayTeam: string
+      homeScore: number | null
+      awayScore: number | null
+      status: "scheduled" | "live" | "completed"
+      detailUrl: string
+    }> = []
+    for (const week of weeks) {
+      const weekNumber = Number(week[1].match(/Spielwoche\s*(\d+)/i)?.[1])
+      if (!weekNumber) continue
+      const rows = week[1].split(/(?=<div\s+class=["']sp-game-row["'])/i).slice(1)
+      for (const row of rows) {
+        const gameId = row.match(/\/ligasystem\/games\/view\/(\d+)/i)?.[1]
+        const date = toIsoDate(decodeHtml(row.match(/<span\s+class=["']sp-game-date["']>([\s\S]*?)<\/span>/i)?.[1] || "").replace(/^[^\d]*/, ""))
+        const teamHtml = row.match(/<span\s+class=["']sp-game-teams["']>([\s\S]*?)<span\s+class=["']sp-game-meta["']/i)?.[1] || ""
+        const teams = decodeHtml(teamHtml).split(/\s+[–—]\s+/)
+        const score = row.match(/<span\s+class=["']sp-score["']>\s*(\d+)\s*:\s*(\d+)\s*<\/span>/i)
+        if (!gameId || !date || teams.length !== 2 || !teams[0] || !teams[1]) continue
+        games.push({
+          gameId, weekNumber, date, homeTeam: teams[0], awayTeam: teams[1],
+          homeScore: score ? Number(score[1]) : null,
+          awayScore: score ? Number(score[2]) : null,
+          status: score ? "completed" : "scheduled",
+          detailUrl: `https://www.sportdartsliga.at/ligasystem/games/view/${gameId}`,
+        })
+      }
+    }
+    return games
+  }
+
+  return []
+}
+
 function parseResults(html: string) {
+  const modern = parseModernResults(html)
+  if (modern.length) return modern.map(({ gameId, date, homeTeam, awayTeam, homeScore, awayScore, status }) =>
+    ({ gameId, date, homeTeam, awayTeam, homeScore, awayScore, status }))
+
   const tableMatch = html.match(/<!--\s*Games Table\s*-->([\s\S]*?)<\/table>/i)
   if (!tableMatch) return []
 
@@ -113,7 +158,33 @@ function inputValue(formHtml: string, name: string) {
   )
 }
 
+function parseModernSyncGame(html: string) {
+  const score = html.match(/<div[^>]*class="sp-board-score"[^>]*>\s*(\d+)\s*:\s*(\d+)\s*<\/div>/i)
+  if (!score) return null
+  const cards = Array.from(html.matchAll(/<div class="sp-card sp-card-plain">([\s\S]*?)<\/table>/gi)).map((m) => {
+    const part = m[1]
+    const title = decodeHtml(part.match(/<h4[^>]*class="sp-card-title"[^>]*>([\s\S]*?)<\/h4>/i)?.[1] || "")
+    const table = part.match(/<table[^>]*class="sp-lineup"[^>]*>([\s\S]*?)<\/table>/i)?.[1] || ""
+    const players = Array.from(table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)).flatMap((r) => {
+      const cells = Array.from(r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi))
+      if (cells.length < 2) return []
+      const label = decodeHtml(cells[0][1]).replace(/\s*Ersatz\s*$/i, "")
+      const match = label.match(/^(.*?)\s*-\s*(\d+)\s*$/)
+      const checks = parseChecks(decodeHtml(cells[1][1]))
+      return [{playerName: match?.[1]?.trim() || label, playerNumber: match?.[2] || "", ...checks}]
+    })
+    return {title, players}
+  })
+  const home = cards.find(c => /^Heim\s*[·:-]/i.test(c.title))
+  const away = cards.find(c => /^Gast\s*[·:-]/i.test(c.title))
+  if (!home?.players.length || !away?.players.length) return null
+  return {homeScore:Number(score[1]), awayScore:Number(score[2]), homeTeam:home.title.replace(/^Heim\s*[·:-]\s*/i, ""), awayTeam:away.title.replace(/^Gast\s*[·:-]\s*/i,""), homePlayers:home.players, awayPlayers:away.players, plays:[] as Array<{block:string;homePlayerNumber:string;awayPlayerNumber:string;secondHomePlayerNumber:string;secondAwayPlayerNumber:string;homeLegs:number;awayLegs:number;isTeamMatch:boolean}>}
+}
+
 function parseGame(html: string) {
+  const modern = parseModernSyncGame(html)
+  if (modern) return modern
+
   const scoreArea = decodeHtml(
     html.match(/Punktestand:\s*([\s\S]{0,1200}?)(?:<\/table>|<h\d|<div class="row")/i)?.[1] || "",
   )
@@ -162,51 +233,8 @@ function parseGame(html: string) {
   const homeTeam = homeLineup?.title.replace(/^\s*Heim\s*[-–:]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
   const awayTeam = awayLineup?.title.replace(/^\s*Gast\s*[-–:]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
 
-  const plays: Array<{
-    block: string
-    homePlayerNumber: string
-    awayPlayerNumber: string
-    secondHomePlayerNumber: string
-    secondAwayPlayerNumber: string
-    homeLegs: number
-    awayLegs: number
-    isTeamMatch: boolean
-  }> = []
-
-  // Alle Game-Formulare direkt auslesen. Das ist robuster als die Block-Überschrift,
-  // weil Sportdarts z. B. "Block 4 - Team" und andere Bezeichnungen verwendet.
-  for (const formMatch of html.matchAll(/<form[^>]*id=["']Game(\d+)Selector["'][^>]*>[\s\S]*?<\/form>/gi)) {
-    const formHtml = formMatch[0]
-    const cells = Array.from(formHtml.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi))
-      .map((cell) => decodeHtml(cell[1]))
-      .filter(Boolean)
-
-    if (cells.length < 4) continue
-
-    const homeLegs = Number(cells[1])
-    const awayLegs = Number(cells[2])
-    if (!Number.isFinite(homeLegs) || !Number.isFinite(awayLegs)) continue
-
-    const secondHomePlayerNumber = inputValue(formHtml, "SecondPlayerHome")
-    const secondAwayPlayerNumber = inputValue(formHtml, "SecondPlayerGuest")
-
-    const beforeForm = html.slice(0, formMatch.index || 0)
-    const previousHeadings = Array.from(beforeForm.matchAll(/<h5>\s*<b>\s*([\s\S]*?)\s*<\/b>\s*<\/h5>/gi))
-    const block = decodeHtml(previousHeadings[previousHeadings.length - 1]?.[1] || "")
-
-    plays.push({
-      block,
-      homePlayerNumber: inputValue(formHtml, "PlayerHome"),
-      awayPlayerNumber: inputValue(formHtml, "PlayerGuest"),
-      secondHomePlayerNumber,
-      secondAwayPlayerNumber,
-      homeLegs,
-      awayLegs,
-      isTeamMatch:
-        Boolean(secondHomePlayerNumber || secondAwayPlayerNumber) ||
-        /team|cricket/i.test(block),
-    })
-  }
+  // Keine Teilspiel- oder Teamblockauswertung: Nur die offizielle Checks-Tabelle ist relevant.
+  const plays: Array<{block:string;homePlayerNumber:string;awayPlayerNumber:string;secondHomePlayerNumber:string;secondAwayPlayerNumber:string;homeLegs:number;awayLegs:number;isTeamMatch:boolean}> = []
 
   return { homeScore, awayScore, homeTeam, awayTeam, homePlayers: homeLineup?.players || [], awayPlayers: awayLineup?.players || [], plays }
 }
@@ -276,7 +304,7 @@ async function fetchOfficialResults(seasonId: number, divisionId: number) {
   const selectedSeason = html.match(/<option\b(?=[^>]*\bvalue=["'](\d+)["'])(?=[^>]*\bselected\b)[^>]*>/i)
   const selectedDivision = html.match(/<select\b[^>]*\bid=["']myDivisionsSelec["'][^>]*>([\s\S]*?)<\/select>/i)?.[1]
     ?.match(/<option\b(?=[^>]*\bvalue=["'](\d+)["'])(?=[^>]*\bselected\b)[^>]*>/i)
-  if (!html.includes("<!-- Games Table -->") ||
+  if ((!html.includes("<!-- Games Table -->") && !html.includes("sp-game-row")) ||
       (selectedSeason && Number(selectedSeason[1]) !== seasonId) ||
       (selectedDivision && Number(selectedDivision[1]) !== divisionId)) {
     throw new Error("Sportdarts liefert keine bestätigte Ergebnisliste für die gewählte Division.")
@@ -294,7 +322,7 @@ async function fetchOfficialGame(gameId: string) {
   })
   if (!response.ok) throw new Error(`Sportdarts-Spiel antwortet mit HTTP ${response.status}.`)
   const html = await response.text()
-  if (!/Punktestand:/i.test(html) || !/Checks/i.test(html)) {
+  if ((!/Punktestand:/i.test(html) && !/sp-board-score/i.test(html)) || !/Checks/i.test(html)) {
     throw new Error("Sportdarts-Spielbericht hat ein unerwartetes Format.")
   }
   return parseGame(html)

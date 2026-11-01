@@ -37,6 +37,43 @@ function parseNullableScore(value: string) {
 }
 
 function parseGames(html: string) {
+  // Neues SportDarts-Layout: Spielwochen als <details>, Spiele als .sp-game-row.
+  const weeks = Array.from(html.matchAll(/<details\b[^>]*class=["'][^"']*\bsp-week\b[^"']*["'][^>]*>([\s\S]*?)<\/details>/gi))
+  if (weeks.length) {
+    const games: Array<{
+      gameId: string
+      weekNumber: number
+      date: string
+      homeTeam: string
+      awayTeam: string
+      homeScore: number | null
+      awayScore: number | null
+      status: "scheduled" | "live" | "completed"
+      detailUrl: string
+    }> = []
+    for (const week of weeks) {
+      const weekNumber = Number(week[1].match(/Spielwoche\s*(\d+)/i)?.[1])
+      if (!weekNumber) continue
+      const rows = week[1].split(/(?=<div\s+class=["']sp-game-row["'])/i).slice(1)
+      for (const row of rows) {
+        const gameId = row.match(/\/ligasystem\/games\/view\/(\d+)/i)?.[1]
+        const date = toIsoDate(decodeHtml(row.match(/<span\s+class=["']sp-game-date["']>([\s\S]*?)<\/span>/i)?.[1] || "").replace(/^[^\d]*/, ""))
+        const teamHtml = row.match(/<span\s+class=["']sp-game-teams["']>([\s\S]*?)<span\s+class=["']sp-game-meta["']/i)?.[1] || ""
+        const teams = decodeHtml(teamHtml).split(/\s+[–—]\s+/)
+        const score = row.match(/<span\s+class=["']sp-score["']>\s*(\d+)\s*:\s*(\d+)\s*<\/span>/i)
+        if (!gameId || !date || teams.length !== 2 || !teams[0] || !teams[1]) continue
+        games.push({
+          gameId, weekNumber, date, homeTeam: teams[0], awayTeam: teams[1],
+          homeScore: score ? Number(score[1]) : null,
+          awayScore: score ? Number(score[2]) : null,
+          status: score ? "completed" : "scheduled",
+          detailUrl: `https://www.sportdartsliga.at/ligasystem/games/view/${gameId}`,
+        })
+      }
+    }
+    return games
+  }
+
   // SportDarts verwendet je nach Version eine kommentierte oder eine normale Tabelle.
   const tableMatch = html.match(/<!--\s*Games Table\s*-->([\s\S]*?)<\/table>/i)
   const section = tableMatch?.[1] ?? html

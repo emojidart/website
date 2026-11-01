@@ -30,6 +30,9 @@ function findTables(html: string) {
 }
 
 function parseScoreSummary(html: string) {
+  const modern = html.match(/<div[^>]*class="sp-board-score"[^>]*>\s*(\d+)\s*:\s*(\d+)\s*<\/div>/i)
+  if (modern) return {homeScore: modern[1], awayScore: modern[2]}
+
   const scoreText = decodeHtml(
     html.match(/Punktestand:\s*([\s\S]{0,1200}?)(?:<\/table>|<h\d|<div class="row")/i)?.[1] || "",
   )
@@ -41,6 +44,45 @@ function parseScoreSummary(html: string) {
     homeScore: homeMatch?.[1] || "",
     awayScore: awayMatch?.[1] || "",
   }
+}
+
+
+// SportDarts 2026: sichtbare Spielkarten statt älterer Formularstruktur.
+function parseModernLineups(html: string) {
+  const cards = Array.from(html.matchAll(/<div class="sp-card sp-card-plain">([\s\S]*?)<\/table>/gi))
+  return cards.map((m) => {
+    const section = m[1]
+    const title = decodeHtml(section.match(/<h4[^>]*class="sp-card-title"[^>]*>([\s\S]*?)<\/h4>/i)?.[1] || "")
+    const table = section.match(/<table[^>]*class="sp-lineup"[^>]*>([\s\S]*)/i)?.[1] || ""
+    const players = Array.from(table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)).flatMap((r) => {
+      const cells = Array.from(r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi))
+      if (cells.length < 2) return []
+      const label = decodeHtml(cells[0][1]).replace(/\s*Ersatz\s*$/i, "").trim()
+      const match = label.match(/^(.*?)\s*-\s*(\d+)\s*$/)
+      const checks = decodeHtml(cells[1][1])
+      return [{ player: label, playerName: match?.[1]?.trim() || label, playerNumber: match?.[2] || "", checks, ...parseChecks(checks) }]
+    })
+    return { title, players }
+  }).filter((t) => /^(Heim|Gast)\s*[·:-]/i.test(t.title))
+}
+
+function parseModernBlocks(html: string) {
+  const cards = Array.from(html.matchAll(/<div class="sp-card sp-card-done">([\s\S]*?)<\/table>/gi))
+  return cards.flatMap((m) => {
+    const section = m[1]
+    const title = decodeHtml(section.match(/<h4[^>]*class="sp-card-title"[^>]*>([\s\S]*?)<\/h4>/i)?.[1] || "")
+    if (!/^(?:Block\s*\d+|Teamblock)$/i.test(title)) return []
+    const table = section.match(/<table[^>]*class="sp-subgames"[^>]*>([\s\S]*)/i)?.[1] || ""
+    const matches = Array.from(table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)).flatMap((r) => {
+      const cells = Array.from(r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi))
+      if (cells.length < 3) return []
+      const leftPlayer = decodeHtml(cells[0][1])
+      const score = decodeHtml(cells[1][1]).match(/^(\d+)\s*:\s*(\d+)$/)
+      const rightPlayer = decodeHtml(cells[2][1])
+      return leftPlayer && rightPlayer && score ? [{leftPlayer, leftScore:score[1], rightScore:score[2], rightPlayer}] : []
+    })
+    return matches.length ? [{title, matches}] : []
+  })
 }
 
 function splitPlayerLabel(value: string) {
@@ -378,12 +420,12 @@ export async function GET(
     }
 
     const html = await response.text()
-    if (!/Punktestand|Checks|Game\d+Selector/i.test(html)) {
+    if (!/Punktestand|Checks|Game\d+Selector|sp-board-score|sp-lineup/i.test(html)) {
       return NextResponse.json({ error: "SportDarts liefert keinen lesbaren Spielbericht. Keine Daten gespeichert." }, { status: 502 })
     }
     const tables = findTables(html)
 
-    const lineupTables = tables
+    const legacyLineupTables = tables
       .map((table) => parseLineupTable(tableRows(table)))
       .filter(Boolean) as Array<{
         title: string
@@ -397,6 +439,8 @@ export async function GET(
         }>
       }>
 
+    const lineupTables = parseModernLineups(html).length ? parseModernLineups(html) : legacyLineupTables
+
     const homeLineup =
       lineupTables.find((table) => /heim/i.test(table.title)) ||
       lineupTables[0] ||
@@ -407,21 +451,7 @@ export async function GET(
       lineupTables[1] ||
       null
 
-    const blockTables = tables
-      .map((table, index) => parseBlockTable(tableRows(table), `Block ${index + 1}`))
-      .filter(Boolean) as Array<{
-        title: string
-        matches: Array<{
-          leftPlayer: string
-          leftScore: string
-          rightScore: string
-          rightPlayer: string
-        }>
-      }>
-
-    // Die offizielle Checks-Liste ist die maßgebliche Quelle für die Übernahme.
-    // Spielmodi/Blockbezeichnungen dürfen sie nicht ausfiltern.
-    const structuredPlays = parseStructuredPlays(html)
+    // Import und Vorschau verwenden ausschliesslich den offiziellen Endstand und die Checks-Tabelle.
     const officialUsed = (players: NonNullable<typeof homeLineup>["players"] | undefined) =>
       (players || [])
         .filter((player) => player.playerNumber && player.checksTotal != null && player.checksTotal > 0)
@@ -450,9 +480,13 @@ export async function GET(
     const score = parseScoreSummary(html)
 
     const homeTeam =
-      homeLineup?.title.replace(/^\s*Heim\s*[-–:]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
+      homeLineup?.title.replace(/^\s*Heim\s*[·–:-]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
     const awayTeam =
-      awayLineup?.title.replace(/^\s*Gast\s*[-–:]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
+      awayLineup?.title.replace(/^\s*Gast\s*[·–:-]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
+
+    if (score.homeScore === "" || score.awayScore === "" || !homeLineup?.players.length || !awayLineup?.players.length) {
+      return NextResponse.json({error: "SportDarts-Detailformat nicht vollständig erkannt."}, {status: 502})
+    }
 
     return NextResponse.json({
       gameId,
@@ -467,11 +501,11 @@ export async function GET(
       // bleibt nur als Fallback erhalten, falls Sportdarts sein Markup ändert.
       homePlayers: homeLineup?.players || [],
       awayPlayers: awayLineup?.players || [],
-      blocks: parseLiveDisplayBlocks(html),
+      blocks: [], // Nicht fuer den SportDarts-Import benoetigt.
 
       // New structured read-only sync data.
-      singles: structuredPlays.filter((play) => !play.isTeamMatch),
-      teamMatches: structuredPlays.filter((play) => play.isTeamMatch),
+      singles: [],
+      teamMatches: [],
       homePlayerLegs: officialLegs(homeLineup?.players),
       awayPlayerLegs: officialLegs(awayLineup?.players),
       usedHomePlayerNumbers: officialUsed(homeLineup?.players),

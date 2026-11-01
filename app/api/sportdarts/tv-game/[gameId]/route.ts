@@ -30,6 +30,9 @@ function findTables(html: string) {
 }
 
 function parseScoreSummary(html: string) {
+  const modern = html.match(/<div[^>]*class="sp-board-score"[^>]*>\s*(\d+)\s*:\s*(\d+)\s*<\/div>/i)
+  if (modern) return {homeScore: modern[1], awayScore: modern[2]}
+
   const scoreText = decodeHtml(
     html.match(/Punktestand:\s*([\s\S]{0,1200}?)(?:<\/table>|<h\d|<div class="row")/i)?.[1] || "",
   )
@@ -41,6 +44,45 @@ function parseScoreSummary(html: string) {
     homeScore: homeMatch?.[1] || "",
     awayScore: awayMatch?.[1] || "",
   }
+}
+
+
+// SportDarts 2026: sichtbare Spielkarten statt älterer Formularstruktur.
+function parseModernLineups(html: string) {
+  const cards = Array.from(html.matchAll(/<div class="sp-card sp-card-plain">([\s\S]*?)<\/table>/gi))
+  return cards.map((m) => {
+    const section = m[1]
+    const title = decodeHtml(section.match(/<h4[^>]*class="sp-card-title"[^>]*>([\s\S]*?)<\/h4>/i)?.[1] || "")
+    const table = section.match(/<table[^>]*class="sp-lineup"[^>]*>([\s\S]*?)<\/table>/i)?.[1] || ""
+    const players = Array.from(table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)).flatMap((r) => {
+      const cells = Array.from(r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi))
+      if (cells.length < 2) return []
+      const label = decodeHtml(cells[0][1]).replace(/\s*Ersatz\s*$/i, "").trim()
+      const match = label.match(/^(.*?)\s*-\s*(\d+)\s*$/)
+      const checks = decodeHtml(cells[1][1])
+      return [{ player: label, playerName: match?.[1]?.trim() || label, playerNumber: match?.[2] || "", checks, ...parseChecks(checks) }]
+    })
+    return { title, players }
+  }).filter((t) => /^(Heim|Gast)\s*[·:-]/i.test(t.title))
+}
+
+function parseModernBlocks(html: string) {
+  const cards = Array.from(html.matchAll(/<div class="sp-card sp-card-done">([\s\S]*?)<\/table>/gi))
+  return cards.flatMap((m) => {
+    const section = m[1]
+    const title = decodeHtml(section.match(/<h4[^>]*class="sp-card-title"[^>]*>([\s\S]*?)<\/h4>/i)?.[1] || "")
+    if (!/^(?:Block\s*\d+|Teamblock)$/i.test(title)) return []
+    const table = section.match(/<table[^>]*class="sp-subgames"[^>]*>([\s\S]*?)<\/table>/i)?.[1] || ""
+    const matches = Array.from(table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)).flatMap((r) => {
+      const cells = Array.from(r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi))
+      if (cells.length < 3) return []
+      const leftPlayer = decodeHtml(cells[0][1])
+      const score = decodeHtml(cells[1][1]).match(/^(\d+)\s*:\s*(\d+)$/)
+      const rightPlayer = decodeHtml(cells[2][1])
+      return leftPlayer && rightPlayer && score ? [{leftPlayer, leftScore:score[1], rightScore:score[2], rightPlayer}] : []
+    })
+    return matches.length ? [{title, matches}] : []
+  })
 }
 
 function splitPlayerLabel(value: string) {
@@ -416,7 +458,7 @@ export async function GET(
     const html = await response.text()
     const tables = findTables(html)
 
-    const lineupTables = tables
+    const legacyLineupTables = tables
       .map((table) => parseLineupTable(tableRows(table)))
       .filter(Boolean) as Array<{
         title: string
@@ -429,6 +471,8 @@ export async function GET(
           checksTotal: number | null
         }>
       }>
+
+    const lineupTables = parseModernLineups(html).length ? parseModernLineups(html) : legacyLineupTables
 
     const homeLineup =
       lineupTables.find((table) => /heim/i.test(table.title)) ||
@@ -466,9 +510,13 @@ export async function GET(
     const usedAway = officialUsedPlayerNumbers(awayPlayers, usedPlayerNumbers(structuredPlays, "away"))
 
     const homeTeam =
-      homeLineup?.title.replace(/^\s*Heim\s*[-–:]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
+      homeLineup?.title.replace(/^\s*Heim\s*[·–:-]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
     const awayTeam =
-      awayLineup?.title.replace(/^\s*Gast\s*[-–:]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
+      awayLineup?.title.replace(/^\s*Gast\s*[·–:-]\s*/i, "").replace(/\s*Checks\s*$/i, "").trim() || ""
+
+    if (!score.homeScore || !score.awayScore || !homePlayers.length || !awayPlayers.length) {
+      return NextResponse.json({error: "SportDarts-Detailformat nicht vollständig erkannt."}, {status: 502})
+    }
 
     return NextResponse.json({
       gameId,
@@ -482,7 +530,7 @@ export async function GET(
       // bleibt nur als Fallback erhalten, falls Sportdarts sein Markup ändert.
       homePlayers,
       awayPlayers,
-      blocks: parseLiveDisplayBlocks(html),
+      blocks: parseModernBlocks(html).length ? parseModernBlocks(html) : parseLiveDisplayBlocks(html),
 
       // New structured read-only sync data.
       singles: structuredPlays.filter((play) => !play.isTeamMatch),
