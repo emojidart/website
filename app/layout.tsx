@@ -15,10 +15,16 @@ import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
 
+// EMD Wartungsmodus: true = alle Webseiten gesperrt, false = wieder normal.
+// Achtung: Dies versteckt die Benutzeroberfläche, sperrt jedoch NICHT API-Routen
+// oder direkte Supabase-Zugriffe. Dafür sind gesonderte Zugriffskontrollen nötig.
+const WARTUNGSMODUS = true
+
 export const metadata: Metadata = {
   title: "Emoj's Dartverein",
   description: "Offizielle Website des Emoj's Dartvereins",
   generator: "grafikguru",
+  robots: WARTUNGSMODUS ? { index: false, follow: false } : undefined,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -40,6 +46,32 @@ export const viewport: Viewport = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  if (WARTUNGSMODUS) {
+    return (
+      <html lang="de">
+        <body className={`${inter.className} min-h-screen bg-[#080a0f] text-white`}>
+          <main className="flex min-h-[100dvh] items-center justify-center px-5 py-12">
+            <section className="w-full max-w-xl rounded-[28px] border border-white/10 bg-white/[0.035] p-8 text-center shadow-2xl sm:p-12">
+              <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-500/20 bg-orange-500/10 text-orange-400" aria-hidden="true">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="10" width="16" height="11" rx="2" />
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+              </div>
+              <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-orange-400">Emoj&apos;s Dartverein</p>
+              <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">Website vorübergehend nicht verfügbar</h1>
+              <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-400">
+                Der Onlinebetrieb ist derzeit ausgesetzt.
+              </p>
+              <div className="mx-auto mt-9 h-px max-w-xs bg-white/10" />
+              <p className="mt-6 text-sm text-slate-500">Vielen Dank für Ihr Verständnis.</p>
+            </section>
+          </main>
+        </body>
+      </html>
+    )
+  }
+
   return (
     <html lang="de">
       <body className={`${inter.className} antialiased bg-[#050608] text-white`}>
