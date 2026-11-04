@@ -50,21 +50,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
       <html lang="de">
         <body className={`${inter.className} min-h-screen bg-[#080a0f] text-white`}>
-          <main className="flex min-h-[100dvh] items-center justify-center px-5 py-12">
-            <section className="w-full max-w-xl rounded-[28px] border border-white/10 bg-white/[0.035] p-8 text-center shadow-2xl sm:p-12">
-              <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-orange-500/20 bg-orange-500/10 text-orange-400" aria-hidden="true">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="4" y="10" width="16" height="11" rx="2" />
-                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                </svg>
+          <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#050505] px-5 py-12 text-[#e7e7e7]">
+            <div className="pointer-events-none absolute inset-0 opacity-40" style={{ backgroundImage: "radial-gradient(circle at 50% 43%, #351010 0%, #090909 48%, #000 85%)" }} />
+            <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent 0px, transparent 3px, #fff 4px)" }} />
+            <section className="relative z-10 w-full max-w-2xl py-10 text-center">
+              <div className="mx-auto mb-10 flex h-14 w-14 items-center justify-center rounded-full border border-red-900/50 bg-red-950/20">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-600 shadow-[0_0_22px_6px_rgba(220,38,38,0.35)]" />
               </div>
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-orange-400">Emoj&apos;s Dartverein</p>
-              <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">Website vorübergehend nicht verfügbar</h1>
-              <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-400">
-                Diese Website ist derzeit vorübergehend nicht erreichbar.
+              <p className="mb-8 font-mono text-[11px] uppercase tracking-[0.46em] text-zinc-500">EMD // SIGNAL UNTERBROCHEN</p>
+              <h1 className="text-4xl font-black uppercase leading-[1.12] tracking-[0.08em] sm:text-6xl">Diese Seite<br /><span className="text-red-700">schweigt.</span></h1>
+              <div className="mx-auto my-9 h-px max-w-[260px] bg-gradient-to-r from-transparent via-red-900 to-transparent" />
+              <p className="mx-auto max-w-lg text-base leading-8 tracking-wide text-zinc-400 sm:text-lg">
+                Der Zugang zur Website ist vorübergehend ausgesetzt.
               </p>
-              <div className="mx-auto mt-9 h-px max-w-xs bg-white/10" />
-              <p className="mt-6 text-sm text-slate-500">Vielen Dank für Ihr Verständnis.</p>
+              <p className="mt-9 font-mono text-xs tracking-[0.28em] text-zinc-600">NICHT GELÖSCHT. NUR STILL.</p>
+              <p className="mt-16 font-mono text-[10px] uppercase tracking-[0.3em] text-zinc-700">STATUS: OFFLINE <span className="mx-2 text-red-900">●</span> EMD</p>
             </section>
           </main>
         </body>
