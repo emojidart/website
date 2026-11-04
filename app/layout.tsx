@@ -59,12 +59,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </svg>
               </div>
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-orange-400">Emoj&apos;s Dartverein</p>
-              <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">Website vorübergehend nicht verfügbar</h1>
+              <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">WEBSITE VORÜBERGEHEND GESPERRT</h1>
               <p className="mx-auto mt-5 max-w-md text-base leading-7 text-slate-400">
-                Der Onlinebetrieb ist derzeit ausgesetzt.
+                Respekt ist keine Frage der Position, sondern des Verhaltens.
               </p>
               <div className="mx-auto mt-9 h-px max-w-xs bg-white/10" />
-              <p className="mt-6 text-sm text-slate-500">Vielen Dank für Ihr Verständnis.</p>
+              <p className="mt-6 text-sm text-slate-500">Diese Website ist derzeit nicht erreichbar.</p>
             </section>
           </main>
         </body>
