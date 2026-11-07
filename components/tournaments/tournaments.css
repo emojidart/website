@@ -13,7 +13,7 @@ body:has(.emd-tournament-surface) [role="alertdialog"] {
   --accent:#314159; --accent-foreground:var(--et-ink);
   --border:var(--et-line); --input:var(--et-line);
   --primary:var(--et-orange); --primary-foreground:#172235; --ring:var(--et-orange);
-  --emd-content-max:1240px; color-scheme:dark;
+  color-scheme:dark;
   --admin-bg:var(--et-background); --admin-panel:var(--et-surface);
   --admin-border:var(--et-line); --admin-text:var(--et-ink); --admin-muted:var(--et-muted);
 }
@@ -25,7 +25,7 @@ body:has(.emd-tournament-surface) :is([role=dialog],[role=alertdialog]) :where(b
 body:has(.emd-tournament-surface) :is([role=dialog],[role=alertdialog]) :where(input,select,textarea) { font-size:16px; }
 .emd-tournament-surface :where(a,button,input,select,textarea,summary):focus-visible { outline:3px solid var(--et-orange); outline-offset:3px; }
 .emd-tournament-surface :where(h1,h2,h3) { letter-spacing:-.035em; }
-.et-shell { width:100%; max-width:1240px; margin:auto; padding:88px 20px calc(100px + env(safe-area-inset-bottom)); }
+.et-shell { width:100%; max-width:var(--emd-content-max); margin:auto; padding:88px 20px calc(100px + env(safe-area-inset-bottom)); }
 .et-page-title { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:26px; }
 .et-page-title>div { min-width:0; }
 .et-page-title h1 { font-size:clamp(28px,3.3vw,40px); font-weight:800; line-height:1.15; margin:10px 0; letter-spacing:-.045em; overflow-wrap:anywhere; }
