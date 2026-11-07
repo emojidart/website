@@ -361,6 +361,7 @@ export default function MeineDachVeranstaltungenPage() {
                 key={label}
                 type="button"
                 onClick={() => setStatusFilter(filter)}
+                aria-pressed={active}
                 className={`group rounded-2xl border p-4 text-left transition-all ${
                   active
                     ? "border-orange-300/[0.20] bg-orange-500/[0.10]"
@@ -402,6 +403,8 @@ export default function MeineDachVeranstaltungenPage() {
             <Button
               variant="outline"
               onClick={() => void loadEvents()}
+              disabled={loading}
+              aria-busy={loading}
               className="h-12 rounded-2xl border-white/10 px-5"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
