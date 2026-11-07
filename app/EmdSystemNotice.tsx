@@ -9,9 +9,18 @@ import { AlertTriangle, ArrowRight, ShieldAlert, Wifi, Wrench, Info } from "luci
  * die Komponente im Root-Layout gemountet und öffnet nicht erneut.
  */
 export default function EmdSystemNotice() {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const actionRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem("emd:system-notice-dismissed:v1") === "1") return
+    } catch {
+      // Browser-Speicher eventuell blockiert; Hinweis trotzdem anzeigen.
+    }
+    setOpen(true)
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -117,7 +126,14 @@ export default function EmdSystemNotice() {
           <button
             ref={actionRef}
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              try {
+                window.sessionStorage.setItem("emd:system-notice-dismissed:v1", "1")
+              } catch {
+                // Hinweis auch ohne Session-Speicher schlieÃŸen.
+              }
+              setOpen(false)
+            }}
             className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl bg-[#17263a] px-5 py-3 text-[14px] font-bold text-white shadow-[0_12px_28px_rgba(23,38,58,.16)] transition-colors hover:bg-[#263b56] focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           >
             Verstanden · Zur Plattform
