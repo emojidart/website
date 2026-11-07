@@ -337,7 +337,27 @@ export default function MemberStatisticsPage() {
 
       {/* LOADING */}
       {authLoading || membershipLoading ? (
-        <SectionSkeleton kind="table" />
+        <main className="w-full pt-14 sm:pt-16" role="status" aria-busy="true" aria-label="Teamstatistiken werden geladen">
+          <div className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-4 sm:px-5 sm:pt-6 lg:px-7 xl:px-8">
+            <section className="rounded-[24px] border border-white/10 bg-background p-5 sm:p-7">
+              <div className="mb-5 h-6 w-36 animate-pulse rounded-full bg-white/10" />
+              <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+              <div className="mt-3 h-10 w-full max-w-sm animate-pulse rounded bg-white/10" />
+              <div className="mt-4 h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+            </section>
+            <section className="rounded-[24px] border border-white/10 bg-card p-4 sm:p-5">
+              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {Array.from({ length: 3 }, (_, index) => (
+                  <div key={index} className="space-y-3 rounded-xl border border-white/10 p-4">
+                    <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+                    <div className="h-8 w-16 animate-pulse rounded bg-white/10" />
+                  </div>
+                ))}
+              </div>
+              <SectionSkeleton kind="table" label="Statistiken werden geladen…" />
+            </section>
+          </div>
+        </main>
       ) : (
         // MAIN (unchanged)
        <main className="w-full pt-14 sm:pt-16">
@@ -347,7 +367,7 @@ export default function MemberStatisticsPage() {
            title="Liga-Statistiken nicht freigeschaltet"
            description="Für die Liga-Statistiken brauchst du das E-Dart- oder Steeldart-Ligapaket bzw. eine aktive Testfreischaltung."
          >
-  <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
+  <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-4 pb-24 sm:px-5 sm:py-5 sm:pb-10 lg:px-7 xl:px-8">
           <section className="relative overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-sm sm:rounded-[20px] xl:rounded-[20px]">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
             <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
