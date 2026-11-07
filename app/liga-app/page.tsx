@@ -573,7 +573,32 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
     <main className="emd-loading-surface relative min-h-screen flex flex-col overflow-x-hidden bg-background pb-24 text-white">
       <Header variant="app" title="Liga & Statistiken" subtitle="Tabelle · Ergebnisse · Termine · Teams · Stats" backHref="/" />
 
-      <SectionSkeleton kind="table" />
+      <div className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-8 xl:px-10" role="status" aria-busy="true" aria-label="Liga wird geladen">
+        <section className="rounded-[28px] border border-white/10 bg-card p-5 sm:p-7">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 shrink-0 animate-pulse rounded-2xl bg-white/10" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+              <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+                <div className="mt-4 h-8 w-16 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="rounded-[24px] border border-white/10 bg-card p-4 sm:p-6">
+          <div className="mb-4 h-6 w-40 animate-pulse rounded bg-white/10" />
+          <div className="grid grid-cols-3 gap-2">
+            {Array.from({ length: 3 }, (_, index) => <div key={index} className="h-11 animate-pulse rounded-xl bg-white/10" />)}
+          </div>
+          <div className="mt-5"><SectionSkeleton kind="table" label="Liga wird geladen…" /></div>
+        </section>
+      </div>
 
       
 
