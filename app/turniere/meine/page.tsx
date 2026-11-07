@@ -170,7 +170,9 @@ export default function MeineDachVeranstaltungenPage() {
   );
 
   async function cancelSelectedEvent() {
-    if (!cancelEvent) return;
+    if (!cancelEvent || savingId) return;
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) { setMessage("Deine Sitzung ist abgelaufen. Bitte melde dich erneut an."); return; }
 
     setSavingId(cancelEvent.id);
     setMessage("");
@@ -182,7 +184,8 @@ export default function MeineDachVeranstaltungenPage() {
         cancellation_reason: cancellationReason.trim() || null,
         cancelled_at: new Date().toISOString(),
       })
-      .eq("id", cancelEvent.id);
+      .eq("id", cancelEvent.id)
+      .eq("created_by", auth.user.id);
 
     if (error) {
       setMessage(error.message);
@@ -196,6 +199,9 @@ export default function MeineDachVeranstaltungenPage() {
   }
 
   async function reactivateEvent(id: string) {
+    if (savingId) return;
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) { setMessage("Deine Sitzung ist abgelaufen. Bitte melde dich erneut an."); return; }
     setSavingId(id);
     setMessage("");
 
@@ -206,7 +212,8 @@ export default function MeineDachVeranstaltungenPage() {
         cancellation_reason: null,
         cancelled_at: null,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("created_by", auth.user.id);
 
     if (error) setMessage(error.message);
     else await loadEvents();
@@ -215,7 +222,9 @@ export default function MeineDachVeranstaltungenPage() {
   }
 
   async function removeSelectedEvent() {
-    if (!deleteEvent) return;
+    if (!deleteEvent || savingId) return;
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) { setMessage("Deine Sitzung ist abgelaufen. Bitte melde dich erneut an."); return; }
 
     setSavingId(deleteEvent.id);
     setMessage("");
@@ -223,7 +232,8 @@ export default function MeineDachVeranstaltungenPage() {
     const { error } = await supabase
       .from("dach_events")
       .delete()
-      .eq("id", deleteEvent.id);
+      .eq("id", deleteEvent.id)
+      .eq("created_by", auth.user.id);
 
     if (error) {
       setMessage(error.message);
