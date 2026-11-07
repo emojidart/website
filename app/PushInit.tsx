@@ -413,10 +413,13 @@ if (event === "TOKEN_REFRESHED") {
     void init()
 
     return () => {
-      subRegistration.remove()
-      subRegErr.remove()
-      subReceived.remove()
-      subAction.remove()
+      // Capacitor addListener() liefert Promise<PluginListenerHandle>.
+      // Die Handles erst nach Auflösung des Promises entfernen.
+      for (const handlePromise of [subRegistration, subRegErr, subReceived, subAction]) {
+        void handlePromise
+          .then((handle) => handle.remove())
+          .catch((error) => console.warn("[push] Listener konnte nicht entfernt werden:", error))
+      }
       authSub?.subscription?.unsubscribe()
     }
   }, [])
