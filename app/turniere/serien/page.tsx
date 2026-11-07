@@ -177,7 +177,25 @@ export default function TurnierserienPage() {
       <main className="et-shell">
         <TournamentPageTitle title="Eine Saison. Viele Chancen." eyebrow="EMD · Turnierserien" description="Finde deine Serie. Alle Termine, Startgelder und Wertungen übersichtlich an einem Ort." />
         <div className="et-section-heading"><h2>Aktuelle Turnierserien</h2><TournamentStatus>{loading ? "Wird geladen…" : series.length + " Serien"}</TournamentStatus></div>
-        {loading ? <SectionSkeleton kind="tournament" />
+        {loading ? <div className="et-series-grid" role="status" aria-busy="true" aria-label="Turnierserien werden geladen">
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="et-series-card overflow-hidden" aria-hidden="true">
+              <div className="et-series-art animate-pulse bg-white/[0.075]" />
+              <div className="et-series-body space-y-4">
+                <div className="space-y-3">
+                  <div className="h-6 w-3/4 animate-pulse rounded bg-white/10" />
+                  <div className="h-3.5 w-full animate-pulse rounded bg-white/10" />
+                  <div className="h-3.5 w-2/3 animate-pulse rounded bg-white/10" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="h-12 animate-pulse rounded-xl bg-white/10" />
+                  <div className="h-12 animate-pulse rounded-xl bg-white/10" />
+                </div>
+                <div className="h-12 animate-pulse rounded-xl bg-white/10" />
+              </div>
+            </div>
+          ))}
+        </div>
         : series.length === 0 ? <TournamentEmpty title="Aktuell keine Turnierserie verfügbar" description="Neue Serien erscheinen hier automatisch. Interne Serien sind für Vereinsmitglieder sichtbar." />
         : <div className="et-series-grid">{series.map(item=>{
           const nextEvent=nextBySeries.get(item.id)
