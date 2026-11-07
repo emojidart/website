@@ -42,7 +42,7 @@ export default function PushInit() {
     const getStoredToken = () => {
       try {
         const v = localStorage.getItem(STORAGE_FCM_TOKEN_KEY)
-        console.log("[push] getStoredToken:", v ? `${v.slice(0, 20)}...` : "null")
+        console.log("[push] stored token available:", Boolean(v))
         return v
       } catch (e) {
         console.log("[push] getStoredToken error:", e)
@@ -127,11 +127,10 @@ export default function PushInit() {
           8000
         )
 
-        const txt = await res.text().catch(() => "")
-        console.log("[push] register-public-fcm response:", res.status, txt)
+        console.log("[push] register-public-fcm status:", res.status)
 
         if (!res.ok) {
-          console.log("[push] register-public-fcm failed:", res.status, txt)
+          console.warn("[push] register-public-fcm failed:", res.status)
           return
         }
 
@@ -178,11 +177,10 @@ export default function PushInit() {
           8000
         )
 
-        const txt = await res.text().catch(() => "")
-        console.log("[push] register-fcm response:", res.status, txt)
+        console.log("[push] register-fcm status:", res.status)
 
         if (!res.ok) {
-          console.log("[push] register-fcm failed:", res.status, txt)
+          console.warn("[push] register-fcm failed:", res.status)
           return
         }
 
@@ -296,7 +294,7 @@ export default function PushInit() {
 
     const subRegistration = PushNotifications.addListener("registration", async (token) => {
       console.log("[push] REGISTRATION EVENT FIRED")
-      console.log("[push] FCM token:", token.value)
+      console.log("[push] FCM token received")
 
       setStoredToken(token.value)
 
@@ -339,7 +337,7 @@ export default function PushInit() {
     }
 
     const subReceived = PushNotifications.addListener("pushNotificationReceived", (notif) => {
-      console.log("[push] received:", notif)
+      console.log("[push] notification received")
 
       try {
         const data: any = (notif as any)?.data || {}
@@ -350,7 +348,7 @@ export default function PushInit() {
     })
 
     const subAction = PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-      console.log("[push] action:", action)
+      console.log("[push] notification action received")
 
       try {
         const data: any = (action as any)?.notification?.data || {}
