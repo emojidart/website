@@ -4,6 +4,7 @@ import { SectionSkeleton } from "@/components/loading/loading"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { createBrowserClient } from "@supabase/ssr"
 import { Header } from "@/components/header"
@@ -197,6 +198,7 @@ function Chip({
 }
 
 export default function VeranstaltungenPage() {
+  const router = useRouter()
   const [events, setEvents] = useState<EventRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -294,6 +296,11 @@ export default function VeranstaltungenPage() {
       })
   }, [events, timeFilter, typeFilter, sourceFilter, query])
 
+  const navigateEvent = (href: string) => {
+    window.dispatchEvent(new CustomEvent("emd:route-start", { detail: { href } }))
+    router.push(href)
+  }
+
   const openEventDetails = async (event: EventRow) => {
     const isTournament = (event.event_type || "").toLowerCase() === "tournament"
 
@@ -306,12 +313,12 @@ export default function VeranstaltungenPage() {
         .maybeSingle()
 
       if (!dachEventError && dachEvent?.id) {
-        window.location.href = `/dach-veranstaltungen/${dachEvent.id}`
+        navigateEvent(`/dach-veranstaltungen/${dachEvent.id}`)
         return
       }
     }
 
-    window.location.href = `/veranstaltungen/${event.id}`
+    navigateEvent(`/veranstaltungen/${event.id}`)
   }
 
   return (
