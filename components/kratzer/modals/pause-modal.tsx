@@ -8,7 +8,7 @@ import { Play } from "lucide-react"
 interface PauseModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  pauseMinutesRef: React.RefObject<HTMLInputElement>
+  pauseMinutesRef: React.RefObject<HTMLInputElement | null>
   onStartPause: (minutes: number) => void
 }
 
@@ -33,13 +33,23 @@ export function PauseModal({
             max="60"
             defaultValue={5}
             ref={pauseMinutesRef}
+            onChange={(event) => event.currentTarget.setCustomValidity("")}
             className="mx-auto h-14 w-40 rounded-2xl border-white/10 bg-white/10 text-center text-xl font-semibold text-white"
           />
         </div>
 
         <DialogFooter className="flex justify-center border-t border-white/10 px-6 py-5">
           <Button
-            onClick={() => onStartPause(Number.parseInt(pauseMinutesRef.current?.value || "5"))}
+            onClick={() => {
+              const minutes = Number(pauseMinutesRef.current?.value ?? 5)
+              if (Number.isInteger(minutes) && minutes >= 1 && minutes <= 60) {
+                onStartPause(minutes)
+              } else {
+                pauseMinutesRef.current?.focus()
+                pauseMinutesRef.current?.setCustomValidity("Bitte eine ganze Minutenzahl zwischen 1 und 60 eingeben.")
+                pauseMinutesRef.current?.reportValidity()
+              }
+            }}
             className="h-12 rounded-xl bg-primary px-6 text-base font-semibold hover:bg-primary/90 text-primary-foreground"
           >
             <Play className="h-5 w-5 mr-2" />
