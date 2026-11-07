@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
@@ -13,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { Search, Send, Users, Image as ImageIcon, Loader2, CheckCircle2, BellRing } from "lucide-react"
+import { Search, Send, Users, Image as ImageIcon, CheckCircle2, BellRing } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type ClubPlayer = {
@@ -394,10 +396,7 @@ export function AdminPushManagement({ user }: AdminPushManagementProps) {
                     <ScrollArea className="h-[320px]">
                       <div className="p-3 space-y-2">
                         {loadingPlayers ? (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Spieler werden geladen...
-                          </div>
+                          <SectionSkeleton kind="cards" />
                         ) : filteredPlayers.length === 0 ? (
                           <div className="text-sm text-gray-500">Keine Spieler gefunden.</div>
                         ) : (
@@ -458,9 +457,7 @@ export function AdminPushManagement({ user }: AdminPushManagementProps) {
             ) : null}
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={sending} className="rounded-xl">
-                {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                Push senden
+              <Button type="submit" disabled={sending} className="rounded-xl" loading={Boolean(sending)}><Send className="w-4 h-4 mr-2" />Push senden
               </Button>
             </div>
           </form>

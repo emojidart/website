@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useRef } from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -1544,18 +1546,8 @@ const toggleInvitePlayer = (playerId: string) => {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-background pb-20 text-white">
-        <main className="flex-grow pt-14 sm:pt-16">
-          <div className="mx-auto w-full max-w-[var(--emd-content-max)] overflow-x-hidden px-3 py-4 sm:px-5 lg:px-7 xl:px-8">
-
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
-                <p className="font-medium text-muted-foreground">Vereinskalender wird geladen…</p>
-              </div>
-            </div>
-          </div>
-        </main>
+      <div className="emd-loading-surface relative min-h-screen overflow-x-hidden bg-background pb-20 text-white">
+        <main className="flex-grow pt-14 sm:pt-16"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     )
@@ -2644,7 +2636,7 @@ const dateB =
     <div className="font-semibold text-sm">Anhänge</div>
 
     {loadingBoardAttachments ? (
-      <div className="text-sm text-muted-foreground">Lade Dateien...</div>
+      <SectionSkeleton kind="cards" />
     ) : boardAttachments.length === 0 ? (
       <div className="text-sm text-muted-foreground">Keine Dateien hochgeladen.</div>
     ) : (
@@ -2900,10 +2892,7 @@ const dateB =
                   onClick={createVacation}
                   disabled={savingVacation || !vacationName.trim() || !vacationStart || !vacationEnd}
                   className="w-full"
-                >
-                  <Sun className="h-4 w-4 mr-2" />
-                  {savingVacation ? "Speichern..." : editingVacationId ? "Änderungen speichern" : "Urlaub speichern"}
-                </Button>
+                 loading={Boolean(savingVacation)} loadingLabel="Speichern..."><Sun className="h-4 w-4 mr-2" />{editingVacationId ? "Änderungen speichern" : "Urlaub speichern"}</Button>
 
                 {editingVacationId && (
                   <Button
@@ -2978,13 +2967,9 @@ const dateB =
         onClick={createPrivateEntry}
         disabled={savingPrivateEntry || !privateTitle.trim() || !privateStart || !privateEnd}
         className="w-full"
-      >
-        {savingPrivateEntry
-          ? "Speichern..."
-          : editingPrivateEntryId
+       loading={Boolean(savingPrivateEntry)} loadingLabel="Speichern...">{editingPrivateEntryId
           ? "Änderungen speichern"
-          : "Privaten Termin speichern"}
-      </Button>
+          : "Privaten Termin speichern"}</Button>
 
       {editingPrivateEntryId && (
         <Button
@@ -3131,9 +3116,7 @@ const dateB =
         onClick={createBoardEvent}
         disabled={savingBoard || !boardTitle.trim() || !boardDate || !boardTime}
         className="w-full bg-black hover:bg-black/90"
-      >
-        {savingBoard ? "Speichern..." : "Termin speichern"}
-      </Button>
+       loading={Boolean(savingBoard)} loadingLabel="Speichern...">{"Termin speichern"}</Button>
     </div>
   </DialogContent>
 </Dialog>
@@ -3260,7 +3243,7 @@ const dateB =
     </DialogHeader>
 
     {loadingLineup ? (
-      <div className="text-sm text-muted-foreground">Lade Aufstellung...</div>
+      <SectionSkeleton kind="cards" />
     ) : lineupPlayers.length === 0 ? (
       <div className="text-sm text-muted-foreground">Noch keine Aufstellung hinterlegt.</div>
     ) : (

@@ -1,10 +1,12 @@
 "use client"
 
+
+
 import type React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
-import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, ImagePlus, Loader2, MapPin, Package, Send, ShieldAlert, Trash2, UserRound, X } from "lucide-react"
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, ImagePlus, MapPin, Package, Send, ShieldAlert, Trash2, UserRound, X } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -375,7 +377,7 @@ export default function NeuesInseratPage() {
           </Section>
 
           {message ? <div className={`rounded-2xl border p-4 text-sm font-bold ${success ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-200" : "border-rose-300/20 bg-rose-500/[0.08] text-rose-300"}`}>{success ? <CheckCircle2 className="mr-2 inline h-5 w-5" /> : <ShieldAlert className="mr-2 inline h-5 w-5" />}{message}</div> : null}
-          <Button disabled={saving} className="h-13 w-full rounded-2xl border border-orange-300/20 bg-orange-500 font-semibold text-white/80 text-base font-semibold hover:bg-orange-600 text-primary-foreground">{saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}{saving ? "Wird eingereicht …" : "Inserat zur Freigabe einreichen"}</Button>
+          <Button disabled={saving} className="h-13 w-full rounded-2xl border border-orange-300/20 bg-orange-500 font-semibold text-white/80 text-base font-semibold hover:bg-orange-600 text-primary-foreground" loading={Boolean(saving)}><Send className="mr-2 h-5 w-5" />{saving ? "Wird eingereicht …" : "Inserat zur Freigabe einreichen"}</Button>
         </form>
       </main><MobileBottomNav /></div>
   )

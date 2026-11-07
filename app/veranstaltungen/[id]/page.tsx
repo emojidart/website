@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -501,7 +503,7 @@ async function loadParticipants(eventId: string) {
           </div>
 
           {loading ? (
-            <div className="rounded-[22px] border border-white/10 bg-white/5 py-16 text-center text-muted-foreground">Lade Veranstaltung…</div>
+            <SectionSkeleton kind="cards" />
           ) : error ? (
             <div className="rounded-[22px] border border-red-400/20 bg-red-400/10 py-16 text-center text-red-300">{error}</div>
           ) : !event ? (

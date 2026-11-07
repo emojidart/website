@@ -175,9 +175,7 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, pa
                 onClick={handleSubmit}
                 disabled={!selectedAnswer || loading}
                 className="flex-1 h-12 md:h-14 text-base md:text-lg font-bold bg-card     text-white shadow-lg disabled:opacity-50"
-              >
-                {loading ? "Speichert..." : "Senden 🎯"}
-              </Button>
+               loading={Boolean(loading)} loadingLabel="Speichert...">{"Senden 🎯"}</Button>
             )}
           </div>
         </div>

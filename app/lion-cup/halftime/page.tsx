@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { supabase } from "@/lib/supabase"
@@ -211,9 +213,9 @@ function MobilePlayerCard({
 
       {/* Additional Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-        <div className="bg-purple-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-purple-600 font-medium">Matches</div>
-          <div className="text-sm font-bold text-purple-800">{player.total_matches_played}</div>
+        <div className="bg-orange-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-orange-600 font-medium">Matches</div>
+          <div className="text-sm font-bold text-orange-800">{player.total_matches_played}</div>
         </div>
         <div className="bg-teal-50 rounded-lg p-2 text-center">
           <div className="text-xs text-teal-600 font-medium">Siege</div>
@@ -425,11 +427,9 @@ export default function TournamentSeriesPage() {
 
   if (loading) {
     return (
-      <div className="text-foreground min-h-screen bg-card  ">
+      <div className="emd-loading-surface text-foreground min-h-screen bg-card  ">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="text-center">Lädt...</div>
-        </div>
+        <SectionSkeleton kind="cards" />
         <MobileBottomNav />
       </div>
     )
@@ -606,10 +606,10 @@ export default function TournamentSeriesPage() {
           <Card className="shadow-lg hover:shadow-xl transition-shadow border-2">
             <CardHeader className="text-foreground flex flex-row items-center justify-between space-y-0 pb-2 bg-card  ">
               <CardTitle className="text-sm font-bold text-muted-foreground">Durchschn. Turniere</CardTitle>
-              <Target className="h-5 w-5 text-purple-600" />
+              <Target className="h-5 w-5 text-orange-600" />
             </CardHeader>
             <CardContent className="pt-4">
-              <div className="text-2xl sm:text-3xl font-bold text-purple-600">
+              <div className="text-2xl sm:text-3xl font-bold text-orange-600">
                 {standings.length > 0
                   ? (standings.reduce((sum, p) => sum + p.tournaments_played, 0) / standings.length).toFixed(1)
                   : "0.0"}

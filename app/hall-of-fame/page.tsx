@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { createBrowserClient } from "@supabase/ssr"
@@ -283,14 +285,9 @@ export default function HallOfFamePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-card text-foreground">
+      <div className="emd-loading-surface min-h-screen bg-card text-foreground">
         <Header />
-        <main className="pt-8 pb-24">
-          <div className="container mx-auto px-4 py-10 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6" />
-            <p className="text-muted-foreground">Lade Hall of Fame...</p>
-          </div>
-        </main>
+        <main className="pt-8 pb-24"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     )

@@ -895,13 +895,9 @@ const handleSecretSubmit = async () => {
                     type="submit"
                     className="h-12 rounded-2xl bg-orange-600 font-black hover:bg-orange-700"
                     disabled={isCodeInputLocked}
-                  >
-                    {submittingCode
-                      ? "Prüft..."
-                      : hasAllCodesCollected
+                   loading={Boolean(submittingCode)} loadingLabel="Prüft...">{hasAllCodesCollected
                         ? "Abgeschlossen"
-                        : "Prüfen"}
-                  </Button>
+                        : "Prüfen"}</Button>
                 </form>
 
                 {hasAllCodesCollected && (
@@ -963,9 +959,7 @@ const handleSecretSubmit = async () => {
         type="submit"
         className="h-12 rounded-2xl bg-zinc-100 font-black text-zinc-900 hover:bg-white"
         disabled={submittingSecret}
-      >
-        {submittingSecret ? "Prüft..." : "Öffnen"}
-      </Button>
+       loading={Boolean(submittingSecret)} loadingLabel="Prüft...">{"Öffnen"}</Button>
     </form>
   </motion.div>
 )}
@@ -1151,13 +1145,9 @@ const handleSecretSubmit = async () => {
                       type="submit"
                       className="h-12 rounded-2xl bg-gray-900 font-black hover:bg-black"
                       disabled={isFinalInputLocked}
-                    >
-                      {submittingFinal
-                        ? "Sendet..."
-                        : hasCorrectFinalSubmission
+                     loading={Boolean(submittingFinal)} loadingLabel="Sendet...">{hasCorrectFinalSubmission
                           ? "Gespeichert"
-                          : "Absenden"}
-                    </Button>
+                          : "Absenden"}</Button>
                   </form>
 
                   {hasCorrectFinalSubmission && (

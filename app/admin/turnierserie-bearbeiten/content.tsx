@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { Trash2, AlertTriangle, Search, ChevronDown, ChevronUp, RefreshCw, ArrowRightLeft } from "lucide-react"
@@ -214,19 +216,12 @@ export default function AdminTurnierSerieContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Lade Turnierserie-Einträge...</p>
-          </div>
-        </div>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div className="min-h-screen bg-card p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-xl shadow-lg p-6 text-white">
@@ -260,20 +255,20 @@ export default function AdminTurnierSerieContent() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow p-4 text-center">
+          <div className="bg-card rounded-xl shadow p-4 text-center">
             <div className="text-3xl font-bold text-red-600">{groupedTournaments.length}</div>
             <div className="text-sm text-gray-600">Turniere</div>
           </div>
-          <div className="bg-white rounded-xl shadow p-4 text-center">
+          <div className="bg-card rounded-xl shadow p-4 text-center">
             <div className="text-3xl font-bold text-blue-600">{entries.length}</div>
             <div className="text-sm text-gray-600">Einträge gesamt</div>
           </div>
-          <div className="bg-white rounded-xl shadow p-4 text-center">
+          <div className="bg-card rounded-xl shadow p-4 text-center">
             <div className="text-3xl font-bold text-green-600">{new Set(entries.map((e) => e.player_name)).size}</div>
             <div className="text-sm text-gray-600">Spieler</div>
           </div>
-          <div className="bg-white rounded-xl shadow p-4 text-center">
-            <div className="text-3xl font-bold text-purple-600">
+          <div className="bg-card rounded-xl shadow p-4 text-center">
+            <div className="text-3xl font-bold text-orange-600">
               {entries.reduce((sum, e) => sum + (e.placement_points || 0), 0)}
             </div>
             <div className="text-sm text-gray-600">Punkte gesamt</div>
@@ -281,7 +276,7 @@ export default function AdminTurnierSerieContent() {
         </div>
 
         {/* Search */}
-        <div className="bg-white rounded-xl shadow p-4">
+        <div className="bg-card rounded-xl shadow p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
@@ -311,11 +306,11 @@ export default function AdminTurnierSerieContent() {
           {filteredTournaments.map((tournament) => (
             <div
               key={tournament.tournament_id}
-              className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-200"
+              className="bg-card rounded-xl shadow-lg overflow-hidden border-2 border-gray-200"
             >
               {/* Tournament Header */}
               <div
-                className="p-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+                className="p-4 bg-card cursor-pointer hover:bg-card transition-colors"
                 onClick={() => toggleTournament(tournament.tournament_id)}
               >
                 <div className="flex items-center justify-between flex-wrap gap-3">
@@ -404,7 +399,7 @@ export default function AdminTurnierSerieContent() {
                                       ? "bg-gray-300 text-white"
                                       : entry.placement === 3
                                         ? "bg-amber-600 text-white"
-                                        : "bg-gray-100 text-gray-700"
+                                        : "bg-card text-gray-700"
                                 }`}
                               >
                                 {entry.placement}
@@ -446,7 +441,7 @@ export default function AdminTurnierSerieContent() {
         </div>
 
         {filteredTournaments.length === 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center text-gray-500">Keine Turniere gefunden</div>
+          <div className="bg-card rounded-xl shadow-lg p-8 text-center text-gray-500">Keine Turniere gefunden</div>
         )}
       </div>
 

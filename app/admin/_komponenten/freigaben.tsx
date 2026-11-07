@@ -1,23 +1,11 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import { supabase } from "@/lib/supabase"
-import {
-  CheckCircle2,
-  Clock3,
-  ExternalLink,
-  Globe2,
-  Image as ImageIcon,
-  Loader2,
-  MapPin,
-  PackageSearch,
-  RefreshCw,
-  ShieldAlert,
-  Tag,
-  Trophy,
-  XCircle,
-} from "lucide-react"
+import { CheckCircle2, Clock3, ExternalLink, Globe2, Image as ImageIcon, MapPin, PackageSearch, RefreshCw, ShieldAlert, Tag, Trophy, XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -352,7 +340,7 @@ export function AdminApprovalsManagement() {
           </div>
 
           <Button type="button" variant="outline" onClick={() => void load()} disabled={loading} className="rounded-xl">
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "" : ""}`} />}
             Aktualisieren
           </Button>
         </div>
@@ -393,9 +381,7 @@ export function AdminApprovalsManagement() {
       ) : null}
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-9 w-9 animate-spin text-orange-600" />
-        </div>
+        <SectionSkeleton kind="cards" />
       ) : tab === "dach" ? (
         dachEvents.length === 0 ? (
           <EmptyState text="Keine offenen DACH-Turniere." />
@@ -446,9 +432,7 @@ export function AdminApprovalsManagement() {
                           onClick={() => void approveDach(event)}
                           disabled={savingId === event.id}
                           className="rounded-xl bg-green-600 hover:bg-green-700"
-                        >
-                          {savingId === event.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                          Freigeben
+                         loading={Boolean(savingId === event.id)}><CheckCircle2 className="mr-2 h-4 w-4" />Freigeben
                         </Button>
 
                         <Button
@@ -516,9 +500,7 @@ export function AdminApprovalsManagement() {
                           onClick={() => void updateListing(listing, "approved")}
                           disabled={savingId === listing.id}
                           className="rounded-xl bg-green-600 hover:bg-green-700"
-                        >
-                          {savingId === listing.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                          Freigeben
+                         loading={Boolean(savingId === listing.id)}><CheckCircle2 className="mr-2 h-4 w-4" />Freigeben
                         </Button>
 
                         <Button

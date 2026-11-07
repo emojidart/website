@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader, LoadingIndicator } from "@/components/loading/loading"
+
 import type React from "react"
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { DialogFooter } from "@/components/ui/dialog"
@@ -8,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { AlertCircle, CheckCircle, Loader2, Eye, EyeOff, Trash2, Mail, UserCheck, Search } from "lucide-react"
+import { AlertCircle, CheckCircle, Eye, EyeOff, Trash2, Mail, UserCheck, Search } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
@@ -279,7 +281,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
         ) : actionMessageType === "success" ? (
           <CheckCircle className="h-4 w-4" />
         ) : (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <LoadingIndicator className="h-4 w-4" />
         )}
         <span>{actionMessage}</span>
       </div>
@@ -317,8 +319,8 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
         <CardContent className="p-4 sm:p-5">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <p className="ml-3 text-muted-foreground">Lade Spielerbewerbungen...</p>
+              
+              <InlineLoader label="Lade Spielerbewerbungen..." />
             </div>
           ) : error ? (
             <div className="flex items-center justify-center py-8 text-red-600">
@@ -385,14 +387,9 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                             onClick={() => handleViewClick(app)}
                             disabled={isBusy}
                             className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted"
-                          >
-                            {isBusy && actionMessageType === "info" ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
+                           loading={Boolean(isBusy && actionMessageType === "info")}>{(
                               <Eye className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">Details</span>
-                          </Button>
+                            )}<span className="sr-only">Details</span></Button>
 
                           <Button
                             type="button"
@@ -401,14 +398,9 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                             onClick={() => openApproveDialog(app)}
                             disabled={isBusy}
                             className="h-8 w-8 rounded-lg text-green-700 hover:bg-green-50"
-                          >
-                            {isBusy ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
+                           loading={Boolean(isBusy)}>{(
                               <UserCheck className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">Genehmigen</span>
-                          </Button>
+                            )}<span className="sr-only">Genehmigen</span></Button>
 
                           <Button
                             type="button"
@@ -417,14 +409,9 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                             onClick={() => handleDeleteClick(app)}
                             disabled={isBusy}
                             className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50"
-                          >
-                            {isBusy ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
+                           loading={Boolean(isBusy)}>{(
                               <Trash2 className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">Löschen</span>
-                          </Button>
+                            )}<span className="sr-only">Löschen</span></Button>
                         </div>
                       </div>
                     </div>
@@ -478,14 +465,9 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                               onClick={() => openApproveDialog(app)}
                               className="mr-2"
                               disabled={isBusy}
-                            >
-                              {isBusy ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                              ) : (
+                             loading={Boolean(isBusy)}>{(
                                 <UserCheck className="h-4 w-4 text-green-700" />
-                              )}
-                              <span className="sr-only">Genehmigen</span>
-                            </Button>
+                              )}<span className="sr-only">Genehmigen</span></Button>
 
                             <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(app)} disabled={isBusy}>
                               <Trash2 className="h-4 w-4 text-red-500" />
@@ -561,16 +543,11 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
               variant="outline"
               onClick={() => handleMarkAsRead(currentApplication!.id, !currentApplication!.is_read)}
               disabled={actionLoading}
-            >
-              {actionLoading && actionMessageType === "info" ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : currentApplication?.is_read ? (
+             loading={Boolean(actionLoading && actionMessageType === "info")}>{currentApplication?.is_read ? (
                 <EyeOff className="h-4 w-4 mr-2" />
               ) : (
                 <Eye className="h-4 w-4 mr-2" />
-              )}
-              {currentApplication?.is_read ? "Als ungelesen" : "Als gelesen"}
-            </Button>
+              )}{currentApplication?.is_read ? "Als ungelesen" : "Als gelesen"}</Button>
 
             <Button
               onClick={() => openApproveDialog(currentApplication!)}
@@ -626,9 +603,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
               onClick={handleApproveConfirm}
               disabled={!currentApplication || actionLoading}
               className="rounded-xl bg-background text-white font-semibold hover:bg-background"
-            >
-              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
-              Genehmigen & übernehmen
+             loading={Boolean(actionLoading)}><UserCheck className="h-4 w-4 mr-2" />Genehmigen & übernehmen
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -660,9 +635,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={actionLoading}>
               Abbrechen
             </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={actionLoading}>
-              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-              Löschen
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={actionLoading} loading={Boolean(actionLoading)}><Trash2 className="h-4 w-4 mr-2" />Löschen
             </Button>
           </DialogFooter>
         </DialogContent>

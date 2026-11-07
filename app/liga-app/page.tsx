@@ -1,11 +1,13 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, Calendar, Users, Loader2 } from "lucide-react"
+import { Trophy, Target, Calendar, Users } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
@@ -568,26 +570,12 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   // ✅ LOADING VIEW
   if (loading) {
   return (
-    <main className="relative min-h-screen flex flex-col overflow-x-hidden bg-background pb-24 text-white">
+    <main className="emd-loading-surface relative min-h-screen flex flex-col overflow-x-hidden bg-background pb-24 text-white">
       <Header variant="app" title="Liga & Statistiken" subtitle="Tabelle · Ergebnisse · Termine · Teams · Stats" backHref="/" />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
+      <SectionSkeleton kind="table" />
 
-      <div className="relative z-10 flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
-        <div>
-          <div className="flex flex-col items-center gap-6 rounded-[28px] border border-white/10 bg-card px-10 py-10 shadow-[0_28px_80px_-52px_rgba(0,0,0,.95)] ">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-orange-500/100/30 blur-2xl animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-300" />
-            </div>
-
-            <div className="text-center">
-              <p className="text-lg font-bold text-white">Statistiken werden geladen</p>
-              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       <MobileBottomNav />
     </main>

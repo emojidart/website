@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -29,27 +31,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-import {
-  Calendar,
-  MapPin,
-  Users,
-  Loader2,
-  Crown,
-  ShieldCheck,
-  CheckCircle2,
-  HelpCircle,
-  XCircle,
-  ClipboardList,
-  Eye,
-  MessageCircle,
-  Send,
-  Clock,
-  ArrowLeft,
-  Search,
-  Filter,
-  Shield,
-  Sparkles,
-} from "lucide-react"
+import { Calendar, MapPin, Users, Crown, ShieldCheck, CheckCircle2, HelpCircle, XCircle, ClipboardList, Eye, MessageCircle, Send, Clock, ArrowLeft, Search, Filter, Shield, Sparkles } from "lucide-react"
 
 type AvailabilityStatus = "yes" | "maybe" | "no"
 
@@ -825,14 +807,9 @@ const [confirmMsg, setConfirmMsg] = useState<null | { type: "ok" | "err"; text: 
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <Header />
-        <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8 max-w-6xl">
-          <div className="flex items-center justify-center min-h-[60vh] gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-            <span className="text-lg font-medium">Lade Admin-Übersicht…</span>
-          </div>
-        </main>
+        <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8 max-w-6xl"><SectionSkeleton kind="lineup" /></main>
         <MobileBottomNav />
       </div>
     )
@@ -1318,9 +1295,7 @@ const [confirmMsg, setConfirmMsg] = useState<null | { type: "ok" | "err"; text: 
       <div className="space-y-2">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button disabled={confirmingLineup} className="bg-orange-600 hover:bg-orange-700 w-full">
-              {confirmingLineup ? "Speichere..." : "Aufstellung bestätigen"}
-            </Button>
+            <Button disabled={confirmingLineup} className="bg-orange-600 hover:bg-orange-700 w-full" loading={Boolean(confirmingLineup)} loadingLabel="Speichere...">{"Aufstellung bestätigen"}</Button>
           </AlertDialogTrigger>
 
           <AlertDialogContent>
@@ -1403,10 +1378,7 @@ const [confirmMsg, setConfirmMsg] = useState<null | { type: "ok" | "err"; text: 
                           <div className="rounded-xl border overflow-hidden">
                             <ScrollArea className="h-64 sm:h-72 p-3">
                               {chatLoading ? (
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
-                                  Lade Chat…
-                                </div>
+                                <SectionSkeleton kind="lineup" />
                               ) : chatMessages.length === 0 ? (
                                 <div className="text-sm text-muted-foreground">Noch keine Nachrichten.</div>
                               ) : (
@@ -1469,9 +1441,7 @@ const [confirmMsg, setConfirmMsg] = useState<null | { type: "ok" | "err"; text: 
                               disabled={!chatText.trim() || chatSending || !myProfileId}
                               className="bg-orange-600 hover:bg-orange-700 px-3"
                               title={!myProfileId ? "Kein user_profiles.id gefunden" : undefined}
-                            >
-                              {chatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                            </Button>
+                             loading={Boolean(chatSending)}><Send className="h-4 w-4" /></Button>
                           </div>
 
                           {!myProfileId ? (

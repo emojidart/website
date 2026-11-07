@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import {
@@ -222,14 +224,7 @@ export default function TerminalPrizeMoneyPage() {
         </header>
 
         {loading ? (
-          <div className="mt-8 rounded-[32px] border border-white/[0.08] bg-black/28 p-12 text-center backdrop-blur-2xl">
-            <div className="mx-auto h-1.5 w-52 overflow-hidden rounded-full bg-white/[0.08]">
-              <div className="h-full w-1/2 animate-pulse rounded-full bg-cyan-300" />
-            </div>
-            <div className="mt-4 text-sm font-black uppercase tracking-[0.24em] text-white/35">
-              Preisgeld wird geladen
-            </div>
-          </div>
+          <SectionSkeleton kind="tournament" />
         ) : !selected ? (
           <div className="mt-8 rounded-[32px] border border-dashed border-white/10 bg-black/24 p-12 text-center backdrop-blur-xl">
             <Trophy className="mx-auto h-14 w-14 text-white/15" />

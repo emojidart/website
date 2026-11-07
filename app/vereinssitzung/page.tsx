@@ -1,7 +1,9 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useRef, useState } from "react"
-import { CalendarClock, Loader2, Radio, Video } from "lucide-react"
+import { CalendarClock, Radio, Video } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 
 import { supabase } from "@/lib/supabase"
@@ -188,7 +190,7 @@ export default function ClubMeetingPage() {
       <Header />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:py-10">
         {loading ? (
-          <div className="flex justify-center py-24"><Loader2 className="h-9 w-9 animate-spin text-red-600" /></div>
+          <SectionSkeleton kind="cards" />
         ) : !meeting ? (
           <Card className="mx-auto max-w-3xl rounded-3xl"><CardContent className="p-10 text-center"><Video className="mx-auto h-12 w-12 text-muted-foreground" /><h1 className="mt-4 text-2xl font-semibold">Keine Vereinssitzung vorhanden</h1><p className="mt-2 text-muted-foreground">Aktuell ist keine Sitzung vorbereitet oder live.</p></CardContent></Card>
         ) : meeting.status === "ended" ? (
@@ -213,7 +215,7 @@ export default function ClubMeetingPage() {
                     <h1 className="mt-3 text-2xl font-semibold sm:text-3xl">{meeting.title}</h1>
                     <p className="mt-1 text-sm text-muted-foreground">Die Sitzung läuft direkt in der Emoji’s Dartverein App.</p>
                   </div>
-                  {joining ? <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Videoraum wird verbunden …</div> : null}
+                  {joining ? <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground"><LoadingIndicator className="h-4 w-4" /> Videoraum wird verbunden …</div> : null}
                 </div>
               </CardContent>
             </Card>

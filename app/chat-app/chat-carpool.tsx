@@ -1,7 +1,9 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Car, Clock3, Loader2, MapPin, Plus, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
+import { Car, Clock3, MapPin, Plus, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -277,10 +279,7 @@ export default function ChatCarpool({
 
   if (loading && !offers.length && !requests.length) {
     return (
-      <div className="rounded-2xl border border-white/[0.07] bg-black/20 p-3 text-xs text-muted-foreground">
-        <Loader2 className="mr-2 inline h-3.5 w-3.5 animate-spin" />
-        Fahrgemeinschaften werden geladen …
-      </div>
+      <SectionSkeleton kind="cards" />
     );
   }
 
@@ -358,14 +357,9 @@ export default function ChatCarpool({
                           ? "bg-emerald-600 text-white hover:bg-emerald-500"
                           : "bg-sky-600 text-white hover:bg-sky-500"
                       }`}
-                    >
-                      {busy === `join-${offer.id}` ? (
-                        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-                      ) : (
+                     loading={Boolean(busy === `join-${offer.id}`)}>{(
                         <UserRoundCheck className="mr-1 h-3.5 w-3.5" />
-                      )}
-                      {joined ? "Fahre mit ✓" : "Ich fahre mit"}
-                    </Button>
+                      )}{joined ? "Fahre mit ✓" : "Ich fahre mit"}</Button>
                   )}
                 </div>
 
@@ -431,10 +425,7 @@ export default function ChatCarpool({
                 ? "border-amber-300/25 bg-amber-500/15 text-amber-100"
                 : "border-white/10 bg-white/[0.03] text-white/60"
             }`}
-          >
-            {busy === "request" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-            {myRequest ? "Mitfahrt gesucht ✓" : "Ich brauche Mitfahrt"}
-          </Button>
+           loading={Boolean(busy === "request")}>{null}{myRequest ? "Mitfahrt gesucht ✓" : "Ich brauche Mitfahrt"}</Button>
         </div>
       ) : null}
 
@@ -484,9 +475,7 @@ export default function ChatCarpool({
             disabled={!!busy}
             onClick={() => void createOffer()}
             className="mt-3 h-10 w-full rounded-xl bg-sky-600 text-xs font-semibold text-white hover:bg-sky-500"
-          >
-            {busy === "offer" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Car className="mr-2 h-4 w-4" />}
-            Fahrt veröffentlichen
+           loading={Boolean(busy === "offer")}><Car className="mr-2 h-4 w-4" />Fahrt veröffentlichen
           </Button>
         </div>
       ) : null}

@@ -47,7 +47,7 @@ export function EinzelturnierEinstellungen({
   return (
     <section className="emd-admin-surface mb-6 overflow-hidden p-5 sm:p-6 lg:p-7">
       <div className="mb-5">
-        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/75">Einstellungen</div>
+        <div className="text-xs font-black uppercase tracking-[0.18em] text-orange-300/75">Einstellungen</div>
         <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Turnier konfigurieren</h2>
       </div>
 
@@ -68,7 +68,7 @@ export function EinzelturnierEinstellungen({
             onChange={(e) => onTournamentNameChange(e.target.value)}
             disabled={isSeriesPrefilled}
             title={isSeriesPrefilled ? "Wird automatisch aus der Turnierserie geladen" : ""}
-            className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-base font-bold text-white outline-none transition placeholder:text-white/25 focus:border-orange-400/45 focus:bg-white/[0.06] focus:ring-4 focus:ring-orange-500/10 disabled:cursor-not-allowed disabled:bg-white/[0.025] disabled:text-white/35"
+            className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-base font-bold text-white outline-none transition placeholder:text-muted-foreground focus:border-orange-400/45 focus:bg-white/[0.06] focus:ring-4 focus:ring-orange-500/10 disabled:cursor-not-allowed disabled:bg-white/[0.025] disabled:text-muted-foreground"
             maxLength={100}
           />
         </div>
@@ -92,9 +92,9 @@ export function EinzelturnierEinstellungen({
               onChange={(e) => onTournamentEntryFeeChange(e.target.value)}
               disabled={isSeriesPrefilled}
               title={isSeriesPrefilled ? "Wird automatisch aus der Turnierserie geladen" : ""}
-              className="h-12 flex-grow rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-base font-bold text-white outline-none transition placeholder:text-white/25 focus:border-orange-400/45 focus:bg-white/[0.065] focus:ring-4 focus:ring-orange-500/10 disabled:cursor-not-allowed disabled:bg-white/[0.025] disabled:text-white/35"
+              className="h-12 flex-grow rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-base font-bold text-white outline-none transition placeholder:text-muted-foreground focus:border-orange-400/45 focus:bg-white/[0.065] focus:ring-4 focus:ring-orange-500/10 disabled:cursor-not-allowed disabled:bg-white/[0.025] disabled:text-muted-foreground"
             />
-            <span className="text-lg font-bold text-white/55">€</span>
+            <span className="text-lg font-bold text-muted-foreground">€</span>
           </div>
         </div>
       </div>
@@ -129,7 +129,7 @@ export function EinzelturnierEinstellungen({
                   <span className="text-sm font-black text-white">{option.title}</span>
                   {active ? <CheckCircle className="h-4 w-4 text-orange-400" /> : null}
                 </div>
-                <div className="mt-1 text-xs font-medium leading-4 text-white/45">{option.text}</div>
+                <div className="mt-1 text-xs font-medium leading-4 text-muted-foreground">{option.text}</div>
               </button>
             )
           })}
@@ -146,7 +146,7 @@ export function EinzelturnierEinstellungen({
             className={`h-12 rounded-2xl font-black ${
               tournamentMode === "dko"
                 ? "border-orange-300/25 bg-orange-500/[0.12] text-orange-100 hover:bg-orange-500/[0.16]"
-                : "border-white/[0.08] bg-white/[0.025] text-white/50 hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white/80"
+                : "border-white/[0.08] bg-white/[0.025] text-muted-foreground hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white/80"
             }`}
           >
             DKO
@@ -158,14 +158,14 @@ export function EinzelturnierEinstellungen({
             className={`h-12 rounded-2xl font-black ${
               tournamentMode === "round_robin"
                 ? "border-orange-300/25 bg-orange-500/[0.12] text-orange-100 hover:bg-orange-500/[0.16]"
-                : "border-white/[0.08] bg-white/[0.025] text-white/50 hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white/80"
+                : "border-white/[0.08] bg-white/[0.025] text-muted-foreground hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white/80"
             }`}
           >
             Round Robin
           </Button>
           {tournamentMode === "round_robin" ? (
             <label className="flex h-12 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4">
-              <span className="text-sm font-bold text-white/60">Gruppen</span>
+              <span className="text-sm font-bold text-muted-foreground">Gruppen</span>
               <input
                 type="number"
                 min={1}

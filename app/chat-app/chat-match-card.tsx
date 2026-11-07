@@ -1,7 +1,9 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Calendar, CheckCircle2, Clock, HelpCircle, Loader2, MapPin, ShieldCheck, Users, XCircle } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, HelpCircle, MapPin, ShieldCheck, Users, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
@@ -310,10 +312,7 @@ export default function ChatMatchCard({
 
   if (loading && !data) {
     return (
-      <div className="mx-auto my-2 flex w-full max-w-[560px] items-center justify-center rounded-[22px] border border-orange-300/10 bg-[#111820] p-5 text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Spiel wird geladen …
-      </div>
+      <SectionSkeleton kind="cards" />
     );
   }
 
@@ -387,9 +386,7 @@ export default function ChatMatchCard({
                     ? "border-emerald-300/30 bg-emerald-500/15 text-emerald-200"
                     : "border-white/10 bg-white/[0.03] text-white/60"
                 }`}
-              >
-                {saving === "yes" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />}
-                Zusage
+               loading={Boolean(saving === "yes")}><CheckCircle2 className="mr-1 h-4 w-4" />Zusage
               </Button>
 
               <Button
@@ -402,9 +399,7 @@ export default function ChatMatchCard({
                     ? "border-amber-300/30 bg-amber-500/15 text-amber-200"
                     : "border-white/10 bg-white/[0.03] text-white/60"
                 }`}
-              >
-                {saving === "maybe" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <HelpCircle className="mr-1 h-4 w-4" />}
-                Wenn nötig
+               loading={Boolean(saving === "maybe")}><HelpCircle className="mr-1 h-4 w-4" />Wenn nötig
               </Button>
 
               <Button
@@ -417,9 +412,7 @@ export default function ChatMatchCard({
                     ? "border-red-300/30 bg-red-500/15 text-red-200"
                     : "border-white/10 bg-white/[0.03] text-white/60"
                 }`}
-              >
-                {saving === "no" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <XCircle className="mr-1 h-4 w-4" />}
-                Absage
+               loading={Boolean(saving === "no")}><XCircle className="mr-1 h-4 w-4" />Absage
               </Button>
             </div>
           ) : (

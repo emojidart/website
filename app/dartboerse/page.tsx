@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -264,7 +266,7 @@ export default function DartboersePage() {
         </div>
 
         {loading ? (
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-[430px] animate-pulse rounded-[28px] border border-white/[0.06] bg-white/[0.035]" />)}</div>
+          <SectionSkeleton kind="cards" />
         ) : filtered.length === 0 ? (
           <Card className="mt-4 rounded-[28px] border-white/[0.08] bg-[#0b0f15]/92 text-white"><CardContent className="p-12 text-center"><Box className="mx-auto h-12 w-12 text-white/20" /><h2 className="mt-4 text-xl font-semibold">Keine passenden Angebote</h2><p className="mt-2 text-sm text-muted-foreground">Ändere die Suche oder erstelle selbst das erste Inserat.</p></CardContent></Card>
         ) : (

@@ -1,11 +1,13 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
 import type { KratzerPlayer, Board, TournamentSettings } from "@/types/tournament"
 import { formatTime } from "@/utils/tournament-utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Monitor, Trophy, Calendar, Users, Heart, AlertTriangle, UserX, Loader2, RefreshCcw } from "lucide-react"
+import { Monitor, Trophy, Calendar, Users, Heart, AlertTriangle, UserX, RefreshCcw } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { supabase } from "@/lib/supabase"
 
@@ -435,10 +437,7 @@ export default function LiveKratzerSection() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="h-16 w-16 animate-spin text-primary-dark" />
-        <p className="mt-4 text-muted-foreground text-lg font-semibold">Lade Kratzer Turnier-Daten...</p>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 

@@ -1,12 +1,14 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { format } from "date-fns"
 import { de } from "date-fns/locale" // Für deutsche Datumsformatierung
-import { History, Loader2, AlertCircle, ArrowRight } from "lucide-react" // ArrowRight für Transfers
+import { History, AlertCircle, ArrowRight } from "lucide-react" // ArrowRight für Transfers
 import { Badge } from "@/components/ui/badge" // Importiere Badge Komponente
 
 interface PlayerMovement {
@@ -73,8 +75,8 @@ export function PlayerMovementHistory() {
       <CardContent className="p-4 sm:p-5">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            <p className="ml-3 text-muted-foreground">Lade Spielerbewegungen...</p>
+            
+            <InlineLoader label="Lade Spielerbewegungen..." />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center py-8 text-red-600">

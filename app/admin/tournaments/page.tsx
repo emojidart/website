@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -396,15 +398,9 @@ export default function TournamentManagePage() {
 
   if (authLoading || adminLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-100">
+      <div className="emd-loading-surface min-h-screen flex flex-col bg-gray-100">
         <Header />
-        <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
-          <Card className="w-full max-w-md p-6 shadow-lg">
-            <CardContent className="text-center">
-              <p className="text-gray-700">Lade...</p>
-            </CardContent>
-          </Card>
-        </main>
+        <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow"><SectionSkeleton kind="table" /></main>
       </div>
     )
   }
@@ -432,9 +428,7 @@ export default function TournamentManagePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Lade Turniere...</div>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 

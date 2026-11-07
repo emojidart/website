@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
@@ -20,20 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Search,
-  Trophy,
-  Loader2,
-  Save,
-  X,
-  RefreshCw,
-  Pencil,
-  Trash2,
-  AlertTriangle,
-  Users,
-  Shield,
-  BarChart3,
-} from "lucide-react"
+import { Search, Trophy, Save, X, RefreshCw, Pencil, Trash2, AlertTriangle, Users, Shield, BarChart3 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type LevelGroup = 1 | 2 | 3
@@ -340,7 +329,7 @@ export function AdminMembersLevelManagement({ user }: AdminMembersLevelManagemen
 
   return (
     <div className="w-full space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-gray-200 bg-card shadow-sm overflow-hidden">
         <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
         <div className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-start gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -349,15 +338,13 @@ export function AdminMembersLevelManagement({ user }: AdminMembersLevelManagemen
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-base sm:text-lg font-black">EMD Members Champion Cup – Level-Einstufung</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Spieler in Tabelle 1, Tabelle 2 oder Tabelle 3 einteilen. Diese Einstufung wird später für die automatische
                 Partner-Zulosung verwendet.
               </p>
             </div>
           </div>
-          <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading} className="rounded-xl">
-            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            Neu laden
+          <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading} className="rounded-xl" loading={Boolean(loading)}><RefreshCw className="w-4 h-4 mr-2" />Neu laden
           </Button>
         </div>
       </div>
@@ -454,9 +441,7 @@ export function AdminMembersLevelManagement({ user }: AdminMembersLevelManagemen
               </div>
 
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button type="button" onClick={handleSaveLevel} disabled={saving} className="rounded-xl">
-                  {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                  Speichern
+                <Button type="button" onClick={handleSaveLevel} disabled={saving} className="rounded-xl" loading={Boolean(saving)}><Save className="w-4 h-4 mr-2" />Speichern
                 </Button>
 
                 <Button type="button" variant="outline" onClick={resetForm} className="rounded-xl">
@@ -476,11 +461,11 @@ export function AdminMembersLevelManagement({ user }: AdminMembersLevelManagemen
               {([1, 2, 3] as LevelGroup[]).map((group) => {
                 const info = LEVELS[group]
                 return (
-                  <div key={group} className="rounded-2xl border border-gray-200 bg-white p-4">
+                  <div key={group} className="rounded-2xl border border-gray-200 bg-card p-4">
                     <Badge variant="outline" className={cn("rounded-xl px-3 py-1", info.className)}>
                       {info.label} – {info.short}
                     </Badge>
-                    <div className="text-sm text-gray-600 mt-2">{info.description}</div>
+                    <div className="text-sm text-muted-foreground mt-2">{info.description}</div>
                   </div>
                 )
               })}
@@ -524,10 +509,7 @@ export function AdminMembersLevelManagement({ user }: AdminMembersLevelManagemen
                 <ScrollArea className="h-[760px]">
                   <div className="p-4 space-y-6">
                     {loading ? (
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Einstufungen werden geladen...
-                      </div>
+                      <SectionSkeleton kind="tournament" />
                     ) : filteredPlayers.length === 0 ? (
                       <div className="text-sm text-gray-500">Keine Spieler gefunden.</div>
                     ) : (
@@ -565,7 +547,7 @@ export function AdminMembersLevelManagement({ user }: AdminMembersLevelManagemen
                         {(levelFilter === "all" || levelFilter === "unset") && unsetPlayers.length > 0 ? (
                           <div className="space-y-3">
                             <div className="flex flex-wrap items-center gap-3">
-                              <Badge variant="outline" className="rounded-xl px-3 py-1 bg-gray-50 text-gray-700 border-gray-200">
+                              <Badge variant="outline" className="rounded-xl px-3 py-1 bg-card text-muted-foreground border-gray-200">
                                 Ohne Einstufung
                               </Badge>
                               <span className="text-sm text-gray-500">{unsetPlayers.length} Spieler</span>
@@ -609,7 +591,7 @@ export function AdminMembersLevelManagement({ user }: AdminMembersLevelManagemen
           </DialogHeader>
 
           <div className="rounded-2xl border border-red-100 bg-red-50/60 p-4">
-            <div className="text-sm text-gray-600 mb-1">Ausgewählter Spieler</div>
+            <div className="text-sm text-muted-foreground mb-1">Ausgewählter Spieler</div>
             <div className="font-semibold text-gray-900">{levelToDelete?.player_name || "—"}</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {levelToDelete ? (
@@ -631,9 +613,7 @@ export function AdminMembersLevelManagement({ user }: AdminMembersLevelManagemen
               onClick={handleDeleteLevel}
               disabled={!!deletingId}
               className="rounded-xl bg-red-600 hover:bg-red-700 text-white"
-            >
-              {deletingId ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-              Endgültig entfernen
+             loading={Boolean(deletingId)}><Trash2 className="w-4 h-4 mr-2" />Endgültig entfernen
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -668,7 +648,7 @@ function PlayerLevelRow({
   const levelInfo = level ? LEVELS[level.level_group] : null
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+    <div className="rounded-2xl border border-gray-200 bg-card p-4 flex flex-col lg:flex-row lg:items-center gap-4">
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <div className="font-semibold text-gray-900">{player.name}</div>
@@ -677,7 +657,7 @@ function PlayerLevelRow({
               {levelInfo.label} – {levelInfo.short}
             </Badge>
           ) : (
-            <Badge variant="outline" className="rounded-lg bg-gray-50 text-gray-700 border-gray-200">
+            <Badge variant="outline" className="rounded-lg bg-card text-muted-foreground border-gray-200">
               nicht eingestuft
             </Badge>
           )}
@@ -687,7 +667,7 @@ function PlayerLevelRow({
             </Badge>
           ) : null}
         </div>
-        {level?.notes ? <div className="text-sm text-gray-500 mt-2">{level.notes}</div> : null}
+        {level?.notes ? <div className="text-sm text-muted-foreground mt-2">{level.notes}</div> : null}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -703,9 +683,7 @@ function PlayerLevelRow({
             onClick={onDelete}
             disabled={deleting}
             className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-          >
-            {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-            Entfernen
+           loading={Boolean(deleting)}><Trash2 className="w-4 h-4 mr-2" />Entfernen
           </Button>
         ) : null}
       </div>

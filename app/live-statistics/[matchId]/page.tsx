@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Loader2, Target } from "lucide-react"
+import { AlertCircle, Target } from "lucide-react"
 import DartStatsClassicPage from "@/components/live/dart-stats-classic"
 
 interface Match {

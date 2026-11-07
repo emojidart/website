@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { AdventCalendarDoors } from "@/components/advent-calendar-doors"
@@ -147,14 +149,7 @@ export default function AdventPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-800 to-red-900 flex flex-col">
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent mx-auto mb-4" />
-            <p className="text-yellow-400 text-lg font-semibold">Adventkalender wird geladen...</p>
-          </div>
-        </main>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 
@@ -292,9 +287,7 @@ export default function AdventPage() {
                 onClick={handleRegistration}
                 disabled={registrationLoading || !registrationName || !registrationEmail}
                 className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold"
-              >
-                {registrationLoading ? "Lädt..." : "Los geht's! 🎯"}
-              </Button>
+               loading={Boolean(registrationLoading)} loadingLabel="Lädt...">{"Los geht's! 🎯"}</Button>
             </div>
           </DialogContent>
         </Dialog>

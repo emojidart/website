@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -81,10 +83,7 @@ export function StatisticsSection({
 
             <CardContent className="px-3 py-4 sm:px-6 sm:py-6">
               {legStatsLoading ? (
-                <div className="py-10 text-center">
-                  <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
-                  <p className="mt-3 text-sm text-muted-foreground">Lade Gesamtstatistiken...</p>
-                </div>
+                <SectionSkeleton kind="table" />
               ) : realLegStatistics.length === 0 ? (
                 <div className="py-10 text-center">
                   <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.16]">
@@ -322,10 +321,7 @@ export function StatisticsSection({
 
             <CardContent className="px-3 py-4 sm:px-6 sm:py-6">
               {legStatsLoading ? (
-                <div className="py-10 text-center">
-                  <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
-                  <p className="mt-3 text-sm text-muted-foreground">Lade Spielstatistiken...</p>
-                </div>
+                <SectionSkeleton kind="table" />
               ) : realLegStatistics.length === 0 ? (
                 <div className="py-10 text-center">
                   <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.16]">

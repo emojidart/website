@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, InlineLoader } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
@@ -18,39 +20,7 @@ import { MarketplaceUnreadBadge } from "@/components/dartboerse/marketplace-unre
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 
-import {
-  Loader2,
-  LogOut,
-  UserRound,
-  Mail,
-  ShieldCheck,
-  AlertTriangle,
-  Trophy,
-  Medal,
-  Target,
-  Activity,
-  CalendarDays,
-  Star,
-  Gift,
-  Swords,
-  TrendingUp,
-  PlusCircle,
-  ListChecks,
-  Globe2,
-  ArrowRight,
-  MessageCircle,
-  ShoppingBag,
-  Store,
-  UserPlus,
-  Clock3,
-  KeyRound,
-  Eye,
-  EyeOff,
-  CheckCircle2,
-  Camera,
-  Upload,
-  X,
-} from "lucide-react"
+import { LogOut, UserRound, Mail, ShieldCheck, AlertTriangle, Trophy, Medal, Target, Activity, CalendarDays, Star, Gift, Swords, TrendingUp, PlusCircle, ListChecks, Globe2, ArrowRight, MessageCircle, ShoppingBag, Store, UserPlus, Clock3, KeyRound, Eye, EyeOff, CheckCircle2, Camera, Upload, X } from "lucide-react"
 
 type GuestRequest = {
   id: string
@@ -703,17 +673,10 @@ export default function GuestProfileAppPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background text-white flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-background text-white flex flex-col">
         <Header />
 
-        <main className="flex-grow flex items-center justify-center p-4 pb-24">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-orange-300" />
-            <p className="text-sm font-semibold text-muted-foreground">
-              Gastprofil wird geladen...
-            </p>
-          </div>
-        </main>
+        <main className="flex-grow flex items-center justify-center p-4 pb-24"><SectionSkeleton kind="profile" /></main>
 
         <MobileBottomNav />
       </div>
@@ -932,9 +895,7 @@ export default function GuestProfileAppPage() {
               </p>
 
               {terminalPinLoading ? (
-                <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-bold text-muted-foreground">
-                  Terminal-Status wird geladen …
-                </div>
+                <SectionSkeleton kind="profile" />
               ) : savedTerminalAuthMethod ? (
                 <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-300/15 bg-emerald-500/[0.07] px-4 py-3">
                   <div>
@@ -1003,9 +964,7 @@ export default function GuestProfileAppPage() {
               )}
 
               <Button type="button" onClick={() => void saveTerminalAuth()} disabled={terminalPinSaving}
-                className="mt-5 h-11 w-full rounded-xl bg-emerald-500 font-semibold text-[#0b1018] hover:bg-emerald-400 disabled:opacity-40">
-                {terminalPinSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                {savedTerminalAuthMethod
+                className="mt-5 h-11 w-full rounded-xl bg-emerald-500 font-semibold text-[#0b1018] hover:bg-emerald-400 disabled:opacity-40" loading={Boolean(terminalPinSaving)}><KeyRound className="mr-2 h-4 w-4" />{savedTerminalAuthMethod
                   ? terminalAuthMethod === savedTerminalAuthMethod
                     ? terminalAuthMethod === "pattern"
                       ? "Muster ändern"
@@ -1013,8 +972,7 @@ export default function GuestProfileAppPage() {
                     : terminalAuthMethod === "pattern"
                       ? "Auf Muster wechseln"
                       : "Auf PIN wechseln"
-                  : "Terminal-Anmeldung speichern"}
-              </Button>
+                  : "Terminal-Anmeldung speichern"}</Button>
 
               {terminalPinMessage ? (
                 <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-sm font-semibold text-white/70">
@@ -1238,10 +1196,7 @@ export default function GuestProfileAppPage() {
                 </div>
 
                 {statsLoading ? (
-                  <Badge variant="outline" className="w-fit">
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Lade Statistiken
-                  </Badge>
+                  <SectionSkeleton kind="profile" />
                 ) : (
                   <Badge className="w-fit bg-orange-600 text-white">
                     <Activity className="w-3 h-3 mr-1" />
@@ -1269,10 +1224,8 @@ export default function GuestProfileAppPage() {
               ) : statsLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-9 h-9 animate-spin text-orange-300" />
-                    <p className="text-sm font-semibold text-muted-foreground">
-                      Statistiken werden geladen...
-                    </p>
+                    
+                    <InlineLoader label="Statistiken werden geladen..." />
                   </div>
                 </div>
               ) : statsMessage ? (
@@ -1555,13 +1508,9 @@ export default function GuestProfileAppPage() {
                 onClick={() => void handleGuestPhotoUpload()}
                 disabled={!guestPhotoFile || guestPhotoUploading}
                 className="h-12 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400 disabled:opacity-40"
-              >
-                {guestPhotoUploading ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Wird gespeichert …</>
-                ) : (
+               loading={Boolean(guestPhotoUploading)} loadingLabel="Wird gespeichert …">{(
                   <><Upload className="mr-2 h-4 w-4" />Profilbild speichern</>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </div>
         </div>

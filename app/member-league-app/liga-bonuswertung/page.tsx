@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { BonusSection } from "@/components/bonus-section"
 import { Header } from "@/components/header"
 import { useRouter } from "next/navigation"
@@ -487,10 +489,8 @@ export default function MemberBonusPage() {
 
   if (authLoading || membershipLoading) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans flex flex-col pb-20">
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-300 border-t-transparent rounded-full animate-spin" />
-        </main>
+      <div className="emd-loading-surface relative min-h-screen overflow-x-hidden bg-background text-white font-sans flex flex-col pb-20">
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="table" /></main>
         <MobileBottomNav />
       </div>
     )

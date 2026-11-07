@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import type React from "react"
 import React, { useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
@@ -8,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { AlertCircle, CheckCircle, Loader2, Send } from "lucide-react"
+import { AlertCircle, CheckCircle, Send } from "lucide-react"
 
 interface PlayerApplicationFormProps {
   onApplicationSuccess: () => void
@@ -472,7 +474,7 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
           >
             {formMessageType === "error" && <AlertCircle className="w-4 h-4" />}
             {formMessageType === "success" && <CheckCircle className="w-4 h-4" />}
-            {formMessageType === "info" && <Loader2 className="w-4 h-4 animate-spin" />}
+            {formMessageType === "info" && <LoadingIndicator className="w-4 h-4" />}
             {formMessage}
           </div>
         ) : null}
@@ -494,9 +496,7 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
           }}
           disabled={!canSubmit}
           className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl shadow-lg disabled:opacity-60"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-          Bewerbung absenden
+         loading={Boolean(loading)}><Send className="w-4 h-4 mr-2" />Bewerbung absenden
         </Button>
       </div>
     </DialogContent>

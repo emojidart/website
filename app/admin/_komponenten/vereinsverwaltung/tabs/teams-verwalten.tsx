@@ -1,26 +1,14 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { useMemo, useState } from "react"
 import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  AlertCircle,
-  CheckCircle,
-  Crown,
-  Edit,
-  Loader2,
-  PlusCircle,
-  ShieldCheck,
-  Trash2,
-  Users,
-  UserRoundCog,
-  XCircle,
-  Target,
-  Sparkles,
-} from "lucide-react"
+import { AlertCircle, CheckCircle, Crown, Edit, PlusCircle, ShieldCheck, Trash2, Users, UserRoundCog, XCircle, Target, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { vv } from "../vereinsverwaltung-styles"
 import type { ClubPlayer, DartType, Team, TeamMember } from "@/components/vereinsverwaltung/types"
@@ -288,10 +276,7 @@ export function ManageTeamsTab(props: Props) {
                       type="submit"
                       disabled={teamLoading}
                       className={cn(vv.buttonPrimary, "h-12 flex-1")}
-                    >
-                      {teamLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : editingTeamId ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                      {teamLoading ? "Wird gespeichert…" : editingTeamId ? "Änderungen speichern" : "Mannschaft erstellen"}
-                    </Button>
+                     loading={Boolean(teamLoading)}>{editingTeamId ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}{teamLoading ? "Wird gespeichert…" : editingTeamId ? "Änderungen speichern" : "Mannschaft erstellen"}</Button>
                     {editingTeamId ? (
                       <Button type="button" variant="outline" onClick={onCancelEdit} disabled={teamLoading} className={cn(vv.buttonSecondary, "h-12")}>
                         <XCircle className="mr-2 h-4 w-4" />
@@ -310,7 +295,7 @@ export function ManageTeamsTab(props: Props) {
                         ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-100"
                         : "border-white/[0.08] bg-white/[0.035] text-white/60",
                   )}>
-                    {teamMessageType === "error" ? <AlertCircle className="h-4 w-4" /> : teamMessageType === "success" ? <CheckCircle className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
+                    {teamMessageType === "error" ? <AlertCircle className="h-4 w-4" /> : teamMessageType === "success" ? <CheckCircle className="h-4 w-4" /> : <LoadingIndicator className="h-4 w-4" />}
                     <span>{teamMessage}</span>
                   </div>
                 ) : null}
@@ -469,9 +454,7 @@ export function ManageTeamsTab(props: Props) {
 
               <div className={vv.modalFooter}>
                 <Button type="button" variant="outline" onClick={() => !teamLoading && closeDelete()} disabled={teamLoading} className={cn(vv.buttonSecondary, "w-full flex-1")}>Abbrechen</Button>
-                <Button type="button" variant="outline" onClick={confirmDelete} disabled={teamLoading || !canDelete} className={cn(vv.buttonDanger, "w-full flex-1")}>
-                  {teamLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                  Endgültig löschen
+                <Button type="button" variant="outline" onClick={confirmDelete} disabled={teamLoading || !canDelete} className={cn(vv.buttonDanger, "w-full flex-1")} loading={Boolean(teamLoading)}><Trash2 className="mr-2 h-4 w-4" />Endgültig löschen
                 </Button>
               </div>
             </div>

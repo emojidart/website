@@ -53,11 +53,11 @@ export function MultiDkoSchnellwechsel({ centralEventId, eventId, seriesId }: {
   if (turniere.length === 0 && !fehler) return null
 
   return (
-    <section className="my-4 rounded-2xl border border-orange-400/20 bg-[#11151a] p-4" aria-label="Laufende DKO schnell öffnen">
+    <section className="my-4 rounded-2xl border border-orange-400/20 bg-card p-4" aria-label="Laufende DKO schnell öffnen">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-base font-black text-white">Laufende DKO · Schnellwechsel</h3>
-          <p className="text-xs text-white/50">Turnier direkt öffnen, ohne Anmeldung oder Ergebnisse zu verändern.</p>
+          <p className="text-xs text-muted-foreground">Turnier direkt öffnen, ohne Anmeldung oder Ergebnisse zu verändern.</p>
         </div>
         <button type="button" onClick={() => void laden()} className="rounded-lg border border-white/20 px-3 py-2 text-xs font-bold text-white hover:border-orange-400/70">Aktualisieren</button>
       </div>

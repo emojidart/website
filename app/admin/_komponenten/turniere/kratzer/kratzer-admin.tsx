@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { RegistrationTab } from "@/components/kratzer/registration-tab"
 import { BoardComponent } from "@/components/kratzer/board-component"
 import { RankingsTable } from "@/components/kratzer/rankings-table"
@@ -43,7 +45,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 
 import { useToast } from "@/hooks/use-toast"
-import { Trophy, Monitor, Play, Loader2 } from "lucide-react"
+import { Trophy, Monitor, Play } from "lucide-react"
 import { publishKratzerBeamerEvent, publishKratzerBeamerSnapshot } from "@/components/kratzer/beamer/beamer-sync"
 
 const defaultTournamentSettings: TournamentSettings = {
@@ -852,10 +854,7 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
 
   if (loading) {
     return (
-      <div className="emd-admin-surface flex min-h-[360px] flex-col items-center justify-center p-6">
-        <Loader2 className="h-12 w-12 animate-spin text-orange-300" />
-        <p className="mt-4 text-sm font-black text-white/55">Lade Turnierdaten...</p>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 
@@ -865,8 +864,8 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
         <Card className="emd-admin-card w-full max-w-md p-6">
           <CardTitle className="mb-3 text-center text-2xl font-black">Zugriff erforderlich</CardTitle>
           <CardContent className="p-0 text-center">
-            <p className="mb-4 text-sm font-medium text-white/45">Bitte melde dich an, um auf das Kratzer-Turnier zuzugreifen.</p>
-            <Button onClick={() => (window.location.href = "/spielerdatenbank")} className="w-full bg-orange-500 font-black text-white hover:bg-orange-400">
+            <p className="mb-4 text-sm font-medium text-muted-foreground">Bitte melde dich an, um auf das Kratzer-Turnier zuzugreifen.</p>
+            <Button onClick={() => (window.location.href = "/spielerdatenbank")} className="w-full bg-primary font-black text-primary-foreground hover:bg-orange-400">
               Zur Anmeldung
             </Button>
           </CardContent>
@@ -882,11 +881,11 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
       <section className="emd-admin-hero">
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300/60">
+            <div className="text-xs font-black uppercase tracking-[0.2em] text-orange-300/60">
               Turnierbetrieb · Spontanes Turnier
             </div>
             <h1 className="mt-1 text-2xl font-black tracking-[-0.025em] text-white sm:text-3xl">Kratzer</h1>
-            <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-white/40">
+            <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-muted-foreground">
               Spieler registrieren, Turnier steuern, Runden verwalten und den Beamer öffnen.
             </p>
           </div>
@@ -909,7 +908,7 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
             handleUpdatePlayerPaidStatus={handleUpdatePlayerPaidStatus}
             handleMarkAllPlayersPaid={handleMarkAllPlayersPaid}
             isRegisteringPlayers={isRegisteringPlayers}
-            loading={loading}
+            loading={Boolean(loading)}
           />
         ) : (
           <>
@@ -925,7 +924,7 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
               settings={tournamentState.settings}
               isTournamentRunning={isTournamentRunning}
               tournamentFinished={tournamentState.tournamentFinished}
-              loading={loading}
+              loading={Boolean(loading)}
               activeTournamentExists={activeTournamentExists}
               currentRound={tournamentState.currentRound}
               registeredPlayersCount={registeredPlayers.length}
@@ -962,7 +961,7 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
               {tournamentState.boards.length === 0 ? (
                 <div className="emd-admin-inset border-dashed px-6 py-14 text-center">
                   <p className="text-lg font-black text-white">Noch keine aktive Runde</p>
-                  <p className="mt-2 text-sm font-medium text-white/40">Starte die nächste Runde, sobald alle Einstellungen passen.</p>
+                  <p className="mt-2 text-sm font-medium text-muted-foreground">Starte die nächste Runde, sobald alle Einstellungen passen.</p>
                   <Button onClick={startNewRound} className="emd-admin-button-primary mt-6 px-5">
                     <Play className="h-4 w-4 mr-2" />
                     Neue Runde starten
@@ -997,7 +996,7 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
                 currentRound={tournamentState.currentRound}
                 onEditPlayerLives={editPlayerLives}
                 onTogglePlayerElimination={togglePlayerElimination}
-                loading={loading}
+                loading={Boolean(loading)}
               />
             </SectionCard>
           </>

@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Loader2, AlertCircle, ArrowLeft, Target } from "lucide-react"
+import { AlertCircle, ArrowLeft, Target } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { MatchStatisticsPage } from "@/components/match-statistics-page"
 

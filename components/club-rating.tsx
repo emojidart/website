@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent } from "@/components/ui/card"
@@ -204,15 +206,7 @@ export function ClubRating() {
 
   if (loading) {
     return (
-      <div className="text-foreground bg-card   rounded-2xl p-4">
-        <Card className="border-0 shadow-md bg-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 
@@ -326,16 +320,9 @@ export function ClubRating() {
                 onClick={handleSubmitRating}
                 disabled={submitting || selectedRating === 0}
                 className="w-full bg-card     text-white shadow-md disabled:opacity-50"
-              >
-                {submitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Wird gespeichert...
-                  </>
-                ) : (
+               loading={Boolean(submitting)} loadingLabel="Wird gespeichert...">{(
                   "Bewertung abgeben"
-                )}
-              </Button>
+                )}</Button>
             </div>
           )}
         </CardContent>

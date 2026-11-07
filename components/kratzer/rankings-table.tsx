@@ -57,7 +57,7 @@ export function RankingsTable({
                     disabled={loading || player.lives <= 0}
                     variant="ghost"
                     size="sm"
-                    className="p-1 h-auto w-auto text-rose-300 hover:text-rose-200 hover:bg-rose-500/[0.08]"
+                    className="p-1 h-auto w-auto text-red-300 hover:text-red-200 hover:bg-red-500/[0.08]"
                     title="Leben reduzieren"
                   >
                     <MinusCircle className="h-4 w-4" />

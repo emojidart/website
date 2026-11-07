@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader, ButtonLoader } from "@/components/loading/loading"
+
 import { useMemo, useState } from "react"
 import { CheckCircle2, Lock, PlusCircle, Search, Star, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -167,7 +169,7 @@ export function TournamentRegistrationPanel({
               onClick={() => setSourceMode("featured")}
               className={`rounded-xl px-4 py-2.5 font-semibold transition ${
                 sourceMode === "featured"
-                  ? "bg-orange-500 text-primary-foreground"
+                  ? "bg-primary text-primary-foreground"
                   : "border border-white/[0.08] bg-white/[0.025] text-muted-foreground hover:bg-white/[0.045] hover:text-white/75"
               }`}
             >
@@ -178,7 +180,7 @@ export function TournamentRegistrationPanel({
               onClick={() => setSourceMode("all")}
               className={`rounded-xl px-4 py-2.5 font-semibold transition ${
                 sourceMode === "all"
-                  ? "bg-orange-500 text-primary-foreground"
+                  ? "bg-primary text-primary-foreground"
                   : "border border-white/[0.08] bg-white/[0.025] text-muted-foreground hover:bg-white/[0.045] hover:text-white/75"
               }`}
             >
@@ -227,7 +229,7 @@ export function TournamentRegistrationPanel({
                 onClick={selectAllEligibleVisible}
                 disabled={!canRegister || eligibilityLoading || eligibleVisiblePlayers.length === 0}
                 variant="outline"
-                className="rounded-xl border-white/[0.08] bg-white/[0.025] font-semibold text-white/60 hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white"
+                className="rounded-xl border-white/[0.08] bg-white/[0.025] font-semibold text-muted-foreground hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white"
               >
                 <CheckCircle2 className="mr-2 h-4 w-4 text-orange-300" />
                 Berechtigte auswählen ({eligibleVisiblePlayers.length})
@@ -244,7 +246,7 @@ export function TournamentRegistrationPanel({
 
         <div className="emd-admin-inset mb-4 h-[390px] overflow-y-auto p-2">
           {loading ? (
-            <p className="py-8 text-center text-muted-foreground">Lade Spieler...</p>
+            <InlineLoader label="Lade Spieler..." />
           ) : searchedPlayers.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">Keine Spieler gefunden</p>
           ) : (
@@ -277,7 +279,7 @@ export function TournamentRegistrationPanel({
                       <span
                         aria-hidden="true"
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition ${
-                          selected ? "border-orange-500 bg-orange-500 text-white" : "border-orange-500/60 bg-transparent"
+                          selected ? "border-orange-500 bg-primary text-primary-foreground" : "border-orange-500/60 bg-transparent"
                         }`}
                       >
                         {selected ? <CheckCircle2 className="h-5 w-5" strokeWidth={3} /> : null}
@@ -317,21 +319,12 @@ export function TournamentRegistrationPanel({
           disabled={selectedIds.size === 0 || !canRegister || eligibilityLoading || isRegistering}
           className={`w-full rounded-xl px-6 py-3 font-bold transition-all ${
             selectedIds.size > 0 && canRegister && !eligibilityLoading && !isRegistering
-              ? "border border-orange-300/25 bg-orange-500 text-primary-foreground shadow-[0_0_28px_rgba(249,115,22,.12)] hover:bg-orange-400"
+              ? "border border-orange-300/25 bg-primary text-primary-foreground shadow-[0_0_28px_rgba(249,115,22,.12)] hover:bg-orange-400"
               : "cursor-not-allowed border border-white/[0.06] bg-orange-900/70 text-muted-foreground"
           }`}
-        >
-          {isRegistering ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-              {registrationProgress?.total
-                ? `Registriere… ${registrationProgress.done}/${registrationProgress.total}`
-                : "Registrierung läuft…"}
-            </span>
-          ) : (
+         aria-busy={isRegistering || undefined}><ButtonLoader loading={Boolean(isRegistering)}>{(
             `Spieler registrieren (${selectedIds.size})`
-          )}
-        </button>
+          )}</ButtonLoader></button>
       </section>
       ) : null}
 
@@ -395,7 +388,7 @@ export function TournamentRegistrationPanel({
                     <TableCell className="font-semibold text-white/85">
                       <div className="flex items-center gap-2">
                         {player.badge ? (
-                          <span className="rounded-lg border border-sky-300/15 bg-sky-500/[0.08] px-2 py-1 text-xs font-bold text-sky-200">
+                          <span className="rounded-lg border border-orange-300/15 bg-orange-500/[0.08] px-2 py-1 text-xs font-bold text-orange-200">
                             {player.badge}
                           </span>
                         ) : null}
@@ -422,7 +415,7 @@ export function TournamentRegistrationPanel({
                         <button
                           type="button"
                           onClick={() => onRemove(player.id)}
-                          className="rounded-lg p-2 text-muted-foreground transition hover:bg-rose-500/[0.10] hover:text-rose-300"
+                          className="rounded-lg p-2 text-muted-foreground transition hover:bg-red-500/[0.10] hover:text-red-300"
                           title="Registrierung entfernen"
                         >
                           <X className="h-4 w-4" />
@@ -441,7 +434,7 @@ export function TournamentRegistrationPanel({
             type="button"
             onClick={onClearAll}
             variant="outline"
-            className="mt-4 h-12 w-full rounded-xl border border-rose-300/20 bg-rose-500/[0.08] font-semibold text-rose-200 hover:bg-rose-500/[0.14]"
+            className="mt-4 h-12 w-full rounded-xl border border-red-300/20 bg-red-500/[0.08] font-semibold text-red-200 hover:bg-red-500/[0.14]"
           >
             <Trash2 className="mr-2 h-4 w-4" />
             {clearAllLabel}

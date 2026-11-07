@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -302,15 +304,7 @@ export function GameHistoryTable() {
 
   if (loading) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-        <Card className="border-0 shadow-2xl bg-gradient-to-br from-white via-gray-50 to-white overflow-hidden">
-          <CardContent className="p-8 sm:p-12 text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Lade Turniere...</h3>
-            <p className="text-gray-600">Einen Moment bitte</p>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <SectionSkeleton kind="cards" />
     )
   }
 
@@ -689,19 +683,12 @@ export function GameHistoryTable() {
                 type="submit"
                 disabled={editLoading}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl rounded-xl px-6 py-3"
-              >
-                {editLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Speichern...</span>
-                  </div>
-                ) : (
+               loading={Boolean(editLoading)} loadingLabel="Speichern...">{(
                   <>
                     <Save className="h-4 w-4 mr-2" />
                     Speichern
                   </>
-                )}
-              </Button>
+                )}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

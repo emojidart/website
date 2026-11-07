@@ -533,7 +533,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           {activeSection === "membership" && (
             <MembershipTab
               clubPlayers={players.clubPlayers}
-              loading={players.playerLoading}
+              loading={Boolean(players.playerLoading)}
               message={players.playerMessage}
               messageType={players.playerMessageType}
               onSave={players.updateMembershipDates}
@@ -544,7 +544,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
             <DuesTab
               summaryRows={dues.summaryRows}
               periodsByPlayer={dues.periodsByPlayer}
-              loading={dues.loading}
+              loading={Boolean(dues.loading)}
               message={dues.message}
               messageType={dues.messageType}
               onSaveSetting={dues.upsertSetting}

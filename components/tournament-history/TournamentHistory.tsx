@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -156,7 +158,7 @@ export default function TournamentHistory() {
         </div>
 
         {loading ? (
-          <div>Lade...</div>
+          <InlineLoader label="Inhalte werden geladen…" />
         ) : error ? (
           <div className="text-red-600">{error}</div>
         ) : (

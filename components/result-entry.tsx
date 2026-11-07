@@ -261,9 +261,7 @@ export default function ResultEntry() {
               onClick={submitResults}
               disabled={isLoading || !tournamentName || !tournamentDate || selectedPlayers.length === 0}
               className="w-full"
-            >
-              {isLoading ? "Speichere..." : "Turnierergebnisse speichern"}
-            </Button>
+             loading={Boolean(isLoading)} loadingLabel="Speichere...">{"Turnierergebnisse speichern"}</Button>
           </div>
         </CardContent>
       </Card>

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import {
   MembersCupBackground,
@@ -8,19 +10,7 @@ import {
 } from "@/app/members-champion-cup/_komponenten/members-cup-design"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
-import {
-  Calendar,
-  Clock,
-  Crown,
-  Loader2,
-  RefreshCw,
-  ShieldAlert,
-  Trophy,
-  UserPlus,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react"
+import { Calendar, Clock, Crown, RefreshCw, ShieldAlert, Trophy, UserPlus, AlertTriangle, CheckCircle2, XCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -401,7 +391,7 @@ export default function UpcomingTournamentsAppPage() {
           animate="visible"
         >
           <motion.div variants={membersCupItemVariants} className="mb-4">
-            <div className="rounded-[26px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)] overflow-hidden">
+            <div className="rounded-[20px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)] overflow-hidden">
               <div className="bg-card    p-4 text-white sm:p-5 lg:p-6">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0 rounded-2xl border border-white/20 bg-white/10 p-3 text-orange-300">
@@ -472,10 +462,7 @@ export default function UpcomingTournamentsAppPage() {
           ) : null}
 
           {loading ? (
-            <div className="rounded-2xl border border-white/10 bg-card p-6 text-center shadow-sm">
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-orange-600" />
-              <div className="mt-2 text-sm font-semibold text-muted-foreground">Members Cup wird geladen...</div>
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : error ? (
             <div className="rounded-2xl border border-red-200 bg-red-500/10 p-5 text-red-800 font-semibold">
               {error}
@@ -539,7 +526,7 @@ export default function UpcomingTournamentsAppPage() {
                               </div>
 
                               {waiting ? (
-                                <span className="rounded-full bg-orange-600 text-white px-3 py-1 text-xs font-semibold">
+                                <span className="rounded-full bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold">
                                   WARTET
                                 </span>
                               ) : (
@@ -566,7 +553,7 @@ export default function UpcomingTournamentsAppPage() {
                 </div>
               </motion.div>
 
-              <motion.div variants={membersCupItemVariants} className="rounded-[22px] border border-white/10 bg-card shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
+              <motion.div variants={membersCupItemVariants} className="rounded-[22px] border border-white/10 bg-card shadow-sm overflow-hidden">
                 <div className="px-4 sm:px-5 py-4 border-b border-white/10">
                   <div className="flex items-center gap-2">
                     <Crown className="h-5 w-5 text-orange-600" />
@@ -597,7 +584,7 @@ export default function UpcomingTournamentsAppPage() {
                               <div className="font-semibold text-white">{ev.title}</div>
 
                               {today ? (
-                                <span className="rounded-full bg-orange-600 text-white px-3 py-1 text-xs font-semibold">
+                                <span className="rounded-full bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold">
                                   HEUTE
                                 </span>
                               ) : null}
@@ -675,7 +662,7 @@ export default function UpcomingTournamentsAppPage() {
                             onClick={() => openModal(ev)}
                             className={
                               canRegister
-                                ? "rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
+                                ? "rounded-xl bg-primary hover:bg-orange-700 text-primary-foreground"
                                 : "rounded-xl"
                             }
                             variant={canRegister ? "default" : "outline"}

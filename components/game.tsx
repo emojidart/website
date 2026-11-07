@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -714,12 +716,7 @@ export function Game({ challengeId }: { challengeId: string }) {
 
   if (isLoading || !challenge || !gameState || !challengerInfo || !opponentInfo) {
     return (
-      <div className="text-foreground min-h-screen flex items-center justify-center bg-card   ">
-        <div className="text-center">
-          <Target className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading game...</p>
-        </div>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 

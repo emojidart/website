@@ -1,4 +1,7 @@
 "use client"
+
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -164,11 +167,9 @@ export default function MeineTeamsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }

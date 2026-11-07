@@ -1,5 +1,7 @@
 "use client"
 
+import { PageLoader, SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import { Suspense, useEffect, useState } from "react"
@@ -9,21 +11,14 @@ import { Header } from "@/components/header"
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<CallbackLoading />}>
+    <Suspense fallback={<SectionSkeleton kind="cards" label="Bereich wird geladen…" />}>
       <AuthCallbackClient />
     </Suspense>
   )
 }
 
 function CallbackLoading() {
-  return (
-    <div className="min-h-screen bg-muted flex flex-col">
-      <Header />
-      <main className="flex-grow flex items-center justify-center p-4">
-        <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-      </main>
-    </div>
-  )
+  return <PageLoader label="Zugang wird vorbereitet…" fullPage />
 }
 
 function AuthCallbackClient() {
@@ -114,7 +109,7 @@ function AuthCallbackClient() {
       <Header />
       <main className="flex-grow flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="w-8 h-8 mx-auto mb-4 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
+          <LoadingIndicator className="w-8 h-8 mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">{msg}</p>
         </div>
       </main>

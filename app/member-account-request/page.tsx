@@ -1,22 +1,13 @@
 "use client"
 
+
+
 import { useMemo, useState } from "react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-  CheckCircle2,
-  Loader2,
-  UserPlus,
-  KeyRound,
-  Search,
-  Lock,
-  Eye,
-  EyeOff,
-  Mail,
-  Shield,
-} from "lucide-react"
+import { CheckCircle2, UserPlus, KeyRound, Search, Lock, Eye, EyeOff, Mail, Shield } from "lucide-react"
 
 type FormState = {
   code: string
@@ -293,19 +284,12 @@ export default function MemberAccountRequestPage() {
                     onClick={lookupByCode}
                     disabled={lookingUp}
                     className="h-12 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4"
-                  >
-                    {lookingUp ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        Prüfen
-                      </>
-                    ) : (
+                   loading={Boolean(lookingUp)} loadingLabel="Prüfen">{(
                       <>
                         <Search className="w-4 h-4 mr-2" />
                         Prüfen
                       </>
-                    )}
-                  </Button>
+                    )}</Button>
                 </div>
 
                 <p className="text-xs text-muted-foreground mt-2">
@@ -448,16 +432,9 @@ export default function MemberAccountRequestPage() {
                 onClick={submit}
                 disabled={!canSubmit}
                 className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold text-lg"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Senden...
-                  </>
-                ) : (
+               loading={Boolean(submitting)} loadingLabel="Senden...">{(
                   "Konto anfordern"
-                )}
-              </Button>
+                )}</Button>
             </CardContent>
           </Card>
         </div>

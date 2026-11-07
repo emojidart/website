@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
@@ -277,14 +279,7 @@ export default function TerminalTournamentHistoryDetailPage() {
         </header>
 
         {loading ? (
-          <div className="mt-8 rounded-[32px] border border-white/[0.08] bg-black/28 p-12 text-center backdrop-blur-2xl">
-            <div className="mx-auto h-1.5 w-52 overflow-hidden rounded-full bg-white/[0.08]">
-              <div className="h-full w-1/2 animate-pulse rounded-full bg-orange-400" />
-            </div>
-            <div className="mt-4 text-sm font-black uppercase tracking-[0.24em] text-white/35">
-              History wird geladen
-            </div>
-          </div>
+          <SectionSkeleton kind="tournament" />
         ) : error ? (
           <div className="mt-8 rounded-[30px] border border-red-400/15 bg-red-500/[0.06] p-8 text-center font-bold text-red-100">
             {error}

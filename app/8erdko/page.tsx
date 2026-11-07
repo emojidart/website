@@ -1,3 +1,5 @@
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Suspense } from "react"
 import { EmdDkoKeyedBracket } from "@/components/emd-dko-keyed-bracket"
 import { Header } from "@/components/header"
@@ -9,7 +11,7 @@ export default function Home() {
       <Header />
       <PlayerScannerModal tournamentId="1" tournamentType="8er_dko" />
       <main className="w-full pt-[64px]">
-        <Suspense fallback={<div className="grid min-h-[50vh] place-items-center text-sm font-bold text-muted-foreground">Turnier wird geladen…</div>}><EmdDkoKeyedBracket size={8} /></Suspense>
+        <Suspense fallback={<SectionSkeleton kind="tournament" label="Bereich wird geladen…" />}><EmdDkoKeyedBracket size={8} /></Suspense>
       </main>
     </div>
   )

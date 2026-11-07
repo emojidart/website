@@ -1,250 +1,30 @@
 "use client"
 
-import { ArrowRight, Bell, Calendar, Loader2, Swords } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { SectionSkeleton, ButtonLoader } from "@/components/loading/loading"
+
+import Link from "next/link"
+import { ArrowUpRight, CalendarDays, Check, Clock3, Swords } from "lucide-react"
 import type { HomeLeagueMatch } from "@/app/_startseite/typen"
 
-type DeineNaechstenLigaspieleProps = {
+type Props = {
   authUserId: string | null
   hasLeaguePackage: boolean
   matches: HomeLeagueMatch[]
   loading: boolean
   saving: string
-  onSetAvailability: (
-    match: HomeLeagueMatch,
-    status: "yes" | "maybe" | "no",
-  ) => Promise<void>
+  onSetAvailability: (match: HomeLeagueMatch, status: "yes" | "maybe" | "no") => Promise<void>
 }
-
-function getTeamName(match: HomeLeagueMatch, isHome: boolean) {
-  if (isHome) {
-    return (
-      match.home_team?.name ||
-      match.home_opponent_team?.name ||
-      "Unbekanntes Team"
-    )
-  }
-
-  return (
-    match.away_team?.name ||
-    match.away_opponent_team?.name ||
-    "Unbekanntes Team"
-  )
-}
-
-export function DeineNaechstenLigaspiele({
-  authUserId,
-  hasLeaguePackage,
-  matches,
-  loading,
-  saving,
-  onSetAvailability,
-}: DeineNaechstenLigaspieleProps) {
+const name = (m: HomeLeagueMatch, home: boolean) => home ? m.home_team?.name || m.home_opponent_team?.name || "Heimteam" : m.away_team?.name || m.away_opponent_team?.name || "Gastteam"
+export function DeineNaechstenLigaspiele({ authUserId, hasLeaguePackage, matches, loading, saving, onSetAvailability }: Props) {
   if (!authUserId || !hasLeaguePackage) return null
-
-  return (
-    <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pt-5 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
-      <div className="space-y-4">
-        <section className="emd-saas-section mb-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-card shadow-sm">
-                <Swords className="h-5 w-5 text-orange-600" />
-              </div>
-
-              <div>
-                <div className="text-sm font-bold uppercase tracking-normal text-orange-600 emd-saas-copy emd-saas-tag">
-                  Liga
-                </div>
-
-                <h2 className="text-lg font-semibold leading-tight text-foreground sm:text-xl emd-saas-heading">
-                  Deine nächsten Spiele
-                </h2>
-              </div>
-            </div>
-
-            <Button
-              variant="ghost"
-              className="h-9 rounded-xl px-3 font-bold text-muted-foreground hover:bg-card hover:text-orange-700 emd-saas-card emd-saas-copy emd-saas-button"
-              onClick={() => (window.location.href = "/member-availability")}
-            >
-              Alle
-            </Button>
-          </div>
-
-          {loading ? (
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm emd-saas-card">
-              <div className="flex items-center justify-center gap-2 text-sm font-semibold text-muted-foreground emd-saas-copy">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Deine Ligaspiele werden geladen...
-              </div>
-            </div>
-          ) : matches.length === 0 ? (
-            <div className="rounded-3xl border border-border/80 bg-card p-7 text-center shadow-sm emd-saas-card">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
-              </div>
-
-              <p className="mt-3 font-bold text-foreground">
-                Aktuell kein Ligaspiel geplant
-              </p>
-
-              <p className="mt-1 text-sm text-muted-foreground emd-saas-copy">
-                Sobald ein neues Spiel angesetzt ist, erscheint es hier.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {matches.map((match) => {
-                const dartType = String(match.dart_type || "").toLowerCase()
-                const isSteel = dartType === "steeldart"
-
-                return (
-                  <div
-                    key={match.id}
-                    className="group overflow-hidden rounded-[26px] border border-border/90 bg-card shadow-[0_18px_55px_-45px_rgba(15,23,42,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_65px_-45px_rgba(15,23,42,0.62)] emd-saas-card"
-                  >
-                    <div className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3.5">
-                      <Badge
-                        variant="outline"
-                        className={
-                          isSteel
-                            ? "rounded-full border-border bg-background px-3 py-1 text-sm font-semibold tracking-wide text-white"
-                            : "rounded-full border-orange-200 bg-orange-600 px-3 py-1 text-sm font-semibold tracking-wide text-white"
-                        }
-                      >
-                        {isSteel ? "STEELDART" : "E-DART"}
-                      </Badge>
-
-                      <div className="flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-bold text-muted-foreground ring-1 ring-border emd-saas-card emd-saas-copy emd-saas-tag">
-                        <Calendar className="h-3.5 w-3.5 text-orange-600" />
-                        {new Date(match.match_date).toLocaleDateString("de-DE", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
-                        {match.match_time
-                          ? ` · ${String(match.match_time).slice(0, 5)}`
-                          : ""}
-                      </div>
-                    </div>
-
-                    <div className="p-4">
-                      <div className="text-xl font-semibold leading-tight tracking-tight text-foreground emd-saas-heading">
-                        {getTeamName(match, true)}{" "}
-                        <span className="font-semibold text-muted-foreground">vs</span>{" "}
-                        {getTeamName(match, false)}
-                      </div>
-
-                      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/70 px-3.5 py-3 emd-saas-card">
-                        <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground emd-saas-copy">
-                          Deine Antwort
-                        </div>
-
-                        <div className="mt-1">
-                          {match.my_status === "yes" ? (
-                            <Badge
-                              variant="outline"
-                              className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700 emd-saas-tag"
-                            >
-                              Zugesagt ✓
-                            </Badge>
-                          ) : match.my_status === "maybe" ? (
-                            <Badge
-                              variant="outline"
-                              className="rounded-full border-amber-200 bg-amber-50 text-amber-700 emd-saas-tag"
-                            >
-                              Vielleicht
-                            </Badge>
-                          ) : match.my_status === "no" ? (
-                            <Badge
-                              variant="outline"
-                              className="rounded-full border-rose-200 bg-rose-50 text-rose-700 emd-saas-tag"
-                            >
-                              Abgesagt
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="rounded-full border-amber-300 bg-amber-50 text-amber-800 emd-saas-tag"
-                            >
-                              Noch keine Antwort
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      {match.my_status === "none" ? (
-                        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm font-bold text-amber-900 emd-saas-card emd-saas-copy">
-                          <Bell className="h-4 w-4 shrink-0" />
-                          Bitte noch zu- oder absagen – wichtig für die Aufstellung.
-                        </div>
-                      ) : null}
-
-                      <div className="mt-4 grid grid-cols-3 gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={!!saving}
-                          onClick={() => void onSetAvailability(match, "yes")}
-                          className="rounded-xl border border-emerald-200 bg-card px-2 font-semibold text-foreground shadow-none hover:bg-emerald-50 hover:text-emerald-800 emd-saas-card emd-saas-button"
-                        >
-                          {saving === `${match.id}-yes` ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            "Zusage"
-                          )}
-                        </Button>
-
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={!!saving}
-                          onClick={() => void onSetAvailability(match, "maybe")}
-                          className="rounded-xl border border-amber-200 bg-card px-2 font-semibold text-foreground shadow-none hover:bg-amber-50 hover:text-amber-800 emd-saas-card emd-saas-button"
-                        >
-                          {saving === `${match.id}-maybe` ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            "Vielleicht"
-                          )}
-                        </Button>
-
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={!!saving}
-                          onClick={() => void onSetAvailability(match, "no")}
-                          className="rounded-xl border border-rose-200 bg-card px-2 font-semibold text-foreground shadow-none hover:bg-rose-50 hover:text-rose-800 emd-saas-card emd-saas-button"
-                        >
-                          {saving === `${match.id}-no` ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            "Absage"
-                          )}
-                        </Button>
-                      </div>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-3 w-full rounded-xl border-border bg-background font-semibold text-white hover:bg-background hover:text-white"
-                        onClick={() =>
-                          (window.location.href = `/member-availability?match_id=${match.id}&team_id=${match.my_team_id}`)
-                        }
-                      >
-                        Details & Aufstellung
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-  )
+  return <div className="eh-rsvp-grid">
+    {loading ? <SectionSkeleton kind="table" /> : matches.length ? matches.map(match => {
+      const isSteel = String(match.dart_type || "").toLowerCase().includes("steel")
+      const status = match.my_status
+      return <article className="eh-rsvp" key={match.id}>
+        <div className="eh-rsvp-top"><span className="eh-rsvp-type"><Swords size={15} /> {isSteel ? "STEELDART" : "E-DART"}</span><span className="eh-rsvp-date"><CalendarDays size={14} /> {new Date(match.match_date).toLocaleDateString("de-AT", { day: "2-digit", month: "short" })}{match.match_time ? <><Clock3 size={13} /> {String(match.match_time).slice(0,5)}</> : null}</span></div>
+        <div className="eh-rsvp-content"><h3>{name(match, true)} <span>vs</span> {name(match, false)}</h3><div className="eh-rsvp-state"><span>DEINE RÜCKMELDUNG</span><strong className={`eh-rsvp-status eh-rsvp-${status}`}>{status === "yes" ? "Zugesagt" : status === "maybe" ? "Vielleicht" : status === "no" ? "Abgesagt" : "Antwort ausstehend"}</strong></div><div className="eh-rsvp-options">{([ ["yes","Zusage"],["maybe","Vielleicht"],["no","Absage"] ] as const).map(([value,label]) => <button type="button" key={value} className={status === value ? "eh-rsvp-selected" : ""} disabled={Boolean(saving)} onClick={() => void onSetAvailability(match,value)} aria-busy={saving === `${match.id}-${value}` || undefined}><ButtonLoader loading={Boolean(saving === `${match.id}-${value}`)}>{status === value ? <Check size={15} /> : null}{label}</ButtonLoader></button>)}</div><Link href="/member-availability" className="eh-rsvp-open">Aufstellung & Spieldetails <ArrowUpRight size={16}/></Link></div>
+      </article>
+    }) : <div className="eh-rsvp-empty"><CalendarDays size={24}/><strong>Keine Ligaspiele geplant</strong><span>Deine nächsten Begegnungen erscheinen hier.</span></div>}
+  </div>
 }

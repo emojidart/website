@@ -525,7 +525,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                       players={players}
                       lineup={getTeamLineup(myTeamId)}
                       onSave={(playerIds) => saveLineup(myTeamId, playerIds)}
-                      loading={loading}
+                      loading={Boolean(loading)}
                     />
                   </CardContent>
                 </Card>

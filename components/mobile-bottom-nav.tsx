@@ -10,6 +10,8 @@ import {
   UserCircle,
   LogIn,
   MoreHorizontal,
+  Menu,
+  ChevronDown,
   HelpCircle,
   LogOut,
   MessageCircle,
@@ -72,7 +74,7 @@ const QUICK_BASE: Omit<NavItem, "key">[] = [
     memberOnly: true,
   },
   {
-    name: "Aufstellung",
+    name: "Line-up",
     href: "/member-availability",
     icon: ClipboardList,
     requiresLogin: true,
@@ -178,6 +180,8 @@ export function MobileBottomNav() {
   const isLoggedIn = !!user
 
   const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(["Schnellzugriff"])
+  const toggleGroup = (title: string) => setExpandedGroups((groups) => groups.includes(title) ? groups.filter((g) => g !== title) : [...groups, title])
   const [isGuest, setIsGuest] = useState(false)
   const [profileChecked, setProfileChecked] = useState(false)
 
@@ -315,14 +319,14 @@ export function MobileBottomNav() {
         <div className="fixed inset-0 z-[100] md:hidden">
           <button
             aria-label="Schließen"
-            className="absolute inset-0 bg-black/75"
+            className="emd-nav-backdrop absolute inset-0"
             onClick={closeMore}
           />
 
           {/* Sheet sitzt über Nav + Offset */}
           <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: SPACER_H }}>
-            <div className="mx-3 overflow-hidden rounded-t-[28px] border border-white/10 bg-[#101722] shadow-sm">
-              <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[#151e2b] p-4 text-white">
+            <div className="emd-mobile-sheet mx-3 overflow-hidden rounded-t-[28px] border border-white/10 bg-[#172235] shadow-2xl" role="dialog" aria-modal="true" aria-label="EMD Menü">
+              <div className="emd-mobile-sheet-heading relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[#233248] p-4 text-white">
                 <h3 className="text-lg font-semibold text-white">
                   Mehr Optionen
                 </h3>
@@ -337,38 +341,19 @@ export function MobileBottomNav() {
                 </button>
               </div>
 
-              <div className="max-h-[68vh] space-y-5 overflow-y-auto bg-[#101722] p-4 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+              <div className="emd-mobile-sheet-body max-h-[70vh] space-y-2 overflow-y-auto overscroll-contain bg-[#172235] p-3 pb-[calc(env(safe-area-inset-bottom)+20px)]">
                 {sections.map((sec) => {
                   if (sec.items.length === 0) return null
 
                   return (
-                    <section key={sec.title}>
-                      <div className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                        {sec.title}
-                      </div>
-
-                      {sec.variant === "grid" ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          {sec.items.map((item) => (
-                            <NavLink
-                              key={item.key}
-                              item={item}
-                              onAfter={closeMore}
-                              className="min-h-[74px] rounded-2xl"
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {sec.items.map((item) =>
-                            item.onClick ? (
-                              <NavButton key={item.key} item={item} />
-                            ) : (
-                              <NavLink key={item.key} item={item} onAfter={closeMore} />
-                            ),
-                          )}
-                        </div>
-                      )}
+                    <section key={sec.title} className="emd-nav-section">
+                      <button type="button" className="emd-nav-accordion" onClick={() => toggleGroup(sec.title)} aria-expanded={expandedGroups.includes(sec.title)}>
+                        <span className="emd-nav-accord-icon">{sec.title === "Schnellzugriff" ? <Trophy className="h-5 w-5" /> : sec.title === "Konto" ? <UserCircle className="h-5 w-5" /> : <HelpCircle className="h-5 w-5" />}</span>
+                        <span className="flex-1">{sec.title}</span><span className="text-xs font-medium text-[#aebed0]">{sec.items.length}</span><ChevronDown className="emd-nav-chevron h-5 w-5" />
+                      </button>
+                      {expandedGroups.includes(sec.title) && <div className="emd-nav-items">
+                        {sec.items.map((item) => item.onClick ? <NavButton key={item.key} item={item} /> : <NavLink key={item.key} item={item} onAfter={closeMore} />)}
+                      </div>}
                     </section>
                   )
                 })}
@@ -450,13 +435,13 @@ export function MobileBottomNav() {
                       : "border-transparent bg-transparent text-white/65",
                   )}
                 >
-                  <MoreHorizontal className="h-[19px] w-[19px]" />
+                  <Menu className="h-[20px] w-[20px]" />
                 </span>
                 <span className={cn(
                   "text-[11px] font-medium leading-none",
                   isMoreOpen ? "text-orange-100" : "text-white/65",
                 )}>
-                  Mehr
+                  Menü
                 </span>
               </span>
             </button>

@@ -1,25 +1,14 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import {
-  AlertCircle,
-  Calendar,
-  CheckCircle,
-  Clock,
-  Coins,
-  Info,
-  Loader2,
-  Lock,
-  LogIn,
-  LogOut,
-  UserPlus,
-  Wallet,
-} from "lucide-react"
+import { AlertCircle, Calendar, CheckCircle, Clock, Coins, Info, Lock, LogIn, LogOut, UserPlus, Wallet } from "lucide-react"
 
 type Message = { type: "success" | "error"; text: string } | null
 
@@ -546,8 +535,8 @@ export function DKOSelfRegistrationModal(props: {
           <div className="mt-4">
             {authLoading || initLoading ? (
               <div className="py-10 flex items-center justify-center gap-3 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="font-semibold">Lade…</span>
+                
+                <InlineLoader label="Inhalte werden geladen…" />
               </div>
             ) : !user ? (
               <div className="space-y-4">
@@ -563,7 +552,7 @@ export function DKOSelfRegistrationModal(props: {
                   <Button variant="outline" onClick={props.onClose} className="rounded-xl">
                     Schließen
                   </Button>
-                  <Button onClick={doLogin} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold">
+                  <Button onClick={doLogin} className="rounded-xl bg-primary hover:bg-orange-700 text-primary-foreground font-semibold">
                     <LogIn className="h-4 w-4 mr-2" />
                     Login
                   </Button>
@@ -684,14 +673,10 @@ export function DKOSelfRegistrationModal(props: {
                       onClick={doUnregister}
                       disabled={busy || props.canUnregister === false || latestReg?.payment_method === "admin"}
                       className="rounded-xl"
-                    >
-                      {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                      Abmelden
+                     loading={Boolean(busy)}>{null}Abmelden
                     </Button>
                   ) : (
-                    <Button onClick={doRegister} disabled={busy} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold">
-                      {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                      Anmelden
+                    <Button onClick={doRegister} disabled={busy} className="rounded-xl bg-primary hover:bg-orange-700 text-primary-foreground font-semibold" loading={Boolean(busy)}>{null}Anmelden
                     </Button>
                   )}
                 </DialogFooter>

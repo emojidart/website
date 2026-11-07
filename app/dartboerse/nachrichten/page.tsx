@@ -1,18 +1,12 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import {
-  ArrowLeft,
-  Inbox,
-  Loader2,
-  Mail,
-  MessageCircle,
-  Search,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, Inbox, Mail, MessageCircle, Search, UserRound } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -221,9 +215,7 @@ export default function NachrichtenPage() {
         ) : null}
 
         {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-9 w-9 animate-spin text-orange-300" />
-          </div>
+          <SectionSkeleton kind="cards" />
         ) : filtered.length === 0 ? (
           <Card className="mt-5 rounded-[24px] border border-white/[0.08] bg-[#0b0f15]/92 shadow-[0_20px_70px_-52px_rgba(0,0,0,.95)]">
             <CardContent className="p-12 text-center">

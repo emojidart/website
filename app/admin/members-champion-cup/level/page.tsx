@@ -1,12 +1,14 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { AdminMembersLevelManagement } from "@/app/admin/_komponenten/turniere/members-cup-einstufung"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
-import { Loader2 } from "lucide-react"
+
 import { useRouter } from "next/navigation"
 
 export default function AdminMembersChampionCupLevelPage() {
@@ -15,14 +17,9 @@ export default function AdminMembersChampionCupLevelPage() {
 
   if (authLoading || adminLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 md:pb-0">
+      <div className="emd-loading-surface min-h-screen bg-gray-50 text-gray-900 pb-24 md:pb-0">
         <Header />
-        <main className="pt-20 px-4">
-          <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white shadow-sm p-6 flex items-center gap-3">
-            <Loader2 className="w-5 h-5 animate-spin text-orange-600" />
-            <p className="text-gray-700 font-medium">Lade Adminbereich...</p>
-          </div>
-        </main>
+        <main className="pt-20 px-4"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     )

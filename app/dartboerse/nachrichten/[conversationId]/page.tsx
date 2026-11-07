@@ -1,21 +1,12 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
-import {
-  ArrowLeft,
-  BadgeEuro,
-  Check,
-  HandCoins,
-  Loader2,
-  RotateCcw,
-  Send,
-  Tag,
-  UserRound,
-  X,
-} from "lucide-react"
+import { ArrowLeft, BadgeEuro, Check, HandCoins, RotateCcw, Send, Tag, UserRound, X } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -360,9 +351,7 @@ export default function UnterhaltungPage() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-orange-300" />
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : (
             <>
               <div className="h-[55vh] space-y-3 overflow-y-auto bg-[#07090c] p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:p-6">
@@ -521,9 +510,7 @@ export default function UnterhaltungPage() {
                         onClick={() => void submitOffer()}
                         disabled={savingOffer || !offerAmount.trim()}
                         className="rounded-xl border border-orange-300/20 bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400"
-                      >
-                        {savingOffer ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <HandCoins className="mr-2 h-4 w-4" />}
-                        Senden
+                       loading={Boolean(savingOffer)}><HandCoins className="mr-2 h-4 w-4" />Senden
                       </Button>
                     </div>
                   </div>
@@ -563,9 +550,7 @@ export default function UnterhaltungPage() {
                       onClick={() => void send()}
                       disabled={sending || !text.trim()}
                       className="rounded-xl border border-orange-300/20 bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400"
-                    >
-                      {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                      Senden
+                     loading={Boolean(sending)}><Send className="mr-2 h-4 w-4" />Senden
                     </Button>
                   </div>
                 </div>

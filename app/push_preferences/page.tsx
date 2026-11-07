@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import { Suspense, useEffect, useMemo, useState } from "react"
@@ -17,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 
-import { Bell, Loader2, Trophy, Clock, Cpu, BellOff } from "lucide-react"
+import { Bell, Trophy, Clock, Cpu, BellOff } from "lucide-react"
 
 interface UserProfile {
   id: string
@@ -196,7 +198,7 @@ function TournamentPushInner() {
   // ✅ SCHÖNE LADEANIMATION + APP HEADER (wie deine andere Datei) + kein extra padding oben
   if (authLoading || loading) {
     return (
-      <main className="text-foreground min-h-screen flex flex-col bg-card   ">
+      <main className="emd-loading-surface text-foreground min-h-screen flex flex-col bg-card   ">
         <Header
           variant="app"
           title="Turnier-Benachrichtigungen"
@@ -204,21 +206,7 @@ function TournamentPushInner() {
           backHref="/member-profile-app"
         />
 
-        <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-2xl px-10 py-10">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
-              </div>
-
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">Lade Einstellungen</p>
-                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
 
         <MobileBottomNav />
       </main>
@@ -279,7 +267,7 @@ function TournamentPushInner() {
                   <div className="text-xs text-muted-foreground whitespace-nowrap">
                     {savingPref ? (
                       <span className="inline-flex items-center gap-1">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <LoadingIndicator className="h-3.5 w-3.5" />
                         speichere…
                       </span>
                     ) : (
@@ -321,10 +309,7 @@ function TournamentPushInner() {
 
           <CardContent>
             {loadingPushRows ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
-                Lade Einträge…
-              </div>
+              <SectionSkeleton kind="cards" />
             ) : list.length === 0 ? (
               <div className="text-sm text-muted-foreground">
                 Keine Einträge gefunden (noch kein Match gestartet oder noch kein push_started_sent_at gesetzt).
@@ -377,7 +362,7 @@ function TournamentPushInner() {
 
 export default function MemberTournamentPushPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<SectionSkeleton kind="cards" label="Bereich wird geladen…" />}>
       <TournamentPushInner />
     </Suspense>
   )

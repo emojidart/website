@@ -1,7 +1,9 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, ClipboardList, Loader2, MapPin, RefreshCw, Trophy } from "lucide-react";
+import { CalendarDays, CheckCircle2, ClipboardList, MapPin, RefreshCw, Trophy } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 
@@ -181,12 +183,7 @@ export default function ChatMatchDayBar({
 
   if (loading) {
     return (
-      <div className="shrink-0 border-b border-orange-300/[0.08] bg-[#111922] px-3 py-2">
-        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Match-Day wird geprüft …
-        </div>
-      </div>
+      <SectionSkeleton kind="cards" />
     );
   }
 

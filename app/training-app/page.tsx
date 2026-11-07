@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Button } from "@/components/ui/button"
@@ -40,7 +42,6 @@ import {
   Users,
   CheckCircle2,
 } from "lucide-react"
-import { Loader2 } from "lucide-react"
 
 interface TrainingSession {
   id: string
@@ -556,24 +557,10 @@ export default function TrainingPage() {
   // ✅ NEU: schönes Loading + App-Header
   if (authLoading) {
     return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-background text-white">
+      <main className="emd-loading-surface min-h-screen flex flex-col overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Dart Training" subtitle="Trainingsbereich" backHref="/member-training-app" />
 
-        <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-white/[0.08] bg-card px-8 py-9 shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)]  sm:px-10">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
-              </div>
-
-              <div className="text-center">
-                <p className="text-lg font-bold text-white">Daten werden geladen</p>
-                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
 
         <MobileBottomNav />
       </main>
@@ -1144,24 +1131,7 @@ export default function TrainingPage() {
                   </CardHeader>
                   <CardContent>
                     {loadingTeamStats ? (
-                      <div className="space-y-3">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="p-4 border-2 rounded-lg bg-white/[0.035] animate-pulse">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-8 h-8 rounded-full bg-secondary" />
-                              <div className="flex-1 space-y-2">
-                                <div className="h-4 bg-secondary rounded w-1/3" />
-                                <div className="h-3 bg-secondary rounded w-1/4" />
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              {[1, 2].map((j) => (
-                                <div key={j} className="p-2 bg-secondary rounded-lg h-16" />
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <SectionSkeleton kind="cards" />
                     ) : teamStats.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />

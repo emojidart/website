@@ -1,10 +1,12 @@
 "use client"
 
+import { InlineLoader, LoadingIndicator } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { StatisticsSection } from "@/components/statistics-section"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useMembershipAccess } from "@/hooks/use-membership-access"
@@ -367,8 +369,8 @@ export default function MemberStatisticsPage() {
       {authLoading || membershipLoading ? (
         <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24">
           <div className="w-full max-w-sm rounded-[28px] border border-white/[0.08] bg-card p-8 text-center ">
-            <Loader2 className="mx-auto h-9 w-9 animate-spin text-orange-300" />
-            <p className="mt-5 text-lg font-semibold text-white">Statistiken werden geladen</p>
+            
+            <InlineLoader label="Statistiken werden geladen" />
             <p className="mt-1 text-sm font-semibold text-muted-foreground">Einen Moment bitte…</p>
           </div>
         </main>
@@ -383,7 +385,7 @@ export default function MemberStatisticsPage() {
             <section className="mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-card p-5  sm:p-7">
               <div className="flex min-w-0 items-start gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-orange-300/15 bg-orange-500/[0.09] text-orange-200 shadow-[0_0_28px_rgba(249,115,22,.10)]">
-                  <Loader2 className="hidden" />
+                  <LoadingIndicator className="hidden" />
                   <span className="text-2xl font-semibold">Σ</span>
                 </div>
 

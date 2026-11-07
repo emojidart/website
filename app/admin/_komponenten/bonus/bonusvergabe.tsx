@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
@@ -11,17 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Award,
-  CheckCircle,
-  Loader2,
-  Plus,
-  RefreshCw,
-  Search,
-  Sparkles,
-  Trophy,
-  UserPlus,
-} from "lucide-react"
+import { Award, CheckCircle, Plus, RefreshCw, Search, Sparkles, Trophy, UserPlus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type PlayerRow = {
@@ -384,10 +376,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
             </p>
           </div>
 
-          <Button type="button" variant="outline" size="sm" onClick={() => void loadData()} disabled={loading} className="ml-auto shrink-0 rounded-xl">
-            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            <span className="hidden sm:inline">Neu laden</span>
-          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => void loadData()} disabled={loading} className="ml-auto shrink-0 rounded-xl" loading={Boolean(loading)}><RefreshCw className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Neu laden</span></Button>
         </div>
       </div>
 
@@ -433,10 +422,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                     <ScrollArea className="h-[220px] sm:h-[280px]">
                       <div className="p-3 space-y-2">
                         {loading ? (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Spieler werden geladen...
-                          </div>
+                          <SectionSkeleton kind="cards" />
                         ) : filteredPlayers.length === 0 ? (
                           <div className="text-sm text-gray-500 p-3">Keine Spieler gefunden.</div>
                         ) : (
@@ -487,10 +473,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                     <ScrollArea className="h-[220px] sm:h-[280px]">
                       <div className="p-3 space-y-2">
                         {loading ? (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Regeln werden geladen...
-                          </div>
+                          <SectionSkeleton kind="cards" />
                         ) : filteredRules.length === 0 ? (
                           <div className="text-sm text-gray-500 p-3">Keine aktiven Regeln gefunden.</div>
                         ) : (
@@ -610,9 +593,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                       onClick={handleSave}
                       disabled={!canSave}
                       className="h-10 rounded-xl bg-gray-950 text-sm font-black text-white hover:bg-gray-800"
-                    >
-                      {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                      Bonuspunkte speichern
+                     loading={Boolean(saving)}><Plus className="w-4 h-4 mr-2" />Bonuspunkte speichern
                     </Button>
                   </div>
                 </div>
@@ -631,10 +612,7 @@ export function BonusVergabeManagement({ user }: BonusVergabeManagementProps) {
                 <ScrollArea className="h-[360px] sm:h-[460px]">
                   <div className="p-3 space-y-2">
                     {loading ? (
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Historie wird geladen...
-                      </div>
+                      <SectionSkeleton kind="cards" />
                     ) : transactions.length === 0 ? (
                       <div className="text-sm text-gray-500 p-3">Noch keine Bonuspunkte vergeben.</div>
                     ) : (

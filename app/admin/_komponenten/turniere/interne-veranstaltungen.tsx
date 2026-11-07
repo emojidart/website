@@ -1,27 +1,9 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
-import {
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Dices,
-  Loader2,
-  MapPin,
-  ImagePlus,
-  Trash2,
-  Plus,
-  RefreshCw,
-  RotateCcw,
-  Save,
-  ShieldCheck,
-  Sparkles,
-  Trophy,
-  UserPlus,
-  Users,
-  WandSparkles,
-  X,
-} from "lucide-react"
+import { CalendarDays, CheckCircle2, Clock3, Dices, MapPin, ImagePlus, Trash2, Plus, RefreshCw, RotateCcw, Save, ShieldCheck, Sparkles, Trophy, UserPlus, Users, WandSparkles, X } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
@@ -567,7 +549,7 @@ export function InternalTournamentEventsAdmin(){
   const availablePlayers=activeRegs.filter((r)=>!pickedPlayerIds.has(r.player_id)&&!captainIds.has(r.player_id))
 
   if(loading){
-    return <div className="flex min-h-[280px] items-center justify-center gap-2 text-sm font-bold text-white/45"><Loader2 className="h-5 w-5 animate-spin"/> Interne Events werden geladen…</div>
+    return <SectionSkeleton kind="tournament" />
   }
 
   return (
@@ -600,18 +582,18 @@ export function InternalTournamentEventsAdmin(){
         }
       `}</style>
 
-      <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#090b0f] p-5 text-white shadow-[0_30px_90px_-54px_rgba(0,0,0,.95)] sm:p-7 lg:p-8">
+      <section className="relative overflow-hidden rounded-[20px] border border-white/[0.08] bg-card p-5 text-white shadow-sm sm:p-7 lg:p-8">
         <div className="pointer-events-none absolute -left-20 bottom-[-90px] h-64 w-64 rounded-full bg-orange-500/[0.13] blur-[90px]" />
-        <div className="pointer-events-none absolute right-[8%] top-[-100px] h-64 w-64 rounded-full bg-sky-500/[0.09] blur-[95px]" />
+        <div className="pointer-events-none absolute right-[8%] top-[-100px] h-64 w-64 rounded-full bg-orange-500/[0.09] blur-[95px]" />
         <div className="relative max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">
             <Trophy className="h-3.5 w-3.5 text-orange-300" />
             Sportdart · Intern
           </div>
           <h1 className="mt-4 text-3xl font-black tracking-[-0.045em] text-white sm:text-4xl lg:text-5xl">
             Interner Ligabetrieb
           </h1>
-          <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/48 sm:text-base">
+          <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground sm:text-base">
             Interne Events, Anmeldungen, Auslosungen und Spielpläne zentral verwalten.
           </p>
         </div>
@@ -624,11 +606,11 @@ export function InternalTournamentEventsAdmin(){
       ):null}
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-[26px] border border-white/[0.08] bg-[#090b0f]/95 p-2 shadow-[0_24px_70px_-50px_rgba(0,0,0,.98)] lg:grid-cols-4">
-          <TabsTrigger value="events" className="min-h-12 rounded-2xl border border-transparent bg-white/[0.025] px-3 py-2.5 font-black text-white/45 transition data-[state=active]:border-orange-300/25 data-[state=active]:bg-orange-500/[0.12] data-[state=active]:text-orange-100">Events</TabsTrigger>
-          <TabsTrigger value="registrations" className="min-h-12 rounded-2xl border border-transparent bg-white/[0.025] px-3 py-2.5 font-black text-white/45 transition data-[state=active]:border-orange-300/25 data-[state=active]:bg-orange-500/[0.12] data-[state=active]:text-orange-100">Anmeldungen</TabsTrigger>
-          <TabsTrigger value="draft" className="min-h-12 rounded-2xl border border-transparent bg-white/[0.025] px-3 py-2.5 font-black text-white/45 transition data-[state=active]:border-orange-300/25 data-[state=active]:bg-orange-500/[0.12] data-[state=active]:text-orange-100">Draft / Auslosung</TabsTrigger>
-          <TabsTrigger value="competition" className="min-h-12 rounded-2xl border border-transparent bg-white/[0.025] px-3 py-2.5 font-black text-white/45 transition data-[state=active]:border-orange-300/25 data-[state=active]:bg-orange-500/[0.12] data-[state=active]:text-orange-100">Spielmodus & Spielplan</TabsTrigger>
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-[20px] border border-white/[0.08] bg-card p-2 shadow-sm lg:grid-cols-4">
+          <TabsTrigger value="events" className="min-h-12 rounded-2xl border border-transparent bg-white/[0.025] px-3 py-2.5 font-black text-muted-foreground transition data-[state=active]:border-orange-300/25 data-[state=active]:bg-orange-500/[0.12] data-[state=active]:text-orange-100">Events</TabsTrigger>
+          <TabsTrigger value="registrations" className="min-h-12 rounded-2xl border border-transparent bg-white/[0.025] px-3 py-2.5 font-black text-muted-foreground transition data-[state=active]:border-orange-300/25 data-[state=active]:bg-orange-500/[0.12] data-[state=active]:text-orange-100">Anmeldungen</TabsTrigger>
+          <TabsTrigger value="draft" className="min-h-12 rounded-2xl border border-transparent bg-white/[0.025] px-3 py-2.5 font-black text-muted-foreground transition data-[state=active]:border-orange-300/25 data-[state=active]:bg-orange-500/[0.12] data-[state=active]:text-orange-100">Draft / Auslosung</TabsTrigger>
+          <TabsTrigger value="competition" className="min-h-12 rounded-2xl border border-transparent bg-white/[0.025] px-3 py-2.5 font-black text-muted-foreground transition data-[state=active]:border-orange-300/25 data-[state=active]:bg-orange-500/[0.12] data-[state=active]:text-orange-100">Spielmodus & Spielplan</TabsTrigger>
         </TabsList>
 
         <TabsContent value="events" className="mt-5 space-y-5">
@@ -641,10 +623,10 @@ export function InternalTournamentEventsAdmin(){
                 <div><Label>Titel *</Label><Input value={form.title} onChange={(e)=>setForm({...form,title:e.target.value})} className="mt-2"/></div>
                 <div><Label>Untertitel</Label><Input value={form.subtitle} onChange={(e)=>setForm({...form,subtitle:e.target.value})} className="mt-2"/></div>
                 <div className="md:col-span-2">
-                  <label className={`flex items-center justify-between rounded-2xl border p-4 ${form.date_open?"border-sky-200 bg-sky-50":"border-white/[0.10] bg-white/[0.035]"}`}>
+                  <label className={`flex items-center justify-between rounded-2xl border p-4 ${form.date_open?"border-orange-200 bg-orange-50":"border-white/[0.10] bg-white/[0.035]"}`}>
                     <span>
                       <span className="block font-black text-white">Termin noch offen</span>
-                      <span className="mt-1 block text-xs font-semibold text-white/45">
+                      <span className="mt-1 block text-xs font-semibold text-muted-foreground">
                         Aktivieren, wenn Start- und Enddatum des Bewerbs noch nicht feststehen.
                       </span>
                     </span>
@@ -689,7 +671,7 @@ export function InternalTournamentEventsAdmin(){
                   <Label>Status</Label>
                   <Select value={form.status} onValueChange={(value:EventStatus)=>setForm({...form,status:value})}>
                     <SelectTrigger className="mt-2"><SelectValue/></SelectTrigger>
-                    <SelectContent className="border-white/[0.10] bg-[#0b0d11] text-white">
+                    <SelectContent className="border-white/[0.10] bg-card text-white">
                       <SelectItem value="draft">Entwurf</SelectItem>
                       <SelectItem value="published">Veröffentlicht / Anmeldung offen</SelectItem>
                       <SelectItem value="closed">Anmeldung geschlossen</SelectItem>
@@ -735,9 +717,9 @@ export function InternalTournamentEventsAdmin(){
                     </div>
                   ):(
                     <label className="flex min-h-[190px] cursor-pointer flex-col items-center justify-center p-6 text-center transition hover:bg-orange-50">
-                      {uploadingImage?<Loader2 className="h-9 w-9 animate-spin text-orange-600"/>:<ImagePlus className="h-9 w-9 text-orange-600"/>}
+                      {uploadingImage?<SectionSkeleton kind="tournament" />:<ImagePlus className="h-9 w-9 text-orange-600"/>}
                       <div className="mt-3 font-black text-white">{uploadingImage?"Bild wird hochgeladen…":"Bild hochladen"}</div>
-                      <div className="mt-1 text-xs font-semibold text-white/45">JPG, PNG, WEBP oder GIF · max. 8 MB · empfohlen 16:9</div>
+                      <div className="mt-1 text-xs font-semibold text-muted-foreground">JPG, PNG, WEBP oder GIF · max. 8 MB · empfohlen 16:9</div>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"
@@ -751,9 +733,9 @@ export function InternalTournamentEventsAdmin(){
               </div>
               <div><Label>Beschreibung / Regeln</Label><Textarea value={form.description} onChange={(e)=>setForm({...form,description:e.target.value})} className="mt-2 min-h-[130px]"/></div>
 
-              <div className="rounded-3xl border border-sky-200 bg-sky-50/60 p-4 sm:p-5">
-                <div className="flex items-center gap-2 font-black text-sky-900"><Dices className="h-5 w-5"/> Auslosung</div>
-                <p className="mt-1 text-sm font-semibold text-sky-800/70">
+              <div className="rounded-3xl border border-orange-200 bg-orange-50/60 p-4 sm:p-5">
+                <div className="flex items-center gap-2 font-black text-orange-900"><Dices className="h-5 w-5"/> Auslosung</div>
+                <p className="mt-1 text-sm font-semibold text-orange-800/70">
                   Unabhängig vom Captain-Draft. Für normale Online- oder Vor-Ort-Auslosungen.
                 </p>
 
@@ -772,7 +754,7 @@ export function InternalTournamentEventsAdmin(){
                       })}
                     >
                       <SelectTrigger className="mt-2 bg-white/[0.035]"><SelectValue/></SelectTrigger>
-                      <SelectContent className="border-white/[0.10] bg-[#0b0d11] text-white">
+                      <SelectContent className="border-white/[0.10] bg-card text-white">
                         <SelectItem value="none">Keine Auslosung</SelectItem>
                         <SelectItem value="online">Online-Auslosung</SelectItem>
                         <SelectItem value="onsite">Live vor Ort</SelectItem>
@@ -804,10 +786,10 @@ export function InternalTournamentEventsAdmin(){
                         placeholder={form.location||"Vereinsheim"}
                       />
                     </div>
-                    <label className="flex items-center justify-between rounded-2xl border border-sky-200 bg-white/[0.035] p-4">
+                    <label className="flex items-center justify-between rounded-2xl border border-orange-200 bg-white/[0.035] p-4">
                       <span>
                         <span className="block font-black">Anwesenheit erforderlich</span>
-                        <span className="text-xs text-white/45">Spieler müssen zur Auslosung vor Ort sein.</span>
+                        <span className="text-xs text-muted-foreground">Spieler müssen zur Auslosung vor Ort sein.</span>
                       </span>
                       <Switch checked={form.draw_attendance_required} onCheckedChange={(v)=>setForm({...form,draw_attendance_required:v})}/>
                     </label>
@@ -829,11 +811,11 @@ export function InternalTournamentEventsAdmin(){
 
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="flex items-center justify-between rounded-2xl border p-4">
-                  <span><span className="block font-black">Auf Startseite anzeigen</span><span className="text-xs font-semibold text-white/45">Nur für Paket „Interne Turniere“.</span></span>
+                  <span><span className="block font-black">Auf Startseite anzeigen</span><span className="text-xs font-semibold text-muted-foreground">Nur für Paket „Interne Turniere“.</span></span>
                   <Switch checked={form.show_on_homepage} onCheckedChange={(v)=>setForm({...form,show_on_homepage:v})}/>
                 </label>
                 <label className="flex items-center justify-between rounded-2xl border p-4">
-                  <span><span className="block font-black">Optionaler Captain-Draft</span><span className="text-xs font-semibold text-white/45">Nur aktivieren, wenn dieser Bewerb so gespielt wird.</span></span>
+                  <span><span className="block font-black">Optionaler Captain-Draft</span><span className="text-xs font-semibold text-muted-foreground">Nur aktivieren, wenn dieser Bewerb so gespielt wird.</span></span>
                   <Switch checked={form.draft_enabled} onCheckedChange={(v)=>setForm({...form,draft_enabled:v})}/>
                 </label>
               </div>
@@ -856,7 +838,7 @@ export function InternalTournamentEventsAdmin(){
                       <Label>Wahlreihenfolge</Label>
                       <Select value={form.draft_order_mode} onValueChange={(v:"snake"|"round_robin")=>setForm({...form,draft_order_mode:v})}>
                         <SelectTrigger className="mt-2"><SelectValue/></SelectTrigger>
-                        <SelectContent className="border-white/[0.10] bg-[#0b0d11] text-white">
+                        <SelectContent className="border-white/[0.10] bg-card text-white">
                           <SelectItem value="snake">Snake-Draft (empfohlen)</SelectItem>
                           <SelectItem value="round_robin">Immer gleiche Reihenfolge</SelectItem>
                         </SelectContent>
@@ -864,7 +846,7 @@ export function InternalTournamentEventsAdmin(){
                     </div>
                   </div>
                   <label className="mt-4 flex items-center justify-between rounded-2xl border border-orange-200 bg-white/[0.035] p-4">
-                    <span><span className="block font-black">Steal-Joker</span><span className="text-xs text-white/45">Jeder Captain kann einmal einen bereits gewählten Spieler stehlen und muss einen eigenen abgeben.</span></span>
+                    <span><span className="block font-black">Steal-Joker</span><span className="text-xs text-muted-foreground">Jeder Captain kann einmal einen bereits gewählten Spieler stehlen und muss einen eigenen abgeben.</span></span>
                     <Switch checked={form.steal_joker_enabled} onCheckedChange={(v)=>setForm({...form,steal_joker_enabled:v})}/>
                   </label>
                   <div className="mt-4"><Label>Draft-Hinweise / Sonderregeln</Label><Textarea value={form.draft_notes} onChange={(e)=>setForm({...form,draft_notes:e.target.value})} className="mt-2 bg-white/[0.035]"/></div>
@@ -872,10 +854,7 @@ export function InternalTournamentEventsAdmin(){
               ):null}
 
               <div className="flex flex-wrap gap-2">
-                <Button onClick={()=>void saveEvent()} disabled={saving} className="rounded-xl bg-orange-600 font-black hover:bg-orange-700">
-                  {saving?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Save className="mr-2 h-4 w-4"/>}
-                  {form.id?"Änderungen speichern":"Event anlegen"}
-                </Button>
+                <Button onClick={()=>void saveEvent()} disabled={saving} className="rounded-xl bg-primary font-black hover:bg-orange-700" loading={Boolean(saving)}><Save className="mr-2 h-4 w-4"/>{form.id?"Änderungen speichern":"Event anlegen"}</Button>
                 {form.id?<Button variant="outline" className="rounded-xl" onClick={resetForm}><X className="mr-2 h-4 w-4"/> Bearbeiten abbrechen</Button>:null}
               </div>
             </CardContent>
@@ -891,7 +870,7 @@ export function InternalTournamentEventsAdmin(){
                       <Badge variant="outline">{e.status}</Badge>
                       {e.draft_enabled?<Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Draft</Badge>:null}
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-white/45">
+                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-muted-foreground">
                       <span>{fmtDateRange(e.event_date,e.end_date,e.date_open)}</span>
                       {e.start_time?<span>{e.start_time.slice(0,5)} Uhr</span>:null}
                       {e.location?<span>{e.location}</span>:null}
@@ -912,13 +891,13 @@ export function InternalTournamentEventsAdmin(){
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="text-lg font-black">Anmeldungen</div>
-              <div className="text-sm font-semibold text-white/45">Alle Vereinsmitglieder, Warteliste und Abmeldungen.</div>
+              <div className="text-sm font-semibold text-muted-foreground">Alle Vereinsmitglieder, Warteliste und Abmeldungen.</div>
             </div>
             <div className="w-full sm:w-[360px]">
               <Label>Veranstaltung</Label>
               <Select value={selectedEventId} onValueChange={setSelectedEventId}>
                 <SelectTrigger className="mt-2"><SelectValue placeholder="Event wählen"/></SelectTrigger>
-                <SelectContent className="border-white/[0.10] bg-[#0b0d11] text-white">{events.map((e)=><SelectItem key={e.id} value={e.id}>{e.title} · {fmtDateRange(e.event_date,e.end_date,e.date_open)}</SelectItem>)}</SelectContent>
+                <SelectContent className="border-white/[0.10] bg-card text-white">{events.map((e)=><SelectItem key={e.id} value={e.id}>{e.title} · {fmtDateRange(e.event_date,e.end_date,e.date_open)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
@@ -928,12 +907,12 @@ export function InternalTournamentEventsAdmin(){
               <div className="grid gap-3 sm:grid-cols-3">
                 <Card className="emd-dark-card border-emerald-200 bg-emerald-50/60"><CardContent className="p-4"><div className="text-xs font-black uppercase text-emerald-700">Angemeldete Spieler</div><div className="mt-1 text-3xl font-black text-emerald-950">{activeRegs.length}</div></CardContent></Card>
                 <Card className="emd-dark-card border-amber-200 bg-amber-50/60"><CardContent className="p-4"><div className="text-xs font-black uppercase text-amber-700">Warteliste</div><div className="mt-1 text-3xl font-black text-amber-950">{waitRegs.length}</div></CardContent></Card>
-                <Card className="emd-dark-card"><CardContent className="p-4"><div className="text-xs font-black uppercase text-white/35">Limit</div><div className="mt-1 text-3xl font-black">{selectedEvent.max_participants||"∞"}</div></CardContent></Card>
+                <Card className="emd-dark-card"><CardContent className="p-4"><div className="text-xs font-black uppercase text-muted-foreground">Limit</div><div className="mt-1 text-3xl font-black">{selectedEvent.max_participants||"∞"}</div></CardContent></Card>
               </div>
               <Card className="emd-dark-card overflow-hidden rounded-3xl">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[760px] text-sm">
-                    <thead className="bg-slate-950 text-white">
+                    <thead className="bg-card text-white">
                       <tr><th className="px-4 py-3 text-left">Spieler</th><th className="px-4 py-3 text-left">Status</th><th className="px-4 py-3 text-left">Anmeldung</th><th className="px-4 py-3 text-right">Aktion</th></tr>
                     </thead>
                     <tbody>
@@ -963,7 +942,7 @@ export function InternalTournamentEventsAdmin(){
                               {r.status==="registered"?"Angemeldet":r.status==="waitlist"?"Warteliste":"Abgemeldet"}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 text-white/45">{fmtDateTime(r.registered_at)}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{fmtDateTime(r.registered_at)}</td>
                           <td className="px-4 py-3">
                             <div className="flex justify-end gap-2">
                               {r.status!=="registered"?<Button size="sm" variant="outline" onClick={()=>void updateRegistration(r.id,"registered")}>Anmelden</Button>:null}
@@ -985,13 +964,13 @@ export function InternalTournamentEventsAdmin(){
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="text-lg font-black">Draft / Auslosung am Spieltag</div>
-              <div className="text-sm font-semibold text-white/45">Optional pro Veranstaltung. Für normale interne Turniere bleibt dieser Bereich einfach deaktiviert.</div>
+              <div className="text-sm font-semibold text-muted-foreground">Optional pro Veranstaltung. Für normale interne Turniere bleibt dieser Bereich einfach deaktiviert.</div>
             </div>
             <div className="w-full sm:w-[360px]">
               <Label>Veranstaltung</Label>
               <Select value={selectedEventId} onValueChange={(id)=>{setSelectedEventId(id);setDraftCaptainIds([])}}>
                 <SelectTrigger className="mt-2"><SelectValue/></SelectTrigger>
-                <SelectContent className="border-white/[0.10] bg-[#0b0d11] text-white">{events.map((e)=><SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}</SelectContent>
+                <SelectContent className="border-white/[0.10] bg-card text-white">{events.map((e)=><SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
@@ -1001,7 +980,7 @@ export function InternalTournamentEventsAdmin(){
               <CardContent className="p-8 text-center">
                 <Dices className="mx-auto h-10 w-10 text-slate-300"/>
                 <div className="mt-3 font-black">Für dieses Event ist kein Draft aktiviert.</div>
-                <div className="mt-1 text-sm font-semibold text-white/45">Das ist völlig okay – der Draft ist nur ein optionales Zusatzmodul.</div>
+                <div className="mt-1 text-sm font-semibold text-muted-foreground">Das ist völlig okay – der Draft ist nur ein optionales Zusatzmodul.</div>
               </CardContent>
             </Card>
           ):(
@@ -1014,7 +993,7 @@ export function InternalTournamentEventsAdmin(){
                       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <div>
                           <div className="text-sm font-black text-white">Angemeldete Spieler</div>
-                          <div className="text-xs font-semibold text-white/45">Nur angemeldete Spieler können als Captain ausgewählt werden.</div>
+                          <div className="text-xs font-semibold text-muted-foreground">Nur angemeldete Spieler können als Captain ausgewählt werden.</div>
                         </div>
                         <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800 hover:bg-emerald-100" variant="outline">
                           {activeRegs.length} angemeldet
@@ -1046,7 +1025,7 @@ export function InternalTournamentEventsAdmin(){
                                   {selected?"Captain":"Angemeldet"}
                                 </Badge>
                               </div>
-                              <div className="mt-1 text-xs font-semibold text-white/45">
+                              <div className="mt-1 text-xs font-semibold text-muted-foreground">
                                 {selected?"Als Captain ausgewählt":"Antippen, um als Captain auszuwählen"}
                               </div>
                             </button>
@@ -1055,7 +1034,7 @@ export function InternalTournamentEventsAdmin(){
                       </div>
                       <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white/[0.035] p-4">
                         <div className="text-sm font-bold">{draftCaptainIds.length}/{selectedEvent.captain_count} Captains ausgewählt</div>
-                        <Button onClick={()=>void randomizeCaptains()} disabled={draftBusy} className="rounded-xl bg-orange-600 font-black hover:bg-orange-700">
+                        <Button onClick={()=>void randomizeCaptains()} disabled={draftBusy} className="rounded-xl bg-primary font-black hover:bg-orange-700">
                           <Dices className="mr-2 h-4 w-4"/> Reihenfolge auslosen
                         </Button>
                       </div>
@@ -1089,8 +1068,8 @@ export function InternalTournamentEventsAdmin(){
                     </CardHeader>
                     <CardContent>
                       {captainForNextPick?.captain?(
-                        <div className="mb-4 rounded-2xl bg-slate-950 p-4 text-white">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-orange-300">Nächster Pick · Runde {captainForNextPick.round}</div>
+                        <div className="mb-4 rounded-2xl bg-card p-4 text-white">
+                          <div className="text-xs font-black uppercase tracking-widest text-orange-300">Nächster Pick · Runde {captainForNextPick.round}</div>
                           <div className="mt-1 text-xl font-black">{captainForNextPick.captain.club_players?.name||"Captain"} wählt jetzt</div>
                         </div>
                       ):null}
@@ -1100,7 +1079,7 @@ export function InternalTournamentEventsAdmin(){
                           <button key={r.player_id} type="button" disabled={draftBusy} onClick={()=>void makePick(r.player_id)}
                             className="rounded-2xl border border-white/[0.10] bg-white/[0.035] p-3 text-left transition hover:border-orange-300 hover:bg-orange-50 disabled:opacity-50">
                             <div className="font-black">{r.club_players?.name||"Spieler"}</div>
-                            <div className="mt-1 text-xs font-semibold text-white/45">Für aktuellen Captain wählen</div>
+                            <div className="mt-1 text-xs font-semibold text-muted-foreground">Für aktuellen Captain wählen</div>
                           </button>
                         ))}
                       </div>
@@ -1122,7 +1101,7 @@ export function InternalTournamentEventsAdmin(){
                             {roster.map((p)=>(
                               <div key={p.id} className="rounded-xl bg-white/[0.035] px-3 py-2 text-sm font-bold">
                                 {p.club_players?.name||playerById.get(p.player_id)?.name||"Spieler"}
-                                {p.pick_type==="steal"?<span className="ml-2 text-[10px] uppercase text-red-600">Steal</span>:null}
+                                {p.pick_type==="steal"?<span className="ml-2 text-xs uppercase text-red-600">Steal</span>:null}
                               </div>
                             ))}
                           </CardContent>
@@ -1138,7 +1117,7 @@ export function InternalTournamentEventsAdmin(){
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm font-semibold text-white/55">
+                      <p className="text-sm font-semibold text-muted-foreground">
                         Erst wenn der Draft fertig ist: daraus werden echte Teams mit Captain und gewählten Spielern erzeugt.
                         Danach erscheinen sie 1:1 im Bereich „Spielmodus & Spielplan“ bei der Mannschaftsauswahl.
                       </p>
@@ -1147,15 +1126,13 @@ export function InternalTournamentEventsAdmin(){
                           <Label>Dartart der Teams</Label>
                           <Select value={draftDartType} onValueChange={(v:"edart"|"steeldart")=>setDraftDartType(v)}>
                             <SelectTrigger className="mt-2 bg-white/[0.035]"><SelectValue/></SelectTrigger>
-                            <SelectContent className="border-white/[0.10] bg-[#0b0d11] text-white">
+                            <SelectContent className="border-white/[0.10] bg-card text-white">
                               <SelectItem value="edart">E-Dart</SelectItem>
                               <SelectItem value="steeldart">Steeldart</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                        <Button onClick={()=>void buildDraftTeams()} disabled={draftBusy||eventCaptains.length===0} className="h-11 rounded-xl bg-orange-600 font-black hover:bg-orange-700">
-                          {draftBusy?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Users className="mr-2 h-4 w-4"/>}
-                          Teams übernehmen
+                        <Button onClick={()=>void buildDraftTeams()} disabled={draftBusy||eventCaptains.length===0} className="h-11 rounded-xl bg-primary font-black hover:bg-orange-700" loading={Boolean(draftBusy)}><Users className="mr-2 h-4 w-4"/>Teams übernehmen
                         </Button>
                       </div>
                       {linkedEventTeams.length>0?(
@@ -1179,7 +1156,7 @@ export function InternalTournamentEventsAdmin(){
                     <Card className="emd-dark-card rounded-3xl border-red-200">
                       <CardHeader><CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-red-600"/> 4. Steal-Joker</CardTitle></CardHeader>
                       <CardContent>
-                        <p className="mb-4 text-sm font-semibold text-white/45">
+                        <p className="mb-4 text-sm font-semibold text-muted-foreground">
                           Ein Captain darf einmal einen bereits gewählten Spieler eines anderen Teams übernehmen. Dafür muss er einen eigenen gedrafteten Spieler an dieses Team abgeben.
                         </p>
                         <div className="grid gap-3 md:grid-cols-3">
@@ -1227,7 +1204,7 @@ export function InternalTournamentEventsAdmin(){
                     <SelectTrigger className="mt-2 h-12 rounded-xl bg-white/[0.035]">
                       <SelectValue placeholder="Bitte Veranstaltung auswählen"/>
                     </SelectTrigger>
-                    <SelectContent className="border-white/[0.10] bg-[#0b0d11] text-white">
+                    <SelectContent className="border-white/[0.10] bg-card text-white">
                       {events.map((e)=>(
                         <SelectItem key={e.id} value={e.id}>
                           {e.title} · {fmtDateRange(e.event_date,e.end_date,e.date_open)}
@@ -1266,7 +1243,7 @@ export function InternalTournamentEventsAdmin(){
               <CardContent className="p-8 text-center">
                 <Trophy className="mx-auto h-10 w-10 text-slate-300"/>
                 <div className="mt-3 text-lg font-black text-white">Keine Veranstaltung ausgewählt</div>
-                <div className="mt-1 text-sm font-semibold text-white/45">
+                <div className="mt-1 text-sm font-semibold text-muted-foreground">
                   Wähle oben zuerst die Veranstaltung aus, für die Spielmodus und Spielplan eingerichtet werden sollen.
                 </div>
               </CardContent>

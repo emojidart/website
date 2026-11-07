@@ -92,7 +92,7 @@ function TierCard({
   return (
     <motion.div
       variants={membersCupItemVariants}
-      className="relative overflow-hidden rounded-[30px] border border-orange-300/15 bg-card shadow-xl"
+      className="relative overflow-hidden rounded-[20px] border border-orange-300/15 bg-card shadow-xl"
     >
       <div className={`h-2 w-full ${accent}`} />
 
@@ -180,7 +180,7 @@ export default function MembersChampionCupEinstufungPage() {
             </Link>
           </motion.div>
 
-          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-[26px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
             <div className="relative bg-card    p-4 text-white sm:p-5 lg:p-6">
               <div className="flex flex-col items-center text-center sm:flex-row sm:text-left sm:gap-4">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
@@ -216,8 +216,8 @@ export default function MembersChampionCupEinstufungPage() {
             className="grid md:grid-cols-3 gap-4 mt-5"
           >
             <div className="rounded-[22px] border border-white/10 bg-card p-4 sm:p-5 shadow-sm">
-              <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-400/20 flex items-center justify-center mb-4">
-                <BarChart3 className="w-8 h-8 text-sky-300" />
+              <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-400/20 flex items-center justify-center mb-4">
+                <BarChart3 className="w-8 h-8 text-orange-300" />
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-white">
                 Statistik-System
@@ -260,7 +260,7 @@ export default function MembersChampionCupEinstufungPage() {
               title="Tabelle 1"
               subtitle="Höchste Punkte"
               accent="text-foreground bg-card   "
-              iconBg="bg-sky-500/100"
+              iconBg="bg-orange-500/100"
               players={tabelle1Players}
             />
 
@@ -283,7 +283,7 @@ export default function MembersChampionCupEinstufungPage() {
 
           <motion.div
             variants={membersCupItemVariants}
-            className="mt-8 rounded-[30px] border border-orange-300/15 bg-card p-7 text-center shadow-xl"
+            className="mt-8 rounded-[20px] border border-orange-300/15 bg-card p-7 text-center shadow-xl"
           >
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center">

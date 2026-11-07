@@ -20,7 +20,7 @@ export function PauseModal({
 }: PauseModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[420px] rounded-[28px] shadow-2xl text-center bg-background text-white">
+      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[420px] rounded-[20px] shadow-2xl text-center bg-background text-white">
         <div className="px-6 pt-7"><DialogHeader>
           <DialogTitle className="text-3xl font-semibold text-white mb-2">PAUSE</DialogTitle>
         </DialogHeader></div>

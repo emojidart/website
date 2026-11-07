@@ -1,23 +1,9 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react";
-import {
-  Calendar,
-  CalendarDays,
-  Cake,
-  CheckCircle2,
-  ChevronRight,
-  Clock,
-  HelpCircle,
-  Loader2,
-  MapPin,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  Trophy,
-  Users,
-  XCircle,
-} from "lucide-react";
+import { Calendar, CalendarDays, Cake, CheckCircle2, ChevronRight, Clock, HelpCircle, MapPin, ShieldCheck, Sparkles, Target, Trophy, Users, XCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -344,9 +330,7 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
 
   if (loading)
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" />
-      </div>
+      <SectionSkeleton kind="cards" />
     );
 
   return (

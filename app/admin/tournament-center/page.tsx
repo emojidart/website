@@ -22,13 +22,13 @@ export default function TournamentCenterPage() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-[#070b12] text-white">
+    <div className="min-h-screen bg-card text-white">
       <Header />
       <div className="h-12 sm:h-14" />
       <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <div className="rounded-2xl border border-white/10 bg-[#0b101a] px-6 py-5 text-center shadow-xl">
+        <div className="rounded-2xl border border-white/10 bg-card px-6 py-5 text-center shadow-xl">
           <div className="text-sm font-bold text-white">Turnier-Zentrale wird geöffnet…</div>
-          <p className="mt-2 text-xs text-white/50">Zurück zur Verwaltung deiner Turniere</p>
+          <p className="mt-2 text-xs text-muted-foreground">Zurück zur Verwaltung deiner Turniere</p>
         </div>
       </div>
     </div>

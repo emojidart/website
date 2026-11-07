@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -7,20 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/hooks/use-auth"
 import { useState, useEffect, useRef } from "react"
-import {
-  Heart,
-  MessageCircle,
-  Send,
-  Users,
-  Lock,
-  TrendingUp,
-  ImageIcon,
-  Loader2,
-  X,
-  Trash2,
-  ArrowLeft,
-  Pencil,
-} from "lucide-react"
+import { Heart, MessageCircle, Send, Users, Lock, TrendingUp, ImageIcon, X, Trash2, ArrowLeft, Pencil } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { AuthModal } from "@/components/auth-modal"
 import { DeleteModal } from "@/components/delete-modal"
@@ -580,13 +569,8 @@ export default function CommunityPage() {
 
   if (authLoading || (loading && !posts.length)) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20">
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 text-orange-600 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Lädt...</p>
-          </div>
-        </main>
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20">
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     )
@@ -711,28 +695,18 @@ export default function CommunityPage() {
                 disabled={!session || !newPost.trim() || isPosting || isUploading}
                 size="sm"
                 className="bg-card     text-white font-bold shadow-lg text-xs"
-              >
-                {isPosting || isUploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {isUploading ? "Lädt Bild hoch..." : "Wird gepostet..."}
-                  </>
-                ) : (
+               loading={Boolean(isPosting || isUploading)}>{(
                   <>
                     <Send className="h-4 w-4 mr-2" />
                     Posten
                   </>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </CardContent>
         </Card>
 
         {loading ? (
-          <div className="text-center py-12">
-            <Loader2 className="h-12 w-12 text-orange-600 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Lade Beiträge...</p>
-          </div>
+          <SectionSkeleton kind="cards" />
         ) : posts.length === 0 ? (
           <Card className="border-0 shadow-xl bg-card ">
             <CardContent className="p-8 text-center">

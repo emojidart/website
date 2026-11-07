@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingBlock } from "@/components/loading/loading"
+
 import { motion } from "framer-motion"
 import { Trophy, TrendingUp, Euro, Sparkles, Zap, Crown } from "lucide-react"
 
@@ -32,7 +34,7 @@ export function PotDisplay({ amount }: PotDisplayProps) {
             className="text-foreground relative bg-card    rounded-2xl p-3 sm:p-4 mb-4 sm:mb-0 sm:mr-5 shadow-xl"
           >
             <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-white drop-shadow-lg" />
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-pulse" />
+            <LoadingBlock className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full " />
           </motion.div>
           <div className="text-center sm:text-left">
             <motion.h2

@@ -1,5 +1,7 @@
 "use client"
 
+import { ButtonLoader, PageLoader, SectionSkeleton } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import type React from "react"
@@ -20,37 +22,14 @@ import { Mail, Lock, Users, Eye, EyeOff, KeyRound, UserRound, ArrowRight } from 
 
 export default function MemberLoginPage() {
   return (
-    <Suspense fallback={<LoginSkeleton />}>
+    <Suspense fallback={<SectionSkeleton kind="cards" label="Bereich wird geladen…" />}>
       <MemberLoginClient />
     </Suspense>
   )
 }
 
 function LoginSkeleton() {
-  return (
-    <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
-      <Header />
-      <style jsx global>{`
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active {
-          -webkit-text-fill-color: #ffffff !important;
-          caret-color: #ffffff !important;
-          -webkit-box-shadow: 0 0 0 1000px #111418 inset !important;
-          box-shadow: 0 0 0 1000px #111418 inset !important;
-          transition: background-color 9999s ease-out 0s !important;
-        }
-      `}</style>
-      <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-20">
-        <div className="flex flex-col items-center gap-4 rounded-[24px] border border-border bg-card px-7 py-6 ">
-          <div className="h-9 w-9 animate-spin rounded-full border-2 border-white/15 border-t-orange-400" />
-          <span className="text-sm font-semibold text-muted-foreground">Zugang wird vorbereitet…</span>
-        </div>
-      </main>
-      <MobileBottomNav />
-    </div>
-  )
+  return <PageLoader label="Zugang wird vorbereitet…" fullPage />
 }
 
 function MemberLoginClient() {
@@ -405,9 +384,7 @@ function MemberLoginClient() {
                     <div>
                       <div className="flex items-center justify-between gap-3">
                         <label htmlFor="login-password" className="text-sm font-medium text-foreground">Passwort</label>
-                        <button type="button" onClick={handlePasswordReset} disabled={resetLoading} className="inline-flex min-h-11 items-center rounded-md text-xs font-semibold text-orange-300 hover:text-orange-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
-                          {resetLoading ? "Sende…" : "Passwort vergessen?"}
-                        </button>
+                        <button type="button" onClick={handlePasswordReset} disabled={resetLoading} className="inline-flex min-h-11 items-center rounded-md text-xs font-semibold text-orange-300 hover:text-orange-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50" aria-busy={Boolean(resetLoading) || undefined}><ButtonLoader loading={Boolean(resetLoading)} label="Sende…">{"Passwort vergessen?"}</ButtonLoader></button>
                       </div>
                       <div className="relative mt-2">
                         <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -465,9 +442,7 @@ function MemberLoginClient() {
                       <div role="status" aria-live="polite" className="rounded-xl border border-red-400/25 bg-red-400/10 p-3 text-center text-sm font-medium text-red-200">{message}</div>
                     ) : null}
 
-                    <Button type="submit" disabled={loading || redirecting} className="h-12 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
-                      {loading ? "Wird angemeldet…" : "Anmelden"}
-                    </Button>
+                    <Button type="submit" disabled={loading || redirecting} className="h-12 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-sm hover:bg-primary/90" loading={Boolean(loading)} loadingLabel="Wird angemeldet…">{"Anmelden"}</Button>
                   </form>
                 </CardContent>
               </Card>

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowUpRight, CalendarDays, ChevronRight, Swords, Trophy, Tv2 } from "lucide-react"
+import { ArrowRight, ArrowUpRight, CalendarDays, ChevronRight, CircleDot, Swords, Trophy, Tv2 } from "lucide-react"
 
 type StartseitenHeroProps = {
   leagueMatchCount: number
@@ -9,64 +9,45 @@ type StartseitenHeroProps = {
   tournamentCount: number
 }
 
+const shortcuts = [
+  { label: "Meine Spiele", description: "Aufstellung & Zusagen", href: "/member-availability", icon: Swords, key: "matches" },
+  { label: "Turniere", description: "Spielen & anmelden", href: "/turniere", icon: Trophy, key: "tournaments" },
+  { label: "Veranstaltungen", description: "Was im Verein läuft", href: "/veranstaltungen", icon: CalendarDays, key: "events" },
+  { label: "EMD TV", description: "Live aus dem Verein", href: "/emd-tv", icon: Tv2, key: "tv" },
+] as const
+
 export function StartseitenHero({ leagueMatchCount, todaysEventCount, tournamentCount }: StartseitenHeroProps) {
-  const links = [
-    { label: "Meine Ligaspiele", detail: "Spiele & Verfügbarkeit", count: leagueMatchCount, icon: Swords, href: "/member-availability" },
-    { label: "Heute im Verein", detail: "Termine & Veranstaltungen", count: todaysEventCount, icon: CalendarDays, href: "/veranstaltungen" },
-    { label: "Turniere", detail: "Wettbewerbe & Anmeldung", count: tournamentCount, icon: Trophy, href: "/turniere" },
-  ]
+  const counts = { matches: leagueMatchCount, tournaments: tournamentCount, events: todaysEventCount, tv: null }
 
   return (
-    <section aria-labelledby="home-heading" className="emd-home-section emd-home-intro mx-auto w-full max-w-[var(--emd-content-max)] px-4 pt-5 sm:px-6 lg:px-8 lg:pt-7">
-      <div className="emd-start-surface overflow-hidden rounded-[28px]">
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(340px,.74fr)]">
-          <div className="emd-start-welcome px-5 py-8 sm:px-9 sm:py-11 lg:px-12 lg:py-14">
-            <div className="emd-start-eyebrow inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[.2em]">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-orange-100 text-orange-700">EMD</span>
-              Emoj!’s Dartverein · Salzburg
-            </div>
-            <h1 id="home-heading" className="mt-6 max-w-[690px] text-[clamp(2.35rem,5.2vw,4.7rem)] font-bold leading-[1.02] tracking-[-.065em]">
-              Dein Verein.<br /><span className="emd-start-orange">Alles im Blick.</span>
-            </h1>
-            <p className="mt-5 max-w-[500px] text-[15px] leading-7 sm:text-[17px]">
-              Spiele, Turniere, Termine und Neues aus dem Verein – direkt hier auf deiner Startseite.
-            </p>
-            <div className="mt-8 flex flex-col gap-2.5 sm:flex-row">
-              <Link href="/member-availability" className="emd-start-primary inline-flex min-h-[50px] items-center justify-center gap-3 rounded-xl px-5 text-sm font-bold">
-                <Swords className="h-[18px] w-[18px]" /> Meine Spiele <ArrowUpRight className="h-4 w-4" />
-              </Link>
-              <Link href="/turniere" className="emd-start-outline inline-flex min-h-[50px] items-center justify-center gap-3 rounded-xl px-5 text-sm font-bold">
-                <Trophy className="h-[18px] w-[18px]" /> Turniere ansehen <ArrowUpRight className="h-4 w-4" />
-              </Link>
+    <section aria-labelledby="home-heading" className="emd-home-intro mx-auto w-full max-w-[var(--emd-content-max)] px-4 pt-5 sm:px-6 lg:px-8 lg:pt-8">
+      <div className="emd-command">
+        <div className="emd-command-main">
+          <div className="emd-command-topline"><span className="emd-command-live"><CircleDot aria-hidden="true" size={12} /> DEIN VEREIN. DEINE APP.</span><span className="emd-command-edition">EMD SALZBURG</span></div>
+          <div className="emd-command-content">
+            <span className="emd-command-overline">WELCOME TO THE CLUB</span>
+            <h1 id="home-heading">Alles, was <span>zählt.</span><br />An einem Ort.</h1>
+            <p>Dein nächstes Match. Dein Team. Dein Verein. Entdecke, was heute läuft – direkt in deiner EMD App.</p>
+            <div className="emd-command-cta">
+              <Link href="/member-availability" className="emd-command-button emd-command-button-primary">Meine Spiele <ArrowUpRight size={18} aria-hidden="true" /></Link>
+              <Link href="/veranstaltungen" className="emd-command-button emd-command-button-secondary">Termine ansehen <ArrowRight size={18} aria-hidden="true" /></Link>
             </div>
           </div>
-          <div className="emd-start-actions border-t px-4 py-5 sm:px-6 sm:py-7 lg:border-l lg:border-t-0 lg:px-7 lg:py-9">
-            <div className="mb-4 flex items-center justify-between px-1">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[.18em] text-orange-700">Direktzugriff</p>
-                <h2 className="mt-1 text-xl font-bold tracking-tight">Deine Bereiche</h2>
-              </div>
-              <span className="emd-start-access-mark text-[11px] font-semibold">EMD APP</span>
-            </div>
-            <div className="grid gap-2.5">
-              {links.map(({ label, detail, count, icon: Icon, href }) => (
-                <Link key={href} href={href} className="emd-start-action flex min-h-[78px] items-center gap-3 rounded-2xl p-3.5">
-                  <span className="emd-start-action-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"><Icon className="h-5 w-5" /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold">{label}</span>
-                    <span className="mt-0.5 block text-xs">{detail}</span>
-                  </span>
-                  <span className="emd-start-count min-w-8 text-center text-lg font-bold tabular-nums">{count}</span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
-                </Link>
-              ))}
-              <Link href="/emd-tv" className="emd-start-action flex min-h-[74px] items-center gap-3 rounded-2xl p-3.5">
-                <span className="emd-start-action-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"><Tv2 className="h-5 w-5" /></span>
-                <span className="min-w-0 flex-1"><span className="block text-sm font-bold">EMD TV</span><span className="mt-0.5 block text-xs">Aufstellungen & Live-Ansichten</span></span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+          <div className="emd-command-watermark" aria-hidden="true">EMD<span>.</span></div>
+        </div>
+        <div className="emd-command-side">
+          <div className="emd-command-sidehead"><div><span>QUICK ACCESS</span><strong>Direkt zu deinem Ziel.</strong></div><span className="emd-command-side-index">01 / 04</span></div>
+          <div className="emd-command-shortcuts">
+            {shortcuts.map(({ label, description, href, icon: Icon, key }, index) => (
+              <Link key={href} href={href} className="emd-command-shortcut">
+                <span className="emd-command-shortcut-icon"><Icon size={21} strokeWidth={1.9} aria-hidden="true" /></span>
+                <span className="emd-command-shortcut-content"><strong>{label}</strong><small>{description}</small></span>
+                {counts[key] !== null && <span className="emd-command-shortcut-count" aria-label={`${counts[key]} Einträge`}>{counts[key]}</span>}
+                <ChevronRight size={17} className="emd-command-shortcut-arrow" aria-hidden="true" />
               </Link>
-            </div>
+            ))}
           </div>
+          <div className="emd-command-sidefooter"><span className="emd-command-sidefooter-mark" /> ALWAYS IN THE GAME <span>0{shortcuts.length} BEREICHE</span></div>
         </div>
       </div>
     </section>

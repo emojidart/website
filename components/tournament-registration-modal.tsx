@@ -1,11 +1,13 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import type React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { supabase } from "@/lib/supabase"
-import { Calendar, Clock, Crown, CheckCircle, AlertCircle, Loader2, LogIn, LogOut } from "lucide-react"
+import { Calendar, Clock, Crown, CheckCircle, AlertCircle, LogIn, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 
@@ -320,7 +322,7 @@ export function TournamentRegistrationModal({
           </div>
 
           {authLoading ? (
-            <div className="text-sm text-muted-foreground">Lade Benutzerstatus…</div>
+            <SectionSkeleton kind="tournament" />
           ) : !session ? (
             <div className="p-3 rounded-md text-sm bg-yellow-50 text-yellow-800 border border-yellow-100">
               Bitte melde dich an, um dich für dieses Turnier zu registrieren.
@@ -339,7 +341,7 @@ export function TournamentRegistrationModal({
 
               {checkingRegistration && (
                 <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Prüfe Anmeldung…
+                  <LoadingIndicator className="h-3 w-3" /> Prüfe Anmeldung…
                 </div>
               )}
 
@@ -387,19 +389,12 @@ export function TournamentRegistrationModal({
               disabled={!canDoAction}
               title={disabledReason ?? undefined}
               className="w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl bg-card     text-white disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Abmelden…</span>
-                </div>
-              ) : (
+             loading={Boolean(loading)} loadingLabel="Abmelden…">{(
                 <div className="flex items-center space-x-2">
                   <LogOut className="h-4 w-4" />
                   <span>Abmelden</span>
                 </div>
-              )}
-            </Button>
+              )}</Button>
           ) : (
             <Button
               type="button"
@@ -407,19 +402,12 @@ export function TournamentRegistrationModal({
               disabled={!canDoAction}
               title={disabledReason ?? undefined}
               className="w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-card     text-white disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Anmeldung läuft…</span>
-                </div>
-              ) : (
+             loading={Boolean(loading)} loadingLabel="Anmeldung läuft…">{(
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Jetzt anmelden</span>
                 </div>
-              )}
-            </Button>
+              )}</Button>
           )}
         </div>
       </DialogContent>

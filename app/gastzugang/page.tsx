@@ -226,10 +226,7 @@ export default function GastzugangPage() {
                 ) : null}
 
                 <div className="sm:col-span-2">
-                  <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-primary-foreground shadow-[0_0_30px_rgba(249,115,22,.16)] hover:bg-orange-600">
-                    <Send className="mr-2 h-5 w-5" />
-                    {loading ? "Wird erstellt…" : "Kostenloses Gastkonto erstellen"}
-                  </Button>
+                  <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl bg-orange-500 text-base font-semibold text-primary-foreground shadow-[0_0_30px_rgba(249,115,22,.16)] hover:bg-orange-600" loading={Boolean(loading)} loadingLabel="Wird erstellt…"><Send className="mr-2 h-5 w-5" />{"Kostenloses Gastkonto erstellen"}</Button>
                 </div>
               </form>
 

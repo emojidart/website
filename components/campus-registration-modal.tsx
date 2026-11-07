@@ -1,5 +1,7 @@
 "use client"
 
+import { ButtonLoader } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useState } from "react"
@@ -405,9 +407,7 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full sm:flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white text-sm sm:text-base font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isSubmitting ? "Wird gesendet..." : "Jetzt Anmelden"}
-                </button>
+                 aria-busy={Boolean(isSubmitting) || undefined}><ButtonLoader loading={Boolean(isSubmitting)} label="Wird gesendet...">{"Jetzt Anmelden"}</ButtonLoader></button>
               </div>
             </form>
           )}

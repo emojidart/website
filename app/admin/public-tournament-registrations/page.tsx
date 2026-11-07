@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
@@ -137,7 +139,7 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8] pb-24">
+    <div className="min-h-screen bg-card pb-24">
       <Header />
 
       <TournamentAdminNav
@@ -153,7 +155,7 @@ export default function Page() {
 
               <div className="mt-3 space-y-2">
                 {loading ? (
-                  <p className="text-sm text-slate-500">Lädt…</p>
+                  <InlineLoader label="Lädt…" />
                 ) : (
                   events.map((e) => {
                     const eventRegs = regs.filter(
@@ -300,9 +302,9 @@ export default function Page() {
                       </CardContent>
                     </Card>
 
-                    <Card className="rounded-3xl border-pink-200">
+                    <Card className="rounded-3xl border-orange-200">
                       <CardContent className="p-4">
-                        <div className="text-xs font-black uppercase text-pink-600">
+                        <div className="text-xs font-black uppercase text-orange-600">
                           Damen
                         </div>
                         <div className="mt-1 text-3xl font-black">
@@ -391,7 +393,7 @@ export default function Page() {
                                 women_reserved_slots: Number(womenReservedInput || 0),
                               })
                             }
-                            className="bg-orange-600 font-black hover:bg-orange-700"
+                            className="bg-primary font-black hover:bg-orange-700"
                           >
                             Kontingent speichern
                           </Button>
@@ -489,7 +491,7 @@ export default function Page() {
                                   className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                                     r.status === "active"
                                       ? "bg-emerald-50 text-emerald-700"
-                                      : "bg-slate-100 text-slate-500"
+                                      : "bg-card text-slate-500"
                                   }`}
                                 >
                                   {r.status === "active"

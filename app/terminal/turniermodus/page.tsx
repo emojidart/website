@@ -1,21 +1,9 @@
 "use client"
 
+import { ButtonLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
-import {
-  ArrowLeft,
-  Check,
-  CheckCircle2,
-  Delete,
-  Loader2,
-  Minus,
-  Plus,
-  Radio,
-  RotateCcw,
-  ShieldCheck,
-  Target,
-  Trophy,
-  Volume2,
-} from "lucide-react"
+import { ArrowLeft, Check, CheckCircle2, Delete, Minus, Plus, Radio, RotateCcw, ShieldCheck, Target, Trophy, Volume2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import TerminalLink from "../_components/TerminalLink"
 import TerminalLoader from "../_components/TerminalLoader"
@@ -912,10 +900,7 @@ export default function TerminalTournamentModePage() {
                   disabled={saving}
                   onClick={() => void saveResult()}
                   className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-500 font-black text-white transition hover:bg-emerald-400 disabled:opacity-50"
-                >
-                  {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                  {saving ? "Wird gespeichert …" : "Ja, speichern"}
-                </button>
+                 aria-busy={saving || undefined}><ButtonLoader loading={Boolean(saving)}><CheckCircle2 className="h-5 w-5" />{saving ? "Wird gespeichert …" : "Ja, speichern"}</ButtonLoader></button>
               </div>
             </div>
           </div>
@@ -1121,7 +1106,7 @@ export default function TerminalTournamentModePage() {
                   <p className="text-center text-sm font-bold">Nur der Sieger schaut in die Kamera. Keine Ergebniseingabe nötig.</p>
                   <video ref={faceVideoRef} playsInline autoPlay muted className="w-full rounded-xl bg-black aspect-video object-cover scale-x-[-1]" />
                   <p role="status" className="text-center text-sm text-orange-200">{faceMessage}</p>
-                  <button type="button" disabled={faceBusy} onClick={() => void captureFaceWinner()} className="w-full rounded-xl bg-orange-500 py-4 font-black disabled:opacity-50">{faceBusy ? "Erkennung läuft …" : "Kamera starten · 3–2–1"}</button>
+                  <button type="button" disabled={faceBusy} onClick={() => void captureFaceWinner()} className="w-full rounded-xl bg-orange-500 py-4 font-black disabled:opacity-50" aria-busy={Boolean(faceBusy) || undefined}><ButtonLoader loading={Boolean(faceBusy)} label="Erkennung läuft …">{"Kamera starten · 3–2–1"}</ButtonLoader></button>
                   <button type="button" onClick={() => { stopFaceCamera(); setFaceMessage("") }} className="w-full rounded-xl border border-white/20 py-3">Zurück</button>
                 </div> : null}
                 <p className="text-center text-xs text-white/45">Alternativ kannst du das Ergebnis weiterhin mit PIN eingeben.</p>

@@ -60,10 +60,7 @@ export default function TeamLineupSelector({ teamId, players, lineup, onSave, lo
           disabled={loading || selectedPlayers.length === 0}
           size="sm"
           className="w-full sm:w-auto min-h-[44px] touch-manipulation"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          {loading ? "Speichern..." : "Aufstellung speichern"}
-        </Button>
+         loading={Boolean(loading)} loadingLabel="Speichern..."><Save className="h-4 w-4 mr-2" />{"Aufstellung speichern"}</Button>
       </div>
 
       <div className="grid grid-cols-1 gap-3">

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { RegistrationTab } from "@/components/kratzer/registration-tab"
 import { BoardComponent } from "@/components/kratzer/board-component"
 import { KratzerMartinStatus, useKratzerMartin } from "@/components/kratzer/kratzer-martin-announcer"
@@ -44,7 +46,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 
 import { useToast } from "@/hooks/use-toast"
-import { Trophy, Monitor, Play, Loader2 } from "lucide-react"
+import { Trophy, Monitor, Play } from "lucide-react"
 import { publishKratzerBeamerEvent, publishKratzerBeamerSnapshot } from "@/components/kratzer/beamer/beamer-sync"
 
 const defaultTournamentSettings: TournamentSettings = {
@@ -964,10 +966,7 @@ export function KratzerTournamentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-muted p-4">
-        <Loader2 className="h-16 w-16 animate-spin text-primary-dark" />
-        <p className="mt-4 text-muted-foreground text-lg font-semibold">Lade Turnierdaten...</p>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 
@@ -992,7 +991,7 @@ export function KratzerTournamentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-foreground">
+    <div className="min-h-screen bg-card text-foreground">
       <KratzerMartinStatus display={announcementDisplay} />
       <Header />
 
@@ -1022,7 +1021,7 @@ export function KratzerTournamentPage() {
             handleUpdatePlayerPaidStatus={handleUpdatePlayerPaidStatus}
             handleMarkAllPlayersPaid={handleMarkAllPlayersPaid}
             isRegisteringPlayers={isRegisteringPlayers}
-            loading={loading}
+            loading={Boolean(loading)}
           />
         ) : (
           <>
@@ -1030,7 +1029,7 @@ export function KratzerTournamentPage() {
               settings={tournamentState.settings}
               isTournamentRunning={isTournamentRunning}
               tournamentFinished={tournamentState.tournamentFinished}
-              loading={loading}
+              loading={Boolean(loading)}
               activeTournamentExists={activeTournamentExists}
               currentRound={tournamentState.currentRound}
               registeredPlayersCount={effectiveRegisteredPlayers.length}
@@ -1068,7 +1067,7 @@ export function KratzerTournamentPage() {
                 <div className="rounded-[24px] border border-dashed border-border bg-muted/70 px-6 py-14 text-center">
                   <p className="text-lg font-semibold text-foreground">Noch keine aktive Runde</p>
                   <p className="mt-2 text-sm font-medium text-muted-foreground">Starte die nächste Runde, sobald alle Einstellungen passen.</p>
-                  <Button onClick={startNewRound} className="mt-6 h-11 rounded-xl bg-orange-600 px-5 font-semibold text-white hover:bg-orange-700">
+                  <Button onClick={startNewRound} className="mt-6 h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground hover:bg-orange-700">
                     <Play className="h-4 w-4 mr-2" />
                     Neue Runde starten
                   </Button>
@@ -1104,7 +1103,7 @@ export function KratzerTournamentPage() {
                 currentRound={tournamentState.currentRound}
                 onEditPlayerLives={editPlayerLives}
                 onTogglePlayerElimination={togglePlayerElimination}
-                loading={loading}
+                loading={Boolean(loading)}
               />
             </SectionCard>
           </>

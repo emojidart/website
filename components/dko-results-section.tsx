@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { Trophy, Calendar, Users, Medal, ChevronDown, ChevronUp } from "lucide-react"
 import { supabase } from "@/lib/supabase"
@@ -142,7 +144,7 @@ export default function DKOResultsSection() {
   const getPlacementColor = (placement: number) => {
     if (placement === 1) return "bg-yellow-500 text-white"
     if (placement === 2) return "bg-accent text-white"
-    if (placement === 3) return "bg-orange-600 text-white"
+    if (placement === 3) return "bg-primary text-primary-foreground"
     return "bg-secondary text-muted-foreground"
   }
 
@@ -156,9 +158,7 @@ export default function DKOResultsSection() {
   return (
     <div>
       {loading ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground text-lg">Lade DKO Turnierergebnisse...</p>
-        </div>
+        <SectionSkeleton kind="tournament" />
       ) : tournaments.length === 0 ? (
         <div className="text-center py-12">
           <Trophy className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -181,7 +181,7 @@ export default function DKOResultsSection() {
                 className="w-full p-6 flex items-center justify-between hover:bg-muted transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-orange-500 text-white rounded-full font-bold">
+                  <div className="flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full font-bold">
                     {index + 1}
                   </div>
                   <div className="text-left">

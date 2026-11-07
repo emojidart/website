@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
@@ -505,7 +507,7 @@ export default function UrkundenPage() {
 
             <CardContent className="space-y-4">
               {loading ? (
-                <div className="text-sm text-gray-600">Lade Statistiken…</div>
+                <InlineLoader label="Lade Statistiken…" />
               ) : playerStatistics.length === 0 ? (
                 <div className="text-sm text-gray-600">Keine Spieler/Statistiken gefunden.</div>
               ) : (

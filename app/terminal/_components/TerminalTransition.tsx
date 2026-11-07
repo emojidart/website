@@ -1,102 +1,34 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
-import { usePathname, useRouter } from "next/navigation"
-import TerminalLoader from "./TerminalLoader"
+import { InlineLoader } from "@/components/loading/loading"
+
+import { createContext, useCallback, useContext, useState, useTransition, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
+
 import TerminalIdleGuard from "./TerminalIdleGuard"
 
-type TransitionContextValue = {
-  navigate: (href: string, label?: string) => void
-  active: boolean
-}
-
+type TransitionContextValue = { navigate: (href: string, label?: string) => void; active: boolean }
 const TransitionContext = createContext<TransitionContextValue | null>(null)
-
-const TOTAL_TRANSITION_MS = 2000
-const NAVIGATE_AT_MS = 1500
-const SAFETY_AFTER_ROUTE_MS = 140
 
 export function TerminalTransitionProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const pathname = usePathname()
-
-  const navTimerRef = useRef<number | null>(null)
-  const hideTimerRef = useRef<number | null>(null)
-  const startedAtRef = useRef(0)
-  const pendingHrefRef = useRef<string | null>(null)
-
-  const [active, setActive] = useState(false)
+  const [active, startTransition] = useTransition()
   const [label, setLabel] = useState("Bereich wird geöffnet")
-
-  const clearTimers = () => {
-    if (navTimerRef.current) window.clearTimeout(navTimerRef.current)
-    if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current)
-    navTimerRef.current = null
-    hideTimerRef.current = null
-  }
-
   const navigate = useCallback((href: string, nextLabel = "Bereich wird geöffnet") => {
     if (active) return
-
-    clearTimers()
-    router.prefetch(href)
-
-    startedAtRef.current = performance.now()
-    pendingHrefRef.current = href
     setLabel(nextLabel)
-    setActive(true)
-
-    navTimerRef.current = window.setTimeout(() => {
-      router.push(href)
-      navTimerRef.current = null
-    }, NAVIGATE_AT_MS)
+    router.prefetch(href)
+    startTransition(() => router.push(href))
   }, [active, router])
-
-  useEffect(() => {
-    if (!active || !pendingHrefRef.current) return
-
-    const targetPath = pendingHrefRef.current.split("?")[0]
-    if (pathname !== targetPath) return
-
-    const elapsed = performance.now() - startedAtRef.current
-    const remaining = Math.max(TOTAL_TRANSITION_MS - elapsed, SAFETY_AFTER_ROUTE_MS)
-
-    hideTimerRef.current = window.setTimeout(() => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setActive(false)
-          pendingHrefRef.current = null
-          hideTimerRef.current = null
-        })
-      })
-    }, remaining)
-
-    return () => {
-      if (hideTimerRef.current) {
-        window.clearTimeout(hideTimerRef.current)
-        hideTimerRef.current = null
-      }
-    }
-  }, [pathname, active])
-
-  useEffect(() => {
-    return () => clearTimers()
-  }, [])
-
-  return (
-    <TransitionContext.Provider value={{ navigate, active }}>
-      <div className="relative min-h-[100svh] bg-[#050608] text-white">
-        <div className="pointer-events-none fixed inset-0 -z-50 bg-[#050608]" />
-        {children}
-      </div>
-      {!active && <TerminalIdleGuard />}
-      {active && <TerminalLoader label={label} />}
-    </TransitionContext.Provider>
-  )
+  return <TransitionContext.Provider value={{ navigate, active }}>
+    <div className="relative min-h-[100svh] bg-[#172235] text-white">{children}</div>
+    {!active && <TerminalIdleGuard/>}
+    {active && <InlineLoader label={label} className="emd-terminal-transition-status"/>}
+  </TransitionContext.Provider>
 }
 
 export function useTerminalTransition() {
-  const ctx = useContext(TransitionContext)
-  if (!ctx) throw new Error("useTerminalTransition must be used inside TerminalTransitionProvider")
-  return ctx
+  const context = useContext(TransitionContext)
+  if (!context) throw new Error("useTerminalTransition must be used inside TerminalTransitionProvider")
+  return context
 }

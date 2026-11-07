@@ -1,21 +1,12 @@
 "use client"
 
+import { SectionSkeleton, ButtonLoader } from "@/components/loading/loading"
+
 import Image from "next/image"
 import Link from "next/link"
 import { notFound, useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Gift,
-  Loader2,
-  Lock,
-  PartyPopper,
-  Sparkles,
-  Star,
-  Trophy,
-  X,
-} from "lucide-react"
+import { ArrowLeft, CheckCircle2, Gift, Lock, PartyPopper, Sparkles, Star, Trophy, X } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -576,10 +567,7 @@ export default function PraemieDetailPage() {
 
             <div className="mt-6 rounded-[24px] border border-border bg-muted p-5">
               {loading ? (
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-orange-600" />
-                  <p className="font-bold text-muted-foreground">Status wird geladen...</p>
-                </div>
+                <SectionSkeleton kind="cards" />
               ) : isRedeemed ? (
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <Lock className="h-6 w-6 text-muted-foreground" />
@@ -662,22 +650,17 @@ export default function PraemieDetailPage() {
                onClick={() => setConfirmOpen(true)}
                 disabled={redeeming || loading || isRedeemed || !canRedeem}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-4 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-orange-200 transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground disabled:shadow-none"
-              >
-                {redeeming ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isRedeemed ? (
+               aria-busy={redeeming || undefined}><ButtonLoader loading={Boolean(redeeming)}>{isRedeemed ? (
                   <Lock className="h-4 w-4" />
                 ) : (
                   <Trophy className="h-4 w-4" />
-                )}
-                {isRedeemed
+                )}{isRedeemed
   ? "Nicht verfügbar"
   : session?.user && !hasBaseMembership
     ? "Mitgliedschaft erforderlich"
     : totalPoints < product.points
       ? `Noch ${missingPoints} Punkte fehlen`
-      : "Prämie einlösen"}
-              </button>
+      : "Prämie einlösen"}</ButtonLoader></button>
 
               <Link
                 href="/praemien-rangliste"

@@ -1,5 +1,7 @@
 "use client"
 
+import { PageLoader, SectionSkeleton } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import type React from "react"
@@ -16,21 +18,14 @@ import { Lock, Save } from "lucide-react"
 
 export default function MemberSetPasswordPage() {
   return (
-    <Suspense fallback={<SetPasswordSkeleton />}>
+    <Suspense fallback={<SectionSkeleton kind="cards" label="Bereich wird geladen…" />}>
       <MemberSetPasswordClient />
     </Suspense>
   )
 }
 
 function SetPasswordSkeleton() {
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header />
-      <main className="flex-grow flex items-center justify-center p-4">
-        <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-      </main>
-    </div>
-  )
+  return <PageLoader label="Zugang wird vorbereitet…" fullPage />
 }
 
 function MemberSetPasswordClient() {
@@ -178,14 +173,12 @@ function MemberSetPasswordClient() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-12 rounded-xl" disabled={!ready || loading}>
-                {loading ? "Speichere…" : (
+              <Button type="submit" className="w-full h-12 rounded-xl" disabled={!ready || loading} loading={Boolean(loading)} loadingLabel="Speichere…">{(
                   <span className="inline-flex items-center gap-2">
                     <Save className="w-5 h-5" />
                     Passwort speichern
                   </span>
-                )}
-              </Button>
+                )}</Button>
             </form>
           </CardContent>
         </Card>

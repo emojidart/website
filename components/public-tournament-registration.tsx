@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { CheckCircle2, Coins, Mail, UserRound, Users, WalletCards } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -269,11 +271,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
   if (loading) {
     return (
-      <Card className="mt-6 rounded-3xl">
-        <CardContent className="p-6 text-center text-sm text-muted-foreground">
-          Anmeldung wird geladen…
-        </CardContent>
-      </Card>
+      <SectionSkeleton kind="tournament" />
     )
   }
 
@@ -312,7 +310,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
   return (
     <div className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
-      <Card className="rounded-[30px] border border-white/[0.08] bg-black/45 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
+      <Card className="rounded-[20px] border border-white/[0.08] bg-black/45 text-white shadow-sm ">
         <CardContent className="p-5 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -397,16 +395,14 @@ export function PublicTournamentRegistration({ eventId }: Props) {
               <p className="mt-1 text-sm text-white/75">{own.name}</p>
               {own.canCancel ? (
                 <Button type="button" variant="outline" disabled={saving} onClick={unregister}
-                  className="mt-4 border-red-400/40 text-red-300 hover:bg-red-500/10">
-                  {saving ? "Bitte warten…" : "Vom Turnier abmelden"}
-                </Button>
+                  className="mt-4 border-red-400/40 text-red-300 hover:bg-red-500/10" loading={Boolean(saving)} loadingLabel="Bitte warten…">{"Vom Turnier abmelden"}</Button>
               ) : (
-                <p className="mt-3 text-xs text-white/60">Für eine Abmeldung bitte die Turnierleitung kontaktieren.</p>
+                <p className="mt-3 text-xs text-muted-foreground">Für eine Abmeldung bitte die Turnierleitung kontaktieren.</p>
               )}
               {message ? <p className="mt-3 text-sm text-white">{message}</p> : null}
             </div>
           ) : ownLoading ? (
-            <div className="mt-5 text-sm text-white/60">Anmeldestatus wird geprüft…</div>
+            <div className="mt-5 text-sm text-muted-foreground">Anmeldestatus wird geprüft…</div>
           ) : !info.event.registration_enabled || full ? (
             <div className="mt-5 rounded-2xl border border-white/[0.08] bg-white/[0.05] p-4 text-center font-bold text-white/75">
               {full
@@ -442,7 +438,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="h-12 rounded-2xl border-white/[0.12] bg-[#080b10] pl-10 text-white shadow-none placeholder:text-white/25 focus-visible:border-orange-400/70 focus-visible:ring-orange-400/20"
+                    className="h-12 rounded-2xl border-white/[0.12] bg-card pl-10 text-white shadow-none placeholder:text-muted-foreground focus-visible:border-orange-400/70 focus-visible:ring-orange-400/20"
                     disabled={prefillLoading}
                     placeholder="Vor- und Nachname"
                   />
@@ -460,7 +456,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-12 rounded-2xl border-white/[0.12] bg-[#080b10] pl-10 text-white shadow-none placeholder:text-white/25 focus-visible:border-orange-400/70 focus-visible:ring-orange-400/20"
+                    className="h-12 rounded-2xl border-white/[0.12] bg-card pl-10 text-white shadow-none placeholder:text-muted-foreground focus-visible:border-orange-400/70 focus-visible:ring-orange-400/20"
                     disabled={prefillLoading}
                     placeholder="deine@email.at"
                   />
@@ -529,7 +525,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-2 text-xs font-semibold text-white/60">
+                    <div className="mt-2 text-xs font-semibold text-muted-foreground">
                       Das Startgeld wird vor Ort bezahlt.
                     </div>
                   )
@@ -555,11 +551,8 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
               <Button
                 disabled={saving || prefillLoading || (splitByGender && !division)}
-                className="h-12 rounded-2xl bg-orange-500 font-semibold text-primary-foreground shadow-none hover:bg-orange-400 disabled:bg-orange-500/50"
-              >
-                {prefillLoading
-                  ? "Kontodaten werden geladen…"
-                  : saving
+                className="h-12 rounded-2xl bg-primary font-semibold text-primary-foreground shadow-none hover:bg-orange-400 disabled:bg-orange-500/50"
+               loading={Boolean(prefillLoading)} loadingLabel="Kontodaten werden geladen…">{saving
                     ? "Wird angemeldet…"
                     : entryFee <= 0
                       ? "Kostenlos anmelden"
@@ -568,14 +561,13 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                             style: "currency",
                             currency: "EUR",
                           })} abbuchen`
-                        : "Verbindlich anmelden"}
-              </Button>
+                        : "Verbindlich anmelden"}</Button>
             </form>
           )}
         </CardContent>
       </Card>
 
-      <Card className="rounded-[30px] border border-white/[0.08] bg-black/45 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
+      <Card className="rounded-[20px] border border-white/[0.08] bg-black/45 text-white shadow-sm ">
         <CardContent className="p-5 sm:p-6">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-orange-300" />

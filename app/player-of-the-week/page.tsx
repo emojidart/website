@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -170,11 +172,9 @@ export default function PlayerOfTheWeekPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }

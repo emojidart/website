@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
@@ -190,14 +192,7 @@ export function WeeklyResults() {
 
   if (loading) {
     return (
-      <section className="py-4 md:py-8 px-4 md:px-8 bg-background">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-primary mx-auto mb-3" />
-            <p className="text-sm md:text-base text-muted-foreground">Lade aktuelle Ergebnisse...</p>
-          </div>
-        </div>
-      </section>
+      <SectionSkeleton kind="cards" />
     )
   }
 

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
@@ -387,14 +389,7 @@ export default function TerminalTournamentRankingsPage() {
 
             <section className="mt-5 overflow-hidden rounded-[32px] border border-white/[0.08] bg-black/28 backdrop-blur-2xl">
               {loading ? (
-                <div className="p-12 text-center">
-                  <div className="mx-auto h-1.5 w-52 overflow-hidden rounded-full bg-white/[0.08]">
-                    <div className="h-full w-1/2 animate-pulse rounded-full bg-cyan-300" />
-                  </div>
-                  <div className="mt-4 text-sm font-black uppercase tracking-[0.24em] text-white/35">
-                    Tabelle wird geladen
-                  </div>
-                </div>
+                <SectionSkeleton kind="tournament" />
               ) : standings.length === 0 ? (
                 <div className="p-12 text-center">
                   <Trophy className="mx-auto h-12 w-12 text-white/18" />

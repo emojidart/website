@@ -1,4 +1,7 @@
 "use client"
+
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {
@@ -133,23 +136,7 @@ export function TournamentHistorySection({ groupedHistory, loading, error }: Tou
 
   if (loading) {
     return (
-      <div className="bg-card  rounded-2xl shadow-xl border border-border/50 overflow-hidden">
-        <div className="text-foreground bg-card    p-6">
-          <div className="flex items-center gap-4">
-            <div className="bg-white/20 rounded-xl p-3 shadow-lg">
-              <History className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-white">Turnier Historie</h2>
-              <p className="text-red-100 text-sm font-medium">Vergangene Turnierergebnisse</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-200 border-t-red-600 mx-auto shadow-lg"></div>
-          <p className="mt-4 text-muted-foreground font-medium">Lade Turnierhistorie...</p>
-        </div>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 

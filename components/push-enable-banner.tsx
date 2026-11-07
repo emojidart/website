@@ -1,11 +1,13 @@
 "use client"
 
+
+
 import { useEffect, useState } from "react"
 import { Capacitor } from "@capacitor/core"
 import { PushNotifications } from "@capacitor/push-notifications"
 import { App } from "@capacitor/app"
 import { createBrowserClient } from "@supabase/ssr"
-import { Bell, BellRing, Loader2, Settings, X } from "lucide-react"
+import { Bell, BellRing, Settings, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const supabase = createBrowserClient(
@@ -220,19 +222,12 @@ export function PushEnableBanner() {
                 onClick={handleEnablePush}
                 disabled={loading}
                 className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Wird aktiviert...
-                  </>
-                ) : (
+               loading={Boolean(loading)} loadingLabel="Wird aktiviert...">{(
                   <>
                     <BellRing className="w-4 h-4 mr-2" />
                     Push aktivieren
                   </>
-                )}
-              </Button>
+                )}</Button>
             ) : (
               <Button
                 onClick={openAppSettings}

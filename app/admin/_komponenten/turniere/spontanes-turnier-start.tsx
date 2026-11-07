@@ -1,7 +1,9 @@
 "use client"
 
+import { ButtonLoader } from "@/components/loading/loading"
+
 import { useState } from "react"
-import { Dices, Flame, Loader2, Sparkles, Trophy } from "lucide-react"
+import { Dices, Flame, Sparkles, Trophy } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 export type SpontaneousTournamentMode = "dko" | "round_robin" | "kratzer" | "survival" | "survival_single"
@@ -96,11 +98,11 @@ export function SpontanesTurnierStart({ onCreated }: Props) {
   return (
     <div className="space-y-5">
       <section className="emd-admin-hero">
-        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300/60">
+        <div className="text-xs font-black uppercase tracking-[0.2em] text-orange-300/60">
           Sofort starten
         </div>
         <h1 className="mt-1 text-3xl font-black tracking-tight text-white">Spontanes Turnier</h1>
-        <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/40">
+        <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground">
           Turniername eingeben, Spielmodus wählen und danach direkt Spieler registrieren.
         </p>
       </section>
@@ -138,7 +140,7 @@ export function SpontanesTurnierStart({ onCreated }: Props) {
                     <Icon className="h-5 w-5 text-orange-300" />
                   </div>
                   <div className="mt-4 font-black text-white">{item.title}</div>
-                  <div className="mt-1 text-xs font-semibold leading-5 text-white/35">{item.description}</div>
+                  <div className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">{item.description}</div>
                 </button>
               )
             })}
@@ -153,7 +155,7 @@ export function SpontanesTurnierStart({ onCreated }: Props) {
                 <button type="button" key={value} onClick={() => setSurvivalType(value)}
                   className={`rounded-xl border p-3 text-left ${survivalType === value ? "border-orange-400/45 bg-orange-500/15" : "border-white/10 bg-white/[0.025]"}`}>
                   <div className="font-black text-white">{survivalType === value ? "✓ " : ""}{title}</div>
-                  <div className="mt-1 text-xs text-white/55">{description}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{description}</div>
                 </button>
               ))}
             </div>
@@ -161,7 +163,7 @@ export function SpontanesTurnierStart({ onCreated }: Props) {
         ) : null}
 
         {error ? (
-          <div className="mt-5 rounded-xl border border-rose-300/20 bg-rose-500/[0.08] px-4 py-3 text-sm font-bold text-rose-200">
+          <div className="mt-5 rounded-xl border border-red-300/20 bg-red-500/[0.08] px-4 py-3 text-sm font-bold text-red-200">
             {error}
           </div>
         ) : null}
@@ -172,13 +174,10 @@ export function SpontanesTurnierStart({ onCreated }: Props) {
           disabled={!name.trim() || saving}
           className={`mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 font-black transition ${
             name.trim() && !saving
-              ? "bg-orange-500 text-white hover:bg-orange-400"
-              : "cursor-not-allowed border border-white/[0.06] bg-white/[0.04] text-white/25"
+              ? "bg-primary text-primary-foreground hover:bg-orange-400"
+              : "cursor-not-allowed border border-white/[0.06] bg-white/[0.04] text-muted-foreground"
           }`}
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          {saving ? "Turnier wird angelegt…" : "Turnier anlegen & Spieler registrieren"}
-        </button>
+         aria-busy={saving || undefined}><ButtonLoader loading={Boolean(saving)}><Sparkles className="h-4 w-4" />{saving ? "Turnier wird angelegt…" : "Turnier anlegen & Spieler registrieren"}</ButtonLoader></button>
       </section>
     </div>
   )

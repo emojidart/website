@@ -119,7 +119,7 @@ export function NewRoundModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !isRolling && onOpenChange(nextOpen)}>
-      <DialogContent className="overflow-hidden rounded-[28px] border border-white/[0.10] bg-[#080b10] p-0 text-white shadow-[0_30px_100px_-40px_rgba(0,0,0,.98)] sm:max-w-[640px]">
+      <DialogContent className="overflow-hidden rounded-[20px] border border-white/[0.10] bg-card p-0 text-white shadow-sm sm:max-w-[640px]">
         <div className="bg-card    px-6 pb-7 pt-6 text-white sm:px-8">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-semibold sm:text-3xl">
@@ -131,7 +131,7 @@ export function NewRoundModal({
             {settings.diceModeEnabled ? (
               <>
                 <div
-                  className={`mx-auto flex h-28 w-28 items-center justify-center rounded-[30px] border border-white/15 bg-white/10 text-[88px] leading-none shadow-[0_18px_50px_-25px_rgba(0,0,0,.9)]  transition-all duration-200 sm:h-32 sm:w-32 sm:text-[100px] ${
+                  className={`mx-auto flex h-28 w-28 items-center justify-center rounded-[20px] border border-white/15 bg-white/10 text-[88px] leading-none shadow-sm  transition-all duration-200 sm:h-32 sm:w-32 sm:text-[100px] ${
                     isRolling ? "scale-110 rotate-6" : "scale-100 rotate-0"
                   }`}
                 >
@@ -173,7 +173,7 @@ export function NewRoundModal({
           </div>
         </div>
 
-        <div className="border-t border-white/[0.06] bg-[#0a0e14] px-6 py-6 sm:px-8">
+        <div className="border-t border-white/[0.06] bg-card px-6 py-6 sm:px-8">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="modalBoardCount" className="text-sm font-bold text-white/65">
@@ -187,7 +187,7 @@ export function NewRoundModal({
                 value={settings.boardCount}
                 disabled={isRolling}
                 onChange={(e) => onSettingsChange("boardCount", Number.parseInt(e.target.value))}
-                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#11161e] font-semibold text-white placeholder:text-white/25 hover:border-white/[0.16] focus-visible:ring-orange-500/30"
+                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-card font-semibold text-white placeholder:text-muted-foreground hover:border-white/[0.16] focus-visible:ring-orange-500/30"
               />
             </div>
 
@@ -203,13 +203,13 @@ export function NewRoundModal({
                 value={settings.maxGroupSize}
                 disabled={isRolling}
                 onChange={(e) => onSettingsChange("maxGroupSize", Number.parseInt(e.target.value))}
-                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#11161e] font-semibold text-white placeholder:text-white/25 hover:border-white/[0.16] focus-visible:ring-orange-500/30"
+                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-card font-semibold text-white placeholder:text-muted-foreground hover:border-white/[0.16] focus-visible:ring-orange-500/30"
               />
             </div>
           </div>
 
           {!enoughCapacity ? (
-            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-rose-300/20 bg-rose-500/[0.08] px-4 py-3 text-sm font-bold text-rose-200">
+            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-red-300/20 bg-red-500/[0.08] px-4 py-3 text-sm font-bold text-red-200">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               Zu viele Spieler für die aktuelle Einstellung. Bitte Automaten oder Gruppengröße erhöhen.
             </div>
@@ -248,7 +248,7 @@ export function NewRoundModal({
             <Button
               onClick={handleRoundStart}
               disabled={!enoughCapacity || isRolling || Boolean(rolledMode)}
-              className="h-11 rounded-xl bg-orange-500 px-5 font-semibold text-primary-foreground hover:bg-orange-400"
+              className="h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground hover:bg-orange-400"
             >
               {settings.diceModeEnabled ? <Dices className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
               {isRolling

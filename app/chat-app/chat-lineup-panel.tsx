@@ -1,7 +1,9 @@
 "use client";
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Calendar, CheckCircle2, Clock, Loader2, MapPin, ShieldCheck, Users } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, Clock, MapPin, ShieldCheck, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -594,7 +596,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
     }
   }
 
-  if (loading) return <div className="flex h-full items-center justify-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (loading) return <SectionSkeleton kind="lineup" />;
   if (!profile) return <div className="p-6 text-sm text-muted-foreground">Kein Mitgliedsprofil gefunden.</div>;
 
   if (!selectedMatch) {
@@ -671,7 +673,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                     {selectedCardStatus.lineupConfirmed ? "Aufstellung bestätigt – Rückmeldung gesperrt." : locked ? "Spielbeginn erreicht – Rückmeldung gesperrt." : "Du kannst deine Rückmeldung bis zur bestätigten Aufstellung ändern."}
                   </div>
                 </div>
-                {availabilitySaving[selectedMatch.id] ? <Loader2 className="mt-1 h-4 w-4 animate-spin text-orange-300" /> : null}
+                {availabilitySaving[selectedMatch.id] ? <LoadingIndicator className="mt-1 h-4 w-4" /> : null}
               </div>
 
               {!selectedCardStatus.lineupConfirmed && !locked ? (
@@ -759,10 +761,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
     disabled={!!remindSending[p.id]}
     onClick={()=>void sendReminder(p.id)}
     className={`mt-2 h-9 w-full border-white/10 text-xs font-semibold ${remindOk[p.id] ? "bg-emerald-500/10 text-emerald-200" : "bg-white/[0.03] text-white/65"}`}
-  >
-    {remindSending[p.id] ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : remindOk[p.id] ? <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> : <Bell className="mr-1.5 h-3.5 w-3.5" />}
-    {remindOk[p.id] ? "Erinnerung gesendet" : "Erinnern"}
-  </Button>
+   loading={Boolean(remindSending[p.id])}>{remindOk[p.id] ? <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> : <Bell className="mr-1.5 h-3.5 w-3.5" />}{remindOk[p.id] ? "Erinnerung gesendet" : "Erinnern"}</Button>
 ) : null}
 <div className="mt-2 grid grid-cols-2 gap-2">{!row?<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"starter")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Starter</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Ersatz</Button></>:<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"remove")} className="border-white/10 bg-white/[0.03] text-xs text-red-200">Raus</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,row.is_substitute?"starter":"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">{row.is_substitute?"Starter":"Ersatz"}</Button></>}</div></div>})}</div></div>}
 
@@ -783,10 +782,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                 onClick={()=>void publishToTeamChat()}
                 disabled={publishingChat}
                 className="h-11 w-full rounded-xl border-sky-300/15 bg-sky-500/[0.07] font-semibold text-sky-100 hover:bg-sky-500/[0.12]"
-              >
-                {publishingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
-                {publishingChat ? "Wird veröffentlicht …" : "Im Team-Chat veröffentlichen"}
-              </Button>
+               loading={Boolean(publishingChat)}><Users className="mr-2 h-4 w-4" />{publishingChat ? "Wird veröffentlicht …" : "Im Team-Chat veröffentlichen"}</Button>
 
               {publishResult ? (
                 <div className="rounded-xl border border-emerald-300/15 bg-emerald-500/[0.08] px-3 py-2.5 text-center text-xs font-semibold text-emerald-200">
@@ -808,9 +804,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   onClick={()=>void remindAllOpen()}
                   disabled={remindAllSending || openPlayerIds.length === 0}
                   className="h-9 rounded-xl border-orange-300/15 bg-orange-500/[0.07] px-3 text-xs font-semibold text-orange-100"
-                >
-                  {remindAllSending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Bell className="mr-1.5 h-3.5 w-3.5" />}
-                  Alle erinnern
+                 loading={Boolean(remindAllSending)}><Bell className="mr-1.5 h-3.5 w-3.5" />Alle erinnern
                 </Button>
               </div>
 
@@ -842,9 +836,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   disabled={confirmed || !!emdAlertSending}
                   onClick={()=>void sendEmdAlert("captain")}
                   className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-xs font-semibold text-red-100"
-                >
-                  {emdAlertSending === "captain" ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-                  Captain
+                 loading={Boolean(emdAlertSending === "captain")}>{null}Captain
                 </Button>
                 <Button
                   type="button"
@@ -853,9 +845,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   disabled={confirmed || !!emdAlertSending}
                   onClick={()=>void sendEmdAlert("co_captain")}
                   className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-xs font-semibold text-red-100"
-                >
-                  {emdAlertSending === "co_captain" ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-                  Co-Captain
+                 loading={Boolean(emdAlertSending === "co_captain")}>{null}Co-Captain
                 </Button>
                 <Button
                   type="button"
@@ -863,9 +853,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   disabled={confirmed || !!emdAlertSending}
                   onClick={()=>void sendEmdAlert("both")}
                   className="h-10 rounded-xl bg-red-600 px-1 text-xs font-semibold text-white hover:bg-red-500"
-                >
-                  {emdAlertSending === "both" ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-                  Beide
+                 loading={Boolean(emdAlertSending === "both")}>{null}Beide
                 </Button>
               </div>
 
@@ -883,7 +871,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
             </div>
           ) : null}
 
-          {isCaptain && !locked && <Button onClick={confirm} disabled={saving || starters.length<required} className="h-12 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400 disabled:bg-white/10 disabled:text-white/25">{saving?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<CheckCircle2 className="mr-2 h-4 w-4"/>}{saving ? "Wird bestätigt …" : confirmed ? "Änderungen bestätigen" : "Aufstellung bestätigen"}</Button>}
+          {isCaptain && !locked && <Button onClick={confirm} disabled={saving || starters.length<required} className="h-12 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400 disabled:bg-white/10 disabled:text-white/25" loading={Boolean(saving)}><CheckCircle2 className="mr-2 h-4 w-4"/>{saving ? "Wird bestätigt …" : confirmed ? "Änderungen bestätigen" : "Aufstellung bestätigen"}</Button>}
         </div>
       </div>
     </div>

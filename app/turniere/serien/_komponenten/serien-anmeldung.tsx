@@ -1,20 +1,12 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
-import {
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Loader2,
-  LogIn,
-  RotateCcw,
-  UserPlus,
-  Users,
-  WalletCards,
-} from "lucide-react"
+import { CalendarDays, CheckCircle2, Clock3, LogIn, RotateCcw, UserPlus, Users, WalletCards } from "lucide-react"
 
 type SeriesConfig = {
   id: string
@@ -575,12 +567,7 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
 
   if (loading || !series) {
     return (
-      <section className="rounded-[28px] border border-white/10 bg-card p-5  sm:p-6">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Anmeldung wird geladen…
-        </div>
-      </section>
+      <SectionSkeleton kind="tournament" />
     )
   }
 
@@ -596,7 +583,7 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
       : "Anmeldung geschlossen"
 
   return (
-    <section className="relative overflow-hidden rounded-[30px] border border-orange-300/[0.12] bg-card p-4 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-6">
+    <section className="relative overflow-hidden rounded-[20px] border border-orange-300/[0.12] bg-card p-4 shadow-sm  sm:p-6">
       <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-orange-500/[0.10] blur-[75px]" />
 
       <div className="relative">
@@ -628,7 +615,7 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
 
         {!currentEvent ? (
           <div className="mt-5 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-6 text-center">
-            <CalendarDays className="mx-auto h-7 w-7 text-white/20" />
+            <CalendarDays className="mx-auto h-7 w-7 text-muted-foreground" />
             <div className="mt-3 font-semibold text-white/75">Kein weiterer Spieltag geplant</div>
             <div className="mt-1 text-sm font-semibold text-muted-foreground">Sobald ein neuer Turniertag feststeht, erscheint er hier.</div>
           </div>
@@ -639,8 +626,8 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <div className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-100/45">Nächster Spieltag</div>
-                    <div className="mt-1 truncate text-xl font-semibold text-white sm:text-2xl">{currentEvent.title || "Spieltag"}</div>
-                    <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-white/48">
+                    <div className="mt-1 break-words text-xl font-semibold text-white sm:text-2xl">{currentEvent.title || "Spieltag"}</div>
+                    <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                       <CalendarDays className="h-4 w-4 text-orange-200/70" />
                       {formatDateTime(effectiveEventDate(currentEvent))}
                     </div>
@@ -652,14 +639,14 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <DeadlineCard label="Anmeldeschluss" value={status.registrationClose ? formatDateTime(status.registrationClose) : "—"} icon={<Clock3 className="h-4 w-4" />} active={status.registrationOpen} />
                 <DeadlineCard label="Abmeldeschluss" value={status.unregisterClose ? formatDateTime(status.unregisterClose) : "—"} icon={<RotateCcw className="h-4 w-4" />} active={status.unregisterOpen} />
               </div>
             </div>
 
             {series.require_even_participants && series.odd_participant_policy === "last_waitlist" ? (
-              <div className="mt-3 rounded-2xl border border-violet-300/10 bg-violet-500/[0.045] px-4 py-3 text-sm font-semibold text-white/52">
+              <div className="mt-3 rounded-2xl border border-orange-300/10 bg-orange-500/[0.045] px-4 py-3 text-sm font-semibold text-muted-foreground">
                 {registrations.length % 2 === 0
                   ? "Die Teilnehmerzahl ist aktuell gerade."
                   : "Der zuletzt angemeldete Spieler wartet noch auf einen weiteren Teilnehmer."}
@@ -680,7 +667,7 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                       </div>
                       <div className="min-w-0">
                         <div className="text-lg font-semibold text-white/92">{ownWaiting ? "Warteposition" : "Anmeldung bestätigt"}</div>
-                        <div className="mt-1 truncate text-sm font-semibold text-white/48">{ownRegistration.player_name}</div>
+                        <div className="mt-1 break-words text-sm font-semibold text-muted-foreground">{ownRegistration.player_name}</div>
                         <div className="mt-1 text-xs font-semibold text-muted-foreground">
                           {ownWaiting
                             ? "Sobald sich ein weiterer Spieler anmeldet, bist du fix dabei."
@@ -699,25 +686,20 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                       disabled={busy || !status.unregisterOpen}
                       onClick={() => void unregister()}
                       className="h-11 rounded-xl border-red-300/20 bg-red-500/[0.035] px-4 font-semibold text-red-100 hover:bg-red-500/10"
-                    >
-                      {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
-                      Abmelden
+                     loading={Boolean(busy)}><RotateCcw className="mr-2 h-4 w-4" />Abmelden
                     </Button>
                   </div>
                 </div>
               ) : accountLoading ? (
-                <div className="flex items-center gap-3 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 text-sm font-semibold text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin text-orange-200" />
-                  Anmeldung wird vorbereitet…
-                </div>
+                <SectionSkeleton kind="tournament" />
               ) : !session?.user?.id ? (
                 <div className="rounded-[24px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
                   <div className="font-semibold text-white/85">Für die Anmeldung einloggen</div>
-                  <div className="mt-1 text-sm font-semibold leading-6 text-white/42">{accountMessage}</div>
+                  <div className="mt-1 text-sm font-semibold leading-6 text-muted-foreground">{accountMessage}</div>
                   <Button
                     type="button"
                     onClick={() => { window.location.href = "/member-login" }}
-                    className="mt-4 h-11 rounded-xl bg-orange-600 px-5 font-semibold text-white hover:bg-orange-500"
+                    className="mt-4 h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground hover:bg-orange-500"
                   >
                     <LogIn className="mr-2 h-4 w-4" />
                     Zum Login
@@ -738,7 +720,7 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                 <div className="rounded-[24px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-white/28">Anmeldung für</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Anmeldung für</div>
                       <div className="mt-1 text-lg font-semibold text-white/90">{playerName}</div>
                       <div className="mt-1 text-xs font-semibold text-muted-foreground">{accountType === "member" ? "Vereinsmitglied" : "Gastzugang"}</div>
                     </div>
@@ -748,11 +730,8 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                         type="button"
                         disabled={busy}
                         onClick={() => void register("on_site")}
-                        className="h-11 rounded-xl bg-orange-600 px-5 font-semibold text-white shadow-[0_12px_30px_-16px_rgba(249,115,22,.8)] hover:bg-orange-500"
-                      >
-                        {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                        {Number(series.startgeld || 0) > 0 ? "Anmelden · Zahlung vor Ort" : "Jetzt anmelden"}
-                      </Button>
+                        className="h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground shadow-[0_12px_30px_-16px_rgba(249,115,22,.8)] hover:bg-orange-500"
+                       loading={Boolean(busy)}><UserPlus className="mr-2 h-4 w-4" />{Number(series.startgeld || 0) > 0 ? "Anmelden · Zahlung vor Ort" : "Jetzt anmelden"}</Button>
 
                       {showCreditPayment ? (
                         <Button
@@ -796,7 +775,7 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
 }
 
 function CompactFact({ label, value, icon }: { label: string; value: string; icon: ReactNode }) {
-  return <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-3"><div className="flex items-center gap-1.5 text-white/28">{icon}<span className="text-xs font-semibold uppercase tracking-[0.12em]">{label}</span></div><div className="mt-1.5 text-sm font-semibold text-white/82">{value}</div></div>
+  return <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-3"><div className="flex items-center gap-1.5 text-muted-foreground">{icon}<span className="text-xs font-semibold uppercase tracking-wide">{label}</span></div><div className="mt-1.5 text-sm font-semibold text-white/82">{value}</div></div>
 }
 function DeadlineCard({ label, value, icon, active }: { label: string; value: string; icon: ReactNode; active: boolean }) {
   return <div className={`rounded-[22px] border p-3.5 ${active ? "border-orange-300/12 bg-orange-500/[0.045]" : "border-white/[0.07] bg-white/[0.02]"}`}><div className="flex items-center gap-1.5 text-muted-foreground">{icon}<span className="text-xs font-semibold uppercase tracking-[0.12em]">{label}</span></div><div className="mt-1.5 text-xs font-semibold leading-5 text-white/72">{value}</div></div>

@@ -1,5 +1,9 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
+import { BracketRounds } from "@/components/tournaments/bracket-round-navigation"
+
 import { finishCentralMultiDkoRun, isPreparedMultiDkoRun } from "@/lib/emd-multi-dko-lifecycle"
 import { useMultiDkoMachinePool } from "@/lib/emd-multi-dko-machine-pool"
 import { EmdMultiDkoQuickSwitch } from "@/components/emd-multi-dko-quick-switch"
@@ -2454,19 +2458,14 @@ const openBeamer = async () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-white px-4">
-        <div className="rounded-[22px] border border-border bg-card px-7 py-6 text-center shadow-[0_18px_50px_-38px_rgba(15,23,42,.55)]">
-          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-[3px] border-border border-t-slate-900" />
-          <p className="mt-4 text-sm font-bold text-white/60">Turnier wird geladen…</p>
-        </div>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 
   return (
     <div className="min-h-screen bg-background text-white">
       <div className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-6 px-3 pb-10 pt-4 sm:px-5 lg:px-7 xl:px-8">
-        <div className="flex flex-col gap-3 rounded-[26px] border border-white/[0.08] bg-card px-4 py-4 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.98)]  sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex flex-col gap-3 rounded-[20px] border border-white/[0.08] bg-card px-4 py-4 text-white shadow-sm  sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               <Trophy className="h-3.5 w-3.5 text-orange-400" />
@@ -2505,14 +2504,12 @@ const openBeamer = async () => {
               variant="outline"
               disabled={loadingRankings || !tournamentId}
               className="h-9 rounded-xl border border-white/10 bg-white/[0.045] px-3 text-sm font-semibold text-white/70 transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
-            >
-              {loadingRankings ? "Lädt..." : "Rangliste"}
-            </Button>
+             loading={Boolean(loadingRankings)} loadingLabel="Lädt...">{"Rangliste"}</Button>
 
             <Button
               onClick={handleCancelClick}
               variant="outline"
-              className="h-9 rounded-xl border border-white/10 bg-white/[0.035] px-3 text-sm font-semibold text-muted-foreground transition hover:-translate-y-0.5 hover:border-rose-300/30 hover:bg-rose-500/[0.10] hover:text-rose-200"
+              className="h-9 rounded-xl border border-white/10 bg-white/[0.035] px-3 text-sm font-semibold text-muted-foreground transition hover:-translate-y-0.5 hover:border-red-300/30 hover:bg-red-500/[0.10] hover:text-red-200"
             >
               Abbrechen
             </Button>
@@ -2520,7 +2517,7 @@ const openBeamer = async () => {
         </div>
 
 
-        <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card text-white shadow-[0_30px_100px_-62px_rgba(0,0,0,.98)] ">
+        <Card className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card text-white shadow-sm ">
           <div className="p-5 md:p-6 space-y-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-2">
@@ -2548,11 +2545,11 @@ const openBeamer = async () => {
                   />
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-white/65">
-                  <div className="rounded-xl border border-white/[0.08] bg-[#080b10] px-3 py-2 text-white">
+                  <div className="rounded-xl border border-white/[0.08] bg-card px-3 py-2 text-white">
                     <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Fertig</div>
                     <div className="mt-1 font-semibold">{completedCount} von {totalMatchCount} Matches</div>
                   </div>
-                  <div className="rounded-xl border border-white/[0.08] bg-[#080b10] px-3 py-2 text-white text-right">
+                  <div className="rounded-xl border border-white/[0.08] bg-card px-3 py-2 text-white text-right">
                     <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
                       {winnerName ? "Sieger" : "Offen"}
                     </div>
@@ -2563,25 +2560,25 @@ const openBeamer = async () => {
             </div>
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
+              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-white/70">LIVE Matches</span>
-                  <Activity className="h-4 w-4 text-rose-300" />
+                  <Activity className="h-4 w-4 text-red-300" />
                 </div>
                 <div className="mt-2 text-3xl font-semibold text-white">{activeLiveMatches.length}</div>
                 <p className="mt-1 text-xs text-muted-foreground">Aktuell auf Automaten gestartet</p>
               </div>
 
-              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
+              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-white/75">Bereit</span>
-                  <Clock3 className="h-4 w-4 text-sky-300" />
+                  <Clock3 className="h-4 w-4 text-orange-300" />
                 </div>
                 <div className="mt-2 text-3xl font-semibold text-white">{readyMatches.length}</div>
                 <p className="mt-1 text-xs text-muted-foreground">Sofort startbare Matches</p>
               </div>
 
-              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
+              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-white/70">Frei</span>
                   <Radio className="h-4 w-4 text-muted-foreground" />
@@ -2590,7 +2587,7 @@ const openBeamer = async () => {
                 <p className="mt-1 text-xs text-muted-foreground">Verfügbare Automaten</p>
               </div>
 
-              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
+              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-white/70">Abgeschlossen</span>
                   <Trophy className="h-4 w-4 text-emerald-300" />
@@ -2611,7 +2608,7 @@ const openBeamer = async () => {
 
                 <div className="mt-4 space-y-3">
                   {activeLiveMatches.length === 0 ? (
-                    <div className="rounded-[18px] border border-dashed border-white/[0.10] bg-[#070a0f] px-4 py-6 text-sm text-muted-foreground">
+                    <div className="rounded-[18px] border border-dashed border-white/[0.10] bg-card px-4 py-6 text-sm text-muted-foreground">
                       Noch kein LIVE-Match aktiv. Starte ein Match und es erscheint sofort hier oben.
                     </div>
                   ) : (
@@ -2698,7 +2695,7 @@ const openBeamer = async () => {
     size="sm"
     onClick={() => confirmMatch(match.id)}
     disabled={!canConfirmLive}
-    className="border border-orange-300/25 bg-orange-500 text-primary-foreground shadow-[0_12px_28px_-18px_rgba(249,115,22,.55)] hover:bg-orange-400 disabled:border-white/[0.08] disabled:bg-white/[0.045] disabled:text-muted-foreground disabled:shadow-none"
+    className="border border-orange-300/25 bg-primary text-primary-foreground shadow-[0_12px_28px_-18px_rgba(249,115,22,.55)] hover:bg-orange-400 disabled:border-white/[0.08] disabled:bg-white/[0.045] disabled:text-muted-foreground disabled:shadow-none"
   >
     <Check className="mr-1 h-4 w-4" />
     Ergebnis bestätigen
@@ -2719,7 +2716,7 @@ const openBeamer = async () => {
 
 
 
-              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
+              <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="font-semibold text-lg">Als Nächstes dran</h3>
                   <span className="text-xs text-muted-foreground">Top {Math.min(readyMatches.length, 4)}</span>
@@ -2727,7 +2724,7 @@ const openBeamer = async () => {
 
                 <div className="mt-4 space-y-3">
                   {readyMatches.length === 0 ? (
-                    <div className="rounded-[18px] border border-dashed border-white/[0.10] bg-[#070a0f] px-4 py-6 text-sm text-muted-foreground">
+                    <div className="rounded-[18px] border border-dashed border-white/[0.10] bg-card px-4 py-6 text-sm text-muted-foreground">
                       Aktuell wartet kein startbereites Match.
                     </div>
                   ) : (
@@ -2735,7 +2732,7 @@ const openBeamer = async () => {
                       const hasFreilos = isFreilos(match.player1) || isFreilos(match.player2)
 
                       return (
-                        <div key={match.id} className="rounded-[18px] border border-white/[0.08] bg-[#080b10] px-4 py-3 text-white shadow-[0_14px_36px_-28px_rgba(0,0,0,.95)] transition hover:border-white/[0.14] hover:bg-[#0b0f15]">
+                        <div key={match.id} className="rounded-[18px] border border-white/[0.08] bg-card px-4 py-3 text-white shadow-[0_14px_36px_-28px_rgba(0,0,0,.95)] transition hover:border-white/[0.14] hover:bg-card">
                           <div className="flex items-center justify-between gap-3">
                             <span className="text-sm font-semibold">Match {match.id}</span>
                             <span className="rounded-full border border-emerald-300/20 bg-emerald-500/[0.10] px-2.5 py-1 text-xs font-semibold text-emerald-200">
@@ -2765,7 +2762,7 @@ const openBeamer = async () => {
         </Card>
 
 
-        <div className="space-y-8">
+        <BracketRounds className="space-y-8">
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-orange-600 border-b-2 border-orange-600 pb-2">Runde 1</h2>
             {[...Array(64)].map((_, i) => (
@@ -3094,7 +3091,7 @@ const openBeamer = async () => {
             (matches[254]?.winner === matches[254]?.player2 && matches[254]?.winner)) &&
             !matches[255]?.winner && (
               <div className="space-y-3">
-                <h2 className="text-xl font-bold text-purple-600 border-b-2 border-purple-600 pb-2">Bracket Reset</h2>
+                <h2 className="text-xl font-bold text-orange-600 border-b-2 border-orange-600 pb-2">Bracket Reset</h2>
                 <p className="text-sm text-muted-foreground">
                   Der Spieler von der Verliererseite hat gewonnen! Beide Spieler haben jetzt je 1 Niederlage.
                 </p>
@@ -3121,7 +3118,7 @@ const openBeamer = async () => {
             )}
 
           {((matches[255]?.winner) || (matches[254]?.winner === matches[254]?.player1 && matches[254]?.player1)) && (
-            <Card className="rounded-[28px] border border-orange-300/20 bg-card p-6 text-white shadow-[0_30px_90px_-52px_rgba(249,115,22,.28)]">
+            <Card className="rounded-[20px] border border-orange-300/20 bg-card p-6 text-white shadow-sm">
               <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
               <p className="text-3xl font-bold text-center mt-4">{matches[255]?.winner || matches[254]?.winner}</p>
 
@@ -3160,10 +3157,10 @@ const openBeamer = async () => {
               </div>
             </Card>
           )}
-        </div>
+        </BracketRounds>
 
       <Dialog open={machineDialogOpen} onOpenChange={setMachineDialogOpen}>
-        <DialogContent className="rounded-[26px] border border-white/10 bg-[#0b0e13]/98 text-white shadow-[0_35px_120px_-54px_rgba(0,0,0,.98)] ">
+        <DialogContent className="rounded-[20px] border border-white/10 bg-card text-white shadow-sm ">
           <DialogHeader>
             <DialogTitle>Automat auswählen</DialogTitle>
             <DialogDescription>Grün = frei · Rot = belegt. Nur freie Automaten können ausgewählt werden. Match {selectedMatchId}</DialogDescription>
@@ -3181,13 +3178,13 @@ const openBeamer = async () => {
                   title={occupied ? `${occupied.player1 || "Spieler 1"} – ${occupied.player2 || "Spieler 2"}` : `Automat ${num} frei`}
                   className={`min-h-[102px] rounded-2xl border p-3 text-left transition-colors ${free
                     ? "border-emerald-500/40 bg-emerald-500/[0.10] hover:border-emerald-400 hover:bg-emerald-500/20"
-                    : "cursor-not-allowed border-rose-500/30 bg-rose-500/[0.08] opacity-80"}`}
+                    : "cursor-not-allowed border-red-500/30 bg-red-500/[0.08] opacity-80"}`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xl font-semibold text-white">{num}</span>
-                    <span className={`text-xs font-bold ${free ? "text-emerald-300" : "text-rose-300"}`}>{free ? "● Frei" : "● Belegt"}</span>
+                    <span className={`text-xs font-bold ${free ? "text-emerald-300" : "text-red-300"}`}>{free ? "● Frei" : "● Belegt"}</span>
                   </div>
-                  <p className="mt-2 line-clamp-2 text-xs leading-snug text-white/60">
+                  <p className="mt-2 line-clamp-2 text-xs leading-snug text-muted-foreground">
                     {occupied ? `${occupied.player1 || "Spieler 1"} gegen ${occupied.player2 || "Spieler 2"}` : "Jetzt auswählen"}
                   </p>
                 </button>
@@ -3198,7 +3195,7 @@ const openBeamer = async () => {
       </Dialog>
 
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent className="rounded-[26px] border border-white/10 bg-[#0b0e13]/98 text-white shadow-[0_35px_120px_-54px_rgba(0,0,0,.98)] ">
+        <DialogContent className="rounded-[20px] border border-white/10 bg-card text-white shadow-sm ">
           <DialogHeader>
             <DialogTitle>Turnier abbrechen?</DialogTitle>
             <DialogDescription>
@@ -3217,7 +3214,7 @@ const openBeamer = async () => {
       </Dialog>
 
       <Dialog open={rankingsDialogOpen} onOpenChange={setRankingsDialogOpen}>
-        <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto rounded-[26px] border border-white/10 bg-[#0b0e13]/98 text-white shadow-[0_35px_120px_-54px_rgba(0,0,0,.98)] ">
+        <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto rounded-[20px] border border-white/10 bg-card text-white shadow-sm ">
           <DialogHeader>
             <DialogTitle>Tabelle</DialogTitle>
             <DialogDescription>Aktuelle Platzierungen im Turnier</DialogDescription>
@@ -3309,8 +3306,8 @@ function MatchCard({
   return (
     <Card
       className={cn(
-        "space-y-3 rounded-[22px] border border-white/[0.08] bg-card p-3.5 text-white shadow-[0_18px_48px_-34px_rgba(0,0,0,.98)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_24px_60px_-38px_rgba(0,0,0,.98)]",
-        isGrandFinal && "border-2 border-orange-300/30 shadow-[0_24px_60px_-36px_rgba(249,115,22,.38)]",
+        "space-y-3 rounded-[22px] border border-white/[0.08] bg-card p-3.5 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-sm",
+        isGrandFinal && "border-2 border-orange-300/30 shadow-sm",
         isLoser && "border-l-4 border-l-rose-400/80",
         isRunning && "border-2 border-emerald-400/45 bg-emerald-500/[0.07] shadow-[0_20px_50px_-30px_rgba(16,185,129,.40)]",
         hasFreilos && !match.winner && "border-l-4 border-l-amber-400/80 bg-amber-500/[0.045]",
@@ -3339,7 +3336,7 @@ function MatchCard({
               size="sm"
               onClick={() => onRepeatCall(match.id)}
               variant="outline"
-              className="h-7 rounded-lg border-rose-300/30 bg-rose-500/[0.06] text-xs font-semibold text-rose-200 hover:bg-rose-500/[0.12]"
+              className="h-7 rounded-lg border-red-300/30 bg-red-500/[0.06] text-xs font-semibold text-red-200 hover:bg-red-500/[0.12]"
             >
               3. Aufruf
             </Button>
@@ -3359,14 +3356,14 @@ function MatchCard({
               size="sm"
               variant="ghost"
               onClick={() => onReset(match.id)}
-              className="h-7 w-7 rounded-lg border border-transparent p-0 text-muted-foreground hover:border-rose-300/20 hover:bg-rose-500/[0.08] hover:text-rose-300"
+              className="h-7 w-7 rounded-lg border border-transparent p-0 text-muted-foreground hover:border-red-300/20 hover:bg-red-500/[0.08] hover:text-red-300"
               title="Match zurücksetzen"
             >
               <RotateCcw className="h-3 w-3" />
             </Button>
           )}
           {!match.machineNumber && !match.winner && match.player1 && match.player2 && (
-            <Button size="sm" onClick={() => onStartMatch(match.id)} className="h-7 rounded-lg bg-orange-500 px-2.5 text-xs font-semibold text-primary-foreground shadow-[0_10px_24px_-18px_rgba(249,115,22,.60)] hover:bg-orange-400">
+            <Button size="sm" onClick={() => onStartMatch(match.id)} className="h-7 rounded-lg bg-primary px-2.5 text-xs font-semibold text-primary-foreground shadow-[0_10px_24px_-18px_rgba(249,115,22,.60)] hover:bg-orange-400">
               {hasFreilos ? "Auto" : "Starten"}
             </Button>
           )}
@@ -3377,7 +3374,7 @@ function MatchCard({
         className={cn(
           "flex items-center gap-2 p-2 rounded-md transition-colors",
           isPlayer1Winner && "bg-orange-100 border-2 border-orange-500",
-          isPlayer1Loser && "border-rose-300/25 bg-rose-500/[0.08]",
+          isPlayer1Loser && "border-red-300/25 bg-red-500/[0.08]",
           !isPlayer1Winner && !isPlayer1Loser && "bg-white/[0.025]",
           isFreilos(match.player1) && "border-amber-300/25 bg-amber-500/[0.08]",
         )}
@@ -3388,7 +3385,7 @@ function MatchCard({
               "text-sm truncate",
               !match.player1 && "text-muted-foreground italic",
               isPlayer1Winner && "font-semibold text-emerald-200",
-              isPlayer1Loser && "text-rose-300",
+              isPlayer1Loser && "text-red-300",
               isFreilos(match.player1) && "text-amber-200 italic font-semibold",
             )}
           >
@@ -3411,7 +3408,7 @@ function MatchCard({
         className={cn(
           "flex items-center gap-2 p-2 rounded-md transition-colors",
           isPlayer2Winner && "bg-orange-100 border-2 border-orange-500",
-          isPlayer2Loser && "border-rose-300/25 bg-rose-500/[0.08]",
+          isPlayer2Loser && "border-red-300/25 bg-red-500/[0.08]",
           !isPlayer2Winner && !isPlayer2Loser && "bg-white/[0.025]",
           isFreilos(match.player2) && "border-amber-300/25 bg-amber-500/[0.08]",
         )}
@@ -3422,7 +3419,7 @@ function MatchCard({
               "text-sm truncate",
               !match.player2 && "text-muted-foreground italic",
               isPlayer2Winner && "font-semibold text-emerald-200",
-              isPlayer2Loser && "text-rose-300",
+              isPlayer2Loser && "text-red-300",
               isFreilos(match.player2) && "text-amber-200 italic font-semibold",
             )}
           >

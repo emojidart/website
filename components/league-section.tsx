@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton, InlineLoader } from "@/components/loading/loading"
+
 import {
   useCallback,
   useEffect,
@@ -875,7 +877,7 @@ export function LeagueSection({
                     disabled={loading}
                     className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-orange-300/[0.13] bg-orange-500 px-4 text-sm font-semibold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.10)] transition duration-300 hover:bg-orange-500/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                    {loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={`h-4 w-4 ${loading ? "" : ""}`} />}
                     Aktualisieren
                   </button>
                 </div>
@@ -897,7 +899,7 @@ export function LeagueSection({
                     disabled={myLeagueLoading}
                     className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-semibold text-white/65 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
                   >
-                    <RefreshCw className={`h-3.5 w-3.5 ${myLeagueLoading ? "animate-spin" : ""}`} />
+                    {myLeagueLoading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={`h-3.5 w-3.5 ${myLeagueLoading ? "" : ""}`} />}
                     Neu laden
                   </button>
                 </div>
@@ -929,14 +931,7 @@ export function LeagueSection({
           ) : null}
 
           {myLeagueLoading ? (
-            <section className="relative flex min-h-[300px] items-center justify-center overflow-hidden rounded-[28px] border border-white/[0.08] bg-card ">
-              <div className="relative text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.035]">
-                  <RefreshCw className="h-6 w-6 animate-spin text-orange-300" />
-                </div>
-                <p className="mt-3 text-sm font-bold text-white/38">Deine Ligatabellen werden geladen…</p>
-              </div>
-            </section>
+            <SectionSkeleton kind="cards" />
           ) : null}
 
           {!myLeagueLoading && myLeagueBlocks.length > 0 ? (
@@ -1053,9 +1048,7 @@ export function LeagueSection({
                   ) : null}
 
                   {selectedMyLeagueBlock.loading ? (
-                    <section className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-[28px] border border-white/[0.08] bg-card ">
-                      <RefreshCw className="h-6 w-6 animate-spin text-orange-300" />
-                    </section>
+                    <SectionSkeleton kind="cards" />
                   ) : null}
 
                   {myLeagueContentMode === "table" && selectedMyLeagueBlock.data ? (
@@ -1106,11 +1099,11 @@ export function LeagueSection({
                             disabled={myTeamResults[selectedMyLeagueBlock.key]?.loading}
                             className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-semibold text-white/60 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
                           >
-                            <RefreshCw
+                            {myTeamResults[selectedMyLeagueBlock.key]?.loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw
                               className={`h-3.5 w-3.5 ${
-                                myTeamResults[selectedMyLeagueBlock.key]?.loading ? "animate-spin" : ""
+                                myTeamResults[selectedMyLeagueBlock.key]?.loading ? "" : ""
                               }`}
-                            />
+                            />}
                             Neu laden
                           </button>
                         </div>
@@ -1118,9 +1111,7 @@ export function LeagueSection({
 
                       <div className="relative p-3 sm:p-4">
                         {myTeamResults[selectedMyLeagueBlock.key]?.loading ? (
-                          <div className="flex min-h-[180px] items-center justify-center">
-                            <RefreshCw className="h-6 w-6 animate-spin text-orange-300" />
-                          </div>
+                          <SectionSkeleton kind="cards" />
                         ) : myTeamResults[selectedMyLeagueBlock.key]?.error ? (
                           <div className="rounded-2xl border border-red-300/[0.12] bg-red-500/[0.05] p-4 text-sm font-semibold text-red-100/70">
                             {myTeamResults[selectedMyLeagueBlock.key]?.error}
@@ -1329,9 +1320,7 @@ export function LeagueSection({
                                   {openResultGameId === game.gameId ? (
                                     <div className="relative mt-2 overflow-hidden rounded-2xl border border-white/[0.07] bg-card">
                                       {resultGameDetails[game.gameId]?.loading ? (
-                                        <div className="flex min-h-[120px] items-center justify-center">
-                                          <RefreshCw className="h-5 w-5 animate-spin text-orange-300" />
-                                        </div>
+                                        <SectionSkeleton kind="cards" />
                                       ) : resultGameDetails[game.gameId]?.error ? (
                                         <div className="p-4 text-sm font-semibold text-red-200/70">
                                           {resultGameDetails[game.gameId]?.error}
@@ -1655,9 +1644,9 @@ export function LeagueSection({
             <section className="relative flex min-h-[360px] items-center justify-center overflow-hidden rounded-[28px] border border-white/[0.08] bg-card ">
               <div className="relative text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.035]">
-                  <RefreshCw className="h-6 w-6 animate-spin text-orange-300" />
+                  <LoadingIndicator className="h-6 w-6" />
                 </div>
-                <p className="mt-3 text-sm font-bold text-white/38">Ligadaten werden geladen…</p>
+                <InlineLoader label="Ligadaten werden geladen…" />
               </div>
             </section>
           ) : null}

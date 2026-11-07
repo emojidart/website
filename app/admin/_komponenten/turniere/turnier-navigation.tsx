@@ -15,7 +15,7 @@ const items = [
   { href: "/kratzer-tournament", label: "Kratzer", icon: ListChecks },
   { href: "/admin/survival-roulette", label: "Survival Roulette", icon: Flame },
   { href: "/admin/public-tournament-registrations", label: "Öffentliche Anmeldungen", icon: Users },
-  { href: "/admin/tournament-schedules", label: "Serien Spieltag anlegen / bearbeiten", icon: CalendarDays },
+  { href: "/admin/tournament-schedules", label: "Spieltage", icon: CalendarDays },
 ] as const
 
 export function TournamentAdminNav({ title, description }: TournamentAdminNavProps) {
@@ -25,7 +25,7 @@ export function TournamentAdminNav({ title, description }: TournamentAdminNavPro
     <>
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
-      <div className="relative z-20 border-b border-white/[0.07] bg-[#080a0e]/90 text-white backdrop-blur-2xl">
+      <div className="relative z-20 border-b border-white/[0.07] bg-card text-white backdrop-blur-2xl">
         <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8">
           <div className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
@@ -34,7 +34,7 @@ export function TournamentAdminNav({ title, description }: TournamentAdminNavPro
                 Turnier-Zentrale
               </div>
               <h1 className="mt-1 truncate text-xl font-black tracking-tight text-white sm:text-2xl">{title}</h1>
-              {description ? <p className="mt-1 text-sm text-white/40">{description}</p> : null}
+              {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
             </div>
 
             <nav className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap" aria-label="Turnierverwaltung">
@@ -50,13 +50,14 @@ export function TournamentAdminNav({ title, description }: TournamentAdminNavPro
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition ${
+                    aria-current={active ? "page" : undefined}
+                    className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-sm font-bold leading-5 transition ${
                       active
                         ? "border-orange-300/25 bg-orange-500/12 text-orange-200 shadow-[0_0_20px_rgba(249,115,22,.08)]"
-                        : "border-white/10 bg-white/[0.035] text-white/55 hover:border-orange-300/25 hover:bg-orange-500/[0.08] hover:text-white"
+                        : "border-white/10 bg-white/[0.035] text-muted-foreground hover:border-orange-300/25 hover:bg-orange-500/[0.08] hover:text-white"
                     }`}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className="h-4 w-4 shrink-0" />
                     {item.label}
                   </Link>
                 )

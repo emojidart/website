@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
@@ -7,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, User, Loader2 } from "lucide-react"
+import { Trophy, Target, User } from "lucide-react"
 import { Header } from "@/components/header"
 import { useRouter } from "next/navigation"
 
@@ -195,14 +197,9 @@ export default function ResultsPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="text-foreground min-h-screen bg-card   ">
+      <div className="emd-loading-surface text-foreground min-h-screen bg-card   ">
         <Header />
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Lade Ergebnisse...</p>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
       </div>
     )
   }

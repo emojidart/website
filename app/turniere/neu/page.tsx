@@ -1,23 +1,12 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import {
-  ArrowLeft,
-  CalendarDays,
-  ChevronRight,
-  Info,
-  CheckCircle2,
-  FileImage,
-  Loader2,
-  MapPin,
-  Send,
-  ShieldAlert,
-  Trophy,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronRight, Info, CheckCircle2, FileImage, MapPin, Send, ShieldAlert, Trophy, UserRound } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -382,11 +371,9 @@ export default function NeueVeranstaltungPage() {
 
   if (access === "loading") {
     return (
-      <div className="min-h-screen flex flex-col bg-background text-white">
+      <div className="emd-loading-surface min-h-screen flex flex-col bg-background text-white">
         <Header variant="app" title="Veranstaltung einreichen" subtitle="Öffentliche Turniere" backHref="/turniere" />
-        <main className="flex-grow flex items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-orange-200" />
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="tournament" /></main>
         <MobileBottomNav />
       </div>
     );
@@ -426,7 +413,7 @@ export default function NeueVeranstaltungPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f6f7f9] pb-24 text-white">
+    <div className="min-h-screen overflow-x-hidden bg-card pb-24 text-white">
       <Header variant="app" title="Veranstaltung einreichen" subtitle="Öffentliche Turniere" backHref="/turniere" />
 
       <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
@@ -734,7 +721,7 @@ export default function NeueVeranstaltungPage() {
                   value={form.details}
                   onChange={(e) => setField("details", e.target.value)}
                   rows={7}
-                  className="w-full resize-y rounded-xl border border-white/10 bg-card px-4 py-3 text-sm outline-none transition placeholder:text-white/25 focus:border-orange-400 focus:bg-card focus:ring-4 focus:ring-orange-100"
+                  className="w-full resize-y rounded-xl border border-white/10 bg-card px-4 py-3 text-sm outline-none transition placeholder:text-muted-foreground focus:border-orange-400 focus:bg-card focus:ring-4 focus:ring-orange-100"
                   placeholder="Modus, Preisgeld, Einlass, Anmeldung und weitere Hinweise …"
                 />
               </Field>
@@ -767,15 +754,9 @@ export default function NeueVeranstaltungPage() {
                 type="submit"
                 disabled={saving}
                 className="h-14 w-full rounded-xl bg-orange-500/100 text-base font-semibold text-white shadow-none hover:bg-orange-400"
-              >
-              {saving ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
+               loading={Boolean(saving)}>{(
                 <Send className="w-5 h-5 mr-2" />
-              )}
-                {saving ? "Wird eingereicht …" : "Zur Freigabe einreichen"}
-                {!saving ? <ChevronRight className="ml-2 h-5 w-5" /> : null}
-              </Button>
+              )}{saving ? "Wird eingereicht …" : "Zur Freigabe einreichen"}{!saving ? <ChevronRight className="ml-2 h-5 w-5" /> : null}</Button>
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 Die Veröffentlichung erfolgt erst nach der Freigabe.
               </p>
@@ -798,7 +779,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="h-full overflow-hidden rounded-[24px] border border-white/10 bg-card shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)] sm:rounded-[26px]">
+    <Card className="h-full overflow-hidden rounded-[24px] border border-white/10 bg-card shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)] sm:rounded-[20px]">
       <CardContent className="p-0">
         <div className="flex items-center gap-3 border-b border-white/10 bg-card px-4 py-4 sm:px-5 lg:px-6">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/10 text-orange-200">

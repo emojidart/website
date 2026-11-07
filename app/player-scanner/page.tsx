@@ -1,5 +1,7 @@
 'use client'
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { useState, useRef, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -181,7 +183,7 @@ export default function PlayerScannerPage() {
             />
             {loading && (
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                <div className="animate-spin h-5 w-5 border-2 border-slate-300 border-t-slate-900 rounded-full"></div>
+                <LoadingIndicator className="h-5 w-5" />
               </div>
             )}
           </div>

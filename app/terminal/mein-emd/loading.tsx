@@ -1,5 +1,5 @@
-import TerminalLoader from "../_components/TerminalLoader"
+import { SectionSkeleton } from "@/components/loading/loading"
 
 export default function Loading() {
-  return <TerminalLoader label="Mein EMD wird vorbereitet" />
+  return <div className="emd-route-loading"><SectionSkeleton kind="profile" label="Terminal wird vorbereitet…" /></div>
 }

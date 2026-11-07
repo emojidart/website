@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { useAuth } from "@/hooks/use-auth"
@@ -180,7 +182,7 @@ export default function MemberLeagueLivePage() {
             disabled={loading}
             className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/[0.08] bg-card px-4 text-sm font-semibold text-muted-foreground transition hover:bg-white/[0.04] hover:text-white disabled:opacity-50"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={`h-4 w-4 ${loading ? "" : ""}`} />}
             Aktualisieren
           </button>
         </div>
@@ -231,9 +233,7 @@ export default function MemberLeagueLivePage() {
 
           <div className="p-3 sm:p-5">
             {loading ? (
-              <div className="flex min-h-[240px] items-center justify-center">
-                <RefreshCw className="h-7 w-7 animate-spin text-orange-300" />
-              </div>
+              <SectionSkeleton kind="cards" />
             ) : error ? (
               <div className="rounded-2xl border border-red-300/10 bg-red-500/[0.05] p-5 text-sm font-semibold text-red-100/70">
                 {error}
@@ -324,9 +324,7 @@ export default function MemberLeagueLivePage() {
                       {openGameId === game.gameId ? (
                         <div className="border-t border-white/[0.06] bg-black/20 p-3 sm:p-4">
                           {detail?.loading ? (
-                            <div className="flex min-h-[120px] items-center justify-center">
-                              <RefreshCw className="h-5 w-5 animate-spin text-orange-300" />
-                            </div>
+                            <SectionSkeleton kind="cards" />
                           ) : detail?.error ? (
                             <div className="text-sm font-semibold text-red-200/70">{detail.error}</div>
                           ) : detail?.data ? (

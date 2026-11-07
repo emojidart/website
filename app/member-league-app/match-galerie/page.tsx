@@ -1,10 +1,12 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useMemo, useRef } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Camera, Calendar, Trophy, Filter, Heart, MessageCircle, Send, X, Users, Loader2 } from "lucide-react"
+import { Camera, Calendar, Trophy, Filter, Heart, MessageCircle, Send, X, Users } from "lucide-react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
@@ -702,24 +704,10 @@ export default function MatchGaleriePage() {
 
   if (authLoading || loading) {
     return (
-      <main className="relative min-h-screen flex flex-col bg-background text-white">
+      <main className="emd-loading-surface relative min-h-screen flex flex-col bg-background text-white">
         <Header variant="app" title="Match-Galerie" subtitle="Ligazentrale" backHref="/member-league-app" />
 
-        <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-white/[0.08] bg-card px-8 py-9 shadow-[0_24px_80px_-46px_rgba(0,0,0,.95)]  sm:px-10">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
-              </div>
-
-              <div className="text-center">
-                <p className="text-lg font-bold text-white">Match-Galerie wird geladen</p>
-                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
 
         <MobileBottomNav />
       </main>
@@ -992,7 +980,7 @@ export default function MatchGaleriePage() {
                       )}
 
                       {commentsLoading ? (
-                        <div className="text-sm text-muted-foreground">Lade Kommentare…</div>
+                        <SectionSkeleton kind="cards" />
                       ) : comments.length === 0 ? (
                         <div className="text-sm text-muted-foreground bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4">
                           Noch keine Kommentare. Sei der Erste 🙂

@@ -1,5 +1,7 @@
 "use client"
 
+import { ButtonLoader } from "@/components/loading/loading"
+
 import { useEffect, useRef, useState } from "react"
 import type { TerminalIdentity } from "./TerminalIdentityAuth"
 
@@ -76,7 +78,7 @@ export default function TerminalFaceCandidate({ onCandidate, onClose }: { onCand
     <div className="relative overflow-hidden rounded-2xl bg-black"><video ref={videoRef} autoPlay muted playsInline className="w-full aspect-video object-cover scale-x-[-1]" /><div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-xl bg-black/70 px-4 py-3 text-center text-lg font-black text-white">{running ? "BITTE IN DIE KAMERA SCHAUEN" : "KAMERA WIRD VORBEREITET"}</div></div>
     <p role="status" className="text-sm text-orange-200">{status}</p>
     <div className="flex flex-wrap gap-3">
-      <button type="button" onClick={retry} disabled={loading} className="rounded-xl bg-orange-500 px-5 py-3 font-bold disabled:opacity-50">{loading ? "Erkennung läuft automatisch …" : "Erkennung erneut starten"}</button>
+      <button type="button" onClick={retry} disabled={loading} className="rounded-xl bg-orange-500 px-5 py-3 font-bold disabled:opacity-50" aria-busy={Boolean(loading) || undefined}><ButtonLoader loading={Boolean(loading)} label="Erkennung läuft automatisch …">{"Erkennung erneut starten"}</ButtonLoader></button>
       <button type="button" onClick={() => { stop(); onClose() }} className="rounded-xl border border-white/20 px-5 py-3">Zurück zur Anmeldung</button>
     </div>
   </div>

@@ -1,21 +1,12 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import {
-  CalendarDays,
-  CheckCircle2,
-  FileImage,
-  Info,
-  Loader2,
-  MapPin,
-  Save,
-  ShieldAlert,
-  Trophy,
-  UserRound,
-} from "lucide-react";
+import { CalendarDays, CheckCircle2, FileImage, Info, MapPin, Save, ShieldAlert, Trophy, UserRound } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -279,18 +270,9 @@ export default function BearbeitenPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="emd-loading-surface min-h-screen bg-background">
         <Header variant="app" title="Veranstaltung bearbeiten" subtitle="Öffentliche Turniere" backHref="/turniere/meine" />
-        <main className="flex min-h-[70vh] items-center justify-center px-4 pt-20">
-          <div className="flex flex-col items-center gap-3 text-muted-foreground">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-card shadow-none">
-              <Loader2 className="h-7 w-7 animate-spin text-orange-200" />
-            </div>
-            <p className="text-sm font-semibold">
-              Veranstaltung wird geladen …
-            </p>
-          </div>
-        </main>
+        <main className="flex min-h-[70vh] items-center justify-center px-4 pt-20"><SectionSkeleton kind="tournament" /></main>
         <MobileBottomNav />
       </div>
     );
@@ -301,7 +283,7 @@ export default function BearbeitenPage() {
       <div className="min-h-screen bg-background">
         <Header variant="app" title="Veranstaltung bearbeiten" subtitle="Öffentliche Turniere" backHref="/turniere/meine" />
         <main className="px-4 pb-28 pt-24">
-          <Card className="mx-auto max-w-lg overflow-hidden rounded-[28px] border-white/10 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] shadow-none">
+          <Card className="mx-auto max-w-lg overflow-hidden rounded-[20px] border-white/10 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] shadow-none">
             <div className="text-foreground h-1.5 bg-card  " />
             <CardContent className="p-8 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/10">
@@ -334,9 +316,9 @@ export default function BearbeitenPage() {
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
 
-        <section className="relative mb-5 overflow-hidden rounded-[30px] border border-white/10 bg-card p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-7 lg:p-8">
+        <section className="relative mb-5 overflow-hidden rounded-[20px] border border-white/10 bg-card p-5 shadow-sm  sm:p-7 lg:p-8">
           <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/[0.13] blur-[70px]" />
-          <div className="pointer-events-none absolute -bottom-20 left-[38%] h-48 w-48 rounded-full bg-sky-500/10 blur-[65px]" />
+          <div className="pointer-events-none absolute -bottom-20 left-[38%] h-48 w-48 rounded-full bg-orange-500/10 blur-[65px]" />
 
           <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">
@@ -643,7 +625,7 @@ export default function BearbeitenPage() {
             </div>
           ) : null}
 
-          <div className="sticky bottom-20 z-20 rounded-[22px] border border-white/10 bg-[#070a0f]/90 p-3 shadow-[0_22px_70px_-48px_rgba(0,0,0,.95)]  sm:bottom-5">
+          <div className="sticky bottom-20 z-20 rounded-[22px] border border-white/10 bg-card p-3 shadow-[0_22px_70px_-48px_rgba(0,0,0,.95)]  sm:bottom-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="hidden items-center gap-2 px-2 text-sm text-muted-foreground sm:flex">
                 <CheckCircle2 className="h-4 w-4 text-emerald-200" />
@@ -651,17 +633,12 @@ export default function BearbeitenPage() {
               </div>
               <Button
                 disabled={saving}
-                className="h-12 w-full rounded-2xl bg-orange-500 px-7 text-base font-semibold text-primary-foreground shadow-[0_18px_46px_-26px_rgba(249,115,22,.5)] transition hover:bg-orange-400 sm:w-auto"
-              >
-                {saving ? (
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
+                className="h-12 w-full rounded-2xl bg-primary px-7 text-base font-semibold text-primary-foreground shadow-sm transition hover:bg-orange-400 sm:w-auto"
+               loading={Boolean(saving)}>{(
                   <Save className="mr-2 h-5 w-5" />
-                )}
-                {saving
+                )}{saving
                   ? "Änderungen werden gespeichert …"
-                  : "Änderungen einreichen"}
-              </Button>
+                  : "Änderungen einreichen"}</Button>
             </div>
           </div>
         </form>
@@ -706,7 +683,7 @@ function ModernSection({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-none ">
+    <Card className="overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-none ">
       <CardContent className="p-0">
         <div className="border-b border-white/10 bg-white/[0.025] px-5 py-5 sm:px-7">
           <div className="flex items-start gap-3">

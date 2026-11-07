@@ -15,6 +15,7 @@ import EmdSystemNotice from "./EmdSystemNotice"
 import "./globals.css"
 import "./premium.css"
 import "./specialty-premium.css"
+import "./emd-navigation-2026.css"
 
 const inter = Inter({ subsets: ["latin"] })
 

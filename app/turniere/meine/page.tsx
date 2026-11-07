@@ -1,25 +1,12 @@
 "use client";
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import {
-  ArrowLeft,
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Edit3,
-  Eye,
-  Loader2,
-  Plus,
-  RefreshCw,
-  RotateCcw,
-  Search,
-  ShieldAlert,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, Edit3, Eye, Plus, RefreshCw, RotateCcw, Search, ShieldAlert, Trash2, XCircle } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -249,12 +236,10 @@ export default function MeineDachVeranstaltungenPage() {
 
   if (access === "loading") {
     return (
-      <div className="min-h-screen flex flex-col bg-background text-white">
+      <div className="emd-loading-surface min-h-screen flex flex-col bg-background text-white">
         <Header variant="app" title="Meine Veranstaltungen" subtitle="Öffentliche Turniere" backHref="/turniere" />
         <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
-        <main className="relative z-10 flex flex-grow items-center justify-center px-4">
-          <Loader2 className="h-10 w-10 animate-spin text-orange-200" />
-        </main>
+        <main className="relative z-10 flex flex-grow items-center justify-center px-4"><SectionSkeleton kind="tournament" /></main>
         <MobileBottomNav />
       </div>
     );
@@ -268,7 +253,7 @@ export default function MeineDachVeranstaltungenPage() {
         <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
         <main className="relative z-10 flex flex-grow items-center justify-center px-4 pb-28 pt-24">
-          <Card className="w-full max-w-md rounded-[28px] border border-white/10 bg-card shadow-[0_30px_100px_-55px_rgba(0,0,0,.98)] ">
+          <Card className="w-full max-w-md rounded-[20px] border border-white/10 bg-card shadow-sm ">
             <CardContent className="p-6 text-center sm:p-7">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-400/10">
                 <ShieldAlert className="h-7 w-7 text-orange-200" />
@@ -290,7 +275,7 @@ export default function MeineDachVeranstaltungenPage() {
                 {access !== "blocked" ? (
                   <Button
                     onClick={() => router.push("/guest-login")}
-                    className="h-11 rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-600"
+                    className="h-11 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-orange-600"
                   >
                     Zum Gast-Login
                   </Button>
@@ -334,7 +319,7 @@ export default function MeineDachVeranstaltungenPage() {
           </Button>
         </div>
 
-        <section className="relative overflow-hidden rounded-[28px] bg-card  px-6 py-7 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] sm:px-8 sm:py-9">
+        <section className="relative overflow-hidden rounded-[20px] bg-card  px-6 py-7 text-white shadow-sm sm:px-8 sm:py-9">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl" />
           <div className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-amber-300/10 blur-3xl" />
           <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -383,7 +368,7 @@ export default function MeineDachVeranstaltungenPage() {
               >
                 <div className="flex items-center justify-between">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${active ? "bg-orange-600 text-white" : "bg-white/5 text-muted-foreground group-hover:bg-orange-500/10 group-hover:text-orange-200"}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${active ? "bg-primary text-primary-foreground" : "bg-white/5 text-muted-foreground group-hover:bg-orange-500/10 group-hover:text-orange-200"}`}
                   >
                     <Icon className="h-5 w-5" />
                   </div>
@@ -405,7 +390,7 @@ export default function MeineDachVeranstaltungenPage() {
         <section className="rounded-[1.6rem] border border-white/10 bg-card p-3 shadow-lg shadow-none ">
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/25" />
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -449,19 +434,12 @@ export default function MeineDachVeranstaltungenPage() {
         ) : null}
 
         {loading ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {[0, 1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="h-56 animate-pulse rounded-[28px] border border-white/10 bg-card shadow-none"
-              />
-            ))}
-          </div>
+          <SectionSkeleton kind="tournament" />
         ) : filtered.length === 0 ? (
-          <Card className="overflow-hidden rounded-[28px] border-white/10 shadow-lg shadow-none">
+          <Card className="overflow-hidden rounded-[20px] border-white/10 shadow-lg shadow-none">
             <CardContent className="p-10 text-center sm:p-14">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5">
-                <Search className="h-8 w-8 text-white/25" />
+                <Search className="h-8 w-8 text-muted-foreground" />
               </div>
               <h2 className="mt-5 text-xl font-semibold">
                 {events.length === 0
@@ -503,7 +481,7 @@ export default function MeineDachVeranstaltungenPage() {
               return (
                 <Card
                   key={event.id}
-                  className="group overflow-hidden rounded-[28px] border-white/10 bg-card shadow-lg shadow-none transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]"
+                  className="group overflow-hidden rounded-[20px] border-white/10 bg-card shadow-lg shadow-none transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]"
                 >
                   <CardContent className="p-0">
                     <div className="relative">
@@ -586,7 +564,7 @@ export default function MeineDachVeranstaltungenPage() {
 
                       {busy ? (
                         <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/75 ">
-                          <Loader2 className="h-7 w-7 animate-spin text-orange-200" />
+                          <LoadingIndicator className="h-7 w-7" />
                         </div>
                       ) : null}
                     </div>
@@ -681,7 +659,7 @@ export default function MeineDachVeranstaltungenPage() {
           }
         }}
       >
-        <AlertDialogContent className="overflow-hidden rounded-[28px] border-white/10 p-0">
+        <AlertDialogContent className="overflow-hidden rounded-[20px] border-white/10 p-0">
           <div className="bg-card  px-6 py-5 text-white">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/100/15">
               <XCircle className="h-7 w-7 text-red-300" />
@@ -732,7 +710,7 @@ export default function MeineDachVeranstaltungenPage() {
                 className="rounded-xl bg-red-600 hover:bg-red-700"
               >
                 {savingId ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoadingIndicator className="mr-2 h-4 w-4" />
                 ) : (
                   <XCircle className="mr-2 h-4 w-4" />
                 )}
@@ -749,7 +727,7 @@ export default function MeineDachVeranstaltungenPage() {
           if (!open && !savingId) setDeleteEvent(null);
         }}
       >
-        <AlertDialogContent className="rounded-[28px] border-white/10">
+        <AlertDialogContent className="rounded-[20px] border-white/10">
           <AlertDialogHeader>
             <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10">
               <Trash2 className="h-8 w-8 text-red-600" />
@@ -786,7 +764,7 @@ export default function MeineDachVeranstaltungenPage() {
               className="rounded-xl bg-red-600 hover:bg-red-700"
             >
               {savingId ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LoadingIndicator className="mr-2 h-4 w-4" />
               ) : (
                 <Trash2 className="mr-2 h-4 w-4" />
               )}

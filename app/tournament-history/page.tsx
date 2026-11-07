@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -125,7 +127,7 @@ function Chip({
     tone === "orange"
       ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
       : tone === "blue"
-        ? "bg-sky-400/10 text-sky-200 border-sky-400/25"
+        ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
         : tone === "emerald"
           ? "bg-emerald-400/10 text-emerald-900 border-emerald-400/25"
           : tone === "amber"
@@ -301,10 +303,10 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
         >
           {/* App-Header Card (Kontakt-Style) */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px]">
+            <section className="relative overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-sm  sm:rounded-[34px]">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
               <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-400/15 blur-[110px]" />
-              <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
+              <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-orange-500/12 blur-[120px]" />
               <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                   <div className="flex items-center gap-4">
@@ -330,7 +332,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
 
           {/* Filter Card (app look) */}
           <motion.div variants={itemVariants} className="mb-5">
-            <Card className="rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] ">
+            <Card className="rounded-[24px] border border-white/10 bg-white/5 shadow-sm ">
               <CardContent className="p-4 sm:p-5">
                 <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
                   <div className="flex-1 flex flex-col sm:flex-row gap-3">
@@ -356,7 +358,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
 
                     <div className="flex gap-2 items-center">
                       <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center">
-                        <Filter className="h-4 w-4 text-white/58" />
+                        <Filter className="h-4 w-4 text-muted-foreground" />
                       </div>
 
                       <select
@@ -391,9 +393,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
 
           {/* Content */}
           {loading ? (
-            <motion.div variants={itemVariants} className="flex justify-center py-16">
-              <div className="w-10 h-10 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-            </motion.div>
+            <SectionSkeleton kind="tournament" />
           ) : error ? (
             <motion.div variants={itemVariants} className="text-red-400 font-semibold">
               {error}
@@ -409,7 +409,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
               {filtered.map((r) => (
                 <Card
                   key={`${r.tournament_id}_${r.tournament_type}`}
-                  className="cursor-pointer overflow-hidden rounded-[20px] border border-white/10 bg-white/5 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-400/35 hover:shadow-[0_28px_80px_-48px_rgba(249,115,22,.18)]"
+                  className="cursor-pointer overflow-hidden rounded-[20px] border border-white/10 bg-white/5 shadow-sm  transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-400/35 hover:shadow-sm"
                   onClick={() => openTournament(r)}
                 >
                   <CardHeader className="pb-2">

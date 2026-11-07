@@ -1,29 +1,11 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  UserPlus,
-  Euro,
-  Info,
-  Loader2,
-  AlertCircle,
-  Crown,
-  BookOpen,
-  ChevronDown,
-  ChevronUp,
-  X,
-  LogOut,
-  Lock,
-  ShieldAlert,
-  Timer,
-  Trophy,
-  RefreshCw,
-} from "lucide-react"
+import { Calendar, Clock, MapPin, UserPlus, Euro, Info, AlertCircle, Crown, BookOpen, ChevronDown, ChevronUp, X, LogOut, Lock, ShieldAlert, Timer, Trophy, RefreshCw } from "lucide-react"
 import { motion } from "framer-motion"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -149,10 +131,10 @@ function RescheduleBadge({
   const accentClasses =
     accent === "orange"
       ? {
-          chip: "bg-orange-600 text-white border-orange-500/30",
+          chip: "bg-primary text-primary-foreground border-orange-500/30",
           ring: "ring-orange-200",
           label: "text-orange-700",
-          dot: "bg-orange-600",
+          dot: "bg-primary",
         }
       : {
           chip: "bg-background text-white border-border/30",
@@ -487,10 +469,7 @@ export default function UpcomingTournamentsAppPage() {
 
               <div className="p-4">
                 {dkoLoading ? (
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground py-4">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Lade Termine…</span>
-                  </div>
+                  <SectionSkeleton kind="tournament" />
                 ) : dkoError ? (
                   <div className="p-3 rounded-lg border bg-red-50 text-red-700 text-sm">Fehler beim Laden: {dkoError}</div>
                 ) : lionSeries && lionEvents.length === 0 ? (
@@ -598,16 +577,10 @@ export default function UpcomingTournamentsAppPage() {
                                 canClick
                                   ? alreadyRegistered
                                     ? "bg-accent hover:bg-background text-white"
-                                    : "bg-orange-600 hover:bg-orange-700 text-white"
+                                    : "bg-primary hover:bg-orange-700 text-primary-foreground"
                                   : "bg-secondary text-muted-foreground"
                               }`}
-                            >
-                              {regLoading ? (
-                                <span className="flex items-center gap-2">
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  ...
-                                </span>
-                              ) : today ? (
+                             loading={Boolean(regLoading)} loadingLabel="...">{today ? (
                                 alreadyRegistered ? (
                                   <span className="flex items-center gap-2">
                                     <LogOut className="h-3 w-3" />
@@ -624,8 +597,7 @@ export default function UpcomingTournamentsAppPage() {
                                   <Lock className="h-3 w-3" />
                                   Am Turniertag
                                 </span>
-                              )}
-                            </Button>
+                              )}</Button>
                           )}
                         </div>
                       )
@@ -684,10 +656,7 @@ export default function UpcomingTournamentsAppPage() {
                 </div>
 
                 {dkoLoading ? (
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground py-4">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Lade Termine…</span>
-                  </div>
+                  <SectionSkeleton kind="tournament" />
                 ) : dkoError ? (
                   <div className="p-3 rounded-lg border bg-red-50 text-red-700 text-sm">Fehler beim Laden: {dkoError}</div>
                 ) : buffaloSeries && buffaloEvents.length === 0 ? (
@@ -770,13 +739,7 @@ export default function UpcomingTournamentsAppPage() {
                               className={`text-xs px-3 py-1 ${
                                 canClick ? (alreadyRegistered ? "bg-accent hover:bg-background text-white" : "bg-background hover:bg-background text-white") : "bg-secondary text-muted-foreground"
                               }`}
-                            >
-                              {regLoading ? (
-                                <span className="flex items-center gap-2">
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  ...
-                                </span>
-                              ) : today ? (
+                             loading={Boolean(regLoading)} loadingLabel="...">{today ? (
                                 alreadyRegistered ? (
                                   <span className="flex items-center gap-2">
                                     <LogOut className="h-3 w-3" />
@@ -793,8 +756,7 @@ export default function UpcomingTournamentsAppPage() {
                                   <Lock className="h-3 w-3" />
                                   Am Turniertag
                                 </span>
-                              )}
-                            </Button>
+                              )}</Button>
                           )}
                         </div>
                       )
@@ -839,9 +801,7 @@ export default function UpcomingTournamentsAppPage() {
             <h2 className="text-2xl font-extrabold uppercase text-center mb-6 text-foreground">Weitere Turniere</h2>
 
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-red-600" />
-              </div>
+              <SectionSkeleton kind="tournament" />
             ) : error ? (
               <div className="text-center py-8 text-red-600">
                 <AlertCircle className="h-10 w-10 mx-auto mb-3" />

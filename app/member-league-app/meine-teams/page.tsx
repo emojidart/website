@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Button } from "@/components/ui/button"
@@ -10,7 +12,7 @@ import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Crown, ShieldCheck, Users, Target, Trash2, Loader2 } from "lucide-react"
+import { Crown, ShieldCheck, Users, Target, Trash2 } from "lucide-react"
 import { CaptainPlayerManagement } from "@/components/captain-player-management"
 
 import {
@@ -297,18 +299,12 @@ export default function MeineTeamsAppPage() {
 
   if (authLoading || membershipLoading || loading) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-background text-white">
+      <div className="emd-loading-surface relative min-h-screen overflow-hidden bg-background text-white">
         <Header variant="app" title="Meine Teams" subtitle="Ligazentrale" backHref="/member-league-app" />
 
         <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-        <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24">
-          <div className="w-full max-w-sm rounded-[28px] border border-white/[0.08] bg-card p-8 text-center shadow-[0_30px_90px_-45px_rgba(0,0,0,.95)] ">
-            <Loader2 className="mx-auto h-9 w-9 animate-spin text-orange-300" />
-            <p className="mt-5 text-lg font-semibold text-white">Teams werden geladen</p>
-            <p className="mt-1 text-sm font-semibold text-muted-foreground">Einen Moment bitte…</p>
-          </div>
-        </main>
+        <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24"><SectionSkeleton kind="cards" /></main>
 
         <MobileBottomNav />
       </div>
@@ -754,7 +750,7 @@ export default function MeineTeamsAppPage() {
               >
                 {removingMemberId ? (
                   <span className="inline-flex items-center gap-2">
-                    <span className="h-4 w-4 rounded-full border-2 border-white/80 border-t-transparent animate-spin" />
+                    <LoadingIndicator className="h-4 w-4" />
                     Entferne...
                   </span>
                 ) : (

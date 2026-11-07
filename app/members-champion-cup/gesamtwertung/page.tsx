@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import Image from "@/components/image"
@@ -11,22 +13,7 @@ import {
 } from "@/app/members-champion-cup/_komponenten/members-cup-design"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { supabase } from "@/lib/supabase"
-import {
-  Activity,
-  Award,
-  Calendar,
-  ChevronDown,
-  Crown,
-  Loader2,
-  Medal,
-  Search,
-  Sparkles,
-  Star,
-  Target,
-  Trophy,
-  Users,
-  X,
-} from "lucide-react"
+import { Activity, Award, Calendar, ChevronDown, Crown, Medal, Search, Sparkles, Star, Target, Trophy, Users, X } from "lucide-react"
 
 type MembersCupResultRow = {
   id: string
@@ -164,13 +151,13 @@ function PlayerRow({ player, rank, onClick }: { player: PlayerStanding; rank: nu
           <div className="text-xs font-bold text-amber-300">Podium</div>
           <div className="text-sm font-semibold text-amber-100">{player.podiums}</div>
         </div>
-        <div className="rounded-xl border border-sky-400/20 bg-sky-500/10 p-2">
-          <div className="text-xs font-bold text-sky-300">Bestplatz</div>
-          <div className="text-sm font-semibold text-sky-100">{player.best_placement}.</div>
+        <div className="rounded-xl border border-orange-400/20 bg-orange-500/10 p-2">
+          <div className="text-xs font-bold text-orange-300">Bestplatz</div>
+          <div className="text-sm font-semibold text-orange-100">{player.best_placement}.</div>
         </div>
-        <div className="rounded-xl border border-violet-400/20 bg-violet-500/10 p-2">
-          <div className="text-xs font-bold text-violet-300">Schnitt</div>
-          <div className="text-sm font-semibold text-violet-100">{player.average_points.toFixed(1)}</div>
+        <div className="rounded-xl border border-orange-400/20 bg-orange-500/10 p-2">
+          <div className="text-xs font-bold text-orange-300">Schnitt</div>
+          <div className="text-sm font-semibold text-orange-100">{player.average_points.toFixed(1)}</div>
         </div>
       </div>
     </motion.button>
@@ -341,13 +328,13 @@ function DetailView({ player, tournaments, onClose }: { player: PlayerStanding; 
                   <div className="text-xs font-bold text-amber-300">Podium</div>
                   <div className="text-xl font-semibold text-amber-100">{player.podiums}</div>
                 </div>
-                <div className="rounded-2xl border border-sky-400/20 bg-sky-500/10 p-3">
-                  <div className="text-xs font-bold text-sky-300">Bestplatz</div>
-                  <div className="text-xl font-semibold text-sky-100">{player.best_placement}.</div>
+                <div className="rounded-2xl border border-orange-400/20 bg-orange-500/10 p-3">
+                  <div className="text-xs font-bold text-orange-300">Bestplatz</div>
+                  <div className="text-xl font-semibold text-orange-100">{player.best_placement}.</div>
                 </div>
-                <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-3 col-span-2 sm:col-span-1">
-                  <div className="text-xs font-bold text-violet-300">Schnitt</div>
-                  <div className="text-xl font-semibold text-violet-100">{player.average_points.toFixed(1)}</div>
+                <div className="rounded-2xl border border-orange-400/20 bg-orange-500/10 p-3 col-span-2 sm:col-span-1">
+                  <div className="text-xs font-bold text-orange-300">Schnitt</div>
+                  <div className="text-xl font-semibold text-orange-100">{player.average_points.toFixed(1)}</div>
                 </div>
               </div>
             </div>
@@ -521,17 +508,9 @@ export default function MembersChampionCupGesamtwertungPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-white/5 text-white pb-24 overflow-x-hidden">
+      <main className="emd-loading-surface min-h-screen flex flex-col bg-white/5 text-white pb-24 overflow-x-hidden">
         <Header />
-        <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12">
-          <div className="flex flex-col items-center gap-5 rounded-3xl bg-card shadow-2xl px-10 py-10 border border-border">
-            <Loader2 className="h-12 w-12 animate-spin text-orange-600" />
-            <div className="text-center">
-              <p className="text-lg font-bold text-white">Members Champion Cup wird geladen</p>
-              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-            </div>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
         <MobileBottomNav />
       </main>
     )
@@ -552,7 +531,7 @@ export default function MembersChampionCupGesamtwertungPage() {
           initial={false}
           animate="visible"
         >
-          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-[26px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
             <div className="relative bg-card    p-4 text-white sm:p-5 lg:p-6">
               <div className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left sm:gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">

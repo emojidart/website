@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, InlineLoader } from "@/components/loading/loading"
+
 import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -7,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Users, List, PlusCircle, Trash2, Loader2, Search } from "lucide-react"
+import { Users, List, PlusCircle, Trash2, Search } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { SpieldatenbankEntry } from "@/types/tournament"
 
@@ -116,8 +118,8 @@ export function RegistrationTab({
               {fetchingAvailablePlayers ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm">Spieler werden geladen...</span>
+                    
+                    <InlineLoader label="Spieler werden geladen..." />
                   </div>
                 </div>
               ) : filteredAvailablePlayers.length === 0 ? (
@@ -158,20 +160,13 @@ export function RegistrationTab({
             <Button
               onClick={handleRegisterPlayers}
               disabled={selectedPlayersForRegistration.length === 0 || isRegisteringPlayers || loading}
-              className="w-full h-11 rounded-xl bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              {isRegisteringPlayers ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Registriere...
-                </>
-              ) : (
+              className="w-full h-11 rounded-xl bg-primary hover:bg-orange-700 text-primary-foreground"
+             loading={Boolean(isRegisteringPlayers)} loadingLabel="Registriere...">{(
                 <>
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Spieler registrieren ({selectedPlayersForRegistration.length})
                 </>
-              )}
-            </Button>
+              )}</Button>
           </CardContent>
         </Card>
 
@@ -189,12 +184,7 @@ export function RegistrationTab({
           <CardContent className="space-y-4">
             <div className="rounded-2xl border border-border bg-muted/60 p-3 h-[420px] overflow-y-auto">
               {loading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm">Registrierungen werden geladen...</span>
-                  </div>
-                </div>
+                <SectionSkeleton kind="tournament" />
               ) : registeredPlayers.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-center text-sm text-muted-foreground px-4">
                   Keine Spieler registriert.

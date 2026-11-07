@@ -6,17 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  PlusCircle,
-  Trash2,
-  Loader2,
-  Search,
-  CheckCircle2,
-  Lock,
-  Globe2,
-  Home,
-  MapPin,
-} from "lucide-react"
+import { PlusCircle, Trash2, Search, CheckCircle2, Lock, Globe2, Home, MapPin } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { SpieldatenbankEntry } from "@/types/tournament"
 import { getKratzerPlayerEligibility } from "@/actions/tournament"
@@ -354,7 +344,7 @@ export function RegistrationTab({
         }}
         searchTerm={filterText}
         onSearchTermChange={setFilterText}
-        loading={fetchingAvailablePlayers || loading}
+        loading={Boolean(fetchingAvailablePlayers || loading)}
         eligibilityLoading={eligibilityLoading}
         canRegister={Boolean(tournamentAccessType)}
         disabledNotice={
@@ -384,7 +374,7 @@ export function RegistrationTab({
 
       {showRegistrationSuccessModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/45 p-4 ">
-          <div className="w-full max-w-sm overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_30px_100px_-35px_rgba(15,23,42,.65)]">
+          <div className="w-full max-w-sm overflow-hidden rounded-[24px] border border-border bg-card shadow-sm">
             <div className="p-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50">
                 <CheckCircle2 className="h-6 w-6 text-emerald-600" />

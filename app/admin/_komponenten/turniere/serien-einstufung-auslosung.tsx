@@ -1,24 +1,13 @@
 "use client"
 
+
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  BarChart3,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  RefreshCw,
-  Save,
-  Search,
-  Shuffle,
-  Trophy,
-  UserRoundCog,
-  Users,
-} from "lucide-react"
+import { BarChart3, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Save, Search, Shuffle, Trophy, UserRoundCog, Users } from "lucide-react"
 
 type LevelGroup = 1 | 2 | 3
 
@@ -281,7 +270,7 @@ export function SeriesLevelDrawManagement({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Shuffle className="h-5 w-5 text-fuchsia-300" />
+            <Shuffle className="h-5 w-5 text-orange-300" />
             <h2 className="text-lg font-black text-slate-950">Einstufung & Auslosung</h2>
           </div>
           <p className="mt-1 text-sm text-slate-500">
@@ -295,9 +284,7 @@ export function SeriesLevelDrawManagement({
           onClick={() => void load()}
           disabled={loading}
           className="emd-admin-button-secondary"
-        >
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-          Aktualisieren
+         loading={Boolean(loading)}><RefreshCw className="mr-2 h-4 w-4" />Aktualisieren
         </Button>
       </div>
 
@@ -320,7 +307,7 @@ export function SeriesLevelDrawManagement({
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-sm font-black text-white/90">Spieler-Einstufung</div>
-              <div className="mt-1 text-sm text-white/45">
+              <div className="mt-1 text-sm text-muted-foreground">
                 Jede Serie hat ihre eigenen Einstufungen.
               </div>
             </div>
@@ -338,26 +325,26 @@ export function SeriesLevelDrawManagement({
           <div className="mt-4 grid grid-cols-3 gap-2">
             {([1, 2, 3] as LevelGroup[]).map((group) => (
               <div key={group} className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-center">
-                <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+                <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">
                   {LEVELS[group].label}
                 </div>
                 <div className="mt-1 text-xl font-black text-white">
                   {levels.filter((row) => row.level_group === group).length}
                 </div>
-                <div className="mt-0.5 text-[11px] font-semibold text-white/40">{LEVELS[group].short}</div>
+                <div className="mt-0.5 text-[11px] font-semibold text-muted-foreground">{LEVELS[group].short}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="rounded-3xl border border-fuchsia-300/10 bg-fuchsia-500/[0.045] p-4 sm:p-5">
+        <div className="rounded-3xl border border-orange-300/10 bg-orange-500/[0.045] p-4 sm:p-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-fuchsia-300/15 bg-fuchsia-500/10 text-fuchsia-100">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/10 text-orange-100">
               <Shuffle className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <div className="text-sm font-black text-white/90">Auslosung</div>
-              <div className="mt-1 text-sm text-white/45">
+              <div className="mt-1 text-sm text-muted-foreground">
                 {nextEvent ? `${nextEvent.title || "Spieltag"} · ${formatDateTime(effectiveDate(nextEvent))}` : "Noch kein kommender Spieltag"}
               </div>
             </div>
@@ -365,18 +352,18 @@ export function SeriesLevelDrawManagement({
 
           <div className="mt-4 grid grid-cols-2 gap-2">
             <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-3">
-              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">Anmeldungen</div>
+              <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Anmeldungen</div>
               <div className="mt-1 text-2xl font-black text-white">{registrationCount}</div>
             </div>
             <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-3">
-              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">Teilnehmerzahl</div>
+              <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Teilnehmerzahl</div>
               <div className={`mt-1 text-sm font-black ${isEven ? "text-emerald-200" : "text-orange-200"}`}>
                 {isEven ? "Gerade" : "Ungerade"}
               </div>
             </div>
           </div>
 
-          <div className="mt-3 rounded-2xl border border-white/[0.08] bg-black/20 p-3 text-sm text-white/55">
+          <div className="mt-3 rounded-2xl border border-white/[0.08] bg-black/20 p-3 text-sm text-muted-foreground">
             {teamMode === "drawn_doubles" ? "Gelostes Doppel" : teamMode === "fixed_doubles" ? "Fixes Doppel" : "Einzel"}
             {" · "}
             {tournamentFormat === "round_robin"
@@ -405,7 +392,7 @@ export function SeriesLevelDrawManagement({
             type="button"
             onClick={openDraw}
             disabled={!nextEvent || registrationCount < 2 || !isEven}
-            className="mt-4 w-full rounded-2xl bg-fuchsia-600 font-black text-white hover:bg-fuchsia-500 disabled:opacity-40"
+            className="mt-4 w-full rounded-2xl bg-primary font-black text-primary-foreground hover:bg-orange-500 disabled:opacity-40"
           >
             <Shuffle className="mr-2 h-4 w-4" />
             Auslosung öffnen
@@ -416,7 +403,7 @@ export function SeriesLevelDrawManagement({
       {editorOpen ? (
         <div className="mt-5 rounded-3xl border border-white/[0.08] bg-black/20 p-4 sm:p-5">
           <div className="relative max-w-xl">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -441,7 +428,7 @@ export function SeriesLevelDrawManagement({
                 >
                   <div className="min-w-0 sm:col-span-2 xl:col-span-4">
                     <div className="break-words text-sm font-black text-white/90">{player.name}</div>
-                    <div className="mt-1 text-xs text-white/35">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {current ? `${LEVELS[current.level_group].label} · gespeichert` : "Noch nicht eingestuft"}
                     </div>
                   </div>
@@ -459,7 +446,7 @@ export function SeriesLevelDrawManagement({
                           },
                         }))
                       }
-                      className="h-10 w-full min-w-0 rounded-xl border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-orange-400"
+                      className="h-10 w-full min-w-0 rounded-xl border border-white/15 bg-card px-3 py-2 text-sm text-white outline-none focus:border-orange-400"
                     >
                       <option value="1">Tabelle 1 – Stark</option>
                       <option value="2">Tabelle 2 – Mitte</option>
@@ -509,13 +496,9 @@ export function SeriesLevelDrawManagement({
                     onClick={() => void savePlayer(player)}
                     disabled={savingPlayerId === String(player.id)}
                     className="emd-admin-button-primary w-full min-w-0 self-end whitespace-nowrap sm:col-span-2 xl:col-span-1"
-                  >
-                    {savingPlayerId === String(player.id) ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
+                   loading={Boolean(savingPlayerId === String(player.id))}>{(
                       <Save className="mr-2 h-4 w-4" />
-                    )}
-                    Speichern
+                    )}Speichern
                   </Button>
                 </div>
               )
@@ -538,9 +521,9 @@ function StatCard({
 }) {
   return (
     <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-3">
-      <div className="flex items-center gap-2 text-white/35">
+      <div className="flex items-center gap-2 text-muted-foreground">
         {icon}
-        <span className="text-[10px] font-black uppercase tracking-[0.12em]">{label}</span>
+        <span className="text-xs font-black uppercase tracking-[0.12em]">{label}</span>
       </div>
       <div className="mt-2 text-2xl font-black text-white">{value}</div>
     </div>
