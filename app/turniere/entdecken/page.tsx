@@ -1,7 +1,5 @@
 "use client"
 
-import { SectionSkeleton } from "@/components/loading/loading"
-
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -520,7 +518,23 @@ export default function VeranstaltungenPage() {
           ) : null}
 
           {loading ? (
-            <SectionSkeleton kind="tournament" />
+            <div className="grid gap-4 xl:grid-cols-2" role="status" aria-busy="true" aria-label="Turniere werden geladen">
+              {Array.from({ length: 4 }, (_, index) => (
+                <div key={index} aria-hidden="true" className="overflow-hidden rounded-[24px] border border-white/10 bg-card p-5 sm:p-6">
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <div className="h-6 w-28 animate-pulse rounded-full bg-white/10" />
+                    <div className="h-9 w-9 animate-pulse rounded-xl bg-white/10" />
+                  </div>
+                  <div className="h-7 w-4/5 animate-pulse rounded bg-white/10" />
+                  <div className="mt-3 h-4 w-2/3 animate-pulse rounded bg-white/10" />
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <div className="h-16 animate-pulse rounded-xl border border-white/10 bg-white/[0.04]" />
+                    <div className="h-16 animate-pulse rounded-xl border border-white/10 bg-white/[0.04]" />
+                  </div>
+                  <div className="mt-4 h-12 animate-pulse rounded-xl bg-white/10" />
+                </div>
+              ))}
+            </div>
           ) : error ? (
             <Card className="rounded-[20px] border-red-300/[0.16] bg-red-500/10">
               <CardContent className="py-14 text-center text-red-200">{error}</CardContent>
