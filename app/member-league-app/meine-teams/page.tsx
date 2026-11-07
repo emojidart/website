@@ -304,7 +304,37 @@ export default function MeineTeamsAppPage() {
 
         <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-        <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24"><SectionSkeleton kind="cards" /></main>
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Meine Teams werden geladen">
+          <section className="rounded-[30px] border border-white/[0.08] bg-card p-5 sm:p-7">
+            <div className="flex items-start gap-4">
+              <div className="h-14 w-14 shrink-0 animate-pulse rounded-[20px] bg-white/10" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                <div className="h-8 w-48 animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+              </div>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-sm">
+              <div className="h-16 animate-pulse rounded-2xl bg-white/[0.07]" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/[0.07]" />
+            </div>
+          </section>
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="rounded-[24px] border border-white/[0.08] bg-card p-5">
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="h-12 w-12 animate-pulse rounded-2xl bg-white/10" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-5 w-3/4 animate-pulse rounded bg-white/10" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-white/10" />
+                  </div>
+                </div>
+                <div className="h-4 w-full animate-pulse rounded bg-white/10" />
+                <div className="mt-3 h-4 w-2/3 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </section>
+        </main>
 
         <MobileBottomNav />
       </div>
