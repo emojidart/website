@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import type { InternalSignupEvent } from "@/app/_startseite/typen"
+import { toISODate } from "@/app/_startseite/utils"
 
 type UseInterneStartseitenAnmeldungenOptions = {
   membershipLoading: boolean
@@ -27,7 +28,7 @@ export function useInterneStartseitenAnmeldungen({
 
       try {
         setInternalSignupLoading(true)
-        const today = new Date().toISOString().slice(0, 10)
+        const today = toISODate(new Date())
 
         const { data, error } = await supabase
           .from("internal_tournament_events")
