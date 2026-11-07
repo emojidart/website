@@ -27,6 +27,7 @@ interface ActiveSeries {
   halving_date: string | null
   division_active: boolean
   division_date: string | null
+  qualification_requirement: number | null
 }
 
 interface Player {
@@ -43,6 +44,7 @@ export default function AdminPage() {
     halving_date: null,
     division_active: false,
     division_date: null,
+    qualification_requirement: 0,
   })
   const [players, setPlayers] = useState<Player[]>([])
   const [activeSeries, setActiveSeries] = useState<ActiveSeries | null>(null)
@@ -80,6 +82,7 @@ export default function AdminPage() {
           halving_date: null,
           division_active: false,
           division_date: null,
+    qualification_requirement: 0,
         })
         return
       }
@@ -90,6 +93,7 @@ export default function AdminPage() {
         halving_date: data.halving_date,
         division_active: data.division_active ?? false,
         division_date: data.division_date,
+        qualification_requirement: data.qualification_requirement ?? 0,
       })
     } catch (error) {
       console.error("Error fetching settings:", error)
