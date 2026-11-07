@@ -1,6 +1,6 @@
 "use client"
 
-import { SectionSkeleton } from "@/components/loading/loading"
+import { LoadingBlock } from "@/components/loading/loading"
 
 import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
@@ -567,22 +567,69 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   const groupedCompletedMatches = groupMatchesByTeam(completedMatches)
   const groupedUpcomingMatches = groupMatchesByTeam(upcomingMatches)
 
-  // ✅ LOADING VIEW
+  /  // Gleiche Seitenstruktur vor und nach dem Datenladen, damit nichts springt.
   if (loading) {
-  return (
-    <main className="emd-loading-surface emd-app-theme-shell relative min-h-screen flex flex-col overflow-x-hidden bg-background pb-24 text-white">
-      <Header variant="app" title="Liga & Statistiken" subtitle="Tabelle · Ergebnisse · Termine · Teams · Stats" backHref="/" />
-
-      <SectionSkeleton kind="table" />
-
-      
-
-      <MobileBottomNav />
-    </main>
-  )
-}
-
- return (
+    return (
+      <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-background pb-20 text-white">
+        <Header variant="app" title="Liga & Statistiken" subtitle="Tabelle · Ergebnisse · Termine · Teams · Stats" backHref="/" />
+        <main className="relative z-10 pt-14 sm:pt-16" aria-busy="true" aria-label="Liga und Statistiken werden geladen">
+          <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-4 sm:px-5 sm:pt-6 lg:px-7 lg:pb-14 xl:px-8">
+            <section className="mb-4 overflow-hidden rounded-[28px] border border-white/[0.09] bg-card p-4 sm:mb-5 sm:rounded-[34px] sm:p-6 lg:p-8 xl:p-9">
+              <div className="mb-5 flex items-center gap-2">
+                <LoadingBlock className="h-7 w-44 rounded-full" />
+              </div>
+              <div className="flex items-center gap-4">
+                <LoadingBlock className="h-14 w-14 shrink-0 rounded-[20px]" />
+                <div className="min-w-0 flex-1 space-y-3">
+                  <LoadingBlock className="h-3 w-24" />
+                  <LoadingBlock className="h-9 w-full max-w-72" />
+                </div>
+              </div>
+              <LoadingBlock className="mt-5 h-4 w-full max-w-xl" />
+              <LoadingBlock className="mt-2 h-4 w-4/5 max-w-md" />
+              <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {Array.from({ length: 4 }, (_, index) => (
+                  <div key={index} className="rounded-[20px] border border-white/[0.08] bg-white/[0.045] p-3.5 sm:p-4">
+                    <LoadingBlock className="h-3 w-20" />
+                    <LoadingBlock className="mt-4 h-8 w-16" />
+                  </div>
+                ))}
+              </div>
+            </section>
+            <section className="mb-5 space-y-4 rounded-[24px] border border-white/[0.08] bg-card p-4 sm:mb-6 sm:p-5">
+              <LoadingBlock className="h-4 w-36" />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <LoadingBlock className="h-11 w-full rounded-2xl" />
+                <LoadingBlock className="h-11 w-full rounded-2xl" />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {Array.from({ length: 3 }, (_, index) => <LoadingBlock key={index} className="h-11 w-full rounded-2xl" />)}
+              </div>
+            </section>
+            <section className="rounded-[24px] border border-white/[0.08] bg-card p-3 sm:p-4">
+              <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {Array.from({ length: 4 }, (_, index) => <LoadingBlock key={index} className="h-11 w-full rounded-xl" />)}
+              </div>
+              <div className="space-y-3">
+                <LoadingBlock className="h-6 w-48" />
+                {Array.from({ length: 5 }, (_, index) => (
+                  <div key={index} className="flex items-center gap-3 rounded-xl border border-white/[0.06] p-3">
+                    <LoadingBlock className="h-9 w-9 shrink-0 rounded-xl" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <LoadingBlock className="h-3.5 w-3/4" />
+                      <LoadingBlock className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        </main>
+        <MobileBottomNav />
+      </div>
+    )
+  }
+eturn (
   <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-background pb-20 text-white">
     <Header variant="app" title="Liga & Statistiken" subtitle="Tabelle · Ergebnisse · Termine · Teams · Stats" backHref="/" />
 
