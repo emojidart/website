@@ -19,6 +19,7 @@ import {
   Gift,
   Tv2,
 } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
@@ -260,14 +261,13 @@ export default function MemberLeaguePage() {
             )
 
             return tile.ready && tile.href ? (
-              <button
+              <Link
                 key={tile.title}
-                type="button"
-                onClick={() => router.push(tile.href!)}
-                className="text-left"
+                href={tile.href}
+                className="block text-left focus-visible:rounded-[28px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
               >
                 {card}
-              </button>
+              </Link>
             ) : (
               <div key={tile.title}>{card}</div>
             )
