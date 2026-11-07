@@ -339,6 +339,7 @@ export default function LiveKratzerSection() {
             suddenDeathEnabled: activeTournament.sudden_death_enabled,
             suddenDeathTime: activeTournament.sudden_death_time,
             speechEnabled: activeTournament.speech_enabled,
+            diceModeEnabled: Boolean(activeTournament.dice_mode_enabled),
           },
         })
       } else {
@@ -355,6 +356,8 @@ export default function LiveKratzerSection() {
             suddenDeathEnabled: false,
             suddenDeathTime: 0,
             speechEnabled: false,
+            diceModeEnabled: false,
+        diceModeEnabled: false,
           },
         })
       }
