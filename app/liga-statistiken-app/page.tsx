@@ -229,6 +229,9 @@ if (!selectedSeasonId && resolvedSeasonId) {
 
               return {
                 ...match,
+                // Supabase can infer joined relations as arrays; normalize to the team object.
+                home_team: Array.isArray(match.home_team) ? match.home_team[0] ?? null : match.home_team,
+                away_team: Array.isArray(match.away_team) ? match.away_team[0] ?? null : match.away_team,
                 home_opponent_team: homeOpponentTeam,
                 away_opponent_team: awayOpponentTeam,
               }
@@ -467,7 +470,7 @@ if (playersError) {
       .map((player) => {
         const detailedStats = legStatistics
           .filter((stat) => stat.player_id === player.player_id)
-          .reduce((acc, stat) => {
+          .reduce<Record<"throws_15" | "throws_16" | "throws_17" | "throws_18" | "throws_19", number>>((acc, stat) => {
             return {
               throws_15: (acc.throws_15 || 0) + (stat.throws_15 || 0),
               throws_16: (acc.throws_16 || 0) + (stat.throws_16 || 0),
@@ -475,7 +478,7 @@ if (playersError) {
               throws_18: (acc.throws_18 || 0) + (stat.throws_18 || 0),
               throws_19: (acc.throws_19 || 0) + (stat.throws_19 || 0),
             }
-          }, {})
+          }, { throws_15: 0, throws_16: 0, throws_17: 0, throws_18: 0, throws_19: 0 }))
 
         const totalPoints = calculatePlayerPoints(player, detailedStats)
 
@@ -501,7 +504,7 @@ if (playersError) {
       })
   }, [legStatistics])
 
-  const getMatchResultColor = (match, teamId) => {
+  const getMatchResultColor = (match: LeagueMatch, teamId: string) => {
     const isHomeTeam = match.home_team?.id === teamId
     const homeScore = match.home_score || 0
     const awayScore = match.away_score || 0
@@ -548,8 +551,8 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
     setCurrentPage(1)
   }
 
-  const groupMatchesByTeam = (matchList) => {
-    const grouped = {}
+  const groupMatchesByTeam = (matchList: LeagueMatch[]) => {
+    const grouped: Record<string, LeagueMatch[]> = {}
 
     matchList.forEach((match) => {
       const homeTeamName = match.home_team?.name || match.home_opponent_team?.name || "Unbekanntes Team"
