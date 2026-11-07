@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 
 const EXCLUDED_PREFIXES = [
-  "/admin", "/terminal", "/emd-tv", "/beamer", "/chat-app",
+  "/admin", "/terminal", "/emd-tv", "/emd-tv-screen", "/beamer", "/chat-app",
+  "/member-league-app/emd-tv", "/member-league-app/chat",
   "/messenger", "/8erdko/beamer", "/16erdko/beamer",
   "/32erdko/beamer", "/64erdko/beamer", "/128erdko/beamer",
 ]
