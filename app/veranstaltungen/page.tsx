@@ -1,7 +1,5 @@
 "use client"
 
-import { SectionSkeleton } from "@/components/loading/loading"
-
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -435,7 +433,26 @@ export default function VeranstaltungenPage() {
           {/* List */}
           <div className="mt-4">
             {loading ? (
-              <SectionSkeleton kind="cards" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" role="status" aria-busy="true" aria-label="Veranstaltungen werden geladen">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <div key={index} aria-hidden="true" className="overflow-hidden rounded-2xl border border-white/10 bg-card">
+                    <div className="h-40 animate-pulse bg-white/[0.075] sm:h-44" />
+                    <div className="space-y-4 p-5">
+                      <div className="h-6 w-4/5 animate-pulse rounded bg-white/10" />
+                      <div className="flex gap-2">
+                        <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
+                        <div className="h-6 w-24 animate-pulse rounded-full bg-white/10" />
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-4 w-3/4 animate-pulse rounded bg-white/10" />
+                        <div className="h-4 w-2/3 animate-pulse rounded bg-white/10" />
+                        <div className="h-4 w-1/2 animate-pulse rounded bg-white/10" />
+                      </div>
+                      <div className="h-11 w-full animate-pulse rounded-xl bg-white/10" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : error ? (
               <div role="alert" className="rounded-2xl border border-red-400/20 bg-red-400/10 px-5 py-12 text-center text-red-300">{error}</div>
             ) : filtered.length === 0 ? (
