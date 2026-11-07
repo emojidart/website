@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionSkeleton } from "@/components/loading/loading"
+import { TournamentManagerSkeleton } from "@/components/tournaments/tournament-manager-skeleton"
 
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -373,7 +374,7 @@ export default function NeueVeranstaltungPage() {
     return (
       <div className="emd-loading-surface min-h-screen flex flex-col bg-background text-white">
         <Header variant="app" title="Veranstaltung einreichen" subtitle="Öffentliche Turniere" backHref="/turniere" />
-        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="tournament" /></main>
+        <TournamentManagerSkeleton mode="form" />
         <MobileBottomNav />
       </div>
     );
@@ -422,7 +423,7 @@ export default function NeueVeranstaltungPage() {
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] pt-14 sm:pt-16">
         <section className="relative overflow-hidden bg-background">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.30),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_36%)]" />
-          <div className="relative w-full max-w-none px-3 pb-20 pt-8 sm:px-4 sm:pb-24 sm:pt-12 lg:px-5 xl:px-6 2xl:px-8">
+          <div className="relative mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-20 pt-8 sm:px-5 sm:pb-24 sm:pt-12 lg:px-7 xl:px-8">
             <button
               type="button"
               onClick={() => router.push("/turniere")}
@@ -447,7 +448,7 @@ export default function NeueVeranstaltungPage() {
           </div>
         </section>
 
-        <div className="relative z-10 -mt-10 w-full max-w-none px-2 pb-10 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
+        <div className="relative z-10 -mt-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 sm:px-5 lg:px-7 xl:px-8">
           <div className="mb-4 grid gap-2 sm:grid-cols-3 xl:gap-3">
             {["Daten eintragen", "Prüfung durch den Verein", "Veröffentlichung im Kalender"].map((label, index) => (
               <div key={label} className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-card px-4 py-3.5 shadow-[0_12px_34px_-30px_rgba(15,23,42,0.35)]">
