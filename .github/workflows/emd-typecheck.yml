@@ -1,12 +1,13 @@
 name: EMD TypeScript Safety Check
 
 on:
-  push:
-    branches:
-      - codex/emd-loading-premium
   pull_request:
     branches:
       - main
+
+concurrency:
+  group: emd-premium-typecheck-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   typecheck:
