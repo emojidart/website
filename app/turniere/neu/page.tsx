@@ -4,7 +4,7 @@ import { SectionSkeleton } from "@/components/loading/loading"
 import { TournamentManagerSkeleton } from "@/components/tournaments/tournament-manager-skeleton"
 
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { ArrowLeft, CalendarDays, ChevronRight, Info, CheckCircle2, FileImage, MapPin, Send, ShieldAlert, Trophy, UserRound } from "lucide-react";
@@ -162,6 +162,7 @@ export default function NeueVeranstaltungPage() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [flyer, setFlyer] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const submittingRef = useRef(false);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
 
@@ -240,6 +241,9 @@ export default function NeueVeranstaltungPage() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    // Schützt auch vor Doppelklicks, bevor React den disabled-Status rendert.
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setSaving(true);
     setMessage("");
     setSuccess(false);
@@ -255,6 +259,22 @@ export default function NeueVeranstaltungPage() {
 
       if (form.endDate && form.endDate < form.startDate) {
         throw new Error("Das Enddatum darf nicht vor dem Startdatum liegen.");
+      }
+
+      const entryFee = form.entryFee.trim()
+        ? Number(form.entryFee.replace(",", "."))
+        : null;
+      const maxParticipants = form.maxParticipants.trim()
+        ? Number(form.maxParticipants)
+        : null;
+      if (entryFee !== null && (!Number.isFinite(entryFee) || entryFee < 0)) {
+        throw new Error("Bitte gib ein gültiges Startgeld ein (mindestens 0 €).");
+      }
+      if (maxParticipants !== null && (!Number.isInteger(maxParticipants) || maxParticipants < 1)) {
+        throw new Error("Die maximale Teilnehmerzahl muss eine positive ganze Zahl sein.");
+      }
+      if (form.registrationDeadline && form.registrationDeadline.slice(0, 10) > form.startDate) {
+        throw new Error("Der Anmeldeschluss darf nicht nach dem Veranstaltungsbeginn liegen.");
       }
 
       if (!form.postalCode.trim()) {
@@ -327,13 +347,9 @@ export default function NeueVeranstaltungPage() {
         mode: form.discipline,
         discipline: form.discipline,
         format: form.format,
-        entry_fee: form.entryFee
-          ? Number(form.entryFee.replace(",", "."))
-          : null,
+        entry_fee: entryFee,
         startgeld_details: form.startgeldDetails.trim() || null,
-        max_participants: form.maxParticipants
-          ? Number(form.maxParticipants)
-          : null,
+        max_participants: maxParticipants,
         organizer_name: form.organizerName.trim(),
         organizer_email: form.organizerEmail.trim() || null,
         organizer_phone: form.organizerPhone.trim() || null,
@@ -366,6 +382,7 @@ export default function NeueVeranstaltungPage() {
         error?.message || "Die Veranstaltung konnte nicht gespeichert werden.",
       );
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   }
