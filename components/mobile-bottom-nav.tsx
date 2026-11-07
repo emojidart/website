@@ -306,7 +306,28 @@ export function MobileBottomNav() {
   const SPACER_H = "calc(4.5rem + max(10px, env(safe-area-inset-bottom)))"
 
   if (loading || (isLoggedIn && !profileChecked)) {
-    return <div className="md:hidden" style={{ height: SPACER_H }} />
+    return (
+      <>
+        <div className="md:hidden" style={{ height: SPACER_H }} />
+        <nav
+          aria-label="Hauptnavigation wird vorbereitet"
+          aria-busy="true"
+          className="emd-bottom-nav pointer-events-none fixed inset-x-0 bottom-0 z-[90] md:hidden"
+          style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
+        >
+          <div className="mx-3 overflow-hidden rounded-2xl border border-white/10 bg-[#101722] shadow-lg">
+            <div className="grid h-[68px] grid-cols-5 items-center gap-1 px-2">
+              {Array.from({ length: 5 }, (_, index) => (
+                <div key={index} className="flex flex-col items-center justify-center gap-2" aria-hidden="true">
+                  <span className="h-7 w-7 animate-pulse rounded-lg bg-white/10" />
+                  <span className="h-2 w-9 animate-pulse rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </nav>
+      </>
+    )
   }
 
   return (
