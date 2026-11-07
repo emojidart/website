@@ -178,7 +178,8 @@ const MODE_LABELS: Record<StartMode, string> = {
   dko: "Doppel-KO",
   round_robin: "Round Robin",
   kratzer: "Kratzer",
-  survival: "Survival Roulette",
+  survival: "Survival Doppel Roulette",
+  survival_single: "Survival Einzel Roulette",
 }
 
 const formatDate = (value: string | null | undefined) => {
