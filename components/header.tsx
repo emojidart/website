@@ -100,6 +100,8 @@ export function Header({
   const [profileChecked, setProfileChecked] = React.useState(false)
   const [areaSwitcherOpen, setAreaSwitcherOpen] = React.useState(false)
   const areaSwitcherRef = React.useRef<HTMLDivElement | null>(null)
+  const drawerRef = React.useRef<HTMLElement | null>(null)
+  const drawerTriggerRef = React.useRef<HTMLButtonElement | null>(null)
   const [portalReady, setPortalReady] = React.useState(false)
 
   const closeDrawer = () => setDrawerOpen(false)
@@ -164,15 +166,42 @@ export function Header({
   }, [user?.id])
 
   React.useEffect(() => {
-    if (!drawerOpen) return
+    if (!drawerOpen || !portalReady) return
+    const drawer = drawerRef.current
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeDrawer()
+    const focusable = () => Array.from(drawer?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    ) ?? []).filter(element => element.getClientRects().length > 0)
+    focusable()[0]?.focus()
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        closeDrawer()
+      } else if (event.key === "Tab") {
+        const items = focusable()
+        if (!items.length) return
+        const first = items[0]
+        const last = items[items.length - 1]
+        if (event.shiftKey && (document.activeElement === first || !drawer?.contains(document.activeElement))) {
+          event.preventDefault()
+          last.focus()
+        } else if (!event.shiftKey && (document.activeElement === last || !drawer?.contains(document.activeElement))) {
+          event.preventDefault()
+          first.focus()
+        }
+      }
     }
 
     window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [drawerOpen])
+    return () => {
+      window.removeEventListener("keydown", onKeyDown)
+      document.body.style.overflow = originalOverflow
+      drawerTriggerRef.current?.focus()
+    }
+  }, [drawerOpen, portalReady])
 
   React.useEffect(() => {
     if (!drawerOpen) return
@@ -442,7 +471,7 @@ export function Header({
             onClick={closeDrawer}
           />
 
-          <aside aria-label="Hauptmenü" className="emd-nav-drawer absolute bottom-0 right-0 top-0 flex flex-col w-[min(92vw,410px)] overflow-hidden border-l border-white/10 bg-[#172235] text-white" role="dialog" aria-modal="true" aria-label="EMD Navigation">
+          <aside ref={drawerRef} className="emd-nav-drawer absolute bottom-0 right-0 top-0 flex flex-col w-[min(92vw,410px)] overflow-hidden border-l border-white/10 bg-[#172235] text-white" role="dialog" aria-modal="true" aria-label="EMD Navigation">
             <div className="emd-nav-head relative overflow-hidden border-b border-white/10 bg-[#233248] p-5 pt-[max(env(safe-area-inset-top),20px)]">
 
               <div className="relative flex items-center justify-between gap-3">
@@ -614,6 +643,7 @@ export function Header({
               <div className="ml-auto" />
 
               <button
+                ref={drawerTriggerRef}
                 onClick={toggleDrawer}
                 className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/65 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59b50] hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
                 aria-label="Menü öffnen"
@@ -787,7 +817,8 @@ export function Header({
             </div>
 
             <button
-              onClick={toggleDrawer}
+              ref={drawerTriggerRef}
+                onClick={toggleDrawer}
               className="emd-nav-trigger ml-auto xl:ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/65 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59b50] hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
               aria-label="Menü öffnen"
                 aria-expanded={drawerOpen}
