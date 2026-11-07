@@ -1152,7 +1152,41 @@ function MemberAvailabilityInner() {
   }, [displayPlayers, availabilityByPlayer])
 
   if (authLoading || loading) {
-    return <div className="min-h-[1px]" aria-hidden="true" />
+    return (
+      <div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-white">
+        <Header variant="app" title="Zusagen & Aufstellung" subtitle="Ligazentrale" backHref="/member-league-app" />
+        <main className="relative z-10 w-full pt-14 sm:pt-16" aria-busy="true" aria-label="Zusagen und Aufstellung werden geladen">
+          <div className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-4 overflow-x-hidden px-3 pb-24 pt-4 sm:px-5 sm:pt-5 lg:px-7 xl:px-8">
+            <section className="rounded-[20px] border border-white/[0.08] bg-card p-4 sm:p-6 lg:p-8">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 shrink-0 animate-pulse rounded-2xl bg-white/10" />
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div className="h-3.5 w-48 max-w-full animate-pulse rounded bg-white/10" />
+                  <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
+                </div>
+              </div>
+            </section>
+            <section className="rounded-[20px] border border-white/[0.08] bg-card p-4">
+              <div className="h-4 w-48 animate-pulse rounded bg-white/10" />
+              <div className="mt-3 h-3.5 w-4/5 animate-pulse rounded bg-white/10" />
+            </section>
+            <section className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card">
+              <div className="border-b border-white/[0.07] p-5">
+                <div className="h-6 w-28 animate-pulse rounded bg-white/10" />
+              </div>
+              <div className="space-y-4 p-4 sm:p-6">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="h-10 animate-pulse rounded-xl bg-white/10" />
+                  <div className="h-10 animate-pulse rounded-xl bg-white/10" />
+                </div>
+                <SectionSkeleton kind="lineup" label="Ligaspiele und Aufstellungen werden geladen…" />
+              </div>
+            </section>
+          </div>
+        </main>
+        <MobileBottomNav />
+      </div>
+    )
   }
 
   return (
