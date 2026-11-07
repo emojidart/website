@@ -3,6 +3,7 @@
 import { SectionSkeleton } from "@/components/loading/loading"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { createBrowserClient } from "@supabase/ssr"
 import { ArrowRight, ArrowUpRight, AlertTriangle, CalendarDays, ChevronRight, MapPin, MonitorPlay, PartyPopper, Radio, ShoppingBag, Sparkles, Swords, Trophy, UsersRound, Zap } from "lucide-react"
@@ -43,6 +44,7 @@ function TeamMark({ logo, name }: { logo?: string | null; name: string }) {
 function Empty({ title, description }: { title: string; description: string }) { return <div className="eh-empty"><CalendarDays size={22} /><strong>{title}</strong><span>{description}</span></div> }
 
 export default function Home() {
+  const router = useRouter()
   const { loading: membershipLoading, hasModule } = useMembershipAccess()
   const canSeeEDartLeague = hasModule("edart_league")
   const canSeeSteeldartLeague = hasModule("steeldart_league")
@@ -63,13 +65,25 @@ export default function Home() {
   const keys = new Set(emdEvents.map(e => `${e.sourceKind}:${e.id}`))
   const events = [...emdEvents, ...combinedEvents.filter(e => e.type === "tournament" && !keys.has(`${e.sourceKind}:${e.id}`)).slice(0, 2)].slice(0, 4)
   const rememberOrigin = () => sessionStorage.setItem("emd:public-area-origin", location.pathname + location.search)
+  const navigateEvent = (href: string) => {
+    window.dispatchEvent(new CustomEvent("emd:route-start", { detail: { href } }))
+    router.push(href)
+  }
   const openEvent = async (item: CombinedEvent) => {
-    if (item.sourceKind === "dach") { rememberOrigin(); window.location.href = `/dach-veranstaltungen/${item.id}`; return }
+    if (item.sourceKind === "dach") {
+      rememberOrigin()
+      navigateEvent(`/dach-veranstaltungen/${item.id}`)
+      return
+    }
     if (item.type === "tournament") {
       const { data, error } = await supabase.from("dach_events").select("id").eq("internal_event_id", item.internalEventId || item.id).eq("event_status", "approved").maybeSingle()
-      if (!error && data?.id) { rememberOrigin(); window.location.href = `/dach-veranstaltungen/${data.id}`; return }
+      if (!error && data?.id) {
+        rememberOrigin()
+        navigateEvent(`/dach-veranstaltungen/${data.id}`)
+        return
+      }
     }
-    window.location.href = `/veranstaltungen/${item.internalEventId || item.id}`
+    navigateEvent(`/veranstaltungen/${item.internalEventId || item.id}`)
   }
   return <div className="emd-app-home">
     <Header />
