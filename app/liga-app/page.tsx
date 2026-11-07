@@ -512,7 +512,7 @@ if (playersError) {
     if (homeScore === awayScore) return "bg-amber-500/10 border-amber-400/20"
 
     const teamWon = isHomeTeam ? homeScore > awayScore : awayScore > homeScore
-    return teamWon ? "bg-emerald-500/10 border-emerald-400/20" : "bg-red-500/100/10 border-red-400/20"
+    return teamWon ? "bg-emerald-500/10 border-emerald-400/20" : "bg-red-500/10 border-red-400/20"
   }
 
  // ✅ "Ergebnisse"
