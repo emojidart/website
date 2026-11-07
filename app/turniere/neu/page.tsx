@@ -250,8 +250,8 @@ export default function NeueVeranstaltungPage() {
       });
 
     if (error) throw error;
-    return supabase.storage.from("dach-event-flyers").getPublicUrl(path).data
-      .publicUrl;
+    const url = supabase.storage.from("dach-event-flyers").getPublicUrl(path).data.publicUrl;
+    return { path, url };
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -262,6 +262,7 @@ export default function NeueVeranstaltungPage() {
     setSaving(true);
     setMessage("");
     setSuccess(false);
+    let uploadedFlyerPath: string | null = null;
 
     try {
       const { data } = await supabase.auth.getUser();
@@ -310,7 +311,9 @@ export default function NeueVeranstaltungPage() {
         throw new Error("Bitte wähle ein Bundesland bzw. einen Kanton aus.");
       }
 
-      const photoUrl = await uploadFlyer(user.id);
+      const uploadedFlyer = await uploadFlyer(user.id);
+      uploadedFlyerPath = uploadedFlyer?.path ?? null;
+      const photoUrl = uploadedFlyer?.url ?? null;
       const location = [
         form.street.trim(),
         `${form.postalCode.trim()} ${form.city.trim()}`.trim(),
@@ -397,6 +400,13 @@ export default function NeueVeranstaltungPage() {
       }));
       setFlyer(null);
     } catch (error: any) {
+      // Fehlgeschlagene DB-Einreichungen dürfen keine ungenutzten Flyer hinterlassen.
+      if (uploadedFlyerPath) {
+        const { error: cleanupError } = await supabase.storage
+          .from("dach-event-flyers")
+          .remove([uploadedFlyerPath]);
+        if (cleanupError) console.error("[DachVeranstaltungNeu] Flyer-Bereinigung:", cleanupError);
+      }
       setMessage(
         error?.message || "Die Veranstaltung konnte nicht gespeichert werden.",
       );
