@@ -676,7 +676,30 @@ export default function GuestProfileAppPage() {
       <div className="emd-loading-surface min-h-screen bg-background text-white flex flex-col">
         <Header />
 
-        <main className="flex-grow flex items-center justify-center p-4 pb-24"><SectionSkeleton kind="profile" /></main>
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Gastprofil wird geladen">
+          <section className="rounded-[28px] border border-white/[0.08] bg-card p-5 sm:p-7">
+            <div className="mb-4 h-3 w-32 animate-pulse rounded bg-white/10" />
+            <div className="h-9 w-48 animate-pulse rounded bg-white/10" />
+            <div className="mt-4 h-4 w-60 max-w-full animate-pulse rounded bg-white/10" />
+          </section>
+          <section className="rounded-[24px] border border-white/[0.08] bg-card p-4 sm:p-6">
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 shrink-0 animate-pulse rounded-[22px] bg-white/10" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-4 w-28 animate-pulse rounded bg-white/10" />
+                <div className="h-8 w-full max-w-xs animate-pulse rounded bg-white/10" />
+              </div>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {Array.from({ length: 3 }, (_, index) => (
+                <div key={index} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+                  <div className="mt-3 h-8 w-16 animate-pulse rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
 
         <MobileBottomNav />
       </div>
