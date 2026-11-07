@@ -1,6 +1,6 @@
 "use client"
 
-import { SectionSkeleton } from "@/components/loading/loading"
+import { TvLauncherSkeleton } from "@/components/emd-tv/tv-launcher-skeleton"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -290,7 +290,7 @@ export default function EmdTvOverviewPage() {
     return (
       <div className="emd-loading-surface min-h-screen bg-[#050608] text-white">
         <Header variant="app" title="EMD TV" subtitle="Ligazentrale" backHref="/" />
-        <main className="flex min-h-screen items-center justify-center px-4"><SectionSkeleton kind="cards" /></main>
+        <TvLauncherSkeleton />
         <MobileBottomNav />
       </div>
     )
