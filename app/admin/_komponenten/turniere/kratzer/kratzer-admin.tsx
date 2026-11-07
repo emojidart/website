@@ -115,7 +115,7 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
 
   const showToast = useCallback(
     (variant: "success" | "error" | "info" | "warning", description: string) => {
-      toast({ variant, description })
+      toast({ variant: variant === "error" ? "destructive" : "default", description })
     },
     [toast],
   )
