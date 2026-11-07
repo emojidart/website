@@ -23,7 +23,9 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - name: Install locked dependencies
-        run: npm ci
+      # Existing package-lock.json is out of sync with package.json.
+      # Install without rewriting the repository to expose TS errors separately.
+      - name: Install dependencies for diagnostic typecheck
+        run: npm install --no-save --package-lock=false --legacy-peer-deps --no-audit --no-fund
       - name: Check types independently of Netlify build
         run: npx tsc --noEmit --incremental false
