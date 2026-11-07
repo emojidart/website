@@ -470,7 +470,7 @@ export default function NeueVeranstaltungPage() {
             </button>
 
             <div className="max-w-3xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/25 bg-orange-500/100/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-orange-300">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/25 bg-orange-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-orange-300">
                 <CalendarDays className="h-4 w-4" />
                 DACH Veranstaltungskalender
               </div>
@@ -773,7 +773,9 @@ export default function NeueVeranstaltungPage() {
 
             {message ? (
               <div
-                className={`xl:col-span-2 rounded-2xl border p-4 text-sm font-semibold shadow-none ${success ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-300/[0.16] bg-red-500/10 text-red-700"}`}
+                role="status"
+                aria-live="polite"
+                className={`xl:col-span-2 rounded-2xl border p-4 text-sm font-semibold shadow-none ${success ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200" : "border-red-400/20 bg-red-500/10 text-red-200"}`}
               >
                 <div className="flex gap-2 items-start">
                   {success ? (
