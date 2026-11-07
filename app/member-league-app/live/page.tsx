@@ -162,7 +162,37 @@ export default function MemberLeagueLivePage() {
     [games],
   )
 
-  if (authLoading) return <div className="min-h-[1px]" aria-hidden="true" />
+  if (authLoading) {
+    return (
+      <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
+        <Header variant="app" title="LIVE-Spiele" subtitle="Ligazentrale" backHref="/member-league-app" />
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Live-Spiele werden geladen">
+          <section className="rounded-[26px] border border-white/[0.08] bg-card p-5 sm:p-7">
+            <div className="mb-4 h-6 w-28 animate-pulse rounded-full bg-white/10" />
+            <div className="h-9 w-52 animate-pulse rounded bg-white/10" />
+            <div className="mt-4 h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+          </section>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="rounded-[24px] border border-white/[0.08] bg-card p-5">
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="h-5 w-24 animate-pulse rounded-full bg-white/10" />
+                  <div className="h-5 w-16 animate-pulse rounded bg-white/10" />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="h-8 w-2/5 animate-pulse rounded bg-white/10" />
+                  <div className="h-9 w-14 animate-pulse rounded bg-white/10" />
+                  <div className="h-8 w-2/5 animate-pulse rounded bg-white/10" />
+                </div>
+                <div className="mt-5 h-4 w-3/4 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </div>
+        </main>
+        <MobileBottomNav />
+      </div>
+    )
+  }
   if (!session) return null
 
   const statusLabel = (status: LiveGame["status"]) =>
