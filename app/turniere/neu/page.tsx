@@ -224,7 +224,22 @@ export default function NeueVeranstaltungPage() {
   async function uploadFlyer(userId: string) {
     if (!flyer) return null;
 
-    const extension = flyer.name.split(".").pop()?.toLowerCase() || "jpg";
+    const allowedTypes: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "application/pdf": "pdf",
+    };
+    const extension = allowedTypes[flyer.type];
+    if (!extension) {
+      throw new Error("Bitte lade einen Flyer als JPG, PNG, WEBP oder PDF hoch.");
+    }
+    if (flyer.size > 8 * 1024 * 1024) {
+      throw new Error("Der Flyer ist zu groß. Maximal 8 MB sind erlaubt.");
+    }
+    if (flyer.size === 0) {
+      throw new Error("Die ausgewählte Datei ist leer.");
+    }
     const path = `${userId}/${crypto.randomUUID()}.${extension}`;
     const { error } = await supabase.storage
       .from("dach-event-flyers")
@@ -275,6 +290,10 @@ export default function NeueVeranstaltungPage() {
       }
       if (form.registrationDeadline && form.registrationDeadline.slice(0, 10) > form.startDate) {
         throw new Error("Der Anmeldeschluss darf nicht nach dem Veranstaltungsbeginn liegen.");
+      }
+
+      if (flyer && (flyer.size > 8 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(flyer.type))) {
+        throw new Error("Flyer: Bitte JPG, PNG, WEBP oder PDF mit maximal 8 MB auswählen.");
       }
 
       if (!form.postalCode.trim()) {
