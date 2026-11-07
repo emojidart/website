@@ -24,3 +24,26 @@
 .emd-mobile-sheet-heading{background:#233248!important;border-color:#3c4e66!important}
 .emd-mobile-sheet-body{background:#172235!important}
 @media(prefers-reduced-motion:reduce){.emd-nav-accordion,.emd-nav-accordion .emd-nav-chevron{transition:none}}
+
+/* Kompakte Smartphones: Menü bleibt innerhalb des sichtbaren Viewports. */
+@media (max-width:767px) {
+  .emd-mobile-sheet {
+    max-height:calc(100dvh - 6rem - env(safe-area-inset-top));
+    display:flex;
+    flex-direction:column;
+  }
+  .emd-mobile-sheet-heading { flex-shrink:0; }
+  .emd-mobile-sheet-body {
+    min-height:0;
+    max-height:none!important;
+    flex:1 1 auto;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .emd-bottom-nav > div { max-width:var(--emd-content-max); margin-inline:auto; }
+}
+@media (max-height:570px) and (max-width:767px) {
+  .emd-mobile-sheet { max-height:calc(100dvh - 4.75rem - env(safe-area-inset-top)); }
+  .emd-mobile-sheet-heading { padding:10px 14px; }
+}
