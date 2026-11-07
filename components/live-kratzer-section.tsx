@@ -209,6 +209,7 @@ export default function LiveKratzerSection() {
       suddenDeathEnabled: false,
       suddenDeathTime: 0,
       speechEnabled: false,
+      diceModeEnabled: false,
     },
   })
   const [loading, setLoading] = useState(true)
@@ -357,7 +358,6 @@ export default function LiveKratzerSection() {
             suddenDeathTime: 0,
             speechEnabled: false,
             diceModeEnabled: false,
-        diceModeEnabled: false,
           },
         })
       }
