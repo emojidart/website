@@ -120,6 +120,18 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
     [toast],
   )
 
+  const announceBoardGroup = useCallback(async (board: Board, call: number): Promise<boolean> => {
+    if (!tournamentState.settings.speechEnabled || !("speechSynthesis" in window)) {
+      showToast("warning", "Sprachausgabe ist auf diesem Gerät nicht verfügbar oder deaktiviert.")
+      return false
+    }
+    if (board.players.length === 0) return false
+    const names = board.players.map((player) => player.name).join(", ")
+    const intro = call === 1 ? "Spieler bitte zum Automaten kommen." : call === 2 ? "Zweiter Aufruf." : "Letzter Aufruf."
+    speakText(`${intro} Board ${board.id}: ${names}.`, true)
+    return true
+  }, [showToast, tournamentState.settings.speechEnabled])
+
   useEffect(() => {
     publishKratzerBeamerSnapshot(tournamentState, isTournamentRunning)
   }, [tournamentState, isTournamentRunning])
@@ -971,6 +983,8 @@ export function KratzerAdminEmbedded({ onExitToCenter }: KratzerAdminEmbeddedPro
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {tournamentState.boards.map((board) => (
                     <BoardComponent
+                      onAnnounceGroup={announceBoardGroup}
+                      announcementBusy={false}
                       key={board.id}
                       board={board}
                       suddenDeathEnabled={tournamentState.settings.suddenDeathEnabled}
