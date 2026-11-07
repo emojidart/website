@@ -24,9 +24,6 @@ async function getCurrentUserId(): Promise<string | null> {
 export async function registerPlayers(playerIds: string[]): Promise<ServerActionResponse> {
   console.log("registerPlayers: Funktion gestartet. Empfangene Player IDs:", playerIds)
 
-  // NEU: Cookies direkt im Server Action loggen
-  const allCookies = (await cookies()).getAll()
-  console.log("registerPlayers: Empfangene Cookies im Server Action:", allCookies)
 
   const userId = await getCurrentUserId()
   console.log("registerPlayers: Aktueller Benutzer ID:", userId)
