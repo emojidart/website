@@ -38,11 +38,11 @@ export function VsIntroOverlay({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80  animate-fadeIn">
       {/* Orange glow background */}
       <div className="absolute w-[600px] h-[600px] bg-orange-500/30 rounded-full blur-[160px]" />
 
-      <div className="relative px-12 py-14 rounded-3xl border border-orange-400/40 bg-gradient-to-br from-black via-zinc-900 to-black shadow-[0_0_80px_rgba(255,140,0,0.5)]">
+      <div className="text-foreground relative px-12 py-14 rounded-3xl border border-orange-400/40 bg-card    shadow-[0_0_80px_rgba(255,140,0,0.5)]">
         {/* Titel */}
         <div className="text-center mb-10">
           <p className="uppercase tracking-[0.4em] text-orange-400 text-sm">
@@ -63,8 +63,8 @@ export function VsIntroOverlay({
           {/* VS Circle */}
           <div className="relative">
             <div className="absolute inset-0 bg-orange-500 rounded-full blur-2xl opacity-60 animate-pulse" />
-            <div className="relative px-10 py-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 shadow-2xl">
-              <span className="text-5xl font-black text-black tracking-widest">
+            <div className="text-foreground relative px-10 py-6 rounded-full bg-card   shadow-2xl">
+              <span className="text-5xl font-semibold text-foreground tracking-widest">
                 VS
               </span>
             </div>

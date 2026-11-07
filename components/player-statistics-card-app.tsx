@@ -74,7 +74,7 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
 
   return (
     <>
-      <Card className="group relative overflow-hidden rounded-[22px] border border-orange-300/[0.10] bg-black/25 text-white shadow-[0_18px_52px_-42px_rgba(0,0,0,.95)] backdrop-blur-xl transition hover:border-orange-300/20 hover:bg-white/[0.035]">
+      <Card className="group relative overflow-hidden rounded-[22px] border border-orange-300/[0.10] bg-card text-white shadow-[0_18px_52px_-42px_rgba(0,0,0,.95)]  transition hover:border-orange-300/20 hover:bg-white/[0.035]">
         <CardContent className="relative p-4 sm:p-5">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_100%,rgba(249,115,22,.08),transparent_35%),radial-gradient(circle_at_100%_0%,rgba(14,165,233,.045),transparent_34%)]" />
           <div className="relative">
@@ -83,13 +83,13 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
             <div className="flex items-center gap-3 min-w-0">
               {/* Rank */}
               <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center flex-shrink-0">
-                <span className="font-black text-orange-300 text-sm">{index + 1}</span>
+                <span className="font-semibold text-orange-300 text-sm">{index + 1}</span>
               </div>
 
               {/* Name */}
               <Link
                 href={`/liga-app/player-profile/${player.player_id}`}
-                className="flex-1 min-w-0 text-base sm:text-lg font-black text-white leading-tight truncate hover:text-orange-300 transition-colors"
+                className="flex-1 min-w-0 text-base sm:text-lg font-semibold text-white leading-tight truncate hover:text-orange-300 transition-colors"
               >
                 {player.name}
               </Link>
@@ -108,41 +108,41 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
           {/* Main stats (cleaner, weniger bunt) */}
           <div className="grid grid-cols-3 gap-2 mb-3">
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-2.5 text-center">
-              <div className="text-lg sm:text-xl font-black text-orange-300 leading-none">
+              <div className="text-lg sm:text-xl font-semibold text-orange-300 leading-none">
                 {Number(player.total_points || 0).toFixed(1)}
               </div>
-              <div className="text-[11px] text-white/38 font-bold">Punkte</div>
+              <div className="text-xs text-white/38 font-bold">Punkte</div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-2.5 text-center">
-              <div className="text-lg sm:text-xl font-black text-emerald-300 leading-none">{player.total_wins}</div>
-              <div className="text-[11px] text-white/38 font-bold">Wins</div>
+              <div className="text-lg sm:text-xl font-semibold text-emerald-300 leading-none">{player.total_wins}</div>
+              <div className="text-xs text-white/38 font-bold">Wins</div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-2.5 text-center">
-              <div className="text-lg sm:text-xl font-black text-sky-300 leading-none">
+              <div className="text-lg sm:text-xl font-semibold text-sky-300 leading-none">
                 {Number(player.win_percentage || 0).toFixed(1)}%
               </div>
-              <div className="text-[11px] text-white/38 font-bold">Win%</div>
+              <div className="text-xs text-white/38 font-bold">Win%</div>
             </div>
           </div>
 
           {/* Top Throws (einheitlicher, weniger knallig) */}
           <div className="flex flex-wrap gap-1.5">
-            <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-black text-[11px] px-2 py-1">
+            <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-semibold text-xs px-2 py-1">
               <Target className="h-3 w-3 mr-1 text-orange-300" />
               {player.throws_180} × 180
             </Badge>
 
-            <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-black text-[11px] px-2 py-1">
+            <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-semibold text-xs px-2 py-1">
               {player.throws_171} × 171
             </Badge>
 
-            <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-black text-[11px] px-2 py-1">
+            <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-semibold text-xs px-2 py-1">
               {player.throws_high_tonne} × HT
             </Badge>
 
-            <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-black text-[11px] px-2 py-1">
+            <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-semibold text-xs px-2 py-1">
               {player.throws_tonne} × T
             </Badge>
           </div>
@@ -160,15 +160,15 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
                 <div className="mt-4 pt-4 border-t border-white/[0.08] space-y-4">
                   {/* Weitere Spezial-Würfe */}
                   <div>
-                    <div className="text-xs font-black text-white/65 mb-2">Weitere Würfe</div>
+                    <div className="text-xs font-semibold text-white/65 mb-2">Weitere Würfe</div>
                     <div className="flex flex-wrap gap-1.5">
-                      <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-black text-[11px] px-2 py-1">
+                      <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-semibold text-xs px-2 py-1">
                         {player.throws_95_plus} × 95+
                       </Badge>
-                      <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-black text-[11px] px-2 py-1">
+                      <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-semibold text-xs px-2 py-1">
                         {player.throws_shanghai} × Shanghai
                       </Badge>
-                      <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-black text-[11px] px-2 py-1">
+                      <Badge className="rounded-full border border-white/[0.08] bg-white/[0.035] text-white/70 font-semibold text-xs px-2 py-1">
                         {player.throws_bull || 0} × Bull
                       </Badge>
                     </div>
@@ -176,7 +176,7 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
 
                   {/* Standard-Würfe */}
                   <div>
-                    <div className="text-xs font-black text-white/65 mb-2">Standard-Würfe (15–20)</div>
+                    <div className="text-xs font-semibold text-white/65 mb-2">Standard-Würfe (15–20)</div>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { k: "15er", v: player.throws_15 || 0 },
@@ -187,8 +187,8 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
                         { k: "20er", v: player.throws_20 || 0 },
                       ].map((x) => (
                         <div key={x.k} className="rounded-2xl border border-white/10 bg-white/[0.035] p-2 text-center">
-                          <div className="font-black text-white leading-none">{x.v}</div>
-                          <div className="text-[11px] text-white/38 font-bold">{x.k}</div>
+                          <div className="font-semibold text-white leading-none">{x.v}</div>
+                          <div className="text-xs text-white/38 font-bold">{x.k}</div>
                         </div>
                       ))}
                     </div>
@@ -199,7 +199,7 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-10 rounded-2xl border-white/10 bg-white/[0.04] hover:bg-white/[0.09] font-black"
+                      className="h-10 rounded-2xl border-white/10 bg-white/[0.04] hover:bg-white/[0.09] font-semibold"
                       onClick={() => setShowPointsModal(true)}
                     >
                       <Trophy className="h-4 w-4 mr-2 shrink-0" />
@@ -210,7 +210,7 @@ export function PlayerStatisticsCardApp({ player, index, allStats }: PlayerStati
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full h-10 rounded-2xl border-white/10 bg-white/[0.04] hover:bg-white/[0.09] font-black"
+                        className="w-full h-10 rounded-2xl border-white/10 bg-white/[0.04] hover:bg-white/[0.09] font-semibold"
                       >
                         <User className="h-4 w-4 mr-2 shrink-0" />
                         Profil

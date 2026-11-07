@@ -37,12 +37,12 @@ export function PlayerPointsModalApp({ isOpen, onClose, player, pointsBreakdown 
   const throw15Count = pointsBreakdown.throw15Points / 1
 
   const Row = ({ label, value, badge }: { label: string; value: string; badge: string }) => (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted px-3 py-3">
       <div className="min-w-0">
-        <div className="text-xs font-black text-gray-900 truncate">{label}</div>
-        <div className="text-[11px] text-gray-600 font-bold truncate">{value}</div>
+        <div className="text-xs font-semibold text-foreground truncate">{label}</div>
+        <div className="text-xs text-muted-foreground font-bold truncate">{value}</div>
       </div>
-      <Badge className="rounded-full bg-white text-gray-900 border border-gray-200 font-black text-xs px-3 py-1 whitespace-nowrap">
+      <Badge className="rounded-full bg-card text-foreground border border-border font-semibold text-xs px-3 py-1 whitespace-nowrap">
         {badge}
       </Badge>
     </div>
@@ -50,14 +50,14 @@ export function PlayerPointsModalApp({ isOpen, onClose, player, pointsBreakdown 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[calc(100vw-24px)] sm:max-w-md p-0 overflow-hidden rounded-2xl border border-gray-200 shadow-2xl">
+      <DialogContent className="w-[calc(100vw-24px)] sm:max-w-md p-0 overflow-hidden rounded-2xl border border-border shadow-2xl">
         {/* Top orange bar */}
-        <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+        <div className="text-foreground h-2 bg-card  " />
 
         {/* Sticky Header */}
-        <DialogHeader className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-200 px-4 py-3">
+        <DialogHeader className="sticky top-0 z-10 bg-card  border-b border-border px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <DialogTitle className="min-w-0 flex items-center gap-2 text-base sm:text-lg font-black">
+            <DialogTitle className="min-w-0 flex items-center gap-2 text-base sm:text-lg font-semibold">
               <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
                 <Trophy className="w-5 h-5 text-orange-600" />
               </div>
@@ -68,28 +68,28 @@ export function PlayerPointsModalApp({ isOpen, onClose, player, pointsBreakdown 
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="h-9 w-9 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50"
+              className="h-9 w-9 rounded-2xl border border-border bg-card hover:bg-muted"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="mt-1 text-xs text-gray-500 font-bold truncate">{player?.name}</div>
+          <div className="mt-1 text-xs text-muted-foreground font-bold truncate">{player?.name}</div>
         </DialogHeader>
 
         {/* Scroll Area */}
         <div className="max-h-[75vh] sm:max-h-[80vh] overflow-y-auto px-4 py-4">
           <div className="space-y-5">
             {/* Total Points (clean) */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-xs text-gray-500 font-bold">Gesamtpunkte</div>
-                  <div className="text-[11px] text-gray-600 font-semibold truncate">
+                  <div className="text-xs text-muted-foreground font-bold">Gesamtpunkte</div>
+                  <div className="text-xs text-muted-foreground font-semibold truncate">
                     Summe aus Legs + Sonderwertungen
                   </div>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black text-orange-700">
+                <div className="text-2xl sm:text-3xl font-semibold text-orange-700">
                   {pointsBreakdown.totalPoints.toFixed(1)}
                 </div>
               </div>
@@ -97,7 +97,7 @@ export function PlayerPointsModalApp({ isOpen, onClose, player, pointsBreakdown 
 
             {/* Leg Wins */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-black text-gray-700">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                 <Target className="w-4 h-4 text-orange-600" />
                 Leg-Wins
               </div>
@@ -111,7 +111,7 @@ export function PlayerPointsModalApp({ isOpen, onClose, player, pointsBreakdown 
 
             {/* Special Throws */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-black text-gray-700">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                 <Award className="w-4 h-4 text-orange-600" />
                 Spezielle Würfe
               </div>
@@ -177,7 +177,7 @@ export function PlayerPointsModalApp({ isOpen, onClose, player, pointsBreakdown 
 
             {/* Standard throws */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-black text-gray-700">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                 <Target className="w-4 h-4 text-orange-600" />
                 Standard-Würfe (15–20)
               </div>

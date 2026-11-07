@@ -92,24 +92,24 @@ function TierCard({
   return (
     <motion.div
       variants={membersCupItemVariants}
-      className="relative overflow-hidden rounded-[30px] border border-orange-300/15 bg-black/30 shadow-xl"
+      className="relative overflow-hidden rounded-[30px] border border-orange-300/15 bg-card shadow-xl"
     >
       <div className={`h-2 w-full ${accent}`} />
 
       <div className="relative p-4 sm:p-5">
         <div className="text-center mb-5">
-          <div className="inline-flex items-center gap-2 rounded-full bg-orange-500/10 border border-orange-300/20 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-orange-300">
+          <div className="inline-flex items-center gap-2 rounded-full bg-orange-500/10 border border-orange-300/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-orange-300">
             <Trophy className="w-4 h-4 text-orange-600" />
             {title}
           </div>
 
-          <h2 className="mt-4 text-2xl sm:text-3xl font-black text-white">
+          <h2 className="mt-4 text-2xl sm:text-3xl font-semibold text-white">
             {subtitle}
           </h2>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-sm">
-          <div className="grid grid-cols-[60px_1fr_90px] px-3 sm:px-4 py-3 text-xs font-black uppercase tracking-wider bg-orange-500/10 text-orange-100 border-b border-orange-100">
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-card shadow-sm">
+          <div className="grid grid-cols-[60px_1fr_90px] px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider bg-orange-500/10 text-orange-100 border-b border-orange-100">
             <div>Platz</div>
             <div>Name</div>
             <div className="text-right">Punkte</div>
@@ -123,7 +123,7 @@ function TierCard({
                   index % 2 === 0 ? "bg-black/20" : "bg-white/5"
                 }`}
               >
-                <div className="font-black text-base sm:text-lg text-white">
+                <div className="font-semibold text-base sm:text-lg text-white">
                   {player.platz}
                 </div>
 
@@ -131,7 +131,7 @@ function TierCard({
                   {player.name}
                 </div>
 
-                <div className="text-right font-black text-base sm:text-lg text-orange-300">
+                <div className="text-right font-semibold text-base sm:text-lg text-orange-300">
                   {player.punkte}
                 </div>
               </div>
@@ -144,7 +144,7 @@ function TierCard({
             Punktedurchschnitt
           </div>
 
-          <div className="font-black text-xl mt-1 text-white">
+          <div className="font-semibold text-xl mt-1 text-white">
             Pro Spiel
           </div>
         </div>
@@ -159,7 +159,7 @@ function TierCard({
 
 export default function MembersChampionCupEinstufungPage() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#050608] text-white pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-background text-white pb-24 md:pb-0">
       <Header variant="app" title="Tabellen-Einstufung" subtitle="Members Champion Cup" backHref="/" />
       <MembersCupBackground />
 
@@ -173,25 +173,25 @@ export default function MembersChampionCupEinstufungPage() {
           <motion.div variants={membersCupItemVariants} className="mb-5">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-xl border border-orange-300/20 bg-black/30 px-4 py-2 text-sm font-black text-orange-300 shadow-sm hover:bg-orange-500/10 transition"
+              className="inline-flex items-center gap-2 rounded-xl border border-orange-300/20 bg-card px-4 py-2 text-sm font-semibold text-orange-300 shadow-sm hover:bg-orange-500/10 transition"
             >
               <ArrowLeft className="w-4 h-4" />
               Zurück
             </Link>
           </motion.div>
 
-          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-[26px] border border-white/10 bg-black/30 shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
-            <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
+          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-[26px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+            <div className="relative bg-card    p-4 text-white sm:p-5 lg:p-6">
               <div className="flex flex-col items-center text-center sm:flex-row sm:text-left sm:gap-4">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
                   <Crown className="h-8 w-8 text-orange-300" />
                 </div>
 
                 <div className="mt-3 min-w-0 flex-1 sm:mt-0">
-                  <div className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-black text-orange-950">
+                  <div className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-orange-950">
                     EMD MEMBERS CHAMPION CUP
                   </div>
-                  <h1 className="mt-2 text-2xl font-black sm:text-3xl lg:text-4xl">
+                  <h1 className="mt-2 text-2xl font-semibold sm:text-3xl lg:text-4xl">
                     Tabellen-Einstufung
                   </h1>
                   <p className="mt-1 text-sm font-semibold text-orange-100 sm:text-base">
@@ -202,10 +202,10 @@ export default function MembersChampionCupEinstufungPage() {
             </div>
 
             <div className="grid gap-3 p-4 sm:p-5 lg:grid-cols-2">
-              <p className="text-sm font-semibold leading-relaxed text-white/55">
+              <p className="text-sm font-semibold leading-relaxed text-muted-foreground">
                 Die Zulosungstabellen wurden anhand der Leistungen aus Herbst 2025 und/oder Frühjahr 2026 berechnet.
               </p>
-              <p className="text-sm font-semibold leading-relaxed text-white/55">
+              <p className="text-sm font-semibold leading-relaxed text-muted-foreground">
                 Grundlage sind die offiziellen Statistikpunkte der EMD VereinsApp geteilt durch die Anzahl der gespielten Spiele.
               </p>
             </div>
@@ -215,40 +215,40 @@ export default function MembersChampionCupEinstufungPage() {
             variants={membersCupItemVariants}
             className="grid md:grid-cols-3 gap-4 mt-5"
           >
-            <div className="rounded-[22px] border border-white/10 bg-black/30 p-4 sm:p-5 shadow-sm">
+            <div className="rounded-[22px] border border-white/10 bg-card p-4 sm:p-5 shadow-sm">
               <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-400/20 flex items-center justify-center mb-4">
                 <BarChart3 className="w-8 h-8 text-sky-300" />
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-white">
+              <h3 className="text-lg sm:text-xl font-semibold text-white">
                 Statistik-System
               </h3>
-              <p className="mt-3 leading-relaxed text-white/55 font-semibold">
+              <p className="mt-3 leading-relaxed text-muted-foreground font-semibold">
                 Berechnung anhand der offiziellen EMD VereinsApp Statistiken
                 und Durchschnittspunkte pro Spiel.
               </p>
             </div>
 
             <div className="rounded-[22px] border border-orange-300/20 bg-orange-500/10 p-4 sm:p-5 shadow-sm">
-              <div className="w-14 h-14 rounded-2xl bg-white border border-orange-200 flex items-center justify-center mb-4">
+              <div className="w-14 h-14 rounded-2xl bg-card border border-orange-200 flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-orange-600" />
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-white">
+              <h3 className="text-lg sm:text-xl font-semibold text-white">
                 Faire Zulosung
               </h3>
-              <p className="mt-3 leading-relaxed text-white/55 font-semibold">
+              <p className="mt-3 leading-relaxed text-muted-foreground font-semibold">
                 Ziel ist eine möglichst faire und ausgeglichene Partner-Zulosung
                 während der gesamten Serie.
               </p>
             </div>
 
-            <div className="rounded-[22px] border border-white/10 bg-black/30 p-4 sm:p-5 shadow-sm">
+            <div className="rounded-[22px] border border-white/10 bg-card p-4 sm:p-5 shadow-sm">
               <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center mb-4">
                 <Target className="w-8 h-8 text-emerald-300" />
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-white">
+              <h3 className="text-lg sm:text-xl font-semibold text-white">
                 Leistungsgruppen
               </h3>
-              <p className="mt-3 leading-relaxed text-white/55 font-semibold">
+              <p className="mt-3 leading-relaxed text-muted-foreground font-semibold">
                 Spieler werden anhand ihrer Durchschnittswerte in
                 unterschiedliche Leistungsgruppen eingeteilt.
               </p>
@@ -259,7 +259,7 @@ export default function MembersChampionCupEinstufungPage() {
             <TierCard
               title="Tabelle 1"
               subtitle="Höchste Punkte"
-              accent="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600"
+              accent="text-foreground bg-card   "
               iconBg="bg-sky-500/100"
               players={tabelle1Players}
             />
@@ -267,15 +267,15 @@ export default function MembersChampionCupEinstufungPage() {
             <TierCard
               title="Tabelle 2"
               subtitle="Mittlere Punkte"
-              accent="bg-gradient-to-r from-slate-400 via-slate-500 to-slate-700"
-              iconBg="bg-white/50"
+              accent="text-foreground bg-card   "
+              iconBg="bg-card"
               players={tabelle2Players}
             />
 
             <TierCard
               title="Tabelle 3"
               subtitle="Niedrigste Punkte"
-              accent="bg-gradient-to-r from-orange-500 via-orange-600 to-red-600"
+              accent="text-foreground bg-card   "
               iconBg="bg-orange-500/100"
               players={tabelle3Players}
             />
@@ -283,7 +283,7 @@ export default function MembersChampionCupEinstufungPage() {
 
           <motion.div
             variants={membersCupItemVariants}
-            className="mt-8 rounded-[30px] border border-orange-300/15 bg-black/30 p-7 text-center shadow-xl"
+            className="mt-8 rounded-[30px] border border-orange-300/15 bg-card p-7 text-center shadow-xl"
           >
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-300/20 flex items-center justify-center">
@@ -291,18 +291,18 @@ export default function MembersChampionCupEinstufungPage() {
               </div>
             </div>
 
-            <h3 className="text-3xl font-black text-white">
+            <h3 className="text-3xl font-semibold text-white">
               EMD Members Champion Cup K26/27
             </h3>
 
-            <p className="mt-4 max-w-4xl mx-auto leading-relaxed text-white/55 font-semibold">
+            <p className="mt-4 max-w-4xl mx-auto leading-relaxed text-muted-foreground font-semibold">
               Die Tabellen dienen ausschließlich der fairen Partner-Zulosung und
               Leistungs-Einstufung innerhalb der offiziellen EMD Members
               Champion Cup Serie. Anpassungen und Neueinstufungen können
               während der Saison durch die Turnierleitung vorgenommen werden.
             </p>
 
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-orange-300/20 bg-orange-500/10 px-5 py-2 text-xs font-black uppercase tracking-widest text-orange-300">
+            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-orange-300/20 bg-orange-500/10 px-5 py-2 text-xs font-semibold uppercase tracking-widest text-orange-300">
               <Star className="w-4 h-4" />
               Saison K26/27
             </div>

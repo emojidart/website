@@ -668,7 +668,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
           setAssignmentMessage("Rolle wurde aktualisiert!")
         }
       } else {
-		
+
 		// 1) Gibt es diese Team+Player Kombination schon (egal ob left_at gesetzt oder nicht)?
 const { data: existingRow, error: existingRowError } = await supabase
   .from("team_members")
@@ -710,8 +710,8 @@ if (existingRow) {
   setAssignmentMessage("Spieler erfolgreich zugewiesen!")
 }
 
-		
-		
+
+
 
 
         // ✅ Neue Teamzuweisung einfügen
@@ -720,7 +720,7 @@ if (existingRow) {
             team_id: selectedTeamId,
             player_id: selectedPlayerId,
             role: selectedRole,
-           
+
             joined_at: new Date().toISOString(),
             left_at: null,
           },
@@ -774,8 +774,8 @@ if (existingRow) {
     <div className="w-full mx-auto space-y-6">
 
 
-      <Card className="border-gray-200 shadow-md rounded-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-5">
+      <Card className="border-border shadow-md rounded-xl overflow-hidden">
+        <CardHeader className="bg-card   text-white p-5">
           <CardTitle className="text-xl font-bold flex items-center gap-2">
             <Users className="h-5 w-5" />
             Vereinsverwaltung: Spieler & Mannschaften
@@ -795,7 +795,7 @@ if (existingRow) {
                 "h-10 rounded-lg font-medium shadow-sm transition",
                 activeSection === "add-player"
                   ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                  : "border-border text-muted-foreground hover:bg-muted",
               )}
             >
               <UserRoundPlus className="h-4 w-4 mr-2" />
@@ -809,7 +809,7 @@ if (existingRow) {
                 "h-10 rounded-lg font-medium shadow-sm transition",
                 activeSection === "manage-players"
                   ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                  : "border-border text-muted-foreground hover:bg-muted",
               )}
             >
               <ClipboardList className="h-4 w-4 mr-2" />
@@ -823,7 +823,7 @@ if (existingRow) {
                 "h-10 rounded-lg font-medium shadow-sm transition",
                 activeSection === "manage-teams"
                   ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                  : "border-border text-muted-foreground hover:bg-muted",
               )}
             >
               <Hand className="h-4 w-4 mr-2" />
@@ -837,7 +837,7 @@ if (existingRow) {
                 "h-10 rounded-lg font-medium shadow-sm transition",
                 activeSection === "assign-player"
                   ? "bg-orange-600 hover:bg-orange-700 text-white"
-                  : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                  : "border-border text-muted-foreground hover:bg-muted",
               )}
             >
               <UserRoundCog className="h-4 w-4 mr-2" />
@@ -848,7 +848,7 @@ if (existingRow) {
           {/* Add / Edit Player Section */}
           {activeSection === "add-player" && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-800">
+              <h3 className="text-lg font-semibold text-foreground">
                 {editingPlayerId ? "Spieler bearbeiten" : "Neuen Spieler hinzufügen"}
               </h3>
               <form onSubmit={handleSubmitPlayerForm} className="space-y-4">
@@ -860,7 +860,7 @@ if (existingRow) {
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     placeholder="Name des Spielers"
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     required
                   />
                 </div>
@@ -873,10 +873,10 @@ if (existingRow) {
                       type="file"
                       accept="image/*"
                       onChange={handlePlayerPhotoChange}
-                      className="flex-1 h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                      className="flex-1 h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
                     />
                     {playerPhotoPreview && (
-                      <div className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border border-gray-200">
+                      <div className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border border-border">
                         <Image
                           src={playerPhotoPreview || "/placeholder.svg"}
                           alt="Vorschau Spielerfoto"
@@ -911,7 +911,7 @@ if (existingRow) {
                       value={playerStreet}
                       onChange={(e) => setPlayerStreet(e.target.value)}
                       placeholder="Straße"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -922,7 +922,7 @@ if (existingRow) {
                       value={playerHouseNumber}
                       onChange={(e) => setPlayerHouseNumber(e.target.value)}
                       placeholder="Hausnummer"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -933,7 +933,7 @@ if (existingRow) {
                       value={playerPostalCode}
                       onChange={(e) => setPlayerPostalCode(e.target.value)}
                       placeholder="PLZ"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -944,7 +944,7 @@ if (existingRow) {
                       value={playerCity}
                       onChange={(e) => setPlayerCity(e.target.value)}
                       placeholder="Ort"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -954,7 +954,7 @@ if (existingRow) {
                       type="date"
                       value={playerBirthdate}
                       onChange={(e) => setPlayerBirthdate(e.target.value)}
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -965,7 +965,7 @@ if (existingRow) {
                       value={playerNumber}
                       onChange={(e) => setPlayerNumber(e.target.value)}
                       placeholder="Nr."
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                 </div>
@@ -979,7 +979,7 @@ if (existingRow) {
                       value={playerJerseySize}
                       onChange={(e) => setPlayerJerseySize(e.target.value)}
                       placeholder="z.B. M, L, XL"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -990,7 +990,7 @@ if (existingRow) {
                       value={playerEmail}
                       onChange={(e) => setPlayerEmail(e.target.value)}
                       placeholder="E-Mail"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1001,7 +1001,7 @@ if (existingRow) {
                       value={playerPhone}
                       onChange={(e) => setPlayerPhone(e.target.value)}
                       placeholder="Telefon"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1012,7 +1012,7 @@ if (existingRow) {
                       value={playerIban}
                       onChange={(e) => setPlayerIban(e.target.value)}
                       placeholder="IBAN"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     />
                   </div>
                 </div>
@@ -1041,7 +1041,7 @@ if (existingRow) {
                       onClick={handleCancelEditPlayer}
                       variant="outline"
                       disabled={playerLoading}
-                      className="h-10 border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 font-medium rounded-lg shadow-md bg-transparent"
+                      className="h-10 border-border text-muted-foreground hover:bg-muted hover:text-foreground font-medium rounded-lg shadow-md bg-transparent"
                     >
                       <XCircle className="h-4 w-4 mr-2" />
                       Abbrechen
@@ -1058,7 +1058,7 @@ if (existingRow) {
                       ? "bg-red-50 text-red-700 border border-red-100"
                       : playerMessageType === "success"
                         ? "bg-green-50 text-green-700 border border-green-100"
-                        : "bg-gray-50 text-gray-700 border border-gray-100",
+                        : "bg-muted text-muted-foreground border border-border",
                   )}
                 >
                   {playerMessageType === "error" ? (
@@ -1077,7 +1077,7 @@ if (existingRow) {
           {/* Manage Players Section */}
           {activeSection === "manage-players" && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-800">Spieler verwalten</h3>
+              <h3 className="text-lg font-semibold text-foreground">Spieler verwalten</h3>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 <div className="lg:col-span-2">
@@ -1088,14 +1088,14 @@ if (existingRow) {
                     value={playerSearch}
                     onChange={(e) => setPlayerSearch(e.target.value)}
                     placeholder="Name, Ort, E-Mail, Nummer ..."
-                    className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 mt-2"
+                    className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50 mt-2"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Sortierung</Label>
                     <Select value={playerSortKey} onValueChange={(v) => setPlayerSortKey(v as any)}>
-                      <SelectTrigger className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 mt-2">
+                      <SelectTrigger className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50 mt-2">
                         <SelectValue placeholder="Sortieren nach" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1109,7 +1109,7 @@ if (existingRow) {
                   <div>
                     <Label>Richtung</Label>
                     <Select value={playerSortDir} onValueChange={(v) => setPlayerSortDir(v as any)}>
-                      <SelectTrigger className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 mt-2">
+                      <SelectTrigger className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50 mt-2">
                         <SelectValue placeholder="Richtung" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1122,27 +1122,27 @@ if (existingRow) {
               </div>
 
               {clubPlayers.length === 0 ? (
-                <p className="text-sm text-gray-500">Noch keine Spieler vorhanden.</p>
+                <p className="text-sm text-muted-foreground">Noch keine Spieler vorhanden.</p>
               ) : (
-                <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                <div className="w-full overflow-x-auto rounded-lg border border-border bg-card">
                   <table className="w-full min-w-[900px] text-sm">
-                    <thead className="bg-gray-50 sticky top-0 z-10">
+                    <thead className="bg-muted sticky top-0 z-10">
                       <tr className="text-left">
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Spieler</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Geburtsdatum</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Straße</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Nr.</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">PLZ</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Ort</th>
-                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700 text-right">Aktionen</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground">Spieler</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground">Nr.</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground">Geburtsdatum</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground">Straße</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground">Nr.</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground">PLZ</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground">Ort</th>
+                        <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground text-right">Aktionen</th>
                       </tr>
                     </thead>
                     <tbody>
                       {visiblePlayers.map((player, idx) => (
                         <tr
                           key={player.id}
-                          className={cn("border-t border-gray-200 hover:bg-gray-50/60", idx % 2 === 1 && "bg-gray-50/30")}
+                          className={cn("border-t border-border hover:bg-muted/60", idx % 2 === 1 && "bg-muted/30")}
                         >
                           <td className="px-3 py-2 lg:px-4 lg:py-3">
                             <div className="flex items-center gap-3">
@@ -1150,15 +1150,15 @@ if (existingRow) {
                                 <AvatarImage src={player.photo_url || "/placeholder.svg?height=32&width=32&query=player-avatar"} />
                                 <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
                               </Avatar>
-                              <span className="font-medium text-gray-800">{player.name}</span>
+                              <span className="font-medium text-foreground">{player.name}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.player_number ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.birthdate ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.street ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.house_number ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.postal_code ?? "—"}</td>
-                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{player.city ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-muted-foreground">{player.player_number ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-muted-foreground">{player.birthdate ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-muted-foreground">{player.street ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-muted-foreground">{player.house_number ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-muted-foreground">{player.postal_code ?? "—"}</td>
+                          <td className="px-3 py-2 lg:px-4 lg:py-3 text-muted-foreground">{player.city ?? "—"}</td>
                           <td className="px-3 py-2 lg:px-4 lg:py-3">
                             <div className="flex justify-end gap-2">
                               <Button
@@ -1195,7 +1195,7 @@ if (existingRow) {
           {/* Manage Teams Section */}
           {activeSection === "manage-teams" && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-800">
+              <h3 className="text-lg font-semibold text-foreground">
                 {editingTeamId ? "Mannschaft bearbeiten" : "Neue Mannschaft erstellen"}
               </h3>
               <form onSubmit={handleSubmitTeamForm} className="space-y-4">
@@ -1207,7 +1207,7 @@ if (existingRow) {
                     value={newTeamName}
                     onChange={(e) => setNewTeamName(e.target.value)}
                     placeholder="Mannschaftsname"
-                    className="flex-1 h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                    className="flex-1 h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     required
                   />
                 </div>
@@ -1219,10 +1219,10 @@ if (existingRow) {
                       type="file"
                       accept="image/*"
                       onChange={handleTeamLogoChange}
-                      className="flex-1 h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                      className="flex-1 h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
                     />
                     {teamLogoPreview && (
-                      <div className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border border-gray-200">
+                      <div className="relative w-10 h-10 flex-shrink-0 rounded-full overflow-hidden border border-border">
                         <Image
                           src={teamLogoPreview || "/placeholder.svg"}
                           alt="Vorschau Teamlogo"
@@ -1271,7 +1271,7 @@ if (existingRow) {
                       onClick={handleCancelEditTeam}
                       variant="outline"
                       disabled={teamLoading}
-                      className="h-10 border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 font-medium rounded-lg shadow-md bg-transparent"
+                      className="h-10 border-border text-muted-foreground hover:bg-muted hover:text-foreground font-medium rounded-lg shadow-md bg-transparent"
                     >
                       <XCircle className="h-4 w-4 mr-2" />
                       Abbrechen
@@ -1287,7 +1287,7 @@ if (existingRow) {
                       ? "bg-red-50 text-red-700 border border-red-100"
                       : teamMessageType === "success"
                         ? "bg-green-50 text-green-700 border border-green-100"
-                        : "bg-gray-50 text-gray-700 border border-gray-100",
+                        : "bg-muted text-muted-foreground border border-border",
                   )}
                 >
                   {teamMessageType === "error" ? (
@@ -1302,17 +1302,17 @@ if (existingRow) {
               )}
 
               <div className="space-y-4">
-                <h4 className="text-md font-semibold text-gray-700">Bestehende Mannschaften:</h4>
+                <h4 className="text-md font-semibold text-muted-foreground">Bestehende Mannschaften:</h4>
                 {teams.length === 0 ? (
-                  <p className="text-sm text-gray-500">Noch keine Mannschaften vorhanden.</p>
+                  <p className="text-sm text-muted-foreground">Noch keine Mannschaften vorhanden.</p>
                 ) : (
-                  <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                  <div className="w-full overflow-x-auto rounded-lg border border-border bg-card">
                     <table className="w-full min-w-[720px] text-sm">
-                      <thead className="bg-gray-50 sticky top-0 z-10">
+                      <thead className="bg-muted sticky top-0 z-10">
                         <tr className="text-left">
-                          <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Mannschaft</th>
-                          <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700">Mitglieder</th>
-                          <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-gray-700 text-right">Aktionen</th>
+                          <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground">Mannschaft</th>
+                          <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground">Mitglieder</th>
+                          <th className="px-3 py-2 lg:px-4 lg:py-3 font-semibold text-muted-foreground text-right">Aktionen</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1322,8 +1322,8 @@ if (existingRow) {
                             <tr
                               key={team.id}
                               className={cn(
-                                "border-t border-gray-200 hover:bg-gray-50/60",
-                                idx % 2 === 1 && "bg-gray-50/30",
+                                "border-t border-border hover:bg-muted/60",
+                                idx % 2 === 1 && "bg-muted/30",
                               )}
                             >
                               <td className="px-3 py-2 lg:px-4 lg:py-3">
@@ -1332,10 +1332,10 @@ if (existingRow) {
                                     <AvatarImage src={team.logo_url || "/placeholder.svg?height=32&width=32&query=team-logo"} />
                                     <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                                   </Avatar>
-                                  <span className="font-medium text-gray-800">{team.name}</span>
+                                  <span className="font-medium text-foreground">{team.name}</span>
                                 </div>
                               </td>
-                              <td className="px-3 py-2 lg:px-4 lg:py-3 text-gray-700">{memberCount}</td>
+                              <td className="px-3 py-2 lg:px-4 lg:py-3 text-muted-foreground">{memberCount}</td>
                               <td className="px-3 py-2 lg:px-4 lg:py-3">
                                 <div className="flex justify-end gap-2">
                                   <Button
@@ -1374,14 +1374,14 @@ if (existingRow) {
           {/* Assign Player to Team Section */}
           {activeSection === "assign-player" && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-800">Spieler zu Mannschaft zuweisen</h3>
+              <h3 className="text-lg font-semibold text-foreground">Spieler zu Mannschaft zuweisen</h3>
               <form onSubmit={handleAssignPlayerToTeam} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="selectPlayer">Spieler auswählen</Label>
                   <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
                     <SelectTrigger
                       id="selectPlayer"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     >
                       <SelectValue placeholder="Spieler auswählen" />
                     </SelectTrigger>
@@ -1400,12 +1400,12 @@ if (existingRow) {
                     </SelectContent>
                   </Select>
                   {selectedPlayerId && (
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Aktuelles Team:{" "}
                       {currentSelectedPlayerTeam ? (
-                        <span className="font-medium text-gray-700">
+                        <span className="font-medium text-muted-foreground">
                           {currentSelectedPlayerTeam.name}{" "}
-                          {currentSelectedPlayerRole && <span className="text-xs text-gray-500">({currentSelectedPlayerRole})</span>}
+                          {currentSelectedPlayerRole && <span className="text-xs text-muted-foreground">({currentSelectedPlayerRole})</span>}
                         </span>
                       ) : (
                         <span className="italic">Keinem Team zugewiesen</span>
@@ -1419,7 +1419,7 @@ if (existingRow) {
                   <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
                     <SelectTrigger
                       id="selectTeam"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     >
                       <SelectValue placeholder="Mannschaft auswählen" />
                     </SelectTrigger>
@@ -1438,7 +1438,7 @@ if (existingRow) {
                   <Select value={selectedRole} onValueChange={setSelectedRole}>
                     <SelectTrigger
                       id="selectRole"
-                      className="h-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                      className="h-10 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
                     >
                       <SelectValue placeholder="Rolle auswählen" />
                     </SelectTrigger>
@@ -1482,7 +1482,7 @@ if (existingRow) {
                       ? "bg-red-50 text-red-700 border border-red-100"
                       : assignmentMessageType === "success"
                         ? "bg-green-50 text-green-700 border border-green-100"
-                        : "bg-gray-50 text-gray-700 border border-gray-100",
+                        : "bg-muted text-muted-foreground border border-border",
                   )}
                 >
                   {assignmentMessageType === "error" ? (
@@ -1497,29 +1497,29 @@ if (existingRow) {
               )}
 
               <div className="space-y-4">
-                <h4 className="text-md font-semibold text-gray-700">Aktuelle Mannschaftszuweisungen:</h4>
+                <h4 className="text-md font-semibold text-muted-foreground">Aktuelle Mannschaftszuweisungen:</h4>
                 {teams.length === 0 ? (
-                  <p className="text-sm text-gray-500">Noch keine Mannschaften zum Anzeigen.</p>
+                  <p className="text-sm text-muted-foreground">Noch keine Mannschaften zum Anzeigen.</p>
                 ) : (
                   <div className="space-y-4">
                     {teams.map((team) => {
                       const playersInTeam = getPlayersInTeam(team.id)
                       return (
-                        <div key={team.id} className="bg-gray-50 border border-gray-200 rounded-md p-4">
-                          <h5 className="font-bold text-gray-900 mb-2">{team.name}</h5>
+                        <div key={team.id} className="bg-muted border border-border rounded-md p-4">
+                          <h5 className="font-bold text-foreground mb-2">{team.name}</h5>
                           {playersInTeam.length === 0 ? (
-                            <p className="text-sm text-gray-500">Keine Spieler in dieser Mannschaft.</p>
+                            <p className="text-sm text-muted-foreground">Keine Spieler in dieser Mannschaft.</p>
                           ) : (
                             <ul className="space-y-1">
                               {playersInTeam.map((member) => (
-                                <li key={member.id} className="flex items-center justify-between text-sm text-gray-700">
+                                <li key={member.id} className="flex items-center justify-between text-sm text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     {member.player_name}
                                     {member.role === "Captain" && <Crown className="h-3 w-3 text-yellow-600" title="Kapitän" />}
                                     {member.role === "Co-Captain" && (
                                       <ShieldCheck className="h-3 w-3 text-blue-600" title="Co-Kapitän" />
                                     )}
-                                    {member.role && member.role !== "Player" && <span className="text-xs text-gray-500">({member.role})</span>}
+                                    {member.role && member.role !== "Player" && <span className="text-xs text-muted-foreground">({member.role})</span>}
                                   </span>
                                   <Button
                                     variant="ghost"

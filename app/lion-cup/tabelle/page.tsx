@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState} from "react"   
+import { useEffect, useState} from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
@@ -148,11 +148,11 @@ function getPositionBadge(position: number) {
 
   switch (position) {
     case 1:
-      return `${baseClasses} bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-none`
+      return `${baseClasses} bg-card   text-white shadow-none`
     case 2:
-      return `${baseClasses} bg-gradient-to-r from-gray-300 to-gray-500 text-white shadow-none`
+      return `${baseClasses} bg-card   text-white shadow-none`
     case 3:
-      return `${baseClasses} bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-none`
+      return `${baseClasses} bg-card   text-white shadow-none`
     default:
       return `${baseClasses} bg-white/[0.05] text-white/60 border border-white/[0.09]`
   }
@@ -173,7 +173,7 @@ function getPositionIcon(position: number) {
 
 function getPlacementColor(placement: number) {
   if (placement === 1) return "bg-amber-400 text-white"
-  if (placement === 2) return "bg-gray-300 text-white"
+  if (placement === 2) return "bg-secondary text-white"
   if (placement === 3) return "bg-amber-400 text-white"
   return "bg-white/[0.05] text-white/60"
 }
@@ -274,8 +274,8 @@ function MobilePlayerCard({
     <motion.div
       variants={cardVariants}
       onClick={onClick}
-      className={`bg-black/30 rounded-xl shadow-none border border-white/[0.08] p-4 hover:border-amber-300/[0.18] hover:bg-white/[0.045] transition-all duration-300 cursor-pointer ${
-        isTopThree ? "ring-1 ring-amber-300/[0.18] bg-gradient-to-r from-amber-500/[0.08] to-white/[0.02]" : ""
+      className={`bg-card rounded-xl shadow-none border border-white/[0.08] p-4 hover:border-amber-300/[0.18] hover:bg-white/[0.045] transition-all duration-300 cursor-pointer ${
+        isTopThree ? "text-foreground ring-1 ring-amber-300/[0.18] bg-card  " : ""
       }`}
     >
       <div className="flex items-center justify-between mb-3">
@@ -440,7 +440,7 @@ function MobilePlayerCard({
   )
 }
 
- 
+
 
  // ✅ MobileTournamentRankingCard
 
@@ -454,10 +454,10 @@ function MobileTournamentRankingCard({ ranking }: { ranking: any }) {
   const hiddenCount = formArray.length - 6
 
   return (
-    <div className="relative rounded-xl border border-orange-300/[0.16] bg-black/30 p-2.5 shadow-sm">
+    <div className="relative rounded-xl border border-orange-300/[0.16] bg-card p-2.5 shadow-sm">
       {/* kleiner Gesamt-Kreis */}
       <div className="absolute right-2 top-2">
-        <div className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center font-black text-sm">
+        <div className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center font-semibold text-sm">
           {totalPoints}
         </div>
       </div>
@@ -471,7 +471,7 @@ function MobileTournamentRankingCard({ ranking }: { ranking: any }) {
 
         {/* Name + Form */}
         <div className="min-w-0 flex-1">
-          <div className="font-black text-white text-sm truncate">
+          <div className="font-semibold text-white text-sm truncate">
             {ranking.player_name}
           </div>
 
@@ -480,7 +480,7 @@ function MobileTournamentRankingCard({ ranking }: { ranking: any }) {
               {visibleForm.map((result: string, idx: number) => (
                 <span
                   key={idx}
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold ${
                     result === "W"
                       ? "bg-emerald-500/80 text-white"
                       : "bg-red-500/80 text-white"
@@ -491,7 +491,7 @@ function MobileTournamentRankingCard({ ranking }: { ranking: any }) {
               ))}
 
               {hiddenCount > 0 && (
-                <span className="text-[10px] font-bold text-white/35 ml-1">
+                <span className="text-xs font-bold text-muted-foreground ml-1">
                   +{hiddenCount}
                 </span>
               )}
@@ -503,22 +503,22 @@ function MobileTournamentRankingCard({ ranking }: { ranking: any }) {
       {/* Stats kompakt */}
       <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
         <div className="rounded-xl bg-orange-500/[0.08] border border-orange-300/[0.16] py-1.5">
-          <div className="text-[9px] font-bold text-orange-200">Pkt</div>
-          <div className="text-sm font-black text-orange-900">
+          <div className="text-xs font-bold text-orange-200">Pkt</div>
+          <div className="text-sm font-semibold text-orange-900">
             {ranking.placement_points}
           </div>
         </div>
 
         <div className="rounded-xl bg-emerald-500/[0.08] border border-emerald-400/20 py-1.5">
-          <div className="text-[9px] font-bold text-green-700">W</div>
-          <div className="text-sm font-black text-emerald-100">
+          <div className="text-xs font-bold text-green-700">W</div>
+          <div className="text-sm font-semibold text-emerald-100">
             {ranking.legs_won}
           </div>
         </div>
 
         <div className="rounded-xl bg-red-500/[0.08] border border-red-400/20 py-1.5">
-          <div className="text-[9px] font-bold text-red-700">L</div>
-          <div className="text-sm font-black text-red-100">
+          <div className="text-xs font-bold text-red-700">L</div>
+          <div className="text-sm font-semibold text-red-100">
             {ranking.legs_lost}
           </div>
         </div>
@@ -527,7 +527,7 @@ function MobileTournamentRankingCard({ ranking }: { ranking: any }) {
       {/* Bonus klein unten rechts */}
       {ranking.bonus_points > 0 && (
         <div className="mt-1 text-right">
-          <span className="text-[10px] font-bold text-yellow-700">
+          <span className="text-xs font-bold text-yellow-700">
             +{ranking.bonus_points} Bonus
           </span>
         </div>
@@ -553,7 +553,7 @@ const [onlyTop3, setOnlyTop3] = useState(false)
   const [activeTab, setActiveTab] = useState<"alle" | "qualifiziert" | "nicht-qualifiziert" | "turnier-historie">(
   "alle",
   )
-  
+
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null)
   const [nemesisData, setNemesisData] = useState<Map<string, NemesisData>>(new Map())
@@ -626,8 +626,8 @@ const [onlyTop3, setOnlyTop3] = useState(false)
     fetchNemesisData()
     fetchTournaments()
   }, [selectedSeriesId, seasonSettings])
-  
-  
+
+
   useEffect(() => {
   if (selectedPlayer) {
     window.scrollTo({
@@ -1065,13 +1065,13 @@ const [onlyTop3, setOnlyTop3] = useState(false)
 
   const predictedTotalPrizePool =
     predictedPrizePoolFromParticipants + predictedPrizePoolFromAppearances + predictedHostSponsoring + finaleFeesTotal
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
 
   // ✅ SELECTED PLAYER VIEW
 if (selectedPlayer) {
@@ -1098,17 +1098,10 @@ if (selectedPlayer) {
   const hasHalving = seasonSettings.halving_active && originalTotalPoints !== calculatedTotalPoints
 
   return (
-    <div className="lion-cup-premium relative min-h-screen overflow-x-hidden bg-[#050608] text-white pb-24 md:pb-0">
+    <div className="lion-cup-premium relative min-h-screen overflow-x-hidden bg-background text-white pb-24 md:pb-0">
       <Header variant="app" title="Lion Cup Tabelle" subtitle="Lion Cup · Öffentlich" backHref="/lion-cup" />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[#050608]">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.31]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(245,158,11,.16),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(249,115,22,.13),transparent_27%),radial-gradient(circle_at_52%_82%,rgba(14,165,233,.07),transparent_24%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
 
       <main className="relative z-10 pt-20 sm:pt-24">
@@ -1132,8 +1125,8 @@ if (selectedPlayer) {
 
           {/* ✅ PLAYER HEADER CARD  */}
           <motion.div variants={itemVariants}>
-            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+              <div className="text-foreground h-2 bg-card  " />
 
               <div className="p-4 sm:p-5">
                 <div className="flex items-start gap-3">
@@ -1150,9 +1143,9 @@ if (selectedPlayer) {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h1 className="text-lg sm:text-2xl font-black text-white truncate">{player.player_name}</h1>
+                      <h1 className="text-lg sm:text-2xl font-semibold text-white truncate">{player.player_name}</h1>
 
-                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/[0.08] border border-orange-300/[0.16] px-3 py-1 text-xs font-black text-orange-200">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/[0.08] border border-orange-300/[0.16] px-3 py-1 text-xs font-semibold text-orange-200">
                         <Trophy className="w-3.5 h-3.5" />
                         {hasHalving ? (
                           <span className="inline-flex items-center gap-2">
@@ -1170,17 +1163,17 @@ if (selectedPlayer) {
                     </p>
 
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-black text-white/60">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
                         <Users className="w-3.5 h-3.5" />
                         Matches: {player.total_matches_played}
                       </span>
 
-                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-black text-white/60">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
                         <Calendar className="w-3.5 h-3.5" />
                         Antritte: {player.tournaments_played}
                       </span>
 
-                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-black text-white/60">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
                         <CheckCircle className="w-3.5 h-3.5 text-emerald-200" />
                         Siege: {player.total_matches_won}
                       </span>
@@ -1190,27 +1183,27 @@ if (selectedPlayer) {
 
                 {/* ✅ 4er Stats  */}
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div className="rounded-xl border border-white/[0.08] bg-black/30 shadow-sm p-3 text-center">
-                    <p className="text-[11px] font-semibold text-white/60">Antritte</p>
-                    <p className="text-lg font-black text-white">{player.tournaments_played}</p>
+                  <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3 text-center">
+                    <p className="text-xs font-semibold text-white/60">Antritte</p>
+                    <p className="text-lg font-semibold text-white">{player.tournaments_played}</p>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-black/30 shadow-sm p-3 text-center">
-                    <p className="text-[11px] font-semibold text-white/60">Siegrate</p>
-                    <p className="text-lg font-black text-green-700">{winRate}%</p>
+                  <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3 text-center">
+                    <p className="text-xs font-semibold text-white/60">Siegrate</p>
+                    <p className="text-lg font-semibold text-green-700">{winRate}%</p>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-black/30 shadow-sm p-3 text-center">
-                    <p className="text-[11px] font-semibold text-white/60">Leg-Diff</p>
-                    <p className={`text-lg font-black ${legDifference >= 0 ? "text-green-700" : "text-red-700"}`}>
+                  <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3 text-center">
+                    <p className="text-xs font-semibold text-white/60">Leg-Diff</p>
+                    <p className={`text-lg font-semibold ${legDifference >= 0 ? "text-green-700" : "text-red-700"}`}>
                       {legDifference >= 0 ? "+" : ""}
                       {legDifference}
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-white/[0.08] bg-black/30 shadow-sm p-3 text-center">
-                    <p className="text-[11px] font-semibold text-white/60">Ø Punkte</p>
-                    <p className="text-lg font-black text-indigo-100">{avgPlacementPoints}</p>
+                  <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3 text-center">
+                    <p className="text-xs font-semibold text-white/60">Ø Punkte</p>
+                    <p className="text-lg font-semibold text-indigo-100">{avgPlacementPoints}</p>
                   </div>
                 </div>
 
@@ -1228,8 +1221,8 @@ if (selectedPlayer) {
 
           {/* ✅ 3er Stats  */}
           <motion.div variants={itemVariants}>
-            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+              <div className="text-foreground h-2 bg-card  " />
 
               <div className="p-4 sm:p-5 border-b border-white/[0.08]">
                 <div className="flex items-start gap-3">
@@ -1237,39 +1230,39 @@ if (selectedPlayer) {
                     <Target className="w-5 h-5 text-orange-200" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-base sm:text-lg font-black text-white">Punkte-Aufteilung</h2>
+                    <h2 className="text-base sm:text-lg font-semibold text-white">Punkte-Aufteilung</h2>
                     <p className="text-xs sm:text-sm text-white/48 mt-1">Platzierung, Legs & Bonus</p>
                   </div>
 
-                  <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-black text-white/60">
+                  <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-white/60">
                     {hasHalving ? calculatedTotalPoints : player.total_points}
                   </div>
                 </div>
               </div>
 
               <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
+                <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Target className="h-4 w-4 text-sky-200" />
-                    <p className="text-xs font-black text-white/60">Platzierungspunkte</p>
+                    <p className="text-xs font-semibold text-white/60">Platzierungspunkte</p>
                   </div>
-                  <p className="text-2xl font-black text-blue-700 mt-2">{player.placement_points}</p>
+                  <p className="text-2xl font-semibold text-blue-700 mt-2">{player.placement_points}</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
+                <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Activity className="h-4 w-4 text-emerald-200" />
-                    <p className="text-xs font-black text-white/60">Legs gewonnen</p>
+                    <p className="text-xs font-semibold text-white/60">Legs gewonnen</p>
                   </div>
-                  <p className="text-2xl font-black text-green-700 mt-2">{player.legs_won}</p>
+                  <p className="text-2xl font-semibold text-green-700 mt-2">{player.legs_won}</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
+                <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Award className="h-4 w-4 text-amber-200" />
-                    <p className="text-xs font-black text-white/60">Bonuspunkte</p>
+                    <p className="text-xs font-semibold text-white/60">Bonuspunkte</p>
                   </div>
-                  <p className="text-2xl font-black text-yellow-700 mt-2">{player.bonus_points}</p>
+                  <p className="text-2xl font-semibold text-yellow-700 mt-2">{player.bonus_points}</p>
                 </div>
               </div>
             </div>
@@ -1278,8 +1271,8 @@ if (selectedPlayer) {
           {/* ✅ Freilos */}
           {playerFreilos && (
             <motion.div variants={itemVariants}>
-              <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
-                <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+              <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+                <div className="text-foreground h-2 bg-card  " />
 
                 <div className="p-4 sm:p-5 border-b border-white/[0.08]">
                   <div className="flex items-start gap-3">
@@ -1287,26 +1280,26 @@ if (selectedPlayer) {
                       <Gift className="w-5 h-5 text-orange-200" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-base sm:text-lg font-black text-white">Freilos-Statistik</h2>
+                      <h2 className="text-base sm:text-lg font-semibold text-white">Freilos-Statistik</h2>
                       <p className="text-xs sm:text-sm text-white/48 mt-1">Auswertung aus Match-Daten</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4 text-center">
-                    <p className="text-[11px] font-semibold text-white/60">Antritte</p>
-                    <p className="text-2xl font-black text-indigo-100 mt-2">{player.tournaments_played}</p>
+                  <div className="rounded-2xl border border-white/[0.08] bg-card p-4 text-center">
+                    <p className="text-xs font-semibold text-white/60">Antritte</p>
+                    <p className="text-2xl font-semibold text-indigo-100 mt-2">{player.tournaments_played}</p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4 text-center">
-                    <p className="text-[11px] font-semibold text-white/60">Freilose</p>
-                    <p className="text-2xl font-black text-red-700 mt-2">{playerFreilos.freilos_count}</p>
+                  <div className="rounded-2xl border border-white/[0.08] bg-card p-4 text-center">
+                    <p className="text-xs font-semibold text-white/60">Freilose</p>
+                    <p className="text-2xl font-semibold text-red-700 mt-2">{playerFreilos.freilos_count}</p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4 text-center">
-                    <p className="text-[11px] font-semibold text-white/60">Ø pro Antritt</p>
-                    <p className="text-2xl font-black text-green-700 mt-2">{playerFreilos.average.toFixed(2)}</p>
+                  <div className="rounded-2xl border border-white/[0.08] bg-card p-4 text-center">
+                    <p className="text-xs font-semibold text-white/60">Ø pro Antritt</p>
+                    <p className="text-2xl font-semibold text-green-700 mt-2">{playerFreilos.average.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -1315,8 +1308,8 @@ if (selectedPlayer) {
 
           {/* ✅ Letzte 20 Spiele */}
           <motion.div variants={itemVariants}>
-            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+              <div className="text-foreground h-2 bg-card  " />
 
               <div className="p-4 sm:p-5 border-b border-white/[0.08]">
                 <div className="flex items-start gap-3">
@@ -1324,7 +1317,7 @@ if (selectedPlayer) {
                     <Activity className="w-5 h-5 text-orange-200" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-base sm:text-lg font-black text-white">Letzte 20 Spiele</h2>
+                    <h2 className="text-base sm:text-lg font-semibold text-white">Letzte 20 Spiele</h2>
                     <p className="text-xs sm:text-sm text-white/48 mt-1">Nur abgeschlossene Matches</p>
                   </div>
                 </div>
@@ -1351,7 +1344,7 @@ if (selectedPlayer) {
                         <div className="flex items-center justify-between">
                           <div className="flex items-start gap-3 min-w-0">
                             <div
-                              className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white flex-shrink-0 ${
+                              className={`w-10 h-10 rounded-2xl flex items-center justify-center font-semibold text-white flex-shrink-0 ${
                                 isWinner ? "bg-green-600" : "bg-red-600"
                               }`}
                             >
@@ -1359,8 +1352,8 @@ if (selectedPlayer) {
                             </div>
 
                             <div className="min-w-0">
-                              <div className="text-xs font-black text-white/60">{match.tournament_type}</div>
-                              <div className="text-xs text-white/35">
+                              <div className="text-xs font-semibold text-white/60">{match.tournament_type}</div>
+                              <div className="text-xs text-muted-foreground">
                                 {new Date(match.updated_at).toLocaleDateString("de-DE")}
                               </div>
                               <div className="mt-1 text-sm font-bold text-white truncate">
@@ -1370,10 +1363,10 @@ if (selectedPlayer) {
                           </div>
 
                           <div className="text-right flex-shrink-0">
-                            <div className={`text-2xl font-black ${isWinner ? "text-green-700" : "text-red-700"}`}>
+                            <div className={`text-2xl font-semibold ${isWinner ? "text-green-700" : "text-red-700"}`}>
                               {playerScore}:{opponentScore}
                             </div>
-                            <div className="text-[10px] text-white/35 mt-1">Match-ID: {match.id}</div>
+                            <div className="text-xs text-muted-foreground mt-1">Match-ID: {match.id}</div>
                           </div>
                         </div>
                       </div>
@@ -1391,8 +1384,8 @@ if (selectedPlayer) {
 
           {/* ✅ Turnier Historie (für den Spieler) */}
           <motion.div variants={itemVariants}>
-            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+              <div className="text-foreground h-2 bg-card  " />
 
               <div className="p-4 sm:p-5 border-b border-white/[0.08]">
                 <div className="flex items-start gap-3">
@@ -1400,11 +1393,11 @@ if (selectedPlayer) {
                     <Calendar className="w-5 h-5 text-orange-200" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-base sm:text-lg font-black text-white">Turnier Historie</h2>
+                    <h2 className="text-base sm:text-lg font-semibold text-white">Turnier Historie</h2>
                     <p className="text-xs sm:text-sm text-white/48 mt-1">Alle Teilnahmen & Ergebnisse</p>
                   </div>
 
-                  <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-black text-white/60">
+                  <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-white/60">
                     {playerTournaments.length}
                   </div>
                 </div>
@@ -1423,40 +1416,40 @@ if (selectedPlayer) {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="font-black text-white truncate">{tournament.tournament_name}</div>
-                            <div className="text-xs text-white/35 mt-1">
+                            <div className="font-semibold text-white truncate">{tournament.tournament_name}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
                               {new Date(tournament.tournament_date).toLocaleDateString("de-DE")}
                             </div>
                           </div>
 
                           <div className="text-right flex-shrink-0">
                             <div className="text-xs text-white/48">Platz</div>
-                            <div className="text-2xl font-black text-orange-200">{entry.placement}</div>
+                            <div className="text-2xl font-semibold text-orange-200">{entry.placement}</div>
                           </div>
                         </div>
 
                         <div className="mt-3 grid grid-cols-4 gap-2">
-                          <div className="rounded-xl border border-white/[0.08] bg-black/30 p-2 text-center">
-                            <div className="text-[10px] font-bold text-white/48">Pl. Punkte</div>
-                            <div className="text-sm font-black text-blue-700">{entry.placement_points}</div>
+                          <div className="rounded-xl border border-white/[0.08] bg-card p-2 text-center">
+                            <div className="text-xs font-bold text-white/48">Pl. Punkte</div>
+                            <div className="text-sm font-semibold text-blue-700">{entry.placement_points}</div>
                           </div>
-                          <div className="rounded-xl border border-white/[0.08] bg-black/30 p-2 text-center">
-                            <div className="text-[10px] font-bold text-white/48">Legs W</div>
-                            <div className="text-sm font-black text-green-700">{entry.legs_won}</div>
+                          <div className="rounded-xl border border-white/[0.08] bg-card p-2 text-center">
+                            <div className="text-xs font-bold text-white/48">Legs W</div>
+                            <div className="text-sm font-semibold text-green-700">{entry.legs_won}</div>
                           </div>
-                          <div className="rounded-xl border border-white/[0.08] bg-black/30 p-2 text-center">
-                            <div className="text-[10px] font-bold text-white/48">Legs L</div>
-                            <div className="text-sm font-black text-red-700">{entry.legs_lost}</div>
+                          <div className="rounded-xl border border-white/[0.08] bg-card p-2 text-center">
+                            <div className="text-xs font-bold text-white/48">Legs L</div>
+                            <div className="text-sm font-semibold text-red-700">{entry.legs_lost}</div>
                           </div>
-                          <div className="rounded-xl border border-white/[0.08] bg-black/30 p-2 text-center">
-                            <div className="text-[10px] font-bold text-white/48">Gesamt</div>
-                            <div className="text-sm font-black text-orange-200">{total}</div>
+                          <div className="rounded-xl border border-white/[0.08] bg-card p-2 text-center">
+                            <div className="text-xs font-bold text-white/48">Gesamt</div>
+                            <div className="text-sm font-semibold text-orange-200">{total}</div>
                           </div>
                         </div>
 
                         {entry.bonus_points > 0 && (
                           <div className="mt-2 text-right">
-                            <span className="inline-flex items-center justify-center rounded-full bg-yellow-100 border border-yellow-200 px-2.5 py-1 text-xs font-black text-amber-100">
+                            <span className="inline-flex items-center justify-center rounded-full bg-yellow-100 border border-yellow-200 px-2.5 py-1 text-xs font-semibold text-amber-100">
                               +{entry.bonus_points} Bonus
                             </span>
                           </div>
@@ -1465,11 +1458,11 @@ if (selectedPlayer) {
                         {entry.form && (
                           <div className="mt-3 flex items-center gap-2 flex-wrap">
                             <span className="text-xs text-white/48">Form:</span>
-                            <div className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-black/30 px-2.5 py-1">
+                            <div className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-card px-2.5 py-1">
                               {entry.form.split(",").map((result: string, idx: number) => (
                                 <span
                                   key={`${tournament.tournament_id}-f-${idx}`}
-                                  className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black ${
+                                  className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${
                                     result === "W" ? "bg-emerald-500/80 text-white" : "bg-red-500/80 text-white"
                                   }`}
                                 >
@@ -1494,7 +1487,7 @@ if (selectedPlayer) {
 
           {/* Footer */}
           <motion.div variants={itemVariants}>
-            
+
           </motion.div>
         </motion.div>
       </main>
@@ -1503,35 +1496,28 @@ if (selectedPlayer) {
     </div>
   )
 }
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
-  // ✅ LOADING VIEW 
+
+
+
+
+
+
+
+
+
+  // ✅ LOADING VIEW
   if (loading) {
   return (
     <main className="min-h-screen flex flex-col bg-white/[0.035] text-white pb-24 overflow-x-hidden">
       <Header variant="app" title="Lion Cup Tabelle" subtitle="Lion Cup · Öffentlich" backHref="/lion-cup" />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[#050608]">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.31]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(245,158,11,.16),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(249,115,22,.13),transparent_27%),radial-gradient(circle_at_52%_82%,rgba(14,165,233,.07),transparent_24%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
 
       <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
         <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-black/30 shadow-2xl px-10 py-10 border border-white/[0.08]">
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-2xl px-10 py-10 border border-white/[0.08]">
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
               <Loader2 className="relative h-12 w-12 animate-spin text-orange-200" />
@@ -1539,7 +1525,7 @@ if (selectedPlayer) {
 
             <div className="text-center">
               <p className="text-lg font-bold text-white">Lion Cup wird geladen</p>
-              <p className="text-sm text-white/35 mt-1">Bitte kurz warten…</p>
+              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
             </div>
           </div>
         </div>
@@ -1550,19 +1536,12 @@ if (selectedPlayer) {
   )
 }
 
-// ✅ MAIN VIEW 
+// ✅ MAIN VIEW
 return (
-  <div className="lion-cup-premium relative min-h-screen overflow-x-hidden bg-[#050608] text-white pb-24 md:pb-0">
+  <div className="lion-cup-premium relative min-h-screen overflow-x-hidden bg-background text-white pb-24 md:pb-0">
     <Header variant="app" title="Lion Cup Tabelle" subtitle="Lion Cup · Öffentlich" backHref="/lion-cup" />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[#050608]">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.31]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(245,158,11,.16),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(249,115,22,.13),transparent_27%),radial-gradient(circle_at_52%_82%,rgba(14,165,233,.07),transparent_24%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
 
     <main className="relative z-10 pt-20 sm:pt-24">
@@ -1574,24 +1553,24 @@ return (
       >
         {/* LION CUP HEADER – wie aktuelle Startseite, bewusst kompakt */}
         <motion.div variants={itemVariants}>
-          <div className="overflow-hidden rounded-[30px] border border-amber-300/[0.12] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
-            <div className="relative bg-[linear-gradient(135deg,rgba(9,12,17,.98),rgba(13,10,8,.98)_55%,rgba(58,30,8,.70))] text-white">
+          <div className="overflow-hidden rounded-[30px] border border-amber-300/[0.12] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
+            <div className="relative bg-card text-white">
               <div className="relative p-4 sm:p-5 lg:p-6">
                 <div className="flex flex-col items-center text-center">
-                  <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl border border-white/20 bg-black/30">
+                  <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl border border-white/20 bg-card">
                     <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-orange-300" />
                   </div>
 
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-black text-[#231407]">
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-semibold text-[#231407]">
                     <Trophy className="h-3.5 w-3.5" />
                     <span>LION CUP PART 3 • HERBST 2026</span>
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                    <h1 className="text-2xl font-black sm:text-3xl lg:text-4xl">
+                    <h1 className="text-2xl font-semibold sm:text-3xl lg:text-4xl">
                       {selectedSeries?.name || "EMD - LION CUP"}
                     </h1>
-                    <span className="rounded-full border border-white/20 bg-black/30 px-3 py-1 text-xs font-black">
+                    <span className="rounded-full border border-white/20 bg-card px-3 py-1 text-xs font-semibold">
                       {selectedSeries?.is_active ? "AKTUELL" : "ARCHIV"}
                     </span>
                   </div>
@@ -1602,7 +1581,7 @@ return (
 
                   {seriesList.length > 1 && (
                     <div className="mt-4 w-full max-w-sm">
-                      <label className="text-[11px] font-black uppercase tracking-wider text-white/60">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-white/60">
                         Saison / Archiv
                       </label>
                       <select
@@ -1611,7 +1590,7 @@ return (
                           setSelectedPlayer(null)
                           setSelectedSeriesId(e.target.value)
                         }}
-                        className="mt-1 w-full rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm font-black text-slate-900 outline-none"
+                        className="mt-1 w-full rounded-xl border border-white/20 bg-card px-3 py-2 text-sm font-semibold text-foreground outline-none"
                       >
                         {seriesList.map((series) => (
                           <option key={series.id} value={series.id}>
@@ -1629,14 +1608,14 @@ return (
               <div className="rounded-2xl border border-orange-300/[0.16] bg-orange-500/[0.08] p-4 sm:p-5">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-orange-200" />
-                  <span className="text-xs font-black uppercase tracking-wider text-white sm:text-sm">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-white sm:text-sm">
                     Finalpreisfonds
                   </span>
                 </div>
 
-                <div className="mt-3 rounded-2xl border border-orange-300/[0.16] bg-black/30 p-4 sm:p-5">
+                <div className="mt-3 rounded-2xl border border-orange-300/[0.16] bg-card p-4 sm:p-5">
                   <div className="text-center">
-                    <div className="text-3xl font-black text-white sm:text-4xl lg:text-5xl">
+                    <div className="text-3xl font-semibold text-white sm:text-4xl lg:text-5xl">
                       €{totalPrizePool.toFixed(2)}
                     </div>
                     <div className="mt-1 text-xs font-semibold text-white/48 sm:text-sm">
@@ -1646,22 +1625,22 @@ return (
 
                   <div className="mt-4 border-t border-orange-300/[0.12] pt-4">
                     <p className="text-center text-sm font-bold text-white/60">
-                      Seriengebühr: <span className="font-black text-orange-200">€ 10,00</span> einmalig pro Spieler
+                      Seriengebühr: <span className="font-semibold text-orange-200">€ 10,00</span> einmalig pro Spieler
                     </p>
                     <p className="mt-1 text-center text-sm font-bold text-white/60">
-                      Startgeld: <span className="font-black text-orange-200">€ 5,00</span> pro Spieler und Turniertag
+                      Startgeld: <span className="font-semibold text-orange-200">€ 5,00</span> pro Spieler und Turniertag
                     </p>
 
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="rounded-xl border border-orange-300/[0.16] bg-orange-500/[0.08] p-3 text-center">
-                        <div className="text-xl font-black text-orange-200 sm:text-2xl">€ 10,00</div>
-                        <div className="mt-1 text-[11px] font-bold text-white/48 sm:text-xs">
+                        <div className="text-xl font-semibold text-orange-200 sm:text-2xl">€ 10,00</div>
+                        <div className="mt-1 text-xs font-bold text-white/48 sm:text-xs">
                           einmalige Seriengebühr pro Spieler
                         </div>
                       </div>
                       <div className="rounded-xl border border-orange-300/[0.16] bg-orange-500/[0.08] p-3 text-center">
-                        <div className="text-xl font-black text-orange-200 sm:text-2xl">€ 5,00</div>
-                        <div className="mt-1 text-[11px] font-bold text-white/48 sm:text-xs">
+                        <div className="text-xl font-semibold text-orange-200 sm:text-2xl">€ 5,00</div>
+                        <div className="mt-1 text-xs font-bold text-white/48 sm:text-xs">
                           pro Turnier und Spieler
                         </div>
                       </div>
@@ -1675,8 +1654,8 @@ return (
 
         {/* ✅ PREISGELD PREDICTION  */}
         <motion.div variants={itemVariants}>
-          <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
-            <div className="h-2 bg-gradient-to-r from-indigo-500 to-purple-600" />
+          <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+            <div className="text-foreground h-2 bg-card  " />
 
             <div className="p-4 sm:p-5">
               <div className="flex items-start gap-3">
@@ -1685,7 +1664,7 @@ return (
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-base sm:text-lg font-black text-white">PREISGELD PREDICTION</h2>
+                  <h2 className="text-base sm:text-lg font-semibold text-white">PREISGELD PREDICTION</h2>
                   <p className="text-sm text-white/48 mt-1">Hochrechnung basierend auf aktuellen Teilnehmern</p>
                 </div>
               </div>
@@ -1693,7 +1672,7 @@ return (
               <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-500/[0.08] p-4 text-center">
                 <div className="flex items-baseline justify-center gap-2">
                   <span className="text-2xl sm:text-3xl text-white/48 font-bold">€</span>
-                  <span className="text-4xl sm:text-5xl font-black text-indigo-100">
+                  <span className="text-4xl sm:text-5xl font-semibold text-indigo-100">
                     {predictedTotalPrizePool.toFixed(2)}
                   </span>
                 </div>
@@ -1704,42 +1683,42 @@ return (
 
               {/* Stats */}
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
+                <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-indigo-200" />
-                    <p className="text-xs font-black text-white/60">Turniertage</p>
+                    <p className="text-xs font-semibold text-white/60">Turniertage</p>
                   </div>
-                  <p className="text-lg font-black text-indigo-100 mt-1">
+                  <p className="text-lg font-semibold text-indigo-100 mt-1">
                     {completedTournaments} / {totalTournamentDays}
                   </p>
-                  <p className="text-xs text-white/35 mt-1">Noch {remainingTournaments} verbleibend</p>
+                  <p className="text-xs text-muted-foreground mt-1">Noch {remainingTournaments} verbleibend</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
+                <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-emerald-200" />
-                    <p className="text-xs font-black text-white/60">Ø Antritte/Turnier</p>
+                    <p className="text-xs font-semibold text-white/60">Ø Antritte/Turnier</p>
                   </div>
-                  <p className="text-lg font-black text-green-700 mt-1">{avgParticipationsPerTournament.toFixed(1)}</p>
-                  <p className="text-xs text-white/35 mt-1">Aktuell: {totalAppearances} gesamt</p>
+                  <p className="text-lg font-semibold text-green-700 mt-1">{avgParticipationsPerTournament.toFixed(1)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Aktuell: {totalAppearances} gesamt</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
+                <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-violet-200" />
-                    <p className="text-xs font-black text-white/60">Prognostiziert</p>
+                    <p className="text-xs font-semibold text-white/60">Prognostiziert</p>
                   </div>
-                  <p className="text-lg font-black text-purple-700 mt-1">{predictedTotalAppearances}</p>
-                  <p className="text-xs text-white/35 mt-1">Antritte bis Saisonende</p>
+                  <p className="text-lg font-semibold text-purple-700 mt-1">{predictedTotalAppearances}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Antritte bis Saisonende</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-4">
+                <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Award className="h-4 w-4 text-amber-200" />
-                    <p className="text-xs font-black text-white/60">Bonus</p>
+                    <p className="text-xs font-semibold text-white/60">Bonus</p>
                   </div>
-                  <p className="text-lg font-black text-yellow-700 mt-1">€ {predictedHostSponsoring.toFixed(2)}</p>
-                  <p className="text-xs text-white/35 mt-1">
+                  <p className="text-lg font-semibold text-yellow-700 mt-1">€ {predictedHostSponsoring.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     {predictedTotalAppearances >= 501
                       ? "Ab 501 Antritte"
                       : predictedTotalAppearances >= 1
@@ -1753,17 +1732,17 @@ return (
               <div className="mt-4 space-y-3">
                 <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/[0.08] p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[11px] font-semibold text-white/75 flex items-center gap-2">
+                    <p className="text-xs font-semibold text-white/75 flex items-center gap-2">
                       <Sparkles className="h-4 w-4 text-emerald-200" />
                       Fortschritt zum €100 Bonus
                     </p>
-                    <p className="text-[11px] font-semibold text-green-700">
+                    <p className="text-xs font-semibold text-green-700">
                       {totalAppearances >= 500 ? "Erreicht!" : `${totalAppearances} / 500`}
                     </p>
                   </div>
                   <div className="relative w-full bg-white/[0.08] rounded-full h-3 overflow-hidden">
                     <div
-                      className="h-3 rounded-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-500"
+                      className="text-foreground h-3 rounded-full bg-card   transition-all duration-500"
                       style={{ width: `${Math.min((totalAppearances / 500) * 100, 100)}%` }}
                     />
                   </div>
@@ -1771,17 +1750,17 @@ return (
 
                 <div className="rounded-2xl border border-yellow-200 bg-amber-500/[0.08] p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[11px] font-semibold text-white/75 flex items-center gap-2">
+                    <p className="text-xs font-semibold text-white/75 flex items-center gap-2">
                       <Sparkles className="h-4 w-4 text-amber-200" />
                       Fortschritt zum €250 Bonus
                     </p>
-                    <p className="text-[11px] font-semibold text-yellow-700">
+                    <p className="text-xs font-semibold text-yellow-700">
                       {totalAppearances >= 501 ? "Erreicht!" : `${Math.max(totalAppearances, 0)} / 501`}
                     </p>
                   </div>
                   <div className="relative w-full bg-white/[0.08] rounded-full h-3 overflow-hidden">
                     <div
-                      className="h-3 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 transition-all duration-500"
+                      className="text-foreground h-3 rounded-full bg-card   transition-all duration-500"
                       style={{ width: `${Math.min((totalAppearances / 501) * 100, 100)}%` }}
                     />
                   </div>
@@ -1790,35 +1769,35 @@ return (
             </div>
           </div>
         </motion.div>
-		
-		
-		
-		
+
+
+
+
 
           {/* ✅ STATS 4er GRID  */}
 <motion.div variants={itemVariants}>
   <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
     {/* Teilnehmer */}
-    <div className="rounded-xl border border-white/[0.08] bg-black/30 shadow-sm p-3">
+    <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-orange-500/[0.08] border border-orange-300/[0.16] flex items-center justify-center flex-shrink-0">
           <Users className="w-5 h-5 text-orange-200" />
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-white/60">Teilnehmer</p>
+          <p className="text-xs font-semibold text-white/60">Teilnehmer</p>
           <p className="text-lg font-bold text-white">{standings.length}</p>
         </div>
       </div>
     </div>
 
     {/* Führender */}
-    <div className="rounded-xl border border-white/[0.08] bg-black/30 shadow-sm p-3">
+    <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-orange-500/[0.08] border border-orange-300/[0.16] flex items-center justify-center flex-shrink-0">
           <Trophy className="w-5 h-5 text-orange-200" />
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-white/60">Führender</p>
+          <p className="text-xs font-semibold text-white/60">Führender</p>
           <p className="text-sm font-semibold text-white truncate">
             {standings[0]?.player_name || "-"}
           </p>
@@ -1827,13 +1806,13 @@ return (
     </div>
 
     {/* Höchste Punktzahl */}
-    <div className="rounded-xl border border-white/[0.08] bg-black/30 shadow-sm p-3">
+    <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-orange-500/[0.08] border border-orange-300/[0.16] flex items-center justify-center flex-shrink-0">
           <TrendingUp className="w-5 h-5 text-orange-200" />
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-white/60">Höchste Punktzahl</p>
+          <p className="text-xs font-semibold text-white/60">Höchste Punktzahl</p>
           <p className="text-lg font-bold text-white">
             {standings[0]
               ? standings[0].placement_points + standings[0].legs_won + standings[0].bonus_points
@@ -1844,33 +1823,33 @@ return (
     </div>
 
     {/* In der Serienwertung */}
-    <div className="rounded-xl border border-white/[0.08] bg-black/30 shadow-sm p-3">
+    <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-orange-500/[0.08] border border-orange-300/[0.16] flex items-center justify-center flex-shrink-0">
           <CheckCircle className="w-5 h-5 text-orange-200" />
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-white/60">Qualifiziert</p>
+          <p className="text-xs font-semibold text-white/60">Qualifiziert</p>
           <p className="text-lg font-bold text-white">{qualifiedPlayers.length}</p>
         </div>
       </div>
     </div>
   </div>
 </motion.div>
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
+
+
+
+
+
+
+
+
 
          {/* ✅ TAB NAV  */}
 <motion.div variants={itemVariants}>
-  <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
+  <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
     {/* orange bar  */}
-    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+    <div className="text-foreground h-2 bg-card  " />
 
     <div className="p-3 overflow-x-auto">
       <div className="flex space-x-2 min-w-max sm:min-w-0 sm:grid sm:grid-cols-4 sm:space-x-0 sm:gap-3">
@@ -1880,7 +1859,7 @@ return (
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
             activeTab === "alle"
               ? "bg-orange-600 hover:bg-orange-700 text-white shadow-none shadow-orange-200"
-              : "bg-black/30 text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
+              : "bg-card text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
           }`}
           type="button"
         >
@@ -1888,8 +1867,8 @@ return (
           <span className="hidden sm:inline">Alle Spieler</span>
           <span className="sm:hidden">Alle</span>
           <span
-            className={`ml-2 rounded-full px-2 py-1 text-xs font-black ${
-              activeTab === "alle" ? "bg-black/30/20 text-white" : "bg-orange-500/[0.08] text-orange-200 border border-orange-300/[0.16]"
+            className={`ml-2 rounded-full px-2 py-1 text-xs font-semibold ${
+              activeTab === "alle" ? "bg-card/20 text-white" : "bg-orange-500/[0.08] text-orange-200 border border-orange-300/[0.16]"
             }`}
           >
             {standings.length}
@@ -1902,7 +1881,7 @@ return (
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
             activeTab === "qualifiziert"
               ? "bg-orange-600 hover:bg-orange-700 text-white shadow-none shadow-orange-200"
-              : "bg-black/30 text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
+              : "bg-card text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
           }`}
           type="button"
         >
@@ -1912,9 +1891,9 @@ return (
           <span className="hidden sm:inline">In der Wertung</span>
           <span className="sm:hidden">Wertung</span>
           <span
-            className={`ml-2 rounded-full px-2 py-1 text-xs font-black ${
+            className={`ml-2 rounded-full px-2 py-1 text-xs font-semibold ${
               activeTab === "qualifiziert"
-                ? "bg-black/30/20 text-white"
+                ? "bg-card/20 text-white"
                 : "bg-orange-500/[0.08] text-orange-200 border border-orange-300/[0.16]"
             }`}
           >
@@ -1928,7 +1907,7 @@ return (
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
             activeTab === "nicht-qualifiziert"
               ? "bg-orange-600 hover:bg-orange-700 text-white shadow-none shadow-orange-200"
-              : "bg-black/30 text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
+              : "bg-card text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
           }`}
           type="button"
         >
@@ -1938,9 +1917,9 @@ return (
           <span className="hidden sm:inline">Noch nicht in der Wertung</span>
           <span className="sm:hidden">Noch offen</span>
           <span
-            className={`ml-2 rounded-full px-2 py-1 text-xs font-black ${
+            className={`ml-2 rounded-full px-2 py-1 text-xs font-semibold ${
               activeTab === "nicht-qualifiziert"
-                ? "bg-black/30/20 text-white"
+                ? "bg-card/20 text-white"
                 : "bg-orange-500/[0.08] text-orange-200 border border-orange-300/[0.16]"
             }`}
           >
@@ -1954,7 +1933,7 @@ return (
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
             activeTab === "turnier-historie"
               ? "bg-orange-600 hover:bg-orange-700 text-white shadow-none shadow-orange-200"
-              : "bg-black/30 text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
+              : "bg-card text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
           }`}
           type="button"
         >
@@ -1964,9 +1943,9 @@ return (
           <span className="hidden sm:inline">Turnier Historie</span>
           <span className="sm:hidden">Historie</span>
           <span
-            className={`ml-2 rounded-full px-2 py-1 text-xs font-black ${
+            className={`ml-2 rounded-full px-2 py-1 text-xs font-semibold ${
               activeTab === "turnier-historie"
-                ? "bg-black/30/20 text-white"
+                ? "bg-card/20 text-white"
                 : "bg-orange-500/[0.08] text-orange-200 border border-orange-300/[0.16]"
             }`}
           >
@@ -1977,21 +1956,21 @@ return (
     </div>
   </div>
 </motion.div>
-		  
-		  
-		  
-		  
-		  
-		  
-	{/* ✅ Alle Turniere Button */}	  
+
+
+
+
+
+
+	{/* ✅ Alle Turniere Button */}
 
 <motion.div variants={itemVariants}>
   <a
     href="/lion_cup_results"
-    className="block overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl hover:shadow-md transition-all duration-300 group"
+    className="block overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none  hover:shadow-md transition-all duration-300 group"
   >
     {/* Orange Balken oben */}
-    <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+    <div className="text-foreground h-2 bg-card  " />
 
     <div className="p-4 sm:p-5 flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -2000,7 +1979,7 @@ return (
         </div>
 
         <div className="min-w-0">
-          <h3 className="text-base sm:text-lg font-black text-white">
+          <h3 className="text-base sm:text-lg font-semibold text-white">
             Alle Turnier-Ergebnisse
           </h3>
           <p className="text-xs sm:text-sm text-white/48 mt-1">
@@ -2019,11 +1998,11 @@ return (
 
 
           {/* ✅ Turnier Historie*/}
-          
+
 		  {activeTab === "turnier-historie" ? (
   <motion.div variants={itemVariants}>
-    <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl hover:shadow-md transition-shadow duration-300">
-      <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+    <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none  hover:shadow-md transition-shadow duration-300">
+      <div className="text-foreground h-2 bg-card  " />
 
       <div className="p-4 sm:p-5 border-b border-white/[0.08]">
         <div className="flex items-start justify-between gap-3">
@@ -2033,21 +2012,21 @@ return (
             </div>
 
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-black text-white">Turnier Historie</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-white">Turnier Historie</h2>
               <p className="text-xs sm:text-sm text-white/48 mt-1">Alle Turniere mit Platzierungen</p>
 
               <div className="mt-3 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full bg-orange-500/[0.08] border border-orange-300/[0.16] px-3 py-1 text-xs font-black text-orange-200">
+                <span className="inline-flex items-center gap-2 rounded-full bg-orange-500/[0.08] border border-orange-300/[0.16] px-3 py-1 text-xs font-semibold text-orange-200">
                   <Trophy className="w-3.5 h-3.5" />
                   {tournaments.length} Turniere
                 </span>
 
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-black text-white/60">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
                   <Users className="w-3.5 h-3.5" />
                   Gesamt Spieler: {tournaments.reduce((sum, t) => sum + (t.rankings?.length || 0), 0)}
                 </span>
 
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-black text-white/60">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
                   <Calendar className="w-3.5 h-3.5" />
                   zuletzt:{" "}
                   {tournaments.length > 0 ? new Date(tournaments[0].tournament_date).toLocaleDateString("de-DE") : "-"}
@@ -2056,7 +2035,7 @@ return (
             </div>
           </div>
 
-          <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-black text-white/60">
+          <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-white/60">
             {tournaments.length}
           </div>
         </div>
@@ -2068,7 +2047,7 @@ return (
             <motion.div
               key={tournament.tournament_id}
               variants={cardVariants}
-              className="bg-black/30 rounded-2xl border border-white/[0.09] overflow-hidden shadow-sm hover:shadow-md hover:border-orange-400 transition-all duration-300"
+              className="bg-card rounded-2xl border border-white/[0.09] overflow-hidden shadow-sm hover:shadow-md hover:border-orange-400 transition-all duration-300"
             >
               <button
                 type="button"
@@ -2078,12 +2057,12 @@ return (
                 className="w-full p-4 flex items-center justify-between hover:bg-white/[0.035] transition-colors"
               >
                 <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                  <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 bg-orange-600 text-white rounded-2xl font-black text-sm sm:text-base flex-shrink-0 shadow-sm">
+                  <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 bg-orange-600 text-white rounded-2xl font-semibold text-sm sm:text-base flex-shrink-0 shadow-sm">
                     {tournaments.length - index}
                   </div>
 
                   <div className="text-left min-w-0 flex-1">
-                    <h3 className="text-sm sm:text-lg font-black text-white truncate">{tournament.tournament_name}</h3>
+                    <h3 className="text-sm sm:text-lg font-semibold text-white truncate">{tournament.tournament_name}</h3>
 
                     <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-white/48">
                       <span className="inline-flex items-center gap-1">
@@ -2113,10 +2092,10 @@ return (
 
               {expandedTournament === tournament.tournament_id && tournament.rankings && (
                 <div className="border-t-2 border-white/[0.08] bg-white/[0.035] p-3 sm:p-6">
-                  <h4 className="text-base sm:text-lg font-black text-white mb-3 sm:mb-4">Platzierungen</h4>
+                  <h4 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Platzierungen</h4>
 
-                  <div className="hidden lg:block bg-black/30 border border-white/[0.09] rounded-2xl overflow-hidden">
-                    <div className="grid grid-cols-[80px_1fr_auto_100px_80px_100px_100px_120px] gap-4 p-4 bg-white/[0.05] border-b-2 border-white/[0.08] font-black text-sm text-white/60">
+                  <div className="hidden lg:block bg-card border border-white/[0.09] rounded-2xl overflow-hidden">
+                    <div className="grid grid-cols-[80px_1fr_auto_100px_80px_100px_100px_120px] gap-4 p-4 bg-white/[0.05] border-b-2 border-white/[0.08] font-semibold text-sm text-white/60">
                       <div className="text-center">Platz</div>
                       <div>Spieler</div>
                       <div className="text-center">Form</div>
@@ -2127,7 +2106,7 @@ return (
                       <div className="text-center">Gesamt</div>
                     </div>
 
-                    <div className="divide-y-2 divide-gray-200">
+                    <div className="divide-y-2 divide-border">
                       {tournament.rankings.map((ranking: any, rankIndex: number) => (
                         <div
                           key={rankIndex}
@@ -2135,7 +2114,7 @@ return (
                         >
                           <div className="flex justify-center">
                             <div
-                              className={`flex items-center justify-center w-10 h-10 rounded-full font-black text-sm ${getPlacementColor(
+                              className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold text-sm ${getPlacementColor(
                                 ranking.placement,
                               )}`}
                             >
@@ -2151,7 +2130,7 @@ return (
                                 {ranking.form.split(",").map((result: string, idx: number) => (
                                   <span
                                     key={idx}
-                                    className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black ${
+                                    className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${
                                       result === "W" ? "bg-emerald-500/80 text-white" : "bg-red-500/80 text-white"
                                     }`}
                                   >
@@ -2164,11 +2143,11 @@ return (
                             )}
                           </div>
 
-                          <div className="text-center text-amber-200 font-black text-lg">{ranking.placement_points}</div>
+                          <div className="text-center text-amber-200 font-semibold text-lg">{ranking.placement_points}</div>
 
                           <div className="text-center">
                             {ranking.bonus_points > 0 ? (
-                              <span className="inline-flex items-center justify-center rounded-full bg-yellow-100 border border-yellow-200 px-2 py-1 text-xs font-black text-amber-100">
+                              <span className="inline-flex items-center justify-center rounded-full bg-yellow-100 border border-yellow-200 px-2 py-1 text-xs font-semibold text-amber-100">
                                 +{ranking.bonus_points}
                               </span>
                             ) : (
@@ -2176,11 +2155,11 @@ return (
                             )}
                           </div>
 
-                          <div className="text-center text-emerald-200 font-black text-lg">{ranking.legs_won}</div>
-                          <div className="text-center text-red-200 font-black text-lg">{ranking.legs_lost}</div>
+                          <div className="text-center text-emerald-200 font-semibold text-lg">{ranking.legs_won}</div>
+                          <div className="text-center text-red-200 font-semibold text-lg">{ranking.legs_lost}</div>
 
                           <div className="text-center">
-                            <span className="inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black text-lg px-3 py-1 rounded-2xl shadow-sm">
+                            <span className="inline-flex items-center justify-center bg-card   text-white font-semibold text-lg px-3 py-1 rounded-2xl shadow-sm">
                               {ranking.placement_points + ranking.bonus_points + ranking.legs_won}
                             </span>
                           </div>
@@ -2218,14 +2197,14 @@ return (
     </div>
   </motion.div>
 ) : seasonSettings.division_active ? (
-		  
-		  
-		  
-		  
-		  
+
+
+
+
+
             <motion.div variants={itemVariants} className="space-y-6">
-              <div className="bg-black/30 rounded-xl shadow-none border border-white/[0.08] overflow-hidden hover:border-amber-300/[0.18] hover:bg-white/[0.045] transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 p-4 sm:p-6">
+              <div className="bg-card rounded-xl shadow-none border border-white/[0.08] overflow-hidden hover:border-amber-300/[0.18] hover:bg-white/[0.045] transition-shadow duration-300">
+                <div className="text-foreground bg-card   p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -2234,7 +2213,7 @@ return (
                         <p className="text-xs sm:text-sm text-yellow-100 mt-1">Kampf um den Titel</p>
                       </div>
                     </div>
-                    <div className="bg-black/30/20 rounded-lg px-2 sm:px-3 py-1">
+                    <div className="bg-card/20 rounded-lg px-2 sm:px-3 py-1">
                       <span className="text-white font-semibold text-sm">
                         {filteredPlayers.filter((p) => p.division === "A").length}
                       </span>
@@ -2242,7 +2221,7 @@ return (
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-cyan-200 p-3 sm:p-4">
+                <div className="text-foreground bg-card   border-b border-cyan-200 p-3 sm:p-4">
                   <div className="flex items-center space-x-2 text-cyan-800">
                     <Info className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
                     <span className="text-xs sm:text-sm font-medium">
@@ -2261,7 +2240,7 @@ return (
                 </div>
 
                 {seasonSettings.halving_active && (
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-300/[0.16] p-3 sm:p-4">
+                  <div className="text-foreground bg-card   border-b border-orange-300/[0.16] p-3 sm:p-4">
                     <div className="flex items-center space-x-2 text-orange-100">
                       <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-orange-200" />
                       <span className="text-xs sm:text-sm font-medium">
@@ -2300,17 +2279,17 @@ return (
                 </div>
               </div>
 
-              <div className="bg-black/30 rounded-xl shadow-none border border-white/[0.08] overflow-hidden hover:border-amber-300/[0.18] hover:bg-white/[0.045] transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-gray-500 to-gray-600 p-4 sm:p-6">
+              <div className="bg-card rounded-xl shadow-none border border-white/[0.08] overflow-hidden hover:border-amber-300/[0.18] hover:bg-white/[0.045] transition-shadow duration-300">
+                <div className="text-foreground bg-card   p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Award className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       <div>
                         <h2 className="text-lg sm:text-2xl font-bold text-white">Tabelle B - Platzierungsrunde</h2>
-                        <p className="text-xs sm:text-sm text-gray-100 mt-1">Kampf um die beste Platzierung</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Kampf um die beste Platzierung</p>
                       </div>
                     </div>
-                    <div className="bg-black/30/20 rounded-lg px-2 sm:px-3 py-1">
+                    <div className="bg-card/20 rounded-lg px-2 sm:px-3 py-1">
                       <span className="text-white font-semibold text-sm">
                         {filteredPlayers.filter((p) => p.division === "B").length}
                       </span>
@@ -2318,7 +2297,7 @@ return (
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-cyan-200 p-3 sm:p-4">
+                <div className="text-foreground bg-card   border-b border-cyan-200 p-3 sm:p-4">
                   <div className="flex items-center space-x-2 text-cyan-800">
                     <Info className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
                     <span className="text-xs sm:text-sm font-medium">
@@ -2337,7 +2316,7 @@ return (
                 </div>
 
                 {seasonSettings.halving_active && (
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-300/[0.16] p-3 sm:p-4">
+                  <div className="text-foreground bg-card   border-b border-orange-300/[0.16] p-3 sm:p-4">
                     <div className="flex items-center space-x-2 text-orange-100">
                       <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-orange-200" />
                       <span className="text-xs sm:text-sm font-medium">
@@ -2378,12 +2357,12 @@ return (
             </motion.div>
           ) : (
             <motion.div variants={itemVariants}>
-              <div className="bg-black/30 rounded-xl shadow-none border border-white/[0.08] overflow-hidden hover:border-amber-300/[0.18] hover:bg-white/[0.045] transition-shadow duration-300">
+              <div className="bg-card rounded-xl shadow-none border border-white/[0.08] overflow-hidden hover:border-amber-300/[0.18] hover:bg-white/[0.045] transition-shadow duration-300">
                {/* ✅ Orange Balken oben wie bei Historie */}
-<div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+<div className="text-foreground h-2 bg-card  " />
 
 {/* ✅ Header weiß  */}
-<div className="p-4 sm:p-5 border-b border-white/[0.08] bg-black/30">
+<div className="p-4 sm:p-5 border-b border-white/[0.08] bg-card">
   <div className="flex items-center justify-between gap-3">
     <div className="flex items-center gap-3 min-w-0">
       <div className="w-9 h-9 rounded-xl bg-orange-500/[0.08] border border-orange-300/[0.16] flex items-center justify-center flex-shrink-0">
@@ -2397,7 +2376,7 @@ return (
       </div>
 
       <div className="min-w-0">
-        <h2 className="text-base sm:text-lg font-black text-white truncate">
+        <h2 className="text-base sm:text-lg font-semibold text-white truncate">
           {activeTab === "alle"
             ? "Alle Spieler"
             : activeTab === "qualifiziert"
@@ -2409,13 +2388,13 @@ return (
     </div>
 
     {/* Counter rechts wie bei Historie */}
-    <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-black text-white/60">
+    <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-white/60">
       {filteredPlayers.length}
     </div>
   </div>
 </div>
 
-                <div className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-cyan-200 p-3 sm:p-4">
+                <div className="text-foreground bg-card   border-b border-cyan-200 p-3 sm:p-4">
                   <div className="flex items-center space-x-2 text-cyan-800">
                     <Info className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-600" />
                     <span className="text-xs sm:text-sm font-medium">
@@ -2434,7 +2413,7 @@ return (
                 </div>
 
                 {seasonSettings.halving_active && (
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-300/[0.16] p-3 sm:p-4">
+                  <div className="text-foreground bg-card   border-b border-orange-300/[0.16] p-3 sm:p-4">
                     <div className="flex items-center space-x-2 text-orange-100">
                       <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-orange-200" />
                       <span className="text-xs sm:text-sm font-medium">
@@ -2477,7 +2456,7 @@ return (
           )}
 
           <motion.div variants={itemVariants}>
-           
+
           </motion.div>
         </motion.div>
       </main>

@@ -35,7 +35,7 @@ const itemVariants = {
 
 export default function RegelwerkPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-card text-foreground font-sans">
       <Header />
       <main className="pt-8 pb-20">
         <motion.div
@@ -46,8 +46,8 @@ export default function RegelwerkPage() {
         >
           {/* Hero Section */}
           <motion.div variants={itemVariants} className="text-center mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
+            <div className="bg-card   rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 text-white">
+              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 ">
                 <Crown className="h-12 w-12 text-white mx-auto" />
               </div>
               <h1 className="text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-4">
@@ -69,17 +69,17 @@ export default function RegelwerkPage() {
           {/* Bewerb Eigenschaften */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-orange-100 rounded-lg p-2">
                 <Crown className="h-6 w-6 text-orange-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Bewerb - Eigenschaften wie ein Löwe!</h2>
+              <h2 className="text-2xl font-bold text-foreground">Bewerb - Eigenschaften wie ein Löwe!</h2>
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-orange-50 border border-orange-100 rounded-xl p-6">
-                <ul className="space-y-3 text-gray-700">
+                <ul className="space-y-3 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-orange-600 font-bold">•</span>
                     <span>
@@ -99,7 +99,7 @@ export default function RegelwerkPage() {
                 </ul>
               </div>
               <div className="bg-orange-50 border border-orange-100 rounded-xl p-6">
-                <ul className="space-y-3 text-gray-700">
+                <ul className="space-y-3 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-orange-600 font-bold">•</span>
                     <span>
@@ -124,19 +124,19 @@ export default function RegelwerkPage() {
           {/* Grunddaten */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-blue-100 rounded-lg p-2">
                 <MapPin className="h-6 w-6 text-blue-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Austragungsort & Termine</h2>
+              <h2 className="text-2xl font-bold text-foreground">Austragungsort & Termine</h2>
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                   <h3 className="font-bold text-blue-700 mb-2">Austragungsort</h3>
-                  <p className="text-gray-700">
+                  <p className="text-muted-foreground">
                     <strong>Dart & Freizeit Vereinsheim „Pfeil-OK" e.V.</strong>
                     <br />
                     Linzer Bundesstraße 16
@@ -149,7 +149,7 @@ export default function RegelwerkPage() {
                     <Calendar className="h-4 w-4" />
                     Periode des Bewerbes
                   </h3>
-                  <p className="text-gray-700 font-semibold">01. September 2025 bis 01. Juni 2026</p>
+                  <p className="text-muted-foreground font-semibold">01. September 2025 bis 01. Juni 2026</p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -158,7 +158,7 @@ export default function RegelwerkPage() {
                     <Clock className="h-4 w-4" />
                     Spielzeit
                   </h3>
-                  <p className="text-gray-700">
+                  <p className="text-muted-foreground">
                     <strong>Spieltag:</strong> Jeden Montag
                     <br />
                     <strong>Uhrzeit:</strong> 19:30 Uhr
@@ -169,7 +169,7 @@ export default function RegelwerkPage() {
                     <Trophy className="h-4 w-4" />
                     Prozess
                   </h3>
-                  <p className="text-gray-700 font-semibold">34 Turniertage + 1 Mega-Finaltag</p>
+                  <p className="text-muted-foreground font-semibold">34 Turniertage + 1 Mega-Finaltag</p>
                 </div>
               </div>
             </div>
@@ -178,16 +178,16 @@ export default function RegelwerkPage() {
           {/* Spielpausen */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-yellow-100 rounded-lg p-2">
                 <AlertCircle className="h-6 w-6 text-yellow-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Spielpausen</h2>
+              <h2 className="text-2xl font-bold text-foreground">Spielpausen</h2>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 An folgenden Terminen finden <strong>keine Turniere</strong> statt:
               </p>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -208,16 +208,16 @@ export default function RegelwerkPage() {
           {/* Leveleinstufung */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-green-100 rounded-lg p-2">
                 <Users className="h-6 w-6 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Leveleinstufung</h2>
+              <h2 className="text-2xl font-bold text-foreground">Leveleinstufung</h2>
             </div>
             <div className="bg-green-50 border border-green-100 rounded-xl p-6">
-              <p className="text-gray-700 text-lg">
+              <p className="text-muted-foreground text-lg">
                 <strong>Jeder kann teilnehmen</strong>, ausgenommen <strong>„A-Level Spieler"</strong>, um
                 unterschiedliche Spielstärken zu fördern und zu motivieren.
               </p>
@@ -230,19 +230,19 @@ export default function RegelwerkPage() {
           {/* Kosten */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-purple-100 rounded-lg p-2">
                 <Euro className="h-6 w-6 text-purple-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Turnierstartgeld & Beiträge</h2>
+              <h2 className="text-2xl font-bold text-foreground">Turnierstartgeld & Beiträge</h2>
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
                   <h3 className="font-bold text-purple-700 mb-2">Reguläre Teilnahme</h3>
-                  <ul className="space-y-2 text-gray-700">
+                  <ul className="space-y-2 text-muted-foreground">
                     <li>
                       • <strong>Turnierstartgeld pro Teilnahme:</strong> € 4,00
                     </li>
@@ -254,7 +254,7 @@ export default function RegelwerkPage() {
                 </div>
                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
                   <h3 className="font-bold text-purple-700 mb-2">Qualifizierte Teilnehmer</h3>
-                  <ul className="space-y-2 text-gray-700">
+                  <ul className="space-y-2 text-muted-foreground">
                     <li>
                       • <strong>Finaltag-Beitrag (einmalig):</strong> € 5,00
                     </li>
@@ -265,7 +265,7 @@ export default function RegelwerkPage() {
               <div className="space-y-4">
                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
                   <h3 className="font-bold text-purple-700 mb-2">Wirt-Sponsoring</h3>
-                  <ul className="space-y-2 text-gray-700">
+                  <ul className="space-y-2 text-muted-foreground">
                     <li>
                       • <strong>Bis 500 Teilnahmen:</strong> € 100,00 (einmalig)
                     </li>
@@ -281,20 +281,20 @@ export default function RegelwerkPage() {
           {/* Starterfeld */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-red-100 rounded-lg p-2">
                 <Target className="h-6 w-6 text-red-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Starterfeld & Anmeldung</h2>
+              <h2 className="text-2xl font-bold text-foreground">Starterfeld & Anmeldung</h2>
             </div>
             <div className="bg-red-50 border border-red-100 rounded-xl p-6">
-              <p className="text-gray-700 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Um ein <strong>EMD – LION CUP-Turnier</strong> zu organisieren, müssen mindestens{" "}
                 <strong>4 Teilnehmer</strong> mitspielen.
               </p>
-              <p className="text-gray-700">
+              <p className="text-muted-foreground">
                 Die Spieler müssen sich mit <strong>vollem Namen anmelden</strong> und eingetragen werden.
               </p>
             </div>
@@ -303,18 +303,18 @@ export default function RegelwerkPage() {
           {/* Punktewertung */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-indigo-100 rounded-lg p-2">
                 <Trophy className="h-6 w-6 text-indigo-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Punktewertung</h2>
+              <h2 className="text-2xl font-bold text-foreground">Punktewertung</h2>
             </div>
             <div className="space-y-4">
               <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6">
                 <h3 className="font-bold text-indigo-700 mb-3">Grundwertung</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • <strong>Letzter Platz:</strong> 10 Punkte
                   </li>
@@ -333,7 +333,7 @@ export default function RegelwerkPage() {
               </div>
               <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6">
                 <h3 className="font-bold text-indigo-700 mb-2">Bonus</h3>
-                <p className="text-gray-700">
+                <p className="text-muted-foreground">
                   <strong>1. Platzierter von Gewinner-Seite:</strong> +5 Bonuspunkte zusätzlich
                 </p>
               </div>
@@ -343,16 +343,16 @@ export default function RegelwerkPage() {
           {/* Antritte */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-teal-100 rounded-lg p-2">
                 <Calendar className="h-6 w-6 text-teal-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Antritte für Finaltag</h2>
+              <h2 className="text-2xl font-bold text-foreground">Antritte für Finaltag</h2>
             </div>
             <div className="bg-teal-50 border border-teal-100 rounded-xl p-6">
-              <p className="text-gray-700 text-lg">
+              <p className="text-muted-foreground text-lg">
                 Jeder <strong>EMD – LION CUP-Teilnehmer</strong>, der am Finaltag teilnehmen möchte, benötigt{" "}
                 <strong className="text-teal-700">20 Antritte</strong>.
               </p>
@@ -362,30 +362,30 @@ export default function RegelwerkPage() {
           {/* Wertung & Tabellen */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-orange-100 rounded-lg p-2">
                 <Trophy className="h-6 w-6 text-orange-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Wertung & Tabellensystem</h2>
+              <h2 className="text-2xl font-bold text-foreground">Wertung & Tabellensystem</h2>
             </div>
             <div className="space-y-6">
               <div className="bg-orange-50 border border-orange-100 rounded-xl p-6">
                 <h3 className="font-bold text-orange-700 mb-3">Tabellenverlauf</h3>
-                <p className="text-gray-700 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Eine Tabelle bis zur Vollendung der <strong>34 Turniertage + 1 Finaltag</strong>
                 </p>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-white border border-orange-200 rounded-lg p-4">
+                  <div className="bg-card border border-orange-200 rounded-lg p-4">
                     <h4 className="font-bold text-orange-600 mb-2">Nach 17 Turniertagen</h4>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-muted-foreground">
                       Punkte werden bei allen Teilnehmern <strong>geteilt</strong>
                     </p>
                   </div>
-                  <div className="bg-white border border-orange-200 rounded-lg p-4">
+                  <div className="bg-card border border-orange-200 rounded-lg p-4">
                     <h4 className="font-bold text-orange-600 mb-2">Nach 24 Turniertagen</h4>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-muted-foreground">
                       Tabelle wird <strong>halbiert</strong> - untere Tabelle kann nicht mehr in obere Tabelle gelangen.
                       Ab diesem Zeitpunkt sind <strong>keine neuen Teilnehmer/Teilnahmen</strong> mehr möglich.
                     </p>
@@ -396,13 +396,13 @@ export default function RegelwerkPage() {
               <div className="bg-orange-50 border border-orange-100 rounded-xl p-6">
                 <h3 className="font-bold text-orange-700 mb-3">Qualifikation (1.-5. Plätze je Tabelle)</h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-white border border-orange-200 rounded-lg p-4">
+                  <div className="bg-card border border-orange-200 rounded-lg p-4">
                     <h4 className="font-bold text-orange-600 mb-2">Tabelle 1 (Obere Tabelle)</h4>
-                    <p className="text-sm text-gray-700">Erspielte Platzierungen der 24 Turniertage</p>
+                    <p className="text-sm text-muted-foreground">Erspielte Platzierungen der 24 Turniertage</p>
                   </div>
-                  <div className="bg-white border border-orange-200 rounded-lg p-4">
+                  <div className="bg-card border border-orange-200 rounded-lg p-4">
                     <h4 className="font-bold text-orange-600 mb-2">Tabelle 2 (Untere Tabelle)</h4>
-                    <p className="text-sm text-gray-700">Die ersten fünf der geteilten Tabelle des unteren Feldes</p>
+                    <p className="text-sm text-muted-foreground">Die ersten fünf der geteilten Tabelle des unteren Feldes</p>
                     <p className="text-xs text-orange-600 mt-1">
                       Beispiel: 20 Teilnehmer geteilt durch zwei = Platz 11-15 werden zu Platz 1-5
                     </p>
@@ -422,27 +422,27 @@ export default function RegelwerkPage() {
           {/* Spielmodus */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-red-100 rounded-lg p-2">
                 <Target className="h-6 w-6 text-red-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Spielmodus & Spielregeln</h2>
+              <h2 className="text-2xl font-bold text-foreground">Spielmodus & Spielregeln</h2>
             </div>
             <div className="space-y-6">
               <div className="bg-red-50 border border-red-100 rounded-xl p-6">
                 <h3 className="font-bold text-red-700 mb-3">Spielmodus</h3>
-                <p className="text-gray-700 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Der Spielmodus ist <strong>abwechselnd</strong> beginnend mit:
                 </p>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white border border-red-200 rounded-lg p-3 text-center">
+                  <div className="bg-card border border-red-200 rounded-lg p-3 text-center">
                     <span className="font-bold text-red-600">1. Turniertag</span>
                     <br />
                     <span className="text-sm">501 Master Out</span>
                   </div>
-                  <div className="bg-white border border-red-200 rounded-lg p-3 text-center">
+                  <div className="bg-card border border-red-200 rounded-lg p-3 text-center">
                     <span className="font-bold text-red-600">2. Turniertag</span>
                     <br />
                     <span className="text-sm">501 Double Out</span>
@@ -453,7 +453,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-red-50 border border-red-100 rounded-xl p-6">
                 <h3 className="font-bold text-red-700 mb-3">Ausbullen & Spielbeginn</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Vor Beginn des Spieles wird <strong>ausgebullt</strong>
                   </li>
@@ -470,7 +470,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-red-50 border border-red-100 rounded-xl p-6">
                 <h3 className="font-bold text-red-700 mb-3">Übungswürfe</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Jeder Teilnehmer kann sich vor Turnierbeginn <strong>einwerfen</strong>
                   </li>
@@ -485,18 +485,18 @@ export default function RegelwerkPage() {
           {/* Teilnahmebedingungen */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-blue-100 rounded-lg p-2">
                 <Users className="h-6 w-6 text-blue-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Teilnahmebedingungen</h2>
+              <h2 className="text-2xl font-bold text-foreground">Teilnahmebedingungen</h2>
             </div>
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
                 <h3 className="font-bold text-blue-700 mb-3">Allgemeine Bedingungen</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Teilnehmen darf jeder Spieler, der das <strong>16. Lebensjahr vollendet</strong> hat
                   </li>
@@ -518,7 +518,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
                 <h3 className="font-bold text-blue-700 mb-3">Regelakzeptanz & Veröffentlichung</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Mit der Anmeldung werden die aktuellen <strong>EMD – LION Cup Regeln</strong> akzeptiert
                   </li>
@@ -533,7 +533,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
                 <h3 className="font-bold text-blue-700 mb-3">Wurfregeln</h3>
-                <p className="text-gray-700">
+                <p className="text-muted-foreground">
                   Die Pfeile müssen mit <strong>einer Hand</strong>, auf den <strong>Füßen stehend</strong> und{" "}
                   <strong>ohne Hilfsmittel</strong> eigenständig geworfen werden. Die{" "}
                   <strong>Abwurflinie darf nicht übertreten</strong> werden.
@@ -545,18 +545,18 @@ export default function RegelwerkPage() {
           {/* Turnierregeln */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-green-100 rounded-lg p-2">
                 <Gavel className="h-6 w-6 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Turnierregeln</h2>
+              <h2 className="text-2xl font-bold text-foreground">Turnierregeln</h2>
             </div>
             <div className="space-y-6">
               <div className="bg-green-50 border border-green-100 rounded-xl p-6">
                 <h3 className="font-bold text-green-700 mb-3">Auslosung & Paarungen</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Vor Turnierbeginn wird <strong>EINE angekündigte öffentliche Auslosung</strong> vorgenommen
                   </li>
@@ -569,7 +569,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-green-50 border border-green-100 rounded-xl p-6">
                 <h3 className="font-bold text-green-700 mb-3">Spielaufgabe & Weiterschreibung</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Aufgabe während des Turniers muss auf Turnierplan eingetragen werden (mit genauem Zeitpunkt)
                   </li>
@@ -590,7 +590,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-green-50 border border-green-100 rounded-xl p-6">
                 <h3 className="font-bold text-green-700 mb-3">Ergebnisse & Veröffentlichung</h3>
-                <p className="text-gray-700">
+                <p className="text-muted-foreground">
                   Die Ergebnisse und Ranglisten werden <strong>fortlaufend geführt</strong> und{" "}
                   <strong>einmal wöchentlich</strong> auf der <strong>emojisdartverein.com Homepage</strong>{" "}
                   veröffentlicht.
@@ -602,18 +602,18 @@ export default function RegelwerkPage() {
           {/* Spielablauf */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-purple-100 rounded-lg p-2">
                 <Clock className="h-6 w-6 text-purple-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Spielablauf</h2>
+              <h2 className="text-2xl font-bold text-foreground">Spielablauf</h2>
             </div>
             <div className="space-y-6">
               <div className="bg-purple-50 border border-purple-100 rounded-xl p-6">
                 <h3 className="font-bold text-purple-700 mb-3">Pünktlichkeit & Spielbeginn</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Jeder Spieler muss sich <strong>rechtzeitig vor Spielbeginn</strong> am Board einfinden
                   </li>
@@ -630,7 +630,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-purple-50 border border-purple-100 rounded-xl p-6">
                 <h3 className="font-bold text-purple-700 mb-3">Spielbereich & Verhalten</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>• Im Spielbereich: nur Spieler, Turnierleitung oder Schiedsrichter</li>
                   <li>
                     • Gegenspieler muss sich in <strong>angemessenem Abstand hinter dem Werfer</strong> befinden
@@ -646,7 +646,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-purple-50 border border-purple-100 rounded-xl p-6">
                 <h3 className="font-bold text-purple-700 mb-3">Pausen & Unterbrechungen</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Bei Pfeilschäden: maximal <strong>5-minütige Pause</strong> mit Zustimmung der Turnierleitung
                   </li>
@@ -659,18 +659,18 @@ export default function RegelwerkPage() {
           {/* Verhaltensregeln */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-red-100 rounded-lg p-2">
                 <Shield className="h-6 w-6 text-red-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Verhaltensregeln</h2>
+              <h2 className="text-2xl font-bold text-foreground">Verhaltensregeln</h2>
             </div>
             <div className="space-y-6">
               <div className="bg-red-50 border border-red-100 rounded-xl p-6">
                 <h3 className="font-bold text-red-700 mb-3">Allgemeine Verhaltensregeln</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • <strong>Unsportliches Verhalten jeglicher Art</strong> ist strikt untersagt
                   </li>
@@ -691,7 +691,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-red-50 border border-red-100 rounded-xl p-6">
                 <h3 className="font-bold text-red-700 mb-3">Spielbereich-Regeln</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Während des Matches auf der Linie: <strong>Alkohol-, Ess- und Rauchverbot</strong>
                   </li>
@@ -706,7 +706,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-red-50 border border-red-100 rounded-xl p-6">
                 <h3 className="font-bold text-red-700 mb-3">Schwerwiegende Verstöße</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • <strong>Androhung und Anwendung von Gewalt</strong> ist strikt untersagt und wird{" "}
                     <strong>strafrechtlich verfolgt</strong>
@@ -726,16 +726,16 @@ export default function RegelwerkPage() {
           {/* Punktegleichstand */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-yellow-100 rounded-lg p-2">
                 <Trophy className="h-6 w-6 text-yellow-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Vorgehensweise bei Punktegleichstand</h2>
+              <h2 className="text-2xl font-bold text-foreground">Vorgehensweise bei Punktegleichstand</h2>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-              <p className="text-gray-700 text-lg">
+              <p className="text-muted-foreground text-lg">
                 Sollten die <strong>1.-5. Platzierten nach dem Finaltag punktegleich</strong> sein, werden diese zu
                 einem <strong>Entscheidungsmatch</strong> eingeladen.
               </p>
@@ -750,18 +750,18 @@ export default function RegelwerkPage() {
           {/* Spielspezifische Regelung */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-indigo-100 rounded-lg p-2">
                 <Target className="h-6 w-6 text-indigo-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Spielspezifische Regelung</h2>
+              <h2 className="text-2xl font-bold text-foreground">Spielspezifische Regelung</h2>
             </div>
             <div className="space-y-6">
               <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6">
                 <h3 className="font-bold text-indigo-700 mb-3">Dartspfeil-Spezifikationen</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • <strong>Maximale Länge:</strong> 20 cm
                   </li>
@@ -776,7 +776,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6">
                 <h3 className="font-bold text-indigo-700 mb-3">Automatenwertung</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • <strong>Jeder Wurf, der vom Automaten gewertet wird, zählt</strong>
                   </li>
@@ -792,7 +792,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6">
                 <h3 className="font-bold text-indigo-700 mb-3">Weitere Spielregeln</h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Nach Ablauf der <strong>20. Runde</strong> muss ausgebullt werden
                   </li>
@@ -808,18 +808,18 @@ export default function RegelwerkPage() {
           {/* Presse */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-pink-100 rounded-lg p-2">
                 <Camera className="h-6 w-6 text-pink-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Presse & Medienrechte</h2>
+              <h2 className="text-2xl font-bold text-foreground">Presse & Medienrechte</h2>
             </div>
             <div className="space-y-4">
               <div className="bg-pink-50 border border-pink-100 rounded-xl p-6">
                 <h3 className="font-bold text-pink-700 mb-3">Aufzeichnung & Veröffentlichung</h3>
-                <p className="text-gray-700 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Einzelne Ranglisten- und Qualifikationsturniere sowie die <strong>Finalturniere</strong> werden via{" "}
                   <strong>Video aufgezeichnet und veröffentlicht</strong>. Dieses Material dient zur Auswertung des EMD
                   – LION CUP-Events.
@@ -828,16 +828,16 @@ export default function RegelwerkPage() {
 
               <div className="bg-pink-50 border border-pink-100 rounded-xl p-6">
                 <h3 className="font-bold text-pink-700 mb-3">Einverständniserklärung</h3>
-                <p className="text-gray-700 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Der Spieler/Teilnehmer nimmt mit der Anmeldung zum EMD – LION CUP zur Kenntnis und willigt ein, dass
                   der Veranstalter, <strong>bis auf Widerruf</strong>, gemäß §78 KunstUrhG,{" "}
                   <strong>Fotos und Videos</strong>, die im Rahmen des Turniers aufgenommen wurden, veröffentlicht
                   werden.
                 </p>
 
-                <div className="bg-white border border-pink-200 rounded-lg p-4">
+                <div className="bg-card border border-pink-200 rounded-lg p-4">
                   <h4 className="font-bold text-pink-600 mb-2">Die Rechte umfassen insbesondere:</h4>
-                  <ul className="text-sm text-gray-700 space-y-1">
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• Recht zur Sendung, zum Vortrag, zur Dokumentation</li>
                     <li>• Vor- und Aufführung sowie öffentliche Zugänglichkeit</li>
                     <li>• Vervielfältigung, Verbreitung und Wiedergabe von Bild- und Tonträgern</li>
@@ -851,18 +851,18 @@ export default function RegelwerkPage() {
           {/* Turnierleitung */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className="bg-gray-100 rounded-lg p-2">
-                <Gavel className="h-6 w-6 text-gray-600" />
+              <div className="bg-muted rounded-lg p-2">
+                <Gavel className="h-6 w-6 text-muted-foreground" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Turnierleitung / Veranstalter</h2>
+              <h2 className="text-2xl font-bold text-foreground">Turnierleitung / Veranstalter</h2>
             </div>
             <div className="space-y-4">
-              <div className="bg-gray-50 border border-gray-100 rounded-xl p-6">
-                <h3 className="font-bold text-gray-700 mb-3">Befugnisse & Verantwortlichkeiten</h3>
-                <ul className="space-y-2 text-gray-700">
+              <div className="bg-muted border border-border rounded-xl p-6">
+                <h3 className="font-bold text-muted-foreground mb-3">Befugnisse & Verantwortlichkeiten</h3>
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Die Turnierleitung <strong>agiert selbstständig</strong> und fungiert auch als{" "}
                     <strong>Schiedsrichter</strong>
@@ -878,9 +878,9 @@ export default function RegelwerkPage() {
                 </ul>
               </div>
 
-              <div className="bg-gray-50 border border-gray-100 rounded-xl p-6">
-                <h3 className="font-bold text-gray-700 mb-3">Turnierstart & Proteste</h3>
-                <ul className="space-y-2 text-gray-700">
+              <div className="bg-muted border border-border rounded-xl p-6">
+                <h3 className="font-bold text-muted-foreground mb-3">Turnierstart & Proteste</h3>
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Der EMD – LION CUP muss nach der angegebenen Uhrzeit des Veranstalters{" "}
                     <strong>PÜNKTLICH gestartet</strong> werden
@@ -897,19 +897,19 @@ export default function RegelwerkPage() {
           {/* Wertung und Auszahlung */}
           <motion.div
             variants={itemVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8"
+            className="bg-card rounded-2xl shadow-xl border border-border p-8 mb-8"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-green-100 rounded-lg p-2">
                 <Euro className="h-6 w-6 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Wertung und Auszahlung</h2>
+              <h2 className="text-2xl font-bold text-foreground">Wertung und Auszahlung</h2>
             </div>
             <div className="space-y-6">
               <div className="bg-green-50 border border-green-100 rounded-xl p-6">
                 <h3 className="font-bold text-green-700 mb-3">Preispool-Zusammensetzung</h3>
-                <p className="text-gray-700 mb-4">In diesen Pott gehen:</p>
-                <ul className="space-y-2 text-gray-700">
+                <p className="text-muted-foreground mb-4">In diesen Pott gehen:</p>
+                <ul className="space-y-2 text-muted-foreground">
                   <li>
                     • Pro Turnier und Teilnehmer gesammelte <strong>€ 4,00</strong>
                   </li>
@@ -934,15 +934,15 @@ export default function RegelwerkPage() {
               <div className="bg-green-50 border border-green-100 rounded-xl p-6">
                 <h3 className="font-bold text-green-700 mb-3">Auszahlungsübersicht</h3>
                 <div className="space-y-4">
-                  <div className="bg-white border border-green-200 rounded-lg p-4">
+                  <div className="bg-card border border-green-200 rounded-lg p-4">
                     <p className="font-bold text-green-600 mb-2">100% Auszahlung nach Final-Spieltag</p>
-                    <p className="text-gray-700">1.-5. Platz bei Oberer Tabelle und Unterer Tabelle</p>
+                    <p className="text-muted-foreground">1.-5. Platz bei Oberer Tabelle und Unterer Tabelle</p>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-white border border-green-200 rounded-lg p-4">
+                    <div className="bg-card border border-green-200 rounded-lg p-4">
                       <h4 className="font-bold text-green-600 mb-2">Obere Tabelle (70% vom Gesamtpott)</h4>
-                      <div className="space-y-1 text-sm text-gray-700">
+                      <div className="space-y-1 text-sm text-muted-foreground">
                         <div className="flex justify-between">
                           <span>1. Platz:</span>
                           <span className="font-bold">30%</span>
@@ -966,9 +966,9 @@ export default function RegelwerkPage() {
                       </div>
                     </div>
 
-                    <div className="bg-white border border-green-200 rounded-lg p-4">
+                    <div className="bg-card border border-green-200 rounded-lg p-4">
                       <h4 className="font-bold text-green-600 mb-2">Untere Tabelle (30% vom Gesamtpott)</h4>
-                      <div className="space-y-1 text-sm text-gray-700">
+                      <div className="space-y-1 text-sm text-muted-foreground">
                         <div className="flex justify-between">
                           <span>1. Platz:</span>
                           <span className="font-bold">30%</span>
@@ -997,7 +997,7 @@ export default function RegelwerkPage() {
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                 <h3 className="font-bold text-yellow-700 mb-2">Entscheidung bei Punktegleichheit nach Finaltag</h3>
-                <p className="text-gray-700">
+                <p className="text-muted-foreground">
                   <strong>Reihenfolge der Entscheidungskriterien:</strong>
                   <br />
                   1. Tabellenpunkte → 2. Check-Punkte → 3. Antritte (zuletzt)
@@ -1008,8 +1008,8 @@ export default function RegelwerkPage() {
 
           {/* Footer Hinweis */}
           <motion.div variants={itemVariants} className="text-center">
-            <div className="bg-gray-100 border border-gray-200 rounded-xl p-6">
-              <p className="text-gray-600 text-sm">
+            <div className="bg-muted border border-border rounded-xl p-6">
+              <p className="text-muted-foreground text-sm">
                 <strong>Druck- und Satzfehler vorbehalten!</strong>
                 <br />
                 Stand: Herbst 2025
@@ -1019,7 +1019,7 @@ export default function RegelwerkPage() {
         </motion.div>
       </main>
 
-      <footer className="py-6 bg-gray-200 text-gray-600 text-sm text-center border-t border-gray-300">
+      <footer className="py-6 bg-secondary text-muted-foreground text-sm text-center border-t border-border">
         <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
       </footer>
     </div>

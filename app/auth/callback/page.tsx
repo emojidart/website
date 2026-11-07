@@ -17,7 +17,7 @@ export default function AuthCallbackPage() {
 
 function CallbackLoading() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-muted flex flex-col">
       <Header />
       <main className="flex-grow flex items-center justify-center p-4">
         <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -110,12 +110,12 @@ function AuthCallbackClient() {
   }, [router, searchParams])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-muted flex flex-col">
       <Header />
       <main className="flex-grow flex items-center justify-center p-4">
         <div className="text-center">
           <div className="w-8 h-8 mx-auto mb-4 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-600">{msg}</p>
+          <p className="text-sm text-muted-foreground">{msg}</p>
         </div>
       </main>
     </div>

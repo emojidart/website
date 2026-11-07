@@ -128,7 +128,7 @@ const statusChip = (status?: string | null) => {
   const isDone = s === "completed" || s === "finished" || s === "done"
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-black ${
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${
         isDone ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" : "border-white/10 bg-white/5 text-white/85"
       }`}
     >
@@ -433,21 +433,13 @@ const params = useParams()
   }, [matches])
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
       <Header />
 
       {/* Same visual background as Member Profile – loaded hidden first to prevent image flash */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
-        <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:68px_68px]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <motion.div
           className="w-full"
           variants={containerVariants}
@@ -477,7 +469,7 @@ const params = useParams()
 
           {/* App-Header Card (Kontakt look) */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px]">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
               <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-400/15 blur-[110px]" />
               <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
@@ -487,14 +479,14 @@ const params = useParams()
                     <Trophy className="h-6 w-6 text-orange-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white/50">{typeLabel(tournamentType)}</p>
-                    <h1 className="mt-1 line-clamp-2 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">{tournamentName}</h1>
+                    <p className="text-sm font-medium text-muted-foreground">{typeLabel(tournamentType)}</p>
+                    <h1 className="mt-1 line-clamp-2 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">{tournamentName}</h1>
                     <p className="mt-3 text-sm font-medium text-white/60 sm:text-base">
-                      Sieger: <span className="font-black text-white">{winner ?? "—"}</span>
+                      Sieger: <span className="font-semibold text-white">{winner ?? "—"}</span>
                       {isKratzer && kratzerTotalRounds != null ? (
                         <>
                           {" "}
-                          • Runden: <span className="font-black text-white">{kratzerTotalRounds}</span>
+                          • Runden: <span className="font-semibold text-white">{kratzerTotalRounds}</span>
                         </>
                       ) : null}
                     </p>
@@ -528,9 +520,9 @@ const params = useParams()
           ) : (
             <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,.85fr)_minmax(0,1.65fr)] xl:gap-5">
               {/* Resultate/Rangliste */}
-              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] ">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm sm:text-base font-black">
+                  <CardTitle className="text-sm sm:text-base font-semibold">
                     {isKratzer ? "Resultate" : "Rangliste"}
                   </CardTitle>
                 </CardHeader>
@@ -546,23 +538,23 @@ const params = useParams()
                         .map((r) => (
                           <div
                             key={`${r.player_name}-${r.placement}`}
-                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 shadow-[0_18px_50px_-38px_rgba(0,0,0,.9)] backdrop-blur-xl"
+                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 shadow-[0_18px_50px_-38px_rgba(0,0,0,.9)] "
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <div className="font-black text-white truncate">{r.player_name}</div>
+                                <div className="font-semibold text-white truncate">{r.player_name}</div>
 
                                 {isKratzer ? (
                                   <div className="mt-2 flex flex-wrap gap-2 text-xs">
                                     {r.lives != null ? (
                                       <Chip tone="gray">
-                                        <span className="font-black">Lives:</span> {r.lives}
+                                        <span className="font-semibold">Lives:</span> {r.lives}
                                       </Chip>
                                     ) : null}
 
                                     {r.ligastatus ? (
                                       <Chip tone="amber">
-                                        <span className="font-mono font-black">{r.ligastatus}</span>
+                                        <span className="font-mono font-semibold">{r.ligastatus}</span>
                                       </Chip>
                                     ) : null}
 
@@ -579,7 +571,7 @@ const params = useParams()
                                 ) : null}
                               </div>
 
-                              <span className="inline-flex items-center rounded-full bg-orange-600 px-2.5 py-1 text-[11px] font-black text-white">
+                              <span className="inline-flex items-center rounded-full bg-orange-600 px-2.5 py-1 text-xs font-semibold text-white">
                                 #{r.placement}
                               </span>
                             </div>
@@ -591,9 +583,9 @@ const params = useParams()
               </Card>
 
               {/* Matches / Info */}
-              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] ">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm sm:text-base font-black">{isKratzer ? "Info" : "Matches"}</CardTitle>
+                  <CardTitle className="text-sm sm:text-base font-semibold">{isKratzer ? "Info" : "Matches"}</CardTitle>
                 </CardHeader>
 
                 <CardContent className="pt-0 pb-5">
@@ -602,25 +594,25 @@ const params = useParams()
                       <div className="flex flex-wrap gap-2">
                         <Chip tone="orange">
                           <Trophy className="w-3.5 h-3.5" />
-                          Sieger: <span className="font-black">{winner ?? "—"}</span>
+                          Sieger: <span className="font-semibold">{winner ?? "—"}</span>
                         </Chip>
 
                         {kratzerTotalRounds != null ? (
                           <Chip tone="blue">
-                            <span className="font-black">Runden:</span> {kratzerTotalRounds}
+                            <span className="font-semibold">Runden:</span> {kratzerTotalRounds}
                           </Chip>
                         ) : null}
 
                         {status ? (
                           <Chip tone="gray">
                             <Info className="w-3.5 h-3.5" />
-                            Status: <span className="font-black">{status}</span>
+                            Status: <span className="font-semibold">{status}</span>
                           </Chip>
                         ) : null}
                       </div>
 
                       <div className="pt-2 border-t border-white/10">
-                        <h3 className="font-black text-white mb-2">Spielverlauf</h3>
+                        <h3 className="font-semibold text-white mb-2">Spielverlauf</h3>
 
                         {kratzerElimTimeline.length === 0 ? (
                           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white/70">
@@ -632,12 +624,12 @@ const params = useParams()
                               <div key={`${e.round}-${e.name}-${idx}`} className="rounded-2xl border border-white/10 p-3">
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="min-w-0">
-                                    <div className="font-black text-white truncate">{e.name}</div>
+                                    <div className="font-semibold text-white truncate">{e.name}</div>
                                     <div className="mt-2 flex flex-wrap gap-2 text-xs">
                                       <Chip tone="gray">Round {e.round}</Chip>
                                       {e.ligastatus ? (
                                         <Chip tone="amber">
-                                          <span className="font-mono font-black">{e.ligastatus}</span>
+                                          <span className="font-mono font-semibold">{e.ligastatus}</span>
                                         </Chip>
                                       ) : null}
                                       {e.time ? <Chip tone="slate">{formatDateTime(e.time)}</Chip> : null}
@@ -653,7 +645,7 @@ const params = useParams()
                               <div className="rounded-2xl border border-orange-400/25 bg-orange-400/10 p-3">
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="min-w-0">
-                                    <div className="font-black text-white truncate">{winner}</div>
+                                    <div className="font-semibold text-white truncate">{winner}</div>
                                     <div className="mt-1 text-xs text-white/58">Turnier gewonnen</div>
                                   </div>
                                   <Chip tone="orange">
@@ -683,46 +675,46 @@ const params = useParams()
                         return (
                           <div
                             key={m.match_id}
-                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 sm:p-4 shadow-[0_18px_50px_-38px_rgba(0,0,0,.9)] backdrop-blur-xl"
+                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 sm:p-4 shadow-[0_18px_50px_-38px_rgba(0,0,0,.9)] "
                           >
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-black text-white/70">
+                                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white/70">
                                     Match {m.match_id}
                                   </span>
 
                                   {m.machine_number ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-black text-white/70">
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white/70">
                                       <Tv className="h-3.5 w-3.5 text-white/58" />
                                       Board {m.machine_number}
                                     </span>
                                   ) : null}
 
                                   {finished ? (
-                                    <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-black text-emerald-300">
+                                    <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
                                       Fertig
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-black text-white/70">
+                                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white/70">
                                       Offen
                                     </span>
                                   )}
                                 </div>
 
-                                <div className="text-sm sm:text-base font-black text-white truncate">
-                                  {p1} <span className="text-white/35 font-normal">vs</span> {p2}
+                                <div className="text-sm sm:text-base font-semibold text-white truncate">
+                                  {p1} <span className="text-muted-foreground font-normal">vs</span> {p2}
                                 </div>
                               </div>
 
                               <div className="flex items-center justify-between sm:justify-end gap-3">
-                                <div className="text-lg font-black tabular-nums text-white">
+                                <div className="text-lg font-semibold tabular-nums text-white">
                                   {s1}:{s2}
                                 </div>
 
                                 {m.winner ? (
                                   <span
-                                    className="inline-flex items-center rounded-full bg-orange-600 px-2.5 py-1 text-[11px] font-black text-white max-w-[220px] truncate"
+                                    className="inline-flex items-center rounded-full bg-orange-600 px-2.5 py-1 text-xs font-semibold text-white max-w-[220px] truncate"
                                     title={m.winner}
                                   >
                                     Sieger: {m.winner}
@@ -732,7 +724,7 @@ const params = useParams()
                             </div>
 
                             {m.updated_at ? (
-                              <div className="mt-2 text-[11px] text-white/45 flex items-center gap-2">
+                              <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
                                 <Calendar className="h-3.5 w-3.5" />
                                 Letztes Update: <span className="font-semibold">{formatDateTime(m.updated_at)}</span>
                               </div>

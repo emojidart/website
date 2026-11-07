@@ -129,16 +129,16 @@ export function LeagueGuide({ role }: { role: GuideRole }) {
           <HelpCircle className="h-4 w-4" /> Hilfe öffnen
         </button>
       </div>
-      {mounted && open && createPortal(<div className="fixed inset-0 z-[2147483647] flex min-h-0 min-w-0 items-stretch justify-center overflow-hidden bg-black/90 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      {mounted && open && createPortal(<div className="fixed inset-0 z-[2147483647] flex min-h-0 min-w-0 items-stretch justify-center overflow-hidden bg-black/90 p-0  sm:items-center sm:p-4">
         <div role="dialog" aria-modal="true" aria-labelledby="emd-guide-title" className="flex h-full min-h-0 max-h-full w-full min-w-0 max-w-2xl flex-col overflow-hidden rounded-none border border-white/15 bg-[#10141d] text-white shadow-2xl sm:h-auto sm:max-h-[min(760px,92dvh)] sm:rounded-3xl">
-          <header className="relative shrink-0 border-b border-white/10 bg-gradient-to-r from-orange-500/15 to-transparent px-4 pb-3 pt-[max(16px,env(safe-area-inset-top))] sm:px-6 sm:pt-5">
-            <div className="pr-10 text-[10px] font-extrabold uppercase tracking-[.14em] text-orange-300">EMD · SPIELPLAN</div>
+          <header className="text-foreground relative shrink-0 border-b border-white/10 bg-card   px-4 pb-3 pt-[max(16px,env(safe-area-inset-top))] sm:px-6 sm:pt-5">
+            <div className="pr-10 text-xs font-extrabold uppercase tracking-[.14em] text-orange-300">EMD · SPIELPLAN</div>
             <h2 id="emd-guide-title" className="mt-1 pr-8 text-lg font-extrabold leading-tight sm:text-xl">Hilfe für Kapitäne & Co-Kapitäne</h2>
             <button type="button" onClick={() => setOpen(false)} aria-label="Schließen" className="absolute right-3 top-[max(12px,env(safe-area-inset-top))] flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/80 hover:bg-white/10"><X className="h-5 w-5" /></button>
           </header>
           <div className="shrink-0 border-b border-white/10 px-4 py-3 sm:px-6">
             <div className="flex items-center justify-between gap-3 text-xs text-white/65"><span>Kapitel {step + 1} von {chapters.length}</span><span className="truncate text-orange-300">{chapter.eyebrow}</span></div>
-            <div className="mt-2 flex gap-1.5">{chapters.map((c, i) => <button key={c.id} type="button" onClick={() => goTo(i)} aria-label={`Kapitel ${i + 1}: ${c.title}`} aria-current={i === step ? "step" : undefined} className={`h-2 min-w-0 flex-1 rounded-full transition-colors ${i <= step ? "bg-orange-500" : "bg-white/15"}`} />)}</div>
+            <div className="mt-2 flex gap-1.5">{chapters.map((c, i) => <button key={c.id} type="button" onClick={() => goTo(i)} aria-label={`Kapitel ${i + 1}: ${c.title}`} aria-current={i === step ? "step" : undefined} className={`h-2 min-w-0 flex-1 rounded-full transition-colors ${i <= step ? "bg-orange-500 text-primary-foreground" : "bg-white/15"}`} />)}</div>
           </div>
           <main key={chapter.id} className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y px-4 py-4 sm:px-6 sm:py-5">
             <h3 className="text-lg font-extrabold leading-snug text-white sm:text-xl">{chapter.title}</h3>
@@ -151,7 +151,7 @@ export function LeagueGuide({ role }: { role: GuideRole }) {
               <button type="button" onClick={() => goTo(step - 1)} disabled={step === 0} className="flex min-h-11 items-center justify-center gap-1 rounded-xl border border-white/15 px-2 text-sm font-bold text-white disabled:opacity-35"><ChevronLeft className="h-4 w-4" /> Zurück</button>
               <button type="button" onClick={() => goTo(step + 1)} disabled={step === chapters.length - 1} className="flex min-h-11 items-center justify-center gap-1 rounded-xl bg-white/10 px-2 text-sm font-bold text-white disabled:opacity-35">Weiter <ChevronRight className="h-4 w-4" /></button>
             </div>
-            {!acknowledged && <button type="button" disabled={loading || saving || !userId} onClick={acknowledge} className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-3 text-sm font-extrabold text-white hover:bg-orange-600 disabled:opacity-50"><Check className="h-4 w-4" />{saving ? "Wird gespeichert…" : "Gelesen & verstanden"}</button>}
+            {!acknowledged && <button type="button" disabled={loading || saving || !userId} onClick={acknowledge} className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-3 text-sm font-extrabold text-primary-foreground hover:bg-orange-600 disabled:opacity-50"><Check className="h-4 w-4" />{saving ? "Wird gespeichert…" : "Gelesen & verstanden"}</button>}
           </footer>
         </div>
       </div>, document.body)}

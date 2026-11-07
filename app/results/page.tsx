@@ -135,7 +135,7 @@ export default function ResultsPage() {
     const didIWin = user && game.winner_id === user.id
 
     return (
-      <Card className={`bg-white shadow-md hover:shadow-lg transition-all ${isMyGame ? "border-orange-200" : ""}`}>
+      <Card className={`bg-card shadow-md hover:shadow-lg transition-all ${isMyGame ? "border-orange-200" : ""}`}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">501 Double Out</CardTitle>
@@ -148,9 +148,9 @@ export default function ResultsPage() {
           <div className="grid grid-cols-2 gap-4">
             {/* Player 1 */}
             <div
-              className={`flex flex-col items-center p-4 rounded-lg ${isPlayer1Winner ? "bg-green-50" : "bg-gray-50"}`}
+              className={`flex flex-col items-center p-4 rounded-lg ${isPlayer1Winner ? "bg-green-50" : "bg-muted"}`}
             >
-              <Avatar className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 mb-2">
+              <Avatar className="text-foreground w-12 h-12 bg-card   mb-2">
                 <AvatarFallback className="bg-transparent">
                   <User className="w-6 h-6 text-white" />
                 </AvatarFallback>
@@ -165,9 +165,9 @@ export default function ResultsPage() {
 
             {/* Player 2 */}
             <div
-              className={`flex flex-col items-center p-4 rounded-lg ${!isPlayer1Winner ? "bg-green-50" : "bg-gray-50"}`}
+              className={`flex flex-col items-center p-4 rounded-lg ${!isPlayer1Winner ? "bg-green-50" : "bg-muted"}`}
             >
-              <Avatar className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-600 mb-2">
+              <Avatar className="text-foreground w-12 h-12 bg-card   mb-2">
                 <AvatarFallback className="bg-transparent">
                   <User className="w-6 h-6 text-white" />
                 </AvatarFallback>
@@ -195,7 +195,7 @@ export default function ResultsPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50 to-gray-50">
+      <div className="text-foreground min-h-screen bg-card   ">
         <Header />
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
@@ -212,7 +212,7 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50 to-gray-50">
+    <div className="text-foreground min-h-screen bg-card   ">
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-8">
@@ -237,7 +237,7 @@ export default function ResultsPage() {
 
           <TabsContent value="my-results" className="space-y-4">
             {myResults.length === 0 ? (
-              <Card className="bg-white shadow-md">
+              <Card className="bg-card shadow-md">
                 <CardContent className="py-12 text-center">
                   <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                   <p className="text-muted-foreground font-medium">Noch keine Spiele gespielt</p>
@@ -255,7 +255,7 @@ export default function ResultsPage() {
 
           <TabsContent value="all-results" className="space-y-4">
             {allResults.length === 0 ? (
-              <Card className="bg-white shadow-md">
+              <Card className="bg-card shadow-md">
                 <CardContent className="py-12 text-center">
                   <Trophy className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                   <p className="text-muted-foreground font-medium">Noch keine Spiele vorhanden</p>

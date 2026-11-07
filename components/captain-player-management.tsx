@@ -421,8 +421,8 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
             <Crown className="h-5 w-5 text-amber-200" />
           </div>
           <div>
-            <h3 className="text-base font-black text-white">Spieler hinzufügen</h3>
-            <p className="mt-1 text-sm font-semibold leading-5 text-white/40">
+            <h3 className="text-base font-semibold text-white">Spieler hinzufügen</h3>
+            <p className="mt-1 text-sm font-semibold leading-5 text-muted-foreground">
               Du musst Kapitän oder Co-Kapitän eines Teams sein, um Spieler hinzuzufügen.
             </p>
           </div>
@@ -440,13 +440,13 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
           </div>
 
           <div className="min-w-0">
-            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300/55">
+            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-300/55">
               Spielerverwaltung
             </div>
-            <h3 className="mt-0.5 text-lg font-black text-white sm:text-xl">
+            <h3 className="mt-0.5 text-lg font-semibold text-white sm:text-xl">
               Spieler zum Team hinzufügen
             </h3>
-            <p className="mt-1 text-sm font-semibold leading-5 text-white/40">
+            <p className="mt-1 text-sm font-semibold leading-5 text-muted-foreground">
               Bestehenden Spieler auswählen und dem richtigen Team zuordnen.
             </p>
           </div>
@@ -460,8 +460,8 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
               <Info className="h-4 w-4 text-orange-200" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/25">Hinweise</div>
-              <div className="text-sm font-black text-white">Was du beachten musst</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-white/25">Hinweise</div>
+              <div className="text-sm font-semibold text-white">Was du beachten musst</div>
             </div>
           </div>
 
@@ -475,8 +475,8 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
               ["Steeldart", "Es erscheinen nur Spieler mit gültigem Steeldart-Liga-Paket."],
             ].map(([title, copy]) => (
               <div key={title} className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
-                <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/25">{title}</div>
-                <p className="mt-1.5 text-sm font-semibold leading-5 text-white/50">{copy}</p>
+                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/25">{title}</div>
+                <p className="mt-1.5 text-sm font-semibold leading-5 text-muted-foreground">{copy}</p>
               </div>
             ))}
           </div>
@@ -485,7 +485,7 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="selectedTeam" className="text-sm font-black text-white/70">Team auswählen *</Label>
+              <Label htmlFor="selectedTeam" className="text-sm font-semibold text-white/70">Team auswählen *</Label>
               <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
                 <SelectTrigger className="h-11 rounded-xl border-white/[0.10] bg-[#0a0d12] font-semibold text-white shadow-none focus:border-orange-300/40 focus:ring-orange-500/10">
                   <SelectValue placeholder="Team auswählen" />
@@ -500,7 +500,7 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
                           <ShieldCheck className="h-4 w-4 text-sky-300" />
                         )}
                         <span>{membership.teams.name}</span>
-                        <span className="text-xs text-white/35">
+                        <span className="text-xs text-muted-foreground">
                           ({membership.teams.dart_type === "steeldart" ? "Steeldart" : "E-Dart"})
                         </span>
                       </div>
@@ -511,7 +511,7 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="selectedPlayer" className="text-sm font-black text-white/70">Spieler auswählen *</Label>
+              <Label htmlFor="selectedPlayer" className="text-sm font-semibold text-white/70">Spieler auswählen *</Label>
               <Select
                 value={selectedPlayerId}
                 onValueChange={setSelectedPlayerId}
@@ -540,7 +540,7 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
                               <Image src={player.photo_url} alt={player.name} fill style={{ objectFit: "cover" }} />
                             </div>
                           ) : (
-                            <span className="text-[11px] font-black uppercase text-white/40">
+                            <span className="text-xs font-semibold uppercase text-muted-foreground">
                               {player.name?.charAt(0) || "?"}
                             </span>
                           )}
@@ -554,10 +554,10 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label className="text-sm font-black text-white/70">Rolle im Team</Label>
+              <Label className="text-sm font-semibold text-white/70">Rolle im Team</Label>
               <div className="flex h-11 items-center rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-white/65">
-                <span className="font-black">Spieler</span>
-                <span className="ml-2 text-xs text-white/30">(Nur diese Rolle verfügbar)</span>
+                <span className="font-semibold">Spieler</span>
+                <span className="ml-2 text-xs text-muted-foreground">(Nur diese Rolle verfügbar)</span>
               </div>
             </div>
           </div>
@@ -576,10 +576,10 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
                   </div>
                 ) : null}
                 <div>
-                  <p className="font-black text-white">
+                  <p className="font-semibold text-white">
                     {allPlayers.find((p) => p.id === selectedPlayerId)?.name}
                   </p>
-                  <div className="mt-1 flex flex-wrap gap-3 text-sm text-white/40">
+                  <div className="mt-1 flex flex-wrap gap-3 text-sm text-muted-foreground">
                     {allPlayers.find((p) => p.id === selectedPlayerId)?.age ? (
                       <span>Alter: {allPlayers.find((p) => p.id === selectedPlayerId)?.age}</span>
                     ) : null}
@@ -595,7 +595,7 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
           <Button
             type="submit"
             disabled={loading || !selectedPlayerId || !selectedTeamId}
-            className="h-11 w-full rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-400 disabled:opacity-40"
+            className="h-11 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground shadow-none hover:bg-orange-400 disabled:opacity-40"
           >
             {loading ? (
               <div className="flex items-center space-x-2">

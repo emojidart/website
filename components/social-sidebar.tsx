@@ -16,7 +16,7 @@ export function SocialSidebar() {
       name: "Instagram",
       url: "https://www.instagram.com/emojsdartverein/",
       icon: Instagram,
-      bgColor: "bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500",
+      bgColor: "text-foreground bg-card   ",
     },
     {
       name: "Facebook",
@@ -59,7 +59,7 @@ export function SocialSidebar() {
               aria-label={link.name}
             >
               <Icon className="w-6 h-6" />
-              <span className="absolute left-full ml-2 px-3 py-1 bg-gray-900 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <span className="absolute left-full ml-2 px-3 py-1 bg-background text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                 {link.name}
               </span>
             </a>
@@ -67,7 +67,7 @@ export function SocialSidebar() {
         })}
       </div>
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center gap-1 bg-white/95 backdrop-blur-sm shadow-lg py-2 px-2">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center gap-1 bg-card  shadow-lg py-2 px-2">
         {socialLinks.map((link) => {
           const Icon = link.icon
           return (

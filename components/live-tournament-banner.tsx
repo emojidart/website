@@ -173,7 +173,7 @@ export function LiveTournamentBanner() {
 
   return (
     <div className="mb-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 shadow-2xl">
+      <div className="text-foreground relative overflow-hidden rounded-2xl bg-card    shadow-2xl">
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00em0wLTMwYzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHpNNiAzNGMwLTIuMjEtMS43OS00LTQtNHMtNCAxLjc5LTQgNCAxLjc5IDQgNCA0IDQtMS43OSA0LTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
         <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-300 rounded-full blur-3xl opacity-20 animate-pulse"></div>
@@ -185,19 +185,19 @@ export function LiveTournamentBanner() {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75"></div>
-                <div className="relative flex items-center gap-2 bg-white/95 backdrop-blur-md rounded-full px-4 py-2 shadow-lg">
+                <div className="relative flex items-center gap-2 bg-card  rounded-full px-4 py-2 shadow-lg">
                   <Radio className="w-4 h-4 text-red-600 animate-pulse" />
-                  <span className="text-red-600 text-sm font-black uppercase tracking-wider">Live</span>
+                  <span className="text-red-600 text-sm font-semibold uppercase tracking-wider">Live</span>
                 </div>
               </div>
-              <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 text-xs font-semibold">
+              <Badge className="bg-white/20  text-white border-white/30 hover:bg-white/30 text-xs font-semibold">
                 {activeTournament.tournament_type.replace("_", " ").toUpperCase()}
               </Badge>
             </div>
 
             {/* Active matches indicator */}
             {activeMatchesCount > 0 && (
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5">
+              <div className="flex items-center gap-2 bg-white/20  rounded-full px-3 py-1.5">
                 <Zap className="w-4 h-4 text-yellow-300" />
                 <span className="text-white text-sm font-bold">{activeMatchesCount}</span>
                 <span className="text-white/90 text-xs font-medium">aktiv</span>
@@ -207,7 +207,7 @@ export function LiveTournamentBanner() {
 
           {/* Tournament name */}
           <div className="mb-6">
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-2 leading-tight tracking-tight drop-shadow-lg">
+            <h2 className="text-3xl md:text-4xl font-semibold text-white mb-2 leading-tight tracking-tight drop-shadow-lg">
               {activeTournament.tournament_name}
             </h2>
             <p className="text-white/90 text-sm font-medium flex items-center gap-2">
@@ -220,7 +220,7 @@ export function LiveTournamentBanner() {
           <Button
             onClick={() => (window.location.href = "/live-all-app")}
             size="lg"
-            className="w-full bg-white hover:bg-gray-50 text-orange-600 font-bold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
+            className="w-full bg-card hover:bg-muted text-orange-600 font-bold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
           >
             <span className="flex items-center justify-center gap-2">
               Jetzt live ansehen

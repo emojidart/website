@@ -156,12 +156,9 @@ function parseStartgeld(details: string | null) {
 
 function DummyCover({ label }: { label?: string }) {
   return (
-    <div className="relative h-36 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700">
-      <div className="absolute inset-0 opacity-25">
-        <div className="w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.10),transparent_40%),radial-gradient(circle_at_30%_80%,rgba(255,255,255,0.12),transparent_45%)]" />
-      </div>
+    <div className="relative h-28 border-b border-border bg-secondary">
       <div className="relative h-full flex items-center justify-center text-white">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10  border border-white/10">
           <ImageIcon className="w-5 h-5" />
           <span className="text-sm font-semibold">{label || "Event"}</span>
         </div>
@@ -316,52 +313,39 @@ export default function VeranstaltungenPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
       <Header />
 
-      {/* Stabiler Hintergrund wie im Member-Profil – ohne Lade-/Fade-Effekt */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
-      </div>
+      {/* Veranstaltungssuche und Vereinskalender */}
 
-      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <div className="w-full">
-          {/* Page Header Card */}
-          <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
-            <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-500/15 blur-[110px]" />
-            <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/10 blur-[120px]" />
-            <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
-                  <Calendar className="h-6 w-6 text-orange-400" />
-                </div>
-                <div className="min-w-0">
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55"><span className="h-2 w-2 rounded-full bg-orange-400" />Vereinsleben · Events</div>
-                  <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Veranstaltungen</h1>
-                  <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">Turniere, Partys und mehr – alles auf einen Blick.</p>
-                </div>
-              </div>
+          <section className="mb-6 flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-end">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary">Vereinsleben</p>
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Veranstaltungen</h1>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Deine nächsten Turniere und Vereinstermine. Finde heraus, was bei EMD ansteht.</p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-5 w-5 text-primary" aria-hidden="true" />
+              Gemeinsam am Oche
             </div>
           </section>
 
           {/* Filters (sticky like app) */}
-          <div className="sticky top-[60px] z-20 mt-4 sm:mt-5">
-            <Card className="rounded-[24px] border border-white/10 bg-black/40 shadow-[0_24px_80px_-52px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+          <div className="z-20 mt-4 sm:mt-5 lg:sticky lg:top-[calc(4rem+env(safe-area-inset-top))]">
+            <Card className="rounded-2xl border border-white/10 bg-card shadow-sm ">
               <CardContent className="p-4">
-                <div className="flex flex-col gap-3">
+                <div className="grid gap-3 md:grid-cols-2">
                   {/* Segmented Buttons */}
                   <div className="grid grid-cols-3 gap-2">
                     <Button
                       size="sm"
                       variant={timeFilter === "upcoming" ? "default" : "outline"}
                       onClick={() => setTimeFilter("upcoming")}
-                      className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 data-[state=active]:bg-orange-500"
+                      aria-pressed={timeFilter === "upcoming"}
+                      className={timeFilter === "upcoming" ? "rounded-xl border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "rounded-xl border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground"}
                     >
                       Anstehend
                     </Button>
@@ -369,7 +353,8 @@ export default function VeranstaltungenPage() {
                       size="sm"
                       variant={timeFilter === "past" ? "default" : "outline"}
                       onClick={() => setTimeFilter("past")}
-                      className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 data-[state=active]:bg-orange-500"
+                      aria-pressed={timeFilter === "past"}
+                      className={timeFilter === "past" ? "rounded-xl border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "rounded-xl border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground"}
                     >
                       Abgelaufen
                     </Button>
@@ -377,7 +362,8 @@ export default function VeranstaltungenPage() {
                       size="sm"
                       variant={timeFilter === "all" ? "default" : "outline"}
                       onClick={() => setTimeFilter("all")}
-                      className="rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 data-[state=active]:bg-orange-500"
+                      aria-pressed={timeFilter === "all"}
+                      className={timeFilter === "all" ? "rounded-xl border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "rounded-xl border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground"}
                     >
                       Alle
                     </Button>
@@ -385,21 +371,22 @@ export default function VeranstaltungenPage() {
 
                   {/* Search */}
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
+                      aria-label="Veranstaltungen durchsuchen"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder="Suchen (Name, Ort, Details …)"
-                      className="h-11 rounded-xl border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/35"
+                      className="h-11 rounded-xl border-white/10 bg-white/5 pl-9 text-white placeholder:text-muted-foreground"
                     />
                   </div>
 
                   {/* Selects */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:col-span-2">
                     <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-white/45" />
+                      <Filter className="w-4 h-4 text-muted-foreground" />
                       <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-white">
+                        <SelectTrigger aria-label="Veranstaltungstyp" className="h-11 min-w-0 rounded-xl border-border bg-background text-foreground">
                           <SelectValue placeholder="Typ" />
                         </SelectTrigger>
                         <SelectContent>
@@ -414,9 +401,9 @@ export default function VeranstaltungenPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-white/45" />
+                      <Filter className="w-4 h-4 text-muted-foreground" />
                       <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                        <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-white">
+                        <SelectTrigger aria-label="Veranstaltungsort" className="h-11 min-w-0 rounded-xl border-border bg-background text-foreground">
                           <SelectValue placeholder="Ort / Art" />
                         </SelectTrigger>
                         <SelectContent>
@@ -428,8 +415,8 @@ export default function VeranstaltungenPage() {
                     </div>
                   </div>
 
-                  <div className="text-xs font-semibold text-white/45">
-                    {loading ? "Lade…" : `${filtered.length} Ergebnis(se)`}
+                  <div role="status" aria-live="polite" className="text-xs font-medium text-muted-foreground md:col-span-2">
+                    {loading ? "Lade…" : `${filtered.length} ${filtered.length === 1 ? "Veranstaltung" : "Veranstaltungen"}`}
                   </div>
                 </div>
               </CardContent>
@@ -439,13 +426,13 @@ export default function VeranstaltungenPage() {
           {/* List */}
           <div className="mt-4">
             {loading ? (
-              <div className="rounded-[22px] border border-white/10 bg-white/5 py-12 text-center text-white/55">Lade Veranstaltungen…</div>
+              <div role="status" aria-live="polite" className="rounded-2xl border border-border bg-card px-5 py-12 text-center text-muted-foreground">Veranstaltungen werden geladen…</div>
             ) : error ? (
-              <div className="rounded-[22px] border border-red-400/20 bg-red-400/10 py-12 text-center text-red-300">{error}</div>
+              <div role="alert" className="rounded-2xl border border-red-400/20 bg-red-400/10 px-5 py-12 text-center text-red-300">{error}</div>
             ) : filtered.length === 0 ? (
-              <div className="rounded-[22px] border border-white/10 bg-white/5 py-12 text-center text-white/55">Keine passenden Veranstaltungen gefunden.</div>
+              <div className="rounded-2xl border border-border bg-card px-5 py-12 text-center text-muted-foreground"><Search className="mx-auto mb-3 h-7 w-7 text-primary" aria-hidden="true" /><p className="font-medium text-foreground">Keine passenden Veranstaltungen</p><p className="mt-2 text-sm">Ändere deine Suche oder die Filter, um weitere Termine zu entdecken.</p></div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {filtered.map((e) => {
                   const dt = toDateTime(e)
 const endDt = toEventEndDateTime(e)
@@ -459,9 +446,9 @@ const isPast = endDt.getTime() < Date.now()
                   const startgeldAmount = parseStartgeld(e.startgeld_details)
 
                   return (
-                    <Card key={e.id} className="group overflow-hidden rounded-[24px] border border-white/10 bg-black/35 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-orange-400/30">
+                    <Card key={e.id} className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-card shadow-sm  transition hover:-translate-y-0.5 hover:border-orange-400/30">
                       {e.photo_url ? (
-                        <div className="relative h-40 bg-black/40 sm:h-44">
+                        <div className="relative h-40 bg-card sm:h-44">
                           <Image src={e.photo_url} alt={e.name} fill className="object-cover" />
                         </div>
                       ) : (
@@ -471,7 +458,7 @@ const isPast = endDt.getTime() < Date.now()
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <CardTitle className="text-base font-black leading-snug line-clamp-2">{e.name}</CardTitle>
+                            <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{e.name}</CardTitle>
 
                             <div className="flex flex-wrap gap-2 mt-2">
                               <Chip tone="gray">
@@ -493,20 +480,20 @@ const isPast = endDt.getTime() < Date.now()
                         </div>
                       </CardHeader>
 
-                      <CardContent className="pt-0">
+                      <CardContent className="flex flex-1 flex-col pt-0">
                         <div className="space-y-2.5 text-sm text-white/70">
                           <div className="flex items-center gap-2">
-  <Calendar className="w-4 h-4 text-white/45" />
+  <Calendar className="w-4 h-4 text-muted-foreground" />
   <span className="font-medium">{formatDateRangeDE(e.start_date, e.end_date, e.event_date)}</span>
 </div>
 
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-white/45" />
+                            <Clock className="w-4 h-4 text-muted-foreground" />
                             <span>{formatTimeDE(e.event_time)} Uhr</span>
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-white/45" />
+                            <MapPin className="w-4 h-4 text-muted-foreground" />
                             <span className="line-clamp-1">{e.location || "Wird bekannt gegeben"}</span>
                           </div>
 
@@ -519,32 +506,32 @@ const isPast = endDt.getTime() < Date.now()
 
                               {hasStartgeldDetails ? (
                                 <Chip tone="orange">
-                                  <span className="font-bold">Startgeld:</span>{" "}
+                                  <span className="font-semibold">Startgeld:</span>{" "}
                                   {startgeldAmount != null ? formatEuroCompact(startgeldAmount) : e.startgeld_details}
                                 </Chip>
                               ) : null}
 
                               {hasEintritt ? (
                                 <Chip tone="gray">
-                                  <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
+                                  <span className="font-semibold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
                                 </Chip>
                               ) : null}
                             </div>
                           ) : hasEintritt ? (
                             <div className="flex flex-wrap gap-2 pt-1">
                               <Chip tone="gray">
-                                <span className="font-bold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
+                                <span className="font-semibold">Eintritt:</span> {formatEuro(e.entry_fee ?? 0)}
                               </Chip>
                             </div>
                           ) : null}
 
-                          {e.details ? <div className="line-clamp-3 pt-1 text-sm leading-relaxed text-white/50">{e.details}</div> : null}
+                          {e.details ? <div className="line-clamp-3 pt-1 text-sm leading-relaxed text-muted-foreground">{e.details}</div> : null}
                         </div>
 
-                        <div className="mt-4">
+                        <div className="mt-auto pt-5">
                           <Button
                             type="button"
-                            className="h-11 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-600"
+                            className="h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
                             onClick={() => void openEventDetails(e)}
                           >
                             Details

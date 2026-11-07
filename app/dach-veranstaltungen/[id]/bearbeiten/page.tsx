@@ -279,11 +279,11 @@ export default function BearbeitenPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050608]">
+      <div className="min-h-screen bg-background">
         <Header variant="app" title="Veranstaltung bearbeiten" subtitle="DACH Turniere" backHref="/dach-veranstaltungen/meine" />
         <main className="flex min-h-[70vh] items-center justify-center px-4 pt-20">
-          <div className="flex flex-col items-center gap-3 text-white/35">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-black/25 shadow-none">
+          <div className="flex flex-col items-center gap-3 text-muted-foreground">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-card shadow-none">
               <Loader2 className="h-7 w-7 animate-spin text-orange-200" />
             </div>
             <p className="text-sm font-semibold">
@@ -298,19 +298,19 @@ export default function BearbeitenPage() {
 
   if (!form) {
     return (
-      <div className="min-h-screen bg-[#050608]">
+      <div className="min-h-screen bg-background">
         <Header variant="app" title="Veranstaltung bearbeiten" subtitle="DACH Turniere" backHref="/dach-veranstaltungen/meine" />
         <main className="px-4 pb-28 pt-24">
           <Card className="mx-auto max-w-lg overflow-hidden rounded-[28px] border-white/[0.08] shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] shadow-none">
-            <div className="h-1.5 bg-gradient-to-r from-orange-500 to-sky-400" />
+            <div className="text-foreground h-1.5 bg-card  " />
             <CardContent className="p-8 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/[0.08]">
                 <ShieldAlert className="h-8 w-8 text-orange-200" />
               </div>
-              <h1 className="mt-5 text-2xl font-black text-white">
+              <h1 className="mt-5 text-2xl font-semibold text-white">
                 Bearbeitung nicht möglich
               </h1>
-              <p className="mt-2 text-sm leading-6 text-white/50">{message}</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{message}</p>
               <Button
                 className="mt-6 h-11 rounded-xl px-6"
                 onClick={() => router.push("/dach-veranstaltungen/meine")}
@@ -326,22 +326,15 @@ export default function BearbeitenPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-32 text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background pb-32 text-white">
       <Header variant="app" title="Veranstaltung bearbeiten" subtitle="DACH Turniere" backHref="/dach-veranstaltungen/meine" />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.70),rgba(3,5,9,.94)_46%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(14,165,233,.13),transparent_26%),radial-gradient(circle_at_88%_28%,rgba(249,115,22,.12),transparent_28%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
 
-        <section className="relative mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/35 p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-7 lg:p-8">
+        <section className="relative mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-card p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-7 lg:p-8">
           <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/[0.13] blur-[70px]" />
           <div className="pointer-events-none absolute -bottom-20 left-[38%] h-48 w-48 rounded-full bg-sky-500/[0.08] blur-[65px]" />
 
@@ -351,13 +344,13 @@ export default function BearbeitenPage() {
                 <CalendarDays className="h-7 w-7" />
               </div>
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.20em] text-orange-200/65">
+                <div className="text-xs font-semibold uppercase tracking-[0.20em] text-orange-200/65">
                   Veranstaltung bearbeiten
                 </div>
-                <h1 className="mt-1.5 text-3xl font-black tracking-[-0.035em] text-white sm:text-4xl">
+                <h1 className="mt-1.5 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
                   {form.name || "Veranstaltung ändern"}
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/45">
+                <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground">
                   Änderungen werden nach dem Speichern erneut zur Prüfung eingereicht.
                 </p>
               </div>
@@ -620,19 +613,19 @@ export default function BearbeitenPage() {
                 value={form.details}
                 onChange={(e) => setField("details", e.target.value)}
                 placeholder="Modus, Preisgeld, Einlass, Anmeldung und weitere Hinweise …"
-                className="min-h-[170px] resize-y rounded-2xl border-white/[0.08] bg-[#050608]/60 px-4 py-3 focus-visible:border-orange-400 focus-visible:ring-orange-200"
+                className="min-h-[170px] resize-y rounded-2xl border-white/[0.08] bg-background px-4 py-3 focus-visible:border-orange-400 focus-visible:ring-orange-200"
               />
             </Field>
 
             <Field label="Neuen Flyer auswählen (optional)">
-              <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#050608] p-4 transition hover:border-orange-300 hover:bg-orange-500/[0.07]">
+              <div className="rounded-2xl border border-dashed border-white/[0.12] bg-background p-4 transition hover:border-orange-300 hover:bg-orange-500/[0.07]">
                 <Input
                   type="file"
                   accept="image/*,application/pdf"
                   onChange={(e) => setFlyer(e.target.files?.[0] || null)}
                   className="border-0 bg-transparent p-0 shadow-none file:mr-4 file:rounded-xl file:border-0 file:bg-orange-500 file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
                 />
-                <p className="mt-2 text-xs text-white/35">
+                <p className="mt-2 text-xs text-muted-foreground">
                   {flyer
                     ? `Ausgewählt: ${flyer.name}`
                     : form.photo_url
@@ -650,15 +643,15 @@ export default function BearbeitenPage() {
             </div>
           ) : null}
 
-          <div className="sticky bottom-20 z-20 rounded-[22px] border border-white/[0.08] bg-[#070a0f]/90 p-3 shadow-[0_22px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:bottom-5">
+          <div className="sticky bottom-20 z-20 rounded-[22px] border border-white/[0.08] bg-[#070a0f]/90 p-3 shadow-[0_22px_70px_-48px_rgba(0,0,0,.95)]  sm:bottom-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="hidden items-center gap-2 px-2 text-sm text-white/35 sm:flex">
+              <div className="hidden items-center gap-2 px-2 text-sm text-muted-foreground sm:flex">
                 <CheckCircle2 className="h-4 w-4 text-emerald-200" />
                 Nach dem Speichern erfolgt eine neue Freigabeprüfung.
               </div>
               <Button
                 disabled={saving}
-                className="h-12 w-full rounded-2xl bg-orange-500 px-7 text-base font-black text-white shadow-[0_18px_46px_-26px_rgba(249,115,22,.5)] transition hover:bg-orange-400 sm:w-auto"
+                className="h-12 w-full rounded-2xl bg-orange-500 px-7 text-base font-semibold text-primary-foreground shadow-[0_18px_46px_-26px_rgba(249,115,22,.5)] transition hover:bg-orange-400 sm:w-auto"
               >
                 {saving ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -713,7 +706,7 @@ function ModernSection({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl">
+    <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-none ">
       <CardContent className="p-0">
         <div className="border-b border-white/[0.07] bg-white/[0.025] px-5 py-5 sm:px-7">
           <div className="flex items-start gap-3">
@@ -721,13 +714,13 @@ function ModernSection({
               {icon}
             </div>
             <div>
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-200">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-200">
                 {eyebrow}
               </div>
-              <h2 className="mt-1 text-xl font-black text-white">
+              <h2 className="mt-1 text-xl font-semibold text-white">
                 {title}
               </h2>
-              <p className="mt-1 text-sm text-white/35">{description}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
             </div>
           </div>
         </div>
@@ -746,7 +739,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-2">
-      <span className="block text-xs font-black uppercase tracking-[0.08em] text-white/50">
+      <span className="block text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </span>
       {children}

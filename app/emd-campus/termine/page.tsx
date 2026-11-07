@@ -104,10 +104,10 @@ function Chip({
       ? "bg-green-50 text-green-900 border-green-200"
       : tone === "orange"
         ? "bg-orange-50 text-orange-900 border-orange-200"
-        : "bg-gray-50 text-gray-800 border-gray-200"
+        : "bg-muted text-foreground border-border"
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-black ${cls}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${cls}`}>
       {children}
     </span>
   )
@@ -115,21 +115,21 @@ function Chip({
 
 export default function CampusTerminePage() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-foreground pb-24 md:pb-0">
       <Header />
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
       <main className="mx-auto w-full max-w-[1800px] px-2 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6 2xl:px-8">
-        <section className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
-          <div className="bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
+        <section className="overflow-hidden rounded-[26px] border border-border bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+          <div className="bg-card    p-4 text-white sm:p-5 lg:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-black uppercase tracking-wider">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider">
                   <CalendarDays className="h-3.5 w-3.5" />
                   EMD Campus Termine
                 </div>
 
-                <h1 className="mt-3 text-2xl font-black sm:text-3xl lg:text-4xl">Terminübersicht 2026</h1>
+                <h1 className="mt-3 text-2xl font-semibold sm:text-3xl lg:text-4xl">Terminübersicht 2026</h1>
                 <p className="mt-2 text-sm font-semibold text-orange-100 sm:text-base">
                   Alle wichtigen Termine
                 </p>
@@ -149,7 +149,7 @@ export default function CampusTerminePage() {
               <div className="shrink-0">
                 <Link
                   href="/emd-campus"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-orange-700 shadow-sm hover:bg-orange-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-5 py-3 text-sm font-semibold text-orange-700 shadow-sm hover:bg-orange-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Zurück zum Campus
@@ -160,21 +160,21 @@ export default function CampusTerminePage() {
 
           <div className="border-t border-orange-100 bg-orange-50/60 p-4 sm:p-5">
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-orange-200 bg-white p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Infotag</p>
-                <p className="mt-1 text-sm font-black text-gray-900">10. Januar 2026</p>
+              <div className="rounded-2xl border border-orange-200 bg-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Infotag</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">10. Januar 2026</p>
                 <p className="mt-1 text-sm font-semibold text-orange-700">14:00 Uhr</p>
               </div>
 
-              <div className="rounded-2xl border border-orange-200 bg-white p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Trainingsstart</p>
-                <p className="mt-1 text-sm font-black text-gray-900">18. Januar 2026</p>
+              <div className="rounded-2xl border border-orange-200 bg-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Trainingsstart</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">18. Januar 2026</p>
                 <p className="mt-1 text-sm font-semibold text-orange-700">Kids / Junior / Teens</p>
               </div>
 
-              <div className="rounded-2xl border border-orange-200 bg-white p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Ort</p>
-                <p className="mt-1 text-sm font-black text-gray-900">Vereinsheim Pfeil-OK e.V.</p>
+              <div className="rounded-2xl border border-orange-200 bg-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ort</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">Vereinsheim Pfeil-OK e.V.</p>
                 <p className="mt-1 text-sm font-semibold text-orange-700">Salzburg</p>
               </div>
             </div>
@@ -185,11 +185,11 @@ export default function CampusTerminePage() {
         <section className="mt-6 lg:hidden">
           <div className="space-y-3">
             {termine.map((termin) => (
-              <div key={`${termin.datum}-${termin.art}`} className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div key={`${termin.datum}-${termin.art}`} className="rounded-3xl border border-border bg-card p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">{termin.art}</p>
-                    <p className="mt-1 text-base font-black text-gray-900">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{termin.art}</p>
+                    <p className="mt-1 text-base font-semibold text-foreground">
                       {termin.tag}, {termin.datum}
                     </p>
                   </div>
@@ -198,24 +198,24 @@ export default function CampusTerminePage() {
                 </div>
 
                 <div className="mt-4 space-y-3">
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-                    <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Zeiten</p>
-                    <div className="mt-2 space-y-1.5 text-sm text-gray-700">
+                  <div className="rounded-2xl border border-border bg-muted p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Zeiten</p>
+                    <div className="mt-2 space-y-1.5 text-sm text-muted-foreground">
                       <p>
-                        <span className="font-black text-red-700">Kids:</span> {termin.zeitKids}
+                        <span className="font-semibold text-red-700">Kids:</span> {termin.zeitKids}
                       </p>
                       <p>
-                        <span className="font-black text-blue-700">Junior:</span> {termin.zeitJunior}
+                        <span className="font-semibold text-blue-700">Junior:</span> {termin.zeitJunior}
                       </p>
                       <p>
-                        <span className="font-black text-purple-700">Teens:</span> {termin.zeitTeens}
+                        <span className="font-semibold text-purple-700">Teens:</span> {termin.zeitTeens}
                       </p>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-                    <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Ort</p>
-                    <p className="mt-2 text-sm text-gray-700 inline-flex items-start gap-2">
+                  <div className="rounded-2xl border border-border bg-muted p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ort</p>
+                    <p className="mt-2 text-sm text-muted-foreground inline-flex items-start gap-2">
                       <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-orange-700" />
                       <span>{termin.ort}</span>
                     </p>
@@ -228,62 +228,62 @@ export default function CampusTerminePage() {
 
         {/* DESKTOP TABLE */}
         <section className="mt-6 hidden lg:block">
-          <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
-              <h2 className="text-lg font-black text-gray-900">Alle Termine in Tabellenform</h2>
-              <p className="mt-1 text-sm text-gray-500"></p>
+          <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+            <div className="border-b border-border bg-muted px-6 py-4">
+              <h2 className="text-lg font-semibold text-foreground">Alle Termine in Tabellenform</h2>
+              <p className="mt-1 text-sm text-muted-foreground"></p>
             </div>
 
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
-                  <tr className="bg-white">
-                    <th className="border-b border-gray-200 px-4 py-4 text-left text-[11px] font-black uppercase tracking-wider text-gray-500">
+                  <tr className="bg-card">
+                    <th className="border-b border-border px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Datum
                     </th>
-                    <th className="border-b border-gray-200 px-4 py-4 text-left text-[11px] font-black uppercase tracking-wider text-gray-500">
+                    <th className="border-b border-border px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Art
                     </th>
-                    <th className="border-b border-gray-200 px-4 py-4 text-left text-[11px] font-black uppercase tracking-wider text-gray-500">
+                    <th className="border-b border-border px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Kids
                     </th>
-                    <th className="border-b border-gray-200 px-4 py-4 text-left text-[11px] font-black uppercase tracking-wider text-gray-500">
+                    <th className="border-b border-border px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Junior
                     </th>
-                    <th className="border-b border-gray-200 px-4 py-4 text-left text-[11px] font-black uppercase tracking-wider text-gray-500">
+                    <th className="border-b border-border px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Teens
                     </th>
-                    <th className="border-b border-gray-200 px-4 py-4 text-left text-[11px] font-black uppercase tracking-wider text-gray-500">
+                    <th className="border-b border-border px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Ort
                     </th>
-                    <th className="border-b border-gray-200 px-4 py-4 text-left text-[11px] font-black uppercase tracking-wider text-gray-500">
+                    <th className="border-b border-border px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Hinweis
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {termine.map((termin, index) => (
-                    <tr key={`${termin.datum}-${termin.art}`} className={index % 2 === 0 ? "bg-white" : "bg-gray-50/60"}>
-                      <td className="border-b border-gray-100 px-4 py-4 align-top">
-                        <div className="font-black text-gray-900">{termin.datum}</div>
-                        <div className="text-sm text-gray-500">{termin.tag}</div>
+                    <tr key={`${termin.datum}-${termin.art}`} className={index % 2 === 0 ? "bg-card" : "bg-muted/60"}>
+                      <td className="border-b border-border px-4 py-4 align-top">
+                        <div className="font-semibold text-foreground">{termin.datum}</div>
+                        <div className="text-sm text-muted-foreground">{termin.tag}</div>
                       </td>
-                      <td className="border-b border-gray-100 px-4 py-4 align-top">
-                        <div className="font-black text-gray-900">{termin.art}</div>
+                      <td className="border-b border-border px-4 py-4 align-top">
+                        <div className="font-semibold text-foreground">{termin.art}</div>
                       </td>
-                      <td className="border-b border-gray-100 px-4 py-4 align-top text-sm font-semibold text-red-700">
+                      <td className="border-b border-border px-4 py-4 align-top text-sm font-semibold text-red-700">
                         {termin.zeitKids}
                       </td>
-                      <td className="border-b border-gray-100 px-4 py-4 align-top text-sm font-semibold text-blue-700">
+                      <td className="border-b border-border px-4 py-4 align-top text-sm font-semibold text-blue-700">
                         {termin.zeitJunior}
                       </td>
-                      <td className="border-b border-gray-100 px-4 py-4 align-top text-sm font-semibold text-purple-700">
+                      <td className="border-b border-border px-4 py-4 align-top text-sm font-semibold text-purple-700">
                         {termin.zeitTeens}
                       </td>
-                      <td className="border-b border-gray-100 px-4 py-4 align-top text-sm text-gray-700">
+                      <td className="border-b border-border px-4 py-4 align-top text-sm text-muted-foreground">
                         {termin.ort}
                       </td>
-                      <td className="border-b border-gray-100 px-4 py-4 align-top">
+                      <td className="border-b border-border px-4 py-4 align-top">
                         {termin.hinweis ? <Chip tone="green">{termin.hinweis}</Chip> : <Chip tone="orange">Geplant</Chip>}
                       </td>
                     </tr>

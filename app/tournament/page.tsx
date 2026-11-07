@@ -178,7 +178,7 @@ export default function TournamentPage() {
   const actualTournamentDays = lioncupDates.filter((date) => !date.spielfrei).length
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+    <div className="min-h-screen bg-muted text-foreground font-sans">
       <Header />
       <main className="pt-8 pb-20">
         <motion.div
@@ -189,13 +189,13 @@ export default function TournamentPage() {
         >
           {/* Hero Section */}
           <motion.div variants={itemVariants} className="text-center mb-16">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 md:p-12 mb-8">
+            <div className="bg-card rounded-2xl shadow-xl border border-border p-8 md:p-12 mb-8">
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-none tracking-tighter mb-6">
                 <span className="block text-red-600">SUMMER SPECIAL</span>
-                <span className="block text-gray-900">DART COMPETITION</span>
+                <span className="block text-foreground">DART COMPETITION</span>
                 <span className="block text-yellow-600">2025</span>
               </h1>
-              <p className="text-lg md:text-xl font-bold uppercase text-gray-600 mb-8">
+              <p className="text-lg md:text-xl font-bold uppercase text-muted-foreground mb-8">
                 WITH SOFTDART & STEELDART COMP.
               </p>
               <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-base font-bold">
@@ -213,8 +213,8 @@ export default function TournamentPage() {
 
           {/* Lioncup Hero Section */}
           <motion.div variants={itemVariants} className="text-center mb-16">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 mb-8 text-white">
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
+            <div className="bg-card   rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 mb-8 text-white">
+              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 ">
                 <Crown className="h-12 w-12 text-white mx-auto" />
               </div>
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-none tracking-tighter mb-6">
@@ -225,15 +225,15 @@ export default function TournamentPage() {
                 {actualTournamentDays} TURNIERTAGE + 1 FINALTAG
               </p>
               <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-base font-bold">
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
+                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 ">
                   <Calendar className="h-5 w-5 text-white" />
                   <span>01. SEP. 2025 - 01. JUN. 2026</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
+                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 ">
                   <Clock className="h-5 w-5 text-white" />
                   <span>JEDEN MONTAG 19:30 UHR</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 backdrop-blur-sm">
+                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg border border-white/30 ">
                   <Trophy className="h-5 w-5 text-white" />
                   <span>20 ANTRITTE FÜR FINALE</span>
                 </div>
@@ -246,10 +246,10 @@ export default function TournamentPage() {
             {/* Steeldart Schedule */}
             <motion.div
               variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
+              className="bg-card rounded-2xl shadow-xl border border-border overflow-hidden hover:shadow-2xl transition-shadow duration-300"
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-red-600 to-red-700 p-6">
+              <div className="text-foreground bg-card   p-6">
                 <div className="flex items-center gap-3">
                   <div className="bg-white/20 rounded-lg p-2">
                     <Target className="h-6 w-6 text-white" />
@@ -274,17 +274,17 @@ export default function TournamentPage() {
                         transition={{ delay: index * 0.1 }}
                         className={`flex justify-between items-center py-4 px-4 rounded-xl border transition-all duration-200 group ${
                           isPast
-                            ? "bg-gray-100 border-gray-200 opacity-60"
-                            : "bg-gray-50 border-gray-100 hover:border-red-200 hover:bg-red-50"
+                            ? "bg-muted border-border opacity-60"
+                            : "bg-muted border-border hover:border-red-200 hover:bg-red-50"
                         }`}
                       >
                         <div className="flex-1">
                           <span
-                            className={`font-bold block ${isPast ? "text-gray-500" : "text-gray-900 group-hover:text-red-700"}`}
+                            className={`font-bold block ${isPast ? "text-muted-foreground" : "text-foreground group-hover:text-red-700"}`}
                           >
                             {item.date}
                           </span>
-                          <div className={`flex items-center gap-2 mt-1 ${isPast ? "text-gray-400" : "text-red-600"}`}>
+                          <div className={`flex items-center gap-2 mt-1 ${isPast ? "text-muted-foreground" : "text-red-600"}`}>
                             <Clock className="h-4 w-4" />
                             <span className="font-bold text-sm">{item.time}</span>
                           </div>
@@ -295,7 +295,7 @@ export default function TournamentPage() {
                           disabled={isPast}
                           className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
                             isPast
-                              ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                              ? "bg-accent text-muted-foreground cursor-not-allowed"
                               : "bg-red-600 hover:bg-red-700 text-white hover:scale-105"
                           }`}
                         >
@@ -309,8 +309,8 @@ export default function TournamentPage() {
               </div>
 
               {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-center text-sm text-gray-600">
+              <div className="bg-muted px-6 py-4 border-t border-border">
+                <div className="flex items-center justify-center text-sm text-muted-foreground">
                   <Star className="h-4 w-4 mr-2 text-red-500" />
                   <span className="font-medium">{steeldartDates.length} Spieltage geplant</span>
                 </div>
@@ -320,10 +320,10 @@ export default function TournamentPage() {
             {/* E-Dart Schedule */}
             <motion.div
               variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
+              className="bg-card rounded-2xl shadow-xl border border-border overflow-hidden hover:shadow-2xl transition-shadow duration-300"
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
+              <div className="text-foreground bg-card   p-6">
                 <div className="flex items-center gap-3">
                   <div className="bg-white/20 rounded-lg p-2">
                     <Users className="h-6 w-6 text-white" />
@@ -348,17 +348,17 @@ export default function TournamentPage() {
                         transition={{ delay: index * 0.1 }}
                         className={`flex justify-between items-center py-4 px-4 rounded-xl border transition-all duration-200 group ${
                           isPast
-                            ? "bg-gray-100 border-gray-200 opacity-60"
-                            : "bg-gray-50 border-gray-100 hover:border-blue-200 hover:bg-blue-50"
+                            ? "bg-muted border-border opacity-60"
+                            : "bg-muted border-border hover:border-blue-200 hover:bg-blue-50"
                         }`}
                       >
                         <div className="flex-1">
                           <span
-                            className={`font-bold block ${isPast ? "text-gray-500" : "text-gray-900 group-hover:text-blue-700"}`}
+                            className={`font-bold block ${isPast ? "text-muted-foreground" : "text-foreground group-hover:text-blue-700"}`}
                           >
                             {item.date}
                           </span>
-                          <div className={`flex items-center gap-2 mt-1 ${isPast ? "text-gray-400" : "text-blue-600"}`}>
+                          <div className={`flex items-center gap-2 mt-1 ${isPast ? "text-muted-foreground" : "text-blue-600"}`}>
                             <Clock className="h-4 w-4" />
                             <span className="font-bold text-sm">{item.time}</span>
                           </div>
@@ -369,7 +369,7 @@ export default function TournamentPage() {
                           disabled={isPast}
                           className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
                             isPast
-                              ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                              ? "bg-accent text-muted-foreground cursor-not-allowed"
                               : "bg-blue-600 hover:bg-blue-700 text-white hover:scale-105"
                           }`}
                         >
@@ -383,8 +383,8 @@ export default function TournamentPage() {
               </div>
 
               {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-center text-sm text-gray-600">
+              <div className="bg-muted px-6 py-4 border-t border-border">
+                <div className="flex items-center justify-center text-sm text-muted-foreground">
                   <Star className="h-4 w-4 mr-2 text-blue-500" />
                   <span className="font-medium">{edartDates.length} Spieltage geplant</span>
                 </div>
@@ -394,10 +394,10 @@ export default function TournamentPage() {
             {/* Lioncup Schedule */}
             <motion.div
               variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
+              className="bg-card rounded-2xl shadow-xl border border-border overflow-hidden hover:shadow-2xl transition-shadow duration-300"
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-orange-600 to-orange-700 p-6">
+              <div className="text-foreground bg-card   p-6">
                 <div className="flex items-center gap-3">
                   <div className="bg-white/20 rounded-lg p-2">
                     <Crown className="h-6 w-6 text-white" />
@@ -425,8 +425,8 @@ export default function TournamentPage() {
                           isSpielFrei
                             ? "bg-yellow-50 border-yellow-200"
                             : isPast
-                              ? "bg-gray-100 border-gray-200 opacity-60"
-                              : "bg-gray-50 border-gray-100 hover:border-orange-200 hover:bg-orange-50"
+                              ? "bg-muted border-border opacity-60"
+                              : "bg-muted border-border hover:border-orange-200 hover:bg-orange-50"
                         }`}
                       >
                         <div className="flex-1">
@@ -435,15 +435,15 @@ export default function TournamentPage() {
                               isSpielFrei
                                 ? "text-yellow-700"
                                 : isPast
-                                  ? "text-gray-500"
-                                  : "text-gray-900 group-hover:text-orange-700"
+                                  ? "text-muted-foreground"
+                                  : "text-foreground group-hover:text-orange-700"
                             }`}
                           >
                             {item.date}
                           </span>
                           <div
                             className={`flex items-center gap-2 mt-1 ${
-                              isSpielFrei ? "text-yellow-600" : isPast ? "text-gray-400" : "text-orange-600"
+                              isSpielFrei ? "text-yellow-600" : isPast ? "text-muted-foreground" : "text-orange-600"
                             }`}
                           >
                             <Clock className="h-4 w-4" />
@@ -461,7 +461,7 @@ export default function TournamentPage() {
                             disabled={isPast}
                             className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
                               isPast
-                                ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                                ? "bg-accent text-muted-foreground cursor-not-allowed"
                                 : "bg-orange-600 hover:bg-orange-700 text-white hover:scale-105"
                             }`}
                           >
@@ -476,9 +476,9 @@ export default function TournamentPage() {
               </div>
 
               {/* Footer */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
+              <div className="bg-muted px-6 py-4 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center text-sm text-gray-600">
+                  <div className="flex items-center text-sm text-muted-foreground">
                     <Crown className="h-4 w-4 mr-2 text-orange-500" />
                     <span className="font-medium">{actualTournamentDays} Turniertage + Finale</span>
                   </div>
@@ -502,9 +502,9 @@ export default function TournamentPage() {
             {/* Summer Special Final */}
             <motion.div
               variants={cardVariants}
-              className="bg-gradient-to-r from-red-600 to-red-800 rounded-2xl shadow-2xl p-8 text-center border border-red-200 hover:shadow-3xl transition-shadow duration-300"
+              className="text-foreground bg-card   rounded-2xl shadow-2xl p-8 text-center border border-red-200 hover:shadow-3xl transition-shadow duration-300"
             >
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
+              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 ">
                 <Trophy className="h-12 w-12 text-white mx-auto" />
               </div>
               <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-4 text-white">SUMMER SPECIAL FINALE</h2>
@@ -519,7 +519,7 @@ export default function TournamentPage() {
             {/* Lioncup Final */}
             <motion.div
               variants={cardVariants}
-              className="bg-gradient-to-r from-orange-600 to-orange-800 rounded-2xl shadow-2xl p-8 text-center border border-orange-200 hover:shadow-3xl transition-shadow duration-300"
+              className="text-foreground bg-card   rounded-2xl shadow-2xl p-8 text-center border border-orange-200 hover:shadow-3xl transition-shadow duration-300"
             >
               <div className="bg-white/10 rounded-full p-4 w-16 h-16 mx-auto mb-6 shadow-lg">
                 <Crown className="h-8 w-8 text-white mx-auto" />
@@ -538,16 +538,16 @@ export default function TournamentPage() {
           <motion.div variants={itemVariants} className="mb-16">
             <motion.div
               variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center hover:shadow-2xl transition-shadow duration-300"
+              className="bg-card rounded-2xl shadow-xl border border-border p-8 text-center hover:shadow-2xl transition-shadow duration-300"
             >
-              <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-full p-4 w-16 h-16 mx-auto mb-6 shadow-lg">
+              <div className="text-foreground bg-card   rounded-full p-4 w-16 h-16 mx-auto mb-6 shadow-lg">
                 <MapPin className="h-8 w-8 text-white mx-auto" />
               </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-6 text-gray-900">VERANSTALTUNGSORT</h2>
+              <h2 className="text-2xl md:text-3xl font-extrabold uppercase mb-6 text-foreground">VERANSTALTUNGSORT</h2>
               <div className="space-y-4 text-lg">
                 <div className="bg-red-50 border border-red-100 rounded-xl p-4">
                   <div className="font-bold text-red-700 text-xl mb-2">Dart & Freizeit Vereinsheim "Pfeil-OK" e.V.</div>
-                  <div className="flex items-center justify-center gap-2 text-gray-700">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
                     <MapPin className="h-5 w-5 text-red-500" />
                     <span className="font-semibold">Linzer Bundesstrasse 16, 5020 Salzburg</span>
                   </div>
@@ -560,17 +560,17 @@ export default function TournamentPage() {
           <motion.div variants={itemVariants}>
             <motion.div
               variants={cardVariants}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 hover:shadow-2xl transition-shadow duration-300"
+              className="bg-card rounded-2xl shadow-xl border border-border p-8 hover:shadow-2xl transition-shadow duration-300"
             >
               {/* Header */}
               <div className="text-center mb-8">
-                <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
+                <div className="text-foreground bg-card   rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-lg">
                   <Sparkles className="h-8 w-8 text-white mx-auto" />
                 </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-gray-900">
+                <h2 className="text-2xl md:text-3xl font-extrabold uppercase text-foreground">
                   UNSERE PARTNER & SPONSOREN
                 </h2>
-                <p className="text-gray-600 mt-2"></p>
+                <p className="text-muted-foreground mt-2"></p>
               </div>
 
               {/* Sponsors Grid */}
@@ -584,7 +584,7 @@ export default function TournamentPage() {
                   <motion.div
                     key={index}
                     variants={sponsorVariants}
-                    className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-center hover:border-red-300 hover:bg-red-50 transition-all duration-300 group cursor-pointer hover:shadow-lg"
+                    className="bg-muted border border-border rounded-xl p-4 flex items-center justify-center hover:border-red-300 hover:bg-red-50 transition-all duration-300 group cursor-pointer hover:shadow-lg"
                   >
                     <img
                       src={sponsor.logo || "/placeholder.svg"}
@@ -599,8 +599,8 @@ export default function TournamentPage() {
               </motion.div>
 
               {/* Footer */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                <p className="text-gray-700 font-bold text-center flex items-center justify-center">
+              <div className="bg-muted rounded-xl p-6 border border-border">
+                <p className="text-muted-foreground font-bold text-center flex items-center justify-center">
                   <Star className="h-5 w-5 mr-2 text-yellow-500" />
                   VIELEN DANK AN ALLE UNSERE PARTNER UND UNTERSTÜTZER!
                   <Star className="h-5 w-5 ml-2 text-yellow-500" />
@@ -620,7 +620,7 @@ export default function TournamentPage() {
         tournamentType={registrationModal.type}
       />
 
-      <footer className="py-6 bg-gray-200 text-gray-600 text-sm text-center border-t border-gray-300">
+      <footer className="py-6 bg-secondary text-muted-foreground text-sm text-center border-t border-border">
         <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
       </footer>
     </div>

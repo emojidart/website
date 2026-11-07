@@ -1,0 +1,39 @@
+{
+  "syntaxFiles": 360,
+  "syntaxErrors": 0,
+  "stylesheetsParsed": 4,
+  "contrast": [
+    {
+      "text": "foreground",
+      "background": "background",
+      "ratio": 16.94
+    },
+    {
+      "text": "card-foreground",
+      "background": "card",
+      "ratio": 15.22
+    },
+    {
+      "text": "muted-foreground",
+      "background": "card",
+      "ratio": 7.87
+    },
+    {
+      "text": "muted-foreground",
+      "background": "muted",
+      "ratio": 7.44
+    },
+    {
+      "text": "primary-foreground",
+      "background": "primary",
+      "ratio": 8.4
+    },
+    {
+      "text": "destructive-foreground",
+      "background": "destructive",
+      "ratio": 6.29
+    }
+  ],
+  "modifiedDataLayerFiles": [],
+  "maintenanceLockRemoved": true
+}

@@ -84,7 +84,7 @@ const typeLabel = (t?: string | null) => {
 }
 
 const statusBadge = () => (
-  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-black text-emerald-300">
+  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
     <CheckCircle2 className="h-3.5 w-3.5" />
     Abgeschlossen
   </span>
@@ -174,7 +174,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
       let combined = (data ?? []) as TournamentOverviewRow[]
 
       try {
-       
+
         const { data: kt, error: ktErr } = await supabase
           .from("kratzer_tournaments")
           .select("id,user_id,name,status,created_at,finished_at")
@@ -286,21 +286,13 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
       <Header />
 
       {/* Same visual background as Member Profile – loaded hidden first to prevent image flash */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
-        <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:68px_68px]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <motion.div
           className="w-full"
           variants={containerVariants}
@@ -309,7 +301,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
         >
           {/* App-Header Card (Kontakt-Style) */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px]">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
               <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-400/15 blur-[110px]" />
               <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
@@ -320,9 +312,9 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
                       <Trophy className="h-6 w-6 text-orange-400" />
                     </div>
                     <div className="min-w-0">
-                      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55 backdrop-blur-xl"><span className="h-2 w-2 rounded-full bg-orange-400" />Turniere · Archiv</div>
-                      <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Turnier Historie</h1>
-                      <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">Alle abgeschlossenen Turniere auf einen Blick</p>
+                      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground "><span className="h-2 w-2 rounded-full bg-orange-400" />Turniere · Archiv</div>
+                      <h1 className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Turnier Historie</h1>
+                      <p className="mt-2 text-sm font-medium text-muted-foreground sm:text-base">Alle abgeschlossenen Turniere auf einen Blick</p>
                     </div>
                   </div>
 
@@ -338,12 +330,12 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
 
           {/* Filter Card (app look) */}
           <motion.div variants={itemVariants} className="mb-5">
-            <Card className="rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+            <Card className="rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] ">
               <CardContent className="p-4 sm:p-5">
                 <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
                   <div className="flex-1 flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
-                      <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/45" />
+                      <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
@@ -357,7 +349,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
                           className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl hover:bg-white/10"
                           aria-label="Suche leeren"
                         >
-                          <X className="h-4 w-4 text-white/45" />
+                          <X className="h-4 w-4 text-muted-foreground" />
                         </button>
                       ) : null}
                     </div>
@@ -387,7 +379,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
                     <Button
                       variant="outline"
                       onClick={resetFilters}
-                      className="h-11 rounded-xl border-white/10 bg-white/5 font-black hover:bg-white/10"
+                      className="h-11 rounded-xl border-white/10 bg-white/5 font-semibold hover:bg-white/10"
                     >
                       Zurücksetzen
                     </Button>
@@ -417,11 +409,11 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
               {filtered.map((r) => (
                 <Card
                   key={`${r.tournament_id}_${r.tournament_type}`}
-                  className="cursor-pointer overflow-hidden rounded-[20px] border border-white/10 bg-white/5 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-400/35 hover:shadow-[0_28px_80px_-48px_rgba(249,115,22,.18)]"
+                  className="cursor-pointer overflow-hidden rounded-[20px] border border-white/10 bg-white/5 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-400/35 hover:shadow-[0_28px_80px_-48px_rgba(249,115,22,.18)]"
                   onClick={() => openTournament(r)}
                 >
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-black line-clamp-1">{r.tournament_name}</CardTitle>
+                    <CardTitle className="text-base font-semibold line-clamp-1">{r.tournament_name}</CardTitle>
 
                     <div className="mt-2 flex flex-wrap gap-2 items-center">
                       <Chip tone="gray">{typeLabel(r.tournament_type)}</Chip>
@@ -439,27 +431,27 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-orange-600" />
                         <span>
-                          Dauer: <span className="font-black text-white">{getDurationLabel(r)}</span>
+                          Dauer: <span className="font-semibold text-white">{getDurationLabel(r)}</span>
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-orange-600" />
                         <span>
-                          Teilnehmer: <span className="font-black text-white">{r.participants ?? 0}</span>
+                          Teilnehmer: <span className="font-semibold text-white">{r.participants ?? 0}</span>
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Trophy className="h-4 w-4 text-orange-600" />
                         <span className="line-clamp-1">
-                          Sieger: <span className="font-black text-white">{r.winner || "—"}</span>
+                          Sieger: <span className="font-semibold text-white">{r.winner || "—"}</span>
                         </span>
                       </div>
                     </div>
 
                     <Button
-                      className="mt-4 h-11 w-full rounded-xl bg-orange-400 font-black hover:bg-orange-600"
+                      className="mt-4 h-11 w-full rounded-xl bg-primary font-semibold hover:bg-primary/90 text-primary-foreground"
                       onClick={(e) => {
                         e.stopPropagation()
                         openTournament(r)

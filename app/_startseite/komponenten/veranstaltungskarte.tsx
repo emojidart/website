@@ -52,9 +52,9 @@ export function StartseitenVeranstaltungskarte({
   return (
     <Link
       href={detailsHref}
-      className="block min-w-[300px] sm:min-w-0 rounded-[22px] border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 emd-saas-card"
+      className="block min-w-[300px] sm:min-w-0 rounded-[22px] border border-border bg-card shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 emd-saas-card"
     >
-      <div className="relative h-40 bg-gray-100">
+      <div className="relative h-40 bg-muted">
         {item.photo_url ? (
           <Image
             src={item.photo_url || "/placeholder.svg"}
@@ -64,29 +64,29 @@ export function StartseitenVeranstaltungskarte({
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
+          <div className="text-foreground w-full h-full flex items-center justify-center bg-card  ">
             <EventIcon className="h-12 w-12 text-orange-600" />
           </div>
         )}
 
         <div className="absolute top-3 left-3">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-3 py-1 text-sm font-semibold text-gray-900 border border-gray-200 emd-saas-card emd-saas-copy emd-saas-tag">
+          <span className="inline-flex items-center gap-1 rounded-full bg-card/95  px-3 py-1 text-sm font-semibold text-foreground border border-border emd-saas-card emd-saas-copy emd-saas-tag">
             {badgeText}
           </span>
         </div>
       </div>
 
       <div className="p-4 sm:p-5">
-        <p className="text-sm text-gray-500 font-bold mb-1 emd-saas-copy">
+        <p className="text-sm text-muted-foreground font-bold mb-1 emd-saas-copy">
           {formatGermanDateRange(item.start_date, item.end_date, item.date)}
           {item.time ? ` • ${item.time.slice(0, 5)} Uhr` : ""}
         </p>
 
-        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+        <h3 className="font-semibold text-foreground mb-1 line-clamp-2">
           {item.name}
         </h3>
 
-        <p className="text-sm text-gray-600 line-clamp-2 emd-saas-copy">
+        <p className="text-sm text-muted-foreground line-clamp-2 emd-saas-copy">
           {item.type === "tournament" ? (
             <>
               {item.details && <span>{item.details} • </span>}
@@ -111,7 +111,7 @@ export function StartseitenVeranstaltungskarte({
         </p>
 
         <div className="mt-3 flex items-center justify-between gap-3">
-          <span className="min-w-0 truncate text-xs text-gray-500 inline-flex items-center gap-1 emd-saas-copy">
+          <span className="min-w-0 truncate text-xs text-muted-foreground inline-flex items-center gap-1 emd-saas-copy">
             <MapPin className="w-3.5 h-3.5 shrink-0 text-orange-600" />
             <span className="truncate">
               {item.location || "Wird bekannt gegeben"}

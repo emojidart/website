@@ -194,7 +194,7 @@ export function DashboardTutorial({ onClose, userRole = "player" }: DashboardTut
       case "co-captain":
         return <UserCheck className="h-4 w-4 text-blue-600" />
       default:
-        return <Users className="h-4 w-4 text-gray-600" />
+        return <Users className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -244,7 +244,7 @@ export function DashboardTutorial({ onClose, userRole = "player" }: DashboardTut
                 {getRoleIcon()}
                 {getRoleLabel()}
               </Badge>
-              <div className="flex-1 bg-gray-200 rounded-full h-2">
+              <div className="flex-1 bg-secondary rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${((currentStep + 1) / filteredSteps.length) * 100}%` }}
@@ -254,10 +254,10 @@ export function DashboardTutorial({ onClose, userRole = "player" }: DashboardTut
           </DialogHeader>
 
           <div className="px-6 pb-6">
-            <Card className="border-0 shadow-none bg-gray-50">
+            <Card className="border-0 shadow-none bg-muted">
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
                     {currentStepData?.description}
                   </div>
 
@@ -316,7 +316,7 @@ export function DashboardTutorial({ onClose, userRole = "player" }: DashboardTut
 
             <div className="flex items-center justify-between mt-6">
               <div className="flex gap-2">
-                <Button variant="outline" onClick={handleSkip} className="text-gray-600 bg-transparent">
+                <Button variant="outline" onClick={handleSkip} className="text-muted-foreground bg-transparent">
                   Überspringen
                 </Button>
                 {currentStep > 0 && (
@@ -327,7 +327,7 @@ export function DashboardTutorial({ onClose, userRole = "player" }: DashboardTut
                 )}
               </div>
 
-              <Button onClick={handleNext} className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
+              <Button onClick={handleNext} className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white">
                 {currentStep === filteredSteps.length - 1 ? (
                   "Fertig"
                 ) : (

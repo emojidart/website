@@ -60,7 +60,7 @@ function isValidMatch(m: any) {
   const p1Freilos = p1.toUpperCase().includes("FREILOS") || p1.toUpperCase() === "EMPTY" || p1 === "NULL"
   const p2Freilos = p2.toUpperCase().includes("FREILOS") || p2.toUpperCase() === "EMPTY" || p2 === "NULL"
 
- 
+
   if (p1Freilos && p2Freilos) return false
 
   return true
@@ -242,37 +242,37 @@ export default function TournamentsPage() {
     const p2IsFreilos = match.player2.toUpperCase().includes("FREILOS")
 
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-2.5 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-2.5 shadow-sm">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <span className="rounded-full bg-gray-100 border border-gray-200 px-2 py-1 text-[10px] font-black text-gray-700">
+            <span className="rounded-full bg-muted border border-border px-2 py-1 text-xs font-semibold text-muted-foreground">
               ID {match.id}
             </span>
-            <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-1 text-[10px] font-black text-blue-700">
+            <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-1 text-xs font-semibold text-blue-700">
               Match {match.match_id}
             </span>
             {match.round ? (
-              <span className="rounded-full bg-purple-50 border border-purple-200 px-2 py-1 text-[10px] font-black text-purple-700">
+              <span className="rounded-full bg-purple-50 border border-purple-200 px-2 py-1 text-xs font-semibold text-purple-700">
                 Runde {match.round}
               </span>
             ) : null}
           </div>
 
-          <div className="text-[10px] font-bold text-gray-500 flex-shrink-0">{formatDateDE(match.updated_at)}</div>
+          <div className="text-xs font-bold text-muted-foreground flex-shrink-0">{formatDateDE(match.updated_at)}</div>
         </div>
 
         <div className="flex items-center gap-2">
           <div
             className={`w-[42%] rounded-xl border px-2 py-2 ${
-              p1IsFreilos ? "border-gray-200 bg-gray-100" : p1Win ? "border-green-300 bg-green-50" : "border-gray-200 bg-gray-50"
+              p1IsFreilos ? "border-border bg-muted" : p1Win ? "border-green-300 bg-green-50" : "border-border bg-muted"
             }`}
           >
-            <div className={`text-[11px] font-semibold truncate ${p1IsFreilos ? "text-gray-500" : "text-gray-900"}`}>
+            <div className={`text-xs font-semibold truncate ${p1IsFreilos ? "text-muted-foreground" : "text-foreground"}`}>
               {cleanPlayerName(match.player1)}
             </div>
             <div
-              className={`mt-1 text-base font-black ${
-                p1IsFreilos ? "text-gray-400" : p1Win ? "text-green-700" : "text-gray-700"
+              className={`mt-1 text-base font-semibold ${
+                p1IsFreilos ? "text-muted-foreground" : p1Win ? "text-green-700" : "text-muted-foreground"
               }`}
             >
               {match.score1}
@@ -280,21 +280,21 @@ export default function TournamentsPage() {
           </div>
 
           <div className="w-[16%] flex flex-col items-center justify-center">
-            <div className="text-[10px] font-black text-gray-300">VS</div>
+            <div className="text-xs font-semibold text-muted-foreground">VS</div>
             <div className="mt-1 w-7 h-7" />
           </div>
 
           <div
             className={`w-[42%] rounded-xl border px-2 py-2 ${
-              p2IsFreilos ? "border-gray-200 bg-gray-100" : p2Win ? "border-green-300 bg-green-50" : "border-gray-200 bg-gray-50"
+              p2IsFreilos ? "border-border bg-muted" : p2Win ? "border-green-300 bg-green-50" : "border-border bg-muted"
             }`}
           >
-            <div className={`text-[11px] font-semibold truncate ${p2IsFreilos ? "text-gray-500" : "text-gray-900"}`}>
+            <div className={`text-xs font-semibold truncate ${p2IsFreilos ? "text-muted-foreground" : "text-foreground"}`}>
               {cleanPlayerName(match.player2)}
             </div>
             <div
-              className={`mt-1 text-base font-black ${
-                p2IsFreilos ? "text-gray-400" : p2Win ? "text-green-700" : "text-gray-700"
+              className={`mt-1 text-base font-semibold ${
+                p2IsFreilos ? "text-muted-foreground" : p2Win ? "text-green-700" : "text-muted-foreground"
               }`}
             >
               {match.score2}
@@ -307,20 +307,20 @@ export default function TournamentsPage() {
 
   if (loading) {
   return (
-    <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+    <main className="min-h-screen flex flex-col bg-muted text-foreground pb-24 overflow-x-hidden">
       <Header />
 
       <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
         <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-gray-200">
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-2xl px-10 py-10 border border-border">
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
               <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
             </div>
 
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-900">Turniere werden geladen</p>
-              <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+              <p className="text-lg font-bold text-foreground">Turniere werden geladen</p>
+              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
             </div>
           </div>
         </div>
@@ -332,7 +332,7 @@ export default function TournamentsPage() {
 }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+    <div className="min-h-screen bg-muted text-foreground pb-24 overflow-x-hidden">
       <Header />
 
       <main className="pt-12 sm:pt-14">
@@ -342,8 +342,8 @@ export default function TournamentsPage() {
             Zurück zur Tabelle
           </a>
 
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="text-foreground h-2 bg-card  " />
             <div className="p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -352,11 +352,11 @@ export default function TournamentsPage() {
                       <Trophy className="w-5 h-5 text-orange-600" />
                     </div>
                     <div className="min-w-0">
-                      <h1 className="text-base sm:text-lg font-black text-gray-900">Lion Cup Ergebnisse</h1>
-                      <p className="text-xs sm:text-sm text-gray-600 mt-1">Übersicht aller gespielten Matches</p>
+                      <h1 className="text-base sm:text-lg font-semibold text-foreground">Lion Cup Ergebnisse</h1>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Übersicht aller gespielten Matches</p>
                       {seriesList.length > 0 && (
                         <div className="mt-3">
-                          <label className="text-[11px] font-bold text-gray-500">Saison / Archiv</label>
+                          <label className="text-xs font-bold text-muted-foreground">Saison / Archiv</label>
                           <select
                             value={selectedSeriesId ?? ""}
                             onChange={(e) => {
@@ -364,7 +364,7 @@ export default function TournamentsPage() {
                               setMatches(new Map())
                               setSelectedSeriesId(e.target.value)
                             }}
-                            className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:border-orange-400"
+                            className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-bold text-foreground outline-none focus:border-orange-400"
                           >
                             {seriesList.map((series) => (
                               <option key={series.id} value={series.id}>
@@ -378,65 +378,65 @@ export default function TournamentsPage() {
                   </div>
                 </div>
 
-                <div className="flex-shrink-0 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black text-gray-700">
+                <div className="flex-shrink-0 rounded-2xl border border-border bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">
                   {filteredTournaments.length}
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <div className="rounded-xl border border-gray-200 bg-white p-3">
+                <div className="rounded-xl border border-border bg-card p-3">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-orange-600" />
-                    <p className="text-[11px] font-semibold text-gray-700">Turniere</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Turniere</p>
                   </div>
-                  <p className="text-lg font-black text-gray-900 mt-1">{tournaments.length}</p>
+                  <p className="text-lg font-semibold text-foreground mt-1">{tournaments.length}</p>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-white p-3">
+                <div className="rounded-xl border border-border bg-card p-3">
                   <div className="flex items-center gap-2">
                     <Target className="w-4 h-4 text-blue-600" />
-                    <p className="text-[11px] font-semibold text-gray-700">Matches</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Matches</p>
                   </div>
-                  <p className="text-lg font-black text-gray-900 mt-1">{totalMatches}</p>
+                  <p className="text-lg font-semibold text-foreground mt-1">{totalMatches}</p>
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-white p-3 col-span-2 sm:col-span-1">
+                <div className="rounded-xl border border-border bg-card p-3 col-span-2 sm:col-span-1">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-green-600" />
-                    <p className="text-[11px] font-semibold text-gray-700">Letztes</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Letztes</p>
                   </div>
-                  <p className="text-sm font-black text-gray-900 mt-1">{lastDate}</p>
+                  <p className="text-sm font-semibold text-foreground mt-1">{lastDate}</p>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-3 flex items-center gap-2">
-                <Search className="h-4 w-4 text-gray-500" />
+              <div className="mt-4 rounded-2xl border border-border bg-muted p-3 flex items-center gap-2">
+                <Search className="h-4 w-4 text-muted-foreground" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Suche Turnier Name, Typ, Datum"
-                  className="w-full bg-transparent outline-none text-sm font-semibold text-gray-800"
+                  className="w-full bg-transparent outline-none text-sm font-semibold text-foreground"
                 />
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="text-foreground h-2 bg-card  " />
 
-            <div className="p-4 sm:p-5 border-b border-gray-200">
+            <div className="p-4 sm:p-5 border-b border-border">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
                     <Calendar className="w-5 h-5 text-orange-600" />
                   </div>
                   <div>
-                    <h2 className="text-base sm:text-lg font-black text-gray-900">Turniere</h2>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">Tap zum Aufklappen</p>
+                    <h2 className="text-base sm:text-lg font-semibold text-foreground">Turniere</h2>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Tap zum Aufklappen</p>
                   </div>
                 </div>
 
-                <div className="flex-shrink-0 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black text-gray-700">
+                <div className="flex-shrink-0 rounded-2xl border border-border bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">
                   {filteredTournaments.length}
                 </div>
               </div>
@@ -452,21 +452,21 @@ export default function TournamentsPage() {
                   return (
                     <div
                       key={tournament.tournament_id}
-                      className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-md hover:border-orange-400 transition-all duration-300"
+                      className="rounded-2xl border-2 border-border bg-card overflow-hidden shadow-sm hover:shadow-md hover:border-orange-400 transition-all duration-300"
                     >
                       <button
                         type="button"
                         onClick={() => handleToggleTournament(tournament.tournament_id)}
-                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        className="w-full p-4 flex items-center justify-between hover:bg-muted transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="flex items-center justify-center w-11 h-11 bg-orange-600 text-white rounded-2xl font-black text-sm flex-shrink-0 shadow-sm">
+                          <div className="flex items-center justify-center w-11 h-11 bg-orange-600 text-white rounded-2xl font-semibold text-sm flex-shrink-0 shadow-sm">
                             {filteredTournaments.length - index}
                           </div>
 
                           <div className="text-left min-w-0 flex-1">
-                            <div className="text-sm sm:text-base font-black text-gray-900 truncate">{tournament.tournament_name}</div>
-                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-gray-600">
+                            <div className="text-sm sm:text-base font-semibold text-foreground truncate">{tournament.tournament_name}</div>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-muted-foreground">
                               <span className="inline-flex items-center gap-1">
                                 <Award className="w-3.5 h-3.5" />
                                 {getTournamentTypeLabel(tournament.tournament_type)}
@@ -484,18 +484,18 @@ export default function TournamentsPage() {
                         </div>
 
                         {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                          <ChevronUp className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                         ) : (
-                          <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                          <ChevronDown className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                         )}
                       </button>
 
                       {isExpanded ? (
-                        <div className="border-t border-gray-200 bg-gray-50 p-3 sm:p-4">
+                        <div className="border-t border-border bg-muted p-3 sm:p-4">
                           {isLoading ? (
-                            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
-                              <Loader2 className="h-8 w-8 animate-spin mx-auto text-gray-500" />
-                              <div className="mt-3 text-sm font-bold text-gray-600">Lade Matches</div>
+                            <div className="rounded-2xl border border-border bg-card p-6 text-center">
+                              <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                              <div className="mt-3 text-sm font-bold text-muted-foreground">Lade Matches</div>
                             </div>
                           ) : tournamentMatches.length > 0 ? (
                             <div className="space-y-3">
@@ -504,9 +504,9 @@ export default function TournamentsPage() {
                               ))}
                             </div>
                           ) : (
-                            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
-                              <Target className="h-10 w-10 mx-auto text-gray-400" />
-                              <div className="mt-3 text-sm font-bold text-gray-600">Keine Matches gefunden</div>
+                            <div className="rounded-2xl border border-border bg-card p-6 text-center">
+                              <Target className="h-10 w-10 mx-auto text-muted-foreground" />
+                              <div className="mt-3 text-sm font-bold text-muted-foreground">Keine Matches gefunden</div>
                             </div>
                           )}
                         </div>
@@ -515,9 +515,9 @@ export default function TournamentsPage() {
                   )
                 })
               ) : (
-                <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
-                  <Calendar className="h-10 w-10 mx-auto text-gray-400" />
-                  <div className="mt-3 text-sm font-bold text-gray-600">Noch keine Turniere vorhanden</div>
+                <div className="rounded-2xl border border-border bg-card p-6 text-center">
+                  <Calendar className="h-10 w-10 mx-auto text-muted-foreground" />
+                  <div className="mt-3 text-sm font-bold text-muted-foreground">Noch keine Turniere vorhanden</div>
                 </div>
               )}
             </div>

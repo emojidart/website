@@ -359,24 +359,17 @@ export default function MemberStatisticsPage() {
   const headerSubtitle = "Ligazentrale"
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] font-sans text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-white">
       <Header variant="app" title="Meine Statistik" subtitle={headerSubtitle} backHref="/member-league-app" />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       {authLoading || membershipLoading ? (
         <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24">
-          <div className="w-full max-w-sm rounded-[28px] border border-white/[0.08] bg-black/35 p-8 text-center backdrop-blur-xl">
+          <div className="w-full max-w-sm rounded-[28px] border border-white/[0.08] bg-card p-8 text-center ">
             <Loader2 className="mx-auto h-9 w-9 animate-spin text-orange-300" />
-            <p className="mt-5 text-lg font-black text-white">Statistiken werden geladen</p>
-            <p className="mt-1 text-sm font-semibold text-white/35">Einen Moment bitte…</p>
+            <p className="mt-5 text-lg font-semibold text-white">Statistiken werden geladen</p>
+            <p className="mt-1 text-sm font-semibold text-muted-foreground">Einen Moment bitte…</p>
           </div>
         </main>
       ) : (
@@ -387,31 +380,31 @@ export default function MemberStatisticsPage() {
             title="Liga-Statistiken nicht freigeschaltet"
             description="Für die Liga-Statistiken brauchst du das E-Dart- oder Steeldart-Ligapaket bzw. eine aktive Testfreischaltung."
           >
-            <section className="mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/30 p-5 backdrop-blur-xl sm:p-7">
+            <section className="mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-card p-5  sm:p-7">
               <div className="flex min-w-0 items-start gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-orange-300/15 bg-orange-500/[0.09] text-orange-200 shadow-[0_0_28px_rgba(249,115,22,.10)]">
                   <Loader2 className="hidden" />
-                  <span className="text-2xl font-black">Σ</span>
+                  <span className="text-2xl font-semibold">Σ</span>
                 </div>
 
                 <div className="min-w-0">
-                  <div className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-300/65">
+                  <div className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-300/65">
                     Auswertung
                   </div>
-                  <h1 className="mt-1 text-2xl font-black tracking-[-0.03em] text-white sm:text-3xl">
+                  <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
                     Meine Statistik
                   </h1>
-                  <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/40">
+                  <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground">
                     Persönliche und teambezogene Ligastatistiken nach Saison und Dartart.
                   </p>
                 </div>
               </div>
             </section>
 
-            <section className="mb-5 overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 p-4 backdrop-blur-xl sm:p-5">
+            <section className="mb-5 overflow-hidden rounded-[24px] border border-white/[0.08] bg-card p-4  sm:p-5">
               <div className="grid gap-3 lg:grid-cols-[minmax(0,320px)_1fr] lg:items-end">
                 <div>
-                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/30">Saison</div>
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Saison</div>
                   <select
                     value={selectedSeasonId}
                     onChange={(e) => setSelectedSeasonId(e.target.value)}
@@ -430,7 +423,7 @@ export default function MemberStatisticsPage() {
                 </div>
 
                 <div>
-                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-white/30">Dartart</div>
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Dartart</div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <Button
                       variant={dartTypeFilter === "gesamt" ? "default" : "outline"}
@@ -438,8 +431,8 @@ export default function MemberStatisticsPage() {
                       onClick={() => setDartTypeFilter("gesamt")}
                       className={
                         dartTypeFilter === "gesamt"
-                          ? "h-10 rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-400"
-                          : "h-10 rounded-xl border-white/[0.09] bg-white/[0.035] font-black text-white/50 shadow-none hover:bg-white/[0.06] hover:text-white"
+                          ? "h-10 rounded-xl bg-orange-500 font-semibold text-primary-foreground shadow-none hover:bg-orange-400"
+                          : "h-10 rounded-xl border-white/[0.09] bg-white/[0.035] font-semibold text-muted-foreground shadow-none hover:bg-white/[0.06] hover:text-white"
                       }
                     >
                       Gesamt
@@ -452,8 +445,8 @@ export default function MemberStatisticsPage() {
                         onClick={() => setDartTypeFilter("edart")}
                         className={
                           dartTypeFilter === "edart"
-                            ? "h-10 rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-400"
-                            : "h-10 rounded-xl border-white/[0.09] bg-white/[0.035] font-black text-white/50 shadow-none hover:bg-white/[0.06] hover:text-white"
+                            ? "h-10 rounded-xl bg-orange-500 font-semibold text-primary-foreground shadow-none hover:bg-orange-400"
+                            : "h-10 rounded-xl border-white/[0.09] bg-white/[0.035] font-semibold text-muted-foreground shadow-none hover:bg-white/[0.06] hover:text-white"
                         }
                       >
                         E-Dart
@@ -467,8 +460,8 @@ export default function MemberStatisticsPage() {
                         onClick={() => setDartTypeFilter("steeldart")}
                         className={
                           dartTypeFilter === "steeldart"
-                            ? "h-10 rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-400"
-                            : "h-10 rounded-xl border-white/[0.09] bg-white/[0.035] font-black text-white/50 shadow-none hover:bg-white/[0.06] hover:text-white"
+                            ? "h-10 rounded-xl bg-orange-500 font-semibold text-primary-foreground shadow-none hover:bg-orange-400"
+                            : "h-10 rounded-xl border-white/[0.09] bg-white/[0.035] font-semibold text-muted-foreground shadow-none hover:bg-white/[0.06] hover:text-white"
                         }
                       >
                         Steeldart
@@ -479,7 +472,7 @@ export default function MemberStatisticsPage() {
               </div>
             </section>
 
-            <section className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/25 p-3 backdrop-blur-xl sm:p-4">
+            <section className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card p-3  sm:p-4">
               <StatisticsSection
                 legStatistics={legStatistics}
                 legStatsLoading={legStatsLoading}

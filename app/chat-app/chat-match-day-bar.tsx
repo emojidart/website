@@ -182,7 +182,7 @@ export default function ChatMatchDayBar({
   if (loading) {
     return (
       <div className="shrink-0 border-b border-orange-300/[0.08] bg-[#111922] px-3 py-2">
-        <div className="flex items-center gap-2 text-[11px] font-bold text-white/35">
+        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Match-Day wird geprüft …
         </div>
@@ -202,7 +202,7 @@ export default function ChatMatchDayBar({
     : null;
 
   return (
-    <div className="shrink-0 border-b border-orange-300/[0.10] bg-[linear-gradient(105deg,rgba(249,115,22,.13),rgba(10,17,24,.98)_55%)] px-3 py-2.5">
+    <div className="text-foreground shrink-0 border-b border-orange-300/[0.10] bg-card px-3 py-2.5">
       <div className="mx-auto flex max-w-5xl items-center gap-3">
         <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-300/15 bg-orange-500/10 text-orange-200 sm:flex">
           <Trophy className="h-5 w-5" />
@@ -210,20 +210,20 @@ export default function ChatMatchDayBar({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-[10px] font-black uppercase tracking-[.16em] text-orange-300">
+            <span className="text-xs font-semibold uppercase tracking-[.16em] text-orange-300">
               Match Day
             </span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-white/45">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground">
               <CalendarDays className="h-3.5 w-3.5" />
               Heute{match.match_time ? ` · ${fmtTime(match.match_time)} Uhr` : ""}
             </span>
           </div>
 
-          <div className="mt-0.5 truncate text-[13px] font-black text-white">
-            {names.home} <span className="text-white/35">vs.</span> {names.away}
+          <div className="mt-0.5 truncate text-[13px] font-semibold text-white">
+            {names.home} <span className="text-muted-foreground">vs.</span> {names.away}
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-bold text-white/40">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-muted-foreground">
             {completed ? (
               <span className="text-emerald-200">
                 Endstand {match.home_score}:{match.away_score}
@@ -256,7 +256,7 @@ export default function ChatMatchDayBar({
             size="sm"
             variant="ghost"
             onClick={() => onOpenLineup(match.id, teamId)}
-            className="h-8 rounded-lg px-2 text-[10px] font-black text-white/70 hover:bg-white/[0.08] hover:text-orange-100 sm:px-3"
+            className="h-8 rounded-lg px-2 text-xs font-semibold text-white/70 hover:bg-white/[0.08] hover:text-orange-100 sm:px-3"
           >
             <ClipboardList className="mr-1 h-3.5 w-3.5" />
             <span className="hidden sm:inline">Aufstellung</span>
@@ -268,7 +268,7 @@ export default function ChatMatchDayBar({
               size="sm"
               variant="ghost"
               onClick={() => window.open(routeUrl, "_blank", "noopener,noreferrer")}
-              className="h-8 rounded-lg px-2 text-[10px] font-black text-white/70 hover:bg-white/[0.08] hover:text-orange-100 sm:px-3"
+              className="h-8 rounded-lg px-2 text-xs font-semibold text-white/70 hover:bg-white/[0.08] hover:text-orange-100 sm:px-3"
             >
               <MapPin className="mr-1 h-3.5 w-3.5" />
               <span className="hidden sm:inline">Route</span>
@@ -280,7 +280,7 @@ export default function ChatMatchDayBar({
             size="sm"
             variant="ghost"
             onClick={completed ? onOpenUpdates : () => void load()}
-            className="h-8 rounded-lg px-2 text-[10px] font-black text-white/70 hover:bg-white/[0.08] hover:text-orange-100 sm:px-3"
+            className="h-8 rounded-lg px-2 text-xs font-semibold text-white/70 hover:bg-white/[0.08] hover:text-orange-100 sm:px-3"
           >
             {completed ? <Trophy className="mr-1 h-3.5 w-3.5" /> : <RefreshCw className="mr-1 h-3.5 w-3.5" />}
             <span className="hidden sm:inline">{completed ? "Ergebnis" : "Aktualisieren"}</span>

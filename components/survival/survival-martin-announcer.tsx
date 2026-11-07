@@ -122,7 +122,7 @@ export function useSurvivalMartin() {
   }, [enabled, speaker])
 
   const status = phase ? (
-    <div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-[9999] w-[min(355px,calc(100vw-40px))] rounded-[18px] border border-orange-400/40 bg-slate-900 px-[18px] py-[17px] text-white shadow-2xl pointer-events-none">
+    <div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-[9999] w-[min(355px,calc(100vw-40px))] rounded-[18px] border border-orange-400/40 bg-background px-[18px] py-[17px] text-white shadow-2xl pointer-events-none">
       <div className="flex items-center gap-2 text-xs font-extrabold tracking-widest text-orange-300">
         <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
         EMD · TURNIERSPRECHER
@@ -130,9 +130,9 @@ export function useSurvivalMartin() {
           {[12, 19, 14, 21].map((height, index) => <span key={index} className={`w-1 rounded-full bg-orange-400 ${phase === "playing" ? "animate-pulse" : ""}`} style={{ height }} />)}
         </span>
       </div>
-      <div className="mt-2 text-base font-black">{phase === "preparing" ? "Ansage wird vorbereitet …" : phase === "playing" ? `${speaker === "volt" ? "VOLT" : "NERO"} spricht 🎤` : phase === "done" ? "Ansage beendet ✓" : "NERO nicht erreichbar"}</div>
-      <div className="mt-1 text-sm text-slate-200">{playersLabel}</div>
-      <div className="mt-1 text-xs text-slate-400">{details}</div>
+      <div className="mt-2 text-base font-semibold">{phase === "preparing" ? "Ansage wird vorbereitet …" : phase === "playing" ? `${speaker === "volt" ? "VOLT" : "NERO"} spricht 🎤` : phase === "done" ? "Ansage beendet ✓" : "NERO nicht erreichbar"}</div>
+      <div className="mt-1 text-sm text-muted-foreground">{playersLabel}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{details}</div>
     </div>
   ) : null
   return { enabled, toggle, speaker, chooseSpeaker, announce, busy, status }

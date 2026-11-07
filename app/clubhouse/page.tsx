@@ -169,19 +169,19 @@ export default function ClubhousePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full overflow-x-hidden bg-slate-50 pb-24">
+    <div className="min-h-[100dvh] w-full overflow-x-hidden bg-muted pb-24">
       <Header />
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
       <main className="w-full px-3 py-4 sm:px-5 sm:py-6 lg:px-6 xl:px-8">
-        <section className="w-full overflow-hidden rounded-[24px] bg-slate-950 text-white shadow-xl sm:rounded-[30px]">
+        <section className="w-full overflow-hidden rounded-[24px] bg-background text-white shadow-xl sm:rounded-[30px]">
           <div className="p-4 sm:p-6 lg:p-8 xl:p-10">
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-orange-300">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">
               <DoorOpen className="h-4 w-4" />
               EMD Vereinsheim
             </div>
-            <h1 className="mt-3 text-[2rem] font-black leading-tight tracking-tight sm:text-4xl lg:text-5xl">Ist heute offen?</h1>
-            <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-white/55 sm:text-base lg:text-lg">
+            <h1 className="mt-3 text-[2rem] font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">Ist heute offen?</h1>
+            <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-muted-foreground sm:text-base lg:text-lg">
               Hier siehst du, ob das Pfeil OK heute geöffnet ist und wann es das nächste Mal offen hat.
             </p>
 
@@ -190,10 +190,10 @@ export default function ClubhousePage() {
                 <div className="flex items-center gap-3 text-white/70"><Loader2 className="h-5 w-5 animate-spin" /> Status wird geladen…</div>
               ) : todayRow?.status === "open" ? (
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1.5 text-sm font-black text-emerald-300">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1.5 text-sm font-semibold text-emerald-300">
                     <CheckCircle2 className="h-4 w-4" /> HEUTE GEÖFFNET
                   </div>
-                  <div className="mt-4 break-words text-2xl font-black leading-tight sm:text-3xl">
+                  <div className="mt-4 break-words text-2xl font-semibold leading-tight sm:text-3xl">
                     {todayRow.opens_at ? `ab ${shortTime(todayRow.opens_at)} Uhr` : "ab sofort"}
                     {todayRow.closes_at ? ` · bis ca. ${shortTime(todayRow.closes_at)} Uhr` : ""}
                   </div>
@@ -202,16 +202,16 @@ export default function ClubhousePage() {
               ) : todayRow?.status === "planned" ? (
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-sky-400/15 px-3 py-1.5 text-sm font-black text-sky-300">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-sky-400/15 px-3 py-1.5 text-sm font-semibold text-sky-300">
                       <CalendarDays className="h-4 w-4" /> HEUTE GEPLANT GEÖFFNET
                     </div>
                     {todayRow.is_auto ? (
-                      <div className="inline-flex items-center rounded-full bg-orange-400/15 px-3 py-1.5 text-xs font-black text-orange-300">
+                      <div className="inline-flex items-center rounded-full bg-orange-400/15 px-3 py-1.5 text-xs font-semibold text-orange-300">
                         AUTOMATISCH AUS KALENDER
                       </div>
                     ) : null}
                   </div>
-                  <div className="mt-4 break-words text-2xl font-black leading-tight sm:text-3xl">
+                  <div className="mt-4 break-words text-2xl font-semibold leading-tight sm:text-3xl">
                     {todayRow.opens_at ? `ab ${shortTime(todayRow.opens_at)} Uhr` : "Öffnung geplant"}
                     {todayRow.closes_at ? ` · bis ca. ${shortTime(todayRow.closes_at)} Uhr` : ""}
                   </div>
@@ -219,18 +219,18 @@ export default function ClubhousePage() {
                 </div>
               ) : todayRow?.status === "closed" ? (
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-red-400/15 px-3 py-1.5 text-sm font-black text-red-300">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-red-400/15 px-3 py-1.5 text-sm font-semibold text-red-300">
                     <XCircle className="h-4 w-4" /> HEUTE GESCHLOSSEN
                   </div>
                   {todayRow.note ? <p className="mt-4 text-base font-semibold text-white/65">{todayRow.note}</p> : null}
                 </div>
               ) : (
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm font-black text-white/70">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold text-white/70">
                     <Clock3 className="h-4 w-4" /> NOCH KEINE INFO
                   </div>
-                  <div className="mt-4 break-words text-xl font-black leading-tight sm:text-2xl">Für heute wurde noch keine Öffnung eingetragen.</div>
-                  <p className="mt-2 text-sm font-semibold text-white/50">Sobald jemand aufsperrt oder eine Öffnung plant, erscheint es hier.</p>
+                  <div className="mt-4 break-words text-xl font-semibold leading-tight sm:text-2xl">Für heute wurde noch keine Öffnung eingetragen.</div>
+                  <p className="mt-2 text-sm font-semibold text-muted-foreground">Sobald jemand aufsperrt oder eine Öffnung plant, erscheint es hier.</p>
                 </div>
               )}
             </div>
@@ -244,16 +244,16 @@ export default function ClubhousePage() {
                 <div className="flex items-start gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-100"><LockKeyhole className="h-5 w-5 text-orange-700" /></div>
                   <div>
-                    <div className="font-black text-slate-950">Vereinsheim verwalten</div>
-                    <div className="text-sm font-semibold text-slate-500">Nur für freigeschaltete Personen sichtbar.</div>
+                    <div className="font-semibold text-foreground">Vereinsheim verwalten</div>
+                    <div className="text-sm font-semibold text-muted-foreground">Nur für freigeschaltete Personen sichtbar.</div>
                   </div>
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <Button disabled={saving} onClick={() => void saveDay("open", { push: true })} className="min-h-14 w-full whitespace-normal rounded-2xl bg-emerald-600 px-4 py-3 text-base font-black leading-tight hover:bg-emerald-700">
+                  <Button disabled={saving} onClick={() => void saveDay("open", { push: true })} className="min-h-14 w-full whitespace-normal rounded-2xl bg-emerald-700 px-4 py-3 text-base font-semibold leading-tight hover:bg-emerald-700 text-white">
                     <DoorOpen className="mr-2 h-5 w-5" /> Jetzt geöffnet
                   </Button>
-                  <Button disabled={saving} onClick={() => void saveDay("closed", { push: true })} variant="outline" className="min-h-14 w-full whitespace-normal rounded-2xl border-red-200 px-4 py-3 text-base font-black leading-tight text-red-700 hover:bg-red-50">
+                  <Button disabled={saving} onClick={() => void saveDay("closed", { push: true })} variant="outline" className="min-h-14 w-full whitespace-normal rounded-2xl border-red-200 px-4 py-3 text-base font-semibold leading-tight text-red-700 hover:bg-red-50">
                     <XCircle className="mr-2 h-5 w-5" /> Heute geschlossen
                   </Button>
                 </div>
@@ -264,10 +264,10 @@ export default function ClubhousePage() {
                   <div><Label>Bis ca.</Label><Input type="time" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} className="mt-1.5 h-11" /></div>
                 </div>
                 <div className="mt-4"><Label>Hinweis (optional)</Label><Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="z. B. Heute spontaner Spielabend – jeder ist willkommen 🎯" className="mt-1.5 min-h-20" /></div>
-                <Button disabled={saving || !planDate} onClick={() => void saveDay("planned", { date: planDate })} className="mt-4 min-h-12 w-full whitespace-normal rounded-xl bg-slate-950 px-4 py-3 font-black leading-tight hover:bg-slate-800">
+                <Button disabled={saving || !planDate} onClick={() => void saveDay("planned", { date: planDate })} className="mt-4 min-h-12 w-full whitespace-normal rounded-xl bg-background px-4 py-3 font-semibold leading-tight hover:bg-background text-foreground">
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Öffnung planen / speichern
                 </Button>
-                {message ? <div className="mt-3 rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700">{message}</div> : null}
+                {message ? <div className="mt-3 rounded-xl bg-muted px-4 py-3 text-sm font-bold text-muted-foreground">{message}</div> : null}
               </CardContent>
             </Card>
           </section>
@@ -275,24 +275,24 @@ export default function ClubhousePage() {
 
         <section className="mt-6 w-full sm:mt-7">
           <div className="mb-3 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end sm:gap-3">
-            <div><div className="text-xs font-black uppercase tracking-wider text-orange-600">Vorschau</div><h2 className="text-xl font-black text-slate-950">Nächste Öffnungen</h2></div>
-            <Link href="/" className="text-sm font-black text-slate-500 hover:text-slate-900">Zur Startseite</Link>
+            <div><div className="text-xs font-semibold uppercase tracking-wider text-orange-600">Vorschau</div><h2 className="text-xl font-semibold text-foreground">Nächste Öffnungen</h2></div>
+            <Link href="/" className="text-sm font-semibold text-muted-foreground hover:text-foreground">Zur Startseite</Link>
           </div>
 
           {upcoming.length ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {upcoming.map((row) => (
-                <div key={row.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="font-black capitalize text-slate-950">{formatDate(row.open_date)}</div>
-                  <div className="mt-1 text-sm font-bold text-slate-600">
+                <div key={row.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                  <div className="font-semibold capitalize text-foreground">{formatDate(row.open_date)}</div>
+                  <div className="mt-1 text-sm font-bold text-muted-foreground">
                     {row.opens_at ? `${shortTime(row.opens_at)} Uhr` : "Zeit folgt"}{row.closes_at ? ` – ${shortTime(row.closes_at)} Uhr` : ""}
                   </div>
-                  {row.note ? <div className="mt-2 text-sm font-semibold text-slate-500">{row.note}</div> : null}
+                  {row.note ? <div className="mt-2 text-sm font-semibold text-muted-foreground">{row.note}</div> : null}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm font-semibold text-slate-500">Aktuell sind keine weiteren Öffnungen geplant.</div>
+            <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center text-sm font-semibold text-muted-foreground">Aktuell sind keine weiteren Öffnungen geplant.</div>
           )}
         </section>
       </main>

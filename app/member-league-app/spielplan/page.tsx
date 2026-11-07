@@ -979,17 +979,17 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
   if (!hasVenueName && !hasVenue && !hasCaptain && !tel) return null
 
   return (
-    <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.08] bg-black/25 text-white shadow-[0_20px_60px_-44px_rgba(0,0,0,.95)] backdrop-blur-xl hover:text-white focus-visible:text-white">
+    <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.08] bg-card text-white shadow-[0_20px_60px_-44px_rgba(0,0,0,.95)]  hover:text-white focus-visible:text-white">
       <div className="flex flex-col gap-3 border-b border-white/[0.07] bg-white/[0.025] px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-300/[0.14] bg-orange-500/[0.08]">
             <MapPin className="h-4 w-4 text-orange-600" />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/30">
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Auswärtsspiel
             </div>
-            <div className="text-sm font-black leading-tight text-white sm:truncate">
+            <div className="text-sm font-semibold leading-tight text-white sm:truncate">
               Gegner – Lokal
             </div>
           </div>
@@ -1013,8 +1013,8 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
       <div className="grid gap-2.5 p-3.5 sm:grid-cols-2 sm:p-4">
         {hasVenueName ? (
           <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3">
-            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">Lokal</div>
-            <div className="mt-1 break-words text-sm font-black leading-snug text-white">
+            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Lokal</div>
+            <div className="mt-1 break-words text-sm font-semibold leading-snug text-white">
               {opp.venue_name}
             </div>
           </div>
@@ -1022,7 +1022,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
 
         {hasVenue ? (
           <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3">
-            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">Adresse</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Adresse</div>
             <div className="mt-1 break-words text-sm font-semibold leading-snug text-white/65">
               {opp.venue}
             </div>
@@ -1031,11 +1031,11 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
 
         {hasCaptain ? (
           <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3">
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               <ShieldCheck className="h-3.5 w-3.5 text-orange-500" />
               Kapitän
             </div>
-            <div className="mt-1 break-words text-sm font-black leading-snug text-white">
+            <div className="mt-1 break-words text-sm font-semibold leading-snug text-white">
               {opp.captain_name}
             </div>
           </div>
@@ -1043,12 +1043,12 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
 
         {tel ? (
           <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3">
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               <Phone className="h-3.5 w-3.5 text-orange-500" />
               Telefon
             </div>
             <a
-              className="mt-1 block break-all text-sm font-black leading-snug text-white hover:text-orange-300"
+              className="mt-1 block break-all text-sm font-semibold leading-snug text-white hover:text-orange-300"
               href={`tel:${tel}`}
             >
               {phone}
@@ -1058,11 +1058,11 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
       </div>
 
       {wa ? (
-        <div className="border-t border-slate-100 px-3.5 py-3 sm:px-4">
+        <div className="border-t border-border px-3.5 py-3 sm:px-4">
           <Button
             asChild
             size="sm"
-            className="h-10 w-full rounded-xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-600 sm:w-auto"
+            className="h-10 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground shadow-none hover:bg-orange-600 sm:w-auto"
           >
             <a href={wa} target="_blank" rel="noreferrer">
               WhatsApp öffnen
@@ -1082,7 +1082,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
       case "Co-Captain":
         return <ShieldCheck className="h-5 w-5 text-blue-600" />
       default:
-        return <Users className="h-5 w-5 text-white/55" />
+        return <Users className="h-5 w-5 text-muted-foreground" />
     }
   }
 
@@ -1104,7 +1104,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
       case "Co-Captain":
         return "bg-blue-100 text-blue-800 border-blue-300"
       default:
-        return "bg-white/[0.05] text-white/75 border-gray-300"
+        return "bg-white/[0.05] text-white/75 border-border"
     }
   }
 
@@ -1270,7 +1270,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
 
     try {
       const teamIds = teamMemberships.map((tm) => tm.team_id)
-	 
+
 
       const [matchesResponse, opponentTeamsResponse] = await Promise.all([
         supabase
@@ -2387,7 +2387,7 @@ const postponeMatch = async (
 
     if (error) throw error
 
-    
+
     await fetchMatches()
 
     // ✅ Dialog schließen + Form reset
@@ -2416,13 +2416,13 @@ const postponeMatch = async (
     })
   }
 }
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 
 if (authLoading || loading || membershipLoading) {
   return <div className="min-h-[1px]" aria-hidden="true" />
@@ -2449,8 +2449,8 @@ if (authLoading || loading || membershipLoading) {
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-white mb-2">Fehler</h1>
-            <p className="text-white/50 mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()} className="bg-orange-500 shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90">
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()} className="bg-primary shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-primary/90 text-primary-foreground">
               Erneut versuchen
             </Button>
           </div>
@@ -2470,17 +2470,17 @@ if (authLoading || loading || membershipLoading) {
         />
 
         <div className="mx-auto mt-8 max-w-xl">
-          <Card className="overflow-hidden rounded-[24px] border border-orange-300/15 bg-black/35 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl hover:text-white focus-visible:text-white">
+          <Card className="overflow-hidden rounded-[24px] border border-orange-300/15 bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  hover:text-white focus-visible:text-white">
             <CardContent className="p-6 text-center sm:p-8">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/[0.08] shadow-[0_0_24px_rgba(249,115,22,.08)]">
                 <ShieldCheck className="h-7 w-7 text-orange-300" />
               </div>
 
-              <h1 className="mt-4 text-xl font-black text-white">
+              <h1 className="mt-4 text-xl font-semibold text-white">
                 Kein Liga-Paket gebucht
               </h1>
 
-              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-white/50">
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-muted-foreground">
                 Für diesen Bereich benötigst du mindestens eines der Liga-Module:
                 E-Dart oder Steeldart.
               </p>
@@ -2488,7 +2488,7 @@ if (authLoading || loading || membershipLoading) {
               <Button
                 type="button"
                 onClick={() => router.push("/member-membership")}
-                className="mt-5 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+                className="mt-5 rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
               >
                 Paket buchen
               </Button>
@@ -2526,7 +2526,7 @@ if (authLoading || loading || membershipLoading) {
     const year = date.getFullYear()
     return `${day}.${month}.${year}`
   }
-  
+
   const modalMatch =
   selectedMatchForResults
     ? matches.find((m) => m.id === selectedMatchForResults)
@@ -2539,7 +2539,7 @@ const modalHomeName = modalMatch
 const modalAwayName = modalMatch
   ? getTeamDisplayName(modalMatch, false)
   : "Auswärts"
-  
+
 
   const formatMatchTime = (timeString: string | null) => {
     if (!timeString) return ""
@@ -2558,26 +2558,19 @@ const modalAwayName = modalMatch
           backHref="/member-league-app"
         />
 
-    <div className="pointer-events-none fixed inset-0 -z-10 bg-[#050608]">
-      <div
-        className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-        style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.66),rgba(3,5,9,.93)_44%,rgba(2,4,7,.99))]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_7%_18%,rgba(249,115,22,.18),transparent_28%),radial-gradient(circle_at_90%_26%,rgba(14,165,233,.10),transparent_29%)]" />
-    </div>
+    <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
    <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] bg-transparent px-3 pb-24 pt-14 text-white sm:px-5 sm:pt-16 lg:px-7 lg:pb-12 xl:px-8">
       {isLeadershipRole() && <LeagueGuide role={getUserRole() as "captain" | "co-captain"} />}
 
-      <section className="relative mt-2 overflow-hidden rounded-[26px] border border-white/[0.09] bg-black/35 shadow-[0_32px_110px_-52px_rgba(0,0,0,.98)] backdrop-blur-2xl sm:mt-4 sm:rounded-[30px] xl:rounded-[32px]">
+      <section className="relative mt-2 overflow-hidden rounded-[26px] border border-white/[0.09] bg-card shadow-[0_32px_110px_-52px_rgba(0,0,0,.98)]  sm:mt-4 sm:rounded-[30px] xl:rounded-[32px]">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
 
         <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="min-w-0">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 hover:text-white focus-visible:text-white">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/60 hover:text-white focus-visible:text-white">
                 <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
                 Liga
               </div>
@@ -2588,36 +2581,36 @@ const modalAwayName = modalMatch
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white/50">Deine Teams auf einen Blick</p>
-                  <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+                  <p className="text-sm font-medium text-muted-foreground">Deine Teams auf einen Blick</p>
+                  <h1 className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
                     Liga-Dashboard
                   </h1>
                 </div>
               </div>
 
-              <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+              <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
                 Spielplan, Ergebnisse und wichtige Änderungen für deine Teams.
               </p>
             </div>
 
             <div className="grid grid-cols-3 gap-2 sm:gap-3 xl:min-w-[430px]">
-              <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)] backdrop-blur-sm sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
-                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[10px]">Kommende</div>
-                <div className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
+              <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)]  sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Kommende</div>
+                <div className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
                   {getUpcomingMatches().length}
                 </div>
               </div>
 
-              <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)] backdrop-blur-sm sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
-                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[10px]">Verschoben</div>
-                <div className="mt-2 text-2xl font-black tracking-tight text-orange-300 sm:text-3xl">
+              <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)]  sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Verschoben</div>
+                <div className="mt-2 text-2xl font-semibold tracking-tight text-orange-300 sm:text-3xl">
                   {getPostponedMatches().length}
                 </div>
               </div>
 
-              <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)] backdrop-blur-sm sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
-                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[10px]">Beendet</div>
-                <div className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
+              <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)]  sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Beendet</div>
+                <div className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
                   {getCompletedMatches().length}
                 </div>
               </div>
@@ -2625,17 +2618,17 @@ const modalAwayName = modalMatch
           </div>
         </div>
       </section>
-		
-		
-		
-		
-		
+
+
+
+
+
 
         {getPostponedMatches().length > 0 && (
   <div className="mt-4 mb-4 sm:mt-5 sm:mb-5">
-    <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[28px] hover:text-white focus-visible:text-white">
+    <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  sm:rounded-[28px] hover:text-white focus-visible:text-white">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-slate-800 bg-slate-950 px-4 py-4 sm:px-5">
+      <div className="flex items-center gap-3 border-b border-border bg-background px-4 py-4 sm:px-5">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
           <CalendarX className="h-5 w-5 text-white" />
         </div>
@@ -2643,7 +2636,7 @@ const modalAwayName = modalMatch
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <div className="text-white text-sm font-extrabold">Verschobene Spiele</div>
-            <span className="inline-flex items-center justify-center rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-bold text-white hover:text-white focus-visible:text-white">
+            <span className="inline-flex items-center justify-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white hover:text-white focus-visible:text-white">
               {getPostponedMatches().length}
             </span>
           </div>
@@ -2675,13 +2668,13 @@ const modalAwayName = modalMatch
 
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-bold text-white">
-                    {homeName} <span className="text-white/30">vs</span> {awayName}
+                    {homeName} <span className="text-muted-foreground">vs</span> {awayName}
                   </div>
 
                   <div className="mt-1 grid gap-1 text-xs">
                     {oldDate ? (
-                      <div className="flex items-center gap-2 text-white/40">
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-white border border-slate-200">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-card border border-border">
                           <X className="h-3 w-3 text-red-500" />
                         </span>
                         <span className="line-through">{oldDate}</span>
@@ -2689,7 +2682,7 @@ const modalAwayName = modalMatch
                     ) : null}
 
                     <div className="flex items-center gap-2 text-white/75">
-                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-white border border-slate-200">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-card border border-border">
                         <Check className="h-3 w-3 text-green-600" />
                       </span>
                       <span className="font-semibold">
@@ -2698,7 +2691,7 @@ const modalAwayName = modalMatch
                     </div>
 
                     {match.postponement_reason ? (
-                      <div className="mt-2 rounded-xl border border-orange-200 bg-white px-3 py-2 text-[11px] text-white/65">
+                      <div className="mt-2 rounded-xl border border-orange-200 bg-card px-3 py-2 text-xs text-white/65">
                         <span className="font-semibold text-orange-700">Grund:</span>{" "}
                         {match.postponement_reason}
                       </div>
@@ -2711,7 +2704,7 @@ const modalAwayName = modalMatch
         })}
 
         {getPostponedMatches().length > 3 ? (
-          <div className="pt-1 text-center text-xs text-white/40">
+          <div className="pt-1 text-center text-xs text-muted-foreground">
             ... und {getPostponedMatches().length - 3} weitere
           </div>
         ) : null}
@@ -2726,7 +2719,7 @@ const modalAwayName = modalMatch
             {/* Main Content */}
             <div className="min-w-0 space-y-5 sm:space-y-6">
               {/* Spielplan Section with Tabs */}
-              <Card className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[30px] hover:text-white focus-visible:text-white">
+              <Card className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  sm:rounded-[30px] hover:text-white focus-visible:text-white">
                 <CardHeader className="border-b border-white/[0.07] px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-3">
@@ -2734,10 +2727,10 @@ const modalAwayName = modalMatch
                         <Calendar className="h-5 w-5 text-orange-600" />
                       </div>
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/30 sm:text-xs">
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">
                           Saison
                         </div>
-                        <CardTitle className="mt-0.5 text-xl font-black tracking-tight text-white sm:text-2xl">
+                        <CardTitle className="mt-0.5 text-xl font-semibold tracking-tight text-white sm:text-2xl">
                           Spielplan meiner Teams
                         </CardTitle>
                       </div>
@@ -2788,55 +2781,55 @@ const modalAwayName = modalMatch
                     onValueChange={(value) => setActiveMatchTab(value as "upcoming" | "completed" | "postponed")}
                     className="w-full"
                   >
-                   <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1.5 shadow-none backdrop-blur-xl">
+                   <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1.5 shadow-none ">
   <TabsTrigger
     value="upcoming"
-    className="h-10 min-w-0 rounded-xl px-1.5 text-[10px] font-black text-white/40 shadow-none sm:px-3 sm:text-xs
+    className="h-10 min-w-0 rounded-xl px-1.5 text-xs font-semibold text-muted-foreground shadow-none sm:px-3 sm:text-xs
       data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_22px_rgba(249,115,22,.14)]"
   >
     Kommende
-    <span className="ml-1 text-[10px] opacity-70">
+    <span className="ml-1 text-xs opacity-70">
       ({getUpcomingMatches().length})
     </span>
   </TabsTrigger>
 
   <TabsTrigger
     value="postponed"
-    className="h-10 min-w-0 rounded-xl px-1.5 text-[10px] font-black text-white/40 shadow-none sm:px-3 sm:text-xs
+    className="h-10 min-w-0 rounded-xl px-1.5 text-xs font-semibold text-muted-foreground shadow-none sm:px-3 sm:text-xs
       data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_22px_rgba(249,115,22,.14)]"
   >
     Verschoben
-    <span className="ml-1 text-[10px] opacity-70">
+    <span className="ml-1 text-xs opacity-70">
       ({getPostponedMatches().length})
     </span>
   </TabsTrigger>
 
   <TabsTrigger
     value="completed"
-    className="h-10 min-w-0 rounded-xl px-1.5 text-[10px] font-black text-white/40 shadow-none sm:px-3 sm:text-xs
+    className="h-10 min-w-0 rounded-xl px-1.5 text-xs font-semibold text-muted-foreground shadow-none sm:px-3 sm:text-xs
       data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_22px_rgba(249,115,22,.14)]"
   >
     <span className="sm:hidden">Abgeschl.</span>
     <span className="hidden sm:inline">Abgeschlossen</span>
-    <span className="ml-1 text-[10px] opacity-70">
+    <span className="ml-1 text-xs opacity-70">
       ({getCompletedMatches().length})
     </span>
   </TabsTrigger>
 </TabsList>
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 				{/* Tabs Conten Upcoming */}
 <TabsContent value="upcoming">
 {getUpcomingMatches().length === 0 ? (
@@ -2845,7 +2838,7 @@ const modalAwayName = modalMatch
 <Calendar className="h-6 w-6 text-orange-600" />
 </div>
 <p className="font-semibold text-white">Keine kommenden Spiele gefunden.</p>
-<p className="text-sm text-white/40 mt-1">Sobald Spiele geplant sind, erscheinen sie hier.</p>
+<p className="text-sm text-muted-foreground mt-1">Sobald Spiele geplant sind, erscheinen sie hier.</p>
 </div>
 ) : (
 <div className="space-y-3 sm:space-y-4">
@@ -2870,8 +2863,8 @@ const awayName = getTeamName(match, false) || "Unbekannt"
       barClass = "bg-amber-500"
     } else if (isCompleted) {
       statusLabel = "Beendet"
-      statusClasses = "border-slate-200 bg-white/[0.05] text-white/65"
-      barClass = "bg-gray-300"
+      statusClasses = "border-border bg-white/[0.05] text-white/65"
+      barClass = "bg-secondary"
     }
 
     return (
@@ -2880,7 +2873,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
         className={[
           "bg-white/[0.035] text-white border border-orange-300/[0.10] shadow-[0_0_26px_rgba(249,115,22,.05)] sm:border-white/[0.08] sm:shadow-none hover:border-white/[0.12] hover:bg-white/[0.045] transition-colors duration-200 active:scale-[0.994]",
           "rounded-[20px] p-3.5 sm:rounded-[24px] sm:p-5",
-          isPostponed ? "border-amber-200" : "border-slate-200/80",
+          isPostponed ? "border-amber-200" : "border-border/80",
         ].join(" ")}
       >
         <div className="flex gap-3">
@@ -2897,12 +2890,12 @@ const awayName = getTeamName(match, false) || "Unbekannt"
               {/* top row: badges + date */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 font-mono text-white/55 hover:text-white focus-visible:text-white">
+                  <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 font-mono text-muted-foreground hover:text-white focus-visible:text-white">
                     Woche {match.week_number}
                   </Badge>
 
                   {match.match_format ? (
-                    <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-white/55 hover:text-white focus-visible:text-white">
+                    <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-muted-foreground hover:text-white focus-visible:text-white">
                       {match.match_format === "team"
                         ? "Team (2er)"
                         : match.match_format === "best_of_three"
@@ -2913,21 +2906,21 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                     </Badge>
                   ) : null}
 
-                  <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-white/55 hover:text-white focus-visible:text-white">
+                  <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-muted-foreground hover:text-white focus-visible:text-white">
                     {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
                   </Badge>
 
-                  <Badge className={["text-[11px] border px-2 py-0.5 font-semibold", statusClasses].join(" ")}>
+                  <Badge className={["text-xs border px-2 py-0.5 font-semibold", statusClasses].join(" ")}>
                     {statusLabel}
                   </Badge>
                 </div>
 
                 {/* desktop meta */}
-                <div className="hidden sm:flex items-center gap-2 text-sm text-white/55">
+                <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
                   <span className="font-semibold text-white/75">{dateText}</span>
-                  {timeText ? <span className="text-white/40">· {timeText} Uhr</span> : null}
+                  {timeText ? <span className="text-muted-foreground">· {timeText} Uhr</span> : null}
                   {match.original_date ? (
-                    <span className="text-[11px] text-white/30">
+                    <span className="text-xs text-muted-foreground">
                       Urspr.: <span className="line-through">{formatMatchDate(match.original_date)}</span>
                     </span>
                   ) : null}
@@ -2938,46 +2931,46 @@ const awayName = getTeamName(match, false) || "Unbekannt"
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-center">
                 {/* home */}
                 <div className="min-w-0 text-center sm:text-right">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Heim</div>
-                  <div className="mt-1 break-words text-[15px] font-black leading-snug text-white sm:text-base">
+                  <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Heim</div>
+                  <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">
                     {homeName}
                   </div>
                 </div>
 
                 {/* score */}
                 <div className="flex items-center justify-center">
-                  <div className="min-w-[112px] rounded-2xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-center shadow-sm sm:min-w-[128px] sm:px-5">
+                  <div className="min-w-[112px] rounded-2xl border border-border bg-background px-4 py-2.5 text-center shadow-sm sm:min-w-[128px] sm:px-5">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="text-2xl font-black tracking-tight text-white">{match.home_score ?? "-"}</span>
-                      <span className="text-white/40">:</span>
-                      <span className="text-2xl font-black tracking-tight text-white">{match.away_score ?? "-"}</span>
+                      <span className="text-2xl font-semibold tracking-tight text-white">{match.home_score ?? "-"}</span>
+                      <span className="text-muted-foreground">:</span>
+                      <span className="text-2xl font-semibold tracking-tight text-white">{match.away_score ?? "-"}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* away */}
                 <div className="min-w-0 text-center sm:text-left">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Gast</div>
-                  <div className="mt-1 break-words text-[15px] font-black leading-snug text-white sm:text-base">
+                  <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Gast</div>
+                  <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">
                     {awayName}
                   </div>
                 </div>
               </div>
 
               {/* mobile meta */}
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs text-white/55 sm:hidden hover:text-white focus-visible:text-white">
-                <div className="font-black text-white/75">
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs text-muted-foreground sm:hidden hover:text-white focus-visible:text-white">
+                <div className="font-semibold text-white/75">
                   {dateText}{timeText ? ` · ${timeText} Uhr` : ""}
                 </div>
                 {match.original_date ? (
-                  <div className="text-[10px] text-white/30">
+                  <div className="text-xs text-muted-foreground">
                     Urspr.: <span className="line-through">{formatMatchDate(match.original_date)}</span>
                   </div>
                 ) : null}
               </div>
 
               {/* venue */}
-              <div className="flex items-start gap-2 text-sm text-white/55">
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-orange-500" />
                 <div className="min-w-0">
                   <div className="break-words font-semibold text-white/65">{match.venue}</div>
@@ -2988,7 +2981,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
               {/* postponed info */}
               {isPostponed && match.original_date ? (
                 <div className="rounded-2xl border border-amber-300/20 bg-amber-500/[0.08] p-3">
-                  <div className="text-[11px] font-semibold text-amber-900">
+                  <div className="text-xs font-semibold text-amber-900">
                     Verschoben: ursprünglich am {formatMatchDate(match.original_date)}
                     {match.postponement_reason ? ` · Grund: ${match.postponement_reason}` : ""}
                   </div>
@@ -2997,7 +2990,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
               {/* actions */}
               {canEdit ? (
-                <div className="pt-3 border-t border-slate-200/70">
+                <div className="pt-3 border-t border-border/70">
                   <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-2.5">
                     <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
                       {/* Primary (Orange) */}
@@ -3015,7 +3008,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                           size="sm"
                           variant="outline"
                           onClick={() => void loadSportdartsSyncPreview(match)}
-                          className="col-span-2 h-11 rounded-xl border-sky-300/30 bg-sky-500/[0.12] font-black text-sky-100 shadow-[0_0_22px_rgba(14,165,233,.10)] transition hover:border-sky-300/45 hover:bg-sky-500/[0.18] hover:text-white sm:col-span-3"
+                          className="col-span-2 h-11 rounded-xl border-sky-300/30 bg-sky-500/[0.12] font-semibold text-sky-100 shadow-[0_0_22px_rgba(14,165,233,.10)] transition hover:border-sky-300/45 hover:bg-sky-500/[0.18] hover:text-white sm:col-span-3"
                         >
                           <RotateCcw className="mr-2 h-4 w-4" />
                           Sportdarts prüfen
@@ -3087,7 +3080,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
         <Calendar className="h-6 w-6 text-orange-600" />
       </div>
       <p className="font-semibold text-white">Keine verschobenen Spiele gefunden.</p>
-      <p className="text-sm text-white/40 mt-1">Wenn Spiele verschoben werden, erscheinen sie hier.</p>
+      <p className="text-sm text-muted-foreground mt-1">Wenn Spiele verschoben werden, erscheinen sie hier.</p>
     </div>
   ) : (
     <div className="space-y-3 sm:space-y-4">
@@ -3117,12 +3110,12 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   {/* top row: badges + date */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 font-mono text-white/55 hover:text-white focus-visible:text-white">
+                      <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 font-mono text-muted-foreground hover:text-white focus-visible:text-white">
                         Woche {match.week_number}
                       </Badge>
 
                       {match.match_format ? (
-                        <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-white/55 hover:text-white focus-visible:text-white">
+                        <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-muted-foreground hover:text-white focus-visible:text-white">
                           {match.match_format === "team"
                             ? "Team (2er)"
                             : match.match_format === "best_of_three"
@@ -3133,18 +3126,18 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                         </Badge>
                       ) : null}
 
-                      <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-white/55 hover:text-white focus-visible:text-white">
+                      <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-muted-foreground hover:text-white focus-visible:text-white">
                         {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
                       </Badge>
 
-                      <Badge className="text-[11px] border px-2 py-0.5 font-semibold border-orange-300/20 bg-orange-500/[0.08] text-orange-800">
+                      <Badge className="text-xs border px-2 py-0.5 font-semibold border-orange-300/20 bg-orange-500/[0.08] text-orange-800">
                         Verschoben
                       </Badge>
                     </div>
 
-                    <div className="hidden sm:flex items-center gap-2 text-sm text-white/55">
+                    <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
                       <span className="font-semibold text-white/75">{dateText}</span>
-                      {timeText ? <span className="text-white/40">· {timeText} Uhr</span> : null}
+                      {timeText ? <span className="text-muted-foreground">· {timeText} Uhr</span> : null}
                     </div>
                   </div>
 
@@ -3152,39 +3145,39 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-center">
                     {/* home */}
                     <div className="min-w-0 text-center sm:text-right">
-                      <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Heim</div>
-                      <div className="mt-1 break-words text-[15px] font-black leading-snug text-white sm:text-base">
+                      <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Heim</div>
+                      <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">
                         {homeName}
                       </div>
                     </div>
 
                     {/* score */}
                     <div className="flex items-center justify-center">
-                      <div className="min-w-[112px] rounded-2xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-center shadow-sm sm:min-w-[128px] sm:px-5">
+                      <div className="min-w-[112px] rounded-2xl border border-border bg-background px-4 py-2.5 text-center shadow-sm sm:min-w-[128px] sm:px-5">
                         <div className="flex items-center justify-center gap-2">
-                          <span className="text-2xl font-black tracking-tight text-white">{match.home_score ?? "-"}</span>
-                          <span className="text-white/40">:</span>
-                          <span className="text-2xl font-black tracking-tight text-white">{match.away_score ?? "-"}</span>
+                          <span className="text-2xl font-semibold tracking-tight text-white">{match.home_score ?? "-"}</span>
+                          <span className="text-muted-foreground">:</span>
+                          <span className="text-2xl font-semibold tracking-tight text-white">{match.away_score ?? "-"}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* away */}
                     <div className="min-w-0 text-center sm:text-left">
-                      <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Gast</div>
-                      <div className="mt-1 break-words text-[15px] font-black leading-snug text-white sm:text-base">
+                      <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Gast</div>
+                      <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">
                         {awayName}
                       </div>
                     </div>
                   </div>
 
                   {/* mobile meta */}
-                  <div className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs text-white/55 sm:hidden hover:text-white focus-visible:text-white">
-                    <div className="font-black text-white/75">
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs text-muted-foreground sm:hidden hover:text-white focus-visible:text-white">
+                    <div className="font-semibold text-white/75">
                       {dateText}{timeText ? ` · ${timeText} Uhr` : ""}
                     </div>
                     {match.original_date ? (
-                      <div className="text-[10px] text-white/30">
+                      <div className="text-xs text-muted-foreground">
                         Urspr.: <span className="line-through">{formatMatchDate(match.original_date)}</span>
                       </div>
                     ) : null}
@@ -3195,7 +3188,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                     <div className="rounded-2xl border border-orange-300/20 bg-orange-500/[0.08] p-3">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-[11px] leading-snug text-orange-900">
+                        <div className="text-xs leading-snug text-orange-900">
                           <div className="font-semibold">
                             Ursprünglich: <span className="line-through">{formatMatchDate(match.original_date)}</span>
                             <span className="mx-1 text-orange-400">→</span>
@@ -3213,7 +3206,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   ) : null}
 
                   {/* venue */}
-                  <div className="flex items-start gap-2 text-sm text-white/55">
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-orange-500" />
                     <div className="min-w-0">
                       <div className="break-words font-semibold text-white/65">{match.venue}</div>
@@ -3223,7 +3216,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
                   {/* actions */}
                   {canEdit ? (
-                    <div className="pt-3 border-t border-slate-200/70">
+                    <div className="pt-3 border-t border-border/70">
                       <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-2.5">
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {/* Statistik (Primary orange) */}
@@ -3238,7 +3231,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                               size="sm"
                               variant="outline"
                               onClick={() => void loadSportdartsSyncPreview(match)}
-                              className="col-span-2 h-11 rounded-xl border-sky-300/30 bg-sky-500/[0.12] font-black text-sky-100 shadow-[0_0_22px_rgba(14,165,233,.10)] transition hover:border-sky-300/45 hover:bg-sky-500/[0.18] hover:text-white sm:col-span-3"
+                              className="col-span-2 h-11 rounded-xl border-sky-300/30 bg-sky-500/[0.12] font-semibold text-sky-100 shadow-[0_0_22px_rgba(14,165,233,.10)] transition hover:border-sky-300/45 hover:bg-sky-500/[0.18] hover:text-white sm:col-span-3"
                             >
                               <RotateCcw className="mr-2 h-4 w-4" />
                               Sportdarts prüfen
@@ -3285,7 +3278,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-10 rounded-xl border-red-200 bg-white font-bold text-red-700 shadow-none hover:bg-red-50"
+                            className="h-10 rounded-xl border-red-200 bg-card font-bold text-red-700 shadow-none hover:bg-red-50"
                             onClick={() => undoPostponement(match.id)}
                           >
                             <RotateCcw className="h-4 w-4 mr-2" />
@@ -3307,14 +3300,14 @@ const awayName = getTeamName(match, false) || "Unbekannt"
     </div>
   )}
 </TabsContent>
-                   
-				   
-				   
-				   
-				   
-				   
-				   
-				   
+
+
+
+
+
+
+
+
 	{/* Tabs Conten Abgeschlosssen */}
 <TabsContent value="completed">
   {getCompletedMatches().length === 0 ? (
@@ -3323,7 +3316,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
         <Calendar className="h-6 w-6 text-orange-600" />
       </div>
       <p className="font-semibold text-white">Keine abgeschlossenen Spiele gefunden.</p>
-      <p className="mt-1 text-sm text-white/40">Sobald Ergebnisse eingetragen sind, erscheinen sie hier.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Sobald Ergebnisse eingetragen sind, erscheinen sie hier.</p>
     </div>
   ) : (
     <div className="space-y-3 sm:space-y-4">
@@ -3338,7 +3331,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
         const result = getMatchResult(match) // "won" | "lost" | "draw" | "pending" | "neutral"
 
         let resultLabel = "Beendet"
-        let barClass = "bg-gray-300"
+        let barClass = "bg-secondary"
         let badgeClass = "border-white/[0.08] bg-white/[0.035] text-white/65"
 
         if (result === "won") {
@@ -3381,12 +3374,12 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   {/* top row: badges + date */}
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 font-mono text-white/55 hover:text-white focus-visible:text-white">
+                      <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 font-mono text-muted-foreground hover:text-white focus-visible:text-white">
                         Woche {match.week_number}
                       </Badge>
 
                       {match.match_format ? (
-                        <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-white/55 hover:text-white focus-visible:text-white">
+                        <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-muted-foreground hover:text-white focus-visible:text-white">
                           {match.match_format === "team"
                             ? "Team (2er)"
                             : match.match_format === "best_of_three"
@@ -3397,19 +3390,19 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                         </Badge>
                       ) : null}
 
-                      <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-white/55 hover:text-white focus-visible:text-white">
+                      <Badge variant="outline" className="rounded-full border-white/[0.08] bg-white/[0.035] px-2.5 text-xs font-bold text-muted-foreground hover:text-white focus-visible:text-white">
                         {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
                       </Badge>
 
-                      <Badge className={["text-[11px] border px-2 py-0.5 font-semibold", badgeClass].join(" ")}>
+                      <Badge className={["text-xs border px-2 py-0.5 font-semibold", badgeClass].join(" ")}>
                         {resultLabel}
                       </Badge>
                     </div>
 
                     {/* desktop meta */}
-                    <div className="hidden items-center gap-2 text-sm text-white/55 sm:flex">
+                    <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
                       <span className="font-semibold text-white/75">{dateText}</span>
-                      {timeText ? <span className="text-white/40">· {timeText} Uhr</span> : null}
+                      {timeText ? <span className="text-muted-foreground">· {timeText} Uhr</span> : null}
                     </div>
                   </div>
 
@@ -3417,44 +3410,44 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   <div className="grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr] sm:gap-4">
                     {/* home */}
                     <div className="min-w-0 text-center sm:text-right">
-                      <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Heim</div>
-                      <div className="mt-1 break-words text-[15px] font-black leading-snug text-white sm:text-base">{homeName}</div>
-                      <div className="mt-1 text-[11px] text-white/40">
+                      <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Heim</div>
+                      <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">{homeName}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
                         {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
                       </div>
                     </div>
 
                     {/* score */}
                     <div className="flex items-center justify-center">
-                      <div className="min-w-[112px] rounded-2xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-center shadow-sm sm:min-w-[128px] sm:px-5">
+                      <div className="min-w-[112px] rounded-2xl border border-border bg-background px-4 py-2.5 text-center shadow-sm sm:min-w-[128px] sm:px-5">
                         <div className="flex items-center justify-center gap-2">
-                          <span className="text-2xl font-black tracking-tight text-white">{match.home_score ?? "-"}</span>
-                          <span className="text-white/40">:</span>
-                          <span className="text-2xl font-black tracking-tight text-white">{match.away_score ?? "-"}</span>
+                          <span className="text-2xl font-semibold tracking-tight text-white">{match.home_score ?? "-"}</span>
+                          <span className="text-muted-foreground">:</span>
+                          <span className="text-2xl font-semibold tracking-tight text-white">{match.away_score ?? "-"}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* away */}
                     <div className="min-w-0 text-center sm:text-left">
-                      <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Gast</div>
-                      <div className="mt-1 break-words text-[15px] font-black leading-snug text-white sm:text-base">{awayName}</div>
-                      <div className="mt-1 text-[11px] text-white/40">
+                      <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Gast</div>
+                      <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">{awayName}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
                         {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
                       </div>
                     </div>
                   </div>
 
                   {/* mobile meta */}
-                  <div className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs text-white/55 sm:hidden hover:text-white focus-visible:text-white">
-                    <div className="font-black text-white/75">
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs text-muted-foreground sm:hidden hover:text-white focus-visible:text-white">
+                    <div className="font-semibold text-white/75">
                       {dateText}
                       {timeText ? ` · ${timeText} Uhr` : ""}
                     </div>
                   </div>
 
                   {/* venue (OHNE Gegner-Lokal / Ort / Telefon / Route / WhatsApp) */}
-                  <div className="flex items-start gap-2 text-sm text-white/55">
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
                     <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-500" />
                     <div className="min-w-0">
                       <div className="break-words font-semibold text-white/65">{match.venue}</div>
@@ -3463,7 +3456,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
                   {/* actions */}
                   {canEdit ? (
-                    <div className="border-t border-slate-200/70 pt-3">
+                    <div className="border-t border-border/70 pt-3">
                       <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-2.5">
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                           {/* Statistik läuft bei Sportdarts über "Sportdarts prüfen" */}
@@ -3474,7 +3467,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                             size="sm"
                             variant="outline"
                             onClick={() => void openExtraStatsEditor(match)}
-                            className="h-10 rounded-xl border-orange-300/25 bg-orange-500/[0.10] font-black text-orange-100 shadow-none hover:border-orange-300/45 hover:bg-orange-500/[0.16] hover:text-white"
+                            className="h-10 rounded-xl border-orange-300/25 bg-orange-500/[0.10] font-semibold text-orange-100 shadow-none hover:border-orange-300/45 hover:bg-orange-500/[0.16] hover:text-white"
                           >
                             <Edit className="mr-2 h-4 w-4" />
                             {matchesWithExtraStats[match.id] ? "Statistik bearbeiten" : "Statistik anlegen"}
@@ -3507,24 +3500,24 @@ const awayName = getTeamName(match, false) || "Unbekannt"
       })}
     </div>
   )}
-</TabsContent>			   
-				   
-				   
-				   
-				   
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-		
+</TabsContent>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   </Tabs>
           </CardContent>
         </Card>
@@ -3537,13 +3530,13 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
 {showPostponeToast && (
   <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] animate-in slide-in-from-top-2 fade-in duration-200">
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.5)]">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950">
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.5)]">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background">
         <Check className="h-5 w-5 text-white" />
       </div>
       <div className="leading-tight">
         <div className="text-sm font-bold text-white">Spiel verschoben</div>
-        <div className="text-xs text-white/40">Änderungen gespeichert</div>
+        <div className="text-xs text-muted-foreground">Änderungen gespeichert</div>
       </div>
     </div>
   </div>
@@ -3558,10 +3551,10 @@ const awayName = getTeamName(match, false) || "Unbekannt"
     if (!open) setSelectedMatchForResults(null)
   }}
 >
-  <DialogContent className="w-[94vw] max-w-sm overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#070a0f]/95 p-0 text-white shadow-[0_30px_120px_-45px_rgba(0,0,0,.98)] backdrop-blur-2xl">
-    
+  <DialogContent className="w-[94vw] max-w-sm overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#070a0f]/95 p-0 text-white shadow-[0_30px_120px_-45px_rgba(0,0,0,.98)] ">
+
     {/* Header klein */}
-    <div className="border-b border-slate-800 bg-slate-950 px-4 py-4">
+    <div className="border-b border-border bg-background px-4 py-4">
       <DialogTitle className="text-white text-sm font-bold">
         Ergebnis eintragen
       </DialogTitle>
@@ -3574,7 +3567,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
         {/* Heim */}
         <div className="text-center space-y-2">
-          <div className="text-[11px] font-semibold text-white/40 truncate">
+          <div className="text-xs font-semibold text-muted-foreground truncate">
   {modalHomeName}
 </div>
 
@@ -3617,7 +3610,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
         {/* Auswärts */}
         <div className="text-center space-y-2">
-         <div className="text-[11px] font-semibold text-white/40 truncate">
+         <div className="text-xs font-semibold text-muted-foreground truncate">
   {modalAwayName}
 </div>
 
@@ -3672,7 +3665,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
       </Button>
 
       <Button
-        className="h-10 rounded-xl bg-orange-500 font-bold text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 active:scale-[0.99]"
+        className="h-10 rounded-xl bg-orange-500 font-bold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 active:scale-[0.99]"
         onClick={async () => {
           if (!selectedMatchForResults) return
 
@@ -3693,17 +3686,17 @@ const awayName = getTeamName(match, false) || "Unbekannt"
     </div>
   </DialogContent>
 </Dialog>
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
+
+
+
+
+
+
+
+
+
+
+
 
       {/* EMD-Zusatzstatistik nachträglich bearbeiten */}
       <Dialog
@@ -3717,17 +3710,17 @@ const awayName = getTeamName(match, false) || "Unbekannt"
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] w-[95vw] max-w-4xl overflow-y-auto rounded-[28px] border border-white/[0.10] bg-[#070a0f]/98 p-0 text-white shadow-[0_35px_130px_-45px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+        <DialogContent className="max-h-[90vh] w-[95vw] max-w-4xl overflow-y-auto rounded-[28px] border border-white/[0.10] bg-[#070a0f]/98 p-0 text-white shadow-[0_35px_130px_-45px_rgba(0,0,0,.98)] ">
           <DialogHeader className="border-b border-white/[0.08] px-4 py-4 text-left sm:px-5">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-500/[0.10] text-orange-200">
                 <Edit className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <DialogTitle className="text-base font-black text-white sm:text-lg">
+                <DialogTitle className="text-base font-semibold text-white sm:text-lg">
                   {extraStatsEditMatch && matchesWithExtraStats[extraStatsEditMatch.id] ? "Statistik bearbeiten" : "Statistik anlegen"}
                 </DialogTitle>
-                <DialogDescription className="mt-1 text-xs font-semibold text-white/45 sm:text-sm">
+                <DialogDescription className="mt-1 text-xs font-semibold text-muted-foreground sm:text-sm">
                   Nur 180er, 171er, High Tonne, Tonne, Shanghai, 95+, Bull, 15–20er, Unter 26/30 und Semperit erfassen oder ändern. Ergebnis und Sportdarts-Legs bleiben unangetastet.
                 </DialogDescription>
               </div>
@@ -3737,9 +3730,9 @@ const awayName = getTeamName(match, false) || "Unbekannt"
           <div className="space-y-4 p-4 sm:p-5">
             {extraStatsEditMatch ? (
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3 text-sm font-bold text-white/65">
-                {getTeamDisplayNameHelper(extraStatsEditMatch, true)} <span className="text-white/30">vs.</span>{" "}
+                {getTeamDisplayNameHelper(extraStatsEditMatch, true)} <span className="text-muted-foreground">vs.</span>{" "}
                 {getTeamName(extraStatsEditMatch, false) || "Unbekannt"}
-                <span className="ml-2 text-white/30">· {formatMatchDate(extraStatsEditMatch.match_date)}</span>
+                <span className="ml-2 text-muted-foreground">· {formatMatchDate(extraStatsEditMatch.match_date)}</span>
               </div>
             ) : null}
 
@@ -3776,18 +3769,18 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
                   return (
                     <div key={row.statId} className="rounded-2xl border border-white/[0.08] bg-black/20 p-3.5">
-                      <div className="mb-3 text-sm font-black text-white">{row.playerName}</div>
+                      <div className="mb-3 text-sm font-semibold text-white">{row.playerName}</div>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {fields.map((field) => (
                           <label key={field.key} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-2.5">
-                            <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-white/40">
+                            <span className="block text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                               {field.label}
                             </span>
                             <div className="mt-2 flex items-center gap-1.5">
                               <button
                                 type="button"
                                 onClick={() => updateExtraStatsEditValue(row.statId, field.key, row.stats[field.key] - 1)}
-                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black/30 text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-card text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
                               >
                                 −
                               </button>
@@ -3802,12 +3795,12 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                                     Number.parseInt(event.target.value || "0", 10) || 0,
                                   )
                                 }
-                                className="h-8 min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-[#070a0f] px-1 text-center text-sm font-black text-white outline-none focus:border-orange-300/35"
+                                className="h-8 min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-[#070a0f] px-1 text-center text-sm font-semibold text-white outline-none focus:border-orange-300/35"
                               />
                               <button
                                 type="button"
                                 onClick={() => updateExtraStatsEditValue(row.statId, field.key, row.stats[field.key] + 1)}
-                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black/30 text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-card text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
                               >
                                 +
                               </button>
@@ -3836,7 +3829,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
               type="button"
               onClick={() => void saveExtraStatsEdits()}
               disabled={extraStatsEditSaving || extraStatsEditLoading || extraStatsEditRows.length === 0}
-              className="rounded-xl bg-orange-500 font-black text-white hover:bg-orange-600 disabled:opacity-50"
+              className="rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-600 disabled:opacity-50"
             >
               {extraStatsEditSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
               Zusatzstatistik speichern
@@ -3861,17 +3854,17 @@ const awayName = getTeamName(match, false) || "Unbekannt"
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] w-[95vw] max-w-3xl overflow-y-auto rounded-[28px] border border-white/[0.10] bg-[#070a0f]/98 p-0 text-white shadow-[0_35px_130px_-45px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+        <DialogContent className="max-h-[90vh] w-[95vw] max-w-3xl overflow-y-auto rounded-[28px] border border-white/[0.10] bg-[#070a0f]/98 p-0 text-white shadow-[0_35px_130px_-45px_rgba(0,0,0,.98)] ">
           <DialogHeader className="border-b border-white/[0.08] px-4 py-4 text-left sm:px-5">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sky-300/20 bg-sky-500/[0.10] text-sky-200">
                 <RotateCcw className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <DialogTitle className="text-base font-black text-white sm:text-lg">
+                <DialogTitle className="text-base font-semibold text-white sm:text-lg">
                   Sportdarts-Prüfung
                 </DialogTitle>
-                <DialogDescription className="mt-1 text-xs font-semibold text-white/45 sm:text-sm">
+                <DialogDescription className="mt-1 text-xs font-semibold text-muted-foreground sm:text-sm">
                   Sichere Vorschau. Es werden noch keine Ergebnisse oder Statistiken gespeichert.
                 </DialogDescription>
               </div>
@@ -3890,10 +3883,10 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   <div className="flex items-start gap-2.5">
                     <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-200" />
                     <div>
-                      <div className="font-black text-white">
+                      <div className="font-semibold text-white">
                         Sportdarts-Spiel auswählen
                       </div>
-                      <div className="mt-1 text-sm font-semibold leading-5 text-white/55">
+                      <div className="mt-1 text-sm font-semibold leading-5 text-muted-foreground">
                         Das EMD-Spiel wurde manuell angelegt. Deshalb wurde keine feste Sportdarts-ID gespeichert.
                         Bitte wähle das passende offizielle Spiel. Es wird weiterhin nichts gespeichert.
                       </div>
@@ -3915,17 +3908,17 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
-                          <div className="text-sm font-black text-white">
-                            {candidate.homeTeam} <span className="text-white/35">vs.</span> {candidate.awayTeam}
+                          <div className="text-sm font-semibold text-white">
+                            {candidate.homeTeam} <span className="text-muted-foreground">vs.</span> {candidate.awayTeam}
                           </div>
-                          <div className="mt-1 text-xs font-semibold text-white/40">
+                          <div className="mt-1 text-xs font-semibold text-muted-foreground">
                             {candidate.date.split("-").reverse().join(".")} · Spieltag {candidate.weekNumber} · Sportdarts #{candidate.gameId}
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
                           {candidate.homeScore != null && candidate.awayScore != null ? (
-                            <div className="rounded-xl border border-orange-300/20 bg-orange-500/[0.10] px-3 py-1.5 text-sm font-black text-orange-100">
+                            <div className="rounded-xl border border-orange-300/20 bg-orange-500/[0.10] px-3 py-1.5 text-sm font-semibold text-orange-100">
                               {candidate.homeScore}:{candidate.awayScore}
                             </div>
                           ) : null}
@@ -3933,7 +3926,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                         </div>
                       </div>
 
-                      <div className="mt-2 text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+                      <div className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                         {candidate.confidence === "exact"
                           ? "Datum + Heim/Gast + Gegner stimmen"
                           : "Datum + eigenes Team stimmen · bitte Gegner prüfen"}
@@ -3947,7 +3940,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                 <div className="flex items-start gap-2">
                   <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-300" />
                   <div>
-                    <div className="font-black text-red-100">Prüfung nicht möglich</div>
+                    <div className="font-semibold text-red-100">Prüfung nicht möglich</div>
                     <div className="mt-1 text-sm font-semibold leading-5 text-red-100/70">
                       {sportdartsSyncError}
                     </div>
@@ -3958,20 +3951,20 @@ const awayName = getTeamName(match, false) || "Unbekannt"
               <>
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-center">
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35">Heim</div>
-                    <div className="mt-1 text-sm font-black text-white">{sportdartsSyncPreview.homeTeam || "—"}</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Heim</div>
+                    <div className="mt-1 text-sm font-semibold text-white">{sportdartsSyncPreview.homeTeam || "—"}</div>
                   </div>
                   <div className="rounded-2xl border border-orange-300/20 bg-orange-500/[0.10] px-4 py-3 text-center">
-                    <div className="text-2xl font-black text-orange-100">
+                    <div className="text-2xl font-semibold text-orange-100">
                       {sportdartsSyncPreview.homeScore || "–"} : {sportdartsSyncPreview.awayScore || "–"}
                     </div>
-                    <div className="mt-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-orange-200/60">
+                    <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-orange-200/60">
                       Sportdarts
                     </div>
                   </div>
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-center">
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35">Gast</div>
-                    <div className="mt-1 text-sm font-black text-white">{sportdartsSyncPreview.awayTeam || "—"}</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Gast</div>
+                    <div className="mt-1 text-sm font-semibold text-white">{sportdartsSyncPreview.awayTeam || "—"}</div>
                   </div>
                 </div>
 
@@ -3990,7 +3983,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                       <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
                     )}
                     <div>
-                      <div className="font-black text-white">
+                      <div className="font-semibold text-white">
                         {sportdartsSyncPreview.blocked
                           ? sportdartsSyncPreview.players.length === 0 ||
                             !sportdartsSyncPreview.homeScore ||
@@ -3999,7 +3992,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                             : "Prüfung erforderlich – Übernahme gesperrt"
                           : "Sportdarts-Zuordnung und Berechtigung stimmen"}
                       </div>
-                      <div className="mt-1 text-sm font-semibold leading-5 text-white/55">
+                      <div className="mt-1 text-sm font-semibold leading-5 text-muted-foreground">
                         {sportdartsSyncPreview.blocked
                           ? sportdartsSyncPreview.blockReason || "Mindestens ein eingesetzter Spieler muss geprüft werden."
                           : "Alle bei Sportdarts tatsächlich eingesetzten Spieler konnten einem berechtigten EMD-Spieler zugeordnet werden. Die Vorab-Aufstellung blockiert die Übernahme nicht mehr."}
@@ -4010,10 +4003,10 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-xs font-black uppercase tracking-[0.14em] text-white/40">
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       Eingesetzte Spieler
                     </div>
-                    <div className="text-[10px] font-bold text-white/30">
+                    <div className="text-xs font-bold text-muted-foreground">
                       Sportdarts-Spiel {sportdartsSyncPreview.gameId}
                     </div>
                   </div>
@@ -4041,11 +4034,11 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                               ) : (
                                 <Check className="h-4 w-4 shrink-0 text-emerald-300" />
                               )}
-                              <div className="truncate text-sm font-black text-white">
+                              <div className="truncate text-sm font-semibold text-white">
                                 {player.localPlayerName || player.sportdartsName}
                               </div>
                             </div>
-                            <div className="mt-1 text-[11px] font-semibold text-white/40">
+                            <div className="mt-1 text-xs font-semibold text-muted-foreground">
                               Sportdarts-Nr. {player.sportdartsNumber}
                               {player.localPlayerName && player.localPlayerName !== player.sportdartsName
                                 ? ` · Sportdarts: ${player.sportdartsName}`
@@ -4055,12 +4048,12 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
                           <div className="grid grid-cols-2 gap-1.5 sm:min-w-[200px]">
                             <div className="rounded-xl border border-white/[0.07] bg-black/20 px-2 py-2 text-center">
-                              <div className="text-[9px] font-black uppercase text-white/30">Checks gemacht</div>
-                              <div className="mt-0.5 text-sm font-black text-white">{player.checksMade ?? "–"}</div>
+                              <div className="text-xs font-semibold uppercase text-muted-foreground">Checks gemacht</div>
+                              <div className="mt-0.5 text-sm font-semibold text-white">{player.checksMade ?? "–"}</div>
                             </div>
                             <div className="rounded-xl border border-white/[0.07] bg-black/20 px-2 py-2 text-center">
-                              <div className="text-[9px] font-black uppercase text-white/30">Checks verloren</div>
-                              <div className="mt-0.5 text-sm font-black text-white">
+                              <div className="text-xs font-semibold uppercase text-muted-foreground">Checks verloren</div>
+                              <div className="mt-0.5 text-sm font-semibold text-white">
                                 {player.checksMade != null && player.checksTotal != null
                                   ? Math.max(0, player.checksTotal - player.checksMade)
                                   : "–"}
@@ -4074,7 +4067,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                             {player.issue}
                           </div>
                         ) : (
-                          <div className="mt-3 text-[11px] font-bold text-emerald-200/70">
+                          <div className="mt-3 text-xs font-bold text-emerald-200/70">
                             ✓ bestätigte Aufstellung · ✓ Liga-Berechtigung
                           </div>
                         )}
@@ -4091,10 +4084,10 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                       className="flex w-full items-center justify-between gap-4 p-4 text-left transition hover:bg-white/[0.035]"
                     >
                       <div className="min-w-0">
-                        <div className="text-sm font-black text-white">
+                        <div className="text-sm font-semibold text-white">
                           Zusätzliche EMD-Statistiken erfassen
                         </div>
-                        <div className="mt-1 text-xs font-semibold leading-5 text-white/40">
+                        <div className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
                           Optional. Nur aktivieren, wenn eure Mannschaft die erweiterten Statistiken für dieses Spiel erfassen möchte.
                         </div>
                       </div>
@@ -4103,7 +4096,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                           "relative h-7 w-12 shrink-0 rounded-full border transition",
                           sportdartsExtraEnabled
                             ? "border-emerald-300/30 bg-emerald-500/30"
-                            : "border-white/[0.10] bg-black/30",
+                            : "border-white/[0.10] bg-card",
                         ].join(" ")}
                       >
                         <div
@@ -4164,10 +4157,10 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                                   className="flex w-full items-center justify-between gap-3 p-3.5 text-left transition hover:bg-white/[0.035]"
                                 >
                                   <div className="min-w-0">
-                                    <div className="truncate text-sm font-black text-white">
+                                    <div className="truncate text-sm font-semibold text-white">
                                       {player.localPlayerName || player.sportdartsName}
                                     </div>
-                                    <div className="mt-0.5 text-[11px] font-semibold text-white/35">
+                                    <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
                                       Legs {player.legsWon}:{player.legsLost} werden automatisch übernommen
                                     </div>
                                   </div>
@@ -4187,7 +4180,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                                           key={field.key}
                                           className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-2.5"
                                         >
-                                          <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-white/40">
+                                          <span className="block text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                                             {field.label}
                                           </span>
                                           <div className="mt-2 flex items-center gap-1.5">
@@ -4200,7 +4193,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                                                   Math.max(0, values[field.key] - 1),
                                                 )
                                               }
-                                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black/30 text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
+                                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-card text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
                                             >
                                               −
                                             </button>
@@ -4215,7 +4208,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                                                   Number.parseInt(event.target.value || "0", 10) || 0,
                                                 )
                                               }
-                                              className="h-8 min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-[#070a0f] px-1 text-center text-sm font-black text-white outline-none focus:border-orange-300/35"
+                                              className="h-8 min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-[#070a0f] px-1 text-center text-sm font-semibold text-white outline-none focus:border-orange-300/35"
                                             />
                                             <button
                                               type="button"
@@ -4226,7 +4219,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                                                   values[field.key] + 1,
                                                 )
                                               }
-                                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black/30 text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
+                                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-card text-white/60 transition hover:border-orange-300/25 hover:bg-orange-500/[0.10] hover:text-white"
                                             >
                                               +
                                             </button>
@@ -4235,7 +4228,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                                       ))}
                                     </div>
 
-                                    <div className="mt-3 text-[10px] font-semibold leading-4 text-white/30">
+                                    <div className="mt-3 text-xs font-semibold leading-4 text-muted-foreground">
                                       Nur diese Zusatzwerte werden ergänzt. Sportdarts-Legs und der Endstand bleiben die offiziellen Werte.
                                     </div>
                                   </div>
@@ -4262,12 +4255,12 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                       <Button
                         type="button"
                         disabled
-                        className="h-11 w-full cursor-not-allowed rounded-xl border border-white/[0.08] bg-white/[0.04] font-black text-white/30 shadow-none"
+                        className="h-11 w-full cursor-not-allowed rounded-xl border border-white/[0.08] bg-white/[0.04] font-semibold text-muted-foreground shadow-none"
                       >
                         <AlertTriangle className="mr-2 h-4 w-4" />
                         Noch keine Sportdarts-Daten verfügbar
                       </Button>
-                      <div className="text-center text-[10px] font-semibold leading-4 text-white/35">
+                      <div className="text-center text-xs font-semibold leading-4 text-muted-foreground">
                         Die Übernahme wird erst freigeschaltet, sobald Sportdarts einen vollständigen Endstand und eingesetzte Spieler liefert.
                       </div>
                     </div>
@@ -4278,7 +4271,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                         variant="outline"
                         disabled={sportdartsSyncActionLoading}
                         onClick={() => void submitSportdartsSync("review")}
-                        className="h-11 w-full rounded-xl border-amber-300/30 bg-amber-500/[0.10] font-black text-amber-100 hover:border-amber-300/50 hover:bg-amber-500/[0.16] hover:text-white disabled:opacity-50"
+                        className="h-11 w-full rounded-xl border-amber-300/30 bg-amber-500/[0.10] font-semibold text-amber-100 hover:border-amber-300/50 hover:bg-amber-500/[0.16] hover:text-white disabled:opacity-50"
                       >
                         {sportdartsSyncActionLoading ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -4287,7 +4280,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                         )}
                         Zur Admin-Prüfung senden
                       </Button>
-                      <div className="text-center text-[10px] font-semibold leading-4 text-white/35">
+                      <div className="text-center text-xs font-semibold leading-4 text-muted-foreground">
                         Der Fall wird gespeichert. Die Admin-Oberfläche für Freigabe oder Korrektur bauen wir als nächsten Schritt.
                       </div>
                     </div>
@@ -4297,7 +4290,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                     type="button"
                     disabled={sportdartsSyncActionLoading}
                     onClick={() => void submitSportdartsSync("apply")}
-                    className="h-12 w-full rounded-xl bg-emerald-500 font-black text-[#03120b] shadow-[0_0_24px_rgba(16,185,129,.16)] transition hover:bg-emerald-400 disabled:opacity-50"
+                    className="h-12 w-full rounded-xl bg-emerald-500 font-semibold text-[#03120b] shadow-[0_0_24px_rgba(16,185,129,.16)] transition hover:bg-emerald-400 disabled:opacity-50"
                   >
                     {sportdartsSyncActionLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -4315,7 +4308,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
             <Button
               type="button"
               onClick={() => setSportdartsSyncOpen(false)}
-              className="h-10 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-500/90 sm:w-auto"
+              className="h-10 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-500/90 sm:w-auto"
             >
               Schließen
             </Button>
@@ -4325,9 +4318,9 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
 
 	  {/* Foto Modal */}
-	  
-	  
-	  
+
+
+
 
      <Dialog
   open={isTeamPhotoDialogOpen && selectedMatchForTeamPhoto !== null}
@@ -4341,7 +4334,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
     }
   }}
 >
-  <DialogContent className="w-[94vw] max-w-md overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#070a0f]/95 p-0 text-white shadow-[0_30px_120px_-45px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+  <DialogContent className="w-[94vw] max-w-md overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#070a0f]/95 p-0 text-white shadow-[0_30px_120px_-45px_rgba(0,0,0,.98)] ">
 
   {(() => {
     const currentMatch = matches.find((m) => m.id === selectedMatchForTeamPhoto)
@@ -4350,7 +4343,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
     return (
       <>
         {/* Header – dezentes Orange */}
-        <div className="border-b border-slate-800 bg-slate-950 px-4 py-4">
+        <div className="border-b border-border bg-background px-4 py-4">
           <DialogTitle className="text-sm font-bold text-white">
             Teamfoto
           </DialogTitle>
@@ -4451,7 +4444,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
           <Button
             onClick={handleTeamPhotoUpload}
             disabled={teamPhotoUploading || !teamPhotoFile}
-            className="h-10 rounded-xl bg-orange-500 font-bold text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 active:scale-[0.99]"
+            className="h-10 rounded-xl bg-orange-500 font-bold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 active:scale-[0.99]"
           >
             {teamPhotoUploading ? "Upload..." : "Speichern"}
           </Button>
@@ -4472,7 +4465,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
 
 
- 
+
     </>
   )
 }

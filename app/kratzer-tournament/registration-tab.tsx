@@ -79,20 +79,20 @@ export function RegistrationTab({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="text-foreground h-2 bg-card  " />
         <div className="p-4 sm:p-5">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Turnier-Registrierung</h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <h2 className="text-lg sm:text-xl font-bold text-foreground">Turnier-Registrierung</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             Spieler auswählen, registrieren und Bezahlstatus direkt verwalten.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <Card className="rounded-2xl border border-border shadow-sm overflow-hidden">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2 text-gray-900">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
               <Users className="h-5 w-5 text-orange-600" />
               Verfügbare Spieler
             </CardTitle>
@@ -103,25 +103,25 @@ export function RegistrationTab({
 
           <CardContent className="space-y-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Spieler suchen..."
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
-                className="pl-10 h-11 border-gray-200 focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50"
+                className="pl-10 h-11 border-border focus:border-orange-500 focus:ring-orange-500 bg-muted/50"
               />
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-3 h-[420px] overflow-y-auto">
+            <div className="rounded-2xl border border-border bg-muted/60 p-3 h-[420px] overflow-y-auto">
               {fetchingAvailablePlayers ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span className="text-sm">Spieler werden geladen...</span>
                   </div>
                 </div>
               ) : filteredAvailablePlayers.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-center text-sm text-gray-500 px-4">
+                <div className="flex items-center justify-center h-full text-center text-sm text-muted-foreground px-4">
                   {filterText ? "Keine Spieler gefunden." : "Alle Spieler sind bereits registriert oder es sind keine vorhanden."}
                 </div>
               ) : (
@@ -133,14 +133,14 @@ export function RegistrationTab({
                       className={`w-full text-left rounded-2xl border p-3 transition-all ${
                         isPlayerSelected(player)
                           ? "border-orange-300 bg-orange-50"
-                          : "border-gray-200 bg-white hover:bg-gray-50"
+                          : "border-border bg-card hover:bg-muted"
                       }`}
                       onClick={() => handleSelectPlayer(player)}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="font-medium text-gray-900 truncate">{player.name}</div>
-                          <div className="mt-1 text-xs text-gray-500 flex flex-wrap gap-2">
+                          <div className="font-medium text-foreground truncate">{player.name}</div>
+                          <div className="mt-1 text-xs text-muted-foreground flex flex-wrap gap-2">
                             <span>{player.ligastatus || "Ohne Ligastatus"}</span>
                             <span>•</span>
                             <span>{player.verein || "Ohne Verein"}</span>
@@ -175,9 +175,9 @@ export function RegistrationTab({
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <Card className="rounded-2xl border border-border shadow-sm overflow-hidden">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2 text-gray-900">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2 text-foreground">
               <List className="h-5 w-5 text-orange-600" />
               Registrierte Spieler ({registeredPlayers.length})
             </CardTitle>
@@ -187,23 +187,23 @@ export function RegistrationTab({
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-3 h-[420px] overflow-y-auto">
+            <div className="rounded-2xl border border-border bg-muted/60 p-3 h-[420px] overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span className="text-sm">Registrierungen werden geladen...</span>
                   </div>
                 </div>
               ) : registeredPlayers.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-center text-sm text-gray-500 px-4">
+                <div className="flex items-center justify-center h-full text-center text-sm text-muted-foreground px-4">
                   Keine Spieler registriert.
                 </div>
               ) : (
-                <div className="rounded-xl overflow-hidden border border-gray-200 bg-white">
+                <div className="rounded-xl overflow-hidden border border-border bg-card">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50 hover:bg-gray-50">
+                      <TableRow className="bg-muted hover:bg-muted">
                         <TableHead>Name</TableHead>
                         <TableHead>Ligastatus</TableHead>
                         <TableHead className="text-center">Bezahlt</TableHead>
@@ -212,8 +212,8 @@ export function RegistrationTab({
                     <TableBody>
                       {registeredPlayers.map((player) => (
                         <TableRow key={player.id}>
-                          <TableCell className="font-medium text-gray-900">{player.name}</TableCell>
-                          <TableCell className="text-gray-600">{player.ligastatus || "—"}</TableCell>
+                          <TableCell className="font-medium text-foreground">{player.name}</TableCell>
+                          <TableCell className="text-muted-foreground">{player.ligastatus || "—"}</TableCell>
                           <TableCell className="text-center">
                             <Checkbox
                               checked={player.paid || false}

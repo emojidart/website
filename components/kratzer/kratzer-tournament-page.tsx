@@ -964,23 +964,23 @@ export function KratzerTournamentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-muted p-4">
         <Loader2 className="h-16 w-16 animate-spin text-primary-dark" />
-        <p className="mt-4 text-gray-700 text-lg font-semibold">Lade Turnierdaten...</p>
+        <p className="mt-4 text-muted-foreground text-lg font-semibold">Lade Turnierdaten...</p>
       </div>
     )
   }
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-100">
+      <div className="min-h-screen flex flex-col bg-muted">
         <KratzerMartinStatus display={announcementDisplay} />
       <Header />
         <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
           <Card className="w-full max-w-md p-6 shadow-lg">
             <CardTitle className="text-2xl font-bold text-center mb-6">Zugriff erforderlich</CardTitle>
             <CardContent className="text-center">
-              <p className="mb-4 text-gray-700">Bitte melden Sie sich an, um auf das Kratzer-Turnier zuzugreifen.</p>
+              <p className="mb-4 text-muted-foreground">Bitte melden Sie sich an, um auf das Kratzer-Turnier zuzugreifen.</p>
               <Button onClick={() => (window.location.href = "/spielerdatenbank")} className="w-full">
                 Zur Anmeldung
               </Button>
@@ -992,7 +992,7 @@ export function KratzerTournamentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-slate-950">
+    <div className="min-h-screen bg-[#f4f6f8] text-foreground">
       <KratzerMartinStatus display={announcementDisplay} />
       <Header />
 
@@ -1007,7 +1007,7 @@ export function KratzerTournamentPage() {
         )}
 
         {!centralEventId && <TournamentTabs activeTab={activeTab} setActiveTab={setActiveTab} />}
-        
+
 
         {activeTab === "register" ? (
           <RegistrationTab
@@ -1065,10 +1065,10 @@ export function KratzerTournamentPage() {
               icon={<Monitor className="h-6 w-6 text-orange-600" />}
             >
               {tournamentState.boards.length === 0 ? (
-                <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50/70 px-6 py-14 text-center">
-                  <p className="text-lg font-black text-slate-900">Noch keine aktive Runde</p>
-                  <p className="mt-2 text-sm font-medium text-slate-500">Starte die nächste Runde, sobald alle Einstellungen passen.</p>
-                  <Button onClick={startNewRound} className="mt-6 h-11 rounded-xl bg-orange-600 px-5 font-black text-white hover:bg-orange-700">
+                <div className="rounded-[24px] border border-dashed border-border bg-muted/70 px-6 py-14 text-center">
+                  <p className="text-lg font-semibold text-foreground">Noch keine aktive Runde</p>
+                  <p className="mt-2 text-sm font-medium text-muted-foreground">Starte die nächste Runde, sobald alle Einstellungen passen.</p>
+                  <Button onClick={startNewRound} className="mt-6 h-11 rounded-xl bg-orange-600 px-5 font-semibold text-white hover:bg-orange-700">
                     <Play className="h-4 w-4 mr-2" />
                     Neue Runde starten
                   </Button>

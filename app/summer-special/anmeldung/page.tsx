@@ -663,7 +663,7 @@ export default function SummerSpecialRegistrationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24 md:pb-0">
+    <div className="min-h-screen bg-muted text-foreground font-sans pb-24 md:pb-0">
       <Header />
 
       <main className="pt-16 sm:pt-14">
@@ -674,7 +674,7 @@ export default function SummerSpecialRegistrationPage() {
           animate="visible"
         >
           <motion.div variants={itemVariants} className="mb-5">
-            <div className="rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
+            <div className="rounded-3xl border border-border/70 bg-card shadow-md ring-1 ring-black/5 overflow-hidden">
               <div className="p-5 sm:p-7">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
@@ -682,16 +682,16 @@ export default function SummerSpecialRegistrationPage() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
+                    <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-100">
                       EMD SUMMER SPECIAL
                     </div>
 
-                    <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">
+                    <h1 className="mt-2 text-2xl sm:text-3xl font-semibold leading-tight">
                       Summer Special Anmeldung
                     </h1>
 
-                    <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-3xl">
-                     
+                    <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-3xl">
+
                     </p>
 
                     <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-2">
@@ -706,10 +706,10 @@ export default function SummerSpecialRegistrationPage() {
                         <strong>10 Minuten vor Start</strong>
                       </div>
 
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700">
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground">
                         <Trophy className="h-4 w-4 text-orange-700" />
                         Startgeld:{" "}
-                        <strong className="text-gray-900">
+                        <strong className="text-foreground">
                           {Number(series?.startgeld ?? 0).toFixed(2)} €
                         </strong>
                       </div>
@@ -718,14 +718,14 @@ export default function SummerSpecialRegistrationPage() {
                 </div>
               </div>
 
-              <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
+              <div className="text-foreground h-1.5 w-full bg-card   " />
             </div>
           </motion.div>
 
           {loading ? (
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm">
+            <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-orange-600" />
-              <div className="mt-2 text-sm font-semibold text-gray-600">
+              <div className="mt-2 text-sm font-semibold text-muted-foreground">
                 Summer Special wird geladen...
               </div>
             </div>
@@ -751,28 +751,28 @@ export default function SummerSpecialRegistrationPage() {
 
               <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,520px)_minmax(0,1fr)] gap-5">
                 <motion.div variants={itemVariants}>
-                  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                    <div className="p-5 border-b border-gray-100">
+                  <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                    <div className="p-5 border-b border-border">
                       <div className="flex items-center gap-2">
                         <UserPlus className="h-5 w-5 text-orange-600" />
-                        <h2 className="text-lg font-black text-gray-900">
+                        <h2 className="text-lg font-semibold text-foreground">
                           Jetzt anmelden
                         </h2>
                       </div>
 
-                      <div className="mt-2 text-sm font-semibold text-gray-600">
+                      <div className="mt-2 text-sm font-semibold text-muted-foreground">
                         {registrationInfoText}
                       </div>
                     </div>
 
                     <div className="p-5">
                       {todayEvent ? (
-                        <div className="mb-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                          <div className="font-black text-gray-900">
+                        <div className="mb-4 rounded-2xl border border-border bg-muted p-4">
+                          <div className="font-semibold text-foreground">
                             {todayEvent.title}
                           </div>
 
-                          <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-600">
+                          <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
                             <span className="inline-flex items-center gap-1">
                               <Calendar className="h-4 w-4 text-orange-600" />
                               {todayEvent.dateLabel}
@@ -787,8 +787,8 @@ export default function SummerSpecialRegistrationPage() {
                             <div
                               className={
                                 currentStatus.registrationClosed
-                                  ? "mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-800"
-                                  : "mt-3 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-xs font-black text-green-800"
+                                  ? "mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-800"
+                                  : "mt-3 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-800"
                               }
                             >
                               {currentStatus.registrationClosed
@@ -798,7 +798,7 @@ export default function SummerSpecialRegistrationPage() {
                                   )}`}
                             </div>
                           ) : (
-                            <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-black text-orange-800">
+                            <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-800">
                               Anmeldung erst am Turniertag möglich
                             </div>
                           )}
@@ -810,7 +810,7 @@ export default function SummerSpecialRegistrationPage() {
                       )}
 
                       {accountLoading ? (
-                        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm font-bold text-gray-600 flex items-center gap-2">
+                        <div className="rounded-2xl border border-border bg-muted p-4 text-sm font-bold text-muted-foreground flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
                           Anmeldung wird vorbereitet...
                         </div>
@@ -821,17 +821,17 @@ export default function SummerSpecialRegistrationPage() {
                           <div className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
                             <div>
-                              <div className="font-black text-gray-900">
+                              <div className="font-semibold text-foreground">
                                 Mitglieder-Anmeldung
                               </div>
                               <div className="mt-1 text-sm text-green-800 font-semibold">
-                                
+
                               </div>
                             </div>
                           </div>
 
                           {memberAlreadyRegistered && ownRegistration ? (
-                            <div className="mt-4 rounded-xl border border-green-300 bg-white px-3 py-2 text-xs font-black text-green-800">
+                            <div className="mt-4 rounded-xl border border-green-300 bg-card px-3 py-2 text-xs font-semibold text-green-800">
                               Du bist bereits angemeldet.
                             </div>
                           ) : null}
@@ -886,20 +886,20 @@ export default function SummerSpecialRegistrationPage() {
                           <div className="flex items-start gap-2">
                             <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
                             <div>
-                              <div className="font-black text-gray-900">
+                              <div className="font-semibold text-foreground">
                                 Gast-Anmeldung
                               </div>
                               <div className="mt-1 text-sm text-green-800 font-semibold">
-                               
+
                               </div>
                             </div>
                           </div>
 
-                          <div className="mt-4 rounded-2xl border border-green-200 bg-white p-4">
-                            <div className="text-xs font-black text-green-700 uppercase">
+                          <div className="mt-4 rounded-2xl border border-green-200 bg-card p-4">
+                            <div className="text-xs font-semibold text-green-700 uppercase">
                               Spieler
                             </div>
-                            <div className="mt-1 text-lg font-black text-gray-900">
+                            <div className="mt-1 text-lg font-semibold text-foreground">
                               {guestPlayerName || "—"}
                             </div>
                             <div className="mt-1 text-sm font-semibold text-green-800">
@@ -908,7 +908,7 @@ export default function SummerSpecialRegistrationPage() {
                           </div>
 
                           {guestAlreadyRegistered && ownRegistration ? (
-                            <div className="mt-4 rounded-xl border border-green-300 bg-white px-3 py-2 text-xs font-black text-green-800">
+                            <div className="mt-4 rounded-xl border border-green-300 bg-card px-3 py-2 text-xs font-semibold text-green-800">
                               Du bist bereits angemeldet.
                             </div>
                           ) : null}
@@ -985,7 +985,7 @@ export default function SummerSpecialRegistrationPage() {
                           <div className="flex items-start gap-2">
                             <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
                             <div>
-                              <div className="font-black text-orange-900">
+                              <div className="font-semibold text-orange-900">
                                 Anmeldung nicht verfügbar
                               </div>
                               <div className="mt-1 text-sm font-semibold text-orange-900">
@@ -1015,23 +1015,23 @@ export default function SummerSpecialRegistrationPage() {
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
-                  <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                    <div className="p-5 border-b border-gray-100">
+                  <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                    <div className="p-5 border-b border-border">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
                             <Users className="h-5 w-5 text-orange-600" />
-                            <h2 className="text-lg font-black text-gray-900">
+                            <h2 className="text-lg font-semibold text-foreground">
                               Aktuelle Anmeldungen
                             </h2>
                           </div>
 
-                          <div className="mt-1 text-sm font-semibold text-gray-500">
+                          <div className="mt-1 text-sm font-semibold text-muted-foreground">
                             {registeredPlayers.length} Spieler angemeldet
                           </div>
                         </div>
 
-                        <div className="rounded-xl bg-green-100 text-green-800 px-3 py-2 text-xs font-black">
+                        <div className="rounded-xl bg-green-100 text-green-800 px-3 py-2 text-xs font-semibold">
                           ANGEMELDET
                         </div>
                       </div>
@@ -1066,7 +1066,7 @@ export default function SummerSpecialRegistrationPage() {
                                       #{index + 1}
                                     </div>
 
-                                    <div className="font-black text-gray-900">
+                                    <div className="font-semibold text-foreground">
                                       {player.player_name}
                                     </div>
 
@@ -1084,8 +1084,8 @@ export default function SummerSpecialRegistrationPage() {
                                   <span
                                     className={
                                       isOwn
-                                        ? "rounded-full bg-orange-600 text-white px-3 py-1 text-[11px] font-black"
-                                        : "rounded-full bg-green-600 text-white px-3 py-1 text-[11px] font-black"
+                                        ? "rounded-full bg-orange-600 text-white px-3 py-1 text-xs font-semibold"
+                                        : "rounded-full bg-green-600 text-white px-3 py-1 text-xs font-semibold"
                                     }
                                   >
                                     {isOwn ? "DU" : "ANGEMELDET"}
@@ -1096,7 +1096,7 @@ export default function SummerSpecialRegistrationPage() {
                           })}
                         </div>
                       ) : (
-                        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 text-sm font-semibold text-gray-600">
+                        <div className="rounded-2xl border border-border bg-muted p-5 text-sm font-semibold text-muted-foreground">
                           Noch keine Anmeldungen vorhanden.
                         </div>
                       )}

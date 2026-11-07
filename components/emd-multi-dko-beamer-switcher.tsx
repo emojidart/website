@@ -34,7 +34,7 @@ export default function MultiDkoBeamerSwitcher({ runs, tvMode = false }: { runs:
   }, [pairKey, paused, loaded])
 
   return (
-    <main className="fixed inset-0 overflow-hidden bg-[#050608] text-white" onMouseEnter={() => { if (!tvMode) setShowControls(true) }} onMouseLeave={() => setShowControls(false)}>
+    <main className="fixed inset-0 overflow-hidden bg-background text-white" onMouseEnter={() => { if (!tvMode) setShowControls(true) }} onMouseLeave={() => setShowControls(false)}>
       {sorted.map((run, index) => {
         const active = current?.id === run.id
         return (
@@ -45,7 +45,7 @@ export default function MultiDkoBeamerSwitcher({ runs, tvMode = false }: { runs:
             onLoad={() => setLoaded(old => ({ ...old, [run.id]: true }))}
             allow="autoplay; fullscreen"
             allowFullScreen
-            className="absolute inset-0 h-full w-full border-0 bg-[#050608]"
+            className="absolute inset-0 h-full w-full border-0 bg-background"
             style={{
               opacity: active ? 1 : 0,
               zIndex: active ? 2 : 1,
@@ -55,26 +55,26 @@ export default function MultiDkoBeamerSwitcher({ runs, tvMode = false }: { runs:
           />
         )
       })}
-      <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-white/15 bg-[#070a10]/85 px-5 py-2.5 text-center shadow-xl backdrop-blur-md">
+      <div className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-white/15 bg-[#070a10]/85 px-5 py-2.5 text-center shadow-xl ">
         <div className="flex items-center justify-center gap-3 whitespace-nowrap">
           <span className="h-2 w-2 rounded-full bg-orange-400" />
-          <span className="text-[clamp(10px,.9vw,15px)] font-black uppercase tracking-[.14em]">{current?.division === "herren" ? "Herren-DKO" : "Damen-DKO"}</span>
-          <span className="text-xs font-medium text-slate-400">·</span>
-          <span className="max-w-[30vw] truncate text-[clamp(10px,.8vw,13px)] font-semibold text-slate-300">{current?.name}</span>
+          <span className="text-[clamp(10px,.9vw,15px)] font-semibold uppercase tracking-[.14em]">{current?.division === "herren" ? "Herren-DKO" : "Damen-DKO"}</span>
+          <span className="text-xs font-medium text-muted-foreground">·</span>
+          <span className="max-w-[30vw] truncate text-[clamp(10px,.8vw,13px)] font-semibold text-muted-foreground">{current?.name}</span>
         </div>
       </div>
-      {!tvMode && <div className={`absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-white/15 bg-[#090d15]/95 p-2 shadow-2xl backdrop-blur-xl transition-opacity ${showControls ? "opacity-100" : "opacity-0"}`}>
-        <div className="flex items-center gap-2 px-2 text-xs font-bold text-slate-400"><MonitorPlay size={16}/> BEAMER</div>
+      {!tvMode && <div className={`absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-white/15 bg-[#090d15]/95 p-2 shadow-2xl  transition-opacity ${showControls ? "opacity-100" : "opacity-0"}`}>
+        <div className="flex items-center gap-2 px-2 text-xs font-bold text-muted-foreground"><MonitorPlay size={16}/> BEAMER</div>
         {sorted.map(run => (
-          <button key={run.id} type="button" onClick={() => { setSelectedId(run.id); setPaused(true) }} disabled={!loaded[run.id]} className={`rounded-xl px-5 py-2 text-sm font-bold transition ${current?.id === run.id ? "bg-orange-600 text-white" : "bg-white/10 text-slate-200 hover:bg-white/20"} disabled:cursor-not-allowed disabled:opacity-40`}>
+          <button key={run.id} type="button" onClick={() => { setSelectedId(run.id); setPaused(true) }} disabled={!loaded[run.id]} className={`rounded-xl px-5 py-2 text-sm font-bold transition ${current?.id === run.id ? "bg-orange-600 text-white" : "bg-white/10 text-muted-foreground hover:bg-white/20"} disabled:cursor-not-allowed disabled:opacity-40`}>
             {run.division === "herren" ? "Herren" : "Damen"}
           </button>
         ))}
-        <button type="button" onClick={() => setPaused(v => !v)} className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-bold text-slate-200 hover:bg-white/20" title={paused ? "Automatischen Wechsel fortsetzen" : "Automatischen Wechsel pausieren"}>
+        <button type="button" onClick={() => setPaused(v => !v)} className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-bold text-muted-foreground hover:bg-white/20" title={paused ? "Automatischen Wechsel fortsetzen" : "Automatischen Wechsel pausieren"}>
           {paused ? <Play size={15}/> : <Pause size={15}/>} {paused ? "Auto an" : "Pause"}
         </button>
       </div>}
-      {!tvMode && <div className="pointer-events-none absolute bottom-4 right-5 z-10 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-bold text-slate-300/80">
+      {!tvMode && <div className="pointer-events-none absolute bottom-4 right-5 z-10 flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-[11px] font-bold text-muted-foreground">
         <ArrowLeftRight size={13}/>{paused ? "MANUELL" : "WECHSEL ALLE 15 S"}
       </div>}
     </main>

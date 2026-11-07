@@ -33,7 +33,7 @@ export default function LigaTabellenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-card text-foreground font-sans">
       <Header />
       <main className="pt-8 pb-20">
         <motion.div
@@ -44,8 +44,8 @@ export default function LigaTabellenPage() {
         >
           {/* Hero Section */}
           <motion.div variants={itemVariants} className="text-center mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 backdrop-blur-sm">
+            <div className="bg-card   rounded-2xl shadow-xl border border-orange-200 p-8 md:p-12 text-white">
+              <div className="bg-white/10 rounded-full p-4 w-20 h-20 mx-auto mb-6 ">
                 <Table className="h-12 w-12 text-white mx-auto" />
               </div>
               <h1 className="text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-4">
@@ -71,8 +71,8 @@ export default function LigaTabellenPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">Herbstsaison 2025</div>
-                <p className="text-sm text-gray-600">Aktuelle Saison</p>
+                <div className="text-2xl font-bold text-foreground">Herbstsaison 2025</div>
+                <p className="text-sm text-muted-foreground">Aktuelle Saison</p>
               </CardContent>
             </Card>
 
@@ -84,8 +84,8 @@ export default function LigaTabellenPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">18+ Divisionen</div>
-                <p className="text-sm text-gray-600">Salzburg, Pongau, Lungau</p>
+                <div className="text-2xl font-bold text-foreground">18+ Divisionen</div>
+                <p className="text-sm text-muted-foreground">Salzburg, Pongau, Lungau</p>
               </CardContent>
             </Card>
 
@@ -97,8 +97,8 @@ export default function LigaTabellenPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">Steeldart</div>
-                <p className="text-sm text-gray-600">5 neue Divisionen</p>
+                <div className="text-2xl font-bold text-foreground">Steeldart</div>
+                <p className="text-sm text-muted-foreground">5 neue Divisionen</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -109,11 +109,11 @@ export default function LigaTabellenPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-3">
                       <Table className="h-6 w-6 text-orange-600" />
                       Liga Tabellen
                     </CardTitle>
-                    <CardDescription className="text-gray-600 mt-2">
+                    <CardDescription className="text-muted-foreground mt-2">
                       Aktuelle Tabellen und Spielerstatistiken der Sportdarts Liga Austria
                     </CardDescription>
                   </div>
@@ -156,7 +156,7 @@ export default function LigaTabellenPage() {
                     sandbox="allow-scripts allow-same-origin allow-forms"
                   />
                   {isLoading && (
-                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-b-lg">
+                    <div className="absolute inset-0 bg-card flex items-center justify-center rounded-b-lg">
                       <div className="flex items-center gap-3 text-orange-600">
                         <RefreshCw className="h-6 w-6 animate-spin" />
                         <span className="font-medium">Wird aktualisiert...</span>
@@ -177,8 +177,8 @@ export default function LigaTabellenPage() {
                     <ExternalLink className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-2">Über die Liga Tabellen</h3>
-                    <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                    <h3 className="font-bold text-foreground mb-2">Über die Liga Tabellen</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed mb-3">
                       Diese Seite zeigt die aktuellen Tabellen der Sportdarts Liga Austria direkt von der offiziellen
                       Website. Hier findest du alle Divisionen von Salzburg, Pongau und Lungau sowie die neuen
                       Steeldart-Ligen.
@@ -205,7 +205,7 @@ export default function LigaTabellenPage() {
         </motion.div>
       </main>
 
-      <footer className="py-6 bg-gray-200 text-gray-600 text-sm text-center border-t border-gray-300">
+      <footer className="py-6 bg-secondary text-muted-foreground text-sm text-center border-t border-border">
         <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
       </footer>
     </div>

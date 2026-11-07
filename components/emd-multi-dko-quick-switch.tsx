@@ -71,9 +71,9 @@ export function EmdMultiDkoQuickSwitch({ tournamentId, centralEventId }: { tourn
               // bracket when tournamentId changes, preserving the surrounding UI.
               startTransition(() => router.push(`${route}?${params.toString()}`, { scroll: false }))
             }}
-            className={`min-h-11 min-w-[126px] rounded-xl border px-4 py-2 text-sm font-bold tracking-wide transition-all duration-200 ${active ? "border-orange-400/75 bg-gradient-to-r from-orange-500 to-amber-500 text-[#17100b] shadow-[0_3px_20px_-9px_rgba(249,115,22,.85)]" : run ? "border-white/10 bg-white/[0.055] text-white hover:border-orange-400/40 hover:bg-orange-500/10" : "cursor-not-allowed border-white/5 bg-white/[0.025] text-white/35"}`}
+            className={`min-h-11 min-w-[126px] rounded-xl border px-4 py-2 text-sm font-bold tracking-wide transition-all duration-200 ${active ? "text-foreground border-orange-400/75 bg-card shadow-[0_3px_20px_-9px_rgba(249,115,22,.85)]" : run ? "border-white/10 bg-white/[0.055] text-white hover:border-orange-400/40 hover:bg-orange-500/10" : "cursor-not-allowed border-white/5 bg-white/[0.025] text-muted-foreground"}`}
           >
-            <span className="flex items-center justify-center gap-2"><span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-[#17100b]" : run ? "bg-emerald-400" : "bg-white/25"}`} />{division === "herren" ? "Herren" : "Damen"}<span className="text-[10px] font-semibold opacity-70">{active ? "AKTIV" : !run ? "WARTET" : "LIVE"}</span></span>
+            <span className="flex items-center justify-center gap-2"><span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-primary" : run ? "bg-emerald-400" : "bg-white/25"}`} />{division === "herren" ? "Herren" : "Damen"}<span className="text-xs font-semibold opacity-70">{active ? "AKTIV" : !run ? "WARTET" : "LIVE"}</span></span>
           </button>
         )
       })}

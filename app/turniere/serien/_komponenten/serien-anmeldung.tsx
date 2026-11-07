@@ -575,8 +575,8 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
 
   if (loading || !series) {
     return (
-      <section className="rounded-[28px] border border-white/10 bg-black/35 p-5 backdrop-blur-xl sm:p-6">
-        <div className="flex items-center gap-2 text-white/45">
+      <section className="rounded-[28px] border border-white/10 bg-card p-5  sm:p-6">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
           Anmeldung wird geladen…
         </div>
@@ -596,30 +596,30 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
       : "Anmeldung geschlossen"
 
   return (
-    <section className="relative overflow-hidden rounded-[30px] border border-orange-300/[0.12] bg-black/40 p-4 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-6">
+    <section className="relative overflow-hidden rounded-[30px] border border-orange-300/[0.12] bg-card p-4 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-6">
       <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-orange-500/[0.10] blur-[75px]" />
 
       <div className="relative">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/15 bg-orange-500/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-orange-100/75">
+            <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/15 bg-orange-500/[0.07] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-100/75">
               <UserPlus className="h-3.5 w-3.5" />
               Turnieranmeldung
             </div>
-            <h2 className="mt-3 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">{series.name}</h2>
-            <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/45">
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">{series.name}</h2>
+            <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground">
               Melde dich für den nächsten Spieltag an oder verwalte deine bestehende Anmeldung.
             </p>
           </div>
 
-          <div className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-2 text-xs font-black ${
+          <div className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${
             ownRegistration && !ownWaiting
               ? "border-emerald-300/18 bg-emerald-500/[0.08] text-emerald-100"
               : ownWaiting
                 ? "border-amber-300/18 bg-amber-500/[0.08] text-amber-100"
                 : status.registrationOpen
                   ? "border-orange-300/18 bg-orange-500/[0.08] text-orange-100"
-                  : "border-white/[0.08] bg-white/[0.03] text-white/45"
+                  : "border-white/[0.08] bg-white/[0.03] text-muted-foreground"
           }`}>
             <span className={`h-2 w-2 rounded-full ${status.registrationOpen || ownRegistration ? "bg-current" : "bg-white/25"}`} />
             {registrationStateLabel}
@@ -629,17 +629,17 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
         {!currentEvent ? (
           <div className="mt-5 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-6 text-center">
             <CalendarDays className="mx-auto h-7 w-7 text-white/20" />
-            <div className="mt-3 font-black text-white/75">Kein weiterer Spieltag geplant</div>
-            <div className="mt-1 text-sm font-semibold text-white/35">Sobald ein neuer Turniertag feststeht, erscheint er hier.</div>
+            <div className="mt-3 font-semibold text-white/75">Kein weiterer Spieltag geplant</div>
+            <div className="mt-1 text-sm font-semibold text-muted-foreground">Sobald ein neuer Turniertag feststeht, erscheint er hier.</div>
           </div>
         ) : (
           <>
             <div className="mt-5 grid gap-3 xl:grid-cols-[1.25fr_.75fr]">
-              <div className="rounded-[24px] border border-orange-300/[0.10] bg-[linear-gradient(135deg,rgba(249,115,22,.08),rgba(255,255,255,.018))] p-4 sm:p-5">
+              <div className="text-foreground rounded-[24px] border border-orange-300/[0.10] bg-card p-4 sm:p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-100/45">Nächster Spieltag</div>
-                    <div className="mt-1 truncate text-xl font-black text-white sm:text-2xl">{currentEvent.title || "Spieltag"}</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-100/45">Nächster Spieltag</div>
+                    <div className="mt-1 truncate text-xl font-semibold text-white sm:text-2xl">{currentEvent.title || "Spieltag"}</div>
                     <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-white/48">
                       <CalendarDays className="h-4 w-4 text-orange-200/70" />
                       {formatDateTime(effectiveEventDate(currentEvent))}
@@ -679,9 +679,9 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                         <CheckCircle2 className={`h-5 w-5 ${ownWaiting ? "text-amber-200" : "text-emerald-200"}`} />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-lg font-black text-white/92">{ownWaiting ? "Warteposition" : "Anmeldung bestätigt"}</div>
+                        <div className="text-lg font-semibold text-white/92">{ownWaiting ? "Warteposition" : "Anmeldung bestätigt"}</div>
                         <div className="mt-1 truncate text-sm font-semibold text-white/48">{ownRegistration.player_name}</div>
-                        <div className="mt-1 text-xs font-semibold text-white/30">
+                        <div className="mt-1 text-xs font-semibold text-muted-foreground">
                           {ownWaiting
                             ? "Sobald sich ein weiterer Spieler anmeldet, bist du fix dabei."
                             : ownRegistration.payment_method === "credit"
@@ -698,7 +698,7 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                       variant="outline"
                       disabled={busy || !status.unregisterOpen}
                       onClick={() => void unregister()}
-                      className="h-11 rounded-xl border-red-300/20 bg-red-500/[0.035] px-4 font-black text-red-100 hover:bg-red-500/10"
+                      className="h-11 rounded-xl border-red-300/20 bg-red-500/[0.035] px-4 font-semibold text-red-100 hover:bg-red-500/10"
                     >
                       {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
                       Abmelden
@@ -706,18 +706,18 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                   </div>
                 </div>
               ) : accountLoading ? (
-                <div className="flex items-center gap-3 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 text-sm font-semibold text-white/45">
+                <div className="flex items-center gap-3 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 text-sm font-semibold text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin text-orange-200" />
                   Anmeldung wird vorbereitet…
                 </div>
               ) : !session?.user?.id ? (
                 <div className="rounded-[24px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
-                  <div className="font-black text-white/85">Für die Anmeldung einloggen</div>
+                  <div className="font-semibold text-white/85">Für die Anmeldung einloggen</div>
                   <div className="mt-1 text-sm font-semibold leading-6 text-white/42">{accountMessage}</div>
                   <Button
                     type="button"
                     onClick={() => { window.location.href = "/member-login" }}
-                    className="mt-4 h-11 rounded-xl bg-orange-600 px-5 font-black text-white hover:bg-orange-500"
+                    className="mt-4 h-11 rounded-xl bg-orange-600 px-5 font-semibold text-white hover:bg-orange-500"
                   >
                     <LogIn className="mr-2 h-4 w-4" />
                     Zum Login
@@ -738,9 +738,9 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                 <div className="rounded-[24px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/28">Anmeldung für</div>
-                      <div className="mt-1 text-lg font-black text-white/90">{playerName}</div>
-                      <div className="mt-1 text-xs font-semibold text-white/35">{accountType === "member" ? "Vereinsmitglied" : "Gastzugang"}</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.15em] text-white/28">Anmeldung für</div>
+                      <div className="mt-1 text-lg font-semibold text-white/90">{playerName}</div>
+                      <div className="mt-1 text-xs font-semibold text-muted-foreground">{accountType === "member" ? "Vereinsmitglied" : "Gastzugang"}</div>
                     </div>
 
                     <div className="flex flex-col gap-2 sm:flex-row">
@@ -748,7 +748,7 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                         type="button"
                         disabled={busy}
                         onClick={() => void register("on_site")}
-                        className="h-11 rounded-xl bg-orange-600 px-5 font-black text-white shadow-[0_12px_30px_-16px_rgba(249,115,22,.8)] hover:bg-orange-500"
+                        className="h-11 rounded-xl bg-orange-600 px-5 font-semibold text-white shadow-[0_12px_30px_-16px_rgba(249,115,22,.8)] hover:bg-orange-500"
                       >
                         {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                         {Number(series.startgeld || 0) > 0 ? "Anmelden · Zahlung vor Ort" : "Jetzt anmelden"}
@@ -765,10 +765,10 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
                               ? `Startgeld ${formatMoney(series.startgeld)} vom Guthaben bezahlen`
                               : `Nicht genügend Guthaben. Benötigt: ${formatMoney(series.startgeld)}`
                           }
-                          className={`h-11 rounded-xl px-5 font-black ${
+                          className={`h-11 rounded-xl px-5 font-semibold ${
                             canUseCredit
                               ? "border-emerald-300/20 bg-emerald-500/[0.055] text-emerald-100 hover:bg-emerald-500/10"
-                              : "cursor-not-allowed border-white/[0.08] bg-white/[0.025] text-white/35"
+                              : "cursor-not-allowed border-white/[0.08] bg-white/[0.025] text-muted-foreground"
                           }`}
                         >
                           <WalletCards className="mr-2 h-4 w-4" />
@@ -784,7 +784,7 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
             </div>
 
             {message ? (
-              <div className="mt-3 rounded-2xl border border-white/[0.08] bg-black/25 px-4 py-3 text-sm font-bold text-white/68">
+              <div className="mt-3 rounded-2xl border border-white/[0.08] bg-card px-4 py-3 text-sm font-bold text-white/68">
                 {message}
               </div>
             ) : null}
@@ -796,12 +796,12 @@ export function SeriesRegistration({ seriesId }: { seriesId: string }) {
 }
 
 function CompactFact({ label, value, icon }: { label: string; value: string; icon: ReactNode }) {
-  return <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-3"><div className="flex items-center gap-1.5 text-white/28">{icon}<span className="text-[9px] font-black uppercase tracking-[0.12em]">{label}</span></div><div className="mt-1.5 text-sm font-black text-white/82">{value}</div></div>
+  return <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-3"><div className="flex items-center gap-1.5 text-white/28">{icon}<span className="text-xs font-semibold uppercase tracking-[0.12em]">{label}</span></div><div className="mt-1.5 text-sm font-semibold text-white/82">{value}</div></div>
 }
 function DeadlineCard({ label, value, icon, active }: { label: string; value: string; icon: ReactNode; active: boolean }) {
-  return <div className={`rounded-[22px] border p-3.5 ${active ? "border-orange-300/12 bg-orange-500/[0.045]" : "border-white/[0.07] bg-white/[0.02]"}`}><div className="flex items-center gap-1.5 text-white/30">{icon}<span className="text-[9px] font-black uppercase tracking-[0.12em]">{label}</span></div><div className="mt-1.5 text-xs font-black leading-5 text-white/72">{value}</div></div>
+  return <div className={`rounded-[22px] border p-3.5 ${active ? "border-orange-300/12 bg-orange-500/[0.045]" : "border-white/[0.07] bg-white/[0.02]"}`}><div className="flex items-center gap-1.5 text-muted-foreground">{icon}<span className="text-xs font-semibold uppercase tracking-[0.12em]">{label}</span></div><div className="mt-1.5 text-xs font-semibold leading-5 text-white/72">{value}</div></div>
 }
 function StatusMessage({ tone, text }: { tone: "warning" | "neutral"; text: string }) {
-  return <div className={`rounded-[22px] border p-4 text-sm font-semibold leading-6 ${tone === "warning" ? "border-amber-300/12 bg-amber-500/[0.05] text-amber-50/72" : "border-white/[0.08] bg-white/[0.025] text-white/50"}`}>{text}</div>
+  return <div className={`rounded-[22px] border p-4 text-sm font-semibold leading-6 ${tone === "warning" ? "border-amber-300/12 bg-amber-500/[0.05] text-amber-50/72" : "border-white/[0.08] bg-white/[0.025] text-muted-foreground"}`}>{text}</div>
 }
 

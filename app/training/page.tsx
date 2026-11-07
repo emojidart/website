@@ -545,7 +545,7 @@ export default function TrainingPage() {
       case "Profi":
         return "bg-red-100 text-red-700 border-red-300"
       default:
-        return "bg-gray-100 text-gray-700 border-gray-300"
+        return "bg-muted text-muted-foreground border-border"
     }
   }
 
@@ -562,7 +562,7 @@ export default function TrainingPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-card text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -576,7 +576,7 @@ export default function TrainingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-card text-foreground font-sans flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl">
@@ -590,19 +590,19 @@ export default function TrainingPage() {
         </Button>
 
         <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
+          <div className="text-foreground inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-card   rounded-3xl mb-4 sm:mb-6 shadow-xl">
             <Dumbbell className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Dart Training</h1>
-          <p className="text-lg sm:text-xl text-gray-600">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2">Dart Training</h1>
+          <p className="text-lg sm:text-xl text-muted-foreground">
             Verbessere deine Fähigkeiten mit gezielten Trainingsübungen
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-white">
+          <Card className="text-foreground border-orange-200 bg-card  ">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-orange-600" />
                 Gesamt Sessions
               </CardTitle>
@@ -612,9 +612,9 @@ export default function TrainingPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-red-200 bg-gradient-to-br from-red-50 to-white">
+          <Card className="text-foreground border-red-200 bg-card  ">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-red-600" />
                 Trainingsarten
               </CardTitle>
@@ -624,9 +624,9 @@ export default function TrainingPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-white">
+          <Card className="text-foreground border-green-200 bg-card  ">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 Abgeschlossen
               </CardTitle>
@@ -636,9 +636,9 @@ export default function TrainingPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+          <Card className="text-foreground border-blue-200 bg-card  ">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Flame className="h-4 w-4 text-blue-600" />
                 Diese Woche
               </CardTitle>
@@ -675,7 +675,7 @@ export default function TrainingPage() {
             {isRecording && selectedTraining ? (
               <div className="space-y-4">
                 <Card className="border-2 border-orange-500 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 pb-4">
+                  <CardHeader className="text-foreground bg-card   pb-4">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <div className="flex-1 min-w-0">
                         <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
@@ -694,48 +694,48 @@ export default function TrainingPage() {
                 </Card>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                  <Card className="border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-white">
+                  <Card className="text-foreground border-2 border-orange-200 bg-card  ">
                     <CardContent className="pt-4 sm:pt-6">
                       <div className="text-center">
                         <Clock className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-orange-600" />
                         <div className="text-2xl sm:text-3xl font-bold text-orange-600">{formatTime(sessionTime)}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 mt-1">Zeit</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground mt-1">Zeit</div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white">
+                  <Card className="text-foreground border-2 border-green-200 bg-card  ">
                     <CardContent className="pt-4 sm:pt-6">
                       <div className="text-center">
                         <CheckCircle2 className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-green-600" />
                         <div className="text-2xl sm:text-3xl font-bold text-green-600">{currentScore}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 mt-1">Score</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground mt-1">Score</div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+                  <Card className="text-foreground border-2 border-blue-200 bg-card  ">
                     <CardContent className="pt-4 sm:pt-6">
                       <div className="text-center">
                         <Target className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-blue-600" />
                         <div className="text-2xl sm:text-3xl font-bold text-blue-600">{dartsThrown}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 mt-1">Würfe</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground mt-1">Würfe</div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white">
+                  <Card className="text-foreground border-2 border-purple-200 bg-card  ">
                     <CardContent className="pt-4 sm:pt-6">
                       <div className="text-center">
                         <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-purple-600" />
                         <div className="text-2xl sm:text-3xl font-bold text-purple-600">{getAccuracy()}%</div>
-                        <div className="text-xs sm:text-sm text-gray-600 mt-1">Genauigkeit</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground mt-1">Genauigkeit</div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                <Card className="border-2 border-gray-200">
+                <Card className="border-2 border-border">
                   <CardHeader>
                     <CardTitle className="text-lg sm:text-xl">Live Training Session</CardTitle>
                   </CardHeader>
@@ -743,16 +743,16 @@ export default function TrainingPage() {
                     {(selectedTraining.id === "around-the-clock" ||
                       selectedTraining.id === "doubles-training" ||
                       selectedTraining.id === "triples-training") && (
-                      <div className="text-center p-6 sm:p-8 bg-gradient-to-br from-orange-100 to-red-100 rounded-xl border-2 border-orange-300">
-                        <div className="text-xs sm:text-sm text-gray-600 mb-2">Aktuelles Ziel</div>
+                      <div className="text-foreground text-center p-6 sm:p-8 bg-card   rounded-xl border-2 border-orange-300">
+                        <div className="text-xs sm:text-sm text-muted-foreground mb-2">Aktuelles Ziel</div>
                         <div className="text-5xl sm:text-7xl font-bold text-orange-600 mb-2">{currentTarget}</div>
                         <Progress value={(currentTarget / 20) * 100} className="h-2 sm:h-3 max-w-md mx-auto" />
-                        <div className="text-xs sm:text-sm text-gray-600 mt-2">{currentTarget} von 20</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground mt-2">{currentTarget} von 20</div>
                       </div>
                     )}
 
                     {isTrainingCompleted() && (
-                      <div className="text-center p-6 sm:p-8 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl border-2 border-green-400 animate-pulse">
+                      <div className="text-foreground text-center p-6 sm:p-8 bg-card   rounded-xl border-2 border-green-400 animate-pulse">
                         <Trophy className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-3 text-green-600" />
                         <div className="text-2xl sm:text-3xl font-bold text-green-700 mb-2">
                           Training abgeschlossen!
@@ -785,7 +785,7 @@ export default function TrainingPage() {
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center justify-center gap-3 sm:gap-4 p-3 sm:p-4 bg-muted rounded-lg border">
                       <Button
                         onClick={() => setCurrentScore(Math.max(0, currentScore - 1))}
                         variant="outline"
@@ -796,8 +796,8 @@ export default function TrainingPage() {
                         <Minus className="h-5 w-5 sm:h-6 sm:w-6" />
                       </Button>
                       <div className="text-center">
-                        <div className="text-xs sm:text-sm text-gray-600">Manueller Score</div>
-                        <div className="text-2xl sm:text-3xl font-bold text-gray-900">{currentScore}</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground">Manueller Score</div>
+                        <div className="text-2xl sm:text-3xl font-bold text-foreground">{currentScore}</div>
                       </div>
                       <Button
                         onClick={() => setCurrentScore(Math.min(selectedTraining.maxScore, currentScore + 1))}
@@ -841,7 +841,7 @@ export default function TrainingPage() {
 
                     {throwHistory.length > 0 && !isTrainingCompleted() && (
                       <div className="space-y-2">
-                        <h4 className="font-semibold text-sm text-gray-600">Letzte Würfe</h4>
+                        <h4 className="font-semibold text-sm text-muted-foreground">Letzte Würfe</h4>
                         <div className="flex flex-wrap gap-2">
                           {throwHistory
                             .slice(-10)
@@ -874,7 +874,7 @@ export default function TrainingPage() {
                       <Button
                         onClick={cancelTraining}
                         variant="outline"
-                        className="h-14 px-6 sm:px-8 border-gray-300 hover:bg-gray-100 bg-transparent touch-manipulation"
+                        className="h-14 px-6 sm:px-8 border-border hover:bg-muted bg-transparent touch-manipulation"
                       >
                         Abbrechen
                       </Button>
@@ -915,7 +915,7 @@ export default function TrainingPage() {
                           <>
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Bester Score:</span>
+                                <span className="text-muted-foreground">Bester Score:</span>
                                 <span className="font-bold text-green-600">
                                   {bestScore} / {training.maxScore}
                                 </span>
@@ -923,16 +923,16 @@ export default function TrainingPage() {
                               <Progress value={(bestScore / training.maxScore) * 100} className="h-2" />
                             </div>
                             <div className="flex justify-between text-sm pt-2 border-t">
-                              <span className="text-gray-600">Durchschnitt:</span>
+                              <span className="text-muted-foreground">Durchschnitt:</span>
                               <span className="font-semibold">{avgScore}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Sessions:</span>
+                              <span className="text-muted-foreground">Sessions:</span>
                               <span className="font-semibold">{sessionCount}</span>
                             </div>
                           </>
                         ) : (
-                          <div className="text-center py-4 text-gray-500 text-sm">
+                          <div className="text-center py-4 text-muted-foreground text-sm">
                             Noch keine Sessions aufgezeichnet
                           </div>
                         )}
@@ -1003,7 +1003,7 @@ export default function TrainingPage() {
                       return (
                         <div
                           key={training.id}
-                          className="border rounded-lg p-6 space-y-4 hover:bg-gray-50 transition-colors"
+                          className="border rounded-lg p-6 space-y-4 hover:bg-muted transition-colors"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -1012,7 +1012,7 @@ export default function TrainingPage() {
                               </div>
                               <div>
                                 <h3 className="font-bold text-lg">{training.name}</h3>
-                                <p className="text-sm text-gray-600">{sessionCount} Sessions absolviert</p>
+                                <p className="text-sm text-muted-foreground">{sessionCount} Sessions absolviert</p>
                               </div>
                             </div>
                             <Badge className={getDifficultyColor(training.difficulty)}>{training.difficulty}</Badge>
@@ -1022,7 +1022,7 @@ export default function TrainingPage() {
                             <div className="space-y-3">
                               <div>
                                 <div className="flex justify-between text-sm mb-2">
-                                  <span className="text-gray-600">Fortschritt</span>
+                                  <span className="text-muted-foreground">Fortschritt</span>
                                   <span className="font-bold">{completionRate}%</span>
                                 </div>
                                 <Progress value={completionRate} className="h-3" />
@@ -1031,23 +1031,23 @@ export default function TrainingPage() {
                               <div className="grid grid-cols-3 gap-4 pt-2">
                                 <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
                                   <div className="text-2xl font-bold text-green-600">{bestScore}</div>
-                                  <div className="text-xs text-gray-600 mt-1">Bester Score</div>
+                                  <div className="text-xs text-muted-foreground mt-1">Bester Score</div>
                                 </div>
                                 <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
                                   <div className="text-2xl font-bold text-blue-600">{avgScore}</div>
-                                  <div className="text-xs text-gray-600 mt-1">Durchschnitt</div>
+                                  <div className="text-xs text-muted-foreground mt-1">Durchschnitt</div>
                                 </div>
                                 <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-200">
                                   <div className="text-2xl font-bold text-orange-600">{sessionCount}</div>
-                                  <div className="text-xs text-gray-600 mt-1">Sessions</div>
+                                  <div className="text-xs text-muted-foreground mt-1">Sessions</div>
                                 </div>
                               </div>
                             </div>
                           ) : (
-                            <div className="text-center py-6 text-gray-500">
-                              <Circle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                            <div className="text-center py-6 text-muted-foreground">
+                              <Circle className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                               <p className="text-sm">Noch keine Daten vorhanden</p>
-                              <p className="text-xs text-gray-400 mt-1">Starte dein erstes Training!</p>
+                              <p className="text-xs text-muted-foreground mt-1">Starte dein erstes Training!</p>
                             </div>
                           )}
                         </div>
@@ -1074,7 +1074,7 @@ export default function TrainingPage() {
                             return (
                               <div
                                 key={session.id}
-                                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted transition-colors"
                               >
                                 <div className="flex items-center gap-4">
                                   <div className={`p-2 rounded-lg bg-${training.color}-100`}>
@@ -1082,7 +1082,7 @@ export default function TrainingPage() {
                                   </div>
                                   <div>
                                     <div className="font-semibold">{training.name}</div>
-                                    <div className="text-sm text-gray-500">
+                                    <div className="text-sm text-muted-foreground">
                                       {new Date(session.date).toLocaleDateString("de-DE", {
                                         day: "2-digit",
                                         month: "2-digit",
@@ -1096,7 +1096,7 @@ export default function TrainingPage() {
                                 <div className="flex items-center gap-4">
                                   <div className="text-right">
                                     <div className="text-2xl font-bold text-orange-600">{session.score}</div>
-                                    <div className="text-sm text-gray-500">von {session.maxScore}</div>
+                                    <div className="text-sm text-muted-foreground">von {session.maxScore}</div>
                                   </div>
                                   <Button
                                     variant="ghost"
@@ -1132,25 +1132,25 @@ export default function TrainingPage() {
                     {loadingTeamStats ? (
                       <div className="space-y-4">
                         {[1, 2, 3].map((i) => (
-                          <div key={i} className="p-6 border-2 rounded-lg bg-gray-50 animate-pulse">
+                          <div key={i} className="p-6 border-2 rounded-lg bg-muted animate-pulse">
                             <div className="flex items-center gap-4 mb-4">
-                              <div className="w-10 h-10 rounded-full bg-gray-300" />
+                              <div className="w-10 h-10 rounded-full bg-secondary" />
                               <div className="flex-1 space-y-2">
-                                <div className="h-5 bg-gray-300 rounded w-1/3" />
-                                <div className="h-4 bg-gray-200 rounded w-1/4" />
+                                <div className="h-5 bg-secondary rounded w-1/3" />
+                                <div className="h-4 bg-secondary rounded w-1/4" />
                               </div>
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                               {[1, 2, 3, 4].map((j) => (
-                                <div key={j} className="p-3 bg-gray-200 rounded-lg h-20" />
+                                <div key={j} className="p-3 bg-secondary rounded-lg h-20" />
                               ))}
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : teamStats.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
-                        <Users className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                         <p>Noch keine Team-Daten verfügbar</p>
                       </div>
                     ) : (
@@ -1169,7 +1169,7 @@ export default function TrainingPage() {
                               className={`p-6 border-2 rounded-lg transition-all ${
                                 member.user_id === session?.user?.id
                                   ? "border-orange-400 bg-orange-50"
-                                  : "border-gray-200 bg-white"
+                                  : "border-border bg-card"
                               }`}
                             >
                               <div className="flex items-center justify-between mb-4">
@@ -1179,10 +1179,10 @@ export default function TrainingPage() {
                                       index === 0
                                         ? "bg-yellow-400 text-yellow-900"
                                         : index === 1
-                                          ? "bg-gray-300 text-gray-700"
+                                          ? "bg-secondary text-muted-foreground"
                                           : index === 2
                                             ? "bg-orange-400 text-orange-900"
-                                            : "bg-gray-100 text-gray-600"
+                                            : "bg-muted text-muted-foreground"
                                     }`}
                                   >
                                     {index + 1}
@@ -1194,7 +1194,7 @@ export default function TrainingPage() {
                                         <Badge className="bg-orange-600 text-white">Du</Badge>
                                       )}
                                     </h3>
-                                    <p className="text-sm text-gray-600">{member.total_sessions} Sessions absolviert</p>
+                                    <p className="text-sm text-muted-foreground">{member.total_sessions} Sessions absolviert</p>
                                   </div>
                                 </div>
                                 <Trophy className="h-8 w-8 text-orange-600" />
@@ -1210,39 +1210,39 @@ export default function TrainingPage() {
                                   const avgDuration = member.avg_duration[training.id] || 0
 
                                   return (
-                                    <div key={training.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                      <div className="font-semibold text-sm text-gray-700 mb-3 flex items-center gap-2">
+                                    <div key={training.id} className="p-4 bg-muted rounded-lg border border-border">
+                                      <div className="font-semibold text-sm text-muted-foreground mb-3 flex items-center gap-2">
                                         <training.icon className="h-4 w-4" />
                                         {training.name}
                                       </div>
                                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-                                        <div className="text-center p-2 bg-white rounded border border-green-200">
-                                          <div className="text-xs text-gray-600">Punkte</div>
+                                        <div className="text-center p-2 bg-card rounded border border-green-200">
+                                          <div className="text-xs text-muted-foreground">Punkte</div>
                                           <div className="text-lg font-bold text-green-600">{bestScore}</div>
-                                          <div className="text-xs text-gray-500">Ø {avgScore}</div>
+                                          <div className="text-xs text-muted-foreground">Ø {avgScore}</div>
                                         </div>
-                                        <div className="text-center p-2 bg-white rounded border border-blue-200">
-                                          <div className="text-xs text-gray-600">Treffer</div>
+                                        <div className="text-center p-2 bg-card rounded border border-blue-200">
+                                          <div className="text-xs text-muted-foreground">Treffer</div>
                                           <div className="text-lg font-bold text-blue-600">{totalHits}</div>
                                         </div>
-                                        <div className="text-center p-2 bg-white rounded border border-red-200">
-                                          <div className="text-xs text-gray-600">Fehlwürfe</div>
+                                        <div className="text-center p-2 bg-card rounded border border-red-200">
+                                          <div className="text-xs text-muted-foreground">Fehlwürfe</div>
                                           <div className="text-lg font-bold text-red-600">{totalMisses}</div>
                                         </div>
-                                        <div className="text-center p-2 bg-white rounded border border-purple-200">
-                                          <div className="text-xs text-gray-600">Genauigkeit</div>
+                                        <div className="text-center p-2 bg-card rounded border border-purple-200">
+                                          <div className="text-xs text-muted-foreground">Genauigkeit</div>
                                           <div className="text-lg font-bold text-purple-600">{avgAccuracy}%</div>
                                         </div>
-                                        <div className="text-center p-2 bg-white rounded border border-orange-200">
-                                          <div className="text-xs text-gray-600">Zeit</div>
+                                        <div className="text-center p-2 bg-card rounded border border-orange-200">
+                                          <div className="text-xs text-muted-foreground">Zeit</div>
                                           <div className="text-lg font-bold text-orange-600">
                                             {Math.floor(avgDuration / 60)}:
                                             {(avgDuration % 60).toString().padStart(2, "0")}
                                           </div>
                                         </div>
-                                        <div className="text-center p-2 bg-white rounded border border-gray-200">
-                                          <div className="text-xs text-gray-600">Maximum</div>
-                                          <div className="text-lg font-bold text-gray-600">{training.maxScore}</div>
+                                        <div className="text-center p-2 bg-card rounded border border-border">
+                                          <div className="text-xs text-muted-foreground">Maximum</div>
+                                          <div className="text-lg font-bold text-muted-foreground">{training.maxScore}</div>
                                         </div>
                                       </div>
                                     </div>
@@ -1261,7 +1261,7 @@ export default function TrainingPage() {
           </TabsContent>
 
           <TabsContent value="tips" className="space-y-6">
-            <Card className="border-2 border-orange-200 bg-gradient-to-br from-orange-50 via-white to-red-50">
+            <Card className="text-foreground border-2 border-orange-200 bg-card   ">
               <CardHeader>
                 <CardTitle className="text-3xl flex items-center gap-3">
                   <Trophy className="h-8 w-8 text-orange-600" />
@@ -1283,13 +1283,13 @@ export default function TrainingPage() {
                     {section.tips.map((tip, tipIdx) => (
                       <div
                         key={tipIdx}
-                        className="p-5 border-2 rounded-lg hover:border-orange-300 hover:shadow-md transition-all bg-white"
+                        className="p-5 border-2 rounded-lg hover:border-orange-300 hover:shadow-md transition-all bg-card"
                       >
                         <div className="flex items-start gap-3">
                           <div className="text-3xl flex-shrink-0">{tip.icon}</div>
                           <div className="space-y-2">
-                            <h4 className="font-bold text-lg text-gray-900">{tip.title}</h4>
-                            <p className="text-gray-700 leading-relaxed text-sm">{tip.description}</p>
+                            <h4 className="font-bold text-lg text-foreground">{tip.title}</h4>
+                            <p className="text-muted-foreground leading-relaxed text-sm">{tip.description}</p>
                           </div>
                         </div>
                       </div>
@@ -1299,7 +1299,7 @@ export default function TrainingPage() {
               </Card>
             ))}
 
-            <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white">
+            <Card className="text-foreground border-2 border-green-200 bg-card  ">
               <CardHeader>
                 <CardTitle className="text-2xl flex items-center gap-3">
                   <BarChart3 className="h-6 w-6 text-green-600" />
@@ -1310,7 +1310,7 @@ export default function TrainingPage() {
                 <div className="space-y-4">
                   <div className="p-5 border-l-4 border-l-green-500 bg-green-50 rounded-r-lg">
                     <h4 className="font-bold text-lg mb-2 text-green-900">Anfänger (0-3 Monate)</h4>
-                    <ul className="space-y-2 text-gray-700">
+                    <ul className="space-y-2 text-muted-foreground">
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold">•</span>
                         <span>
@@ -1334,7 +1334,7 @@ export default function TrainingPage() {
 
                   <div className="p-5 border-l-4 border-l-orange-500 bg-orange-50 rounded-r-lg">
                     <h4 className="font-bold text-lg mb-2 text-orange-900">Fortgeschritten (3-12 Monate)</h4>
-                    <ul className="space-y-2 text-gray-700">
+                    <ul className="space-y-2 text-muted-foreground">
                       <li className="flex items-start gap-2">
                         <span className="text-orange-600 font-bold">•</span>
                         <span>
@@ -1364,7 +1364,7 @@ export default function TrainingPage() {
 
                   <div className="p-5 border-l-4 border-l-red-500 bg-red-50 rounded-r-lg">
                     <h4 className="font-bold text-lg mb-2 text-red-900">Profi (12+ Monate)</h4>
-                    <ul className="space-y-2 text-gray-700">
+                    <ul className="space-y-2 text-muted-foreground">
                       <li className="flex items-start gap-2">
                         <span className="text-red-600 font-bold">•</span>
                         <span>
@@ -1398,7 +1398,7 @@ export default function TrainingPage() {
                     <Flame className="h-5 w-5" />
                     Pro-Tipp: Die 80/20 Regel
                   </h4>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed">
                     Verbringe 80% deiner Trainingszeit mit gezielten Übungen (Doubles, Triples, Checkouts) und nur 20%
                     mit Spielen. Spiele sind wichtig für die Anwendung, aber gezielte Übungen bringen die größte
                     Verbesserung!
@@ -1407,7 +1407,7 @@ export default function TrainingPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-white">
+            <Card className="text-foreground border-2 border-red-200 bg-card  ">
               <CardHeader>
                 <CardTitle className="text-2xl flex items-center gap-3 text-red-700">
                   Häufige Fehler vermeiden
@@ -1415,35 +1415,35 @@ export default function TrainingPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="p-4 border-l-4 border-l-red-500 bg-white rounded-r-lg">
+                  <div className="p-4 border-l-4 border-l-red-500 bg-card rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1">Zu fester Griff</h4>
-                    <p className="text-gray-700 text-sm">
+                    <p className="text-muted-foreground text-sm">
                       Ein zu fester Griff führt zu Verkrampfung. Der Dart sollte kontrolliert aber locker gehalten
                       werden.
                     </p>
                   </div>
-                  <div className="p-4 border-l-4 border-l-red-500 bg-white rounded-r-lg">
+                  <div className="p-4 border-l-4 border-l-red-500 bg-card rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1">Beweglicher Ellbogen</h4>
-                    <p className="text-gray-700 text-sm">
+                    <p className="text-muted-foreground text-sm">
                       Der Ellbogen sollte als Fixpunkt dienen. Bewegung sollte nur aus dem Unterarm und Handgelenk
                       kommen.
                     </p>
                   </div>
-                  <div className="p-4 border-l-4 border-l-red-500 bg-white rounded-r-lg">
+                  <div className="p-4 border-l-4 border-l-red-500 bg-card rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1">Kein Follow-Through</h4>
-                    <p className="text-gray-700 text-sm">
+                    <p className="text-muted-foreground text-sm">
                       Stoppe nicht abrupt nach dem Release. Lass deine Hand natürlich zum Ziel zeigen.
                     </p>
                   </div>
-                  <div className="p-4 border-l-4 border-l-red-500 bg-white rounded-r-lg">
+                  <div className="p-4 border-l-4 border-l-red-500 bg-card rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1">Unregelmäßiges Training</h4>
-                    <p className="text-gray-700 text-sm">
+                    <p className="text-muted-foreground text-sm">
                       Sporadisches Training bringt keine Verbesserung. Lieber kurz aber regelmäßig trainieren.
                     </p>
                   </div>
-                  <div className="p-4 border-l-4 border-l-red-500 bg-white rounded-r-lg">
+                  <div className="p-4 border-l-4 border-l-red-500 bg-card rounded-r-lg">
                     <h4 className="font-bold text-red-900 mb-1">Nur Spiele spielen</h4>
-                    <p className="text-gray-700 text-sm">
+                    <p className="text-muted-foreground text-sm">
                       Spiele sind wichtig, aber gezielte Übungen bringen mehr Fortschritt. Nutze die Trainingsmodi!
                     </p>
                   </div>

@@ -189,7 +189,7 @@ export default function ResultEntry() {
                   {filteredPlayers.slice(0, 5).map((player) => (
                     <div
                       key={player.id}
-                      className="p-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                      className="p-2 hover:bg-muted cursor-pointer flex items-center justify-between"
                       onClick={() => addPlayer(player)}
                     >
                       <span>{player.name}</span>

@@ -215,7 +215,7 @@ export default function LiveTournamentView() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans">
+      <div className="min-h-screen bg-card text-foreground font-sans">
         <Header />
         <main className="pt-8 pb-20">
           <div className="container mx-auto px-4 md:px-6 py-8">
@@ -223,7 +223,7 @@ export default function LiveTournamentView() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6">
                 <Trophy className="h-12 w-12 text-white mx-auto" />
               </div>
-              <p className="mt-4 text-gray-600">Lade Turnier-Daten...</p>
+              <p className="mt-4 text-muted-foreground">Lade Turnier-Daten...</p>
             </div>
           </div>
         </main>
@@ -233,19 +233,19 @@ export default function LiveTournamentView() {
 
   if (!activeTournament) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans">
+      <div className="min-h-screen bg-card text-foreground font-sans">
         <Header />
         <main className="pt-8 pb-20">
           <div className="container mx-auto px-4 md:px-6 py-8">
             <Card className="overflow-hidden shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-500 to-gray-600 text-white p-6">
+              <CardHeader className="bg-card   text-white p-6">
                 <CardTitle className="flex items-center justify-center gap-3 text-2xl">
                   <Trophy className="h-8 w-8" />
                   Kein aktives Turnier
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-8 text-center">
-                <p className="text-lg text-gray-600 mb-4">
+                <p className="text-lg text-muted-foreground mb-4">
                   Aktuell läuft kein Turnier.
                 </p>
               </CardContent>
@@ -257,7 +257,7 @@ export default function LiveTournamentView() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-card text-foreground font-sans">
       <Header />
 
       <main className="pt-8 pb-20">
@@ -268,8 +268,8 @@ export default function LiveTournamentView() {
           animate="visible"
         >
           <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
+            <div className="bg-card   rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
+              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 ">
                 <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
               </div>
               <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
@@ -289,7 +289,7 @@ export default function LiveTournamentView() {
           {tournamentWinner ? (
             <motion.div variants={itemVariants}>
               <Card className="overflow-hidden shadow-lg border-2 border-orange-500">
-                <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6">
+                <CardHeader className="bg-card   text-white p-6">
                   <CardTitle className="flex items-center justify-center gap-3 text-2xl sm:text-3xl">
                     <Trophy className="h-8 w-8 sm:h-10 sm:w-10" />
                     Turniersieger
@@ -308,8 +308,8 @@ export default function LiveTournamentView() {
                   <div className="bg-orange-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
                     <Zap className="h-8 w-8 text-orange-600 mx-auto" />
                   </div>
-                  <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{activeMatches.length}</p>
-                  <p className="text-sm text-gray-600 font-medium">Aktive Spiele</p>
+                  <p className="text-3xl sm:text-4xl font-bold text-foreground mb-2">{activeMatches.length}</p>
+                  <p className="text-sm text-muted-foreground font-medium">Aktive Spiele</p>
                 </CardContent>
               </Card>
               <Card className="overflow-hidden shadow-lg">
@@ -317,8 +317,8 @@ export default function LiveTournamentView() {
                   <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
                     <Clock className="h-8 w-8 text-blue-600 mx-auto" />
                   </div>
-                  <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{upcomingMatches.length}</p>
-                  <p className="text-sm text-gray-600 font-medium">Anstehend</p>
+                  <p className="text-3xl sm:text-4xl font-bold text-foreground mb-2">{upcomingMatches.length}</p>
+                  <p className="text-sm text-muted-foreground font-medium">Anstehend</p>
                 </CardContent>
               </Card>
               <Card className="overflow-hidden shadow-lg">
@@ -326,8 +326,8 @@ export default function LiveTournamentView() {
                   <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
                     <Target className="h-8 w-8 text-green-600 mx-auto" />
                   </div>
-                  <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{completedCount}</p>
-                  <p className="text-sm text-gray-600 font-medium">Abgeschlossen</p>
+                  <p className="text-3xl sm:text-4xl font-bold text-foreground mb-2">{completedCount}</p>
+                  <p className="text-sm text-muted-foreground font-medium">Abgeschlossen</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -336,7 +336,7 @@ export default function LiveTournamentView() {
           {activeMatches.length > 0 && (
             <motion.div variants={itemVariants} className="mb-8">
               <Card className="overflow-hidden shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 sm:p-6">
+                <CardHeader className="bg-card   text-white p-4 sm:p-6">
                   <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                     <Zap className="h-5 w-5 sm:h-6 sm:w-6" />
                     Live Spiele
@@ -356,12 +356,12 @@ export default function LiveTournamentView() {
                           </Badge>
                         </div>
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                            <span className="font-semibold text-gray-900">{match.player1}</span>
+                          <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
+                            <span className="font-semibold text-foreground">{match.player1}</span>
                             <span className="text-2xl font-bold text-orange-600">{match.score1}</span>
                           </div>
-                          <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                            <span className="font-semibold text-gray-900">{match.player2}</span>
+                          <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
+                            <span className="font-semibold text-foreground">{match.player2}</span>
                             <span className="text-2xl font-bold text-orange-600">{match.score2}</span>
                           </div>
                         </div>
@@ -376,7 +376,7 @@ export default function LiveTournamentView() {
           {upcomingMatches.length > 0 && (
             <motion.div variants={itemVariants} className="mb-8">
               <Card className="overflow-hidden shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 sm:p-6">
+                <CardHeader className="bg-card   text-white p-4 sm:p-6">
                   <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                     <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
                     Als Nächstes
@@ -385,17 +385,17 @@ export default function LiveTournamentView() {
                 <CardContent className="p-4 sm:p-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     {upcomingMatches.map((match) => (
-                      <div key={match.id} className="border border-gray-200 rounded-xl p-4 sm:p-6 bg-gray-50">
+                      <div key={match.id} className="border border-border rounded-xl p-4 sm:p-6 bg-muted">
                         <Badge variant="outline" className="mb-4">
                           Match {match.id}
                         </Badge>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between p-3 bg-white rounded-lg">
-                            <span className="font-medium text-gray-900">{match.player1}</span>
+                          <div className="flex items-center justify-between p-3 bg-card rounded-lg">
+                            <span className="font-medium text-foreground">{match.player1}</span>
                           </div>
-                          <div className="text-center text-xs text-gray-500 font-semibold">VS</div>
-                          <div className="flex items-center justify-between p-3 bg-white rounded-lg">
-                            <span className="font-medium text-gray-900">{match.player2}</span>
+                          <div className="text-center text-xs text-muted-foreground font-semibold">VS</div>
+                          <div className="flex items-center justify-between p-3 bg-card rounded-lg">
+                            <span className="font-medium text-foreground">{match.player2}</span>
                           </div>
                         </div>
                       </div>
@@ -409,7 +409,7 @@ export default function LiveTournamentView() {
           {completedMatches.length > 0 && (
             <motion.div variants={itemVariants} className="mb-8">
               <Card className="overflow-hidden shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 sm:p-6">
+                <CardHeader className="bg-card   text-white p-4 sm:p-6">
                   <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                     <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
                     Letzte Ergebnisse
@@ -418,7 +418,7 @@ export default function LiveTournamentView() {
                 <CardContent className="p-4 sm:p-6">
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {completedMatches.map((match) => (
-                      <div key={match.id} className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
+                      <div key={match.id} className="border border-border rounded-xl p-4 bg-card shadow-sm">
                         <Badge variant="secondary" className="mb-3 text-xs">
                           Match {match.id}
                         </Badge>
@@ -428,11 +428,11 @@ export default function LiveTournamentView() {
                               "flex items-center justify-between p-2 rounded text-sm",
                               match.winner === match.player1
                                 ? "bg-green-100 border border-green-500 font-bold"
-                                : "bg-gray-100",
+                                : "bg-muted",
                             )}
                           >
                             <span
-                              className={cn("text-sm", match.winner === match.player1 && "font-bold text-gray-900")}
+                              className={cn("text-sm", match.winner === match.player1 && "font-bold text-foreground")}
                             >
                               {match.player1}
                             </span>
@@ -450,11 +450,11 @@ export default function LiveTournamentView() {
                               "flex items-center justify-between p-2 rounded text-sm",
                               match.winner === match.player2
                                 ? "bg-green-100 border border-green-500 font-bold"
-                                : "bg-gray-100",
+                                : "bg-muted",
                             )}
                           >
                             <span
-                              className={cn("text-sm", match.winner === match.player2 && "font-bold text-gray-900")}
+                              className={cn("text-sm", match.winner === match.player2 && "font-bold text-foreground")}
                             >
                               {match.player2}
                             </span>
@@ -478,7 +478,7 @@ export default function LiveTournamentView() {
 
           <motion.div variants={itemVariants}>
             <Card className="overflow-hidden shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-gray-700 to-gray-900 text-white p-4 sm:p-6">
+              <CardHeader className="bg-card   text-white p-4 sm:p-6">
                 <CardTitle className="text-lg sm:text-xl">Kompletter Bracket</CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 space-y-6">
@@ -507,7 +507,7 @@ export default function LiveTournamentView() {
           </motion.div>
 
           {/* Footer */}
-          <div className="text-center text-sm text-gray-600 pt-8 mt-8 border-t border-gray-200">
+          <div className="text-center text-sm text-muted-foreground pt-8 mt-8 border-t border-border">
             <p className="font-medium">Letzte Aktualisierung: {lastUpdate.toLocaleTimeString("de-DE")}</p>
             <p className="mt-2">Aktualisiert sich automatisch in Echtzeit</p>
           </div>
@@ -555,8 +555,8 @@ function BracketMatchCard({ match }: { match: Match }) {
       className={cn(
         "transition-all",
         isActive && "border-2 border-orange-500 shadow-lg",
-        isCompleted && "border-gray-200",
-        !hasPlayers && "opacity-50 bg-gray-50",
+        isCompleted && "border-border",
+        !hasPlayers && "opacity-50 bg-muted",
       )}
     >
       <div className="p-3 space-y-2">
@@ -575,7 +575,7 @@ function BracketMatchCard({ match }: { match: Match }) {
           <div
             className={cn(
               "flex items-center justify-between p-2 rounded text-sm",
-              match.winner === match.player1 ? "bg-green-100 border border-green-500 font-bold" : "bg-gray-100",
+              match.winner === match.player1 ? "bg-green-100 border border-green-500 font-bold" : "bg-muted",
             )}
           >
             <span className="truncate">{match.player1 || "Warte auf Spieler..."}</span>
@@ -584,7 +584,7 @@ function BracketMatchCard({ match }: { match: Match }) {
           <div
             className={cn(
               "flex items-center justify-between p-2 rounded text-sm",
-              match.winner === match.player2 ? "bg-green-100 border border-green-500 font-bold" : "bg-gray-100",
+              match.winner === match.player2 ? "bg-green-100 border border-green-500 font-bold" : "bg-muted",
             )}
           >
             <span className="truncate">{match.player2 || "Warte auf Spieler..."}</span>

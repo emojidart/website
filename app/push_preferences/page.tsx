@@ -196,7 +196,7 @@ function TournamentPushInner() {
   // ✅ SCHÖNE LADEANIMATION + APP HEADER (wie deine andere Datei) + kein extra padding oben
   if (authLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <main className="text-foreground min-h-screen flex flex-col bg-card   ">
         <Header
           variant="app"
           title="Turnier-Benachrichtigungen"
@@ -206,15 +206,15 @@ function TournamentPushInner() {
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
           <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+            <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-2xl px-10 py-10">
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
                 <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
               </div>
 
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">Lade Einstellungen</p>
-                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+                <p className="text-lg font-bold text-foreground">Lade Einstellungen</p>
+                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
               </div>
             </div>
           </div>
@@ -226,7 +226,7 @@ function TournamentPushInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col overflow-x-hidden">
       {/* ✅ App Header statt normalem Header */}
       <Header
         variant="app"
@@ -237,19 +237,19 @@ function TournamentPushInner() {
 
       <main className="flex-grow mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 pb-24 md:pb-8 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl overflow-x-hidden">
         <div className="mb-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
             <Trophy className="h-6 w-6 text-orange-600" />
-            
+
           </h1>
 
           {/* ✅ moderne Box mit ORANGE Verlauf oben */}
-          <div className="mt-4 overflow-hidden rounded-2xl border bg-white shadow-sm">
-            <div className="h-1.5 bg-gradient-to-r from-orange-500 via-orange-400 to-amber-300" />
+          <div className="mt-4 overflow-hidden rounded-2xl border bg-card shadow-sm">
+            <div className="text-foreground h-1.5 bg-card   " />
             <div className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-xs text-gray-500">Spieler</div>
-                  <div className="mt-0.5 text-base sm:text-lg font-semibold text-gray-900 truncate">
+                  <div className="text-xs text-muted-foreground">Spieler</div>
+                  <div className="mt-0.5 text-base sm:text-lg font-semibold text-foreground truncate">
                     <span className="text-orange-700">{displayName}</span>
                   </div>
 
@@ -259,14 +259,14 @@ function TournamentPushInner() {
                         "rounded-full px-3 py-1 text-xs sm:text-sm whitespace-nowrap",
                         pushEnabled
                           ? "bg-green-50 text-green-700 border border-green-200"
-                          : "bg-gray-50 text-gray-700 border border-gray-200"
+                          : "bg-muted text-muted-foreground border border-border"
                       )}
                     >
                       {pushEnabled ? "Benachrichtigungen aktiv" : "Benachrichtigungen aus"}
                     </Badge>
 
                     {pushPrefUpdatedAt ? (
-                      <span className="text-xs text-gray-500 inline-flex items-center gap-1 whitespace-nowrap">
+                      <span className="text-xs text-muted-foreground inline-flex items-center gap-1 whitespace-nowrap">
                         <Clock className="h-3.5 w-3.5" />
                         {formatDateTimeCompact(pushPrefUpdatedAt)}
                       </span>
@@ -276,7 +276,7 @@ function TournamentPushInner() {
 
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <Switch checked={pushEnabled} onCheckedChange={() => toggleTournamentNotifications()} disabled={savingPref} />
-                  <div className="text-[11px] text-gray-500 whitespace-nowrap">
+                  <div className="text-xs text-muted-foreground whitespace-nowrap">
                     {savingPref ? (
                       <span className="inline-flex items-center gap-1">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -292,17 +292,17 @@ function TournamentPushInner() {
                 </div>
               </div>
 
-              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
                 Übersicht der letzten 20 Match-Starts mit Gegner und – sofern vorhanden – Automat.
               </p>
 
-              <div className="mt-4 rounded-2xl border bg-gray-50 p-4 flex items-start gap-3">
-                <div className="mt-0.5 rounded-xl bg-white p-2 ring-1 ring-black/5">
+              <div className="mt-4 rounded-2xl border bg-muted p-4 flex items-start gap-3">
+                <div className="mt-0.5 rounded-xl bg-card p-2 ring-1 ring-black/5">
                   <Bell className="h-4 w-4 text-orange-600" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-gray-900">Hinweis</div>
-                  <div className="mt-1 text-sm text-gray-600">
+                  <div className="text-sm font-semibold text-foreground">Hinweis</div>
+                  <div className="mt-1 text-sm text-muted-foreground">
                     Wenn deaktiviert, bekommst du keine Hinweise, sobald dein Match gestartet wird.
                   </div>
                 </div>
@@ -311,7 +311,7 @@ function TournamentPushInner() {
           </div>
         </div>
 
-        <Card className="shadow-xl border-0 bg-white">
+        <Card className="shadow-xl border-0 bg-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl font-bold">
               <Bell className="h-6 w-6 text-orange-600" />
@@ -334,16 +334,16 @@ function TournamentPushInner() {
                 {list.map(({ row, opponent }) => (
                   <Card
                     key={`${row.tournament_id ?? "t"}-${row.match_id}-${row.id}`}
-                    className="border bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl overflow-hidden"
+                    className="border bg-card shadow-sm hover:shadow-md transition-shadow rounded-2xl overflow-hidden"
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-3 min-w-0">
                         <div className="min-w-0">
                           <div className="font-semibold text-base md:text-lg truncate">
-                            vs <span className="text-gray-900">{opponent}</span>
+                            vs <span className="text-foreground">{opponent}</span>
                           </div>
 
-                          <div className="mt-2 text-sm text-gray-600 inline-flex items-center gap-2 flex-wrap">
+                          <div className="mt-2 text-sm text-muted-foreground inline-flex items-center gap-2 flex-wrap">
                             <span className="inline-flex items-center gap-1">
                               <Clock className="h-4 w-4 text-orange-600" />
                               {formatDateTimeCompact(row.push_started_sent_at)}

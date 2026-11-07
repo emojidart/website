@@ -66,25 +66,25 @@ export function PlayerListModal({ isOpen, onClose, onSelectPlayer }: PlayerListM
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md mx-auto bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
-        <DialogHeader className="border-b border-gray-100 pb-4">
+      <DialogContent className="max-w-md mx-auto bg-card  border-0 shadow-2xl">
+        <DialogHeader className="border-b border-border pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+              <div className="text-foreground p-2 bg-card   rounded-lg shadow-lg">
                 <Users className="h-5 w-5 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-lg font-semibold text-gray-900">Spieler auswählen</DialogTitle>
-                <p className="text-sm text-gray-500 mt-1">Wählen Sie einen Spieler aus der Liste</p>
+                <DialogTitle className="text-lg font-semibold text-foreground">Spieler auswählen</DialogTitle>
+                <p className="text-sm text-muted-foreground mt-1">Wählen Sie einen Spieler aus der Liste</p>
               </div>
             </div>
             <Button
               onClick={handleClose}
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
+              className="h-8 w-8 p-0 hover:bg-muted rounded-full"
             >
-              <X className="h-4 w-4 text-gray-500" />
+              <X className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </DialogHeader>
@@ -92,13 +92,13 @@ export function PlayerListModal({ isOpen, onClose, onSelectPlayer }: PlayerListM
         <div className="py-4 space-y-4">
           {/* Search Input */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Spieler suchen..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-10 border-gray-200 focus:border-red-500 focus:ring-red-500 bg-gray-50/50 transition-all duration-200"
+              className="pl-10 h-10 border-border focus:border-red-500 focus:ring-red-500 bg-muted/50 transition-all duration-200"
             />
           </div>
 
@@ -108,13 +108,13 @@ export function PlayerListModal({ isOpen, onClose, onSelectPlayer }: PlayerListM
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
                   <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Spieler werden geladen...</p>
+                  <p className="text-sm text-muted-foreground">Spieler werden geladen...</p>
                 </div>
               </div>
             ) : filteredPlayers.length === 0 ? (
               <div className="text-center py-8">
-                <User className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">
+                <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
                   {searchTerm ? "Keine Spieler gefunden" : "Keine Spieler verfügbar"}
                 </p>
               </div>
@@ -125,11 +125,11 @@ export function PlayerListModal({ isOpen, onClose, onSelectPlayer }: PlayerListM
                   onClick={() => handleSelectPlayer(player)}
                   className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 hover:border-red-200 border border-transparent transition-all duration-200 text-left group"
                 >
-                  <div className="flex-shrink-0 h-8 w-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center group-hover:from-red-100 group-hover:to-red-200 transition-all duration-200">
-                    <User className="h-4 w-4 text-gray-600 group-hover:text-red-600" />
+                  <div className="text-foreground flex-shrink-0 h-8 w-8 bg-card   rounded-full flex items-center justify-center   transition-all duration-200">
+                    <User className="h-4 w-4 text-muted-foreground group-hover:text-red-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 group-hover:text-red-700 transition-colors duration-200">
+                    <p className="text-sm font-medium text-foreground group-hover:text-red-700 transition-colors duration-200">
                       {player}
                     </p>
                   </div>
@@ -140,8 +140,8 @@ export function PlayerListModal({ isOpen, onClose, onSelectPlayer }: PlayerListM
 
           {/* Footer */}
           {!loading && filteredPlayers.length > 0 && (
-            <div className="border-t border-gray-100 pt-3">
-              <p className="text-xs text-gray-500 text-center">
+            <div className="border-t border-border pt-3">
+              <p className="text-xs text-muted-foreground text-center">
                 {filteredPlayers.length} von {players.length} Spielern
               </p>
             </div>

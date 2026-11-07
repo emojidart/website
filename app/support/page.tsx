@@ -192,7 +192,7 @@ export default function SupportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
@@ -209,7 +209,7 @@ export default function SupportPage() {
 
   if (selectedTicket) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="mb-6">
@@ -240,7 +240,7 @@ export default function SupportPage() {
               <CardContent>
                 <div className="mb-6">
                   <h4 className="font-medium mb-2">Ursprüngliche Beschreibung:</h4>
-                  <p className="text-gray-600 bg-gray-50 p-3 rounded">{selectedTicket.description}</p>
+                  <p className="text-muted-foreground bg-muted p-3 rounded">{selectedTicket.description}</p>
                 </div>
 
                 <div className="space-y-4">
@@ -249,11 +249,11 @@ export default function SupportPage() {
                     Nachrichten
                   </h4>
 
-                  <div className="max-h-96 overflow-y-auto space-y-3 border rounded p-4 bg-white">
+                  <div className="max-h-96 overflow-y-auto space-y-3 border rounded p-4 bg-card">
                     {!selectedTicket.admin_response ? (
-                      <p className="text-gray-500 text-center py-4">Noch keine Nachrichten vorhanden.</p>
+                      <p className="text-muted-foreground text-center py-4">Noch keine Nachrichten vorhanden.</p>
                     ) : (
-                      <div className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded">
+                      <div className="whitespace-pre-wrap text-sm bg-muted p-3 rounded">
                         {selectedTicket.admin_response}
                       </div>
                     )}
@@ -270,7 +270,7 @@ export default function SupportPage() {
                     <Button
                       onClick={sendMessage}
                       disabled={!newMessage.trim() || sendingMessage}
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Send className="w-4 h-4" />
                     </Button>
@@ -285,7 +285,7 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
@@ -298,12 +298,12 @@ export default function SupportPage() {
 
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Support</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-foreground">Support</h1>
+            <p className="text-muted-foreground mt-2">
               Benötigen Sie Hilfe? Erstellen Sie ein Support-Ticket und wir helfen Ihnen gerne weiter.
             </p>
           </div>
-          <Button onClick={() => setShowForm(!showForm)} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => setShowForm(!showForm)} className="bg-blue-600 hover:bg-blue-700 text-white">
             <Plus className="w-4 h-4 mr-2" />
             Neues Ticket
           </Button>
@@ -324,7 +324,7 @@ export default function SupportPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Titel *</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">Titel *</label>
                     <Input
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -333,7 +333,7 @@ export default function SupportPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Kategorie *</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">Kategorie *</label>
                     <Select
                       value={formData.category}
                       onValueChange={(value) => setFormData({ ...formData, category: value })}
@@ -354,7 +354,7 @@ export default function SupportPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Priorität</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Priorität</label>
                   <Select
                     value={formData.priority}
                     onValueChange={(value: any) => setFormData({ ...formData, priority: value })}
@@ -372,7 +372,7 @@ export default function SupportPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Beschreibung *</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Beschreibung *</label>
                   <Textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -383,7 +383,7 @@ export default function SupportPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700">
+                  <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white">
                     {submitting ? "Wird erstellt..." : "Ticket erstellen"}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
@@ -432,7 +432,7 @@ function TicketList({
     return (
       <Card>
         <CardContent className="py-8">
-          <div className="text-center text-gray-500">
+          <div className="text-center text-muted-foreground">
             <Ticket className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>Keine Tickets gefunden.</p>
           </div>
@@ -463,15 +463,15 @@ function TicketList({
                     </Badge>
                   </div>
 
-                  <p className="text-gray-600 mb-3 line-clamp-2">{ticket.description}</p>
+                  <p className="text-muted-foreground mb-3 line-clamp-2">{ticket.description}</p>
 
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span>Kategorie: {ticket.category}</span>
                     <span>•</span>
                     <span>Erstellt: {new Date(ticket.created_at).toLocaleDateString("de-DE")}</span>
                   </div>
                 </div>
-                <MessageCircle className="w-5 h-5 text-gray-400" />
+                <MessageCircle className="w-5 h-5 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>

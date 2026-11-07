@@ -149,7 +149,7 @@ function toDateAndTimeInTZ(iso: string, timeZone: string = DKO_TIMEZONE) {
 
 function sanitizeVacationNote(note?: string | null) {
   if (!note) return ""
- 
+
   const cleaned = note
     .replace(/🎂/g, "")
     .replace(/\bgeburtstag\b/gi, "")
@@ -171,7 +171,7 @@ const [loadingLineup, setLoadingLineup] = useState(false)
 
 
 
- 
+
   useEffect(() => {
     let isMounted = true
     supabase.auth.getUser().then(({ data }) => {
@@ -261,7 +261,7 @@ const [savingBoard, setSavingBoard] = useState(false)
   const [confirmDeleteVacationId, setConfirmDeleteVacationId] = useState<string | null>(null)
   const [isConfirmDeleteBoardOpen, setIsConfirmDeleteBoardOpen] = useState(false)
 const [confirmDeleteBoardId, setConfirmDeleteBoardId] = useState<string | null>(null)
-  
+
   const fetchAustrianHolidays = async (year: number): Promise<Event[]> => {
   try {
     const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/AT`)
@@ -287,9 +287,9 @@ const [confirmDeleteBoardId, setConfirmDeleteBoardId] = useState<string | null>(
     try {
       setLoading(true)
 
-      
+
       const { data: authData } = await supabase.auth.getUser()
-	  
+
 	  // ✅ Spieler-Liste für Einladungen laden
 try {
   const playersRes = await supabase
@@ -426,7 +426,7 @@ try {
         }
       })
 
-    
+
     enrichedEvents = [...enrichedEvents, ...tournamentEvents]
   }
 } catch (tournamentError) {
@@ -460,7 +460,7 @@ if (!boardRes.error) {
 }
       setEvents(enrichedEvents as Event[])
 
-      
+
       let fetchedBirthdayPlayers: BirthdayPlayer[] = []
       try {
         const playersResponse = await supabase
@@ -486,7 +486,7 @@ if (!boardRes.error) {
 
       setBirthdayPlayers(fetchedBirthdayPlayers)
 
-      
+
       let fetchedVacations: Vacation[] = []
       try {
         const vacationResponse = await supabase
@@ -549,7 +549,7 @@ if (!boardRes.error) {
       }
 
       setVacations(fetchedVacations)
-	  
+
 	        let fetchedPrivateEntries: PrivateCalendarEntry[] = []
       try {
         if (uid) {
@@ -589,7 +589,7 @@ if (!boardRes.error) {
   useEffect(() => {
     fetchData()
   }, [])
-  
+
   useEffect(() => {
   const y = currentDate.getFullYear()
   fetchAustrianHolidays(y).then(setHolidayEvents)
@@ -642,7 +642,7 @@ if (!boardRes.error) {
       match.home_opponent_team?.name === selectedTeam ||
       match.away_opponent_team?.name === selectedTeam
 
-   
+
     let resultTypeMatch = true
     const shouldFilterByResultType =
       selectedResultType !== "Alle" &&
@@ -670,16 +670,16 @@ const filteredEvents = allEvents.filter((event) => {
     if (selectedItemType === "Geburtstage" || selectedItemType === "Urlaube") return false
     if (selectedItemType === "Spiele") return false
 
-    
+
     if (selectedItemType === "Events") return event.type === "event" || event.type === "board"
     if (selectedItemType === "Turniere") return event.type === "dko"
 	if (selectedItemType === "Feiertage") return event.type === "holiday"
 
-   
+
     return true
   })
 
-  
+
   const isBirthdayOnDate = (birthdate: string, date: Date) => {
     const parts = (birthdate || "").split("-")
     const m = Number(parts[1]) // 1-12
@@ -697,7 +697,7 @@ const filteredEvents = allEvents.filter((event) => {
     const day = String(date.getDate()).padStart(2, "0")
     const dateStr = `${year}-${month}-${day}`
 
-    
+
     if (selectedTeam !== "Alle Teams") {
       return filteredMatches.filter((match) => match.match_date === dateStr)
     }
@@ -754,8 +754,8 @@ const filteredEvents = allEvents.filter((event) => {
               } as Event
             })
         : []
-		
-		
+
+
 		    const privateEntriesForDate =
       selectedItemType !== "Spiele" && selectedItemType !== "Turniere" && selectedItemType !== "Geburtstage"
         ? privateEntries
@@ -777,8 +777,8 @@ const filteredEvents = allEvents.filter((event) => {
               } as Event
             })
         : []
-		
-		
+
+
 
        return [...matchesForDate, ...eventsForDate, ...birthdaysForDate, ...vacationsForDate, ...privateEntriesForDate]
   }
@@ -826,7 +826,7 @@ const filteredEvents = allEvents.filter((event) => {
   setIsMatchDialogOpen(true)
 }
 
-  
+
 const loadLineup = async (matchId: string) => {
   setLoadingLineup(true)
   setLineupPlayers([])
@@ -863,7 +863,7 @@ const loadLineup = async (matchId: string) => {
   const openEventDialog = async (event: Event) => {
   setSelectedEvent(event)
   setIsEventDialogOpen(true)
-  
+
     if (event.type === "private") {
     setIsEventDialogOpen(false)
 
@@ -879,19 +879,19 @@ setPrivateNote(entry.note || "")
 setIsPrivateDialogOpen(true)
     return
   }
-  
+
   boardAttachments.forEach((a) => {
   if (a.url?.startsWith("blob:")) URL.revokeObjectURL(a.url)
 })
 
-  
+
   setBoardAttachments([])
   setLoadingBoardAttachments(false)
 
 
   if (event.type !== "board") return
 
- 
+
   const boardId = (event.id || "").replace("board_", "").trim()
   if (!boardId) return
 
@@ -913,7 +913,7 @@ setIsPrivateDialogOpen(true)
 
   const withUrls = await Promise.all(
   rows.map(async (f) => {
-    
+
     const { data: blob, error: dlErr } = await supabase.storage
       .from("vorstand-uploads")
       .download(f.file_path)
@@ -991,8 +991,8 @@ setIsPrivateDialogOpen(true)
       setSavingVacation(false)
     }
   }
-  
-  
+
+
     const createPrivateEntry = async () => {
     if (!privateTitle.trim() || !privateStart || !privateEnd) return
 
@@ -1056,7 +1056,7 @@ await fetchData()
       setSavingPrivateEntry(false)
     }
   }
-  
+
 
 
 const createBoardEvent = async () => {
@@ -1066,7 +1066,7 @@ const createBoardEvent = async () => {
   try {
     const startsAtIso = new Date(`${boardDate}T${boardTime}:00`).toISOString()
 
-    // ✅ eventId 
+    // ✅ eventId
     let eventId: string | null = editingBoardId
 
     // ✅ UPDATE (bearbeiten)
@@ -1086,7 +1086,7 @@ const createBoardEvent = async () => {
       }
     }
 
-    // ✅ INSERT 
+    // ✅ INSERT
     if (!editingBoardId) {
       const { data: ev, error: evErr } = await supabase
         .from("board_events")
@@ -1103,15 +1103,15 @@ const createBoardEvent = async () => {
         return
       }
 
-      
+
       eventId = ev.id
     }
 
     // ✅ wenn eventId aus irgendeinem Grund fehlt -> stop
     if (!eventId) return
-	
-	
-	
+
+
+
 	// ✅ Push an alle eingeladenen senden
 try {
   const { data: sessionData } = await supabase.auth.getSession()
@@ -1130,11 +1130,11 @@ try {
 } catch (e) {
   console.error("board invite push failed:", e)
 }
-	
-	
-	
 
-    // ✅ Einladungen speichern 
+
+
+
+    // ✅ Einladungen speichern
     if (invitePlayerIds.length > 0) {
       const { data: authData } = await supabase.auth.getUser()
       const inviter = authData?.user?.id ?? null
@@ -1176,7 +1176,7 @@ try {
 
 
 
-  
+
 
   const deleteVacation = async (vacationId: string) => {
     if (!vacationId) return
@@ -1197,8 +1197,8 @@ try {
       setSavingVacation(false)
     }
   }
-  
-  
+
+
     const deletePrivateEntry = async (entryId: string) => {
     if (!entryId) return
 
@@ -1226,8 +1226,8 @@ try {
       setSavingPrivateEntry(false)
     }
   }
-  
-  
+
+
 
   const handleItemClick = (item: CalendarItem) => {
     if ("match_date" in item) {
@@ -1320,9 +1320,9 @@ const todayEvents = events.filter((event) => {
       start_time: "00:00:00",
       type: "vacation",
     }))
-	
-	
-	
+
+
+
 	  const todayPrivateEntries: Event[] = privateEntries
     .filter((p) => isDateInRange(todayStr, p.start_date, p.end_date))
     .map((p) => ({
@@ -1339,13 +1339,13 @@ const todayEvents = events.filter((event) => {
      start_time: p.start_time || undefined,
       type: "private",
     }))
-	
-	
+
+
 
     const todayHighlights: CalendarItem[] = [...todayMatches, ...todayEvents, ...todayBirthdayEvents, ...todayVacations, ...todayPrivateEntries]
-  
-  
-  
+
+
+
 
   const getTeamDisplayName = (match: Match, isHome: boolean) => {
     if (isHome) {
@@ -1425,7 +1425,7 @@ const safeString = (value: any): string => {
   const formatTimeWithoutSeconds = (value: any): string => {
   if (!value) return ""
 
- 
+
   if (typeof value === "object") {
     // { type: "Buffer", data: [...] }
     if (value?.type === "Buffer" && Array.isArray(value?.data)) {
@@ -1501,7 +1501,7 @@ const toggleInvitePlayer = (playerId: string) => {
     setIsMobileBottomSheetOpen(true)
   }
 
-  
+
   const birthdayEventsForList: Event[] =
     selectedItemType !== "Spiele" && selectedItemType !== "Turniere" && selectedItemType !== "Events"
       ? birthdayPlayers.map((p) => {
@@ -1544,14 +1544,14 @@ const toggleInvitePlayer = (playerId: string) => {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-20 text-white">
+      <div className="relative min-h-screen overflow-x-hidden bg-background pb-20 text-white">
         <main className="flex-grow pt-14 sm:pt-16">
           <div className="mx-auto w-full max-w-[var(--emd-content-max)] overflow-x-hidden px-3 py-4 sm:px-5 lg:px-7 xl:px-8">
 
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
-                <p className="font-medium text-white/40">Vereinskalender wird geladen…</p>
+                <p className="font-medium text-muted-foreground">Vereinskalender wird geladen…</p>
               </div>
             </div>
           </div>
@@ -1562,27 +1562,20 @@ const toggleInvitePlayer = (playerId: string) => {
   }
 
   return (
-      <div className="calendar-premium relative isolate min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans flex flex-col pb-20">
+      <div className="calendar-premium relative isolate min-h-screen overflow-x-hidden bg-background text-white font-sans flex flex-col pb-20">
 
       <Header variant="app" title="Vereinskalender" subtitle="Mein EMD" backHref="/member-profile-app" />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.17),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(14,165,233,.11),transparent_27%),radial-gradient(circle_at_52%_82%,rgba(168,85,247,.06),transparent_24%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
      <main className="relative z-10 w-full pt-14 sm:pt-16">
-      <div className="mx-auto w-full max-w-[1680px] px-3 py-4 pb-24 sm:px-5 sm:py-6 sm:pb-12 lg:px-7 xl:px-8">
+      <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-4 pb-24 sm:px-5 sm:py-6 sm:pb-12 lg:px-7 xl:px-8">
 
 
 
-         
 
-          <section className="relative mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
+
+          <section className="relative mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/[0.14] blur-3xl" />
             <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-sky-500/[0.07] blur-3xl" />
             <div className="relative p-4 sm:p-5 lg:p-6">
@@ -1592,7 +1585,7 @@ const toggleInvitePlayer = (playerId: string) => {
                 </div>
                 <div className="min-w-0">
                   <h1 className="text-[25px] font-extrabold tracking-[-0.035em] text-white sm:text-[32px]">Vereinskalender</h1>
-                  <p className="mt-1 text-xs font-medium text-white/50 sm:text-sm">Alle Liga-Spiele und Termine von Emoj!'s Dartverein</p>
+                  <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">Alle Liga-Spiele und Termine von Emoj!'s Dartverein</p>
                 </div>
               </div>
             </div>
@@ -1600,14 +1593,14 @@ const toggleInvitePlayer = (playerId: string) => {
 
           {todayHighlights.length > 0 && (
             <div className="mb-4 sm:mb-5">
-              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl transition duration-300 hover:border-orange-300/[0.14]">
+              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
                 <CardContent className="p-4 sm:p-5">
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08]">
                       <Star className="h-5 w-5 text-orange-200" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-black text-white">Heute im Verein</div>
+                      <div className="font-semibold text-white">Heute im Verein</div>
 
                       <div className="mt-3 space-y-2">
                         {todayHighlights.slice(0, 5).map((item) => {
@@ -1620,12 +1613,12 @@ const toggleInvitePlayer = (playerId: string) => {
                                 onClick={() => openMatchDialog(match)}
                                 className="w-full text-left"
                               >
-                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-black/30 p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]">
+                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-card p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]">
                                   <div className="min-w-0">
-                                    <div className="truncate text-sm font-black text-white">
+                                    <div className="truncate text-sm font-semibold text-white">
                                       🎯 {getTeamDisplayName(match, true)} vs {getTeamDisplayName(match, false)}
                                     </div>
-                                    <div className="mt-1 text-xs font-medium text-white/35">
+                                    <div className="mt-1 text-xs font-medium text-muted-foreground">
   <span>{formatTimeWithoutSeconds(match.match_time)} Uhr</span>
 
   {match.season?.name ? ` • ${match.season.name}` : ""}
@@ -1653,13 +1646,13 @@ const toggleInvitePlayer = (playerId: string) => {
                                 onClick={() => openEventDialog(ev)}
                                 className="w-full text-left"
                               >
-                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-black/30 p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]">
+                                <div className="flex min-w-0 items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-card p-3 transition hover:border-orange-300/[0.16] hover:bg-orange-500/[0.08]">
                                   <div className="min-w-0">
-                                    <div className="truncate text-sm font-black text-white">
+                                    <div className="truncate text-sm font-semibold text-white">
                                       {ev.event_type === "Geburtstag" ? "🎂" : ev.event_type === "Turnier" ? "🏆" : "📅"}{" "}
                                       {ev.name}
                                     </div>
-                                    <div className="mt-1 text-xs font-medium text-white/35">
+                                    <div className="mt-1 text-xs font-medium text-muted-foreground">
                                       {ev.event_type === "Urlaub"
                                         ? `Urlaub • ${ev.start_date} bis ${ev.end_date}`
                                         : ev.event_type === "Geburtstag"
@@ -1677,7 +1670,7 @@ const toggleInvitePlayer = (playerId: string) => {
                         })}
 
                         {todayHighlights.length > 5 && (
-                          <div className="text-xs text-white/35 pt-1">+ {todayHighlights.length - 5} weitere</div>
+                          <div className="text-xs text-muted-foreground pt-1">+ {todayHighlights.length - 5} weitere</div>
                         )}
                       </div>
                     </div>
@@ -1689,14 +1682,14 @@ const toggleInvitePlayer = (playerId: string) => {
 
           {todayBirthdays.length > 0 && (
             <div className="mb-4 sm:mb-5">
-              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl transition duration-300 hover:border-orange-300/[0.14]">
+              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
                 <CardContent className="p-4 sm:p-5">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-pink-500/[0.10] rounded-lg">
                       <Cake className="h-5 w-5 text-pink-200" />
                     </div>
                     <div className="flex-1">
-                      <div className="font-black text-white">Heute hat jemand Geburtstag 🎉</div>
+                      <div className="font-semibold text-white">Heute hat jemand Geburtstag 🎉</div>
                       <div className="text-sm text-white/60 mt-1">{todayBirthdays.map((p) => p.name).join(", ")}</div>
                     </div>
                   </div>
@@ -1709,9 +1702,9 @@ const toggleInvitePlayer = (playerId: string) => {
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] pb-3">
               <div>
                 <div className="text-sm font-bold text-white">Kalenderansicht</div>
-                <div className="mt-0.5 text-[11px] text-white/40">Termine gezielt finden und verwalten</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">Termine gezielt finden und verwalten</div>
               </div>
-              <div className="inline-flex max-w-full rounded-xl border border-white/10 bg-black/35 p-1">
+              <div className="inline-flex max-w-full rounded-xl border border-white/10 bg-card p-1">
                 <Button variant={viewMode === "month" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("month")} className="h-9 gap-1.5 rounded-lg px-3 text-xs font-bold"><Calendar className="h-3.5 w-3.5" />Monat</Button>
                 <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" onClick={() => { setListLimit(36); setViewMode("list") }} className="h-9 gap-1.5 rounded-lg px-3 text-xs font-bold"><Filter className="h-3.5 w-3.5" />Liste</Button>
                 <Button variant={viewMode === "browse" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("browse")} className="h-9 gap-1.5 rounded-lg px-3 text-xs font-bold"><Users className="h-3.5 w-3.5" />Übersicht</Button>
@@ -1744,7 +1737,7 @@ const toggleInvitePlayer = (playerId: string) => {
                             Nur Events
                           </div>
                         </SelectItem>
-						
+
 						<SelectItem value="Feiertage" className="text-xs">
   <div className="flex items-center gap-2">
     <CalendarDays className="h-4 w-4 text-red-200" />
@@ -1826,14 +1819,14 @@ const toggleInvitePlayer = (playerId: string) => {
                       }} className="h-9 rounded-xl border-white/10 bg-white/[0.035] px-3 text-xs text-white/75 hover:bg-white/[0.08]"><RotateCcw className="mr-1.5 h-3.5 w-3.5"/>Filter zurücksetzen</Button>
               <div className="hidden flex-1 sm:block" />
               {isVorstand && <Button size="sm" onClick={() => {setBoardTitle("");setBoardDesc("");setBoardDate("");setBoardTime("");setBoardFiles(null);setInvitePlayerIds([]);setInviteSearch("");setIsBoardDialogOpen(true)}} className="h-9 rounded-xl bg-white/[0.08] px-3 text-xs font-semibold text-white hover:bg-white/[0.14]"><Plus className="mr-1.5 h-3.5 w-3.5"/>Vorstandstermin</Button>}
-              <Button size="sm" onClick={() => {setEditingVacationId(null);setVacationStart("");setVacationEnd("");setVacationNote("");setIsVacationDialogOpen(true)}} className="h-9 rounded-xl bg-orange-500 px-3 text-xs font-bold text-white hover:bg-orange-600"><Sun className="mr-1.5 h-3.5 w-3.5"/>Urlaub eintragen</Button>
+              <Button size="sm" onClick={() => {setEditingVacationId(null);setVacationStart("");setVacationEnd("");setVacationNote("");setIsVacationDialogOpen(true)}} className="h-9 rounded-xl bg-orange-500 px-3 text-xs font-bold text-primary-foreground hover:bg-orange-600"><Sun className="mr-1.5 h-3.5 w-3.5"/>Urlaub eintragen</Button>
               <Button variant="outline" size="sm" onClick={() => {setEditingPrivateEntryId(null);setPrivateTitle("");setPrivateStart("");setPrivateEnd("");setPrivateTime("");setPrivateNote("");setIsPrivateDialogOpen(true)}} className="h-9 rounded-xl border-white/10 bg-white/[0.035] px-3 text-xs font-semibold text-white hover:bg-white/[0.08]"><Plus className="mr-1.5 h-3.5 w-3.5"/>Privater Termin</Button>
             </div>
           </section>
 
           {viewMode === "browse" && (
             <div className="calendar-browse space-y-4">
-              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/30 shadow-none backdrop-blur-xl transition duration-300 hover:border-orange-300/[0.14]">
+              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
                 <CardHeader className="pb-2 px-2 sm:px-6">
 
                   <CardTitle className="text-base text-white">Kachelübersicht</CardTitle>
@@ -1849,7 +1842,7 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
+                        className="p-3 rounded-xl border bg-card hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-white/60" />
@@ -1864,7 +1857,7 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
+                        className="p-3 rounded-xl border bg-card hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Target className="h-4 w-4 text-orange-200" />
@@ -1879,7 +1872,7 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
+                        className="p-3 rounded-xl border bg-card hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Trophy className="h-4 w-4 text-violet-200" />
@@ -1894,7 +1887,7 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
+                        className="p-3 rounded-xl border bg-card hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <CalendarDays className="h-4 w-4 text-green-600" />
@@ -1909,7 +1902,7 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
+                        className="p-3 rounded-xl border bg-card hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Sun className="h-4 w-4 text-sky-200" />
@@ -1924,7 +1917,7 @@ const toggleInvitePlayer = (playerId: string) => {
                           setSelectedTeam("Alle Teams")
                           setViewMode("list")
                         }}
-                        className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
+                        className="p-3 rounded-xl border bg-card hover:bg-white/[0.035] text-left transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <Cake className="h-4 w-4 text-pink-200" />
@@ -1948,17 +1941,17 @@ const toggleInvitePlayer = (playerId: string) => {
                               setSelectedItemType("Spiele")
                               setViewMode("list")
                             }}
-                            className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
+                            className="p-3 rounded-xl border bg-card hover:bg-white/[0.035] text-left transition-colors"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <Trophy className="h-4 w-4 text-white/60 shrink-0" />
-                              <div className="truncate text-sm font-black text-white">{league}</div>
+                              <div className="truncate text-sm font-semibold text-white">{league}</div>
                             </div>
                           </button>
                         ))}
                     </div>
                     {leagues.filter((l) => l !== "Alle Ligen").length === 0 && (
-                      <div className="text-xs text-white/35">Keine Ligen gefunden.</div>
+                      <div className="text-xs text-muted-foreground">Keine Ligen gefunden.</div>
                     )}
                   </div>
 
@@ -1983,19 +1976,19 @@ const toggleInvitePlayer = (playerId: string) => {
                               setSelectedItemType("Spiele")
                               setViewMode("list")
                             }}
-                            className="p-3 rounded-xl border bg-black/30 hover:bg-white/[0.035] text-left transition-colors"
+                            className="p-3 rounded-xl border bg-card hover:bg-white/[0.035] text-left transition-colors"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <Avatar className="h-6 w-6 shrink-0">
                                 <AvatarImage src={team.logo_url ?? undefined} alt={team.name} />
                                 <AvatarFallback>{team.name?.slice(0, 1)?.toUpperCase()}</AvatarFallback>
                               </Avatar>
-                              <div className="truncate text-sm font-black text-white">{team.name}</div>
+                              <div className="truncate text-sm font-semibold text-white">{team.name}</div>
                             </div>
                           </button>
                         ))}</div>
                     {clubTeams.length === 0 && (
-                      <div className="text-xs text-white/35">Keine Teams gefunden.</div>
+                      <div className="text-xs text-muted-foreground">Keine Teams gefunden.</div>
                     )}
                   </div>
                 </CardContent>
@@ -2007,13 +2000,13 @@ const toggleInvitePlayer = (playerId: string) => {
             <section className="overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#0a0d12]/90 shadow-[0_24px_70px_-42px_rgba(0,0,0,.9)]">
               <div className="flex flex-col gap-4 border-b border-white/[0.07] px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div className="min-w-0">
-                  <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400/85">
+                  <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-orange-400/85">
                     <span className="h-1.5 w-1.5 rounded-full bg-orange-400" /> EMD · Monatsübersicht
                   </div>
-                  <h2 className="text-[25px] font-black tracking-tight text-white sm:text-[30px]">
-                    {monthNames[currentDate.getMonth()]} <span className="font-medium text-white/45">{currentDate.getFullYear()}</span>
+                  <h2 className="text-[25px] font-semibold tracking-tight text-white sm:text-[30px]">
+                    {monthNames[currentDate.getMonth()]} <span className="font-medium text-muted-foreground">{currentDate.getFullYear()}</span>
                   </h2>
-                  <p className="mt-1 text-xs text-white/40">Spiele, Turniere und alles rund um deinen Verein</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Spiele, Turniere und alles rund um deinen Verein</p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
                   <button aria-label="Vorheriger Monat" onClick={() => navigateMonth("prev")} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/75 transition hover:bg-white/10 hover:text-white"><ChevronLeft className="h-4 w-4" /></button>
@@ -2024,7 +2017,7 @@ const toggleInvitePlayer = (playerId: string) => {
               <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_390px]">
               <div className="px-2 pb-3 pt-3 sm:px-4 sm:pb-5 sm:pt-5">
                 <div className="mb-2 grid grid-cols-7 gap-1.5 sm:gap-2">
-                  {dayNames.map((day, i) => <div key={day} className={`py-2 text-center text-[10px] font-bold uppercase tracking-wider sm:text-xs ${i >= 5 ? "text-orange-300/65" : "text-white/40"}`}>{day}</div>)}
+                  {dayNames.map((day, i) => <div key={day} className={`py-2 text-center text-xs font-bold uppercase tracking-wider sm:text-xs ${i >= 5 ? "text-orange-300/65" : "text-muted-foreground"}`}>{day}</div>)}
                 </div>
                 <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                   {getDaysInMonth(currentDate).slice(0, 42).map((day, index) => {
@@ -2047,7 +2040,7 @@ const toggleInvitePlayer = (playerId: string) => {
                               const color = category === "match" ? "bg-orange-400" : category === "Geburtstag" ? "bg-pink-400" : category === "Turnier" ? "bg-violet-400" : category === "Urlaub" ? "bg-sky-400" : "bg-emerald-400"
                               return <span key={idx} className={`h-1.5 w-1.5 rounded-full ${color}`} />
                             })}
-                            {itemsForDay.length > 4 && <span className="text-[9px] text-white/45">+{itemsForDay.length-4}</span>}
+                            {itemsForDay.length > 4 && <span className="text-xs text-muted-foreground">+{itemsForDay.length-4}</span>}
                           </div>
                           <div className="mt-2 hidden w-full min-w-0 space-y-1.5 sm:block">
                             {itemsForDay.slice(0, 2).map((item, idx) => {
@@ -2057,23 +2050,23 @@ const toggleInvitePlayer = (playerId: string) => {
                               const name = isMatch ? `${getTeamDisplayName(item as Match, true)} vs ${getTeamDisplayName(item as Match, false)}` : (item as Event).name
                               const time = isMatch ? normalizeTimeHHMM((item as Match).match_time) : ((item as Event).start_time && (item as Event).event_type !== "Urlaub" && (item as Event).event_type !== "Geburtstag" ? normalizeTimeHHMM((item as Event).start_time!) : "")
                               return <div key={idx} title={`${time} ${name}`} className="min-w-0 rounded-lg border border-white/[0.035] bg-black/20 px-2 py-1.5">
-                                <div className="flex min-w-0 items-center gap-1.5"><span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} /><span className="truncate text-[10px] font-semibold leading-snug text-white/80 lg:text-[11px]">{name}</span></div>
-                                {time && <div className="ml-3 mt-0.5 text-[9px] font-medium text-white/35">{time} Uhr</div>}
+                                <div className="flex min-w-0 items-center gap-1.5"><span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} /><span className="truncate text-xs font-semibold leading-snug text-white/80 lg:text-xs">{name}</span></div>
+                                {time && <div className="ml-3 mt-0.5 text-xs font-medium text-muted-foreground">{time} Uhr</div>}
                               </div>
                             })}
-                            {itemsForDay.length > 2 && <div className="pl-1 text-[10px] font-semibold text-orange-300/85">+{itemsForDay.length - 2} weitere</div>}
+                            {itemsForDay.length > 2 && <div className="pl-1 text-xs font-semibold text-orange-300/85">+{itemsForDay.length - 2} weitere</div>}
                           </div>
                         </>}
                       </button>
                     )
                   })}
                 </div>
-                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-white/[0.065] pt-4 text-[11px] text-white/55">
+                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-white/[0.065] pt-4 text-xs text-muted-foreground">
                   {[["bg-orange-400", "Ligaspiele"], ["bg-violet-400", "Turniere"], ["bg-emerald-400", "Termine"], ["bg-pink-400", "Geburtstage"], ["bg-sky-400", "Urlaub"]].map(([dot, name]) => <span key={name} className="inline-flex items-center gap-1.5"><span className={`h-2 w-2 rounded-full ${dot}`} />{name}</span>)}
                 </div>
                 <div ref={dayAgendaRef} id="emd-day-agenda" className="mt-5 scroll-mt-24 rounded-[18px] border border-white/[0.08] bg-white/[0.025] p-3 lg:hidden">
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <div><div className="text-[10px] font-bold uppercase tracking-[0.14em] text-orange-300/80">Tagesübersicht</div><h3 className="mt-1 text-base font-extrabold text-white">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() ? `${selectedDate.getDate()}. ${monthNames[selectedDate.getMonth()]}` : "Tag auswählen"}</h3></div>
+                    <div><div className="text-xs font-bold uppercase tracking-[0.14em] text-orange-300/80">Tagesübersicht</div><h3 className="mt-1 text-base font-extrabold text-white">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() ? `${selectedDate.getDate()}. ${monthNames[selectedDate.getMonth()]}` : "Tag auswählen"}</h3></div>
                     <CalendarDays className="h-5 w-5 text-white/25" />
                   </div>
                   {selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() && getItemsForDate(selectedDate).length ? (
@@ -2083,18 +2076,18 @@ const toggleInvitePlayer = (playerId: string) => {
                       const time = isMatch ? (item as Match).match_time : (item as Event).start_time
                       return <button type="button" key={`${item.id}-${idx}`} onClick={() => handleItemClick(item)} className="flex w-full min-w-0 items-center gap-3 rounded-xl border border-white/[0.075] bg-[#10151d] px-3 py-3 text-left transition hover:border-orange-400/25">
                         <span className={`h-9 w-1 shrink-0 rounded-full ${isMatch ? "bg-orange-400" : (item as Event).event_type === "Turnier" ? "bg-violet-400" : (item as Event).event_type === "Geburtstag" ? "bg-pink-400" : (item as Event).event_type === "Urlaub" ? "bg-sky-400" : "bg-emerald-400"}`} />
-                        <span className="min-w-0 flex-1"><span className="block text-xs font-bold leading-snug text-white">{name}</span><span className="mt-1 block text-[11px] text-white/45">{isMatch ? "Ligaspiel" : (item as Event).event_type}{time && time !== "00:00:00" ? ` · ${normalizeTimeHHMM(time)} Uhr` : ""}</span></span>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-white/30" />
+                        <span className="min-w-0 flex-1"><span className="block text-xs font-bold leading-snug text-white">{name}</span><span className="mt-1 block text-xs text-muted-foreground">{isMatch ? "Ligaspiel" : (item as Event).event_type}{time && time !== "00:00:00" ? ` · ${normalizeTimeHHMM(time)} Uhr` : ""}</span></span>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </button>
                     })}</div>
-                  ) : <p className="py-3 text-xs text-white/40">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() ? "Keine Termine an diesem Tag." : "Tippe auf einen Tag, um alle Termine zu sehen."}</p>}
+                  ) : <p className="py-3 text-xs text-muted-foreground">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() ? "Keine Termine an diesem Tag." : "Tippe auf einen Tag, um alle Termine zu sehen."}</p>}
                 </div>
               </div>
               <aside className="hidden min-w-0 border-l border-white/[0.08] bg-white/[0.018] p-5 lg:block">
                 <div className="sticky top-24">
-                  <div className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-300">Tagesübersicht</div>
-                  <h3 className="mb-1 text-xl font-black text-white">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() ? selectedDate.toLocaleDateString("de-DE", { day: "numeric", month: "long" }) : "Tag auswählen"}</h3>
-                  <p className="mb-5 text-xs text-white/40">Tag im Kalender auswählen, um Termine zu sehen.</p>
+                  <div className="mb-1 text-xs font-extrabold uppercase tracking-[0.2em] text-orange-300">Tagesübersicht</div>
+                  <h3 className="mb-1 text-xl font-semibold text-white">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() ? selectedDate.toLocaleDateString("de-DE", { day: "numeric", month: "long" }) : "Tag auswählen"}</h3>
+                  <p className="mb-5 text-xs text-muted-foreground">Tag im Kalender auswählen, um Termine zu sehen.</p>
                   <div className="max-h-[650px] space-y-2 overflow-y-auto pr-1">
                     {selectedDate && selectedDate.getMonth() === currentDate.getMonth() && selectedDate.getFullYear() === currentDate.getFullYear() && getItemsForDate(selectedDate).length > 0 ? getItemsForDate(selectedDate).map((item, idx) => {
                       const match = "match_date" in item
@@ -2103,9 +2096,9 @@ const toggleInvitePlayer = (playerId: string) => {
                       const kind = match ? "Ligaspiel" : (item as Event).event_type
                       return <button type="button" key={`${item.id}-${idx}`} onClick={() => handleItemClick(item)} className="flex w-full items-start gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.035] p-3.5 text-left transition hover:border-orange-400/35 hover:bg-orange-500/[0.06]">
                         <span className={`mt-1 h-8 w-1 shrink-0 rounded-full ${match ? "bg-orange-400" : kind === "Turnier" ? "bg-violet-400" : kind === "Geburtstag" ? "bg-pink-400" : kind === "Urlaub" ? "bg-sky-400" : "bg-emerald-400"}`} />
-                        <span className="min-w-0 flex-1"><span className="block text-sm font-bold leading-snug text-white">{name}</span><span className="mt-1.5 block text-xs text-white/45">{kind}{time && time !== "00:00:00" ? ` · ${normalizeTimeHHMM(time)} Uhr` : ""}</span></span><ChevronRight className="mt-2 h-4 w-4 shrink-0 text-white/40" />
+                        <span className="min-w-0 flex-1"><span className="block text-sm font-bold leading-snug text-white">{name}</span><span className="mt-1.5 block text-xs text-muted-foreground">{kind}{time && time !== "00:00:00" ? ` · ${normalizeTimeHHMM(time)} Uhr` : ""}</span></span><ChevronRight className="mt-2 h-4 w-4 shrink-0 text-muted-foreground" />
                       </button>
-                    }) : <p className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center text-sm text-white/40">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() ? "Keine Termine an diesem Tag." : "Wähle ein Datum im Kalender."}</p>}
+                    }) : <p className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center text-sm text-muted-foreground">{selectedDate && selectedDate.getMonth() === currentDate.getMonth() ? "Keine Termine an diesem Tag." : "Wähle ein Datum im Kalender."}</p>}
                   </div>
                 </div>
               </aside>
@@ -2129,12 +2122,12 @@ const toggleInvitePlayer = (playerId: string) => {
 
                 if (listItems.length === 0) {
                   return (
-                    <Card className="border bg-black/30 w-full shadow-none rounded-none sm:rounded-xl">
+                    <Card className="border bg-card w-full shadow-none rounded-none sm:rounded-xl">
 
                       <CardContent className="p-6 text-center">
-                        <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                        <Target className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                         <h3 className="text-lg font-semibold text-white mb-2">Keine Termine gefunden</h3>
-                        <p className="mt-2 text-sm font-medium text-white/35 sm:text-base">Mit den aktuellen Filtern wurden keine Termine gefunden.</p>
+                        <p className="mt-2 text-sm font-medium text-muted-foreground sm:text-base">Mit den aktuellen Filtern wurden keine Termine gefunden.</p>
                       </CardContent>
                     </Card>
                   )
@@ -2169,7 +2162,7 @@ const dateB =
                     const isUpcomingA = dateA >= todayStr
                     const isUpcomingB = dateB >= todayStr
 
-                 
+
                     if (isUpcomingA && !isUpcomingB) return -1
                     if (!isUpcomingA && isUpcomingB) return 1
 
@@ -2202,10 +2195,10 @@ const dateB =
 
                                 <div className="mb-2 min-w-0">
                                   <h3 className="text-base font-semibold text-white mb-1">{item.name}</h3>
-                                  {item.description && <p className="mt-2 text-sm font-medium text-white/35 sm:text-base">{item.description}</p>}
+                                  {item.description && <p className="mt-2 text-sm font-medium text-muted-foreground sm:text-base">{item.description}</p>}
                                 </div>
 
-                                <div className="flex flex-col gap-2 text-sm text-white/50">
+                                <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                                   <div className="flex items-center gap-2 min-w-0">
   <Calendar className="h-4 w-4 shrink-0" />
   <span>
@@ -2286,7 +2279,7 @@ const dateB =
                                       {match.season?.name || "Liga"}
                                     </Badge>
                                   </div>
-                                  <div className="text-sm text-white/50">Spieltag {match.week_number}</div>
+                                  <div className="text-sm text-muted-foreground">Spieltag {match.week_number}</div>
                                 </div>
 
                                 <div className="flex items-center gap-4 mb-2 min-w-0">
@@ -2310,7 +2303,7 @@ const dateB =
                                         {match.home_score} : {match.away_score}
                                       </div>
                                     ) : (
-                                      <div className="text-gray-400 font-bold">vs</div>
+                                      <div className="text-muted-foreground font-bold">vs</div>
                                     )}
                                   </div>
 
@@ -2329,7 +2322,7 @@ const dateB =
                                   </div>
                                 </div>
 
-                                <div className="flex flex-col gap-2 text-sm text-white/50">
+                                <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                                   <div className="flex items-center gap-2 min-w-0">
                                     <Calendar className="h-4 w-4 shrink-0" />
                                     {new Date(match.match_date).toLocaleDateString("de-DE", {
@@ -2386,7 +2379,7 @@ const dateB =
             <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
               <DialogHeader>
                 <DialogTitle className="text-lg font-extrabold tracking-tight">Spiel Details</DialogTitle>
-                <DialogDescription className="text-sm text-white/50">Detaillierte Informationen zum Spiel</DialogDescription>
+                <DialogDescription className="text-sm text-muted-foreground">Detaillierte Informationen zum Spiel</DialogDescription>
               </DialogHeader>
 
               {selectedMatch && (
@@ -2413,7 +2406,7 @@ const dateB =
                             {selectedMatch.home_score} : {selectedMatch.away_score}
                           </div>
                         ) : (
-                          <div className="text-2xl text-gray-400 font-bold">vs</div>
+                          <div className="text-2xl text-muted-foreground font-bold">vs</div>
                         )}
                       </div>
 
@@ -2431,9 +2424,9 @@ const dateB =
                     </div>
                   </div>
 
-                  <div className="space-y-2 bg-black/30 p-3 rounded-lg border">
+                  <div className="space-y-2 bg-card p-3 rounded-lg border">
                     <div className="flex items-center gap-3 text-sm">
-                      <Calendar className="h-5 w-5 text-white/50 shrink-0" />
+                      <Calendar className="h-5 w-5 text-muted-foreground shrink-0" />
                       <span>
                         {new Date(selectedMatch.match_date).toLocaleDateString("de-DE", {
                           weekday: "long",
@@ -2445,20 +2438,20 @@ const dateB =
                     </div>
                     {selectedEvent?.start_time && (
   <div className="flex items-center gap-3 text-sm">
-    <Clock className="h-5 w-5 text-white/50 shrink-0" />
+    <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
     <span>{formatTimeWithoutSeconds(selectedEvent.start_time)}</span>
   </div>
 )}
 
                     {selectedEvent?.location && (
                       <div className="flex items-center gap-3 text-sm">
-                        <MapPin className="h-5 w-5 text-white/50 shrink-0" />
+                        <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
                         <span>{selectedEvent?.location}</span>
                       </div>
                     )}
                     {(selectedEvent?.entry_fee != null || selectedEvent?.max_participants != null) && (
                       <div className="flex items-center gap-3 text-sm">
-                        <Users className="h-5 w-5 text-white/50 shrink-0" />
+                        <Users className="h-5 w-5 text-muted-foreground shrink-0" />
                         <span>
                           {selectedEvent?.entry_fee != null ? `${selectedEvent?.entry_fee} €` : ""}
                           {selectedEvent?.entry_fee != null && selectedEvent?.max_participants != null ? " • " : ""}
@@ -2468,15 +2461,15 @@ const dateB =
                     )}
 
                     <div className="flex items-center gap-3 text-sm">
-                      <Clock className="h-5 w-5 text-white/50 shrink-0" />
+                      <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
                       <span>{formatTimeWithoutSeconds(selectedMatch.match_time)} Uhr</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm min-w-0">
-                      <MapPin className="h-5 w-5 text-white/50 shrink-0" />
+                      <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
                       <span className="truncate">{selectedMatch.venue}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
-                      <Trophy className="h-5 w-5 text-white/50 shrink-0" />
+                      <Trophy className="h-5 w-5 text-muted-foreground shrink-0" />
                       <span>
                         {selectedMatch.season?.name || "Liga"} - Spieltag {selectedMatch.week_number}
                       </span>
@@ -2522,7 +2515,7 @@ const dateB =
 
               <DialogHeader>
                 <DialogTitle className="text-lg font-extrabold tracking-tight">Event Details</DialogTitle>
-                <DialogDescription className="text-sm text-white/50">Detaillierte Informationen zum Event</DialogDescription>
+                <DialogDescription className="text-sm text-muted-foreground">Detaillierte Informationen zum Event</DialogDescription>
               </DialogHeader>
 
               {selectedEvent && (
@@ -2540,7 +2533,7 @@ const dateB =
                       </div>
                     )}
                     <div className="mb-4 sm:mb-5">
-                      <div className="h-16 w-16 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center">
+                      <div className="text-foreground h-16 w-16 mx-auto mb-4 bg-card   rounded-full flex items-center justify-center">
                         {selectedEvent.event_type === "Turnier" ? (
                           <Trophy className="h-8 w-8 text-orange-200" />
                         ) : selectedEvent.event_type === "Geburtstag" ? (
@@ -2552,13 +2545,13 @@ const dateB =
                         )}
                       </div>
                       <h3 className="text-xl font-bold text-white">{selectedEvent.name}</h3>
-                      {selectedEvent.description && <p className="text-white/50 mt-2">{selectedEvent.description}</p>}
+                      {selectedEvent.description && <p className="text-muted-foreground mt-2">{selectedEvent.description}</p>}
                     </div>
                   </div>
 
-                  <div className="space-y-2 bg-black/30 p-3 rounded-lg border">
+                  <div className="space-y-2 bg-card p-3 rounded-lg border">
                     <div className="flex items-center gap-3 text-sm">
-  <Calendar className="h-5 w-5 text-white/50 shrink-0" />
+  <Calendar className="h-5 w-5 text-muted-foreground shrink-0" />
   <span>
     {new Date(selectedEvent.start_date || selectedEvent.event_date).toLocaleDateString("de-DE", {
       weekday: "long",
@@ -2632,28 +2625,28 @@ const dateB =
 >
   Löschen
 </Button>
-	
-	
-	
-	
-	
+
+
+
+
+
 
   </div>
 )}
-				  
-				  
-				  
-				  
-				  
-				  
+
+
+
+
+
+
 				  {selectedEvent?.type === "board" && (
-  <div className="space-y-2 bg-black/30 p-3 rounded-lg border">
+  <div className="space-y-2 bg-card p-3 rounded-lg border">
     <div className="font-semibold text-sm">Anhänge</div>
 
     {loadingBoardAttachments ? (
-      <div className="text-sm text-white/50">Lade Dateien...</div>
+      <div className="text-sm text-muted-foreground">Lade Dateien...</div>
     ) : boardAttachments.length === 0 ? (
-      <div className="text-sm text-white/50">Keine Dateien hochgeladen.</div>
+      <div className="text-sm text-muted-foreground">Keine Dateien hochgeladen.</div>
     ) : (
       <div className="space-y-3">
         {boardAttachments.map((a) => {
@@ -2693,12 +2686,12 @@ const dateB =
     )}
   </div>
 )}
-				  
-				  
-				  
-				  
-				  
-				  
+
+
+
+
+
+
 
                   {selectedEvent?.event_type === "Urlaub" &&
   selectedEvent.vacation_id &&
@@ -2713,7 +2706,7 @@ const dateB =
           setVacationStart(selectedEvent.start_date || "")
           setVacationEnd(selectedEvent.end_date || "")
           setVacationNote((selectedEvent.note || selectedEvent.description || "") as string)
-          
+
           if (!vacationName.trim()) {
             const inferred = (selectedEvent.name || "").replace("🏖️ Urlaub:", "").trim()
             if (inferred) setVacationName(inferred)
@@ -2755,7 +2748,7 @@ const dateB =
                     year: "numeric",
                   })}
                 </DialogTitle>
-                <DialogDescription className="text-sm text-white/50">Alle Termine an diesem Tag</DialogDescription>
+                <DialogDescription className="text-sm text-muted-foreground">Alle Termine an diesem Tag</DialogDescription>
               </DialogHeader>
 
               {selectedDate && (
@@ -2820,7 +2813,7 @@ const dateB =
   <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
       <DialogTitle className="text-lg font-extrabold tracking-tight">Vorstand-Termin wirklich löschen?</DialogTitle>
-      <DialogDescription className="text-sm text-white/50">
+      <DialogDescription className="text-sm text-muted-foreground">
         Dieser Termin wird dauerhaft entfernt (inkl. Einladungen & Dateien).
       </DialogDescription>
     </DialogHeader>
@@ -2872,13 +2865,13 @@ const dateB =
             <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
               <DialogHeader>
                 <DialogTitle className="text-lg font-extrabold tracking-tight">{editingVacationId ? "Urlaub bearbeiten" : "Urlaub eintragen"}</DialogTitle>
-                <DialogDescription className="text-sm text-white/50">Für alle sichtbar im Vereins-Kalender</DialogDescription>
+                <DialogDescription className="text-sm text-muted-foreground">Für alle sichtbar im Vereins-Kalender</DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label></Label>
-                 
+
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2891,8 +2884,8 @@ const dateB =
                     <Input type="date" value={vacationEnd} onChange={(e) => setVacationEnd(e.target.value)} />
                   </div>
                 </div>
-				
-	
+
+
 
                 <div className="space-y-2">
                   <Label>Notiz (optional)</Label>
@@ -2928,16 +2921,16 @@ const dateB =
               </div>
             </DialogContent>
           </Dialog>
-		  
-		  
-		  
+
+
+
 		<Dialog open={isPrivateDialogOpen} onOpenChange={setIsPrivateDialogOpen}>
   <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
       <DialogTitle className="text-lg font-extrabold tracking-tight">
         {editingPrivateEntryId ? "Privaten Termin bearbeiten" : "Privaten Termin eintragen"}
       </DialogTitle>
-      <DialogDescription className="text-sm text-white/50">
+      <DialogDescription className="text-sm text-muted-foreground">
         Nur für dich sichtbar
       </DialogDescription>
     </DialogHeader>
@@ -2962,7 +2955,7 @@ const dateB =
           <Input type="date" value={privateEnd} onChange={(e) => setPrivateEnd(e.target.value)} />
         </div>
       </div>
-	  
+
 	  <div className="space-y-2">
   <Label>Uhrzeit (optional)</Label>
   <Input
@@ -3008,14 +3001,14 @@ const dateB =
       )}
     </div>
   </DialogContent>
-</Dialog>  
-		  
-		  
+</Dialog>
+
+
 		  <Dialog open={isConfirmDeletePrivateOpen} onOpenChange={setIsConfirmDeletePrivateOpen}>
   <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
       <DialogTitle className="text-lg font-extrabold tracking-tight">Privaten Termin wirklich löschen?</DialogTitle>
-      <DialogDescription className="text-sm text-white/50">
+      <DialogDescription className="text-sm text-muted-foreground">
         Dieser private Termin wird dauerhaft entfernt.
       </DialogDescription>
     </DialogHeader>
@@ -3051,13 +3044,13 @@ const dateB =
     </div>
   </DialogContent>
 </Dialog>
-		  
-		  
+
+
 		  <Dialog open={isBoardDialogOpen} onOpenChange={setIsBoardDialogOpen}>
   <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
       <DialogTitle className="text-lg font-extrabold tracking-tight">Vorstand Termin eintragen</DialogTitle>
-      <DialogDescription className="text-sm text-white/50">Nur für Vorstand sichtbar</DialogDescription>
+      <DialogDescription className="text-sm text-muted-foreground">Nur für Vorstand sichtbar</DialogDescription>
     </DialogHeader>
 
     <div className="space-y-4">
@@ -3086,8 +3079,8 @@ const dateB =
         <Label>Dateien / Bilder</Label>
         <Input type="file" multiple onChange={(e) => setBoardFiles(e.target.files)} />
       </div>
-	  
-	  
+
+
 	  <div className="space-y-2">
   <Label>Spieler einladen</Label>
 
@@ -3119,20 +3112,20 @@ const dateB =
       })}
 
     {allClubPlayers.length === 0 && (
-      <div className="text-sm text-white/50">Keine Spieler gefunden.</div>
+      <div className="text-sm text-muted-foreground">Keine Spieler gefunden.</div>
     )}
   </div>
 
-  <div className="text-xs text-white/50">
+  <div className="text-xs text-muted-foreground">
     Ausgewählt: {invitePlayerIds.length}
   </div>
 </div>
-	  
-	  
-	  
-	  
-	  
-	  
+
+
+
+
+
+
 
       <Button
         onClick={createBoardEvent}
@@ -3144,17 +3137,17 @@ const dateB =
     </div>
   </DialogContent>
 </Dialog>
-		  
-		  
-		  
+
+
+
 
           {isMobileBottomSheetOpen && mobileSelectedDate && (
             <div className="fixed inset-0 z-[999]">
-              <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileBottomSheetOpen(false)} />
+              <div className="absolute inset-0 bg-card" onClick={() => setIsMobileBottomSheetOpen(false)} />
 
-              <div className="absolute bottom-0 left-0 right-0 bg-black/30 rounded-t-xl max-h-[70dvh] overflow-hidden pb-[calc(env(safe-area-inset-bottom)+5rem)]">
+              <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-xl max-h-[70dvh] overflow-hidden pb-[calc(env(safe-area-inset-bottom)+5rem)]">
                 <div className="flex justify-center py-3">
-                  <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                  <div className="w-10 h-1 bg-secondary rounded-full" />
                 </div>
 
                 <div className="px-4 pb-4 border-b">
@@ -3165,7 +3158,7 @@ const dateB =
                       month: "long",
                     })}
                   </h3>
-                  <p className="text-sm text-white/50">
+                  <p className="text-sm text-muted-foreground">
                     {getItemsForDate(mobileSelectedDate).length}{" "}
                     {getItemsForDate(mobileSelectedDate).length === 1 ? "Termin" : "Termine"}
                   </p>
@@ -3209,7 +3202,7 @@ const dateB =
                                 </div>
                                 <div className="min-w-0">
                                   <div className="font-medium text-base truncate">{item.name}</div>
-                                  <div className="text-sm text-white/50">
+                                  <div className="text-sm text-muted-foreground">
                                     {item.event_type === "Urlaub"
                                       ? `${item.start_date} bis ${item.end_date}`
                                       : item.event_type === "Geburtstag"
@@ -3237,7 +3230,7 @@ const dateB =
                                   <div className="font-medium text-base truncate">
                                     {getTeamDisplayName(item, true)} vs {getTeamDisplayName(item, false)}
                                   </div>
-                                  <div className="text-sm text-white/50">
+                                  <div className="text-sm text-muted-foreground">
                                     {formatTimeWithoutSeconds((item as any).match_time)} Uhr
 
                                     {item.season?.name && ` • ${item.season.name}`}
@@ -3256,20 +3249,20 @@ const dateB =
             </div>
           )}
         </div>
-		
+
 			  <Dialog open={isLineupDialogOpen} onOpenChange={setIsLineupDialogOpen}>
   <DialogContent className="calendar-dialog w-[calc(100vw-1.25rem)] max-w-[560px] max-h-[min(88dvh,860px)] overflow-y-auto p-5 sm:p-6">
     <DialogHeader>
       <DialogTitle className="text-lg font-extrabold tracking-tight">Aufstellung</DialogTitle>
-      <DialogDescription className="text-sm text-white/50">
+      <DialogDescription className="text-sm text-muted-foreground">
         {selectedMatch ? `${getTeamDisplayName(selectedMatch, true)} vs ${getTeamDisplayName(selectedMatch, false)}` : ""}
       </DialogDescription>
     </DialogHeader>
 
     {loadingLineup ? (
-      <div className="text-sm text-white/50">Lade Aufstellung...</div>
+      <div className="text-sm text-muted-foreground">Lade Aufstellung...</div>
     ) : lineupPlayers.length === 0 ? (
-      <div className="text-sm text-white/50">Noch keine Aufstellung hinterlegt.</div>
+      <div className="text-sm text-muted-foreground">Noch keine Aufstellung hinterlegt.</div>
     ) : (
       <div className="space-y-2">
         {lineupPlayers.map((p) => (
@@ -3290,9 +3283,9 @@ const dateB =
   </DialogContent>
 </Dialog>
 
-		
+
       </main>
-	  
+
 
 
       <style jsx global>{`

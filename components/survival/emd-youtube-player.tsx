@@ -100,23 +100,23 @@ export function EmdYouTubePlayer() {
   return (
     <section className="mb-5 rounded-2xl border border-orange-400/25 bg-[#151821] p-4 text-white">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><div className="text-sm font-extrabold text-orange-200">♫ Musik · YouTube</div><p className="text-xs text-slate-400">Deine Playlist für die Turnierleitung</p></div>
+        <div><div className="text-sm font-extrabold text-orange-200">♫ Musik · YouTube</div><p className="text-xs text-muted-foreground">Deine Playlist für die Turnierleitung</p></div>
         <button type="button" onClick={() => setOpen(v => !v)} className="rounded-xl border border-orange-400/40 px-4 py-2 text-sm font-bold text-orange-200 hover:bg-orange-400/10">{open ? "Musiksteuerung schließen" : "Musiksteuerung öffnen"}</button>
       </div>
       {open && <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,400px)]">
         <div className="space-y-3">
-          <label className="block text-xs font-bold text-slate-300" htmlFor="emd-youtube-url">YouTube-Playlist oder Video</label>
+          <label className="block text-xs font-bold text-muted-foreground" htmlFor="emd-youtube-url">YouTube-Playlist oder Video</label>
           <div className="flex flex-wrap gap-2">
             <input id="emd-youtube-url" value={link} onChange={e => setLink(e.target.value)} placeholder="https://www.youtube.com/playlist?list=..." className="min-w-0 flex-1 rounded-xl border border-white/15 bg-[#080a10] px-3 py-2 text-sm text-white" />
-            <button type="button" onClick={applyLink} className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-black">Laden</button>
+            <button type="button" onClick={applyLink} className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-[#0b1018]">Laden</button>
           </div>
           {error && <p role="alert" className="text-xs text-red-300">{error}</p>}
           <label className="flex items-center gap-3 text-sm"><span className="w-24">Musik</span><input aria-label="Musiklautstärke" type="range" min={0} max={100} value={volume} onChange={e => { const v=Number(e.target.value);setVolume(v);targetVolume.current=v;localStorage.setItem(STORAGE_VOLUME,String(v));setPlayerVolume(isDucking.current && duckEnabled.current ? Math.min(15,v) : v) }} className="min-w-0 flex-1 accent-orange-500" /><span className="w-10 text-right tabular-nums">{volume}%</span></label>
           <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" checked={duck} onChange={e => {setDuck(e.target.checked);duckEnabled.current=e.target.checked;localStorage.setItem(STORAGE_DUCK,String(e.target.checked));setPlayerVolume(isDucking.current && e.target.checked ? Math.min(15,targetVolume.current) : targetVolume.current)}} className="accent-orange-500" />Musik während NERO-/VOLT-Ansagen leiser (15 %)</label>
-          <p className="text-xs text-slate-400">Musik im Player starten. Automatische Absenkung funktioniert nur in diesem Player und in diesem Browser-Tab. YouTube kann Werbung anzeigen.</p>
+          <p className="text-xs text-muted-foreground">Musik im Player starten. Automatische Absenkung funktioniert nur in diesem Player und in diesem Browser-Tab. YouTube kann Werbung anzeigen.</p>
         </div>
         <div className="min-h-[205px] overflow-hidden rounded-xl bg-black">
-          {active ? <div id={playerId.current} /> : <div className="flex h-[205px] items-center justify-center px-4 text-center text-sm text-slate-400">Playlist-Link einfügen und auf „Laden“ klicken</div>}
+          {active ? <div id={playerId.current} /> : <div className="flex h-[205px] items-center justify-center px-4 text-center text-sm text-muted-foreground">Playlist-Link einfügen und auf „Laden“ klicken</div>}
         </div>
       </div>}
     </section>

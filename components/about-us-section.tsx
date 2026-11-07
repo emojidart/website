@@ -226,7 +226,7 @@ export function AboutUsSection() {
 
         {/* Section 5: WIR SUCHEN DICH - Call to Action */}
         <div
-          className="bg-gradient-to-br from-brutal-accent-red to-red-900 p-10 rounded-lg shadow-2xl text-brutal-text text-center"
+          className="text-foreground bg-card from-brutal-accent-red  p-10 rounded-lg shadow-2xl text-brutal-text text-center"
           // Removed initial, whileInView, and variants from this div
         >
           <motion.h3

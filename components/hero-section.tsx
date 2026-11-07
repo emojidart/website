@@ -155,7 +155,7 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
     accent: "text-white",
     buttonBg: "bg-orange-600",
     buttonHover: "hover:bg-orange-700",
-    cardBg: "bg-gradient-to-br from-orange-500/20 to-orange-600/30",
+    cardBg: "text-foreground bg-card  ",
     cardBorder: "border-orange-400/50",
   }
 
@@ -204,7 +204,7 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
                 key={index}
                 onClick={() => setCurrentEventIndex(index)}
                 className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentEventIndex ? "bg-orange-400" : "bg-white/30"
+                  index === currentEventIndex ? "bg-orange-400 text-primary-foreground" : "bg-white/30"
                 }`}
               />
             ))}
@@ -242,37 +242,37 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
         >
           <motion.div
             variants={cardVariants}
-            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-2 sm:p-4 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
+            className={`flex flex-col items-center justify-center rounded-lg  p-2 sm:p-4 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
           >
             <Calendar className={`h-5 w-5 sm:h-8 sm:w-8 mb-1 sm:mb-2 text-orange-600`} />
             <span className={`text-xs sm:text-lg lg:text-xl font-bold text-center text-white leading-tight`}>
               34 TAGE
             </span>
-            <span className={`text-[10px] sm:text-xs lg:text-sm uppercase text-center font-semibold text-orange-200`}>
+            <span className={`text-xs sm:text-xs lg:text-sm uppercase text-center font-semibold text-orange-200`}>
               + FINALE
             </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
-            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-2 sm:p-4 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
+            className={`flex flex-col items-center justify-center rounded-lg  p-2 sm:p-4 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
           >
             <MapPin className={`h-5 w-5 sm:h-8 sm:w-8 mb-1 sm:mb-2 text-orange-600`} />
             <span className={`text-xs sm:text-lg lg:text-xl font-bold text-center text-white leading-tight`}>
               PFEIL-OK
             </span>
-            <span className={`text-[10px] sm:text-xs lg:text-sm uppercase text-center font-semibold text-orange-200`}>
+            <span className={`text-xs sm:text-xs lg:text-sm uppercase text-center font-semibold text-orange-200`}>
               SALZBURG
             </span>
           </motion.div>
           <motion.div
             variants={cardVariants}
-            className={`flex flex-col items-center justify-center rounded-lg backdrop-blur-sm p-2 sm:p-4 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
+            className={`flex flex-col items-center justify-center rounded-lg  p-2 sm:p-4 border shadow-xl ${eventColors.cardBg} ${eventColors.cardBorder} shadow-orange-500/20`}
           >
             <Trophy className={`h-5 w-5 sm:h-8 sm:w-8 mb-1 sm:mb-2 text-orange-600`} />
             <span className={`text-xs sm:text-lg lg:text-xl font-bold text-center text-white leading-tight`}>
               20 ANTRITTE
             </span>
-            <span className={`text-[10px] sm:text-xs lg:text-sm uppercase text-center font-semibold text-orange-200`}>
+            <span className={`text-xs sm:text-xs lg:text-sm uppercase text-center font-semibold text-orange-200`}>
               FINALE
             </span>
           </motion.div>
@@ -300,7 +300,7 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
             <Link href="/tournament">
               <Button
                 variant="outline"
-                className={`border-white text-white hover:bg-white font-extrabold py-3 sm:py-4 px-6 sm:px-10 rounded-md text-base sm:text-lg lg:text-xl bg-white/90 shadow-lg hover:scale-105 transition-transform uppercase w-full sm:w-auto min-h-[48px] hover:text-orange-600 border-orange-400 text-orange-400`}
+                className={`border-white text-white hover:bg-card font-extrabold py-3 sm:py-4 px-6 sm:px-10 rounded-md text-base sm:text-lg lg:text-xl bg-card shadow-lg hover:scale-105 transition-transform uppercase w-full sm:w-auto min-h-[48px] hover:text-orange-600 border-orange-400 text-orange-400`}
               >
                 EMD - LION CUP ANMELDUNG
               </Button>

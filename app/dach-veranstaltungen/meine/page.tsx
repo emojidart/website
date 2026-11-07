@@ -69,7 +69,7 @@ const statusConfig: Record<
 > = {
   draft: {
     label: "Entwurf",
-    className: "bg-gray-100 text-white/55 border-white/[0.08]",
+    className: "bg-muted text-muted-foreground border-white/[0.08]",
     hint: "Noch nicht zur Prüfung eingereicht.",
   },
   pending: {
@@ -89,7 +89,7 @@ const statusConfig: Record<
   },
   cancelled: {
     label: "Abgesagt",
-    className: "bg-slate-100 text-white/65 border-white/[0.08]",
+    className: "bg-muted text-white/65 border-white/[0.08]",
     hint: "Die Veranstaltung ist als abgesagt markiert.",
   },
 };
@@ -225,17 +225,10 @@ export default function MeineDachVeranstaltungenPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#050608] pb-28 text-white">
+    <div className="min-h-screen overflow-x-hidden bg-background pb-28 text-white">
       <Header variant="app" title="Meine Veranstaltungen" subtitle="DACH Turniere" backHref="/dach-veranstaltungen" />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.70),rgba(3,5,9,.94)_46%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(14,165,233,.13),transparent_26%),radial-gradient(circle_at_88%_28%,rgba(249,115,22,.12),transparent_28%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-2 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
@@ -243,7 +236,7 @@ export default function MeineDachVeranstaltungenPage() {
           <Button
             asChild
             variant="ghost"
-            className="-ml-2 rounded-xl text-white/50 hover:bg-black/25 hover:text-white"
+            className="-ml-2 rounded-xl text-muted-foreground hover:bg-card hover:text-white"
           >
             <Link href="/dach-veranstaltungen">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -252,25 +245,25 @@ export default function MeineDachVeranstaltungenPage() {
           </Button>
         </div>
 
-        <section className="relative overflow-hidden rounded-[28px] bg-black/30 backdrop-blur-xl px-6 py-7 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] sm:px-8 sm:py-9">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/[0.08]0/20 blur-3xl" />
+        <section className="relative overflow-hidden rounded-[28px] bg-card  px-6 py-7 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] sm:px-8 sm:py-9">
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl" />
           <div className="absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-amber-300/10 blur-3xl" />
           <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">
                 DACH-Veranstaltungen
               </div>
-              <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
                 Meine Veranstaltungen
               </h1>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
+              <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
                 Behalte Freigaben im Blick, aktualisiere deine Turniere oder
                 sage Veranstaltungen mit wenigen Klicks ab.
               </p>
             </div>
             <Button
               asChild
-              className="h-12 rounded-2xl bg-orange-600 px-5 font-black shadow-lg shadow-orange-950/30 hover:bg-orange-500/[0.08]0"
+              className="h-12 rounded-2xl bg-primary px-5 font-semibold shadow-lg shadow-orange-950/30 hover:bg-primary/90/[0.08]0 text-primary-foreground"
             >
               <Link href="/dach-veranstaltungen/neu">
                 <Plus className="mr-2 h-5 w-5" />
@@ -296,23 +289,23 @@ export default function MeineDachVeranstaltungenPage() {
                 className={`group rounded-2xl border p-4 text-left transition-all ${
                   active
                     ? "border-orange-300/[0.20] bg-orange-500/[0.10]"
-                    : "border-white/[0.08] bg-black/25 shadow-none hover:-translate-y-0.5 hover:border-white/[0.12] hover:shadow-md"
+                    : "border-white/[0.08] bg-card shadow-none hover:-translate-y-0.5 hover:border-white/[0.12] hover:shadow-md"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${active ? "bg-orange-600 text-white" : "bg-slate-100 text-white/50 group-hover:bg-orange-500/[0.08] group-hover:text-orange-200"}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${active ? "bg-orange-600 text-white" : "bg-muted text-muted-foreground group-hover:bg-orange-500/[0.08] group-hover:text-orange-200"}`}
                   >
                     <Icon className="h-5 w-5" />
                   </div>
                   {active ? (
-                    <span className="rounded-full bg-orange-100 px-2 py-1 text-[10px] font-black uppercase text-orange-200">
+                    <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold uppercase text-orange-200">
                       Aktiv
                     </span>
                   ) : null}
                 </div>
-                <div className="mt-3 text-3xl font-black">{value}</div>
-                <div className="mt-0.5 text-[11px] font-black uppercase tracking-[0.1em] text-white/35">
+                <div className="mt-3 text-3xl font-semibold">{value}</div>
+                <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                   {label}
                 </div>
               </button>
@@ -320,7 +313,7 @@ export default function MeineDachVeranstaltungenPage() {
           })}
         </section>
 
-        <section className="rounded-[1.6rem] border border-white/[0.08] bg-black/30 p-3 shadow-lg shadow-none backdrop-blur">
+        <section className="rounded-[1.6rem] border border-white/[0.08] bg-card p-3 shadow-lg shadow-none ">
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/25" />
@@ -328,7 +321,7 @@ export default function MeineDachVeranstaltungenPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Veranstaltung, Ort oder Status suchen …"
-                className="h-12 rounded-2xl border-white/[0.08] bg-black/25/[0.035] pl-12 pr-4 text-base focus-visible:border-orange-400 focus-visible:ring-orange-200"
+                className="h-12 rounded-2xl border-white/[0.08] bg-card/[0.035] pl-12 pr-4 text-base focus-visible:border-orange-400 focus-visible:ring-orange-200"
               />
             </div>
             <Button
@@ -340,7 +333,7 @@ export default function MeineDachVeranstaltungenPage() {
               Neu laden
             </Button>
           </div>
-          <div className="mt-3 flex items-center justify-between px-1 text-xs text-white/35">
+          <div className="mt-3 flex items-center justify-between px-1 text-xs text-muted-foreground">
             <span>
               {filtered.length} von {events.length} Veranstaltungen
             </span>
@@ -371,22 +364,22 @@ export default function MeineDachVeranstaltungenPage() {
             {[0, 1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="h-56 animate-pulse rounded-[28px] border border-white/[0.08] bg-black/25 shadow-none"
+                className="h-56 animate-pulse rounded-[28px] border border-white/[0.08] bg-card shadow-none"
               />
             ))}
           </div>
         ) : filtered.length === 0 ? (
           <Card className="overflow-hidden rounded-[28px] border-white/[0.08] shadow-lg shadow-none">
             <CardContent className="p-10 text-center sm:p-14">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
                 <Search className="h-8 w-8 text-white/25" />
               </div>
-              <h2 className="mt-5 text-xl font-black">
+              <h2 className="mt-5 text-xl font-semibold">
                 {events.length === 0
                   ? "Noch keine Veranstaltung vorhanden"
                   : "Keine passende Veranstaltung gefunden"}
               </h2>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/35">
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                 {events.length === 0
                   ? "Reiche dein erstes Turnier ein und verfolge anschließend hier den Freigabestatus."
                   : "Ändere die Suche oder wähle einen anderen Status aus."}
@@ -421,12 +414,12 @@ export default function MeineDachVeranstaltungenPage() {
               return (
                 <Card
                   key={event.id}
-                  className="group overflow-hidden rounded-[28px] border-white/[0.08] bg-black/25 shadow-lg shadow-none transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]"
+                  className="group overflow-hidden rounded-[28px] border-white/[0.08] bg-card shadow-lg shadow-none transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]"
                 >
                   <CardContent className="p-0">
                     <div className="relative">
                       <div className="flex min-h-[190px]">
-                        <div className="relative w-28 shrink-0 overflow-hidden bg-slate-100 sm:w-40">
+                        <div className="relative w-28 shrink-0 overflow-hidden bg-muted sm:w-40">
                           {event.photo_url ? (
                             <img
                               src={event.photo_url}
@@ -434,8 +427,8 @@ export default function MeineDachVeranstaltungenPage() {
                               className="h-full min-h-[190px] w-full object-cover transition duration-500 group-hover:scale-105"
                             />
                           ) : (
-                            <div className="flex h-full min-h-[190px] items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-                              <CalendarDays className="h-10 w-10 text-white/55" />
+                            <div className="text-foreground flex h-full min-h-[190px] items-center justify-center bg-card  ">
+                              <CalendarDays className="h-10 w-10 text-muted-foreground" />
                             </div>
                           )}
                         </div>
@@ -443,10 +436,10 @@ export default function MeineDachVeranstaltungenPage() {
                         <div className="min-w-0 flex-1 p-4 sm:p-5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <h2 className="line-clamp-2 text-lg font-black leading-snug text-white sm:text-xl">
+                              <h2 className="line-clamp-2 text-lg font-semibold leading-snug text-white sm:text-xl">
                                 {event.name}
                               </h2>
-                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/35">
+                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                                 <span className="inline-flex items-center gap-1.5">
                                   <CalendarDays className="h-4 w-4 text-orange-200" />
                                   {formatDate(event.start_date)}
@@ -464,7 +457,7 @@ export default function MeineDachVeranstaltungenPage() {
                             </div>
                             <Badge
                               variant="outline"
-                              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${cfg.className}`}
+                              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${cfg.className}`}
                             >
                               {cfg.label}
                             </Badge>
@@ -472,24 +465,24 @@ export default function MeineDachVeranstaltungenPage() {
 
                           <div className="mt-3 text-sm font-bold text-white/65">
                             {event.city}{" "}
-                            <span className="text-slate-300">•</span>{" "}
+                            <span className="text-muted-foreground">•</span>{" "}
                             {event.country_code}
                           </div>
-                          <p className="mt-2 text-xs leading-5 text-white/35">
+                          <p className="mt-2 text-xs leading-5 text-muted-foreground">
                             {cfg.hint}
                           </p>
 
                           {event.event_status === "rejected" &&
                           event.rejection_reason ? (
                             <div className="mt-3 rounded-xl border border-red-300/[0.16] bg-red-500/[0.08] p-3 text-xs font-semibold leading-5 text-red-200">
-                              <span className="font-black">Hinweis:</span>{" "}
+                              <span className="font-semibold">Hinweis:</span>{" "}
                               {event.rejection_reason}
                             </div>
                           ) : null}
 
                           {event.event_status === "cancelled" ? (
                             <div className="mt-3 rounded-xl border border-red-300/[0.16] bg-red-500/[0.08] p-3 text-xs font-semibold leading-5 text-red-200">
-                              <div className="font-black uppercase tracking-wide">
+                              <div className="font-semibold uppercase tracking-wide">
                                 Veranstaltung abgesagt
                               </div>
                               <div className="mt-1">
@@ -503,19 +496,19 @@ export default function MeineDachVeranstaltungenPage() {
                       </div>
 
                       {busy ? (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/25/75 backdrop-blur-sm">
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/75 ">
                           <Loader2 className="h-7 w-7 animate-spin text-orange-200" />
                         </div>
                       ) : null}
                     </div>
 
-                    <div className="flex flex-wrap gap-2 border-t border-white/[0.07] bg-black/25/[0.035]/80 p-3">
+                    <div className="flex flex-wrap gap-2 border-t border-white/[0.07] bg-card p-3">
                       {event.event_status === "approved" ? (
                         <Button
                           asChild
                           size="sm"
                           variant="outline"
-                          className="rounded-xl border-white/[0.08] bg-black/25"
+                          className="rounded-xl border-white/[0.08] bg-card"
                         >
                           <Link href={`/dach-veranstaltungen/${event.id}`}>
                             <Eye className="mr-1.5 h-4 w-4" />
@@ -529,7 +522,7 @@ export default function MeineDachVeranstaltungenPage() {
                           asChild
                           size="sm"
                           variant="outline"
-                          className="rounded-xl border-white/[0.08] bg-black/25"
+                          className="rounded-xl border-white/[0.08] bg-card"
                         >
                           <Link
                             href={`/dach-veranstaltungen/${event.id}/bearbeiten`}
@@ -549,7 +542,7 @@ export default function MeineDachVeranstaltungenPage() {
                             setCancelEvent(event);
                             setCancellationReason("");
                           }}
-                          className="rounded-xl border-red-300/[0.16] bg-black/25 text-red-700 hover:bg-red-500/[0.08] hover:text-red-200"
+                          className="rounded-xl border-red-300/[0.16] bg-card text-red-700 hover:bg-red-500/[0.08] hover:text-red-200"
                         >
                           <XCircle className="mr-1.5 h-4 w-4" />
                           Absagen
@@ -560,7 +553,7 @@ export default function MeineDachVeranstaltungenPage() {
                           variant="outline"
                           disabled={busy}
                           onClick={() => void reactivateEvent(event.id)}
-                          className="rounded-xl border-white/[0.08] bg-black/25"
+                          className="rounded-xl border-white/[0.08] bg-card"
                         >
                           <RotateCcw className="mr-1.5 h-4 w-4" />
                           Neu einreichen
@@ -600,15 +593,15 @@ export default function MeineDachVeranstaltungenPage() {
         }}
       >
         <AlertDialogContent className="overflow-hidden rounded-[28px] border-white/[0.08] p-0">
-          <div className="bg-black/30 backdrop-blur-xl px-6 py-5 text-white">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/[0.08]0/15">
+          <div className="bg-card  px-6 py-5 text-white">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/15">
               <XCircle className="h-7 w-7 text-red-300" />
             </div>
             <AlertDialogHeader className="mt-3">
               <AlertDialogTitle className="text-center text-xl text-white">
                 Veranstaltung wirklich absagen?
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-center text-slate-300">
+              <AlertDialogDescription className="text-center text-muted-foreground">
                 <span className="font-bold text-white">
                   {cancelEvent?.name}
                 </span>{" "}
@@ -620,7 +613,7 @@ export default function MeineDachVeranstaltungenPage() {
 
           <div className="space-y-4 p-6">
             <div className="space-y-2">
-              <label className="text-sm font-black text-slate-900">
+              <label className="text-sm font-semibold text-foreground">
                 Absagegrund (optional)
               </label>
               <Textarea
@@ -629,7 +622,7 @@ export default function MeineDachVeranstaltungenPage() {
                 placeholder="z. B. zu wenige Anmeldungen, Lokal nicht verfügbar oder organisatorische Gründe"
                 className="min-h-[110px] rounded-2xl border-white/[0.08]"
               />
-              <p className="text-xs text-white/35">
+              <p className="text-xs text-muted-foreground">
                 Der Grund wird öffentlich bei der Veranstaltung angezeigt.
               </p>
             </div>
@@ -677,7 +670,7 @@ export default function MeineDachVeranstaltungenPage() {
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center">
               Möchtest du{" "}
-              <span className="font-bold text-slate-900">
+              <span className="font-bold text-foreground">
                 „{deleteEvent?.name}“
               </span>{" "}
               wirklich dauerhaft löschen?

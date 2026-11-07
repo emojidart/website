@@ -48,8 +48,8 @@ type Section = {
 /** ---------- CONFIG ---------- */
 
 const BOTTOM_BAR: NavItem[] = [
-  { key: "home", name: "Home", href: "/", icon: Home },
-  { key: "events", name: "Events", href: "/veranstaltungen", icon: CalendarDays },
+  { key: "home", name: "Start", href: "/", icon: Home },
+  { key: "events", name: "Termine", href: "/veranstaltungen", icon: CalendarDays },
   { key: "liga", name: "Liga", href: "/liga-statistiken-app", icon: Trophy },
   { key: "verein", name: "Verein", href: "/new-club", icon: Users },
 ]
@@ -57,7 +57,7 @@ const BOTTOM_BAR: NavItem[] = [
 const QUICK_BASE: Omit<NavItem, "key">[] = [
   { name: "Turnierserien", href: "/turniere/serien", icon: Trophy },
   { name: "Live", href: "/live-all-app", icon: Radio },
-  { name: "History", href: "/tournament-history", icon: History },
+  { name: "Verlauf", href: "/tournament-history", icon: History },
   {
     name: "Chat",
     href: "/chat-app",
@@ -117,21 +117,26 @@ function NavLink({
   className?: string
 }) {
   const Icon = item.icon
+  const pathname = usePathname()
+  const targetPath = item.href?.split("?")[0]
+  const active = pathname === targetPath || (targetPath !== "/" && !!targetPath && pathname.startsWith(`${targetPath}/`))
 
   return (
     <Link
       href={item.href!}
+      aria-current={active ? "page" : undefined}
       onClick={onAfter}
       className={cn(
-        "group flex items-center gap-3 rounded-2xl border p-3 transition-all",
+        "group flex min-h-12 items-center gap-3 rounded-xl border p-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59b50]",
+        active && "border-orange-300/30 bg-orange-500/10",
         "border-white/[0.07] bg-white/[0.035] text-white/65 hover:border-orange-300/20 hover:bg-orange-500/[0.08] hover:text-white",
         className,
       )}
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-orange-200 transition-colors group-hover:border-orange-300/20 group-hover:bg-orange-500/10">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#f59b50] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59b50] group-hover:border-orange-300/20 group-hover:bg-orange-500/10">
         <Icon className="h-4 w-4" />
       </span>
-      <span className="min-w-0 flex-1 truncate text-sm font-bold">{item.name}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold">{item.name}</span>
     </Link>
   )
 }
@@ -154,11 +159,11 @@ function NavButton({ item, className }: { item: NavItem; className?: string }) {
         "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
         item.danger
           ? "border-red-400/15 bg-red-500/10 text-red-300"
-          : "border-white/10 bg-white/5 text-orange-200",
+          : "border-white/10 bg-white/5 text-[#f59b50]",
       )}>
         <Icon className="h-4 w-4" />
       </span>
-      <span className="min-w-0 flex-1 truncate text-left text-sm font-bold">{item.name}</span>
+      <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold">{item.name}</span>
     </button>
   )
 }
@@ -246,7 +251,7 @@ export function MobileBottomNav() {
         : "/member-profile-app"
       : "/login"
 
-    const profileName = isLoggedIn ? (isGuest ? "Gast-Profil" : "Profil") : "Login"
+    const profileName = isLoggedIn ? (isGuest ? "Gast-Profil" : "Profil") : "Anmelden"
 
     const quickRaw: NavItem[] = [
       ...QUICK_BASE.map((x) => ({
@@ -288,13 +293,12 @@ export function MobileBottomNav() {
 
     return [
       { title: "Schnellzugriff", variant: "grid", items: quick },
-      { title: "Account", variant: "list", items: account },
+      { title: "Konto", variant: "list", items: account },
       { title: "Live", variant: "list", items: live },
       { title: "Info", variant: "list", items: info },
     ]
   }, [isLoggedIn, isAdmin, isGuest, handleLogout])
 
-  const BOTTOM_OFFSET = "0px"
   const SPACER_H = "calc(4.5rem + max(10px, env(safe-area-inset-bottom)))"
 
   if (loading || (isLoggedIn && !profileChecked)) {
@@ -311,43 +315,35 @@ export function MobileBottomNav() {
         <div className="fixed inset-0 z-[100] md:hidden">
           <button
             aria-label="Schließen"
-            className="absolute inset-0 bg-black/75 backdrop-blur-sm"
-            onPointerUp={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              closeMore()
-            }}
+            className="absolute inset-0 bg-black/75"
+            onClick={closeMore}
           />
 
           {/* Sheet sitzt über Nav + Offset */}
           <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: SPACER_H }}>
-            <div className="mx-3 overflow-hidden rounded-t-[28px] border border-white/10 bg-[#050608] shadow-[0_-28px_80px_-30px_rgba(0,0,0,.98)]">
-              <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[#070a0f] p-4 text-white">
-                <h3 className="text-lg font-black text-white">
+            <div className="mx-3 overflow-hidden rounded-t-[28px] border border-white/10 bg-[#101722] shadow-sm">
+              <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[#151e2b] p-4 text-white">
+                <h3 className="text-lg font-semibold text-white">
                   Mehr Optionen
                 </h3>
 
                 <button
                   type="button"
-                  onPointerUp={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    closeMore()
-                  }}
-                  className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/5 p-0 text-white/50 transition hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
+                  onClick={closeMore}
+                  className="flex h-11 w-11 touch-manipulation items-center justify-center rounded-xl border border-white/10 bg-white/5 p-0 text-white/65 transition hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
                   aria-label="Schließen"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <div className="max-h-[68vh] space-y-5 overflow-y-auto bg-[#050608] p-4 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+              <div className="max-h-[68vh] space-y-5 overflow-y-auto bg-[#101722] p-4 pb-[calc(env(safe-area-inset-bottom)+20px)]">
                 {sections.map((sec) => {
                   if (sec.items.length === 0) return null
 
                   return (
                     <section key={sec.title}>
-                      <div className="mb-2 px-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/28">
+                      <div className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
                         {sec.title}
                       </div>
 
@@ -384,43 +380,45 @@ export function MobileBottomNav() {
 
       {/* BOTTOM NAV */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-[90] md:hidden pointer-events-none"
+        aria-label="Hauptnavigation"
+        className="emd-bottom-nav fixed inset-x-0 bottom-0 z-[90] md:hidden pointer-events-none"
         style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
       >
-        <div className="pointer-events-auto mx-2 overflow-hidden rounded-[22px] border border-white/10 bg-[#06080d]/96 shadow-[0_-16px_46px_-24px_rgba(0,0,0,.98)] backdrop-blur-2xl">
-          <div className="pointer-events-none absolute inset-x-2 bottom-[max(8px,env(safe-area-inset-bottom))] h-[68px] rounded-[22px] bg-[radial-gradient(circle_at_50%_110%,rgba(249,115,22,.12),transparent_52%)]" />
+        <div className="pointer-events-auto mx-3 overflow-hidden rounded-2xl border border-white/10 bg-[#101722] shadow-lg">
+
           <div className="relative grid h-[68px] grid-cols-5 px-1">
             {BOTTOM_BAR.map((item) => {
-              const isActive = pathname === item.href
+              const isActive = pathname === item.href || (item.href !== "/" && !!item.href && pathname.startsWith(`${item.href}/`))
               const Icon = item.icon
 
               return (
                 <Link
                   key={item.key}
                   href={item.href!}
+                  aria-current={isActive ? "page" : undefined}
                   className="group flex min-h-[58px] min-w-0 touch-manipulation select-none items-center justify-center px-0.5"
                 >
                   <span
                     className={cn(
                       "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 transition-all",
                       isActive
-                        ? "bg-orange-500/[0.12] text-orange-200 shadow-[0_0_24px_rgba(249,115,22,.08)]"
-                        : "text-white/38 group-active:bg-white/[0.05] group-active:text-white/70",
+                        ? "bg-orange-500/10 text-[#f59b50]"
+                        : "text-white/65 group-active:bg-white/[0.05] group-active:text-white/70",
                     )}
                   >
                     <span
                       className={cn(
                         "flex h-7 w-9 items-center justify-center rounded-xl border transition-all",
                         isActive
-                          ? "border-orange-300/20 bg-orange-500/10 text-orange-200"
-                          : "border-transparent bg-transparent text-white/42",
+                          ? "border-orange-300/20 bg-orange-500/10 text-[#f59b50]"
+                          : "border-transparent bg-transparent text-white/65",
                       )}
                     >
                       <Icon className="h-[19px] w-[19px]" strokeWidth={isActive ? 2.5 : 2.1} />
                     </span>
                     <span className={cn(
-                      "max-w-[62px] truncate text-[9px] font-bold leading-none",
-                      isActive ? "text-orange-100" : "text-white/38",
+                      "max-w-[62px] truncate text-[11px] font-medium leading-none",
+                      isActive ? "text-orange-100" : "text-white/65",
                     )}>
                       {item.name}
                     </span>
@@ -431,11 +429,7 @@ export function MobileBottomNav() {
 
             <button
               type="button"
-              onPointerUp={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                setIsMoreOpen(true)
-              }}
+              onClick={() => setIsMoreOpen(true)}
               className="group relative z-[2] flex min-h-[58px] min-w-0 touch-manipulation select-none items-center justify-center px-0.5"
               aria-label="Mehr Optionen"
               aria-expanded={isMoreOpen}
@@ -444,23 +438,23 @@ export function MobileBottomNav() {
                 className={cn(
                   "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 transition-all",
                   isMoreOpen
-                    ? "bg-orange-500/[0.12] text-orange-200 shadow-[0_0_24px_rgba(249,115,22,.08)]"
-                    : "text-white/38 group-active:bg-white/[0.05] group-active:text-white/70",
+                    ? "bg-orange-500/10 text-[#f59b50]"
+                    : "text-white/65 group-active:bg-white/[0.05] group-active:text-white/70",
                 )}
               >
                 <span
                   className={cn(
                     "flex h-7 w-9 items-center justify-center rounded-xl border transition-all",
                     isMoreOpen
-                      ? "border-orange-300/20 bg-orange-500/10 text-orange-200"
-                      : "border-transparent bg-transparent text-white/42",
+                      ? "border-orange-300/20 bg-orange-500/10 text-[#f59b50]"
+                      : "border-transparent bg-transparent text-white/65",
                   )}
                 >
                   <MoreHorizontal className="h-[19px] w-[19px]" />
                 </span>
                 <span className={cn(
-                  "text-[9px] font-bold leading-none",
-                  isMoreOpen ? "text-orange-100" : "text-white/38",
+                  "text-[11px] font-medium leading-none",
+                  isMoreOpen ? "text-orange-100" : "text-white/65",
                 )}>
                   Mehr
                 </span>

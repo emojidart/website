@@ -75,12 +75,12 @@ export function VereinAppInstall() {
   }
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-black/30 p-3.5 backdrop-blur-xl sm:p-4">
+    <div className="rounded-[22px] border border-white/10 bg-card p-3.5  sm:p-4">
       <div className="mb-3">
-        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">
+        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           EMD VereinsApp
         </div>
-        <div className="mt-1 text-sm font-black text-white sm:text-base">
+        <div className="mt-1 text-sm font-semibold text-white sm:text-base">
           Direkt auf Smartphone oder PC installieren
         </div>
       </div>
@@ -96,12 +96,12 @@ export function VereinAppInstall() {
             <Smartphone className="h-5 w-5 text-orange-200" />
           </div>
           <div className="min-w-0">
-            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35">
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Android
             </div>
-            <div className="truncate text-sm font-black text-white">Google Play</div>
+            <div className="truncate text-sm font-semibold text-white">Google Play</div>
           </div>
-          <Download className="ml-auto h-4 w-4 text-white/30 group-hover:text-orange-300" />
+          <Download className="ml-auto h-4 w-4 text-muted-foreground group-hover:text-orange-300" />
         </a>
 
         <button
@@ -113,10 +113,10 @@ export function VereinAppInstall() {
             <MonitorDown className="h-5 w-5 text-sky-200" />
           </div>
           <div className="min-w-0">
-            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35">
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Windows / PC
             </div>
-            <div className="truncate text-sm font-black text-white">
+            <div className="truncate text-sm font-semibold text-white">
               {isInstalled ? "Bereits installiert" : "App installieren"}
             </div>
           </div>
@@ -131,16 +131,16 @@ export function VereinAppInstall() {
             
           </div>
           <div className="min-w-0">
-            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35">
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               iPhone / iPad
             </div>
-            <div className="truncate text-sm font-black text-white">Installieren</div>
+            <div className="truncate text-sm font-semibold text-white">Installieren</div>
           </div>
         </button>
       </div>
 
       {message ? (
-        <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold leading-5 text-white/55">
+        <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold leading-5 text-muted-foreground">
           {message}
         </div>
       ) : null}

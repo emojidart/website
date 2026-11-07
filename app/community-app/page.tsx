@@ -580,11 +580,11 @@ export default function CommunityPage() {
 
   if (authLoading || (loading && !posts.length)) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20">
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="h-12 w-12 text-orange-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Lädt...</p>
+            <p className="text-muted-foreground">Lädt...</p>
           </div>
         </main>
         <MobileBottomNav />
@@ -597,7 +597,7 @@ export default function CommunityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20">
       <main className="flex-grow container mx-auto px-4 py-4 max-w-6xl">
         <Button
           variant="outline"
@@ -610,54 +610,54 @@ export default function CommunityPage() {
         </Button>
 
         <div className="text-center mb-4">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-4 shadow-xl">
+          <div className="text-foreground inline-flex items-center justify-center w-14 h-14 bg-card   rounded-3xl mb-4 shadow-xl">
             <Users className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Feed</h1>
-          <p className="text-sm text-gray-600 text-balance px-4">Poste, kommentiere und bleib verbunden</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Feed</h1>
+          <p className="text-sm text-muted-foreground text-balance px-4">Poste, kommentiere und bleib verbunden</p>
         </div>
 
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-card ">
             <CardContent className="p-3 text-center">
               <TrendingUp className="h-5 w-5 text-orange-600 mx-auto mb-2" />
-              <div className="text-xl font-bold text-gray-900">{totalPosts}</div>
-              <div className="text-xs text-gray-600">Beiträge</div>
+              <div className="text-xl font-bold text-foreground">{totalPosts}</div>
+              <div className="text-xs text-muted-foreground">Beiträge</div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-card ">
             <CardContent className="p-3 text-center">
               <Heart className="h-5 w-5 text-red-600 mx-auto mb-2" />
-              <div className="text-xl font-bold text-gray-900">{totalLikes}</div>
-              <div className="text-xs text-gray-600">Likes</div>
+              <div className="text-xl font-bold text-foreground">{totalLikes}</div>
+              <div className="text-xs text-muted-foreground">Likes</div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-card ">
             <CardContent className="p-3 text-center">
               <MessageCircle className="h-5 w-5 text-blue-600 mx-auto mb-2" />
-              <div className="text-xl font-bold text-gray-900">{totalComments}</div>
-              <div className="text-xs text-gray-600">Kommentare</div>
+              <div className="text-xl font-bold text-foreground">{totalComments}</div>
+              <div className="text-xs text-muted-foreground">Kommentare</div>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="mb-4 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+        <Card className="mb-4 border-0 shadow-xl bg-card ">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
               <Avatar className="w-10 h-10 border-2 border-orange-200">
                 <AvatarImage src={session ? getUserAvatar() : undefined} alt="Du" />
-                <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white font-bold text-sm">
+                <AvatarFallback className="bg-card   text-white font-bold text-sm">
                   {session ? getUserInitials() : "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-grow min-w-0">
-                <h3 className="font-bold text-gray-900 text-sm truncate">
+                <h3 className="font-bold text-foreground text-sm truncate">
                   {loading ? "Lädt..." : session ? getUserName() : "Nicht angemeldet"}
                 </h3>
                 {!session && (
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Lock className="h-3 w-3" />
                     Melde dich an, um zu posten
                   </p>
@@ -675,10 +675,10 @@ export default function CommunityPage() {
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
               disabled={!session || isPosting}
-              className="min-h-[100px] mb-3 border-2 border-gray-200 focus:border-orange-500 resize-none text-sm"
+              className="min-h-[100px] mb-3 border-2 border-border focus:border-orange-500 resize-none text-sm"
             />
             {imagePreview && (
-              <div className="relative mb-3 rounded-lg overflow-hidden border-2 border-gray-200">
+              <div className="relative mb-3 rounded-lg overflow-hidden border-2 border-border">
                 <img
                   src={imagePreview || "/placeholder-user.jpg"}
                   alt="Preview"
@@ -701,7 +701,7 @@ export default function CommunityPage() {
                 size="sm"
                 disabled={!session || isPosting}
                 onClick={() => fileInputRef.current?.click()}
-                className="text-gray-600 hover:text-orange-600 bg-transparent text-xs"
+                className="text-muted-foreground hover:text-orange-600 bg-transparent text-xs"
               >
                 <ImageIcon className="h-4 w-4 mr-2" />
                 Bild hinzufügen
@@ -710,7 +710,7 @@ export default function CommunityPage() {
                 onClick={handleCreatePost}
                 disabled={!session || !newPost.trim() || isPosting || isUploading}
                 size="sm"
-                className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-bold shadow-lg text-xs"
+                className="bg-card     text-white font-bold shadow-lg text-xs"
               >
                 {isPosting || isUploading ? (
                   <>
@@ -731,20 +731,20 @@ export default function CommunityPage() {
         {loading ? (
           <div className="text-center py-12">
             <Loader2 className="h-12 w-12 text-orange-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Lade Beiträge...</p>
+            <p className="text-muted-foreground">Lade Beiträge...</p>
           </div>
         ) : posts.length === 0 ? (
-          <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+          <Card className="border-0 shadow-xl bg-card ">
             <CardContent className="p-8 text-center">
-              <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Noch keine Beiträge</h3>
-              <p className="text-gray-600">Sei der Erste und teile etwas mit der Community!</p>
+              <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-foreground mb-2">Noch keine Beiträge</h3>
+              <p className="text-muted-foreground">Sei der Erste und teile etwas mit der Community!</p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
             {posts.map((post) => (
-              <Card key={post.id} className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+              <Card key={post.id} className="border-0 shadow-xl bg-card ">
                 <CardHeader className="pb-3">
                   <div className="flex items-start gap-3">
                     <Avatar className="w-10 h-10 border-2 border-orange-200 flex-shrink-0">
@@ -752,7 +752,7 @@ export default function CommunityPage() {
                         src={getPostAuthorAvatar(post) || "/placeholder-user.jpg"}
                         alt={getPostAuthorName(post)}
                       />
-                      <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white font-bold text-sm">
+                      <AvatarFallback className="bg-card   text-white font-bold text-sm">
                         {getPostAuthorName(post)
                           .split(" ")
                           .map((n) => n[0])
@@ -761,10 +761,10 @@ export default function CommunityPage() {
                     </Avatar>
                     <div className="flex-grow min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-gray-900 text-sm">{getPostAuthorName(post)}</h3>
+                        <h3 className="font-bold text-foreground text-sm">{getPostAuthorName(post)}</h3>
                         <span className="text-base">{getRoleIcon("Spieler")}</span>
                       </div>
-                      <p className="text-xs text-gray-500">{getPostTimestamp(post.created_at)}</p>
+                      <p className="text-xs text-muted-foreground">{getPostTimestamp(post.created_at)}</p>
                     </div>
                     {session && session.user.id === post.user_id && (
                       <div className="flex gap-1">
@@ -772,7 +772,7 @@ export default function CommunityPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditPost(post.id, post.content)}
-                          className="text-gray-400 hover:text-blue-600 p-2"
+                          className="text-muted-foreground hover:text-blue-600 p-2"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -780,7 +780,7 @@ export default function CommunityPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeletePost(post.id)}
-                          className="text-gray-400 hover:text-red-600 p-2"
+                          className="text-muted-foreground hover:text-red-600 p-2"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -809,18 +809,18 @@ export default function CommunityPage() {
                           size="sm"
                           onClick={() => handleSaveEditPost(post.id)}
                           disabled={!editContent.trim()}
-                          className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white text-xs"
+                          className="bg-card     text-white text-xs"
                         >
                           Speichern
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-800 mb-3 leading-relaxed text-sm whitespace-pre-wrap">{post.content}</p>
+                    <p className="text-foreground mb-3 leading-relaxed text-sm whitespace-pre-wrap">{post.content}</p>
                   )}
 
                   {post.image_url && (
-                    <div className="mb-3 rounded-lg overflow-hidden border border-gray-200">
+                    <div className="mb-3 rounded-lg overflow-hidden border border-border">
                       <img
                         src={post.image_url || "/placeholder-user.jpg"}
                         alt="Post image"
@@ -829,13 +829,13 @@ export default function CommunityPage() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2 pt-3 border-t border-border">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleLike(post.id)}
                       className={`flex items-center gap-1 text-xs ${
-                        hasUserLikedPost(post) ? "text-red-600 hover:text-red-700" : "text-gray-600 hover:text-red-600"
+                        hasUserLikedPost(post) ? "text-red-600 hover:text-red-700" : "text-muted-foreground hover:text-red-600"
                       }`}
                     >
                       <Heart className={`h-4 w-4 ${hasUserLikedPost(post) ? "fill-current" : ""}`} />
@@ -845,7 +845,7 @@ export default function CommunityPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setActiveCommentId(activeCommentId === post.id ? null : post.id)}
-                      className="flex items-center gap-1 text-gray-600 hover:text-blue-600 text-xs"
+                      className="flex items-center gap-1 text-muted-foreground hover:text-blue-600 text-xs"
                     >
                       <MessageCircle className="h-4 w-4" />
                       <span className="font-semibold">{post.comments.length}</span>
@@ -853,18 +853,18 @@ export default function CommunityPage() {
                   </div>
 
                   {activeCommentId === post.id && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="mt-3 pt-3 border-t border-border">
                       {post.commentsWithUsers.length > 0 && (
                         <div className="mb-3 space-y-2">
-                          <h4 className="text-sm font-semibold text-gray-700">Kommentare</h4>
+                          <h4 className="text-sm font-semibold text-muted-foreground">Kommentare</h4>
                           {post.commentsWithUsers.map((comment) => (
-                            <div key={comment.id} className="flex gap-2 bg-gray-50 p-3 rounded-lg">
+                            <div key={comment.id} className="flex gap-2 bg-muted p-3 rounded-lg">
                               <Avatar className="w-8 h-8 border-2 border-orange-200 flex-shrink-0">
                                 <AvatarImage
                                   src={comment.userAvatar || "/placeholder-user.jpg"}
                                   alt={comment.userName}
                                 />
-                                <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs font-bold">
+                                <AvatarFallback className="bg-card   text-white text-xs font-bold">
                                   {comment.userName
                                     .split(" ")
                                     .map((n) => n[0])
@@ -875,8 +875,8 @@ export default function CommunityPage() {
                               </Avatar>
                               <div className="flex-grow min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-sm font-semibold text-gray-900">{comment.userName}</span>
-                                  <span className="text-xs text-gray-500">{getPostTimestamp(comment.created_at)}</span>
+                                  <span className="text-sm font-semibold text-foreground">{comment.userName}</span>
+                                  <span className="text-xs text-muted-foreground">{getPostTimestamp(comment.created_at)}</span>
                                 </div>
                                 {editingCommentId === comment.id ? (
                                   <div>
@@ -898,14 +898,14 @@ export default function CommunityPage() {
                                         size="sm"
                                         onClick={() => handleSaveEditComment(comment.id)}
                                         disabled={!editContent.trim()}
-                                        className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white text-xs"
+                                        className="bg-card     text-white text-xs"
                                       >
                                         Speichern
                                       </Button>
                                     </div>
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                                     {comment.content}
                                   </p>
                                 )}
@@ -916,7 +916,7 @@ export default function CommunityPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleEditComment(comment.id, comment.content)}
-                                    className="text-gray-400 hover:text-blue-600 p-1 h-auto flex-shrink-0"
+                                    className="text-muted-foreground hover:text-blue-600 p-1 h-auto flex-shrink-0"
                                   >
                                     <Pencil className="h-3 w-3" />
                                   </Button>
@@ -924,7 +924,7 @@ export default function CommunityPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleDeleteComment(comment.id, post.id)}
-                                    className="text-gray-400 hover:text-red-600 p-1 h-auto flex-shrink-0"
+                                    className="text-muted-foreground hover:text-red-600 p-1 h-auto flex-shrink-0"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
@@ -939,7 +939,7 @@ export default function CommunityPage() {
                         <div className="flex gap-2">
                           <Avatar className="w-8 h-8 border-2 border-orange-200 flex-shrink-0">
                             <AvatarImage src={getUserAvatar() || "/placeholder-user.jpg"} alt="Du" />
-                            <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs font-bold">
+                            <AvatarFallback className="bg-card   text-white text-xs font-bold">
                               {getUserInitials()}
                             </AvatarFallback>
                           </Avatar>
@@ -948,7 +948,7 @@ export default function CommunityPage() {
                               placeholder="Schreibe einen Kommentar..."
                               value={commentText}
                               onChange={(e) => setCommentText(e.target.value)}
-                              className="min-h-[60px] mb-2 border-2 border-gray-200 focus:border-orange-500 resize-none text-sm"
+                              className="min-h-[60px] mb-2 border-2 border-border focus:border-orange-500 resize-none text-sm"
                             />
                             <div className="flex justify-end gap-2">
                               <Button
@@ -966,7 +966,7 @@ export default function CommunityPage() {
                                 size="sm"
                                 onClick={() => handleComment(post.id)}
                                 disabled={!commentText.trim()}
-                                className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white text-xs"
+                                className="bg-card     text-white text-xs"
                               >
                                 Kommentieren
                               </Button>
@@ -974,13 +974,13 @@ export default function CommunityPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="text-center py-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                          <Lock className="h-6 w-6 text-gray-400 mx-auto mb-2" />
-                          <p className="text-xs text-gray-600 mb-3">Melde dich an, um zu kommentieren</p>
+                        <div className="text-center py-4 bg-muted rounded-lg border-2 border-dashed border-border">
+                          <Lock className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground mb-3">Melde dich an, um zu kommentieren</p>
                           <Button
                             size="sm"
                             onClick={() => (window.location.href = "/member-login")}
-                            className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white text-xs"
+                            className="bg-card     text-white text-xs"
                           >
                             Jetzt anmelden
                           </Button>

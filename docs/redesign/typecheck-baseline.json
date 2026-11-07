@@ -1,0 +1,12 @@
+{
+  "baseline": 965,
+  "current": 965,
+  "newDiagnostics": [],
+  "resolvedCount": 0,
+  "modifiedSources": 358,
+  "newSourceFiles": [
+    "app/error.tsx",
+    "app/loading.tsx"
+  ],
+  "method": "Identical current TypeScript config and dependency tree; baseline compiler host substitutes all modified TS/TSX files with git HEAD sources and excludes new source files. Diagnostic multiset compared by file, code and message, ignoring line shifts."
+}

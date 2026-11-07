@@ -270,7 +270,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
   if (loading) {
     return (
       <Card className="mt-6 rounded-3xl">
-        <CardContent className="p-6 text-center text-sm text-slate-500">
+        <CardContent className="p-6 text-center text-sm text-muted-foreground">
           Anmeldung wird geladen…
         </CardContent>
       </Card>
@@ -312,35 +312,35 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
   return (
     <div className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
-      <Card className="rounded-[30px] border border-white/[0.08] bg-black/45 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
+      <Card className="rounded-[30px] border border-white/[0.08] bg-black/45 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
         <CardContent className="p-5 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-orange-300/80">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/80">
                 Online-Anmeldung
               </div>
-              <h2 className="mt-1 text-2xl font-black text-white">
+              <h2 className="mt-1 text-2xl font-semibold text-white">
                 Jetzt Platz sichern
               </h2>
             </div>
 
             <div className="shrink-0 rounded-2xl border border-white/[0.10] bg-white/[0.06] px-3 py-2 text-center">
-              <div className="text-xl font-black text-white">
+              <div className="text-xl font-semibold text-white">
                 {occupiedOrReservedTotal}
                 {info.event.max_participants ? ` / ${info.event.max_participants}` : ""}
               </div>
 
               {splitByGender ? (
                 <>
-                  <div className="text-[11px] font-bold text-white/55">
+                  <div className="text-xs font-bold text-muted-foreground">
                     belegt / reserviert
                   </div>
-                  <div className="mt-1 text-[10px] font-semibold text-white/40">
+                  <div className="mt-1 text-xs font-semibold text-muted-foreground">
                     {info.participantCount} angemeldet · {reservedTotal} reserviert
                   </div>
                 </>
               ) : (
-                <div className="text-[11px] font-bold text-white/55">angemeldet</div>
+                <div className="text-xs font-bold text-muted-foreground">angemeldet</div>
               )}
             </div>
           </div>
@@ -368,15 +368,15 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <div className="font-black text-white">🎯 {label}</div>
+                      <div className="font-semibold text-white">🎯 {label}</div>
                       {selected ? (
                         <CheckCircle2 className="h-5 w-5 text-orange-300" />
                       ) : null}
                     </div>
-                    <div className="mt-3 text-2xl font-black text-white">
+                    <div className="mt-3 text-2xl font-semibold text-white">
                       {(cap?.registered ?? 0) + (cap?.reserved ?? 0)} / {cap?.max ?? 0}
                     </div>
-                    <div className="mt-1 text-xs font-semibold text-white/45">
+                    <div className="mt-1 text-xs font-semibold text-muted-foreground">
                       {cap?.registered ?? 0} angemeldet · {cap?.reserved ?? 0} reserviert
                     </div>
                     <div className="mt-2 text-xs font-bold text-emerald-300">
@@ -385,7 +385,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                   </button>
                 )
               })}
-              <p className="sm:col-span-2 text-xs font-semibold leading-relaxed text-white/45">
+              <p className="sm:col-span-2 text-xs font-semibold leading-relaxed text-muted-foreground">
                 Ein begrenztes Kontingent ist für bereits im Lokal vorgemerkte Teilnehmer reserviert. Nicht in Anspruch genommene Plätze können kurzfristig wieder als Restplätze verfügbar werden.
               </p>
             </div>
@@ -393,7 +393,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
           {own?.registered ? (
             <div className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-500/10 p-5">
-              <p className="font-black text-emerald-200">✓ Du bist bereits angemeldet!</p>
+              <p className="font-semibold text-emerald-200">✓ Du bist bereits angemeldet!</p>
               <p className="mt-1 text-sm text-white/75">{own.name}</p>
               {own.canCancel ? (
                 <Button type="button" variant="outline" disabled={saving} onClick={unregister}
@@ -422,7 +422,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
               ) : null}
               {prefillType ? (
                 <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3">
-                  <div className="flex items-center gap-2 text-sm font-black text-emerald-300">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
                     <CheckCircle2 className="h-4 w-4" />
                     Daten aus deinem {prefillType === "guest" ? "Gastkonto" : "Konto"} übernommen
                   </div>
@@ -433,11 +433,11 @@ export function PublicTournamentRegistration({ eventId }: Props) {
               ) : null}
 
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.10em] text-white/55">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.10em] text-muted-foreground">
                   Vor- und Nachname *
                 </label>
                 <div className="relative">
-                  <UserRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                  <UserRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     required
                     value={fullName}
@@ -450,11 +450,11 @@ export function PublicTournamentRegistration({ eventId }: Props) {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.10em] text-white/55">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.10em] text-muted-foreground">
                   E-Mail *
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="email"
                     required
@@ -469,11 +469,11 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
               <div className="rounded-2xl border border-white/[0.10] bg-white/[0.05] p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 font-black text-white">
+                  <div className="flex items-center gap-2 font-semibold text-white">
                     <WalletCards className="h-4 w-4 text-orange-300" />
                     Startgeld
                   </div>
-                  <div className="text-lg font-black text-white">
+                  <div className="text-lg font-semibold text-white">
                     {entryFee > 0
                       ? entryFee.toLocaleString("de-AT", {
                           style: "currency",
@@ -495,8 +495,8 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                             : "border-white/[0.10] bg-black/20 hover:bg-white/[0.06]"
                         }`}
                       >
-                        <div className="font-black text-white">Vor Ort bezahlen</div>
-                        <div className="mt-1 text-xs font-semibold text-white/55">
+                        <div className="font-semibold text-white">Vor Ort bezahlen</div>
+                        <div className="mt-1 text-xs font-semibold text-muted-foreground">
                           Anmeldung jetzt, Zahlung beim Turnier.
                         </div>
                       </button>
@@ -515,11 +515,11 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                             : "hover:bg-emerald-500/10"
                         }`}
                       >
-                        <div className="flex items-center gap-2 font-black text-white">
+                        <div className="flex items-center gap-2 font-semibold text-white">
                           <Coins className="h-4 w-4 text-emerald-300" />
                           Vom Guthaben
                         </div>
-                        <div className="mt-1 text-xs font-semibold text-white/55">
+                        <div className="mt-1 text-xs font-semibold text-muted-foreground">
                           Verfügbar:{" "}
                           {creditBalance.toLocaleString("de-AT", {
                             style: "currency",
@@ -555,7 +555,7 @@ export function PublicTournamentRegistration({ eventId }: Props) {
 
               <Button
                 disabled={saving || prefillLoading || (splitByGender && !division)}
-                className="h-12 rounded-2xl bg-orange-500 font-black text-white shadow-none hover:bg-orange-400 disabled:bg-orange-500/50"
+                className="h-12 rounded-2xl bg-orange-500 font-semibold text-primary-foreground shadow-none hover:bg-orange-400 disabled:bg-orange-500/50"
               >
                 {prefillLoading
                   ? "Kontodaten werden geladen…"
@@ -575,11 +575,11 @@ export function PublicTournamentRegistration({ eventId }: Props) {
         </CardContent>
       </Card>
 
-      <Card className="rounded-[30px] border border-white/[0.08] bg-black/45 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
+      <Card className="rounded-[30px] border border-white/[0.08] bg-black/45 text-white shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
         <CardContent className="p-5 sm:p-6">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-orange-300" />
-            <h2 className="text-xl font-black text-white">Teilnehmer</h2>
+            <h2 className="text-xl font-semibold text-white">Teilnehmer</h2>
           </div>
 
           {info.event.show_participants ? (
@@ -590,18 +590,18 @@ export function PublicTournamentRegistration({ eventId }: Props) {
                     key={p.id}
                     className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2"
                   >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-black text-black">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card text-xs font-semibold text-foreground">
                       {i + 1}
                     </span>
                     <span className="font-bold text-white/90">{p.name}</span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-white/50">Noch keine Anmeldungen.</p>
+                <p className="text-sm text-muted-foreground">Noch keine Anmeldungen.</p>
               )}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-white/50">
+            <p className="mt-4 text-sm text-muted-foreground">
               Die Teilnehmerliste ist für dieses Turnier nicht öffentlich.
             </p>
           )}

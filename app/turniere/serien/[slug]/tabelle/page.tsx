@@ -106,16 +106,16 @@ function formatDate(value: string) {
 
 function rankTone(index: number) {
   if (index === 0) return "border-amber-300/30 bg-amber-400/[0.08]"
-  if (index === 1) return "border-slate-300/20 bg-slate-300/[0.055]"
+  if (index === 1) return "border-border/20 bg-secondary/[0.055]"
   if (index === 2) return "border-orange-300/20 bg-orange-500/[0.055]"
   return "border-white/[0.08] bg-white/[0.025]"
 }
 
 function rankIcon(index: number) {
   if (index === 0) return <Trophy className="h-4 w-4 text-amber-200" />
-  if (index === 1) return <Medal className="h-4 w-4 text-slate-200" />
+  if (index === 1) return <Medal className="h-4 w-4 text-muted-foreground" />
   if (index === 2) return <Medal className="h-4 w-4 text-orange-200" />
-  return <span className="text-xs font-black text-white/45">{index + 1}</span>
+  return <span className="text-xs font-semibold text-muted-foreground">{index + 1}</span>
 }
 
 export default function DynamicSeriesTablePage() {
@@ -280,7 +280,7 @@ export default function DynamicSeriesTablePage() {
   const totalPlayers = table.length
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-white">
       <Header
         variant="app"
         title={series?.name || "Tabelle & Ergebnisse"}
@@ -288,29 +288,25 @@ export default function DynamicSeriesTablePage() {
         backHref={`/turniere/serien/${params.slug}`}
       />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-cover bg-[64%_50%] bg-no-repeat opacity-[0.26]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.76),rgba(3,5,9,.96)_42%,rgba(2,4,7,.995))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_22%,rgba(249,115,22,.12),transparent_27%),radial-gradient(circle_at_88%_18%,rgba(245,158,11,.08),transparent_24%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
         {loading ? (
           <div className="min-h-[420px] animate-pulse rounded-[30px] border border-white/10 bg-white/[0.04]" />
         ) : !series ? (
-          <div className="rounded-[28px] border border-white/10 bg-black/35 p-8 text-center font-bold text-white/60">Turnierserie nicht gefunden.</div>
+          <div className="rounded-[28px] border border-white/10 bg-card p-8 text-center font-bold text-white/60">Turnierserie nicht gefunden.</div>
         ) : (
           <div className="space-y-5 sm:space-y-6">
-            <section className="relative overflow-hidden rounded-[30px] border border-orange-300/[0.13] bg-black/40 p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-7">
+            <section className="relative overflow-hidden rounded-[30px] border border-orange-300/[0.13] bg-card p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-7">
               <div className="pointer-events-none absolute -right-14 -top-14 h-48 w-48 rounded-full bg-orange-500/[0.11] blur-[70px]" />
               <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/15 bg-orange-500/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-orange-100/75">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/15 bg-orange-500/[0.07] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-100/75">
                     <Trophy className="h-3.5 w-3.5" />
                     Gesamtwertung
                   </div>
-                  <h1 className="mt-3 text-2xl font-black tracking-[-0.035em] sm:text-3xl">{series.name}</h1>
-                  <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/45">
+                  <h1 className="mt-3 text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">{series.name}</h1>
+                  <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground">
                     {series.result_counting_mode === "best_n" && series.best_n_results
                       ? `Für die Serienwertung zählen die besten ${series.best_n_results} Ergebnisse.`
                       : "Alle gespielten Turniertage fließen in die Serienwertung ein."}
@@ -330,20 +326,20 @@ export default function DynamicSeriesTablePage() {
               <>
                 <section className="grid gap-3 sm:grid-cols-3">
                   {table.slice(0, 3).map((player, index) => (
-                    <div key={player.player_name} className={`relative overflow-hidden rounded-[24px] border p-4 backdrop-blur-xl sm:p-5 ${rankTone(index)}`}>
+                    <div key={player.player_name} className={`relative overflow-hidden rounded-[24px] border p-4  sm:p-5 ${rankTone(index)}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/[0.10] bg-black/30">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/[0.10] bg-card">
                             {rankIcon(index)}
                           </div>
                           <div className="min-w-0">
-                            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/35">Platz {index + 1}</div>
-                            <div className="truncate text-lg font-black text-white">{player.player_name}</div>
+                            <div className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Platz {index + 1}</div>
+                            <div className="truncate text-lg font-semibold text-white">{player.player_name}</div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-black tracking-tight text-amber-100">{player.points}</div>
-                          <div className="text-[10px] font-black uppercase tracking-wider text-white/30">Punkte</div>
+                          <div className="text-2xl font-semibold tracking-tight text-amber-100">{player.points}</div>
+                          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Punkte</div>
                         </div>
                       </div>
                       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -355,18 +351,18 @@ export default function DynamicSeriesTablePage() {
                   ))}
                 </section>
 
-                <section className="rounded-[30px] border border-white/[0.09] bg-black/40 p-4 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-6">
+                <section className="rounded-[30px] border border-white/[0.09] bg-card p-4 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-6">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-5 w-5 text-orange-200" />
-                        <h2 className="text-xl font-black sm:text-2xl">Rangliste</h2>
+                        <h2 className="text-xl font-semibold sm:text-2xl">Rangliste</h2>
                       </div>
-                      <p className="mt-1 text-xs font-semibold text-white/35 sm:text-sm">Aktueller Stand der Serie</p>
+                      <p className="mt-1 text-xs font-semibold text-muted-foreground sm:text-sm">Aktueller Stand der Serie</p>
                     </div>
                     {series.qualification_requirement && series.qualification_requirement > 0 ? (
-                      <div className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-bold text-white/50">
-                        Mindestantritte: <span className="font-black text-white/85">{series.qualification_requirement}</span>
+                      <div className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-bold text-muted-foreground">
+                        Mindestantritte: <span className="font-semibold text-white/85">{series.qualification_requirement}</span>
                       </div>
                     ) : null}
                   </div>
@@ -378,10 +374,10 @@ export default function DynamicSeriesTablePage() {
                       return (
                         <div key={player.player_name} className={`rounded-[22px] border p-3.5 ${rankTone(index)}`}>
                           <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.10] bg-black/30">{rankIcon(index)}</div>
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.10] bg-card">{rankIcon(index)}</div>
                             <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm font-black text-white">{player.player_name}</div>
-                              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-bold text-white/35">
+                              <div className="truncate text-sm font-semibold text-white">{player.player_name}</div>
+                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-muted-foreground">
                                 <span>{player.tournaments} Antritte</span>
                                 {series.qualification_requirement ? (
                                   <span className={qualified ? "text-emerald-200/80" : "text-amber-200/75"}>
@@ -391,8 +387,8 @@ export default function DynamicSeriesTablePage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-xl font-black text-amber-100">{player.points}</div>
-                              <div className="text-[9px] font-black uppercase tracking-wider text-white/25">Pkt.</div>
+                              <div className="text-xl font-semibold text-amber-100">{player.points}</div>
+                              <div className="text-xs font-semibold uppercase tracking-wider text-white/25">Pkt.</div>
                             </div>
                           </div>
 
@@ -418,7 +414,7 @@ export default function DynamicSeriesTablePage() {
                   <div className="mt-4 hidden overflow-hidden rounded-2xl border border-white/[0.08] lg:block">
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[1120px] text-sm">
-                        <thead className="bg-white/[0.035] text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+                        <thead className="bg-white/[0.035] text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                           <tr>
                             <th className="w-14 px-4 py-3 text-center">#</th>
                             <th className="px-4 py-3 text-left">Spieler</th>
@@ -441,8 +437,8 @@ export default function DynamicSeriesTablePage() {
                             return (
                               <tr key={player.player_name} className="border-t border-white/[0.065] transition hover:bg-white/[0.025]">
                                 <td className="px-4 py-3.5 text-center"><div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025]">{rankIcon(index)}</div></td>
-                                <td className="px-4 py-3.5"><div className="font-black text-white">{player.player_name}</div><div className="mt-0.5 text-[10px] font-semibold text-white/28">Beste Platzierung: {player.best_placement === 999 ? "–" : player.best_placement}</div></td>
-                                <td className="px-3 py-3.5 text-right text-base font-black text-amber-100">{player.points}</td>
+                                <td className="px-4 py-3.5"><div className="font-semibold text-white">{player.player_name}</div><div className="mt-0.5 text-xs font-semibold text-white/28">Beste Platzierung: {player.best_placement === 999 ? "–" : player.best_placement}</div></td>
+                                <td className="px-3 py-3.5 text-right text-base font-semibold text-amber-100">{player.points}</td>
                                 <td className="px-3 py-3.5 text-right font-bold text-white/58">{player.placement_points}</td>
                                 <td className="px-3 py-3.5 text-right font-bold text-white/58">{series.series_type === "members_cup" ? "–" : player.leg_points}</td>
                                 <td className="px-3 py-3.5 text-right font-bold text-white/58">{player.bonus_points}</td>
@@ -450,10 +446,10 @@ export default function DynamicSeriesTablePage() {
                                 <td className="px-3 py-3.5 text-right font-bold text-white/58">{series.series_type === "members_cup" ? "–" : `${player.matches_won}:${player.matches_lost}`}</td>
                                 <td className="px-3 py-3.5 text-right font-bold text-white/58">{series.series_type === "members_cup" || winRate === null ? "–" : `${winRate}%`}</td>
                                 <td className="px-3 py-3.5 text-right font-bold text-white/58">{series.series_type === "members_cup" ? "–" : `${player.legs_won}:${player.legs_lost}`}</td>
-                                <td className="px-3 py-3.5 text-right font-black text-white/65">{series.series_type === "members_cup" ? "–" : signed(player.legs_won - player.legs_lost)}</td>
+                                <td className="px-3 py-3.5 text-right font-semibold text-white/65">{series.series_type === "members_cup" ? "–" : signed(player.legs_won - player.legs_lost)}</td>
                                 <td className="px-4 py-3.5 text-right">
                                   {series.qualification_requirement ? (
-                                    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black ${qualified ? "border-emerald-300/15 bg-emerald-500/[0.07] text-emerald-100/80" : "border-amber-300/15 bg-amber-500/[0.07] text-amber-100/75"}`}>
+                                    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${qualified ? "border-emerald-300/15 bg-emerald-500/[0.07] text-emerald-100/80" : "border-amber-300/15 bg-amber-500/[0.07] text-amber-100/75"}`}>
                                       {qualified ? <CheckCircle2 className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
                                       {qualified ? "Gewertet" : `${series.qualification_requirement - player.tournaments} fehlen`}
                                     </span>
@@ -469,19 +465,19 @@ export default function DynamicSeriesTablePage() {
                 </section>
               </>
             ) : (
-              <section className="rounded-[30px] border border-white/[0.09] bg-black/40 p-8 text-center backdrop-blur-xl">
+              <section className="rounded-[30px] border border-white/[0.09] bg-card p-8 text-center ">
                 <Trophy className="mx-auto h-8 w-8 text-white/20" />
-                <h2 className="mt-3 text-lg font-black">Noch keine Wertung</h2>
-                <p className="mt-1 text-sm text-white/35">Nach dem ersten abgeschlossenen Turniertag erscheint hier die Rangliste.</p>
+                <h2 className="mt-3 text-lg font-semibold">Noch keine Wertung</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Nach dem ersten abgeschlossenen Turniertag erscheint hier die Rangliste.</p>
               </section>
             )}
 
-            <section className="rounded-[30px] border border-white/[0.09] bg-black/40 p-4 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-6">
+            <section className="rounded-[30px] border border-white/[0.09] bg-card p-4 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-6">
               <div className="flex items-center gap-2">
                 <Medal className="h-5 w-5 text-orange-200" />
                 <div>
-                  <h2 className="text-xl font-black sm:text-2xl">Turnierergebnisse</h2>
-                  <p className="mt-0.5 text-xs font-semibold text-white/35 sm:text-sm">Alle abgeschlossenen Spieltage der Serie</p>
+                  <h2 className="text-xl font-semibold sm:text-2xl">Turnierergebnisse</h2>
+                  <p className="mt-0.5 text-xs font-semibold text-muted-foreground sm:text-sm">Alle abgeschlossenen Spieltage der Serie</p>
                 </div>
               </div>
 
@@ -496,12 +492,12 @@ export default function DynamicSeriesTablePage() {
                             <CalendarDays className="h-5 w-5 text-orange-200" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="truncate font-black text-white">{tournament.name}</div>
-                            <div className="mt-1 text-xs font-semibold text-white/35">{formatDate(tournament.date)} · {sorted.length} Wertungen</div>
+                            <div className="truncate font-semibold text-white">{tournament.name}</div>
+                            <div className="mt-1 text-xs font-semibold text-muted-foreground">{formatDate(tournament.date)} · {sorted.length} Wertungen</div>
                           </div>
                           <div className="hidden text-right sm:block">
-                            <div className="text-[10px] font-black uppercase tracking-wider text-white/25">Sieger</div>
-                            <div className="mt-0.5 max-w-[180px] truncate text-sm font-black text-amber-100">{sorted[0]?.player_name || "–"}</div>
+                            <div className="text-xs font-semibold uppercase tracking-wider text-white/25">Sieger</div>
+                            <div className="mt-0.5 max-w-[180px] truncate text-sm font-semibold text-amber-100">{sorted[0]?.player_name || "–"}</div>
                           </div>
                           <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition group-open:rotate-90 group-open:text-orange-200" />
                         </summary>
@@ -511,7 +507,7 @@ export default function DynamicSeriesTablePage() {
                               <div key={row.id} className="flex items-center gap-3 rounded-xl border border-white/[0.055] bg-black/20 px-3 py-2.5">
                                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.035]">{rankIcon(index)}</div>
                                 <div className="min-w-0 flex-1 truncate text-sm font-bold text-white/78">{row.player_name}</div>
-                                <div className="text-sm font-black text-white/55">{displayRowScore(row)} Pkt.</div>
+                                <div className="text-sm font-semibold text-muted-foreground">{displayRowScore(row)} Pkt.</div>
                               </div>
                             ))}
                           </div>
@@ -521,7 +517,7 @@ export default function DynamicSeriesTablePage() {
                   })}
                 </div>
               ) : (
-                <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 text-center text-sm font-semibold text-white/35">Noch keine Turnierergebnisse vorhanden.</div>
+                <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 text-center text-sm font-semibold text-muted-foreground">Noch keine Turnierergebnisse vorhanden.</div>
               )}
             </section>
           </div>
@@ -541,16 +537,16 @@ function signed(value: number) {
 function HeroStat({ label, value, icon, compact = false }: { label: string; value: string; icon: ReactNode; compact?: boolean }) {
   return (
     <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
-      <div className="flex items-center gap-1.5 text-white/30">{icon}<span className="text-[9px] font-black uppercase tracking-[0.13em]">{label}</span></div>
-      <div className={`mt-1.5 font-black text-white/90 ${compact ? "truncate text-sm" : "text-xl"}`}>{value}</div>
+      <div className="flex items-center gap-1.5 text-muted-foreground">{icon}<span className="text-xs font-semibold uppercase tracking-[0.13em]">{label}</span></div>
+      <div className={`mt-1.5 font-semibold text-white/90 ${compact ? "truncate text-sm" : "text-xl"}`}>{value}</div>
     </div>
   )
 }
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {
-  return <div className="rounded-xl border border-white/[0.07] bg-black/20 px-2 py-2"><div className="text-sm font-black text-white/80">{value}</div><div className="mt-0.5 text-[9px] font-black uppercase tracking-wider text-white/25">{label}</div></div>
+  return <div className="rounded-xl border border-white/[0.07] bg-black/20 px-2 py-2"><div className="text-sm font-semibold text-white/80">{value}</div><div className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-white/25">{label}</div></div>
 }
 
 function MobileStat({ label, value }: { label: string; value: string | number }) {
-  return <div className="rounded-xl border border-white/[0.06] bg-black/20 px-2 py-2 text-center"><div className="text-xs font-black text-white/75">{value}</div><div className="mt-0.5 text-[8px] font-black uppercase tracking-wider text-white/22">{label}</div></div>
+  return <div className="rounded-xl border border-white/[0.06] bg-black/20 px-2 py-2 text-center"><div className="text-xs font-semibold text-white/75">{value}</div><div className="mt-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/22">{label}</div></div>
 }

@@ -1,0 +1,72 @@
+{
+  "files": 358,
+  "dataAndNavigationCallExpressions": 5776,
+  "jsxEventHandlers": 2531,
+  "jsxHrefAttributes": 187,
+  "diffs": [
+    {
+      "file": "app/_startseite/komponenten/startseiten-hero.tsx",
+      "events": {
+        "removed": [
+          "onClick={() => (window.location.href = \"/member-availability\")}",
+          "onClick={() => (window.location.href = \"/turniere\")}"
+        ],
+        "added": [],
+        "beforeCount": 2,
+        "afterCount": 0
+      },
+      "routes": {
+        "removed": [],
+        "added": [
+          "href=\"/member-availability\"",
+          "href=\"/turniere\"",
+          "href={href}"
+        ],
+        "beforeCount": 0,
+        "afterCount": 3
+      }
+    },
+    {
+      "file": "components/footer.tsx",
+      "routes": {
+        "removed": [],
+        "added": [
+          "href=\"/impressum\"",
+          "href=\"/datenschutz\"",
+          "href=\"/kontakt\""
+        ],
+        "beforeCount": 0,
+        "afterCount": 3
+      }
+    },
+    {
+      "file": "components/header.tsx",
+      "routes": {
+        "removed": [],
+        "added": [
+          "href={item.href}"
+        ],
+        "beforeCount": 2,
+        "afterCount": 3
+      }
+    },
+    {
+      "file": "components/mobile-bottom-nav.tsx",
+      "events": {
+        "removed": [
+          "onPointerUp={(event) => { event.preventDefault() event.stopPropagation() closeMore() }}",
+          "onPointerUp={(event) => { event.preventDefault() event.stopPropagation() closeMore() }}",
+          "onPointerUp={(event) => { event.preventDefault() event.stopPropagation() setIsMoreOpen(true) }}"
+        ],
+        "added": [
+          "onClick={closeMore}",
+          "onClick={closeMore}",
+          "onClick={() => setIsMoreOpen(true)}"
+        ],
+        "beforeCount": 7,
+        "afterCount": 7
+      }
+    }
+  ],
+  "method": "TypeScript AST extraction of Supabase/client query chains, fetch and router navigation calls, all JSX onX handlers and href attributes, compared exactly with whitespace normalized. Intended navigation link redesign exceptions are listed for review."
+}

@@ -20,9 +20,9 @@ export function PauseModal({
 }: PauseModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[420px] rounded-[28px] shadow-2xl text-center bg-slate-950 text-white">
+      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[420px] rounded-[28px] shadow-2xl text-center bg-background text-white">
         <div className="px-6 pt-7"><DialogHeader>
-          <DialogTitle className="text-3xl font-black text-white mb-2">PAUSE</DialogTitle>
+          <DialogTitle className="text-3xl font-semibold text-white mb-2">PAUSE</DialogTitle>
         </DialogHeader></div>
 
         <div className="px-6 py-6">
@@ -33,14 +33,14 @@ export function PauseModal({
             max="60"
             defaultValue={5}
             ref={pauseMinutesRef}
-            className="mx-auto h-14 w-40 rounded-2xl border-white/10 bg-white/10 text-center text-xl font-black text-white"
+            className="mx-auto h-14 w-40 rounded-2xl border-white/10 bg-white/10 text-center text-xl font-semibold text-white"
           />
         </div>
 
         <DialogFooter className="flex justify-center border-t border-white/10 px-6 py-5">
           <Button
             onClick={() => onStartPause(Number.parseInt(pauseMinutesRef.current?.value || "5"))}
-            className="h-12 rounded-xl bg-orange-600 px-6 text-base font-black hover:bg-orange-700"
+            className="h-12 rounded-xl bg-primary px-6 text-base font-semibold hover:bg-primary/90 text-primary-foreground"
           >
             <Play className="h-5 w-5 mr-2" />
             Pause starten

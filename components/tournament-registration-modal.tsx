@@ -292,15 +292,15 @@ export function TournamentRegistrationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md mx-auto bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
-        <DialogHeader className="border-b border-gray-100 pb-4">
+      <DialogContent className="max-w-md mx-auto bg-card  border-0 shadow-2xl">
+        <DialogHeader className="border-b border-border pb-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg shadow-lg bg-gradient-to-br from-orange-500 to-orange-600">
+            <div className="text-foreground p-2 rounded-lg shadow-lg bg-card  ">
               <Crown className="h-5 w-5 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-gray-900">Lion Cup Anmeldung</DialogTitle>
-              <p className="text-sm text-gray-500 mt-1">Für das Turnier registrieren</p>
+              <DialogTitle className="text-lg font-semibold text-foreground">Lion Cup Anmeldung</DialogTitle>
+              <p className="text-sm text-muted-foreground mt-1">Für das Turnier registrieren</p>
             </div>
           </div>
         </DialogHeader>
@@ -310,23 +310,23 @@ export function TournamentRegistrationModal({
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-orange-600" />
-                <span className="font-semibold text-gray-900">{tournamentDate}</span>
+                <span className="font-semibold text-foreground">{tournamentDate}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4 text-orange-600" />
-                <span className="font-semibold text-gray-900">{tournamentTime}</span>
+                <span className="font-semibold text-foreground">{tournamentTime}</span>
               </div>
             </div>
           </div>
 
           {authLoading ? (
-            <div className="text-sm text-gray-600">Lade Benutzerstatus…</div>
+            <div className="text-sm text-muted-foreground">Lade Benutzerstatus…</div>
           ) : !session ? (
             <div className="p-3 rounded-md text-sm bg-yellow-50 text-yellow-800 border border-yellow-100">
               Bitte melde dich an, um dich für dieses Turnier zu registrieren.
             </div>
           ) : (
-            <div className="p-3 rounded-md text-sm bg-gray-50 text-gray-700 border border-gray-100 mb-4">
+            <div className="p-3 rounded-md text-sm bg-muted text-muted-foreground border border-border mb-4">
               <div className="font-semibold">Du meldest dich an als:</div>
               <div className="mt-1">
                 <div>
@@ -338,7 +338,7 @@ export function TournamentRegistrationModal({
               </div>
 
               {checkingRegistration && (
-                <div className="mt-2 text-xs text-gray-500 flex items-center gap-2">
+                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
                   <Loader2 className="h-3 w-3 animate-spin" /> Prüfe Anmeldung…
                 </div>
               )}
@@ -373,7 +373,7 @@ export function TournamentRegistrationModal({
             <Button
               type="button"
               onClick={() => router.push("/member-login")}
-              className="w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white"
+              className="w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl bg-card     text-white"
             >
               <div className="flex items-center space-x-2">
                 <LogIn className="h-4 w-4" />
@@ -386,7 +386,7 @@ export function TournamentRegistrationModal({
               onClick={handleUnregister}
               disabled={!canDoAction}
               title={disabledReason ?? undefined}
-              className="w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl bg-card     text-white disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="flex items-center space-x-2">
@@ -406,7 +406,7 @@ export function TournamentRegistrationModal({
               onClick={() => handleRegister()}
               disabled={!canDoAction}
               title={disabledReason ?? undefined}
-              className="w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full h-12 font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-card     text-white disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="flex items-center space-x-2">

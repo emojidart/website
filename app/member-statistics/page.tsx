@@ -337,7 +337,7 @@ export default function MemberStatisticsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -347,7 +347,7 @@ export default function MemberStatisticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
@@ -356,10 +356,10 @@ export default function MemberStatisticsPage() {
             <ArrowLeft className="h-4 w-4" />
             Zurück zum Profil
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-foreground">
             {isLeadershipRole() ? "Team Statistiken" : "Spieler Statistiken"}
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             {isLeadershipRole() ? "Detaillierte Analyse der Team-Leistung" : "Detaillierte Analyse Ihrer Leistung"}
           </p>
         </div>

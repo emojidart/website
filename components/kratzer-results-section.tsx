@@ -54,7 +54,7 @@ export default function KratzerResultsSection() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="h-16 w-16 animate-spin text-orange-500" />
-          <p className="mt-4 text-gray-700 text-lg font-semibold">Kratzer Turniere werden geladen...</p>
+          <p className="mt-4 text-muted-foreground text-lg font-semibold">Kratzer Turniere werden geladen...</p>
         </div>
       )}
 
@@ -66,25 +66,25 @@ export default function KratzerResultsSection() {
       )}
 
       {!loading && !error && tournaments.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-lg shadow-md">
-          <Info className="h-12 w-12 mx-auto text-gray-500 mb-4" />
-          <p className="text-gray-600 text-lg">Es wurden noch keine Kratzer Turniere abgeschlossen.</p>
-          <p className="text-gray-500 text-sm mt-2">Schauen Sie später wieder vorbei!</p>
+        <div className="text-center py-12 bg-card rounded-lg shadow-md">
+          <Info className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground text-lg">Es wurden noch keine Kratzer Turniere abgeschlossen.</p>
+          <p className="text-muted-foreground text-sm mt-2">Schauen Sie später wieder vorbei!</p>
         </div>
       )}
 
       {!loading && !error && tournaments.length > 0 && (
         <div className="grid grid-cols-1 gap-6">
           {tournaments.map((tournament) => (
-            <Card key={tournament.id} className="shadow-xl border-gray-200">
+            <Card key={tournament.id} className="shadow-xl border-border">
               <CardHeader className="border-b pb-4">
-                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-3">
                   <Trophy className="h-7 w-7 text-yellow-600" />
                   {tournament.name}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 text-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-yellow-500" />
                     <span className="font-semibold">Gewinner:</span> {tournament.winner_name || "N/A"}
@@ -135,7 +135,7 @@ export default function KratzerResultsSection() {
                           </Table>
                         </div>
                       ) : (
-                        <p className="text-gray-500 mt-4">Keine detaillierten Spielergebnisse verfügbar.</p>
+                        <p className="text-muted-foreground mt-4">Keine detaillierten Spielergebnisse verfügbar.</p>
                       )}
                     </AccordionContent>
                   </AccordionItem>

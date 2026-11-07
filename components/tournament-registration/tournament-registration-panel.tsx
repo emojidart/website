@@ -143,9 +143,9 @@ export function TournamentRegistrationPanel({
       {showAvailablePanel ? (
       <section className="emd-admin-surface p-5 text-white sm:p-6">
         <div className="mb-5 flex items-end justify-between gap-4">
-          <h2 className="text-2xl font-black text-white">{availableTitle}</h2>
+          <h2 className="text-2xl font-semibold text-white">{availableTitle}</h2>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-white/40">{availablePlayers.length} Spieler</span>
+            <span className="text-sm font-semibold text-muted-foreground">{availablePlayers.length} Spieler</span>
             {onAddPlayer ? (
               <Button
                 type="button"
@@ -165,10 +165,10 @@ export function TournamentRegistrationPanel({
             <button
               type="button"
               onClick={() => setSourceMode("featured")}
-              className={`rounded-xl px-4 py-2.5 font-black transition ${
+              className={`rounded-xl px-4 py-2.5 font-semibold transition ${
                 sourceMode === "featured"
-                  ? "bg-orange-500 text-white"
-                  : "border border-white/[0.08] bg-white/[0.025] text-white/45 hover:bg-white/[0.045] hover:text-white/75"
+                  ? "bg-orange-500 text-primary-foreground"
+                  : "border border-white/[0.08] bg-white/[0.025] text-muted-foreground hover:bg-white/[0.045] hover:text-white/75"
               }`}
             >
               <span className="flex items-center justify-center gap-2"><Star className="h-4 w-4" />Häufig verwendet</span>
@@ -176,10 +176,10 @@ export function TournamentRegistrationPanel({
             <button
               type="button"
               onClick={() => setSourceMode("all")}
-              className={`rounded-xl px-4 py-2.5 font-black transition ${
+              className={`rounded-xl px-4 py-2.5 font-semibold transition ${
                 sourceMode === "all"
-                  ? "bg-orange-500 text-white"
-                  : "border border-white/[0.08] bg-white/[0.025] text-white/45 hover:bg-white/[0.045] hover:text-white/75"
+                  ? "bg-orange-500 text-primary-foreground"
+                  : "border border-white/[0.08] bg-white/[0.025] text-muted-foreground hover:bg-white/[0.045] hover:text-white/75"
               }`}
             >
               Alle Spieler
@@ -188,7 +188,7 @@ export function TournamentRegistrationPanel({
         ) : null}
 
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/30" />
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Spieler suchen..."
@@ -210,10 +210,10 @@ export function TournamentRegistrationPanel({
                   key={option.value}
                   type="button"
                   onClick={() => setEligibilityFilter(option.value)}
-                  className={`rounded-xl border px-3 py-2.5 text-sm font-black transition ${
+                  className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
                     eligibilityFilter === option.value
                       ? "border-orange-300/25 bg-orange-500/[0.12] text-orange-100"
-                      : "border-white/[0.08] bg-white/[0.025] text-white/45 hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white/75"
+                      : "border-white/[0.08] bg-white/[0.025] text-muted-foreground hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white/75"
                   }`}
                 >
                   {option.label}
@@ -227,7 +227,7 @@ export function TournamentRegistrationPanel({
                 onClick={selectAllEligibleVisible}
                 disabled={!canRegister || eligibilityLoading || eligibleVisiblePlayers.length === 0}
                 variant="outline"
-                className="rounded-xl border-white/[0.08] bg-white/[0.025] font-black text-white/60 hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white"
+                className="rounded-xl border-white/[0.08] bg-white/[0.025] font-semibold text-white/60 hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white"
               >
                 <CheckCircle2 className="mr-2 h-4 w-4 text-orange-300" />
                 Berechtigte auswählen ({eligibleVisiblePlayers.length})
@@ -244,9 +244,9 @@ export function TournamentRegistrationPanel({
 
         <div className="emd-admin-inset mb-4 h-[390px] overflow-y-auto p-2">
           {loading ? (
-            <p className="py-8 text-center text-white/35">Lade Spieler...</p>
+            <p className="py-8 text-center text-muted-foreground">Lade Spieler...</p>
           ) : searchedPlayers.length === 0 ? (
-            <p className="py-8 text-center text-white/35">Keine Spieler gefunden</p>
+            <p className="py-8 text-center text-muted-foreground">Keine Spieler gefunden</p>
           ) : (
             <div className="space-y-2">
               {searchedPlayers.map((player) => {
@@ -286,7 +286,7 @@ export function TournamentRegistrationPanel({
                         <div className={`truncate font-semibold ${selected ? "text-orange-200" : "text-white/85"}`}>
                           {player.name}{selected ? " · Ausgewählt" : ""}
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/40">
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           {player.featuredMeta && showFeaturedTabs && sourceMode === "featured" ? <span>{player.featuredMeta}</span> : null}
                           {player.meta ? <span>{player.meta}</span> : null}
                           {player.secondaryMeta ? <span>{player.secondaryMeta}</span> : null}
@@ -301,7 +301,7 @@ export function TournamentRegistrationPanel({
                       {player.featured && showFeaturedTabs && sourceMode === "featured" ? (
                         <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
                       ) : !playerEligible ? (
-                        <Lock className="h-4 w-4 shrink-0 text-white/30" />
+                        <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
                       ) : null}
                     </div>
                   </div>
@@ -317,8 +317,8 @@ export function TournamentRegistrationPanel({
           disabled={selectedIds.size === 0 || !canRegister || eligibilityLoading || isRegistering}
           className={`w-full rounded-xl px-6 py-3 font-bold transition-all ${
             selectedIds.size > 0 && canRegister && !eligibilityLoading && !isRegistering
-              ? "border border-orange-300/25 bg-orange-500 text-white shadow-[0_0_28px_rgba(249,115,22,.12)] hover:bg-orange-400"
-              : "cursor-not-allowed border border-white/[0.06] bg-orange-900/70 text-white/30"
+              ? "border border-orange-300/25 bg-orange-500 text-primary-foreground shadow-[0_0_28px_rgba(249,115,22,.12)] hover:bg-orange-400"
+              : "cursor-not-allowed border border-white/[0.06] bg-orange-900/70 text-muted-foreground"
           }`}
         >
           {isRegistering ? (
@@ -339,9 +339,9 @@ export function TournamentRegistrationPanel({
       <section className="emd-admin-surface p-5 text-white sm:p-6">
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-white">{registeredTitle}</h2>
-            {registeredSubtitle ? <p className="mt-1 text-sm font-semibold text-white/40">{registeredSubtitle}</p> : null}
-            {showPaid ? <p className="mt-1 text-sm font-semibold text-white/40">{paidCount} von {registeredPlayers.length} bezahlt</p> : null}
+            <h2 className="text-2xl font-semibold text-white">{registeredTitle}</h2>
+            {registeredSubtitle ? <p className="mt-1 text-sm font-semibold text-muted-foreground">{registeredSubtitle}</p> : null}
+            {showPaid ? <p className="mt-1 text-sm font-semibold text-muted-foreground">{paidCount} von {registeredPlayers.length} bezahlt</p> : null}
           </div>
 
           <div className="flex items-center gap-2">
@@ -351,21 +351,21 @@ export function TournamentRegistrationPanel({
                 onClick={onMarkAllPaid}
                 disabled={markingAllPaid}
                 variant="outline"
-                className="rounded-xl border border-emerald-300/20 bg-emerald-500/[0.08] font-black text-emerald-200 hover:bg-emerald-500/[0.13]"
+                className="rounded-xl border border-emerald-300/20 bg-emerald-500/[0.08] font-semibold text-emerald-200 hover:bg-emerald-500/[0.13]"
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
                 {markingAllPaid ? "Wird aktualisiert…" : "Alle als bezahlt markieren"}
               </Button>
             ) : null}
 
-            <span className="rounded-xl border border-orange-300/15 bg-orange-500/[0.07] px-3 py-1.5 text-xs font-black text-orange-200">
+            <span className="rounded-xl border border-orange-300/15 bg-orange-500/[0.07] px-3 py-1.5 text-xs font-semibold text-orange-200">
               {registeredPlayers.length}{typeof registeredLimit === "number" ? ` / ${registeredLimit}` : ""}
             </span>
           </div>
         </div>
 
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/30" />
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Registrierte Spieler suchen..."
@@ -377,16 +377,16 @@ export function TournamentRegistrationPanel({
 
         {registeredPlayers.length === 0 ? (
           <div className="emd-admin-inset flex h-[390px] items-center justify-center p-6 text-center">
-            <p className="text-sm font-semibold text-white/35">{emptyRegisteredText}</p>
+            <p className="text-sm font-semibold text-muted-foreground">{emptyRegisteredText}</p>
           </div>
         ) : (
           <div className="h-[390px] overflow-y-auto rounded-xl border border-white/[0.08] bg-white/[0.015]">
             <Table>
               <TableHeader>
                 <TableRow className="bg-white/[0.03] hover:bg-white/[0.03]">
-                  <TableHead className="text-white/40">Name</TableHead>
-                  {showPaid ? <TableHead className="text-center text-white/40">Bezahlt</TableHead> : null}
-                  <TableHead className="w-14 text-right text-white/40"></TableHead>
+                  <TableHead className="text-muted-foreground">Name</TableHead>
+                  {showPaid ? <TableHead className="text-center text-muted-foreground">Bezahlt</TableHead> : null}
+                  <TableHead className="w-14 text-right text-muted-foreground"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -395,13 +395,13 @@ export function TournamentRegistrationPanel({
                     <TableCell className="font-semibold text-white/85">
                       <div className="flex items-center gap-2">
                         {player.badge ? (
-                          <span className="rounded-lg border border-sky-300/15 bg-sky-500/[0.08] px-2 py-1 text-[10px] font-bold text-sky-200">
+                          <span className="rounded-lg border border-sky-300/15 bg-sky-500/[0.08] px-2 py-1 text-xs font-bold text-sky-200">
                             {player.badge}
                           </span>
                         ) : null}
                         <div>
                           <div>{player.name}</div>
-                          {player.subtitle ? <div className="mt-0.5 text-xs font-medium text-white/35">{player.subtitle}</div> : null}
+                          {player.subtitle ? <div className="mt-0.5 text-xs font-medium text-muted-foreground">{player.subtitle}</div> : null}
                         </div>
                       </div>
                     </TableCell>
@@ -422,7 +422,7 @@ export function TournamentRegistrationPanel({
                         <button
                           type="button"
                           onClick={() => onRemove(player.id)}
-                          className="rounded-lg p-2 text-white/30 transition hover:bg-rose-500/[0.10] hover:text-rose-300"
+                          className="rounded-lg p-2 text-muted-foreground transition hover:bg-rose-500/[0.10] hover:text-rose-300"
                           title="Registrierung entfernen"
                         >
                           <X className="h-4 w-4" />
@@ -441,7 +441,7 @@ export function TournamentRegistrationPanel({
             type="button"
             onClick={onClearAll}
             variant="outline"
-            className="mt-4 h-12 w-full rounded-xl border border-rose-300/20 bg-rose-500/[0.08] font-black text-rose-200 hover:bg-rose-500/[0.14]"
+            className="mt-4 h-12 w-full rounded-xl border border-rose-300/20 bg-rose-500/[0.08] font-semibold text-rose-200 hover:bg-rose-500/[0.14]"
           >
             <Trash2 className="mr-2 h-4 w-4" />
             {clearAllLabel}

@@ -158,14 +158,14 @@ function LeagueTable({
 
   if (!table?.rows?.length) {
     return (
-      <section className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 p-5 backdrop-blur-xl">
+      <section className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-card p-5 ">
         <div className="pointer-events-none absolute -left-10 bottom-[-42px] h-28 w-28 rounded-full bg-orange-500/[0.10] blur-[34px]" />
         <div className="relative flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.035] text-orange-300">
             {icon}
           </div>
           <div>
-            <h2 className="font-black text-white">{title}</h2>
+            <h2 className="font-semibold text-white">{title}</h2>
             <p className="text-sm text-white/38">Keine Daten vorhanden.</p>
           </div>
         </div>
@@ -174,7 +174,7 @@ function LeagueTable({
   }
 
   return (
-    <section className="relative overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/25 shadow-[0_28px_85px_-55px_rgba(0,0,0,.96)] backdrop-blur-xl sm:rounded-[30px]">
+    <section className="relative overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-[0_28px_85px_-55px_rgba(0,0,0,.96)]  sm:rounded-[30px]">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.035),transparent_38%,rgba(14,165,233,.025)_82%,transparent)]" />
       <div className="pointer-events-none absolute -left-16 top-[-90px] h-52 w-52 rounded-full bg-orange-500/[0.08] blur-[80px]" />
 
@@ -184,17 +184,17 @@ function LeagueTable({
             {icon}
           </div>
           <div className="min-w-0">
-            <div className="text-[9px] font-black uppercase tracking-[0.20em] text-orange-300/55">
+            <div className="text-xs font-semibold uppercase tracking-[0.20em] text-orange-300/55">
               Mein EMD
             </div>
-            <h2 className="truncate text-lg font-black tracking-[-0.02em] text-white">
+            <h2 className="truncate text-lg font-semibold tracking-[-0.02em] text-white">
               {title}
             </h2>
             <p className="mt-0.5 text-xs text-white/34">{subtitle}</p>
           </div>
         </div>
 
-        <div className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-[11px] font-black text-white/45">
+        <div className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-semibold text-muted-foreground">
           {table.rows.length} Einträge
         </div>
       </div>
@@ -259,34 +259,34 @@ function LeagueTable({
                     >
                       {playerIndex >= 0 ? (
                         <div className="grid grid-cols-[28px_minmax(0,1.35fr)_42px_minmax(0,1fr)] items-center gap-1.5">
-                          <div className="text-center text-[11px] font-black text-white/45">
+                          <div className="text-center text-xs font-semibold text-muted-foreground">
                             {placeIndex >= 0 ? row[placeIndex] : ""}
                           </div>
 
                           <div className="min-w-0">
-                            <div className="truncate text-[12px] font-black leading-tight text-white/92">
+                            <div className="truncate text-[12px] font-semibold leading-tight text-white/92">
                               {row[playerIndex]}
                             </div>
                           </div>
 
-                          <div className="text-center text-[10px] font-bold text-white/48">
+                          <div className="text-center text-xs font-bold text-white/48">
                             {numberIndex >= 0 ? row[numberIndex] : ""}
                           </div>
 
                           <div className="min-w-0">
-                            <div className="truncate text-[10px] font-bold leading-tight text-white/64">
+                            <div className="truncate text-xs font-bold leading-tight text-white/64">
                               {teamIndex >= 0 ? row[teamIndex] : ""}
                             </div>
                           </div>
                         </div>
                       ) : (
                         <div className="grid grid-cols-[28px_minmax(0,1fr)] items-center gap-2">
-                          <div className="text-center text-[11px] font-black text-white/45">
+                          <div className="text-center text-xs font-semibold text-muted-foreground">
                             {placeIndex >= 0 ? row[placeIndex] : ""}
                           </div>
 
                           <div className="min-w-0">
-                            <div className="truncate text-[13px] font-black leading-tight text-white/92">
+                            <div className="truncate text-[13px] font-semibold leading-tight text-white/92">
                               {teamIndex >= 0 ? row[teamIndex] : row[0]}
                             </div>
                           </div>
@@ -309,10 +309,10 @@ function LeagueTable({
                                 key={cellIndex}
                                 className="min-w-0 rounded-lg border border-white/[0.05] bg-black/18 px-1 py-1.5 text-center"
                               >
-                                <div className="truncate text-[8px] font-black uppercase tracking-[0.03em] text-white/24">
+                                <div className="truncate text-[8px] font-semibold uppercase tracking-[0.03em] text-white/24">
                                   {shortHeader(header)}
                                 </div>
-                                <div className="mt-0.5 truncate text-[10px] font-black text-white/72">
+                                <div className="mt-0.5 truncate text-xs font-semibold text-white/72">
                                   {value}
                                 </div>
                               </div>
@@ -336,7 +336,7 @@ function LeagueTable({
               {table.headers.map((header, index) => (
                 <th
                   key={`${header}-${index}`}
-                  className="whitespace-nowrap px-4 py-3.5 text-[10px] font-black uppercase tracking-[0.11em] text-white/34 sm:px-5"
+                  className="whitespace-nowrap px-4 py-3.5 text-xs font-semibold uppercase tracking-[0.11em] text-white/34 sm:px-5"
                 >
                   {header}
                 </th>
@@ -362,8 +362,8 @@ function LeagueTable({
                     key={cellIndex}
                     className={[
                       "whitespace-nowrap px-4 py-3.5 text-white/65 sm:px-5",
-                      cellIndex === 0 ? "font-black text-orange-300/90" : "",
-                      cellIndex === 1 ? "font-black text-white/88" : "",
+                      cellIndex === 0 ? "font-semibold text-orange-300/90" : "",
+                      cellIndex === 1 ? "font-semibold text-white/88" : "",
                     ].join(" ")}
                   >
                     {cell || "—"}
@@ -758,7 +758,7 @@ export function LeagueSection({
 
   return (
     <div className="w-full space-y-4 sm:space-y-5">
-      <section className="relative overflow-hidden rounded-[28px] border border-white/[0.09] bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+      <section className="relative overflow-hidden rounded-[28px] border border-white/[0.09] bg-card shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px]">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
         <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-500/15 blur-[110px]" />
         <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
@@ -766,7 +766,7 @@ export function LeagueSection({
         <div className="relative p-4 sm:p-6 lg:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="min-w-0">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55 backdrop-blur-xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground ">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-50" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-400" />
@@ -780,10 +780,10 @@ export function LeagueSection({
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Sportdarts Liga Austria
                   </p>
-                  <h1 className="mt-1 truncate text-[clamp(1.65rem,4vw,2.75rem)] font-black leading-none tracking-[-0.045em] text-white">
+                  <h1 className="mt-1 truncate text-[clamp(1.65rem,4vw,2.75rem)] font-semibold leading-none tracking-[-0.045em] text-white">
                     {data?.title || "Liga Tabellen"}
                   </h1>
                   <p className="mt-2 text-sm text-white/38">
@@ -795,16 +795,16 @@ export function LeagueSection({
               </div>
             </div>
 
-            <div className="w-full space-y-2.5 rounded-[22px] border border-white/[0.075] bg-black/20 p-3 backdrop-blur-xl xl:max-w-[760px]">
-              <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.07] bg-black/30 p-1.5">
+            <div className="w-full space-y-2.5 rounded-[22px] border border-white/[0.075] bg-black/20 p-3  xl:max-w-[760px]">
+              <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.07] bg-card p-1.5">
                 <button
                   type="button"
                   onClick={() => setViewMode("mine")}
                   className={[
-                    "inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-black transition duration-200",
+                    "inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition duration-200",
                     viewMode === "mine"
-                      ? "bg-orange-500 text-white shadow-[0_0_24px_rgba(249,115,22,.16)]"
-                      : "text-white/45 hover:bg-white/[0.05] hover:text-white/80",
+                      ? "bg-orange-500 text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.16)]"
+                      : "text-muted-foreground hover:bg-white/[0.05] hover:text-white/80",
                   ].join(" ")}
                 >
                   <UserRound className="h-4 w-4" />
@@ -814,10 +814,10 @@ export function LeagueSection({
                   type="button"
                   onClick={() => setViewMode("all")}
                   className={[
-                    "inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-black transition duration-200",
+                    "inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition duration-200",
                     viewMode === "all"
-                      ? "bg-orange-500 text-white shadow-[0_0_24px_rgba(249,115,22,.16)]"
-                      : "text-white/45 hover:bg-white/[0.05] hover:text-white/80",
+                      ? "bg-orange-500 text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.16)]"
+                      : "text-muted-foreground hover:bg-white/[0.05] hover:text-white/80",
                   ].join(" ")}
                 >
                   <Globe2 className="h-4 w-4" />
@@ -828,7 +828,7 @@ export function LeagueSection({
               {viewMode === "all" ? (
                 <div className="grid gap-2.5 sm:grid-cols-[1fr_1fr_auto]">
                   <label className="relative block">
-                    <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.16em] text-white/28">Saison</span>
+                    <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-white/28">Saison</span>
                     <div className="relative">
                       <select
                         value={seasonId}
@@ -844,12 +844,12 @@ export function LeagueSection({
                           ))
                         )}
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
                   </label>
 
                   <label className="relative block">
-                    <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.16em] text-white/28">Division</span>
+                    <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-white/28">Division</span>
                     <div className="relative">
                       <select
                         value={divisionId}
@@ -865,7 +865,7 @@ export function LeagueSection({
                           ))
                         )}
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
                   </label>
 
@@ -873,7 +873,7 @@ export function LeagueSection({
                     type="button"
                     onClick={() => loadLeague(seasonId, divisionId)}
                     disabled={loading}
-                    className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-orange-300/[0.13] bg-orange-500 px-4 text-sm font-black text-white shadow-[0_0_24px_rgba(249,115,22,.10)] transition duration-300 hover:bg-orange-500/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-orange-300/[0.13] bg-orange-500 px-4 text-sm font-semibold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.10)] transition duration-300 hover:bg-orange-500/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                     Aktualisieren
@@ -882,7 +882,7 @@ export function LeagueSection({
               ) : (
                 <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.025] px-3.5 py-3">
                   <div className="min-w-0">
-                    <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/28">Persönliche Auswahl</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/28">Persönliche Auswahl</div>
                     <div className="mt-1 truncate text-sm font-bold text-white/68">
                       {myLeagueLoading
                         ? "Deine Mannschaften werden ermittelt…"
@@ -895,7 +895,7 @@ export function LeagueSection({
                     type="button"
                     onClick={() => void loadMyLeagues()}
                     disabled={myLeagueLoading}
-                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-black text-white/65 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-semibold text-white/65 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${myLeagueLoading ? "animate-spin" : ""}`} />
                     Neu laden
@@ -910,16 +910,16 @@ export function LeagueSection({
       {viewMode === "mine" ? (
         <>
           {myLeagueError ? (
-            <section className="relative overflow-hidden rounded-[24px] border border-orange-300/[0.12] bg-black/25 p-4 backdrop-blur-xl sm:p-5">
+            <section className="relative overflow-hidden rounded-[24px] border border-orange-300/[0.12] bg-card p-4  sm:p-5">
               <div className="relative flex items-start gap-3">
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-orange-300" />
                 <div>
-                  <p className="font-black text-white">Deine Ligatabellen</p>
+                  <p className="font-semibold text-white">Deine Ligatabellen</p>
                   <p className="mt-1 text-sm text-white/48">{myLeagueError}</p>
                   <button
                     type="button"
                     onClick={() => setViewMode("all")}
-                    className="mt-3 inline-flex h-9 items-center rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs font-black text-white/70 transition hover:bg-white/[0.07] hover:text-white"
+                    className="mt-3 inline-flex h-9 items-center rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs font-semibold text-white/70 transition hover:bg-white/[0.07] hover:text-white"
                   >
                     Alle Tabellen öffnen
                   </button>
@@ -929,7 +929,7 @@ export function LeagueSection({
           ) : null}
 
           {myLeagueLoading ? (
-            <section className="relative flex min-h-[300px] items-center justify-center overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/25 backdrop-blur-xl">
+            <section className="relative flex min-h-[300px] items-center justify-center overflow-hidden rounded-[28px] border border-white/[0.08] bg-card ">
               <div className="relative text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.035]">
                   <RefreshCw className="h-6 w-6 animate-spin text-orange-300" />
@@ -941,17 +941,17 @@ export function LeagueSection({
 
           {!myLeagueLoading && myLeagueBlocks.length > 0 ? (
             <>
-              <section className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 p-3 backdrop-blur-xl">
+              <section className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-card p-3 ">
                 <div className="mb-2.5 flex items-center justify-between gap-3 px-1">
                   <div>
-                    <div className="text-[9px] font-black uppercase tracking-[0.20em] text-orange-300/60">
+                    <div className="text-xs font-semibold uppercase tracking-[0.20em] text-orange-300/60">
                       Meine Mannschaften
                     </div>
-                    <div className="mt-0.5 text-xs font-semibold text-white/35">
+                    <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
                       Mannschaft auswählen – ohne nach unten scrollen
                     </div>
                   </div>
-                  <div className="shrink-0 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-black text-white/40">
+                  <div className="shrink-0 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-xs font-semibold text-muted-foreground">
                     {myLeagueBlocks.length} {myLeagueBlocks.length === 1 ? "Division" : "Divisionen"}
                   </div>
                 </div>
@@ -972,12 +972,12 @@ export function LeagueSection({
                         className={[
                           "min-w-fit shrink-0 rounded-2xl border px-4 py-3 text-left transition duration-200",
                           active
-                            ? "border-orange-300/25 bg-orange-500 text-white shadow-[0_0_26px_rgba(249,115,22,.14)]"
-                            : "border-white/[0.08] bg-white/[0.035] text-white/55 hover:bg-white/[0.06] hover:text-white/85",
+                            ? "border-orange-300/25 bg-orange-500 text-primary-foreground shadow-[0_0_26px_rgba(249,115,22,.14)]"
+                            : "border-white/[0.08] bg-white/[0.035] text-muted-foreground hover:bg-white/[0.06] hover:text-white/85",
                         ].join(" ")}
                       >
-                        <div className="text-sm font-black">{teamLabel}</div>
-                        <div className={active ? "mt-0.5 text-[11px] font-bold text-white/75" : "mt-0.5 text-[11px] font-bold text-white/30"}>
+                        <div className="text-sm font-semibold">{teamLabel}</div>
+                        <div className={active ? "mt-0.5 text-xs font-bold text-white/75" : "mt-0.5 text-xs font-bold text-muted-foreground"}>
                           {block.divisionName}
                         </div>
                       </button>
@@ -989,15 +989,15 @@ export function LeagueSection({
               {selectedMyLeagueBlock ? (
                 <div className="space-y-4 sm:space-y-5">
                   {!fixedMode ? (
-                    <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.07] bg-black/25 p-1.5">
+                    <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.07] bg-card p-1.5">
                     <button
                       type="button"
                       onClick={() => setMyLeagueContentMode("table")}
                       className={[
-                        "inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-black transition",
+                        "inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition",
                         myLeagueContentMode === "table"
-                          ? "bg-orange-500 text-white shadow-[0_0_22px_rgba(249,115,22,.15)]"
-                          : "text-white/45 hover:bg-white/[0.05] hover:text-white/80",
+                          ? "bg-orange-500 text-primary-foreground shadow-[0_0_22px_rgba(249,115,22,.15)]"
+                          : "text-muted-foreground hover:bg-white/[0.05] hover:text-white/80",
                       ].join(" ")}
                     >
                       <Table2 className="h-4 w-4" />
@@ -1013,10 +1013,10 @@ export function LeagueSection({
                         }
                       }}
                       className={[
-                        "inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-black transition",
+                        "inline-flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition",
                         myLeagueContentMode === "results"
-                          ? "bg-orange-500 text-white shadow-[0_0_22px_rgba(249,115,22,.15)]"
-                          : "text-white/45 hover:bg-white/[0.05] hover:text-white/80",
+                          ? "bg-orange-500 text-primary-foreground shadow-[0_0_22px_rgba(249,115,22,.15)]"
+                          : "text-muted-foreground hover:bg-white/[0.05] hover:text-white/80",
                       ].join(" ")}
                     >
                       <ListChecks className="h-4 w-4" />
@@ -1024,28 +1024,28 @@ export function LeagueSection({
                     </button>
                   </div>
                   ) : null}
-                  <section className="relative overflow-hidden rounded-[24px] border border-orange-300/[0.10] bg-black/25 p-4 backdrop-blur-xl sm:p-5">
+                  <section className="relative overflow-hidden rounded-[24px] border border-orange-300/[0.10] bg-card p-4  sm:p-5">
                     <div className="relative flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <div className="text-[9px] font-black uppercase tracking-[0.20em] text-orange-300/60">
+                        <div className="text-xs font-semibold uppercase tracking-[0.20em] text-orange-300/60">
                           Aktuelle Auswahl
                         </div>
-                        <div className="mt-1 text-lg font-black text-white">
+                        <div className="mt-1 text-lg font-semibold text-white">
                           {selectedMyLeagueBlock.teams.map((team) => team.name).join(" · ")}
                         </div>
                       </div>
-                      <div className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-black text-white/55">
+                      <div className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-semibold text-muted-foreground">
                         {selectedMyLeagueBlock.divisionName}
                       </div>
                     </div>
                   </section>
 
                   {selectedMyLeagueBlock.error ? (
-                    <section className="rounded-[24px] border border-red-300/[0.13] bg-red-500/[0.055] p-4 backdrop-blur-xl">
+                    <section className="rounded-[24px] border border-red-300/[0.13] bg-red-500/[0.055] p-4 ">
                       <div className="flex items-start gap-3">
                         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-300" />
                         <div>
-                          <p className="font-black text-red-100">{selectedMyLeagueBlock.divisionName}</p>
+                          <p className="font-semibold text-red-100">{selectedMyLeagueBlock.divisionName}</p>
                           <p className="mt-1 text-sm text-red-100/55">{selectedMyLeagueBlock.error}</p>
                         </div>
                       </div>
@@ -1053,7 +1053,7 @@ export function LeagueSection({
                   ) : null}
 
                   {selectedMyLeagueBlock.loading ? (
-                    <section className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/25 backdrop-blur-xl">
+                    <section className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-[28px] border border-white/[0.08] bg-card ">
                       <RefreshCw className="h-6 w-6 animate-spin text-orange-300" />
                     </section>
                   ) : null}
@@ -1082,7 +1082,7 @@ export function LeagueSection({
                   ) : null}
 
                   {myLeagueContentMode === "results" ? (
-                    <section className="relative overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/25 backdrop-blur-xl">
+                    <section className="relative overflow-hidden rounded-[26px] border border-white/[0.08] bg-card ">
                       <div className="pointer-events-none absolute -left-14 top-[-44px] h-32 w-32 rounded-full bg-orange-500/[0.08] blur-[44px]" />
                       <div className="pointer-events-none absolute -right-10 bottom-[-50px] h-32 w-32 rounded-full bg-orange-300/[0.05] blur-[44px]" />
 
@@ -1091,11 +1091,11 @@ export function LeagueSection({
                           <div>
                             <div className="flex items-center gap-2">
                               <CalendarDays className="h-5 w-5 text-orange-300" />
-                              <h3 className="text-lg font-black text-white">
+                              <h3 className="text-lg font-semibold text-white">
                                 Ergebnisse · {selectedMyLeagueBlock.divisionName}
                               </h3>
                             </div>
-                            <p className="mt-1 text-xs font-semibold text-white/35">
+                            <p className="mt-1 text-xs font-semibold text-muted-foreground">
                               Nur Spiele von {selectedMyLeagueBlock.teams.map((team) => team.name).join(", ")}
                             </p>
                           </div>
@@ -1104,7 +1104,7 @@ export function LeagueSection({
                             type="button"
                             onClick={() => void loadMyTeamResults(selectedMyLeagueBlock)}
                             disabled={myTeamResults[selectedMyLeagueBlock.key]?.loading}
-                            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-black text-white/60 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
+                            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-xs font-semibold text-white/60 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
                           >
                             <RefreshCw
                               className={`h-3.5 w-3.5 ${
@@ -1126,7 +1126,7 @@ export function LeagueSection({
                             {myTeamResults[selectedMyLeagueBlock.key]?.error}
                           </div>
                         ) : (myTeamResults[selectedMyLeagueBlock.key]?.games || []).length === 0 ? (
-                          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 text-center text-sm font-semibold text-white/35">
+                          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 text-center text-sm font-semibold text-muted-foreground">
                             Keine Spiele für dieses Team gefunden.
                           </div>
                         ) : (
@@ -1192,23 +1192,23 @@ export function LeagueSection({
                                   <div className="pointer-events-none absolute right-[-16px] top-[-18px] h-20 w-20 rounded-full bg-white/[0.035] blur-[30px]" />
 
                                   <div className="relative flex items-center justify-between gap-3">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/30">
+                                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                                       ST {game.weekNumber} · {formatResultDate(game.date)}
                                     </div>
                                     <div className="flex items-center gap-2">
                                       {game.isToday ? (
-                                        <div className="rounded-full border border-orange-300/20 bg-orange-400/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-orange-200">
+                                        <div className="rounded-full border border-orange-300/20 bg-orange-400/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-orange-200">
                                           Heute
                                         </div>
                                       ) : null}
                                       <div
                                         className={[
-                                          "rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em]",
+                                          "rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.08em]",
                                           game.status === "completed"
                                             ? "border-emerald-300/15 bg-emerald-400/10 text-emerald-200"
                                             : game.status === "live"
                                               ? "border-orange-300/15 bg-orange-400/10 text-orange-200"
-                                              : "border-white/[0.08] bg-white/[0.03] text-white/35",
+                                              : "border-white/[0.08] bg-white/[0.03] text-muted-foreground",
                                         ].join(" ")}
                                       >
                                         {game.status === "completed"
@@ -1226,22 +1226,22 @@ export function LeagueSection({
                                         <div className="min-w-0 text-right">
                                           <div
                                             className={[
-                                              "truncate text-sm font-black",
+                                              "truncate text-sm font-semibold",
                                               game.homeIsOwn ? "text-orange-200" : "text-white/80",
                                             ].join(" ")}
                                           >
                                             {game.homeTeam}
                                           </div>
-                                          <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/28">
+                                          <div className="text-xs font-bold uppercase tracking-[0.08em] text-white/28">
                                             Heim
                                           </div>
                                         </div>
                                         <div
                                           className={[
-                                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border text-[10px] font-black",
+                                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border text-xs font-semibold",
                                             game.homeIsOwn
                                               ? "border-orange-300/20 bg-orange-400/10 text-orange-100"
-                                              : "border-white/[0.08] bg-white/[0.03] text-white/55",
+                                              : "border-white/[0.08] bg-white/[0.03] text-muted-foreground",
                                           ].join(" ")}
                                         >
                                           {teamInitials(game.homeTeam)}
@@ -1250,7 +1250,7 @@ export function LeagueSection({
                                     </div>
 
                                     <div className="min-w-[64px] text-center">
-                                      <div className="rounded-2xl border border-white/[0.08] bg-black/25 px-3 py-2 text-base font-black text-white">
+                                      <div className="rounded-2xl border border-white/[0.08] bg-card px-3 py-2 text-base font-semibold text-white">
                                         {game.hasScore ? `${game.homeScore} : ${game.awayScore}` : "– : –"}
                                       </div>
                                     </div>
@@ -1259,10 +1259,10 @@ export function LeagueSection({
                                       <div className="flex items-center gap-2">
                                         <div
                                           className={[
-                                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border text-[10px] font-black",
+                                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border text-xs font-semibold",
                                             game.awayIsOwn
                                               ? "border-orange-300/20 bg-orange-400/10 text-orange-100"
-                                              : "border-white/[0.08] bg-white/[0.03] text-white/55",
+                                              : "border-white/[0.08] bg-white/[0.03] text-muted-foreground",
                                           ].join(" ")}
                                         >
                                           {teamInitials(game.awayTeam)}
@@ -1270,13 +1270,13 @@ export function LeagueSection({
                                         <div className="min-w-0 text-left">
                                           <div
                                             className={[
-                                              "truncate text-sm font-black",
+                                              "truncate text-sm font-semibold",
                                               game.awayIsOwn ? "text-orange-200" : "text-white/80",
                                             ].join(" ")}
                                           >
                                             {game.awayTeam}
                                           </div>
-                                          <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/28">
+                                          <div className="text-xs font-bold uppercase tracking-[0.08em] text-white/28">
                                             Auswärts
                                           </div>
                                         </div>
@@ -1286,12 +1286,12 @@ export function LeagueSection({
 
                                   {game.hasScore ? (
                                     <div className="relative mt-3 flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-black/18 px-3 py-2">
-                                      <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-white/32">
+                                      <div className="text-xs font-bold uppercase tracking-[0.08em] text-white/32">
                                         Dein Team
                                       </div>
                                       <div
                                         className={[
-                                          "text-xs font-black",
+                                          "text-xs font-semibold",
                                           game.status === "completed"
                                             ? game.won
                                               ? "text-emerald-200"
@@ -1314,20 +1314,20 @@ export function LeagueSection({
                                     onClick={() => toggleResultGameDetail(game.gameId)}
                                     className="relative mt-3 flex w-full items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5 text-left transition hover:bg-white/[0.045]"
                                   >
-                                    <span className="flex items-center gap-2 text-xs font-black text-white/62">
+                                    <span className="flex items-center gap-2 text-xs font-semibold text-white/62">
                                       <Target className="h-4 w-4 text-orange-300" />
                                       Spieldetails
                                     </span>
                                     <ChevronDown
                                       className={[
-                                        "h-4 w-4 text-white/35 transition-transform",
+                                        "h-4 w-4 text-muted-foreground transition-transform",
                                         openResultGameId === game.gameId ? "rotate-180" : "",
                                       ].join(" ")}
                                     />
                                   </button>
 
                                   {openResultGameId === game.gameId ? (
-                                    <div className="relative mt-2 overflow-hidden rounded-2xl border border-white/[0.07] bg-black/25">
+                                    <div className="relative mt-2 overflow-hidden rounded-2xl border border-white/[0.07] bg-card">
                                       {resultGameDetails[game.gameId]?.loading ? (
                                         <div className="flex min-h-[120px] items-center justify-center">
                                           <RefreshCw className="h-5 w-5 animate-spin text-orange-300" />
@@ -1343,13 +1343,13 @@ export function LeagueSection({
                                           return (
                                             <div className="space-y-4 p-3 sm:p-4">
                                               <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3">
-                                                <div className="truncate text-right text-sm font-black text-white/80">
+                                                <div className="truncate text-right text-sm font-semibold text-white/80">
                                                   {detail.homeTeam || game.homeTeam}
                                                 </div>
-                                                <div className="rounded-xl border border-white/[0.08] bg-black/30 px-3 py-1.5 text-base font-black text-white">
+                                                <div className="rounded-xl border border-white/[0.08] bg-card px-3 py-1.5 text-base font-semibold text-white">
                                                   {detail.homeScore || (game.homeScore ?? "–")} : {detail.awayScore || (game.awayScore ?? "–")}
                                                 </div>
-                                                <div className="truncate text-left text-sm font-black text-white/80">
+                                                <div className="truncate text-left text-sm font-semibold text-white/80">
                                                   {detail.awayTeam || game.awayTeam}
                                                 </div>
                                               </div>
@@ -1357,7 +1357,7 @@ export function LeagueSection({
                                               {(detail.homePlayers.length > 0 || detail.awayPlayers.length > 0) ? (
                                                 <div className="grid gap-2 sm:grid-cols-2">
                                                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                                                    <div className="mb-2 text-[10px] font-black uppercase tracking-[0.10em] text-white/30">
+                                                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.10em] text-muted-foreground">
                                                       Heim · Checks
                                                     </div>
                                                     <div className="space-y-1.5">
@@ -1367,14 +1367,14 @@ export function LeagueSection({
                                                           className="flex items-center justify-between gap-2 text-xs"
                                                         >
                                                           <span className="truncate font-bold text-white/72">{player.player}</span>
-                                                          <span className="shrink-0 font-black text-orange-200">{player.checks || "—"}</span>
+                                                          <span className="shrink-0 font-semibold text-orange-200">{player.checks || "—"}</span>
                                                         </div>
                                                       ))}
                                                     </div>
                                                   </div>
 
                                                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                                                    <div className="mb-2 text-[10px] font-black uppercase tracking-[0.10em] text-white/30">
+                                                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.10em] text-muted-foreground">
                                                       Gast · Checks
                                                     </div>
                                                     <div className="space-y-1.5">
@@ -1384,7 +1384,7 @@ export function LeagueSection({
                                                           className="flex items-center justify-between gap-2 text-xs"
                                                         >
                                                           <span className="truncate font-bold text-white/72">{player.player}</span>
-                                                          <span className="shrink-0 font-black text-orange-200">{player.checks || "—"}</span>
+                                                          <span className="shrink-0 font-semibold text-orange-200">{player.checks || "—"}</span>
                                                         </div>
                                                       ))}
                                                     </div>
@@ -1397,26 +1397,26 @@ export function LeagueSection({
                                                   {detail.blocks.map((block, blockIndex) => (
                                                     <div
                                                       key={`${block.title}-${blockIndex}`}
-                                                      className="relative overflow-hidden rounded-2xl border border-white/[0.075] bg-gradient-to-r from-orange-500/[0.025] via-white/[0.018] to-sky-500/[0.025]"
+                                                      className="text-foreground relative overflow-hidden rounded-2xl border border-white/[0.075] bg-card   "
                                                     >
                                                       <div className="absolute inset-y-0 left-0 w-[3px] bg-orange-400/70" />
 
                                                       <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
                                                         <div className="flex items-center gap-2">
-                                                          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-orange-300/15 bg-orange-400/[0.08] text-[11px] font-black text-orange-200">
+                                                          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-orange-300/15 bg-orange-400/[0.08] text-xs font-semibold text-orange-200">
                                                             {blockIndex + 1}
                                                           </div>
                                                           <div>
-                                                            <div className="text-sm font-black text-white/88">
+                                                            <div className="text-sm font-semibold text-white/88">
                                                               {block.title}
                                                             </div>
-                                                            <div className="text-[9px] font-bold uppercase tracking-[0.12em] text-white/24">
+                                                            <div className="text-xs font-bold uppercase tracking-[0.12em] text-white/24">
                                                               {block.matches.length} {block.matches.length === 1 ? "Duell" : "Duelle"}
                                                             </div>
                                                           </div>
                                                         </div>
 
-                                                        <div className="rounded-full border border-white/[0.07] bg-black/20 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-white/30">
+                                                        <div className="rounded-full border border-white/[0.07] bg-black/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                                                           Block
                                                         </div>
                                                       </div>
@@ -1434,13 +1434,13 @@ export function LeagueSection({
                                                               <div className="min-w-0 text-right">
                                                                 <div
                                                                   className={[
-                                                                    "break-words text-[11px] font-black leading-[1.25] sm:text-xs",
+                                                                    "break-words text-xs font-semibold leading-[1.25] sm:text-xs",
                                                                     leftWins ? "text-white/92" : "text-white/58",
                                                                   ].join(" ")}
                                                                 >
                                                                   {match.leftPlayer}
                                                                 </div>
-                                                                <div className="mt-1 text-[8px] font-black uppercase tracking-[0.10em] text-white/20">
+                                                                <div className="mt-1 text-[8px] font-semibold uppercase tracking-[0.10em] text-white/20">
                                                                   Heim
                                                                 </div>
                                                               </div>
@@ -1448,7 +1448,7 @@ export function LeagueSection({
                                                               <div className="flex items-center justify-center gap-1.5">
                                                                 <div
                                                                   className={[
-                                                                    "flex h-9 min-w-[30px] items-center justify-center rounded-xl border px-2 text-base font-black",
+                                                                    "flex h-9 min-w-[30px] items-center justify-center rounded-xl border px-2 text-base font-semibold",
                                                                     leftWins
                                                                       ? "border-orange-300/20 bg-orange-400/10 text-orange-100"
                                                                       : "border-white/[0.08] bg-white/[0.035] text-white/70",
@@ -1456,10 +1456,10 @@ export function LeagueSection({
                                                                 >
                                                                   {match.leftScore}
                                                                 </div>
-                                                                <div className="text-[11px] font-black text-white/20">:</div>
+                                                                <div className="text-xs font-semibold text-white/20">:</div>
                                                                 <div
                                                                   className={[
-                                                                    "flex h-9 min-w-[30px] items-center justify-center rounded-xl border px-2 text-base font-black",
+                                                                    "flex h-9 min-w-[30px] items-center justify-center rounded-xl border px-2 text-base font-semibold",
                                                                     rightWins
                                                                       ? "border-sky-300/20 bg-sky-400/10 text-sky-100"
                                                                       : "border-white/[0.08] bg-white/[0.035] text-white/70",
@@ -1472,13 +1472,13 @@ export function LeagueSection({
                                                               <div className="min-w-0 text-left">
                                                                 <div
                                                                   className={[
-                                                                    "break-words text-[11px] font-black leading-[1.25] sm:text-xs",
+                                                                    "break-words text-xs font-semibold leading-[1.25] sm:text-xs",
                                                                     rightWins ? "text-white/92" : "text-white/58",
                                                                   ].join(" ")}
                                                                 >
                                                                   {match.rightPlayer}
                                                                 </div>
-                                                                <div className="mt-1 text-[8px] font-black uppercase tracking-[0.10em] text-white/20">
+                                                                <div className="mt-1 text-[8px] font-semibold uppercase tracking-[0.10em] text-white/20">
                                                                   Gast
                                                                 </div>
                                                               </div>
@@ -1490,7 +1490,7 @@ export function LeagueSection({
                                                   ))}
                                                 </div>
                                               ) : (
-                                                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center text-xs font-semibold text-white/30">
+                                                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center text-xs font-semibold text-muted-foreground">
                                                   Keine Blockdetails gefunden.
                                                 </div>
                                               )}
@@ -1517,8 +1517,8 @@ export function LeagueSection({
                                       {icon}
                                     </div>
                                     <div>
-                                      <div className="text-sm font-black text-white">{title}</div>
-                                      <div className="text-[10px] font-bold uppercase tracking-[0.10em] text-white/28">
+                                      <div className="text-sm font-semibold text-white">{title}</div>
+                                      <div className="text-xs font-bold uppercase tracking-[0.10em] text-white/28">
                                         {subtitle}
                                       </div>
                                     </div>
@@ -1563,14 +1563,14 @@ export function LeagueSection({
 
                             return (
                               <div className="space-y-4">
-                                <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-white/[0.07] bg-black/25 p-1.5">
+                                <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-white/[0.07] bg-card p-1.5">
                                   <button
                                     type="button"
                                     onClick={() => setMyResultsFilter("today")}
                                     className={[
-                                      "rounded-xl px-2 py-2.5 text-xs font-black transition",
+                                      "rounded-xl px-2 py-2.5 text-xs font-semibold transition",
                                       myResultsFilter === "today"
-                                        ? "bg-orange-500 text-white shadow-[0_0_22px_rgba(249,115,22,.14)]"
+                                        ? "bg-orange-500 text-primary-foreground shadow-[0_0_22px_rgba(249,115,22,.14)]"
                                         : "text-white/42 hover:bg-white/[0.05] hover:text-white/80",
                                     ].join(" ")}
                                   >
@@ -1581,9 +1581,9 @@ export function LeagueSection({
                                     type="button"
                                     onClick={() => setMyResultsFilter("upcoming")}
                                     className={[
-                                      "rounded-xl px-2 py-2.5 text-xs font-black transition",
+                                      "rounded-xl px-2 py-2.5 text-xs font-semibold transition",
                                       myResultsFilter === "upcoming"
-                                        ? "bg-orange-500 text-white shadow-[0_0_22px_rgba(249,115,22,.14)]"
+                                        ? "bg-orange-500 text-primary-foreground shadow-[0_0_22px_rgba(249,115,22,.14)]"
                                         : "text-white/42 hover:bg-white/[0.05] hover:text-white/80",
                                     ].join(" ")}
                                   >
@@ -1594,9 +1594,9 @@ export function LeagueSection({
                                     type="button"
                                     onClick={() => setMyResultsFilter("completed")}
                                     className={[
-                                      "rounded-xl px-2 py-2.5 text-xs font-black transition",
+                                      "rounded-xl px-2 py-2.5 text-xs font-semibold transition",
                                       myResultsFilter === "completed"
-                                        ? "bg-orange-500 text-white shadow-[0_0_22px_rgba(249,115,22,.14)]"
+                                        ? "bg-orange-500 text-primary-foreground shadow-[0_0_22px_rgba(249,115,22,.14)]"
                                         : "text-white/42 hover:bg-white/[0.05] hover:text-white/80",
                                     ].join(" ")}
                                   >
@@ -1613,7 +1613,7 @@ export function LeagueSection({
                                   )
                                 ) : (
                                   <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-7 text-center">
-                                    <div className="text-sm font-black text-white/55">
+                                    <div className="text-sm font-semibold text-muted-foreground">
                                       {myResultsFilter === "today"
                                         ? "Heute keine Spiele"
                                         : myResultsFilter === "upcoming"
@@ -1640,11 +1640,11 @@ export function LeagueSection({
       ) : (
         <>
           {error ? (
-            <section className="relative overflow-hidden rounded-[24px] border border-red-300/[0.13] bg-red-500/[0.055] p-4 backdrop-blur-xl">
+            <section className="relative overflow-hidden rounded-[24px] border border-red-300/[0.13] bg-red-500/[0.055] p-4 ">
               <div className="relative flex items-start gap-3">
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-300" />
                 <div>
-                  <p className="font-black text-red-100">Ligadaten konnten nicht geladen werden</p>
+                  <p className="font-semibold text-red-100">Ligadaten konnten nicht geladen werden</p>
                   <p className="mt-1 text-sm text-red-100/55">{error}</p>
                 </div>
               </div>
@@ -1652,7 +1652,7 @@ export function LeagueSection({
           ) : null}
 
           {loading && !data ? (
-            <section className="relative flex min-h-[360px] items-center justify-center overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/25 backdrop-blur-xl">
+            <section className="relative flex min-h-[360px] items-center justify-center overflow-hidden rounded-[28px] border border-white/[0.08] bg-card ">
               <div className="relative text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.035]">
                   <RefreshCw className="h-6 w-6 animate-spin text-orange-300" />
@@ -1665,11 +1665,11 @@ export function LeagueSection({
           {data ? (
             <>
               {data.openRounds?.length > 0 ? (
-                <section className="relative overflow-hidden rounded-[24px] border border-orange-300/[0.10] bg-black/25 p-4 backdrop-blur-xl sm:p-5">
+                <section className="relative overflow-hidden rounded-[24px] border border-orange-300/[0.10] bg-card p-4  sm:p-5">
                   <div className="relative">
                     <div className="mb-3 flex items-center gap-2">
                       <CircleDot className="h-4 w-4 text-orange-300" />
-                      <p className="text-[9px] font-black uppercase tracking-[0.20em] text-orange-300/60">Offene Runden</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.20em] text-orange-300/60">Offene Runden</p>
                     </div>
                     <div className="space-y-2">
                       {data.openRounds.map((item, index) => (

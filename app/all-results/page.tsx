@@ -11,16 +11,16 @@ export default function AllResultsPage() {
   const [activeTab, setActiveTab] = useState("dko")
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <Header />
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white py-16 px-4 sm:px-6 lg:px-8">
+      <div className="bg-card   text-white py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6">
             <Trophy className="w-8 h-8" />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black mb-4 tracking-tight">TURNIER ERGEBNISSE</h1>
+          <h1 className="text-4xl sm:text-5xl font-semibold mb-4 tracking-tight">TURNIER ERGEBNISSE</h1>
           <p className="text-xl text-white/90 max-w-2xl mx-auto">Alle vergangenen DKO und Kratzer Turniere</p>
         </div>
       </div>

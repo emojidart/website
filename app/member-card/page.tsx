@@ -53,7 +53,7 @@ function Chip({
                   : "bg-white/[0.035] text-white/60 border-white/[0.08]"
 
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full border ${cls}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
       {children}
     </span>
   )
@@ -264,16 +264,12 @@ export default function MemberCardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+      <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Meine Mitgliedskarte" subtitle="Mein EMD" backHref="/member-profile-app" />
 
-        <div className="pointer-events-none fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.72),rgba(3,5,9,.94)_48%,rgba(2,4,7,.985))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.18),transparent_28%),radial-gradient(circle_at_90%_30%,rgba(14,165,233,.12),transparent_28%)]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-        
+
         <main className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[var(--emd-content-max)] items-center justify-center px-4 py-10">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
         </main>
@@ -284,23 +280,19 @@ export default function MemberCardPage() {
 
   if (error || !profile) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+      <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Meine Mitgliedskarte" subtitle="Mein EMD" backHref="/member-profile-app" />
 
-        <div className="pointer-events-none fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.72),rgba(3,5,9,.94)_48%,rgba(2,4,7,.985))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.18),transparent_28%),radial-gradient(circle_at_90%_30%,rgba(14,165,233,.12),transparent_28%)]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-        
+
        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-4 py-10">
-          <div className="rounded-3xl border border-white/[0.08] bg-black/35 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl p-6 text-center">
+          <div className="rounded-3xl border border-white/[0.08] bg-card shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  p-6 text-center">
             <div className="mx-auto w-14 h-14 rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.14] flex items-center justify-center mb-4">
               <CreditCard className="w-6 h-6 text-orange-300" />
             </div>
-            <h1 className="text-lg sm:text-xl font-black text-white mb-1">{error || "Profil nicht gefunden"}</h1>
-            <p className="text-sm text-white/45 mb-5">Bitte melde dich erneut an.</p>
+            <h1 className="text-lg sm:text-xl font-semibold text-white mb-1">{error || "Profil nicht gefunden"}</h1>
+            <p className="text-sm text-muted-foreground mb-5">Bitte melde dich erneut an.</p>
             <Button onClick={() => router.push("/member-login")} className="rounded-2xl">
               Zur Anmeldung
             </Button>
@@ -314,25 +306,21 @@ export default function MemberCardPage() {
   /* ---------------- ui ---------------- */
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
       <Header variant="app" title="Meine Mitgliedskarte" subtitle="Mein EMD" backHref="/member-profile-app" />
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.72),rgba(3,5,9,.94)_48%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.18),transparent_28%),radial-gradient(circle_at_90%_30%,rgba(14,165,233,.12),transparent_28%)]" />
-      </div>
-      
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
+
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
         {/* top hero */}
-        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
+        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/[0.14] blur-3xl" />
           <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-sky-500/[0.06] blur-3xl" />
 
           <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/60">
                   <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
                   Mitgliederbereich
                 </div>
@@ -342,10 +330,10 @@ export default function MemberCardPage() {
                     <CreditCard className="h-6 w-6 text-orange-200" />
                   </div>
                   <div className="min-w-0">
-                    <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+                    <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
                       Meine Mitgliedskarte
                     </h1>
-                    <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">
+                    <p className="mt-2 text-sm font-medium text-muted-foreground sm:text-base">
                       Digitale Vereinskarte, QR-Code, Guthaben und Buchungen an einem Ort.
                     </p>
                   </div>
@@ -358,7 +346,7 @@ export default function MemberCardPage() {
                   onClick={() => setActiveTab("card")}
                   variant="outline"
                   className={`h-10 rounded-xl border-white/10 text-white hover:text-white ${
-                    activeTab === "card" ? "border-orange-300/30 bg-orange-500 hover:bg-orange-400" : "bg-white/[0.04] hover:bg-white/[0.08]"
+                    activeTab === "card" ? "border-orange-300/30 bg-orange-500 hover:bg-orange-400 text-primary-foreground" : "bg-white/[0.04] hover:bg-white/[0.08]"
                   }`}
                 >
                   <CreditCard className="mr-2 h-4 w-4" />
@@ -369,7 +357,7 @@ export default function MemberCardPage() {
                   onClick={() => setActiveTab("history")}
                   variant="outline"
                   className={`h-10 rounded-xl border-white/10 text-white hover:text-white ${
-                    activeTab === "history" ? "border-orange-300/30 bg-orange-500 hover:bg-orange-400" : "bg-white/[0.04] hover:bg-white/[0.08]"
+                    activeTab === "history" ? "border-orange-300/30 bg-orange-500 hover:bg-orange-400 text-primary-foreground" : "bg-white/[0.04] hover:bg-white/[0.08]"
                   }`}
                 >
                   <History className="mr-2 h-4 w-4" />
@@ -379,24 +367,24 @@ export default function MemberCardPage() {
             </div>
 
             <div className="mt-5 grid grid-cols-3 gap-2 sm:mt-6 sm:gap-3">
-              <div className="relative min-w-0 overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)] backdrop-blur-sm sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
-                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40 sm:text-[11px] sm:tracking-[0.16em]">Guthaben</div>
+              <div className="relative min-w-0 overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)]  sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
+                <div className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground sm:text-xs sm:tracking-[0.16em]">Guthaben</div>
                 <div className="mt-2 flex items-end justify-between gap-2">
-                  <div className="whitespace-nowrap text-lg font-black text-white sm:text-2xl">{formatEuro(creditBalance)}</div>
+                  <div className="whitespace-nowrap text-lg font-semibold text-white sm:text-2xl">{formatEuro(creditBalance)}</div>
                   <Wallet className="h-5 w-5 shrink-0 text-orange-200" />
                 </div>
               </div>
-              <div className="relative min-w-0 overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)] backdrop-blur-sm sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
-                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40 sm:text-[11px] sm:tracking-[0.16em]">Buchungen</div>
+              <div className="relative min-w-0 overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)]  sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
+                <div className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground sm:text-xs sm:tracking-[0.16em]">Buchungen</div>
                 <div className="mt-2 flex items-end justify-between gap-2">
-                  <div className="text-2xl font-black text-white">{quickStats.txCount}</div>
+                  <div className="text-2xl font-semibold text-white">{quickStats.txCount}</div>
                   <History className="h-5 w-5 shrink-0 text-orange-200" />
                 </div>
               </div>
-              <div className="relative min-w-0 overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)] backdrop-blur-sm sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
-                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40 sm:text-[11px] sm:tracking-[0.16em]">Spielercode</div>
+              <div className="relative min-w-0 overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-[0_0_24px_rgba(249,115,22,.055)]  sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
+                <div className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground sm:text-xs sm:tracking-[0.16em]">Spielercode</div>
                 <div className="mt-2 flex items-end justify-between gap-2">
-                  <div className="truncate font-mono text-[11px] font-black text-white sm:text-sm">{memberNumber}</div>
+                  <div className="truncate font-mono text-xs font-semibold text-white sm:text-sm">{memberNumber}</div>
                   <Target className="hidden h-5 w-5 shrink-0 text-orange-200 sm:block" />
                 </div>
               </div>
@@ -414,7 +402,7 @@ export default function MemberCardPage() {
               {/* card preview (download target) */}
               <Card
                 ref={cardRef}
-                className="relative overflow-hidden rounded-[30px] border border-orange-300/[0.13] bg-[linear-gradient(145deg,#0b0e13,#080a0e_58%,#120b07)] shadow-[0_0_42px_rgba(249,115,22,.07),0_28px_80px_-48px_rgba(0,0,0,.98)]"
+                className="text-foreground relative overflow-hidden rounded-[30px] border border-orange-300/[0.13] bg-card shadow-[0_0_42px_rgba(249,115,22,.07),0_28px_80px_-48px_rgba(0,0,0,.98)]"
               >
                 <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/[0.14] blur-3xl" />
                 <div className="absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-sky-500/[0.06] blur-3xl" />
@@ -422,7 +410,7 @@ export default function MemberCardPage() {
                 <CardContent className="p-6 sm:p-8 relative z-10">
                   <div className="flex items-center justify-between mb-6">
                     <div className="text-white">
-                      <p className="text-sm font-black opacity-90">EMD Darts Verein</p>
+                      <p className="text-sm font-semibold opacity-90">EMD Darts Verein</p>
                       <p className="text-xs opacity-75">Mitgliedskarte</p>
                     </div>
                     <Image src="/icon-192.png" alt="EMD Logo" width={56} height={56} className="opacity-90 drop-shadow-lg" />
@@ -438,13 +426,13 @@ export default function MemberCardPage() {
                         }
                         alt={profile.club_players?.name || "Spieler"}
                       />
-                      <AvatarFallback className="bg-white/20 backdrop-blur-sm text-white text-xl font-black">
+                      <AvatarFallback className="bg-white/20  text-white text-xl font-semibold">
                         {initials}
                       </AvatarFallback>
                     </Avatar>
 
                     <div className="flex-grow text-white min-w-0">
-                      <h2 className="text-2xl sm:text-3xl font-black mb-1 truncate">
+                      <h2 className="text-2xl sm:text-3xl font-semibold mb-1 truncate">
                         {profile.club_players?.name || "Mitglied"}
                       </h2>
 
@@ -460,13 +448,13 @@ export default function MemberCardPage() {
                     </div>
                   </div>
 
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 grid grid-cols-2 gap-4 border border-white/10">
+                  <div className="bg-white/10  rounded-2xl p-4 grid grid-cols-2 gap-4 border border-white/10">
                     <div>
-                      <p className="text-[11px] font-black uppercase tracking-wider text-white/70 mb-1">Mitglied seit</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-white/70 mb-1">Mitglied seit</p>
                       <p className="text-sm font-bold text-white">{memberSince}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] font-black uppercase tracking-wider text-white/70 mb-1">Guthaben</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-white/70 mb-1">Guthaben</p>
                       <div className="flex items-center gap-1.5">
                         <Wallet className="h-4 w-4 text-white" />
                         <p className="text-sm font-bold text-white">{formatEuro(creditBalance)}</p>
@@ -477,11 +465,11 @@ export default function MemberCardPage() {
               </Card>
 
               {/* QR block */}
-              <div className="mt-4 rounded-[26px] border border-white/[0.08] bg-black/30 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl overflow-hidden sm:rounded-[30px]">
+              <div className="mt-4 rounded-[26px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  overflow-hidden sm:rounded-[30px]">
                 <div className="p-4 sm:p-6 border-b border-white/[0.07] flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-wider text-white/35">QR-Code</p>
-                    <p className="text-lg font-black text-white">Scannen zum Anmelden</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">QR-Code</p>
+                    <p className="text-lg font-semibold text-white">Scannen zum Anmelden</p>
                   </div>
                   <div className="w-11 h-11 rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.14] flex items-center justify-center">
                     <QrCode className="w-5 h-5 text-orange-300" />
@@ -491,17 +479,17 @@ export default function MemberCardPage() {
                 <div className="p-4 sm:p-6 bg-white/[0.025]">
                   <div className="grid sm:grid-cols-[1fr_auto] gap-4 items-center">
                     <div className="text-center sm:text-left">
-                      <p className="text-sm text-white/55">
+                      <p className="text-sm text-muted-foreground">
                         {playerCode !== "Noch kein Turniercode"
                           ? "Jetzt anmelden – QR-Code scannen"
                           : "QR-Code wird erstellt nach erster Turnieranmeldung"}
                       </p>
-                      <p className="text-[11px] text-white/35 font-mono mt-2">{memberNumber}</p>
+                      <p className="text-xs text-muted-foreground font-mono mt-2">{memberNumber}</p>
 
                       <div className="mt-4 flex flex-col sm:flex-row gap-2">
                         <Button
                           type="button"
-                          className="rounded-2xl bg-orange-500 shadow-[0_0_26px_rgba(249,115,22,.14)] hover:bg-orange-400 active:scale-[0.99]"
+                          className="rounded-2xl bg-primary shadow-[0_0_26px_rgba(249,115,22,.14)] hover:bg-primary/90 active:scale-[0.99] text-primary-foreground"
                           onClick={() => setQrOpen(true)}
                         >
                           <QrCode className="w-4 h-4 mr-2" />
@@ -511,12 +499,12 @@ export default function MemberCardPage() {
                     </div>
 
                     <div className="mx-auto sm:mx-0">
-                      <div className="inline-block rounded-2xl border border-white/15 bg-white p-4 shadow-[0_18px_45px_-24px_rgba(0,0,0,.8)]">
+                      <div className="inline-block rounded-2xl border border-white/15 bg-card p-4 shadow-[0_18px_45px_-24px_rgba(0,0,0,.8)]">
                         {playerCode !== "Noch kein Turniercode" ? (
                           <QRCodeSVG value={playerCode} size={160} level="H" includeMargin />
                         ) : (
-                          <div className="flex h-40 w-40 items-center justify-center rounded-xl border border-slate-200 bg-slate-100">
-                            <QrCode className="h-16 w-16 text-gray-400" />
+                          <div className="flex h-40 w-40 items-center justify-center rounded-xl border border-border bg-muted">
+                            <QrCode className="h-16 w-16 text-muted-foreground" />
                           </div>
                         )}
                       </div>
@@ -526,10 +514,10 @@ export default function MemberCardPage() {
               </div>
 
               {/* benefits */}
-              <div className="mt-4 rounded-[26px] border border-white/[0.08] bg-black/30 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl overflow-hidden sm:rounded-[30px]">
+              <div className="mt-4 rounded-[26px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  overflow-hidden sm:rounded-[30px]">
                 <div className="p-4 sm:p-6 border-b border-orange-300/[0.10]">
-                  <p className="text-xs font-black uppercase tracking-wider text-white/35">So nutzt du’s</p>
-                  <p className="text-lg font-black text-white">Schnell • Bargeldlos • Flexibel</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">So nutzt du’s</p>
+                  <p className="text-lg font-semibold text-white">Schnell • Bargeldlos • Flexibel</p>
                 </div>
 
                 <div className="p-4 sm:p-6 grid sm:grid-cols-3 gap-3">
@@ -537,54 +525,54 @@ export default function MemberCardPage() {
                     <div className="w-11 h-11 rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.14] flex items-center justify-center mb-3">
                       <HandCoins className="w-5 h-5 text-orange-300" />
                     </div>
-                    <p className="text-sm font-black text-white">Online aufladen</p>
-                    <p className="text-sm text-white/55 mt-1">10, 20, 30 oder 50 € wählen und sicher über Stripe bezahlen.</p>
+                    <p className="text-sm font-semibold text-white">Online aufladen</p>
+                    <p className="text-sm text-muted-foreground mt-1">10, 20, 30 oder 50 € wählen und sicher über Stripe bezahlen.</p>
                   </div>
 
                   <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.12] bg-orange-500/[0.04] p-4 shadow-[0_0_24px_rgba(249,115,22,.05)] transition active:scale-[0.992] sm:shadow-none">
                     <div className="w-11 h-11 rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.14] flex items-center justify-center mb-3">
                       <Zap className="w-5 h-5 text-orange-300" />
                     </div>
-                    <p className="text-sm font-black text-white">Bargeldlos & schnell</p>
-                    <p className="text-sm text-white/55 mt-1">Turniere/Events per QR in Sekunden – ohne Stress.</p>
+                    <p className="text-sm font-semibold text-white">Bargeldlos & schnell</p>
+                    <p className="text-sm text-muted-foreground mt-1">Turniere/Events per QR in Sekunden – ohne Stress.</p>
                   </div>
 
                   <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.12] bg-orange-500/[0.04] p-4 shadow-[0_0_24px_rgba(249,115,22,.05)] transition active:scale-[0.992] sm:shadow-none">
                     <div className="w-11 h-11 rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.14] flex items-center justify-center mb-3">
                       <Smartphone className="w-5 h-5 text-orange-300" />
                     </div>
-                    <p className="text-sm font-black text-white">Für Cups verwenden</p>
-                    <p className="text-sm text-white/55 mt-1">Guthaben zunächst für Members Cup und Lion Cup verwenden.</p>
+                    <p className="text-sm font-semibold text-white">Für Cups verwenden</p>
+                    <p className="text-sm text-muted-foreground mt-1">Guthaben zunächst für Members Cup und Lion Cup verwenden.</p>
                   </div>
                 </div>
               </div>
 
               {/* info blocks */}
-              <div className="mt-4 rounded-[26px] border border-white/[0.08] bg-black/30 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl overflow-hidden sm:rounded-[30px]">
+              <div className="mt-4 rounded-[26px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  overflow-hidden sm:rounded-[30px]">
                 <div className="p-4 sm:p-6 border-b border-white/[0.07]">
-                  <p className="text-xs font-black uppercase tracking-wider text-white/35">Profil</p>
-                  <p className="text-lg font-black text-white">Mitgliedsinformationen</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Profil</p>
+                  <p className="text-lg font-semibold text-white">Mitgliedsinformationen</p>
                 </div>
 
                 <div className="p-4 sm:p-6 bg-white/[0.025]">
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
-                      <p className="text-[11px] font-black uppercase tracking-wider text-white/35">Name</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</p>
                       <p className="mt-1 text-sm font-bold text-white">{profile.club_players?.name || "—"}</p>
                     </div>
 
                     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
-                      <p className="text-[11px] font-black uppercase tracking-wider text-white/35">E-Mail</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">E-Mail</p>
                       <p className="mt-1 text-sm font-bold text-white">{session?.user?.email || "—"}</p>
                     </div>
 
                     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
-                      <p className="text-[11px] font-black uppercase tracking-wider text-white/35">Herkunft</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Herkunft</p>
                       <p className="mt-1 text-sm font-bold text-white">{profile.club_players?.origin || "—"}</p>
                     </div>
 
                     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
-                      <p className="text-[11px] font-black uppercase tracking-wider text-white/35">Alter</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alter</p>
                       <p className="mt-1 text-sm font-bold text-white">
                         {profile.club_players?.age ? `${profile.club_players.age} Jahre` : "—"}
                       </p>
@@ -593,8 +581,8 @@ export default function MemberCardPage() {
                     <div className="sm:col-span-2 rounded-2xl border border-orange-300/[0.10] bg-orange-500/[0.035] p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-[11px] font-black uppercase tracking-wider text-white/35">Guthaben</p>
-                          <p className="mt-1 text-xl font-black text-orange-300">{formatEuro(creditBalance)}</p>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Guthaben</p>
+                          <p className="mt-1 text-xl font-semibold text-orange-300">{formatEuro(creditBalance)}</p>
                         </div>
                         <Chip tone="amber">
                           <Wallet className="w-3.5 h-3.5" />
@@ -608,7 +596,7 @@ export default function MemberCardPage() {
                     <Button
                       onClick={downloadCard}
                       disabled={downloading}
-                      className="rounded-2xl bg-orange-500 shadow-[0_0_26px_rgba(249,115,22,.14)] hover:bg-orange-400 active:scale-[0.99]"
+                      className="rounded-2xl bg-primary shadow-[0_0_26px_rgba(249,115,22,.14)] hover:bg-primary/90 active:scale-[0.99] text-primary-foreground"
                     >
                       <Download className="w-4 h-4 mr-2" />
                       {downloading ? "Wird heruntergeladen…" : "Karte herunterladen"}
@@ -624,19 +612,19 @@ export default function MemberCardPage() {
               {/* QR modal */}
               {qrOpen ? (
                 <div
-                  className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                  className="fixed inset-0 z-[100] bg-black/80  flex items-center justify-center p-4"
                   role="dialog"
                   aria-modal="true"
                   onMouseDown={() => setQrOpen(false)}
                 >
                   <div
-                    className="w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden"
+                    className="w-full max-w-md rounded-3xl bg-card shadow-2xl overflow-hidden"
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     <div className="p-4 border-b border-white/[0.07] flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-black uppercase tracking-wider text-white/35">QR-Code</p>
-                        <p className="text-lg font-black text-white">Scannen</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">QR-Code</p>
+                        <p className="text-lg font-semibold text-white">Scannen</p>
                       </div>
                       <button
                         type="button"
@@ -649,17 +637,17 @@ export default function MemberCardPage() {
                     </div>
 
                     <div className="p-6 bg-white/[0.025] flex flex-col items-center">
-                      <div className="bg-white p-4 rounded-3xl border border-white/[0.08] shadow-sm">
+                      <div className="bg-card p-4 rounded-3xl border border-white/[0.08] shadow-sm">
                         {playerCode !== "Noch kein Turniercode" ? (
                           <QRCodeSVG value={playerCode} size={260} level="H" includeMargin />
                         ) : (
-                          <div className="w-[260px] h-[260px] bg-gray-100 rounded-2xl flex items-center justify-center border border-white/[0.08]">
-                            <QrCode className="h-20 w-20 text-gray-400" />
+                          <div className="w-[260px] h-[260px] bg-muted rounded-2xl flex items-center justify-center border border-white/[0.08]">
+                            <QrCode className="h-20 w-20 text-muted-foreground" />
                           </div>
                         )}
                       </div>
-                      <p className="mt-3 text-[11px] text-white/35 font-mono">{memberNumber}</p>
-                      <p className="mt-2 text-sm text-white/55 text-center">
+                      <p className="mt-3 text-xs text-muted-foreground font-mono">{memberNumber}</p>
+                      <p className="mt-2 text-sm text-muted-foreground text-center">
                         {playerCode !== "Noch kein Turniercode"
                           ? "QR-Code kann für Anmeldungen vor Ort genutzt werden."
                           : "QR-Code erscheint nach der ersten Turnieranmeldung."}
@@ -671,12 +659,12 @@ export default function MemberCardPage() {
             </>
           ) : (
             /* HISTORY */
-            <div className="rounded-[26px] border border-white/[0.08] bg-black/30 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl overflow-hidden sm:rounded-[30px]">
+            <div className="rounded-[26px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  overflow-hidden sm:rounded-[30px]">
               <div className="p-4 sm:p-6 border-b border-white/[0.07] flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wider text-white/35">Guthaben</p>
-                  <p className="text-lg font-black text-white">Transaktions-Historie</p>
-                  <p className="text-sm text-white/45 mt-1">Letzte: {quickStats.lastTx}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Guthaben</p>
+                  <p className="text-lg font-semibold text-white">Transaktions-Historie</p>
+                  <p className="text-sm text-muted-foreground mt-1">Letzte: {quickStats.lastTx}</p>
                 </div>
 
                 <Button
@@ -696,10 +684,10 @@ export default function MemberCardPage() {
                     <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : transactions.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center">
-                    <History className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-800 font-black">Keine Transaktionen vorhanden</p>
-                    <p className="text-sm text-white/45 mt-1">Deine Guthaben-Transaktionen werden hier angezeigt.</p>
+                  <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center">
+                    <History className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-foreground font-semibold">Keine Transaktionen vorhanden</p>
+                    <p className="text-sm text-muted-foreground mt-1">Deine Guthaben-Transaktionen werden hier angezeigt.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -715,12 +703,12 @@ export default function MemberCardPage() {
                                 </Chip>
                                 <p className="text-sm font-bold text-white">{getTransactionTypeLabel(t.transaction_type)}</p>
                               </div>
-                              <p className="text-xs text-white/35 mt-1">{formatDateDE(t.created_at)}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{formatDateDE(t.created_at)}</p>
                             </div>
 
                             <div className="text-right">
-                              <p className="text-[11px] font-black uppercase tracking-wider text-white/35">Saldo danach</p>
-                              <p className="text-sm font-black text-white">{formatEuro(t.balance_after)}</p>
+                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Saldo danach</p>
+                              <p className="text-sm font-semibold text-white">{formatEuro(t.balance_after)}</p>
                             </div>
                           </div>
                         </div>

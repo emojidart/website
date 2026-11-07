@@ -56,11 +56,11 @@ function Chip({
                 : tone === "amber"
                   ? "bg-amber-50 text-amber-900 border-amber-200"
                   : tone === "slate"
-                    ? "bg-slate-50 text-slate-800 border-slate-200"
-                    : "bg-gray-50 text-gray-800 border-gray-200"
+                    ? "bg-muted text-foreground border-border"
+                    : "bg-muted text-foreground border-border"
 
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full border ${cls}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
       {children}
     </span>
   )
@@ -82,9 +82,9 @@ function SectionTitle({
           <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
             <Icon className="w-4.5 h-4.5 text-orange-700" />
           </div>
-          <h2 className="text-base sm:text-lg font-black text-gray-900">{title}</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-foreground">{title}</h2>
         </div>
-        {subtitle ? <p className="text-xs sm:text-sm text-gray-500 mt-1">{subtitle}</p> : null}
+        {subtitle ? <p className="text-xs sm:text-sm text-muted-foreground mt-1">{subtitle}</p> : null}
       </div>
     </div>
   )
@@ -103,18 +103,18 @@ function AgeTab({
 }) {
   const activeCls =
     tone === "red"
-      ? "bg-gradient-to-r from-red-500 to-red-600 text-white border-red-200"
+      ? "bg-card   text-white border-red-200"
       : tone === "blue"
-        ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-200"
-        : "bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-200"
+        ? "bg-card   text-white border-blue-200"
+        : "bg-card   text-white border-purple-200"
 
   return (
     <button
       type="button"
       onClick={onClick}
       className={[
-        "h-10 px-4 rounded-xl border text-sm font-black transition active:scale-[0.98]",
-        active ? `${activeCls} shadow-sm` : "bg-white text-gray-800 border-gray-200 hover:bg-gray-50",
+        "h-10 px-4 rounded-xl border text-sm font-semibold transition active:scale-[0.98]",
+        active ? `${activeCls} shadow-sm` : "bg-card text-foreground border-border hover:bg-muted",
       ].join(" ")}
     >
       {label}
@@ -448,7 +448,7 @@ export default function App() {
   }, [selectedAge])
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-foreground pb-24 md:pb-0">
       <Header />
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
@@ -459,23 +459,23 @@ export default function App() {
         animate="visible"
       >
         {/* HERO */}
-        <motion.section variants={itemVariants} className="rounded-3xl border border-orange-200 bg-white shadow-2xl overflow-hidden">
-          <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white">
+        <motion.section variants={itemVariants} className="rounded-3xl border border-orange-200 bg-card shadow-2xl overflow-hidden">
+          <div className="relative bg-card    text-white">
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.35),transparent_55%),radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.18),transparent_55%),radial-gradient(circle_at_50%_90%,rgba(255,255,255,0.20),transparent_60%)]" />
             <div className="relative p-4 sm:p-5 lg:p-6">
               <div className="flex items-center justify-center mb-5">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/10 border border-white/20  flex items-center justify-center">
                   <Target className="w-8 h-8 sm:w-9 sm:h-9 text-white" />
                 </div>
               </div>
 
               <div className="text-center">
-                <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-black text-xs mb-3">
+                <div className="inline-flex items-center gap-2 bg-yellow-400 text-orange-950 px-3 py-1.5 rounded-full font-semibold text-xs mb-3">
                   <Trophy className="w-3.5 h-3.5" />
                   <span>YOUNG TALENT PROGRAMM 2026</span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black leading-tight">
+                <h1 className="text-2xl sm:text-3xl lg:text-5xl font-semibold leading-tight">
                   EMD – CAMPUS
                   <span className="block text-orange-200">NACHWUCHS AKADEMIE</span>
                 </h1>
@@ -503,14 +503,14 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setIsRegistrationOpen(true)}
-                    className="h-12 px-5 rounded-2xl bg-white text-orange-700 font-black shadow-sm active:scale-[0.99]"
+                    className="h-12 px-5 rounded-2xl bg-card text-orange-700 font-semibold shadow-sm active:scale-[0.99]"
                   >
                     Jetzt anmelden
                   </button>
 
                   <a
                     href="#moduleplan"
-                    className="h-12 px-5 rounded-2xl border border-white/30 bg-white/10 text-white font-black flex items-center justify-center active:scale-[0.99]"
+                    className="h-12 px-5 rounded-2xl border border-white/30 bg-white/10 text-white font-semibold flex items-center justify-center active:scale-[0.99]"
                   >
                     Modulplan ansehen
                   </a>
@@ -519,15 +519,15 @@ export default function App() {
             </div>
           </div>
 
-          <div className="p-4 sm:p-6 bg-white">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
+          <div className="p-4 sm:p-6 bg-card">
+            <div className="rounded-2xl border border-border bg-muted p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center">
                   <Info className="w-5 h-5 text-orange-700" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-black text-gray-900">Kurz erklärt</p>
-                  <p className="text-sm text-gray-700 mt-1 leading-relaxed">
+                  <p className="text-sm font-semibold text-foreground">Kurz erklärt</p>
+                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                     12 Module über 12 Monate – je Altersgruppe angepasst. Fokus auf Technik, Zieltraining, mentale Stärke
                     und faire Wettkampfroutine.
                   </p>
@@ -539,16 +539,16 @@ export default function App() {
 
         {/* TERMIN-HIGHLIGHT OBEN */}
         <motion.section variants={itemVariants} className="mt-6">
-          <div className="rounded-3xl overflow-hidden border border-orange-300 bg-white shadow-xl">
-            <div className="bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 p-4 sm:p-6 text-white">
+          <div className="rounded-3xl overflow-hidden border border-orange-300 bg-card shadow-xl">
+            <div className="bg-card    p-4 sm:p-6 text-white">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-black uppercase tracking-wider backdrop-blur">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider ">
                     <CalendarDays className="h-3.5 w-3.5" />
                     Wichtige Termine 2026
                   </div>
 
-                  <h2 className="mt-3 text-xl sm:text-2xl lg:text-3xl font-black leading-tight">
+                  <h2 className="mt-3 text-xl sm:text-2xl lg:text-3xl font-semibold leading-tight">
                     Infotag: Samstag, 10. Januar 2026
                   </h2>
 
@@ -578,7 +578,7 @@ export default function App() {
                 <div className="shrink-0">
                   <Link
                     href="/emd-campus/termine"
-                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-orange-700 shadow-sm transition hover:bg-orange-50"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-card px-5 py-3 text-sm font-semibold text-orange-700 shadow-sm transition hover:bg-orange-50"
                   >
                     Alle Termine ansehen
                     <ArrowRight className="h-4 w-4" />
@@ -588,21 +588,21 @@ export default function App() {
             </div>
 
             <div className="grid gap-3 border-t border-orange-100 bg-orange-50/60 p-4 sm:grid-cols-3 sm:p-5">
-              <div className="rounded-2xl border border-orange-200 bg-white p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Infotag</p>
-                <p className="mt-1 text-sm font-black text-gray-900">10. Januar 2026</p>
+              <div className="rounded-2xl border border-orange-200 bg-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Infotag</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">10. Januar 2026</p>
                 <p className="mt-1 text-sm text-orange-700 font-semibold">14:00 Uhr</p>
               </div>
 
-              <div className="rounded-2xl border border-orange-200 bg-white p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Trainingsstart</p>
-                <p className="mt-1 text-sm font-black text-gray-900">18. Januar 2026</p>
+              <div className="rounded-2xl border border-orange-200 bg-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Trainingsstart</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">18. Januar 2026</p>
                 <p className="mt-1 text-sm text-orange-700 font-semibold">ab 14:00 Uhr</p>
               </div>
 
-              <div className="rounded-2xl border border-orange-200 bg-white p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Terminübersicht</p>
-                <p className="mt-1 text-sm font-black text-gray-900">alle geplanten Sonntage</p>
+              <div className="rounded-2xl border border-orange-200 bg-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Terminübersicht</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">alle geplanten Sonntage</p>
                 <p className="mt-1 text-sm text-orange-700 font-semibold">weitere Folgen</p>
               </div>
             </div>
@@ -617,12 +617,12 @@ export default function App() {
             subtitle="Kennenlernen, Fragen klären, Programm erleben – alle Eltern/Erziehungsberechtigten willkommen."
           />
 
-          <div className="rounded-3xl border border-green-200 bg-white shadow-sm overflow-hidden">
-            <div className="p-4 sm:p-6 bg-gradient-to-br from-green-500 to-green-700 text-white">
+          <div className="rounded-3xl border border-green-200 bg-card shadow-sm overflow-hidden">
+            <div className="p-4 sm:p-6 bg-card   text-white">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wider text-green-100">Termin</p>
-                  <p className="text-lg sm:text-2xl font-black">Samstag, 10. Januar 2026 • 14:00 Uhr</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-green-100">Termin</p>
+                  <p className="text-lg sm:text-2xl font-semibold">Samstag, 10. Januar 2026 • 14:00 Uhr</p>
                 </div>
                 <Chip tone="green">
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -638,11 +638,11 @@ export default function App() {
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 bg-gray-50">
+            <div className="p-4 sm:p-6 bg-muted">
               <div className="grid sm:grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Themen</p>
-                  <ul className="mt-2 space-y-2 text-sm text-gray-700">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Themen</p>
+                  <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
                     {[
                       "Besichtigung Trainingsräume",
                       "Vorstellung 12-Monats Programm",
@@ -661,20 +661,20 @@ export default function App() {
                   </ul>
                 </div>
 
-                <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Für wen?</p>
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Für wen?</p>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-center">
-                      <p className="text-xs font-black text-red-900">KIDS</p>
-                      <p className="text-[11px] text-red-800 mt-0.5 font-semibold">6–10</p>
+                      <p className="text-xs font-semibold text-red-900">KIDS</p>
+                      <p className="text-xs text-red-800 mt-0.5 font-semibold">6–10</p>
                     </div>
                     <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3 text-center">
-                      <p className="text-xs font-black text-blue-900">JUNIOR</p>
-                      <p className="text-[11px] text-blue-800 mt-0.5 font-semibold">11–15</p>
+                      <p className="text-xs font-semibold text-blue-900">JUNIOR</p>
+                      <p className="text-xs text-blue-800 mt-0.5 font-semibold">11–15</p>
                     </div>
                     <div className="rounded-2xl border border-purple-200 bg-purple-50 p-3 text-center">
-                      <p className="text-xs font-black text-purple-900">TEENS</p>
-                      <p className="text-[11px] text-purple-800 mt-0.5 font-semibold">15–18</p>
+                      <p className="text-xs font-semibold text-purple-900">TEENS</p>
+                      <p className="text-xs text-purple-800 mt-0.5 font-semibold">15–18</p>
                     </div>
                   </div>
 
@@ -691,12 +691,12 @@ export default function App() {
         <motion.section variants={itemVariants} className="mt-6">
           <SectionTitle icon={Calendar} title="Starttermine" subtitle="Fixe Trainingssonntage – Zeiten je Altersgruppe." />
 
-          <div className="rounded-3xl border border-orange-200 bg-white shadow-sm overflow-hidden">
-            <div className="p-4 sm:p-6 bg-gradient-to-br from-orange-500 to-orange-700 text-white">
+          <div className="rounded-3xl border border-orange-200 bg-card shadow-sm overflow-hidden">
+            <div className="p-4 sm:p-6 bg-card   text-white">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wider text-orange-100">Start ab</p>
-                  <p className="text-lg sm:text-2xl font-black">Sonntag, 18. Januar 2026</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-orange-100">Start ab</p>
+                  <p className="text-lg sm:text-2xl font-semibold">Sonntag, 18. Januar 2026</p>
                   <div className="mt-2 flex flex-wrap gap-2 text-sm text-orange-50">
                     <span className="inline-flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
@@ -707,7 +707,7 @@ export default function App() {
 
                 <Link
                   href="/emd-campus/termine"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-orange-700 shadow-sm transition hover:bg-orange-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-card px-4 py-3 text-sm font-semibold text-orange-700 shadow-sm transition hover:bg-orange-50"
                 >
                   Termine als Tabelle
                   <ArrowRight className="h-4 w-4" />
@@ -715,52 +715,52 @@ export default function App() {
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 bg-gray-50">
+            <div className="p-4 sm:p-6 bg-muted">
               <div className="grid sm:grid-cols-3 gap-3">
-                <div className="rounded-2xl border border-red-200 bg-white shadow-sm p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Kids</p>
-                  <p className="mt-1 text-sm font-bold text-gray-900">6–10 Jahre</p>
-                  <div className="mt-2 inline-flex items-center gap-2 text-sm font-black text-red-700">
+                <div className="rounded-2xl border border-red-200 bg-card shadow-sm p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kids</p>
+                  <p className="mt-1 text-sm font-bold text-foreground">6–10 Jahre</p>
+                  <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-red-700">
                     <Clock className="w-4 h-4" />
                     14:00 – 15:00
                   </div>
-                  <p className="mt-1 text-[11px] text-gray-600 font-semibold">60 Minuten</p>
+                  <p className="mt-1 text-xs text-muted-foreground font-semibold">60 Minuten</p>
                 </div>
 
-                <div className="rounded-2xl border border-blue-200 bg-white shadow-sm p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Junior</p>
-                  <p className="mt-1 text-sm font-bold text-gray-900">11–14 Jahre</p>
-                  <div className="mt-2 inline-flex items-center gap-2 text-sm font-black text-blue-700">
+                <div className="rounded-2xl border border-blue-200 bg-card shadow-sm p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Junior</p>
+                  <p className="mt-1 text-sm font-bold text-foreground">11–14 Jahre</p>
+                  <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">
                     <Clock className="w-4 h-4" />
                     15:15 – 16:30
                   </div>
-                  <p className="mt-1 text-[11px] text-gray-600 font-semibold">75 Minuten</p>
+                  <p className="mt-1 text-xs text-muted-foreground font-semibold">75 Minuten</p>
                 </div>
 
-                <div className="rounded-2xl border border-purple-200 bg-white shadow-sm p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Teens</p>
-                  <p className="mt-1 text-sm font-bold text-gray-900">15–18 Jahre</p>
-                  <div className="mt-2 inline-flex items-center gap-2 text-sm font-black text-purple-700">
+                <div className="rounded-2xl border border-purple-200 bg-card shadow-sm p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Teens</p>
+                  <p className="mt-1 text-sm font-bold text-foreground">15–18 Jahre</p>
+                  <div className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-purple-700">
                     <Clock className="w-4 h-4" />
                     16:45 – 18:15
                   </div>
-                  <p className="mt-1 text-[11px] text-gray-600 font-semibold">90 Minuten</p>
+                  <p className="mt-1 text-xs text-muted-foreground font-semibold">90 Minuten</p>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+              <div className="mt-4 rounded-2xl border border-border bg-card p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm font-black text-gray-900">Weitere Termine</p>
-                    <p className="text-sm text-gray-700 mt-1">
+                    <p className="text-sm font-semibold text-foreground">Weitere Termine</p>
+                    <p className="text-sm text-muted-foreground mt-1">
                       Sonntag, 15. Februar 2026 • Sonntag, 22. März 2026 • Sonntag, 19. April 2026
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-2 font-semibold">Weitere Termine folgen in Kürze.</p>
+                    <p className="text-xs text-muted-foreground mt-2 font-semibold">Weitere Termine folgen in Kürze.</p>
                   </div>
 
                   <Link
                     href="/emd-campus/termine"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-black text-orange-700 hover:bg-orange-100"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 hover:bg-orange-100"
                   >
                     Ganze Übersicht
                     <ArrowRight className="h-4 w-4" />
@@ -775,9 +775,9 @@ export default function App() {
         <motion.section variants={itemVariants} className="mt-6">
           <SectionTitle icon={Target} title="Programm-Überblick" subtitle="Worum es geht und was ihr bekommt." />
 
-          <div className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
-            <p className="text-sm text-gray-700 leading-relaxed">
-              Beim <span className="font-black text-gray-900">EMD-CAMPUS</span> steht die Entwicklung junger
+          <div className="rounded-3xl border border-border bg-card shadow-sm p-4 sm:p-6">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Beim <span className="font-semibold text-foreground">EMD-CAMPUS</span> steht die Entwicklung junger
               Dart-Spielerinnen und Spieler im Mittelpunkt. Unser 12-monatiges Programm begleitet euch von 6 bis 18
               Jahren – vom spielerischen Einstieg bis zur Turnier- und Liga-Teilnahme.
             </p>
@@ -791,11 +791,11 @@ export default function App() {
                 "Begleitung durch qualifizierte Trainer",
                 "Individuelles Feedback & Dokumentation",
               ].map((x) => (
-                <div key={x} className="rounded-2xl border border-gray-200 bg-gray-50 p-3 flex items-start gap-2">
+                <div key={x} className="rounded-2xl border border-border bg-muted p-3 flex items-start gap-2">
                   <span className="mt-0.5 w-5 h-5 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                   </span>
-                  <p className="text-sm text-gray-700 leading-snug">{x}</p>
+                  <p className="text-sm text-muted-foreground leading-snug">{x}</p>
                 </div>
               ))}
             </div>
@@ -807,22 +807,22 @@ export default function App() {
           <SectionTitle icon={MapPin} title="Zeitraum & Ort" subtitle="Organisatorische Eckdaten auf einen Blick." />
 
           <div className="grid sm:grid-cols-2 gap-3">
-            <div className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
-              <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Programmzeitraum</p>
-              <p className="mt-1 text-sm font-black text-gray-900">Jänner – Dezember 2026</p>
+            <div className="rounded-3xl border border-border bg-card shadow-sm p-4 sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Programmzeitraum</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">Jänner – Dezember 2026</p>
 
-              <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Teilnahmemodell</p>
-                <p className="mt-1 text-sm text-gray-700">
+              <div className="mt-4 rounded-2xl border border-border bg-muted p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Teilnahmemodell</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   12 Monate • 12 Module • Training pro Altersgruppe (Kids/Junior/Teens)
                 </p>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
-              <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Austragungsort</p>
-              <p className="mt-1 text-sm font-black text-gray-900">Vereinsheim Pfeil-OK e.V.</p>
-              <p className="mt-1 text-sm text-gray-700">
+            <div className="rounded-3xl border border-border bg-card shadow-sm p-4 sm:p-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Austragungsort</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">Vereinsheim Pfeil-OK e.V.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Linzer Bundesstraße 16
                 <br />
                 5020 Salzburg
@@ -846,8 +846,8 @@ export default function App() {
         <motion.section id="moduleplan" variants={itemVariants} className="mt-6">
           <SectionTitle icon={Trophy} title="12-Monats Modulplan" subtitle="Wähle deine Altersgruppe – scroll & fertig." />
 
-          <div className="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="p-4 sm:p-6 border-b border-gray-100 bg-white">
+          <div className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-border bg-card">
               <div className="flex flex-wrap gap-2">
                 <AgeTab active={selectedAge === "kids"} label="Kids (6–10)" tone="red" onClick={() => setSelectedAge("kids")} />
                 <AgeTab active={selectedAge === "junior"} label="Junior (11–15)" tone="blue" onClick={() => setSelectedAge("junior")} />
@@ -870,37 +870,37 @@ export default function App() {
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 bg-gray-50">
+            <div className="p-4 sm:p-6 bg-muted">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {modules.map((m) => (
-                  <div key={m.modul} className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4">
+                  <div key={m.modul} className="rounded-3xl border border-border bg-card shadow-sm p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center font-black text-orange-700">
+                        <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center font-semibold text-orange-700">
                           {m.modul}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-black text-gray-900 line-clamp-2">{m.thema}</p>
-                          <p className="text-[11px] text-gray-500 font-semibold mt-0.5">{m.dauer}</p>
+                          <p className="text-sm font-semibold text-foreground line-clamp-2">{m.thema}</p>
+                          <p className="text-xs text-muted-foreground font-semibold mt-0.5">{m.dauer}</p>
                         </div>
                       </div>
                       <Chip tone="orange">Modul</Chip>
                     </div>
 
                     <div className="mt-3 space-y-3">
-                      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-                        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Inhalte</p>
-                        <p className="mt-1 text-sm text-gray-700">{m.inhalte}</p>
+                      <div className="rounded-2xl border border-border bg-muted p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Inhalte</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{m.inhalte}</p>
                       </div>
 
-                      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-                        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Ablauf</p>
-                        <p className="mt-1 text-sm text-gray-700">{m.ablauf}</p>
+                      <div className="rounded-2xl border border-border bg-muted p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ablauf</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{m.ablauf}</p>
                       </div>
 
-                      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-                        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Lernziele</p>
-                        <p className="mt-1 text-sm text-gray-700">{m.lernziele}</p>
+                      <div className="rounded-2xl border border-border bg-muted p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lernziele</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{m.lernziele}</p>
                       </div>
                     </div>
                   </div>
@@ -908,8 +908,8 @@ export default function App() {
               </div>
 
               <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4">
-                <p className="text-sm text-gray-800">
-                  <span className="font-black">Hinweis:</span> Jedes Modul beinhaltet Training, Pausen und kurze
+                <p className="text-sm text-foreground">
+                  <span className="font-semibold">Hinweis:</span> Jedes Modul beinhaltet Training, Pausen und kurze
                   Reflexionsphasen.
                 </p>
               </div>
@@ -928,14 +928,14 @@ export default function App() {
               { title: "Teamgeist – respektvoll & pädagogisch", text: "Fair-Play, Motivation und gemeinsamer Fortschritt." },
               { title: "Talente gesucht! Future Players 2026", text: "Potenzial entdecken und gezielt fördern." },
             ].map((x) => (
-              <div key={x.title} className="rounded-3xl border border-gray-200 bg-white shadow-sm p-4 sm:p-6">
+              <div key={x.title} className="rounded-3xl border border-border bg-card shadow-sm p-4 sm:p-6">
                 <div className="flex items-start gap-3">
                   <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center">
                     <Target className="w-5 h-5 text-purple-700" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-black text-gray-900">{x.title}</p>
-                    <p className="text-sm text-gray-700 mt-1">{x.text}</p>
+                    <p className="text-sm font-semibold text-foreground">{x.title}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{x.text}</p>
                   </div>
                 </div>
               </div>
@@ -945,10 +945,10 @@ export default function App() {
 
         {/* CTA */}
         <motion.section variants={itemVariants} className="mt-6">
-          <div className="rounded-3xl border border-orange-200 bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] text-white shadow-2xl overflow-hidden">
+          <div className="rounded-3xl border border-orange-200 bg-card    text-white shadow-2xl overflow-hidden">
             <div className="p-4 sm:p-5 lg:p-6">
-              <p className="text-xs font-black uppercase tracking-wider text-orange-100">Jetzt starten</p>
-              <p className="mt-1 text-xl sm:text-2xl font-black">Sei dabei – Anmeldung in 30 Sekunden</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-orange-100">Jetzt starten</p>
+              <p className="mt-1 text-xl sm:text-2xl font-semibold">Sei dabei – Anmeldung in 30 Sekunden</p>
               <p className="mt-2 text-sm text-orange-100">
                 Wähle Altersgruppe, trage Kontaktdaten ein, fertig. Wir melden uns mit allen Details.
               </p>
@@ -957,13 +957,13 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsRegistrationOpen(true)}
-                  className="h-12 px-5 rounded-2xl bg-white text-orange-700 font-black shadow-sm active:scale-[0.99]"
+                  className="h-12 px-5 rounded-2xl bg-card text-orange-700 font-semibold shadow-sm active:scale-[0.99]"
                 >
                   Jetzt anmelden
                 </button>
                 <a
                   href="#moduleplan"
-                  className="h-12 px-5 rounded-2xl border border-white/30 bg-white/10 text-white font-black flex items-center justify-center active:scale-[0.99]"
+                  className="h-12 px-5 rounded-2xl border border-white/30 bg-white/10 text-white font-semibold flex items-center justify-center active:scale-[0.99]"
                 >
                   Modulplan ansehen
                 </a>
@@ -972,8 +972,8 @@ export default function App() {
           </div>
 
           <div className="mt-4 text-center">
-            <div className="inline-block rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600 shadow-sm">
-              <span className="font-black">© 2026 EMD CAMPUS</span> • Erstellt von <span className="font-black">Grafikguru</span>
+            <div className="inline-block rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
+              <span className="font-semibold">© 2026 EMD CAMPUS</span> • Erstellt von <span className="font-semibold">Grafikguru</span>
             </div>
           </div>
         </motion.section>

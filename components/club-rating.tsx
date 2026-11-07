@@ -204,8 +204,8 @@ export function ClubRating() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-gray-50 to-orange-50 rounded-2xl p-4">
-        <Card className="border-0 shadow-md bg-white">
+      <div className="text-foreground bg-card   rounded-2xl p-4">
+        <Card className="border-0 shadow-md bg-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500" />
@@ -217,26 +217,26 @@ export function ClubRating() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-orange-50 rounded-2xl p-4 space-y-4">
+    <div className="text-foreground bg-card   rounded-2xl p-4 space-y-4">
       {/* Bewertung abgeben */}
-      <Card className="border-0 shadow-md bg-white">
+      <Card className="border-0 shadow-md bg-card">
         <CardContent className="p-6 space-y-6">
           <div className="text-center">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Bewerte unsere Seite</h3>
-            <p className="text-sm text-gray-600">Teile deine Erfahrung mit anderen</p>
+            <h3 className="text-lg font-bold text-foreground mb-2">Bewerte unsere Seite</h3>
+            <p className="text-sm text-muted-foreground">Teile deine Erfahrung mit anderen</p>
           </div>
 
           {totalRatings > 0 && (
-            <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl p-4 border border-orange-200">
+            <div className="text-foreground bg-card   rounded-xl p-4 border border-orange-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
                     <Star className="w-8 h-8 fill-orange-500 text-orange-500" />
-                    <span className="text-3xl font-black text-gray-900">{averageRating.toFixed(1)}</span>
+                    <span className="text-3xl font-semibold text-foreground">{averageRating.toFixed(1)}</span>
                   </div>
                   <div className="text-left">
-                    <p className="text-xs text-gray-600">Durchschnitt</p>
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <p className="text-xs text-muted-foreground">Durchschnitt</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <TrendingUp className="w-3 h-3" />
                       {totalRatings} {totalRatings === 1 ? "Bewertung" : "Bewertungen"}
                     </p>
@@ -247,12 +247,12 @@ export function ClubRating() {
           )}
 
           {!user ? (
-            <div className="text-center py-4 bg-gray-50 rounded-xl">
-              <MessageSquare className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-3">Melde dich an, um eine Bewertung abzugeben</p>
+            <div className="text-center py-4 bg-muted rounded-xl">
+              <MessageSquare className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground mb-3">Melde dich an, um eine Bewertung abzugeben</p>
               <Button
                 onClick={() => (window.location.href = "/member-login")}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+                className="bg-card     text-white"
               >
                 Zur Anmeldung
               </Button>
@@ -266,24 +266,24 @@ export function ClubRating() {
                     <Star
                       key={star}
                       className={`w-8 h-8 ${
-                        star <= userRating.rating ? "fill-orange-500 text-orange-500" : "fill-gray-200 text-gray-200"
+                        star <= userRating.rating ? "fill-orange-500 text-orange-500" : "fill-gray-200 text-muted-foreground"
                       }`}
                     />
                   ))}
                 </div>
                 {userRating.comment && (
-                  <div className="bg-white rounded-lg p-3 border border-green-100">
-                    <p className="text-xs font-medium text-gray-700 mb-1">Dein Kommentar:</p>
-                    <p className="text-sm text-gray-600">{userRating.comment}</p>
+                  <div className="bg-card rounded-lg p-3 border border-green-100">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Dein Kommentar:</p>
+                    <p className="text-sm text-muted-foreground">{userRating.comment}</p>
                   </div>
                 )}
-                <p className="text-xs text-gray-500 text-center mt-3">Vielen Dank für deine Bewertung!</p>
+                <p className="text-xs text-muted-foreground text-center mt-3">Vielen Dank für deine Bewertung!</p>
               </div>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="text-center">
-                <p className="text-sm font-semibold text-gray-700 mb-3">Wie gefällt dir unser Verein?</p>
+                <p className="text-sm font-semibold text-muted-foreground mb-3">Wie gefällt dir unser Verein?</p>
                 <div className="flex items-center justify-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -298,7 +298,7 @@ export function ClubRating() {
                         className={`w-10 h-10 transition-colors ${
                           star <= (hoveredStar || selectedRating)
                             ? "fill-orange-500 text-orange-500"
-                            : "fill-gray-200 text-gray-200"
+                            : "fill-gray-200 text-muted-foreground"
                         }`}
                       />
                     </button>
@@ -307,7 +307,7 @@ export function ClubRating() {
               </div>
 
               <div>
-                <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="comment" className="block text-sm font-medium text-muted-foreground mb-2">
                   Kommentar (optional)
                 </label>
                 <Textarea
@@ -319,13 +319,13 @@ export function ClubRating() {
                   rows={3}
                   maxLength={500}
                 />
-                <p className="text-xs text-gray-500 mt-1">{comment.length}/500 Zeichen</p>
+                <p className="text-xs text-muted-foreground mt-1">{comment.length}/500 Zeichen</p>
               </div>
 
               <Button
                 onClick={handleSubmitRating}
                 disabled={submitting || selectedRating === 0}
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md disabled:opacity-50"
+                className="w-full bg-card     text-white shadow-md disabled:opacity-50"
               >
                 {submitting ? (
                   <>
@@ -343,15 +343,15 @@ export function ClubRating() {
 
       {/* Alle Bewertungen anzeigen */}
       {allRatings.length > 0 && (
-        <Card className="border-0 shadow-md bg-white">
+        <Card className="border-0 shadow-md bg-card">
           <CardContent className="p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-orange-500" />
               Alle Bewertungen ({allRatings.length})
             </h3>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {allRatings.map((rating) => (
-                <div key={rating.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                <div key={rating.id} className="border border-border rounded-lg p-3 bg-muted">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1">
@@ -359,18 +359,18 @@ export function ClubRating() {
                           <Star
                             key={star}
                             className={`w-4 h-4 ${
-                              star <= rating.rating ? "fill-orange-500 text-orange-500" : "fill-gray-200 text-gray-200"
+                              star <= rating.rating ? "fill-orange-500 text-orange-500" : "fill-gray-200 text-muted-foreground"
                             }`}
                           />
                         ))}
                       </div>
-                      <span className="text-xs font-semibold text-gray-700">{rating.user_name}</span>
+                      <span className="text-xs font-semibold text-muted-foreground">{rating.user_name}</span>
                     </div>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {new Date(rating.created_at).toLocaleDateString("de-DE")}
                     </span>
                   </div>
-                  {rating.comment && <p className="text-sm text-gray-700">{rating.comment}</p>}
+                  {rating.comment && <p className="text-sm text-muted-foreground">{rating.comment}</p>}
                 </div>
               ))}
             </div>

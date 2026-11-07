@@ -23,7 +23,7 @@ const itemVariants = {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-center">
-      <div className="text-3xl font-black text-orange-700">{value}</div>
+      <div className="text-3xl font-semibold text-orange-700">{value}</div>
       <div className="text-sm font-bold text-orange-900/80 mt-1">{label}</div>
     </div>
   )
@@ -39,14 +39,14 @@ function Feature({
   text: string
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
           {icon}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-black text-gray-900">{title}</p>
-          <p className="text-sm text-gray-600 mt-1 leading-relaxed">{text}</p>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{text}</p>
         </div>
       </div>
     </div>
@@ -55,7 +55,7 @@ function Feature({
 
 export default function UberUnsPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen bg-muted text-foreground pb-20 overflow-x-hidden">
       <Header />
 
       {/* fixed header offset */}
@@ -68,18 +68,18 @@ export default function UberUnsPage() {
         >
           {/*  */}
           <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+              <div className="text-foreground h-2 bg-card  " />
               <div className="p-4 sm:p-5 flex items-start gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
                   <Users className="w-5 h-5 text-orange-600" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg font-black">Über uns</h1>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <h1 className="text-base sm:text-lg font-semibold">Über uns</h1>
+                  <p className="text-sm text-muted-foreground mt-1">
                     EMOJI&apos;S DARTVEREIN – mehr als ein Verein: <span className="font-semibold">Dart-Familie</span>
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Gemeinschaft • Turniere • Liga • Spaß am Spiel</p>
+                  <p className="text-xs text-muted-foreground mt-1">Gemeinschaft • Turniere • Liga • Spaß am Spiel</p>
                 </div>
               </div>
             </div>
@@ -87,9 +87,9 @@ export default function UberUnsPage() {
 
           {/* Warum */}
           <motion.div variants={itemVariants} className="space-y-4">
-            <Card className="rounded-2xl border border-gray-200 shadow-sm">
+            <Card className="rounded-2xl border border-border shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm sm:text-base font-black flex items-center gap-2">
+                <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
                   <Target className="w-5 h-5 text-orange-600" />
                   Warum EMOJI&apos;S DARTVEREIN?
                 </CardTitle>
@@ -121,9 +121,9 @@ export default function UberUnsPage() {
 
           {/* Zahlen */}
           <motion.div variants={itemVariants} className="mt-5">
-            <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <Card className="rounded-2xl border border-border shadow-sm overflow-hidden">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm sm:text-base font-black flex items-center gap-2">
+                <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-orange-600" />
                   Unsere Stärke in Zahlen
                 </CardTitle>
@@ -136,7 +136,7 @@ export default function UberUnsPage() {
                 </div>
 
                 <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
-                  <p className="text-sm text-gray-700 leading-relaxed">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     Mit über 50 Mitgliedern und mehr als 60 aktiven Spielern sind wir einer der wachsenden Dartvereine
                     der Region. Aktuell stellen wir 5 E-Dart- und 5 Steeldart-Mannschaften sowie mehrere Teams für
                     Nebenbewerbe – Tendenz steigend.
@@ -148,33 +148,33 @@ export default function UberUnsPage() {
 
           {/* Philosophie */}
           <motion.div variants={itemVariants} className="mt-5">
-            <Card className="rounded-2xl border border-gray-200 shadow-sm">
+            <Card className="rounded-2xl border border-border shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm sm:text-base font-black flex items-center gap-2">
+                <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
                   <Heart className="w-5 h-5 text-orange-600" />
                   Unsere Philosophie
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Dart-Familie</p>
-                  <p className="mt-2 text-sm text-gray-700 leading-relaxed">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dart-Familie</p>
+                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                     Wir sehen uns nicht als „normalen“ Verein. Wir sind eine kleine Dart-Familie – das Soziale steht
                     bei uns an erster Stelle. Bei uns kommt jeder zu Wort, dem etwas am Herzen liegt.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Herausforderungen & Ziele</p>
-                  <p className="mt-2 text-sm text-gray-700 leading-relaxed">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Herausforderungen & Ziele</p>
+                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                     Wir nehmen Herausforderungen an – dort, wo andere scheitern. Wir setzen uns Ziele und machen das
                     Unsichtbare sichtbar: Schritt für Schritt.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Gemeinschaft</p>
-                  <p className="mt-2 text-sm text-gray-700 leading-relaxed">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Gemeinschaft</p>
+                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                     Wir agieren nicht als Einzelne: Turniere, Meisterschaften und Training erleben wir gemeinsam. Auch
                     neben dem Sport sind wir gern zusammen unterwegs – Ausflüge, Aktivitäten und Vereinsleben.
                   </p>
@@ -185,22 +185,22 @@ export default function UberUnsPage() {
 
           {/* CTA */}
           <motion.div variants={itemVariants} className="mt-5">
-            <div className="rounded-2xl border border-orange-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="rounded-2xl border border-orange-200 bg-card shadow-sm overflow-hidden">
+              <div className="text-foreground h-2 bg-card  " />
               <div className="p-5">
                 <div className="flex items-start gap-3">
                   <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
                     <Mail className="w-5 h-5 text-orange-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-black text-gray-900">Werde Teil unserer Familie!</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-base font-semibold text-foreground">Werde Teil unserer Familie!</p>
+                    <p className="text-sm text-muted-foreground mt-1">
                       Du willst dabei sein, neue Leute kennenlernen und Dart feiern? Schreib uns – wir freuen uns!
                     </p>
 
                     <div className="grid grid-cols-2 gap-3 mt-4">
                       <Button
-                        className="h-10 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-black"
+                        className="h-10 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-semibold"
                         onClick={() => (window.location.href = "mailto:office@emojisdartverein.com")}
                         type="button"
                       >
@@ -210,7 +210,7 @@ export default function UberUnsPage() {
 
                       <Button
                         variant="outline"
-                        className="h-10 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 font-black"
+                        className="h-10 rounded-2xl border-border bg-card hover:bg-muted font-semibold"
                         onClick={() => (window.location.href = "/kontakt")}
                         type="button"
                       >
@@ -218,7 +218,7 @@ export default function UberUnsPage() {
                       </Button>
                     </div>
 
-                    
+
                   </div>
                 </div>
               </div>

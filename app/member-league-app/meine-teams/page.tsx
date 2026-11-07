@@ -297,23 +297,16 @@ export default function MeineTeamsAppPage() {
 
   if (authLoading || membershipLoading || loading) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-[#050608] text-white">
+      <div className="relative min-h-screen overflow-hidden bg-background text-white">
         <Header variant="app" title="Meine Teams" subtitle="Ligazentrale" backHref="/member-league-app" />
 
-        <div className="pointer-events-none fixed inset-0">
-          <div
-            className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.30]"
-            style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.72),rgba(3,5,9,.95)_48%,rgba(2,4,7,.99))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_28%,rgba(14,165,233,.12),transparent_28%)]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
         <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24">
-          <div className="w-full max-w-sm rounded-[28px] border border-white/[0.08] bg-black/35 p-8 text-center shadow-[0_30px_90px_-45px_rgba(0,0,0,.95)] backdrop-blur-xl">
+          <div className="w-full max-w-sm rounded-[28px] border border-white/[0.08] bg-card p-8 text-center shadow-[0_30px_90px_-45px_rgba(0,0,0,.95)] ">
             <Loader2 className="mx-auto h-9 w-9 animate-spin text-orange-300" />
-            <p className="mt-5 text-lg font-black text-white">Teams werden geladen</p>
-            <p className="mt-1 text-sm font-semibold text-white/35">Einen Moment bitte…</p>
+            <p className="mt-5 text-lg font-semibold text-white">Teams werden geladen</p>
+            <p className="mt-1 text-sm font-semibold text-muted-foreground">Einen Moment bitte…</p>
           </div>
         </main>
 
@@ -324,24 +317,18 @@ export default function MeineTeamsAppPage() {
 
   if (error || !profile) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-[#050608] text-white">
+      <div className="relative min-h-screen overflow-hidden bg-background text-white">
         <Header variant="app" title="Meine Teams" subtitle="Ligazentrale" backHref="/member-league-app" />
 
-        <div className="pointer-events-none fixed inset-0">
-          <div
-            className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]"
-            style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.74),rgba(3,5,9,.96)_48%,rgba(2,4,7,.99))]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
         <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24">
-          <div className="w-full max-w-md rounded-[28px] border border-red-300/[0.13] bg-red-500/[0.055] p-6 text-center backdrop-blur-xl">
+          <div className="w-full max-w-md rounded-[28px] border border-red-300/[0.13] bg-red-500/[0.055] p-6 text-center ">
             <Users className="mx-auto h-8 w-8 text-red-200" />
-            <h1 className="mt-4 text-lg font-black text-white">{error || "Profil nicht gefunden"}</h1>
-            <p className="mt-2 text-sm font-semibold text-white/40">Bitte versuche es erneut oder gehe zurück zur Ligazentrale.</p>
+            <h1 className="mt-4 text-lg font-semibold text-white">{error || "Profil nicht gefunden"}</h1>
+            <p className="mt-2 text-sm font-semibold text-muted-foreground">Bitte versuche es erneut oder gehe zurück zur Ligazentrale.</p>
             <Button
-              className="mt-5 rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400"
+              className="mt-5 rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400"
               onClick={() => router.push("/member-league-app")}
             >
               Zur Ligazentrale
@@ -356,30 +343,24 @@ export default function MeineTeamsAppPage() {
 
   if (!canSeeEDart && !canSeeSteeldart) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-[#050608] text-white">
+      <div className="relative min-h-screen overflow-hidden bg-background text-white">
         <Header variant="app" title="Meine Teams" subtitle="Ligazentrale" backHref="/member-league-app" />
 
-        <div className="pointer-events-none fixed inset-0">
-          <div
-            className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]"
-            style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.74),rgba(3,5,9,.96)_48%,rgba(2,4,7,.99))]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
         <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24">
-          <div className="w-full max-w-xl rounded-[30px] border border-orange-300/[0.12] bg-black/35 p-6 text-center backdrop-blur-xl sm:p-8">
+          <div className="w-full max-w-xl rounded-[30px] border border-orange-300/[0.12] bg-card p-6 text-center  sm:p-8">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/[0.16] bg-orange-500/[0.08]">
               <ShieldCheck className="h-7 w-7 text-orange-200" />
             </div>
-            <h1 className="mt-5 text-xl font-black text-white">Kein Liga-Paket gebucht</h1>
-            <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-white/45">
+            <h1 className="mt-5 text-xl font-semibold text-white">Kein Liga-Paket gebucht</h1>
+            <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-muted-foreground">
               Für deine Mannschaftsbereiche benötigst du mindestens das E-Dart- oder Steeldart-Liga-Paket.
             </p>
             <Button
               type="button"
               onClick={() => router.push("/member-membership")}
-              className="mt-5 rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400"
+              className="mt-5 rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400"
             >
               Paket buchen
             </Button>
@@ -392,20 +373,13 @@ export default function MeineTeamsAppPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] font-sans text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-white">
       <Header variant="app" title="Meine Teams" subtitle="Ligazentrale" backHref="/member-league-app" />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
-        <section className="mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/30 p-5 backdrop-blur-xl sm:p-7">
+        <section className="mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-card p-5  sm:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex min-w-0 items-start gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-orange-300/15 bg-orange-500/[0.09] text-orange-200 shadow-[0_0_28px_rgba(249,115,22,.10)]">
@@ -413,13 +387,13 @@ export default function MeineTeamsAppPage() {
               </div>
 
               <div className="min-w-0">
-                <div className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-300/65">
+                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-300/65">
                   Mannschaften
                 </div>
-                <h1 className="mt-1 text-2xl font-black tracking-[-0.03em] text-white sm:text-3xl">
+                <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
                   Meine Teams
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/40">
+                <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground">
                   Deine Mannschaften, Rollen und Kader zentral verwalten.
                 </p>
               </div>
@@ -427,22 +401,22 @@ export default function MeineTeamsAppPage() {
 
             <div className="grid grid-cols-2 gap-2 sm:min-w-[280px]">
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3.5">
-                <div className="text-[9px] font-black uppercase tracking-[0.15em] text-white/30">Teams</div>
-                <div className="mt-1.5 text-2xl font-black text-white">{teamMemberships.length}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Teams</div>
+                <div className="mt-1.5 text-2xl font-semibold text-white">{teamMemberships.length}</div>
               </div>
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3.5">
-                <div className="text-[9px] font-black uppercase tracking-[0.15em] text-white/30">Mitglieder</div>
-                <div className="mt-1.5 text-2xl font-black text-white">{teamMembers.length}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Mitglieder</div>
+                <div className="mt-1.5 text-2xl font-semibold text-white">{teamMembers.length}</div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="mb-5 rounded-[24px] border border-white/[0.08] bg-black/25 p-4 backdrop-blur-xl sm:p-5">
+        <section className="mb-5 rounded-[24px] border border-white/[0.08] bg-card p-4  sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30">Liga-Zugriff</div>
-              <div className="mt-1 text-sm font-black text-white">Freigeschaltete Bereiche</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Liga-Zugriff</div>
+              <div className="mt-1 text-sm font-semibold text-white">Freigeschaltete Bereiche</div>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -486,10 +460,10 @@ export default function MeineTeamsAppPage() {
         </section>
 
         {profile?.player_id ? (
-          <section className="mb-5 overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/25 backdrop-blur-xl">
+          <section className="mb-5 overflow-hidden rounded-[28px] border border-white/[0.08] bg-card ">
             <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/60">Kapitänsbereich</div>
-              <h2 className="mt-1 text-lg font-black text-white">Spielerverwaltung</h2>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/60">Kapitänsbereich</div>
+              <h2 className="mt-1 text-lg font-semibold text-white">Spielerverwaltung</h2>
             </div>
             <div className="p-3 sm:p-4">
               <CaptainPlayerManagement onPlayerAdded={fetchTeamData} />
@@ -497,19 +471,19 @@ export default function MeineTeamsAppPage() {
           </section>
         ) : null}
 
-        <section className="mb-5 overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/25 backdrop-blur-xl">
+        <section className="mb-5 overflow-hidden rounded-[28px] border border-white/[0.08] bg-card ">
           <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] px-4 py-4 sm:px-5">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08] text-orange-200">
                 <Users className="h-5 w-5" />
               </div>
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/30">Mannschaften</div>
-                <h2 className="mt-0.5 text-xl font-black text-white">Deine Teams</h2>
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Mannschaften</div>
+                <h2 className="mt-0.5 text-xl font-semibold text-white">Deine Teams</h2>
               </div>
             </div>
 
-            <div className="flex h-9 min-w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 text-xs font-black text-white">
+            <div className="flex h-9 min-w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 text-xs font-semibold text-white">
               {teamMemberships.length}
             </div>
           </div>
@@ -518,8 +492,8 @@ export default function MeineTeamsAppPage() {
             {teamMemberships.length === 0 ? (
               <div className="rounded-[22px] border border-dashed border-white/[0.10] bg-white/[0.025] px-5 py-10 text-center">
                 <Users className="mx-auto h-6 w-6 text-white/20" />
-                <p className="mt-3 text-sm font-black text-white/65">Du bist noch keinem Team zugeordnet.</p>
-                <p className="mt-1 text-xs font-semibold text-white/30">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
+                <p className="mt-3 text-sm font-semibold text-white/65">Du bist noch keinem Team zugeordnet.</p>
+                <p className="mt-1 text-xs font-semibold text-muted-foreground">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
               </div>
             ) : (
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -537,7 +511,7 @@ export default function MeineTeamsAppPage() {
                       {membership.teams?.logo_url ? (
                         <Avatar className="h-14 w-14 shrink-0 border border-white/[0.08]">
                           <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                          <AvatarFallback className="bg-orange-500/[0.08] text-lg font-black text-orange-200">
+                          <AvatarFallback className="bg-orange-500/[0.08] text-lg font-semibold text-orange-200">
                             {membership.teams.name?.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
@@ -548,10 +522,10 @@ export default function MeineTeamsAppPage() {
                       )}
 
                       <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300/55">
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-300/55">
                           {membership.teams?.dart_type === "steeldart" ? "Steeldart" : "E-Dart"}
                         </div>
-                        <h3 className="mt-1 break-words text-lg font-black leading-tight text-white">
+                        <h3 className="mt-1 break-words text-lg font-semibold leading-tight text-white">
                           {membership.teams?.name || "Unbekanntes Team"}
                         </h3>
                       </div>
@@ -559,23 +533,23 @@ export default function MeineTeamsAppPage() {
 
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       <div className="rounded-2xl border border-white/[0.07] bg-black/20 p-3">
-                        <div className="text-[9px] font-black uppercase tracking-[0.12em] text-white/25">Rolle</div>
-                        <div className="mt-2 flex items-center gap-2 text-sm font-black text-white/80">
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/25">Rolle</div>
+                        <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-white/80">
                           {getRoleIcon(membership.role)}
                           {getRoleText(membership.role)}
                         </div>
                       </div>
 
                       <div className="rounded-2xl border border-white/[0.07] bg-black/20 p-3">
-                        <div className="text-[9px] font-black uppercase tracking-[0.12em] text-white/25">Dartart</div>
-                        <div className="mt-2 text-sm font-black text-white/80">
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/25">Dartart</div>
+                        <div className="mt-2 text-sm font-semibold text-white/80">
                           {membership.teams?.dart_type === "steeldart" ? "Steeldart" : "E-Dart"}
                         </div>
                       </div>
                     </div>
 
                     {membership.left_at ? (
-                      <div className="mt-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-xs font-semibold text-white/35">
+                      <div className="mt-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-xs font-semibold text-muted-foreground">
                         Ehemalig seit {new Date(membership.left_at).toLocaleDateString("de-DE")}
                       </div>
                     ) : null}
@@ -586,7 +560,7 @@ export default function MeineTeamsAppPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/25 backdrop-blur-xl">
+        <section className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card ">
           <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex items-center gap-3">
@@ -594,8 +568,8 @@ export default function MeineTeamsAppPage() {
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/30">Kader</div>
-                  <h2 className="mt-0.5 text-xl font-black text-white">Teammitglieder</h2>
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Kader</div>
+                  <h2 className="mt-0.5 text-xl font-semibold text-white">Teammitglieder</h2>
                 </div>
               </div>
 
@@ -606,10 +580,10 @@ export default function MeineTeamsAppPage() {
                   size="sm"
                   onClick={() => setShowFormerMembers((v) => !v)}
                   className={[
-                    "h-9 rounded-xl border px-3 text-xs font-black shadow-none",
+                    "h-9 rounded-xl border px-3 text-xs font-semibold shadow-none",
                     showFormerMembers
                       ? "border-orange-300/25 bg-orange-500/[0.10] text-orange-100 hover:bg-orange-500/[0.15]"
-                      : "border-white/[0.09] bg-white/[0.035] text-white/50 hover:bg-white/[0.06] hover:text-white",
+                      : "border-white/[0.09] bg-white/[0.035] text-muted-foreground hover:bg-white/[0.06] hover:text-white",
                   ].join(" ")}
                 >
                   {showFormerMembers ? "Ehemalige: AN" : "Ehemalige: AUS"}
@@ -621,7 +595,7 @@ export default function MeineTeamsAppPage() {
           <div className="p-3 sm:p-4 lg:p-5">
             {teamMembers.length === 0 ? (
               <div className="rounded-[22px] border border-dashed border-white/[0.10] bg-white/[0.025] px-5 py-10 text-center">
-                <p className="text-sm font-black text-white/60">Keine Teammitglieder gefunden.</p>
+                <p className="text-sm font-semibold text-white/60">Keine Teammitglieder gefunden.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -635,7 +609,7 @@ export default function MeineTeamsAppPage() {
                         {membership.teams?.logo_url ? (
                           <Avatar className="h-11 w-11 shrink-0 border border-white/[0.08]">
                             <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                            <AvatarFallback className="bg-orange-500/[0.08] text-sm font-black text-orange-200">
+                            <AvatarFallback className="bg-orange-500/[0.08] text-sm font-semibold text-orange-200">
                               {membership.teams.name?.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
@@ -646,15 +620,15 @@ export default function MeineTeamsAppPage() {
                         )}
 
                         <div className="min-w-0 flex-1">
-                          <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/25">
+                          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-white/25">
                             {membership.teams?.dart_type === "steeldart" ? "Steeldart-Team" : "E-Dart-Team"}
                           </div>
-                          <h3 className="mt-0.5 break-words text-base font-black text-white sm:text-lg">
+                          <h3 className="mt-0.5 break-words text-base font-semibold text-white sm:text-lg">
                             {membership.teams?.name || "Unbekanntes Team"}
                           </h3>
                         </div>
 
-                        <div className="flex h-9 min-w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-black/25 px-2.5 text-xs font-black text-white/70">
+                        <div className="flex h-9 min-w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-card px-2.5 text-xs font-semibold text-white/70">
                           {teamMembersForThisTeam.length}
                         </div>
                       </div>
@@ -681,25 +655,25 @@ export default function MeineTeamsAppPage() {
                                   <AvatarImage
                                     src={member.club_players?.photo_url || "/placeholder.svg?height=32&width=32&query=darts-player"}
                                   />
-                                  <AvatarFallback className="bg-orange-500/[0.08] text-sm font-black text-orange-200">
+                                  <AvatarFallback className="bg-orange-500/[0.08] text-sm font-semibold text-orange-200">
                                     {member.club_players?.name?.charAt(0) || "?"}
                                   </AvatarFallback>
                                 </Avatar>
 
                                 <div className="min-w-0 flex-1">
-                                  <div className="break-words text-sm font-black leading-snug text-white">
+                                  <div className="break-words text-sm font-semibold leading-snug text-white">
                                     {member.club_players?.name || "Unbekannt"}
                                     {isMe ? <span className="ml-1 text-orange-300">(Du)</span> : null}
                                   </div>
 
                                   <div className="mt-1.5 flex flex-wrap gap-1.5">
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.035] px-2.5 py-1 text-[10px] font-black text-white/55">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.035] px-2.5 py-1 text-xs font-semibold text-muted-foreground">
                                       {getRoleIcon(member.role)}
                                       {getRoleText(member.role)}
                                     </span>
 
                                     {member.left_at ? (
-                                      <span className="inline-flex rounded-full border border-white/[0.07] bg-white/[0.025] px-2 py-1 text-[10px] font-bold text-white/35">
+                                      <span className="inline-flex rounded-full border border-white/[0.07] bg-white/[0.025] px-2 py-1 text-xs font-bold text-muted-foreground">
                                         Ehemalig seit {new Date(member.left_at).toLocaleDateString("de-DE")}
                                       </span>
                                     ) : null}
@@ -750,7 +724,7 @@ export default function MeineTeamsAppPage() {
           <AlertDialogContent className="w-[94vw] max-w-md overflow-hidden rounded-[24px] border border-white/[0.10] bg-[#070a0f] p-0 text-white shadow-[0_30px_90px_-38px_rgba(0,0,0,.95)]">
             <AlertDialogHeader className="border-b border-white/[0.08] px-5 py-5">
               <AlertDialogTitle className="text-white">Spieler wirklich aus der Mannschaft entfernen?</AlertDialogTitle>
-              <AlertDialogDescription className="text-white/45">
+              <AlertDialogDescription className="text-muted-foreground">
                 {removeTarget ? (
                   <>
                     Du entfernst <span className="font-semibold text-white/75">{removeTarget.playerName}</span> aus{" "}

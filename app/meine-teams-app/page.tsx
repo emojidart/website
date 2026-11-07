@@ -298,19 +298,19 @@ export default function MeineTeamsAppPage() {
 
   if (authLoading || membershipLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-foreground">
         <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
           <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-slate-200 bg-white px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
+            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-border bg-card px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
                 <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
               </div>
               <div className="text-center">
-                <p className="text-lg font-bold text-slate-950">Teams werden geladen</p>
-                <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
+                <p className="text-lg font-bold text-foreground">Teams werden geladen</p>
+                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
               </div>
             </div>
           </div>
@@ -323,17 +323,17 @@ export default function MeineTeamsAppPage() {
 
   if (error || !profile) {
     return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-foreground">
         <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200/70 p-6 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 shadow-md">
+          <div className="w-full max-w-md rounded-3xl bg-card shadow-2xl border border-border/70 p-6 text-center">
+            <div className="text-foreground mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-card   shadow-md">
               <Users className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-lg font-extrabold text-slate-950 mb-1">{error || "Profil nicht gefunden"}</h1>
-            <p className="text-sm text-slate-500 mb-4">Bitte versuche es erneut oder gehe zurück.</p>
-            <Button className="rounded-xl bg-orange-600 hover:bg-orange-700" onClick={() => router.push("/member-profile-app")}>
+            <h1 className="text-lg font-extrabold text-foreground mb-1">{error || "Profil nicht gefunden"}</h1>
+            <p className="text-sm text-muted-foreground mb-4">Bitte versuche es erneut oder gehe zurück.</p>
+            <Button className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => router.push("/member-profile-app")}>
               Zurück zum Profil
             </Button>
           </div>
@@ -346,7 +346,7 @@ export default function MeineTeamsAppPage() {
 
   if (!canSeeEDart && !canSeeSteeldart) {
     return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-foreground">
         <Header
           variant="app"
           title="Meine Teams"
@@ -355,24 +355,24 @@ export default function MeineTeamsAppPage() {
         />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <Card className="w-full max-w-xl overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-xl">
+          <Card className="w-full max-w-xl overflow-hidden rounded-3xl border border-orange-200 bg-card shadow-xl">
             <CardContent className="p-6 text-center sm:p-8">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
                 <ShieldCheck className="h-7 w-7 text-orange-600" />
               </div>
 
-              <h1 className="mt-4 text-xl font-black text-slate-950">
+              <h1 className="mt-4 text-xl font-semibold text-foreground">
                 Kein Liga-Paket gebucht
               </h1>
 
-              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-slate-600">
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-muted-foreground">
                 Für deine Mannschaftsbereiche benötigst du mindestens das E-Dart- oder Steeldart-Liga-Paket.
               </p>
 
               <Button
                 type="button"
                 onClick={() => router.push("/member-membership")}
-                className="mt-5 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+                className="mt-5 rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
               >
                 Paket buchen
               </Button>
@@ -386,7 +386,7 @@ export default function MeineTeamsAppPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-slate-950">
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-foreground">
       <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
 
       {/*  */}
@@ -394,14 +394,14 @@ export default function MeineTeamsAppPage() {
       <main className="w-full pt-14 sm:pt-16">
   <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
         {/* */}
-       
+
           {/* Page Header */}
-          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
+          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
             <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
                 <div className="min-w-0">
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/60">
                     <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
                     Mannschaften
                   </div>
@@ -410,11 +410,11 @@ export default function MeineTeamsAppPage() {
                       <Users className="h-6 w-6 sm:h-7 sm:w-7" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-white/50">Deine Teams auf einen Blick</p>
-                      <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Meine Teams</h1>
+                      <p className="text-sm font-medium text-muted-foreground">Deine Teams auf einen Blick</p>
+                      <h1 className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Meine Teams</h1>
                     </div>
                   </div>
-                  <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                  <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
                     Teams, Rollen und Mitglieder übersichtlich an einem Ort.
                   </p>
                 </div>
@@ -422,19 +422,19 @@ export default function MeineTeamsAppPage() {
                 <div className="flex flex-col gap-3 sm:flex-row xl:flex-col xl:items-end">
                   <div className="grid grid-cols-2 gap-2 sm:min-w-[300px]">
                     <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-3 sm:p-4">
-                      <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[10px]">Teams</div>
-                      <div className="mt-2 text-2xl font-black text-white sm:text-3xl">{teamMemberships.length}</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Teams</div>
+                      <div className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{teamMemberships.length}</div>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-3 sm:p-4">
-                      <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[10px]">Mitglieder</div>
-                      <div className="mt-2 text-2xl font-black text-white sm:text-3xl">{teamMembers.length}</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Mitglieder</div>
+                      <div className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{teamMembers.length}</div>
                     </div>
                   </div>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => router.push("/member-profile-app")}
-                    className="h-11 w-full rounded-xl border-white/10 bg-white/10 px-4 font-black text-white shadow-none hover:bg-white/15 hover:text-white sm:w-auto"
+                    className="h-11 w-full rounded-xl border-white/10 bg-white/10 px-4 font-semibold text-white shadow-none hover:bg-white/15 hover:text-white sm:w-auto"
                   >
                     Zurück zum Profil
                   </Button>
@@ -443,22 +443,22 @@ export default function MeineTeamsAppPage() {
             </div>
           </section>
 
-          <section className="mb-4 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_14px_44px_-34px_rgba(15,23,42,0.5)] sm:mb-5 sm:rounded-[26px]">
+          <section className="mb-4 overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_14px_44px_-34px_rgba(15,23,42,0.5)] sm:mb-5 sm:rounded-[26px]">
             <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Liga-Zugriff</div>
-                <div className="mt-1 text-sm font-black text-slate-950">Freigeschaltete Bereiche</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Liga-Zugriff</div>
+                <div className="mt-1 text-sm font-semibold text-foreground">Freigeschaltete Bereiche</div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 {canSeeEDart ? (
-                  <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 font-bold text-slate-700">
+                  <Badge variant="outline" className="rounded-full border-border bg-muted px-3 py-1 font-bold text-muted-foreground">
                     E-Dart freigeschaltet
                   </Badge>
                 ) : null}
 
                 {canSeeSteeldart ? (
-                  <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 font-bold text-slate-700">
+                  <Badge variant="outline" className="rounded-full border-border bg-muted px-3 py-1 font-bold text-muted-foreground">
                     Steeldart freigeschaltet
                   </Badge>
                 ) : null}
@@ -492,37 +492,37 @@ export default function MeineTeamsAppPage() {
 
           {/* Captain Player Management */}
           {profile?.player_id && (
-            <div className="mb-4 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-42px_rgba(15,23,42,0.5)] sm:mb-5 sm:rounded-[28px]">
+            <div className="mb-4 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-42px_rgba(15,23,42,0.5)] sm:mb-5 sm:rounded-[28px]">
               <CaptainPlayerManagement onPlayerAdded={fetchTeamData} />
             </div>
           )}
 
           {/* Team Memberships */}
-          <section className="mb-4 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:mb-5 sm:rounded-[30px]">
-            <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
+          <section className="mb-4 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:mb-5 sm:rounded-[30px]">
+            <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-5 sm:px-6 sm:py-6">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
                   <Users className="h-5 w-5 text-orange-600" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">Deine Mannschaften</div>
-                  <h2 className="mt-0.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Meine Teams</h2>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Deine Mannschaften</div>
+                  <h2 className="mt-0.5 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Meine Teams</h2>
                 </div>
               </div>
 
-              <div className="flex h-10 min-w-10 items-center justify-center rounded-2xl bg-slate-950 px-3 text-sm font-black text-white">
+              <div className="flex h-10 min-w-10 items-center justify-center rounded-2xl bg-background px-3 text-sm font-semibold text-white">
                 {teamMemberships.length}
               </div>
             </div>
 
             <div className="p-3 sm:p-5 lg:p-6">
               {teamMemberships.length === 0 ? (
-                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50/70 px-6 py-10 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white">
-                    <Users className="h-5 w-5 text-slate-300" />
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[22px] border border-dashed border-border bg-muted/70 px-6 py-10 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-card">
+                    <Users className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <p className="mt-4 text-sm font-black text-slate-700 sm:text-base">Du bist noch keinem Team zugeordnet.</p>
-                  <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
+                  <p className="mt-4 text-sm font-semibold text-muted-foreground sm:text-base">Du bist noch keinem Team zugeordnet.</p>
+                  <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
                 </div>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -530,20 +530,20 @@ export default function MeineTeamsAppPage() {
                     <article
                       key={membership.id}
                       className={[
-                        "group relative overflow-hidden rounded-[22px] border bg-white shadow-[0_14px_42px_-34px_rgba(15,23,42,0.55)] transition-all",
+                        "group relative overflow-hidden rounded-[22px] border bg-card shadow-[0_14px_42px_-34px_rgba(15,23,42,0.55)] transition-all",
                         membership.left_at
-                          ? "border-slate-200 bg-slate-50/70 opacity-65"
-                          : "border-slate-200 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_20px_54px_-34px_rgba(15,23,42,0.5)]",
+                          ? "border-border bg-muted/70 opacity-65"
+                          : "border-border hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_20px_54px_-34px_rgba(15,23,42,0.5)]",
                       ].join(" ")}
                     >
-                      <div className="h-1 w-full bg-slate-950" />
+                      <div className="h-1 w-full bg-background" />
 
                       <div className="p-4 sm:p-5">
                         <div className="flex items-start gap-3.5">
                           {membership.teams?.logo_url ? (
-                            <Avatar className="h-14 w-14 shrink-0 ring-1 ring-slate-200">
+                            <Avatar className="h-14 w-14 shrink-0 ring-1 ring-border">
                               <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                              <AvatarFallback className="bg-orange-50 text-lg font-black text-orange-700">
+                              <AvatarFallback className="bg-orange-50 text-lg font-semibold text-orange-700">
                                 {membership.teams.name?.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
@@ -554,34 +554,34 @@ export default function MeineTeamsAppPage() {
                           )}
 
                           <div className="min-w-0 flex-1">
-                            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                               {membership.teams?.dart_type === "steeldart" ? "Steeldart" : "E-Dart"}
                             </div>
-                            <h3 className="mt-1 break-words text-lg font-black leading-tight tracking-tight text-slate-950">
+                            <h3 className="mt-1 break-words text-lg font-semibold leading-tight tracking-tight text-foreground">
                               {membership.teams?.name || "Unbekanntes Team"}
                             </h3>
                           </div>
                         </div>
 
                         <div className="mt-5 grid grid-cols-2 gap-2">
-                          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
-                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Rolle</div>
+                          <div className="rounded-2xl border border-border bg-muted/70 p-3">
+                            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Rolle</div>
                             <div className="mt-2 flex items-center gap-2">
                               {getRoleIcon(membership.role)}
-                              <span className="text-sm font-black text-slate-800">{getRoleText(membership.role)}</span>
+                              <span className="text-sm font-semibold text-foreground">{getRoleText(membership.role)}</span>
                             </div>
                           </div>
 
-                          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
-                            <div className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Dartart</div>
-                            <div className="mt-2 text-sm font-black text-slate-800">
+                          <div className="rounded-2xl border border-border bg-muted/70 p-3">
+                            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Dartart</div>
+                            <div className="mt-2 text-sm font-semibold text-foreground">
                               {membership.teams?.dart_type === "steeldart" ? "Steeldart" : "E-Dart"}
                             </div>
                           </div>
                         </div>
 
                         {membership.left_at && (
-                          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs font-bold text-slate-500">
+                          <div className="mt-3 rounded-2xl border border-border bg-muted px-3.5 py-3 text-xs font-bold text-muted-foreground">
                             Ehemalig seit {new Date(membership.left_at).toLocaleDateString("de-DE")}
                           </div>
                         )}
@@ -594,16 +594,16 @@ export default function MeineTeamsAppPage() {
           </section>
 
           {/* Team Members */}
-          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[30px]">
-            <div className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
+          <section className="overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[30px]">
+            <div className="border-b border-border px-4 py-5 sm:px-6 sm:py-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
                     <Users className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 sm:text-xs">Kader</div>
-                    <h2 className="mt-0.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">Meine Teammitglieder</h2>
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Kader</div>
+                    <h2 className="mt-0.5 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Meine Teammitglieder</h2>
                   </div>
                 </div>
 
@@ -614,15 +614,15 @@ export default function MeineTeamsAppPage() {
                     size="sm"
                     onClick={() => setShowFormerMembers((v) => !v)}
                     className={[
-                      "h-10 rounded-xl px-4 font-black shadow-none",
+                      "h-10 rounded-xl px-4 font-semibold shadow-none",
                       showFormerMembers
-                        ? "bg-slate-950 text-white hover:bg-slate-800"
-                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                        ? "bg-background text-white hover:bg-background"
+                        : "border-border bg-card text-muted-foreground hover:bg-muted",
                     ].join(" ")}
                   >
                     {showFormerMembers ? "Ehemalige: AN" : "Ehemalige: AUS"}
                   </Button>
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {showFormerMembers ? "Zeigt aktive + entfernte Spieler (Historie)" : "Zeigt nur aktive Spieler"}
                   </span>
                 </div>
@@ -631,9 +631,9 @@ export default function MeineTeamsAppPage() {
 
             <div className="p-3 sm:p-5 lg:p-6">
               {teamMembers.length === 0 ? (
-                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50/70 px-6 py-10 text-center">
-                  <Users className="h-6 w-6 text-slate-300" />
-                  <p className="mt-3 text-sm font-black text-slate-700 sm:text-base">Keine Teammitglieder gefunden.</p>
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[22px] border border-dashed border-border bg-muted/70 px-6 py-10 text-center">
+                  <Users className="h-6 w-6 text-muted-foreground" />
+                  <p className="mt-3 text-sm font-semibold text-muted-foreground sm:text-base">Keine Teammitglieder gefunden.</p>
                 </div>
               ) : (
                 <div className="space-y-4 sm:space-y-5">
@@ -642,12 +642,12 @@ export default function MeineTeamsAppPage() {
                     const canManage = canManageTeam(membership.team_id)
 
                     return (
-                      <section key={membership.id} className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50/50">
-                        <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-3.5 py-3.5 sm:px-4">
+                      <section key={membership.id} className="overflow-hidden rounded-[22px] border border-border bg-muted/50">
+                        <div className="flex items-center gap-3 border-b border-border bg-card px-3.5 py-3.5 sm:px-4">
                           {membership.teams?.logo_url ? (
-                            <Avatar className="h-11 w-11 shrink-0 ring-1 ring-slate-200">
+                            <Avatar className="h-11 w-11 shrink-0 ring-1 ring-border">
                               <AvatarImage src={membership.teams.logo_url || "/placeholder.svg"} />
-                              <AvatarFallback className="bg-orange-50 text-sm font-black text-orange-700">
+                              <AvatarFallback className="bg-orange-50 text-sm font-semibold text-orange-700">
                                 {membership.teams.name?.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
@@ -658,15 +658,15 @@ export default function MeineTeamsAppPage() {
                           )}
 
                           <div className="min-w-0 flex-1">
-                            <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                               {membership.teams?.dart_type === "steeldart" ? "Steeldart-Team" : "E-Dart-Team"}
                             </div>
-                            <h3 className="mt-0.5 break-words text-base font-black leading-tight text-slate-950 sm:text-lg">
+                            <h3 className="mt-0.5 break-words text-base font-semibold leading-tight text-foreground sm:text-lg">
                               {membership.teams?.name || "Unbekanntes Team"}
                             </h3>
                           </div>
 
-                          <div className="flex h-9 min-w-9 items-center justify-center rounded-xl bg-slate-950 px-2.5 text-xs font-black text-white">
+                          <div className="flex h-9 min-w-9 items-center justify-center rounded-xl bg-background px-2.5 text-xs font-semibold text-white">
                             {teamMembersForThisTeam.length}
                           </div>
                         </div>
@@ -680,16 +680,16 @@ export default function MeineTeamsAppPage() {
                               <article
                                 key={member.id}
                                 className={[
-                                  "group relative overflow-hidden rounded-[18px] border bg-white p-3.5 shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)]",
+                                  "group relative overflow-hidden rounded-[18px] border bg-card p-3.5 shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)]",
                                   member.left_at
-                                    ? "border-slate-200 opacity-60"
+                                    ? "border-border opacity-60"
                                     : isMe
                                       ? "border-orange-200 ring-1 ring-orange-100"
-                                      : "border-slate-200 hover:border-slate-300",
+                                      : "border-border hover:border-border",
                                 ].join(" ")}
                               >
                                 <div className="flex items-start gap-3">
-                                  <Avatar className="h-11 w-11 shrink-0 ring-1 ring-slate-200">
+                                  <Avatar className="h-11 w-11 shrink-0 ring-1 ring-border">
                                     <AvatarImage
                                       src={
                                         member.club_players?.photo_url ||
@@ -697,25 +697,25 @@ export default function MeineTeamsAppPage() {
                                         "/placeholder.svg"
                                       }
                                     />
-                                    <AvatarFallback className="bg-orange-50 text-sm font-black text-orange-700">
+                                    <AvatarFallback className="bg-orange-50 text-sm font-semibold text-orange-700">
                                       {member.club_players?.name?.charAt(0) || "?"}
                                     </AvatarFallback>
                                   </Avatar>
 
                                   <div className="min-w-0 flex-1">
-                                    <div className="break-words text-sm font-black leading-snug text-slate-950">
+                                    <div className="break-words text-sm font-semibold leading-snug text-foreground">
                                       {member.club_players?.name || "Unbekannt"}
                                       {isMe && <span className="ml-1 text-orange-600">(Du)</span>}
                                     </div>
 
                                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-black text-slate-600 shadow-none">
+                                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground shadow-none">
                                         {getRoleIcon(member.role)}
                                         {getRoleText(member.role)}
                                       </span>
 
                                       {member.left_at && (
-                                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-500">
+                                        <span className="inline-flex rounded-full border border-border bg-muted px-2 py-1 text-xs font-bold text-muted-foreground">
                                           Ehemalig seit {new Date(member.left_at).toLocaleDateString("de-DE")}
                                         </span>
                                       )}
@@ -726,7 +726,7 @@ export default function MeineTeamsAppPage() {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="h-9 w-9 shrink-0 rounded-xl border-slate-200 bg-white p-0 shadow-none hover:border-red-200 hover:bg-red-50"
+                                      className="h-9 w-9 shrink-0 rounded-xl border-border bg-card p-0 shadow-none hover:border-red-200 hover:bg-red-50"
                                       disabled={!!removingMemberId}
                                       onClick={() =>
                                         openRemoveDialog({
@@ -765,8 +765,8 @@ export default function MeineTeamsAppPage() {
               if (!open) setRemoveTarget(null)
             }}
           >
-            <AlertDialogContent className="w-[94vw] max-w-md overflow-hidden rounded-[24px] border border-slate-200 bg-white p-0 shadow-[0_30px_90px_-38px_rgba(15,23,42,0.55)] sm:max-w-[450px]">
-              <AlertDialogHeader className="border-b border-slate-100 px-5 py-5">
+            <AlertDialogContent className="w-[94vw] max-w-md overflow-hidden rounded-[24px] border border-border bg-card p-0 shadow-[0_30px_90px_-38px_rgba(15,23,42,0.55)] sm:max-w-[450px]">
+              <AlertDialogHeader className="border-b border-border px-5 py-5">
                 <AlertDialogTitle>Spieler wirklich aus der Mannschaft entfernen?</AlertDialogTitle>
                 <AlertDialogDescription>
                   {removeTarget ? (
@@ -781,7 +781,7 @@ export default function MeineTeamsAppPage() {
               </AlertDialogHeader>
 
               <AlertDialogFooter className="gap-2 px-5 pb-5 pt-4 sm:gap-2">
-                <AlertDialogCancel disabled={!!removingMemberId} className="h-10 rounded-xl border-slate-200 font-bold">Abbrechen</AlertDialogCancel>
+                <AlertDialogCancel disabled={!!removingMemberId} className="h-10 rounded-xl border-border font-bold">Abbrechen</AlertDialogCancel>
 
                 <AlertDialogAction
                   disabled={!removeTarget || !!removingMemberId}
@@ -804,7 +804,7 @@ export default function MeineTeamsAppPage() {
             </AlertDialogContent>
           </AlertDialog>
 		   </div>
-       
+
       </main>
 
       <MobileBottomNav />

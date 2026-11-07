@@ -26,15 +26,15 @@ export function DeletePhotoConfirmationModal({
 }: DeletePhotoConfirmationModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm mx-auto bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
-        <DialogHeader className="border-b border-gray-100 pb-4">
+      <DialogContent className="max-w-sm mx-auto bg-card  border-0 shadow-2xl">
+        <DialogHeader className="border-b border-border pb-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+            <div className="text-foreground p-2 bg-card   rounded-lg shadow-lg">
               <Trash2 className="h-5 w-5 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-gray-900">Profilbild löschen</DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 mt-1">
+              <DialogTitle className="text-lg font-semibold text-foreground">Profilbild löschen</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-1">
                 Diese Aktion kann nicht rückgängig gemacht werden.
               </DialogDescription>
             </div>
@@ -42,18 +42,18 @@ export function DeletePhotoConfirmationModal({
         </DialogHeader>
 
         <div className="py-4 text-center">
-          <p className="text-base text-gray-700">
-            Möchten Sie das Profilbild für <span className="font-semibold text-gray-900">{playerName}</span> wirklich
+          <p className="text-base text-muted-foreground">
+            Möchten Sie das Profilbild für <span className="font-semibold text-foreground">{playerName}</span> wirklich
             löschen?
           </p>
         </div>
 
-        <DialogFooter className="pt-4 border-t border-gray-100">
+        <DialogFooter className="pt-4 border-t border-border">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="border-gray-200 hover:bg-gray-50 bg-transparent"
+            className="border-border hover:bg-muted bg-transparent"
           >
             <XCircle className="h-4 w-4 mr-2" />
             Abbrechen

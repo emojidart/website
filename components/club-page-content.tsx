@@ -200,13 +200,13 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
     >
       {/* Hero Section */}
       <motion.section variants={itemVariants} className="text-center mb-16">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 md:p-12 mb-8">
+        <div className="bg-card rounded-2xl shadow-xl border border-border p-8 md:p-12 mb-8">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold uppercase leading-none tracking-tighter mb-6">
             <span className="block text-orange-600">UNSER</span>
-            <span className="block text-gray-900">DARTVEREIN</span>
+            <span className="block text-foreground">DARTVEREIN</span>
             <span className="block text-yellow-600">EMOJ!'S</span>
           </h1>
-          <p className="text-lg md:text-xl font-bold uppercase text-gray-600 mb-8">
+          <p className="text-lg md:text-xl font-bold uppercase text-muted-foreground mb-8">
             Leidenschaft, Gemeinschaft, Erfolg
           </p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-base font-bold">
@@ -224,19 +224,19 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
 
       {/* New "Why Join Us" Section */}
       <motion.section variants={itemVariants} className="mb-16">
-        <h2 className="text-3xl md:text-4xl font-extrabold uppercase text-center mb-10 text-gray-900">
+        <h2 className="text-3xl md:text-4xl font-extrabold uppercase text-center mb-10 text-foreground">
           Warum uns beitreten?
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <motion.div
             variants={cardVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 text-center flex flex-col items-center hover:shadow-2xl transition-shadow duration-300"
+            className="bg-card rounded-2xl shadow-xl border border-border p-6 text-center flex flex-col items-center hover:shadow-2xl transition-shadow duration-300"
           >
             <div className="bg-orange-100 rounded-full p-4 mb-4">
               <Heart className="h-8 w-8 text-orange-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Starke Gemeinschaft</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-xl font-bold text-foreground mb-2">Starke Gemeinschaft</h3>
+            <p className="text-sm text-muted-foreground">
               Werde Teil einer unterstützenden und freundlichen Dart-Familie, in der Spaß und Zusammenhalt
               großgeschrieben werden.
             </p>
@@ -244,39 +244,39 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
 
           <motion.div
             variants={cardVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 text-center flex flex-col items-center hover:shadow-2xl transition-shadow duration-300"
+            className="bg-card rounded-2xl shadow-xl border border-border p-6 text-center flex flex-col items-center hover:shadow-2xl transition-shadow duration-300"
           >
             <div className="bg-yellow-100 rounded-full p-4 mb-4">
               <Target className="h-8 w-8 text-yellow-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Leidenschaft für Darts</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-xl font-bold text-foreground mb-2">Leidenschaft für Darts</h3>
+            <p className="text-sm text-muted-foreground">
               Egal ob Anfänger oder Profi, teile deine Begeisterung für den Dartsport und verbessere dein Spiel.
             </p>
           </motion.div>
 
           <motion.div
             variants={cardVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 text-center flex flex-col items-center hover:shadow-2xl transition-shadow duration-300"
+            className="bg-card rounded-2xl shadow-xl border border-border p-6 text-center flex flex-col items-center hover:shadow-2xl transition-shadow duration-300"
           >
             <div className="bg-red-100 rounded-full p-4 mb-4">
               <TrendingUp className="h-8 w-8 text-red-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Persönliche Entwicklung</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-xl font-bold text-foreground mb-2">Persönliche Entwicklung</h3>
+            <p className="text-sm text-muted-foreground">
               Profitiere von regelmäßigen Trainings und der Möglichkeit, dein Können stetig zu verbessern.
             </p>
           </motion.div>
 
           <motion.div
             variants={cardVariants}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 text-center flex flex-col items-center hover:shadow-2xl transition-shadow duration-300"
+            className="bg-card rounded-2xl shadow-xl border border-border p-6 text-center flex flex-col items-center hover:shadow-2xl transition-shadow duration-300"
           >
             <div className="bg-blue-100 rounded-full p-4 mb-4">
               <Trophy className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Spannende Turniere</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-xl font-bold text-foreground mb-2">Spannende Turniere</h3>
+            <p className="text-sm text-muted-foreground">
               Nimm an internen Ligen und regionalen Turnieren teil, um dich mit anderen zu messen.
             </p>
           </motion.div>
@@ -285,7 +285,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
 
       {/* NEU: Aktuelle Rekrutierungsbedürfnisse Section - Modern & Prominent */}
       <motion.section variants={itemVariants} className="mb-16">
-        <div className="bg-gradient-to-br from-blue-700 to-blue-900 text-white rounded-2xl shadow-xl p-8 md:p-12 text-center relative overflow-hidden">
+        <div className="bg-card   text-white rounded-2xl shadow-xl p-8 md:p-12 text-center relative overflow-hidden">
           <div className="relative z-10">
             <h2 className="text-3xl md:text-5xl font-extrabold uppercase mb-4 leading-tight">
               <span className="block text-yellow-400">WIR SUCHEN</span>
@@ -317,7 +317,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                         <motion.div
                           key={need.id}
                           variants={cardVariants}
-                          className="bg-white/10 backdrop-blur-sm rounded-xl border border-blue-600 p-6 shadow-lg flex flex-col justify-between text-left hover:bg-white/20 transition-colors duration-200"
+                          className="bg-white/10  rounded-xl border border-blue-600 p-6 shadow-lg flex flex-col justify-between text-left hover:bg-white/20 transition-colors duration-200"
                         >
                           <div>
                             <div className="flex items-center gap-3 mb-3">
@@ -326,12 +326,12 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                               </div>
                               <div>
                                 <CardTitle className="text-xl font-bold text-white">{need.team_name}</CardTitle>
-                                <CardDescription className="text-sm text-gray-200">
+                                <CardDescription className="text-sm text-muted-foreground">
                                   Gesucht seit: {format(new Date(need.created_at), "dd.MM.yyyy", { locale: de })}
                                 </CardDescription>
                               </div>
                             </div>
-                            <div className="space-y-2 text-gray-100 text-sm">
+                            <div className="space-y-2 text-muted-foreground text-sm">
                               <p className="flex items-center gap-2">
                                 <ClipboardList className="h-4 w-4 text-yellow-400" />
                                 <span className="font-semibold">Liga:</span> {need.league}
@@ -353,15 +353,15 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                       ))}
                     </div>
                     {/* Allgemeine Nachricht auch hier anzeigen, aber etwas weniger prominent */}
-                    <div className="text-center py-4 text-gray-200 mt-8 border-t border-blue-600 pt-8">
+                    <div className="text-center py-4 text-muted-foreground mt-8 border-t border-blue-600 pt-8">
                       <p className="text-lg font-medium">Wir sind immer auf der Suche nach begeisterten Dartspielern!</p>
                       <p className="text-sm mt-2">Egal ob Anfänger oder Profi, melde dich bei uns – wir freuen uns auf dich!</p>
                     </div>
                   </>
                 ) : (
                   // Wenn keine spezifischen Rekrutierungsbedürfnisse vorliegen
-                  <div className="text-center py-8 text-gray-200">
-                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <h3 className="text-2xl md:text-3xl font-bold text-yellow-400 mb-3">Wir sind immer auf der Suche nach begeisterten Dartspielern!</h3>
                     <p className="text-lg font-medium">Egal ob Anfänger oder Profi, melde dich bei uns – wir freuen uns auf dich!</p>
                   </div>
@@ -371,7 +371,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
 
             <Dialog open={isApplicationFormOpen} onOpenChange={setIsApplicationFormOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-extrabold py-3 px-8 rounded-full text-lg uppercase shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <Button className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-extrabold py-3 px-8 rounded-full text-lg uppercase shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 text-primary-foreground">
                   <Mail className="h-5 w-5 mr-3" />
                   Jetzt bewerben!
                 </Button>
@@ -384,7 +384,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
 
       {/* NEU: Success Confirmation Dialog */}
       <Dialog open={showApplicationSuccessModal} onOpenChange={setShowApplicationSuccessModal}>
-        <DialogContent className="sm:max-w-[425px] p-6 text-center bg-white rounded-lg shadow-xl">
+        <DialogContent className="sm:max-w-[425px] p-6 text-center bg-card rounded-lg shadow-xl">
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -392,8 +392,8 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
             className="flex flex-col items-center justify-center"
           >
             <CheckCircle className="h-20 w-20 text-green-500 mb-6" />
-            <DialogTitle className="text-3xl font-bold text-gray-900 mb-3">Bewerbung erfolgreich!</DialogTitle>
-            <DialogDescription className="text-lg text-gray-600 mb-8">
+            <DialogTitle className="text-3xl font-bold text-foreground mb-3">Bewerbung erfolgreich!</DialogTitle>
+            <DialogDescription className="text-lg text-muted-foreground mb-8">
               Vielen Dank für Ihre Bewerbung. Wir werden uns in Kürze bei Ihnen melden!
             </DialogDescription>
             <Button
@@ -408,7 +408,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
 
       {/* Teams Section - Revamped with Team Spotlight */}
       <motion.section variants={itemVariants} className="mb-16">
-        <h2 className="text-3xl md:text-4xl font-extrabold uppercase text-center mb-10 text-gray-900">
+        <h2 className="text-3xl md:text-4xl font-extrabold uppercase text-center mb-10 text-foreground">
           Unsere Mannschaften
         </h2>
 
@@ -420,21 +420,21 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 md:p-12"
+              className="bg-card rounded-2xl shadow-xl border border-border p-8 md:p-12"
             >
               <Button
                 variant="ghost"
                 onClick={handleBackToTeams}
-                className="mb-6 text-gray-600 hover:text-red-600 hover:bg-gray-50"
+                className="mb-6 text-muted-foreground hover:text-red-600 hover:bg-muted"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Zurück zu den Mannschaften
               </Button>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
+              <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-6 text-center">
                 Spieler von {selectedTeam.name}
               </h3>
               {selectedTeam.players.length === 0 ? (
-                <p className="text-center text-lg text-gray-600">Diese Mannschaft hat noch keine Spieler.</p>
+                <p className="text-center text-lg text-muted-foreground">Diese Mannschaft hat noch keine Spieler.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {selectedTeam.players.map((player) => (
@@ -442,7 +442,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                       <DialogTrigger asChild>
                         <motion.div
                           variants={cardVariants}
-                          className="bg-gray-50 rounded-xl border border-gray-200 p-4 text-center flex flex-col items-center shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
+                          className="bg-muted rounded-xl border border-border p-4 text-center flex flex-col items-center shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
                           onClick={() => setSelectedPlayer(player)}
                         >
                           <Avatar className="h-20 w-20 mb-3 border-2 border-orange-400">
@@ -455,7 +455,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                               {player.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          <h4 className="font-semibold text-gray-900 text-lg mb-1 flex items-center justify-center gap-1">
+                          <h4 className="font-semibold text-foreground text-lg mb-1 flex items-center justify-center gap-1">
                             {player.name}
                             {player.role === "Captain" && (
                               <Crown className="h-4 w-4 text-yellow-600 ml-1" title="Kapitän" />
@@ -465,9 +465,9 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                             )}
                           </h4>
                           {player.role && (
-                            <p className="text-xs text-gray-500 mb-2">({getTranslatedRole(player.role)})</p>
+                            <p className="text-xs text-muted-foreground mb-2">({getTranslatedRole(player.role)})</p>
                           )}
-                          <div className="text-xs text-gray-600 space-y-1">
+                          <div className="text-xs text-muted-foreground space-y-1">
                             {player.throwing_hand && (
                               <p className="flex items-center justify-center gap-1">
                                 <Hand className="h-3 w-3 text-orange-500" />
@@ -490,18 +490,18 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                         </motion.div>
                       </DialogTrigger>
                       {selectedPlayer && (
-                        <DialogContent className="sm:max-w-[425px] p-6 bg-white rounded-lg shadow-xl [&>button]:hidden">
-                          <DialogHeader className="relative pb-4 border-b border-gray-200">
-                            <DialogTitle className="text-2xl font-bold text-gray-900 text-center">
+                        <DialogContent className="sm:max-w-[425px] p-6 bg-card rounded-lg shadow-xl [&>button]:hidden">
+                          <DialogHeader className="relative pb-4 border-b border-border">
+                            <DialogTitle className="text-2xl font-bold text-foreground text-center">
                               {selectedPlayer.name}
                             </DialogTitle>
-                            <DialogDescription className="text-center text-gray-600">
+                            <DialogDescription className="text-center text-muted-foreground">
                               Details zum Spieler
                             </DialogDescription>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="absolute top-2 right-2 text-gray-500 hover:bg-gray-100"
+                              className="absolute top-2 right-2 text-muted-foreground hover:bg-muted"
                               onClick={() => setSelectedPlayer(null)}
                             >
                               <X className="h-5 w-5" />
@@ -520,7 +520,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                                 {selectedPlayer.name.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="grid gap-3 text-center text-gray-700">
+                            <div className="grid gap-3 text-center text-muted-foreground">
                               {selectedPlayer.role && (
                                 <p className="text-lg font-semibold flex items-center justify-center gap-2">
                                   {selectedPlayer.role === "Captain" && <Crown className="h-5 w-5 text-yellow-600" />}
@@ -567,7 +567,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
               {teamsWithPlayers.length === 0 ? (
-                <p className="text-center text-lg text-gray-600 col-span-full">
+                <p className="text-center text-lg text-muted-foreground col-span-full">
                   Aktuell sind keine Mannschaften registriert.
                 </p>
               ) : (
@@ -575,7 +575,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                   <motion.div
                     key={team.id}
                     variants={cardVariants}
-                    className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-2xl transition-shadow duration-300"
+                    className="bg-card rounded-2xl shadow-xl border border-border p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-2xl transition-shadow duration-300"
                     onClick={() => handleTeamClick(team)}
                   >
                     {team.logo_url ? (
@@ -589,14 +589,14 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                         />
                       </div>
                     ) : (
-                      <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-full p-4 mb-4 shadow-lg">
+                      <div className="text-foreground bg-card   rounded-full p-4 mb-4 shadow-lg">
                         <Darts className="h-10 w-10 text-white" />
                       </div>
                     )}
-                    <CardTitle className="text-2xl font-extrabold text-gray-900 uppercase tracking-wide mb-2">
+                    <CardTitle className="text-2xl font-extrabold text-foreground uppercase tracking-wide mb-2">
                       {team.name}
                     </CardTitle>
-                    <p className="text-sm text-gray-600">{team.players.length} Spieler</p>
+                    <p className="text-sm text-muted-foreground">{team.players.length} Spieler</p>
                     <Button variant="link" className="mt-4 text-red-600 hover:text-red-700">
                       Details anzeigen
                     </Button>
@@ -610,10 +610,10 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
 
       {/* NEU: Player Movements Section mit Tabs */}
       <motion.section variants={itemVariants} className="mb-16">
-        <h2 className="text-3xl md:text-4xl font-extrabold uppercase text-center mb-10 text-gray-900">
+        <h2 className="text-3xl md:text-4xl font-extrabold uppercase text-center mb-10 text-foreground">
           Spielerbewegungen
         </h2>
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 md:p-12">
+        <div className="bg-card rounded-2xl shadow-xl border border-border p-8 md:p-12">
           {/* Tabs für Filterung */}
           <div className="flex justify-center mb-6 space-x-4">
             <Button
@@ -622,7 +622,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                 "px-4 py-2 rounded-lg font-semibold transition-all duration-200",
                 activeMovementTab === "all"
                   ? "bg-purple-600 text-white shadow-md"
-                  : "bg-transparent text-gray-600 hover:bg-gray-100",
+                  : "bg-transparent text-muted-foreground hover:bg-muted",
               )}
             >
               Alle Bewegungen
@@ -633,7 +633,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                 "px-4 py-2 rounded-lg font-semibold transition-all duration-200",
                 activeMovementTab === "new_addition"
                   ? "bg-green-600 text-white shadow-md"
-                  : "bg-transparent text-gray-600 hover:bg-gray-100",
+                  : "bg-transparent text-muted-foreground hover:bg-muted",
               )}
             >
               Neuzugänge
@@ -644,7 +644,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                 "px-4 py-2 rounded-lg font-semibold transition-all duration-200",
                 activeMovementTab === "transfer"
                   ? "bg-blue-600 text-white shadow-md"
-                  : "bg-transparent text-gray-600 hover:bg-gray-100",
+                  : "bg-transparent text-muted-foreground hover:bg-muted",
               )}
             >
               Transfers
@@ -654,7 +654,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
           {movementsLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-              <p className="ml-3 text-gray-600">Lade Spielerbewegungen...</p>
+              <p className="ml-3 text-muted-foreground">Lade Spielerbewegungen...</p>
             </div>
           ) : movementsError ? (
             <div className="flex items-center justify-center py-8 text-red-600">
@@ -662,7 +662,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
               <p>{movementsError}</p>
             </div>
           ) : filteredMovements.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">
+            <p className="text-center text-muted-foreground py-8">
               {activeMovementTab === "all"
                 ? "Keine Spielerbewegungen gefunden."
                 : activeMovementTab === "new_addition"
@@ -690,7 +690,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                               <Badge variant="default" className="bg-green-500 hover:bg-green-600">
                                 Neuzugang
                               </Badge>
-                              <span className="text-gray-700">
+                              <span className="text-muted-foreground">
                                 ist {movement.teams?.name ? `der Mannschaft ${movement.teams.name}` : "einem Team"}{" "}
                                 beigetreten.
                               </span>
@@ -700,9 +700,9 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                               <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">
                                 Transfer
                               </Badge>
-                              <span className="text-gray-700 flex items-center gap-1">
+                              <span className="text-muted-foreground flex items-center gap-1">
                                 von <span className="font-semibold">{movement.from_teams?.name || "Kein Team"}</span>{" "}
-                                <ArrowRight className="h-4 w-4 text-gray-500" /> nach{" "}
+                                <ArrowRight className="h-4 w-4 text-muted-foreground" /> nach{" "}
                                 <span className="font-semibold">{movement.teams?.name || "Unbekanntes Team"}</span>
                               </span>
                             </>

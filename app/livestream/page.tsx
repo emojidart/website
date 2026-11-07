@@ -32,7 +32,7 @@ export default function LivestreamPage() {
   const isStreamConfigured = !!STREAM_URL
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 overflow-x-hidden">
+    <div className="min-h-screen bg-muted text-foreground pb-20 overflow-x-hidden">
       <Header />
 
       {/* fixed header offset */}
@@ -45,30 +45,30 @@ export default function LivestreamPage() {
         >
           {/* App-Header Card (wie Kontakt) */}
           <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+              <div className="text-foreground h-2 bg-card  " />
               <div className="p-4 sm:p-5 flex items-start gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0">
                   <Radio className="w-5 h-5 text-orange-600" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-base sm:text-lg font-black">Livestream</h1>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <h1 className="text-base sm:text-lg font-semibold">Livestream</h1>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Live Darts-Action aus der <span className="font-semibold">EMD Arena</span>
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {isStreamConfigured ? "Stream ist konfiguriert – viel Spaß!" : "Der Stream ist aktuell offline."}
                   </p>
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
                   {isStreamConfigured ? (
-                    <span className="inline-flex items-center rounded-full bg-red-50 border border-red-200 px-3 py-1 text-[11px] font-black text-red-700">
+                    <span className="inline-flex items-center rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">
                       <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse" />
                       LIVE
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-[11px] font-black text-gray-700">
+                    <span className="inline-flex items-center rounded-full bg-muted border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">
                       OFFLINE
                     </span>
                   )}
@@ -81,7 +81,7 @@ export default function LivestreamPage() {
             {/* Main Video Area */}
             <div className="space-y-4">
               {/* Video Player */}
-              <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <Card className="rounded-2xl border border-border shadow-sm overflow-hidden">
                 <div className="relative aspect-video bg-black">
                   {isStreamConfigured ? (
                     <>
@@ -117,19 +117,19 @@ export default function LivestreamPage() {
                       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
                         <div className="text-center space-y-3 sm:space-y-4 px-4">
                           <div className="relative">
-                            <div className="absolute inset-0 bg-slate-600/20 blur-3xl" />
-                            <RadioOff className="h-16 w-16 sm:h-24 sm:w-24 text-slate-600 relative mx-auto" />
+                            <div className="absolute inset-0 bg-accent/20 blur-3xl" />
+                            <RadioOff className="h-16 w-16 sm:h-24 sm:w-24 text-muted-foreground relative mx-auto" />
                           </div>
                           <div className="space-y-1 sm:space-y-2">
-                            <h3 className="text-lg sm:text-2xl font-black text-white">Stream derzeit offline</h3>
-                            <p className="text-sm sm:text-base text-slate-400">
+                            <h3 className="text-lg sm:text-2xl font-semibold text-white">Stream derzeit offline</h3>
+                            <p className="text-sm sm:text-base text-muted-foreground">
                               EMD Darts – nächster Stream wird bald angekündigt
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 sm:p-4">
+                      <div className="text-foreground absolute bottom-0 left-0 right-0 bg-card   p-3 sm:p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Button
@@ -141,7 +141,7 @@ export default function LivestreamPage() {
                               <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
                             </Button>
                             <div className="w-20 sm:w-28 h-1 bg-white/30 rounded-full overflow-hidden">
-                              <div className="w-0 h-full bg-white rounded-full" />
+                              <div className="w-0 h-full bg-card rounded-full" />
                             </div>
                           </div>
 
@@ -171,14 +171,14 @@ export default function LivestreamPage() {
               </Card>
 
               {/* Stream Info */}
-              <Card className="rounded-2xl border border-gray-200 shadow-sm">
+              <Card className="rounded-2xl border border-border shadow-sm">
                 <div className="p-4 sm:p-5">
-                  <h2 className="text-lg sm:text-xl font-black mb-1">EMD Darts – Live Match Übertragung</h2>
-                  <p className="text-sm text-gray-600">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-1">EMD Darts – Live Match Übertragung</h2>
+                  <p className="text-sm text-muted-foreground">
                     Hier werden bald spannende Live-Matches aus der EMD Arena übertragen.
                   </p>
 
-                  <div className="mt-3 flex items-center gap-2 text-xs font-bold text-gray-600">
+                  <div className="mt-3 flex items-center gap-2 text-xs font-bold text-muted-foreground">
                     {isStreamConfigured ? (
                       <>
                         <Radio className="h-4 w-4 text-orange-600" />
@@ -186,25 +186,25 @@ export default function LivestreamPage() {
                       </>
                     ) : (
                       <>
-                        <RadioOff className="h-4 w-4 text-gray-500" />
+                        <RadioOff className="h-4 w-4 text-muted-foreground" />
                         <span>Kein aktiver Stream</span>
                       </>
                     )}
                   </div>
 
-                  
+
                 </div>
               </Card>
             </div>
 
             {/* Chat Sidebar */}
             <div className="lg:sticky lg:top-[80px] h-fit">
-              <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-[420px] sm:h-[520px] lg:h-[620px]">
+              <Card className="rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col h-[420px] sm:h-[520px] lg:h-[620px]">
                 {/* Chat Header */}
-                <div className="p-4 border-b border-gray-200 bg-white">
+                <div className="p-4 border-b border-border bg-card">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-black text-sm sm:text-base">Live Chat</h3>
-                    <span className="inline-flex items-center rounded-full bg-gray-100 border border-gray-200 px-3 py-1 text-[11px] font-black text-gray-700">
+                    <h3 className="font-semibold text-sm sm:text-base">Live Chat</h3>
+                    <span className="inline-flex items-center rounded-full bg-muted border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">
                       <Lock className="h-3 w-3 mr-2" />
                       Deaktiviert
                     </span>
@@ -212,16 +212,16 @@ export default function LivestreamPage() {
                 </div>
 
                 {/* Chat Messages - Empty/Disabled State */}
-                <div className="flex-1 flex items-center justify-center p-5 sm:p-8 bg-white">
+                <div className="flex-1 flex items-center justify-center p-5 sm:p-8 bg-card">
                   <div className="text-center space-y-3">
                     <div className="flex justify-center">
-                      <div className="rounded-2xl bg-gray-50 border border-gray-200 p-4">
-                        <Lock className="h-7 w-7 sm:h-8 sm:w-8 text-gray-500" />
+                      <div className="rounded-2xl bg-muted border border-border p-4">
+                        <Lock className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground" />
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <h4 className="font-black text-sm sm:text-base">Chat derzeit nicht verfügbar</h4>
-                      <p className="text-xs sm:text-sm text-gray-600 max-w-[280px] px-4">
+                      <h4 className="font-semibold text-sm sm:text-base">Chat derzeit nicht verfügbar</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground max-w-[280px] px-4">
                         Der Live-Chat wird in Kürze aktiviert.
                       </p>
                     </div>
@@ -229,19 +229,19 @@ export default function LivestreamPage() {
                 </div>
 
                 {/* Chat Input - Disabled */}
-                <div className="p-4 border-t border-gray-200 bg-gray-50">
+                <div className="p-4 border-t border-border bg-muted">
                   <div className="space-y-2">
                     <div className="flex gap-2 opacity-60">
                       <input
                         disabled
                         placeholder="Chat ist deaktiviert..."
-                        className="flex-1 px-3 py-2 text-sm rounded-2xl border border-gray-200 bg-white cursor-not-allowed"
+                        className="flex-1 px-3 py-2 text-sm rounded-2xl border border-border bg-card cursor-not-allowed"
                       />
                       <Button size="icon" disabled className="h-10 w-10 rounded-2xl">
                         <Lock className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="text-[10px] sm:text-xs text-gray-500 text-center font-bold">
+                    <p className="text-xs sm:text-xs text-muted-foreground text-center font-bold">
                       Chat-Funktion wird bald verfügbar sein
                     </p>
                   </div>

@@ -1,0 +1,35 @@
+{
+  "checked": 358,
+  "presentationOnly": 345,
+  "exceptions": [
+    "app/_startseite/komponenten/startseiten-hero.tsx",
+    "app/guest-login/page.tsx",
+    "app/layout.tsx",
+    "app/member-account-request/page.tsx",
+    "app/member-dashboard-app/page.tsx",
+    "app/member-login/page.tsx",
+    "app/member-set-password/page.tsx",
+    "app/terminal/layout.tsx",
+    "app/veranstaltungen/page.tsx",
+    "components/AppThemeShell.tsx",
+    "components/footer.tsx",
+    "components/header.tsx",
+    "components/mobile-bottom-nav.tsx"
+  ],
+  "method": "TypeScript AST comparison with className/style/visual data and accessibility attributes omitted; CSS utility strings normalized; JSX display text and empty decorative div/span trees omitted. Remaining structural differences require manual review and are cross-checked against behavior-operations.json.",
+  "manualReview": {
+    "app/_startseite/komponenten/startseiten-hero.tsx": "Two imperative navigation buttons became links to identical routes; new quick links are presentation/navigation design.",
+    "app/guest-login/page.tsx": "Decorative layers removed, input IDs added for labels, German display copy updated; operation audit unchanged.",
+    "app/layout.tsx": "Intended global maintenance gate and noindex condition removed; new style imports, zoom accessibility and theme color changed; all existing providers/guards remain.",
+    "app/member-account-request/page.tsx": "Input IDs and live status accessibility attributes added; no data/event changes.",
+    "app/member-dashboard-app/page.tsx": "Previously empty loading branch now renders Header, status spinner and loading message; access conditions and operations preserved.",
+    "app/member-login/page.tsx": "Decorative layers removed and input IDs added; no data/event changes.",
+    "app/member-set-password/page.tsx": "Input IDs and live status accessibility added; no password/data/event behavior changed.",
+    "app/terminal/layout.tsx": "Terminal shell marker and CSS background changed; providers preserved.",
+    "app/veranstaltungen/page.tsx": "Page heading markup rearranged, decorative layers removed, filter pressed-state labels and pluralized display count added; filter logic/events/data unchanged.",
+    "components/AppThemeShell.tsx": "Decorative global touch-ring listener/portal effect removed; pathname admin/terminal exclusion and child rendering retained.",
+    "components/footer.tsx": "Footer visual rewrite adds direct legal/contact links; existing content retained.",
+    "components/header.tsx": "Adds desktop links from existing drawer config and menu aria state; existing data/auth/events preserved.",
+    "components/mobile-bottom-nav.tsx": "Menu overlay/close/open controls use click instead of pointerup for keyboard access; close/open state transitions preserved."
+  }
+}

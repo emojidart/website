@@ -24,7 +24,7 @@ export default async function PlayerSearchPage() {
 
   if (recruitmentError) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20 md:pb-0">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20 md:pb-0">
         <Header />
         <main className="flex-grow flex items-center justify-center p-8">
           <div className="text-center text-destructive">
@@ -41,11 +41,11 @@ export default async function PlayerSearchPage() {
   const recruitmentNeeds: RecruitmentNeed[] = recruitmentData || []
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-24 text-slate-950 font-sans md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-24 text-foreground font-sans md:pb-0">
       <Header />
 
       <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
-        <section className="relative overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+        <section className="relative overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
           <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -55,11 +55,11 @@ export default async function PlayerSearchPage() {
                     <Users className="h-6 w-6 text-orange-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white/50">Emoj!´s Dartverein</p>
-                    <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Offene Positionen</h1>
+                    <p className="text-sm font-medium text-muted-foreground">Emoj!´s Dartverein</p>
+                    <h1 className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Offene Positionen</h1>
                   </div>
                 </div>
-                <p className="mt-4 max-w-3xl text-sm font-medium leading-6 text-white/55 sm:text-base">
+                <p className="mt-4 max-w-3xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
                   Hier siehst du, für welche Teams aktuell Spieler gesucht werden.
                 </p>
               </div>
@@ -67,8 +67,8 @@ export default async function PlayerSearchPage() {
               <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white">
                 <Users className="h-5 w-5 text-orange-400" />
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/45">Aktuell</div>
-                  <div className="text-lg font-black">{recruitmentNeeds.length} offene Position{recruitmentNeeds.length === 1 ? "" : "en"}</div>
+                  <div className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Aktuell</div>
+                  <div className="text-lg font-semibold">{recruitmentNeeds.length} offene Position{recruitmentNeeds.length === 1 ? "" : "en"}</div>
                 </div>
               </div>
             </div>
@@ -76,25 +76,25 @@ export default async function PlayerSearchPage() {
         </section>
 
         <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start xl:gap-5">
-          <div className="rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
-            <div className="border-b border-slate-100 p-4 sm:p-5">
-              <h2 className="text-lg font-black tracking-tight text-slate-950 sm:text-xl">Teams auf Spielersuche</h2>
-              <p className="mt-1 text-sm text-slate-500">Alle aktuell gemeldeten offenen Positionen.</p>
+          <div className="rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+            <div className="border-b border-border p-4 sm:p-5">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">Teams auf Spielersuche</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Alle aktuell gemeldeten offenen Positionen.</p>
             </div>
 
             <div className="p-3 sm:p-5">
               {recruitmentNeeds.length === 0 ? (
-                <div className="rounded-[20px] border border-dashed border-slate-200 bg-slate-50 px-4 py-12 text-center">
-                  <Users className="mx-auto h-10 w-10 text-slate-300" />
-                  <h3 className="mt-3 font-black text-slate-950">Aktuell keine offenen Positionen</h3>
+                <div className="rounded-[20px] border border-dashed border-border bg-muted px-4 py-12 text-center">
+                  <Users className="mx-auto h-10 w-10 text-muted-foreground" />
+                  <h3 className="mt-3 font-semibold text-foreground">Aktuell keine offenen Positionen</h3>
                 </div>
               ) : (
                 <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
                   {recruitmentNeeds.map((need) => (
-                    <article key={need.id} className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_10px_34px_-30px_rgba(15,23,42,0.4)]">
+                    <article key={need.id} className="rounded-[20px] border border-border bg-card p-4 shadow-[0_10px_34px_-30px_rgba(15,23,42,0.4)]">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h3 className="truncate text-base font-black text-slate-950">{need.team_name}</h3>
+                          <h3 className="truncate text-base font-semibold text-foreground">{need.team_name}</h3>
                           <p className="mt-1 text-sm font-semibold text-orange-600">{need.league}</p>
                         </div>
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
@@ -102,12 +102,12 @@ export default async function PlayerSearchPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500">
-                        <CalendarDays className="h-4 w-4 text-slate-400" />
+                      <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
                         <span>ab {new Date(need.start_date).toLocaleDateString("de-AT")}</span>
                       </div>
 
-                      {need.description ? <p className="mt-3 text-sm leading-6 text-slate-600">{need.description}</p> : null}
+                      {need.description ? <p className="mt-3 text-sm leading-6 text-muted-foreground">{need.description}</p> : null}
                     </article>
                   ))}
                 </div>
@@ -115,21 +115,21 @@ export default async function PlayerSearchPage() {
             </div>
           </div>
 
-          <aside className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:p-5 xl:sticky xl:top-20">
+          <aside className="rounded-[24px] border border-border bg-card p-4 shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:p-5 xl:sticky xl:top-20">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
               <UserPlus className="h-5 w-5 text-orange-600" />
             </div>
-            <h2 className="mt-4 text-xl font-black tracking-tight text-slate-950">Interesse am Verein?</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <h2 className="mt-4 text-xl font-semibold tracking-tight text-foreground">Interesse am Verein?</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Erstelle zuerst einen Gastzugang. Danach kannst du im Gastbereich eine Beitrittsanfrage an den Verein stellen.
             </p>
-            <div className="mt-4 rounded-[18px] border border-slate-200 bg-slate-50 p-3">
+            <div className="mt-4 rounded-[18px] border border-border bg-muted p-3">
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-orange-600" />
-                <p className="text-xs font-medium leading-5 text-slate-600">Eine direkte Bewerbung über diese Seite ist nicht erforderlich.</p>
+                <p className="text-xs font-medium leading-5 text-muted-foreground">Eine direkte Bewerbung über diese Seite ist nicht erforderlich.</p>
               </div>
             </div>
-            <Button asChild className="mt-4 h-11 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-600">
+            <Button asChild className="mt-4 h-11 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-600">
               <Link href="/gastzugang">
                 Gastzugang erstellen
                 <ArrowRight className="ml-2 h-4 w-4" />

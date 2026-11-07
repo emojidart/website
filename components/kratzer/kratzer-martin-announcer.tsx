@@ -138,8 +138,8 @@ export function KratzerMartinStatus({ display }: { display: Display }) {
       <div className="flex items-center gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400 text-xl">🎤</div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-black">{display.title}</div>
-          <div className="mt-1 text-xs text-white/55">{display.detail}</div>
+          <div className="text-sm font-semibold">{display.title}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{display.detail}</div>
         </div>
       </div>
       {(display.phase === "preparing" || display.phase === "playing") && (

@@ -55,13 +55,13 @@ function getPositionBadge(position: number) {
 
   switch (position) {
     case 1:
-      return `${baseClasses} bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-lg`
+      return `${baseClasses} bg-card   text-white shadow-lg`
     case 2:
-      return `${baseClasses} bg-gradient-to-r from-gray-300 to-gray-500 text-white shadow-lg`
+      return `${baseClasses} bg-card   text-white shadow-lg`
     case 3:
-      return `${baseClasses} bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-lg`
+      return `${baseClasses} bg-card   text-white shadow-lg`
     default:
-      return `${baseClasses} bg-gray-100 text-gray-700 border-2 border-gray-200`
+      return `${baseClasses} bg-muted text-muted-foreground border-2 border-border`
   }
 }
 
@@ -70,7 +70,7 @@ function getPositionIcon(position: number) {
     case 1:
       return <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
     case 2:
-      return <Award className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+      return <Award className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
     case 3:
       return <Award className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
     default:
@@ -84,7 +84,7 @@ function QualificationProgress({ current, required }: { current: number; require
 
   return (
     <div className="flex items-center space-x-2">
-      <div className="flex-1 bg-gray-200 rounded-full h-2 min-w-[40px] sm:min-w-[60px]">
+      <div className="flex-1 bg-secondary rounded-full h-2 min-w-[40px] sm:min-w-[60px]">
         <div
           className={`h-2 rounded-full transition-all duration-300 ${isQualified ? "bg-green-500" : "bg-red-500"}`}
           style={{ width: `${percentage}%` }}
@@ -142,8 +142,8 @@ function MobilePlayerCard({
   return (
     <motion.div
       variants={cardVariants}
-      className={`bg-white rounded-xl shadow-lg border border-gray-200 p-4 hover:shadow-xl transition-all duration-300 ${
-        isTopThree ? "ring-2 ring-yellow-200 bg-gradient-to-r from-yellow-50 to-white" : ""
+      className={`bg-card rounded-xl shadow-lg border border-border p-4 hover:shadow-xl transition-all duration-300 ${
+        isTopThree ? "text-foreground ring-2 ring-yellow-200 bg-card  " : ""
       }`}
     >
       {/* Header Row */}
@@ -152,7 +152,7 @@ function MobilePlayerCard({
           <div className={getPositionBadge(position)}>{position}</div>
           {isTopThree && getPositionIcon(position)}
 
-          <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0">
+          <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-border flex-shrink-0">
             <Image
               src={player.profile_picture_url || "/placeholder-user.jpg"}
               alt={`Profilbild von ${player.player_name}`}
@@ -165,7 +165,7 @@ function MobilePlayerCard({
 
           <div className="min-w-0 flex-1 overflow-hidden">
             <div
-              className={`text-sm sm:text-base font-bold ${isTopThree ? "text-gray-900" : "text-gray-700"}
+              className={`text-sm sm:text-base font-bold ${isTopThree ? "text-foreground" : "text-muted-foreground"}
                          truncate max-w-full block`}
               title={player.player_name}
             >
@@ -233,18 +233,18 @@ function MobilePlayerCard({
       </div>
 
       {/* Antritte Row */}
-      <div className="bg-gray-50 rounded-lg p-2 text-center mb-3">
-        <div className="text-xs text-gray-600 font-medium">Antritte</div>
-        <div className="text-sm font-bold text-gray-800">{player.tournaments_played}</div>
+      <div className="bg-muted rounded-lg p-2 text-center mb-3">
+        <div className="text-xs text-muted-foreground font-medium">Antritte</div>
+        <div className="text-sm font-bold text-foreground">{player.tournaments_played}</div>
       </div>
 
       {/* Progress/Status Row */}
       <div className="space-y-2">
         <div>
-          <div className="text-xs text-gray-600 mb-1">Qualifikations-Fortschritt</div>
+          <div className="text-xs text-muted-foreground mb-1">Qualifikations-Fortschritt</div>
           <QualificationProgress current={player.tournaments_played} required={QUALIFICATION_REQUIREMENT} />
         </div>
-        <div className="pt-2 border-t border-gray-100">
+        <div className="pt-2 border-t border-border">
           <QualificationStatus tournamentsPlayed={player.tournaments_played} />
         </div>
       </div>
@@ -425,7 +425,7 @@ export default function TournamentSeriesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="text-foreground min-h-screen bg-card  ">
         <Header />
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="text-center">Lädt...</div>
@@ -436,18 +436,18 @@ export default function TournamentSeriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-20 sm:pb-8">
+    <div className="text-foreground min-h-screen bg-card   pb-20 sm:pb-8">
       <Header />
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="mb-6 sm:mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full mb-3 sm:mb-4 shadow-lg">
+          <div className="text-foreground inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-card   rounded-full mb-3 sm:mb-4 shadow-lg">
             <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
-          <h1 className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+          <h1 className="text-primary text-3xl sm:text-5xl font-bold      mb-2">
             {seasonSettings.division_active ? "Tabellenteilung A/B" : "Halbzeit Punkteteilung"}
           </h1>
-          <p className="text-base sm:text-lg text-gray-600">
+          <p className="text-base sm:text-lg text-muted-foreground">
             {seasonSettings.division_active ? "Meisterrunde & Platzierungsrunde" : "Rangliste mit Punktehalbierung"}
           </p>
           <div className="flex flex-wrap justify-center gap-2 mt-3">
@@ -457,7 +457,7 @@ export default function TournamentSeriesPage() {
               </Badge>
             )}
             {seasonSettings.division_active && (
-              <Badge className="text-sm px-4 py-1 bg-gradient-to-r from-purple-500 to-purple-700">
+              <Badge className="text-foreground text-sm px-4 py-1 bg-card  ">
                 Tabellenteilung aktiv
               </Badge>
             )}
@@ -465,13 +465,13 @@ export default function TournamentSeriesPage() {
         </div>
 
         <div className="mb-6 flex justify-center">
-          <div className="inline-flex flex-col sm:flex-row gap-2 sm:gap-0 w-full sm:w-auto bg-white rounded-lg sm:rounded-xl shadow-md p-1">
+          <div className="inline-flex flex-col sm:flex-row gap-2 sm:gap-0 w-full sm:w-auto bg-card rounded-lg sm:rounded-xl shadow-md p-1">
             <button
               onClick={() => setActiveTab("alle")}
               className={`px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl transition-all ${
                 activeTab === "alle"
-                  ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "bg-card   text-white shadow-md"
+                  : "text-muted-foreground hover:bg-muted"
               }`}
             >
               Alle Spieler
@@ -480,8 +480,8 @@ export default function TournamentSeriesPage() {
               onClick={() => setActiveTab("qualifiziert")}
               className={`px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl transition-all ${
                 activeTab === "qualifiziert"
-                  ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "bg-card   text-white shadow-md"
+                  : "text-muted-foreground hover:bg-muted"
               }`}
             >
               Qualifiziert
@@ -490,8 +490,8 @@ export default function TournamentSeriesPage() {
               onClick={() => setActiveTab("nicht-qualifiziert")}
               className={`px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl transition-all ${
                 activeTab === "nicht-qualifiziert"
-                  ? "bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "bg-card   text-white shadow-md"
+                  : "text-muted-foreground hover:bg-muted"
               }`}
             >
               Nicht Qualifiziert
@@ -504,7 +504,7 @@ export default function TournamentSeriesPage() {
             {/* Tabelle A - Meisterrunde */}
             <div className="mb-6">
               <div className="mb-4 text-center">
-                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-6 py-3 rounded-xl shadow-lg">
+                <div className="inline-flex items-center gap-2 bg-card   text-white px-6 py-3 rounded-xl shadow-lg">
                   <Trophy className="h-6 w-6" />
                   <h2 className="text-xl sm:text-2xl font-bold">Tabelle A - Meisterrunde</h2>
                 </div>
@@ -534,7 +534,7 @@ export default function TournamentSeriesPage() {
             {/* Tabelle B - Platzierungsrunde */}
             <div className="mb-6">
               <div className="mb-4 text-center">
-                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-gray-500 to-gray-700 text-white px-6 py-3 rounded-xl shadow-lg">
+                <div className="inline-flex items-center gap-2 bg-card   text-white px-6 py-3 rounded-xl shadow-lg">
                   <Award className="h-6 w-6" />
                   <h2 className="text-xl sm:text-2xl font-bold">Tabelle B - Platzierungsrunde</h2>
                 </div>
@@ -582,8 +582,8 @@ export default function TournamentSeriesPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <Card className="shadow-lg hover:shadow-xl transition-shadow border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-blue-50 to-white">
-              <CardTitle className="text-sm font-bold text-gray-700">Gesamt Spieler</CardTitle>
+            <CardHeader className="text-foreground flex flex-row items-center justify-between space-y-0 pb-2 bg-card  ">
+              <CardTitle className="text-sm font-bold text-muted-foreground">Gesamt Spieler</CardTitle>
               <Trophy className="h-5 w-5 text-blue-600" />
             </CardHeader>
             <CardContent className="pt-4">
@@ -592,8 +592,8 @@ export default function TournamentSeriesPage() {
           </Card>
 
           <Card className="shadow-lg hover:shadow-xl transition-shadow border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-green-50 to-white">
-              <CardTitle className="text-sm font-bold text-gray-700">Qualifizierte</CardTitle>
+            <CardHeader className="text-foreground flex flex-row items-center justify-between space-y-0 pb-2 bg-card  ">
+              <CardTitle className="text-sm font-bold text-muted-foreground">Qualifizierte</CardTitle>
               <Award className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent className="pt-4">
@@ -604,8 +604,8 @@ export default function TournamentSeriesPage() {
           </Card>
 
           <Card className="shadow-lg hover:shadow-xl transition-shadow border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-purple-50 to-white">
-              <CardTitle className="text-sm font-bold text-gray-700">Durchschn. Turniere</CardTitle>
+            <CardHeader className="text-foreground flex flex-row items-center justify-between space-y-0 pb-2 bg-card  ">
+              <CardTitle className="text-sm font-bold text-muted-foreground">Durchschn. Turniere</CardTitle>
               <Target className="h-5 w-5 text-purple-600" />
             </CardHeader>
             <CardContent className="pt-4">

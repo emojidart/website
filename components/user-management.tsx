@@ -696,7 +696,7 @@ team_id: teamMembership?.team_id,
       case "Co-Captain":
         return <Shield className="h-4 w-4 text-blue-600" />
       default:
-        return <User className="h-4 w-4 text-gray-600" />
+        return <User className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -707,7 +707,7 @@ team_id: teamMembership?.team_id,
       case "Co-Captain":
         return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Co-Kapitän</Badge>
       default:
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Spieler</Badge>
+        return <Badge className="bg-muted text-foreground border-border">Spieler</Badge>
     }
   }
 
@@ -732,7 +732,7 @@ team_id: teamMembership?.team_id,
   const getEmailConfirmationBadge = (player: PlayerData) => {
     if (!player.has_account) return null
     return (
-      <Badge className="bg-gray-100 text-gray-800 border-gray-200 text-xs">
+      <Badge className="bg-muted text-foreground border-border text-xs">
         {player.email_confirmed ? <MailCheck className="h-3 w-3 mr-1" /> : <MailX className="h-3 w-3 mr-1" />}
         Mail {player.email_confirmed ? "✓" : "!"}
       </Badge>
@@ -770,7 +770,7 @@ team_id: teamMembership?.team_id,
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Benutzerdaten werden geladen...</p>
+          <p className="text-muted-foreground">Benutzerdaten werden geladen...</p>
         </div>
       </div>
     )
@@ -797,19 +797,19 @@ team_id: teamMembership?.team_id,
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
+          <div className="text-foreground p-2 bg-card   rounded-lg shadow-lg">
             <Users className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Benutzerverwaltung</h2>
-            <p className="text-gray-600">Vereinsspieler nach Teams organisiert</p>
+            <h2 className="text-2xl font-bold text-foreground">Benutzerverwaltung</h2>
+            <p className="text-muted-foreground">Vereinsspieler nach Teams organisiert</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="flex items-center space-x-2 bg-green-600 hover:bg-green-700">
+              <Button className="flex items-center space-x-2 bg-green-700 hover:bg-green-700 text-white">
                 <UserPlus className="h-4 w-4" />
                 <span>Account erstellen</span>
               </Button>
@@ -849,7 +849,7 @@ team_id: teamMembership?.team_id,
                 <div className="space-y-2">
                   <Label htmlFor="email">E-Mail-Adresse</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="email"
                       type="email"
@@ -864,7 +864,7 @@ team_id: teamMembership?.team_id,
                 <div className="space-y-2">
                   <Label htmlFor="password">Passwort</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="password"
                       type="password"
@@ -879,7 +879,7 @@ team_id: teamMembership?.team_id,
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">Passwort bestätigen</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="confirm-password"
                       type="password"
@@ -904,7 +904,7 @@ team_id: teamMembership?.team_id,
                   </div>
                 )}
 
-                <Button onClick={createAccount} disabled={isCreatingAccount} className="w-full bg-green-600 hover:bg-green-700">
+                <Button onClick={createAccount} disabled={isCreatingAccount} className="w-full bg-green-700 hover:bg-green-700 text-white">
                   {isCreatingAccount ? (
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -931,13 +931,13 @@ team_id: teamMembership?.team_id,
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               type="text"
               placeholder="Nach Spielername suchen..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+              className="pl-10 h-12 border-border focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
         </CardContent>
@@ -951,8 +951,8 @@ team_id: teamMembership?.team_id,
             <div className="flex items-center gap-2 flex-wrap">
               <Crown className="h-5 w-5 text-yellow-600" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{allPlayers.filter((p) => p.role === "Captain").length}</p>
-                <p className="text-sm text-gray-600">Kapitäne</p>
+                <p className="text-2xl font-bold text-foreground">{allPlayers.filter((p) => p.role === "Captain").length}</p>
+                <p className="text-sm text-muted-foreground">Kapitäne</p>
               </div>
             </div>
           </CardContent>
@@ -963,8 +963,8 @@ team_id: teamMembership?.team_id,
             <div className="flex items-center gap-2 flex-wrap">
               <Shield className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{allPlayers.filter((p) => p.role === "Co-Captain").length}</p>
-                <p className="text-sm text-gray-600">Co-Kapitäne</p>
+                <p className="text-2xl font-bold text-foreground">{allPlayers.filter((p) => p.role === "Co-Captain").length}</p>
+                <p className="text-sm text-muted-foreground">Co-Kapitäne</p>
               </div>
             </div>
           </CardContent>
@@ -973,10 +973,10 @@ team_id: teamMembership?.team_id,
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 flex-wrap">
-              <User className="h-5 w-5 text-gray-600" />
+              <User className="h-5 w-5 text-muted-foreground" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{allPlayers.filter((p) => p.role === "Player").length}</p>
-                <p className="text-sm text-gray-600">Spieler</p>
+                <p className="text-2xl font-bold text-foreground">{allPlayers.filter((p) => p.role === "Player").length}</p>
+                <p className="text-sm text-muted-foreground">Spieler</p>
               </div>
             </div>
           </CardContent>
@@ -987,8 +987,8 @@ team_id: teamMembership?.team_id,
             <div className="flex items-center gap-2 flex-wrap">
               <Building2 className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{teamGroups.length}</p>
-                <p className="text-sm text-gray-600">Teams</p>
+                <p className="text-2xl font-bold text-foreground">{teamGroups.length}</p>
+                <p className="text-sm text-muted-foreground">Teams</p>
               </div>
             </div>
           </CardContent>
@@ -999,8 +999,8 @@ team_id: teamMembership?.team_id,
             <div className="flex items-center gap-2 flex-wrap">
               <UserPlus className="h-5 w-5 text-purple-600" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{allPlayers.filter((p) => p.has_account).length}</p>
-                <p className="text-sm text-gray-600">Mit Account</p>
+                <p className="text-2xl font-bold text-foreground">{allPlayers.filter((p) => p.has_account).length}</p>
+                <p className="text-sm text-muted-foreground">Mit Account</p>
               </div>
             </div>
           </CardContent>
@@ -1011,8 +1011,8 @@ team_id: teamMembership?.team_id,
             <div className="flex items-center gap-2 flex-wrap">
               <Link2 className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{allPlayers.filter((p) => p.has_account && p.spieldatenbank_linked).length}</p>
-                <p className="text-sm text-gray-600">Member Card aktiv</p>
+                <p className="text-2xl font-bold text-foreground">{allPlayers.filter((p) => p.has_account && p.spieldatenbank_linked).length}</p>
+                <p className="text-sm text-muted-foreground">Member Card aktiv</p>
               </div>
             </div>
           </CardContent>
@@ -1022,7 +1022,7 @@ team_id: teamMembership?.team_id,
       <div className="space-y-4">
         {filteredTeams.map((team) => (
           <Card key={team.id} className="overflow-hidden">
-            <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => toggleTeamExpansion(team.id)}>
+            <CardHeader className="cursor-pointer hover:bg-muted transition-colors" onClick={() => toggleTeamExpansion(team.id)}>
               <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center space-x-3">
                   <Building2 className="h-5 w-5 text-blue-600" />
@@ -1031,7 +1031,7 @@ team_id: teamMembership?.team_id,
                     {team.players.length} Spieler
                   </Badge>
                 </div>
-                {team.isExpanded ? <ChevronDown className="h-5 w-5 text-gray-400" /> : <ChevronRight className="h-5 w-5 text-gray-400" />}
+                {team.isExpanded ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
               </CardTitle>
             </CardHeader>
 
@@ -1041,21 +1041,21 @@ team_id: teamMembership?.team_id,
                   {team.players.map((player) => (
                     <div
                       key={`${team.id}-${player.id}`}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted transition-colors"
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         {player.photo_url && (
                           <img
                             src={player.photo_url || "/placeholder.svg"}
                             alt={player.name}
-                            className="w-12 h-12 shrink-0 rounded-full object-cover border-2 border-gray-200"
+                            className="w-12 h-12 shrink-0 rounded-full object-cover border-2 border-border"
                           />
                         )}
 
                         <div className="flex items-center gap-2 flex-wrap">
                           {getRoleIcon(player.role)}
                           <div>
-                            <h3 className="font-semibold text-gray-900 break-words">{player.name}</h3>
+                            <h3 className="font-semibold text-foreground break-words">{player.name}</h3>
                             <div className="flex items-center mt-1 flex-wrap gap-1">
                               {getRoleBadge(player.role)}
 
@@ -1065,7 +1065,7 @@ team_id: teamMembership?.team_id,
                                   Account
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="text-xs text-gray-600 border-gray-300">
+                                <Badge variant="outline" className="text-xs text-muted-foreground border-border">
                                   Kein Account
                                 </Badge>
                               )}
@@ -1075,7 +1075,7 @@ team_id: teamMembership?.team_id,
                               {getClubRoleBadges(player)}
                               {getEmailConfirmationBadge(player)}
 
-                              <div className="flex items-center space-x-1 text-sm text-gray-500">
+                              <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                                 <Calendar className="h-3 w-3" />
                                 <span>Seit {formatDate(player.created_at)}</span>
                               </div>
@@ -1087,7 +1087,7 @@ team_id: teamMembership?.team_id,
                       <div className="flex items-start gap-3 min-w-0">
                         {player.has_account && (
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Label htmlFor={`admin-${player.id}`} className="text-sm text-gray-600">
+                            <Label htmlFor={`admin-${player.id}`} className="text-sm text-muted-foreground">
                               Admin
                             </Label>
                             <Switch id={`admin-${player.id}`} checked={player.is_admin || false} onCheckedChange={() => toggleAdminStatus(player)} />
@@ -1156,7 +1156,7 @@ team_id: teamMembership?.team_id,
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-3">
-                <User className="h-5 w-5 text-gray-600" />
+                <User className="h-5 w-5 text-muted-foreground" />
                 <span>Nicht zugeordnete Spieler</span>
                 <Badge variant="outline" className="ml-2">
                   {filteredUnassigned.length} Spieler
@@ -1173,14 +1173,14 @@ team_id: teamMembership?.team_id,
                         <img
                           src={player.photo_url || "/placeholder.svg"}
                           alt={player.name}
-                          className="w-12 h-12 shrink-0 rounded-full object-cover border-2 border-gray-200"
+                          className="w-12 h-12 shrink-0 rounded-full object-cover border-2 border-border"
                         />
                       )}
 
                       <div className="flex items-center gap-2 flex-wrap">
                         {getRoleIcon(player.role)}
                         <div>
-                          <h3 className="font-semibold text-gray-900 break-words">{player.name}</h3>
+                          <h3 className="font-semibold text-foreground break-words">{player.name}</h3>
                           <div className="flex items-center mt-1 flex-wrap gap-1">
                             {getRoleBadge(player.role)}
                             <Badge variant="outline" className="text-xs text-yellow-700 border-yellow-300">
@@ -1193,7 +1193,7 @@ team_id: teamMembership?.team_id,
                                 Account
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-xs text-gray-600 border-gray-300">
+                              <Badge variant="outline" className="text-xs text-muted-foreground border-border">
                                 Kein Account
                               </Badge>
                             )}
@@ -1210,7 +1210,7 @@ team_id: teamMembership?.team_id,
                     <div className="flex items-start gap-3 min-w-0">
                       {player.has_account && (
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Label htmlFor={`admin-unassigned-${player.id}`} className="text-sm text-gray-600">
+                          <Label htmlFor={`admin-unassigned-${player.id}`} className="text-sm text-muted-foreground">
                             Admin
                           </Label>
                           <Switch
@@ -1306,9 +1306,9 @@ team_id: teamMembership?.team_id,
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Spieler:</p>
-              <p className="font-semibold text-gray-900">{managementForm.playerName}</p>
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Spieler:</p>
+              <p className="font-semibold text-foreground">{managementForm.playerName}</p>
             </div>
 
             {managementAction === "email" && (
@@ -1316,7 +1316,7 @@ team_id: teamMembership?.team_id,
                 <div className="space-y-2">
                   <Label htmlFor="new-email">Neue E-Mail-Adresse</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="new-email"
                       type="email"
@@ -1339,7 +1339,7 @@ team_id: teamMembership?.team_id,
                   </div>
                 )}
 
-                <Button onClick={updateEmail} disabled={isManagingAccount} className="w-full bg-blue-600 hover:bg-blue-700">
+                <Button onClick={updateEmail} disabled={isManagingAccount} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   {isManagingAccount ? (
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1360,7 +1360,7 @@ team_id: teamMembership?.team_id,
                 <div className="space-y-2">
                   <Label htmlFor="new-password">Neues Passwort</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="new-password"
                       type="password"
@@ -1375,7 +1375,7 @@ team_id: teamMembership?.team_id,
                 <div className="space-y-2">
                   <Label htmlFor="confirm-new-password">Neues Passwort bestätigen</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                       id="confirm-new-password"
                       type="password"
@@ -1398,7 +1398,7 @@ team_id: teamMembership?.team_id,
                   </div>
                 )}
 
-                <Button onClick={updatePassword} disabled={isManagingAccount} className="w-full bg-green-600 hover:bg-green-700">
+                <Button onClick={updatePassword} disabled={isManagingAccount} className="w-full bg-green-700 hover:bg-green-700 text-white">
                   {isManagingAccount ? (
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1443,7 +1443,7 @@ team_id: teamMembership?.team_id,
                   <Button onClick={() => setManagementAction(null)} variant="outline" className="flex-1" disabled={isManagingAccount}>
                     Abbrechen
                   </Button>
-                  <Button onClick={deleteAccount} disabled={isManagingAccount} className="flex-1 bg-red-600 hover:bg-red-700">
+                  <Button onClick={deleteAccount} disabled={isManagingAccount} className="flex-1 bg-red-600 hover:bg-red-700 text-white">
                     {isManagingAccount ? (
                       <div className="flex items-center gap-2 flex-wrap">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1478,9 +1478,9 @@ team_id: teamMembership?.team_id,
               <p className="text-sm text-blue-700">Wählen Sie einen Spieler aus der Spielerdatenbank aus, um diesem Vereinsspieler eine Member Card zu aktivieren.</p>
             </div>
 
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Spieler:</p>
-              <p className="font-semibold text-gray-900">{linkingForm.playerName}</p>
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Spieler:</p>
+              <p className="font-semibold text-foreground">{linkingForm.playerName}</p>
             </div>
 
             <div className="space-y-2">
@@ -1519,7 +1519,7 @@ team_id: teamMembership?.team_id,
               <Button onClick={() => setLinkingDialogOpen(false)} variant="outline" className="flex-1" disabled={isLinkingAccount}>
                 Abbrechen
               </Button>
-              <Button onClick={linkToSpieldatenbank} disabled={isLinkingAccount || !linkingForm.selectedSpielerId} className="flex-1 bg-blue-600 hover:bg-blue-700">
+              <Button onClick={linkToSpieldatenbank} disabled={isLinkingAccount || !linkingForm.selectedSpielerId} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
                 {isLinkingAccount ? (
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1548,9 +1548,9 @@ team_id: teamMembership?.team_id,
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Spieler:</p>
-              <p className="font-semibold text-gray-900">{clubRolesForm.playerName}</p>
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Spieler:</p>
+              <p className="font-semibold text-foreground">{clubRolesForm.playerName}</p>
             </div>
 
             <div className="space-y-2">
@@ -1559,7 +1559,7 @@ team_id: teamMembership?.team_id,
                 {CLUB_ROLE_OPTIONS.map((opt) => {
                   const checked = clubRolesForm.roles.includes(opt.value)
                   return (
-                    <div key={opt.value} className="flex items-center justify-between p-3 rounded-lg border bg-white">
+                    <div key={opt.value} className="flex items-center justify-between p-3 rounded-lg border bg-card">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-purple-600" />
                         <span className="text-sm font-medium">{opt.label}</span>

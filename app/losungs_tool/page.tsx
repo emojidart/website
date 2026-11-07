@@ -622,7 +622,7 @@ export default function LosungsToolPage() {
       <Header />
 
       <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
-        <div className="rounded-3xl border border-orange-200 bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-orange-200 bg-card p-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-orange-600">
@@ -630,11 +630,11 @@ export default function LosungsToolPage() {
                 Losungs Tool
               </div>
 
-              <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
                 Teams, Gruppen & gelostes Doppel
               </h1>
 
-              <p className="mt-2 text-sm text-slate-600 md:text-base">
+              <p className="mt-2 text-sm text-muted-foreground md:text-base">
                 Wähle nur die Spieler aus, die wirklich in die Auslosung sollen.
               </p>
             </div>
@@ -642,22 +642,22 @@ export default function LosungsToolPage() {
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               <Card className="rounded-2xl border-orange-100 shadow-none">
                 <CardContent className="p-4 text-center">
-                  <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Alle</div>
-                  <div className="mt-1 text-2xl font-bold text-slate-900">{totalStats.total}</div>
+                  <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Alle</div>
+                  <div className="mt-1 text-2xl font-bold text-foreground">{totalStats.total}</div>
                 </CardContent>
               </Card>
 
               <Card className="rounded-2xl border-orange-100 bg-orange-50 shadow-none">
                 <CardContent className="p-4 text-center">
                   <div className="text-xs uppercase tracking-[0.14em] text-orange-600">Ausgewählt</div>
-                  <div className="mt-1 text-2xl font-bold text-slate-900">{selectedStats.total}</div>
+                  <div className="mt-1 text-2xl font-bold text-foreground">{selectedStats.total}</div>
                 </CardContent>
               </Card>
 
               <Card className="rounded-2xl border-orange-100 shadow-none">
                 <CardContent className="p-4 text-center">
-                  <div className="text-xs uppercase tracking-[0.14em] text-slate-500">M / W</div>
-                  <div className="mt-1 text-lg font-bold text-slate-900">
+                  <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">M / W</div>
+                  <div className="mt-1 text-lg font-bold text-foreground">
                     {selectedStats.men} / {selectedStats.women}
                   </div>
                 </CardContent>
@@ -665,8 +665,8 @@ export default function LosungsToolPage() {
 
               <Card className="rounded-2xl border-orange-100 shadow-none">
                 <CardContent className="p-4 text-center">
-                  <div className="text-xs uppercase tracking-[0.14em] text-slate-500">?</div>
-                  <div className="mt-1 text-2xl font-bold text-slate-900">{selectedStats.unknown}</div>
+                  <div className="text-xs uppercase tracking-[0.14em] text-muted-foreground">?</div>
+                  <div className="mt-1 text-2xl font-bold text-foreground">{selectedStats.unknown}</div>
                 </CardContent>
               </Card>
             </div>
@@ -674,9 +674,9 @@ export default function LosungsToolPage() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1fr_1.15fr]">
-          <Card className="rounded-3xl border-orange-100 bg-white shadow-sm">
+          <Card className="rounded-3xl border-orange-100 bg-card shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
+              <CardTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
                 <Users className="h-5 w-5 text-orange-500" />
                 Spielerquelle & Modus
               </CardTitle>
@@ -689,7 +689,7 @@ export default function LosungsToolPage() {
                   variant={source === "registration" ? "default" : "outline"}
                   className={cn(
                     "rounded-2xl",
-                    source === "registration" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-200",
+                    source === "registration" ? "bg-orange-500 hover:bg-orange-600 text-primary-foreground" : "border-orange-200",
                   )}
                   onClick={() => setSource("registration")}
                 >
@@ -702,7 +702,7 @@ export default function LosungsToolPage() {
                   variant={source === "spieldatenbank" ? "default" : "outline"}
                   className={cn(
                     "rounded-2xl",
-                    source === "spieldatenbank" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-200",
+                    source === "spieldatenbank" ? "bg-orange-500 hover:bg-orange-600 text-primary-foreground" : "border-orange-200",
                   )}
                   onClick={() => setSource("spieldatenbank")}
                 >
@@ -717,7 +717,7 @@ export default function LosungsToolPage() {
                   variant={mode === "random_double" ? "default" : "outline"}
                   className={cn(
                     "rounded-2xl",
-                    mode === "random_double" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-200",
+                    mode === "random_double" ? "bg-orange-500 hover:bg-orange-600 text-primary-foreground" : "border-orange-200",
                   )}
                   onClick={() => setMode("random_double")}
                 >
@@ -729,7 +729,7 @@ export default function LosungsToolPage() {
                   variant={mode === "mixed_double" ? "default" : "outline"}
                   className={cn(
                     "rounded-2xl",
-                    mode === "mixed_double" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-200",
+                    mode === "mixed_double" ? "bg-orange-500 hover:bg-orange-600 text-primary-foreground" : "border-orange-200",
                   )}
                   onClick={() => setMode("mixed_double")}
                 >
@@ -741,7 +741,7 @@ export default function LosungsToolPage() {
                   variant={mode === "groups" ? "default" : "outline"}
                   className={cn(
                     "rounded-2xl",
-                    mode === "groups" ? "bg-orange-500 hover:bg-orange-600" : "border-orange-200",
+                    mode === "groups" ? "bg-orange-500 hover:bg-orange-600 text-primary-foreground" : "border-orange-200",
                   )}
                   onClick={() => setMode("groups")}
                 >
@@ -751,14 +751,14 @@ export default function LosungsToolPage() {
 
               {mode === "groups" && (
                 <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4">
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">Anzahl Gruppen</label>
+                  <label className="mb-2 block text-sm font-semibold text-muted-foreground">Anzahl Gruppen</label>
                   <Input
                     type="number"
                     min={2}
                     max={16}
                     value={groupCount}
                     onChange={(e) => setGroupCount(Number(e.target.value) || 2)}
-                    className="h-11 rounded-2xl border-orange-100 bg-white"
+                    className="h-11 rounded-2xl border-orange-100 bg-card"
                   />
                 </div>
               )}
@@ -783,7 +783,7 @@ export default function LosungsToolPage() {
                 <Button
                   onClick={runDraw}
                   disabled={loading}
-                  className="rounded-2xl bg-orange-500 hover:bg-orange-600"
+                  className="rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   <Eye className="mr-2 h-4 w-4" />
                   Show-Auslosung
@@ -829,18 +829,18 @@ export default function LosungsToolPage() {
                 </div>
               )}
 
-              <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-slate-700">
-                Aktuell ausgewählt: <span className="font-bold text-slate-900">{selectedStats.total}</span> von{" "}
-                <span className="font-bold text-slate-900">{totalStats.total}</span> Spielern
+              <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-muted-foreground">
+                Aktuell ausgewählt: <span className="font-bold text-foreground">{selectedStats.total}</span> von{" "}
+                <span className="font-bold text-foreground">{totalStats.total}</span> Spielern
               </div>
 
               <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
                 {loading ? (
-                  <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50 px-4 py-8 text-center text-sm text-slate-600">
+                  <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50 px-4 py-8 text-center text-sm text-muted-foreground">
                     Spieler werden geladen...
                   </div>
                 ) : filteredPlayers.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50 px-4 py-8 text-center text-sm text-slate-600">
+                  <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50 px-4 py-8 text-center text-sm text-muted-foreground">
                     Keine Spieler gefunden.
                   </div>
                 ) : (
@@ -856,7 +856,7 @@ export default function LosungsToolPage() {
                           "w-full rounded-2xl border px-4 py-3 text-left transition-all",
                           isSelected
                             ? "border-orange-300 bg-orange-50"
-                            : "border-orange-100 bg-white hover:border-orange-200 hover:bg-orange-50/40",
+                            : "border-orange-100 bg-card hover:border-orange-200 hover:bg-orange-50/40",
                         )}
                       >
                         <div className="flex items-center justify-between gap-3">
@@ -864,14 +864,14 @@ export default function LosungsToolPage() {
                             <div
                               className={cn(
                                 "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold",
-                                isSelected ? "bg-orange-500 text-white" : "bg-slate-200 text-slate-700",
+                                isSelected ? "bg-orange-500 text-white" : "bg-secondary text-muted-foreground",
                               )}
                             >
                               {index + 1}
                             </div>
 
                             <div>
-                              <div className="font-semibold text-slate-900">{player.name}</div>
+                              <div className="font-semibold text-foreground">{player.name}</div>
 
                               <div className="mt-1 flex flex-wrap items-center gap-2">
                                 <Badge variant="outline" className="border-orange-200 text-orange-600">
@@ -879,7 +879,7 @@ export default function LosungsToolPage() {
                                 </Badge>
 
                                 {player.sourceLabel && (
-                                  <span className="text-xs text-slate-500">{player.sourceLabel}</span>
+                                  <span className="text-xs text-muted-foreground">{player.sourceLabel}</span>
                                 )}
                               </div>
                             </div>
@@ -888,7 +888,7 @@ export default function LosungsToolPage() {
                           <div
                             className={cn(
                               "rounded-full px-3 py-1 text-xs font-bold",
-                              isSelected ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-500",
+                              isSelected ? "bg-orange-500 text-white" : "bg-muted text-muted-foreground",
                             )}
                           >
                             {isSelected ? "Ausgewählt" : "Nicht gewählt"}
@@ -902,9 +902,9 @@ export default function LosungsToolPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border-orange-100 bg-white shadow-sm">
+          <Card className="rounded-3xl border-orange-100 bg-card shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
+              <CardTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
                 <Trophy className="h-5 w-5 text-orange-500" />
                 Ergebnis
               </CardTitle>
@@ -912,7 +912,7 @@ export default function LosungsToolPage() {
 
             <CardContent className="space-y-4">
               {teamResults.length === 0 && groupResults.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50 px-4 py-10 text-center text-sm text-slate-600">
+                <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50 px-4 py-10 text-center text-sm text-muted-foreground">
                   Noch kein Ergebnis vorhanden. Spieler auswählen und Show-Auslosung starten.
                 </div>
               ) : null}
@@ -922,13 +922,13 @@ export default function LosungsToolPage() {
                   {teamResults.map((team, index) => (
                     <div key={team.id} className="rounded-2xl border border-orange-100 bg-orange-50 p-4">
                       <div className="flex items-center justify-between">
-                        <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Team {index + 1}</div>
+                        <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Team {index + 1}</div>
                         <Badge variant="outline" className="border-orange-200 text-orange-600">
                           {mode === "mixed_double" ? "Mixed" : "Doppel"}
                         </Badge>
                       </div>
 
-                      <div className="mt-3 text-lg font-bold text-slate-900">{team.label}</div>
+                      <div className="mt-3 text-lg font-bold text-foreground">{team.label}</div>
                     </div>
                   ))}
                 </div>
@@ -946,7 +946,7 @@ export default function LosungsToolPage() {
                         {group.map((player) => (
                           <div
                             key={player.id}
-                            className="rounded-xl border border-white bg-white px-3 py-2 text-sm font-medium text-slate-800"
+                            className="rounded-xl border border-white bg-card px-3 py-2 text-sm font-medium text-foreground"
                           >
                             {player.name}
                           </div>
@@ -1037,7 +1037,7 @@ export default function LosungsToolPage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-between text-sm text-gray-400">
+              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
                 <div>
                   Fortschritt: <span className="font-bold text-white">{currentStepIndex}</span> / {revealSteps.length}
                 </div>
@@ -1063,13 +1063,13 @@ export default function LosungsToolPage() {
                             {currentRevealStep.badge}
                           </div>
 
-                          <div className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">
+                          <div className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                             {currentRevealStep.title}
                           </div>
 
                           {currentRevealStep.stage === "first" && (
                             <div className="mt-10">
-                              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                                 Spieler 1
                               </div>
                               <div className="mx-auto mt-4 max-w-3xl break-words text-3xl font-bold leading-tight text-white md:text-5xl">
@@ -1088,7 +1088,7 @@ export default function LosungsToolPage() {
 
                           {currentRevealStep.stage === "second" && (
                             <div className="mt-10">
-                              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                                 Spieler 2
                               </div>
                               <div className="mx-auto mt-4 max-w-3xl break-words text-3xl font-bold leading-tight text-white md:text-5xl">
@@ -1099,13 +1099,13 @@ export default function LosungsToolPage() {
 
                           {currentRevealStep.stage === "complete" && (
                             <div className="mt-10">
-                              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                                 Komplettes Team
                               </div>
 
                               <div className="mt-6 grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
                                 <div className="rounded-2xl border border-[#2d2d2d] bg-[#1c1c1c] px-5 py-6">
-                                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                                     Spieler 1
                                   </div>
                                   <div className="mt-3 break-words text-xl font-bold leading-snug text-white md:text-3xl">
@@ -1116,7 +1116,7 @@ export default function LosungsToolPage() {
                                 <div className="text-2xl font-bold text-orange-400 md:text-4xl">+</div>
 
                                 <div className="rounded-2xl border border-[#2d2d2d] bg-[#1c1c1c] px-5 py-6">
-                                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                                     Spieler 2
                                   </div>
                                   <div className="mt-3 break-words text-xl font-bold leading-snug text-white md:text-3xl">
@@ -1133,7 +1133,7 @@ export default function LosungsToolPage() {
                             {currentRevealStep.badge}
                           </div>
 
-                          <div className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-gray-500">
+                          <div className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                             {currentRevealStep.title}
                           </div>
 
@@ -1144,14 +1144,14 @@ export default function LosungsToolPage() {
                       )
                     ) : currentStepIndex >= revealSteps.length && revealSteps.length > 0 ? (
                       <div className="text-center">
-                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Fertig</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Fertig</div>
                         <div className="mt-5 text-3xl font-bold text-white md:text-5xl">
                           Auslosung abgeschlossen
                         </div>
                       </div>
                     ) : (
                       <div className="text-center">
-                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Bereit</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bereit</div>
                         <div className="mt-5 text-3xl font-bold text-white md:text-5xl">
                           Show startet...
                         </div>
@@ -1161,7 +1161,7 @@ export default function LosungsToolPage() {
                 </div>
 
                 <div className="min-h-0 rounded-3xl border border-[#2d2d2d] bg-[#151515] p-4">
-                  <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-gray-500">
+                  <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
                     Bereits gezogen
                   </div>
 
@@ -1176,7 +1176,7 @@ export default function LosungsToolPage() {
 
                             <div className="space-y-2">
                               {group.length === 0 ? (
-                                <div className="rounded-xl border border-dashed border-[#333333] bg-[#181818] px-3 py-3 text-sm text-gray-500">
+                                <div className="rounded-xl border border-dashed border-[#333333] bg-[#181818] px-3 py-3 text-sm text-muted-foreground">
                                   wartet...
                                 </div>
                               ) : (
@@ -1196,7 +1196,7 @@ export default function LosungsToolPage() {
                     ) : (
                       <div className="space-y-3">
                         {revealedResults.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-[#333333] bg-[#181818] px-4 py-6 text-sm text-gray-500">
+                          <div className="rounded-2xl border border-dashed border-[#333333] bg-[#181818] px-4 py-6 text-sm text-muted-foreground">
                             Noch nichts gezogen...
                           </div>
                         ) : (
@@ -1206,10 +1206,10 @@ export default function LosungsToolPage() {
                               className="rounded-2xl border border-[#2d2d2d] bg-[#1c1c1c] p-4"
                             >
                               <div className="flex items-center justify-between gap-3">
-                                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+                                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                                   {item.title}
                                 </div>
-                                <div className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-orange-400">
+                                <div className="rounded-full bg-orange-500/10 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.12em] text-orange-400">
                                   {item.badge}
                                 </div>
                               </div>

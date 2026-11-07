@@ -193,30 +193,26 @@ export default function DynamicSeriesRulesPage() {
   }, [params.slug])
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-white">
       <Header variant="app" title={series?.name || "Regelwerk"} subtitle="Regelwerk" backHref={`/turniere/serien/${params.slug}`} />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-cover bg-[64%_50%] bg-no-repeat opacity-[0.24]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.76),rgba(3,5,9,.96)_42%,rgba(2,4,7,.995))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_18%,rgba(14,165,233,.11),transparent_27%),radial-gradient(circle_at_90%_22%,rgba(249,115,22,.10),transparent_26%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
         {loading ? (
           <div className="min-h-[420px] animate-pulse rounded-[30px] border border-white/10 bg-white/[0.04]" />
         ) : !series ? (
-          <div className="rounded-[28px] border border-white/10 bg-black/35 p-8 text-center font-bold text-white/60">Turnierserie nicht gefunden.</div>
+          <div className="rounded-[28px] border border-white/10 bg-card p-8 text-center font-bold text-white/60">Turnierserie nicht gefunden.</div>
         ) : (
           <div className="space-y-5 sm:space-y-6">
-            <section className="relative overflow-hidden rounded-[30px] border border-sky-300/[0.13] bg-black/40 p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-7">
+            <section className="relative overflow-hidden rounded-[30px] border border-sky-300/[0.13] bg-card p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-7">
               <div className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full bg-sky-500/[0.09] blur-[75px]" />
               <div className="relative">
-                <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/15 bg-sky-500/[0.07] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-sky-100/75">
+                <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/15 bg-sky-500/[0.07] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-sky-100/75">
                   <BookOpenCheck className="h-3.5 w-3.5" />
                   {SERIES_TYPE_LABEL[series.series_type || ""] || "Turnierserie"}
                 </div>
-                <h1 className="mt-3 text-2xl font-black tracking-[-0.035em] sm:text-3xl">Regelwerk · {series.name}</h1>
+                <h1 className="mt-3 text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">Regelwerk · {series.name}</h1>
                 {series.description ? <p className="mt-3 max-w-3xl text-sm font-semibold leading-7 text-white/48 sm:text-base">{series.description}</p> : null}
 
                 <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -308,7 +304,7 @@ export default function DynamicSeriesRulesPage() {
               <RuleSection icon={<Scale className="h-5 w-5" />} title="Tie-Break" tone="sky">
                 {tiebreaks.length > 0 ? tiebreaks.map((rule, index) => (
                   <div key={rule.id} className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-black/20 text-xs font-black text-white/65">{index + 1}</div>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-black/20 text-xs font-semibold text-white/65">{index + 1}</div>
                     <div className="font-bold text-white/72">{rule.label || rule.rule_key}</div>
                   </div>
                 )) : <EmptyText>Keine zusätzliche Tie-Break-Reihenfolge hinterlegt.</EmptyText>}
@@ -341,27 +337,27 @@ function RuleSection({ icon, title, tone, children }: { icon: ReactNode; title: 
     violet: "text-violet-200 border-violet-300/[0.10]",
   }[tone]
   return (
-    <section className={`rounded-[26px] border bg-black/40 p-4 shadow-[0_22px_60px_-42px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-5 ${toneClass}`}>
-      <div className="flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035]">{icon}</div><h2 className="text-lg font-black sm:text-xl">{title}</h2></div>
+    <section className={`rounded-[26px] border bg-card p-4 shadow-[0_22px_60px_-42px_rgba(0,0,0,.95)]  sm:p-5 ${toneClass}`}>
+      <div className="flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035]">{icon}</div><h2 className="text-lg font-semibold sm:text-xl">{title}</h2></div>
       <div className="mt-4 space-y-2">{children}</div>
     </section>
   )
 }
 
 function QuickFact({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3"><div className="flex items-center gap-1.5 text-white/28">{icon}<span className="text-[9px] font-black uppercase tracking-[0.13em]">{label}</span></div><div className="mt-1.5 truncate text-sm font-black text-white/82">{value}</div></div>
+  return <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3"><div className="flex items-center gap-1.5 text-white/28">{icon}<span className="text-xs font-semibold uppercase tracking-[0.13em]">{label}</span></div><div className="mt-1.5 truncate text-sm font-semibold text-white/82">{value}</div></div>
 }
 function Info({ label, value, strong = false }: { label: string; value: string | number; strong?: boolean }) {
-  return <div className="flex items-start justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3"><span className="text-xs font-bold leading-5 text-white/38">{label}</span><span className={`max-w-[62%] text-right text-sm leading-5 ${strong ? "font-black text-white" : "font-bold text-white/72"}`}>{value}</span></div>
+  return <div className="flex items-start justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3"><span className="text-xs font-bold leading-5 text-white/38">{label}</span><span className={`max-w-[62%] text-right text-sm leading-5 ${strong ? "font-semibold text-white" : "font-bold text-white/72"}`}>{value}</span></div>
 }
 function ScoreBox({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
-  return <div className={`rounded-2xl border p-3.5 ${accent ? "border-orange-300/12 bg-orange-500/[0.05]" : "border-white/[0.07] bg-white/[0.025]"}`}><div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">{label}</div><div className={`mt-1 text-lg font-black ${accent ? "text-orange-100" : "text-white/85"}`}>{value}</div></div>
+  return <div className={`rounded-2xl border p-3.5 ${accent ? "border-orange-300/12 bg-orange-500/[0.05]" : "border-white/[0.07] bg-white/[0.025]"}`}><div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</div><div className={`mt-1 text-lg font-semibold ${accent ? "text-orange-100" : "text-white/85"}`}>{value}</div></div>
 }
 function RewardRow({ label, value, cash = false }: { label: string; value: string; cash?: boolean }) {
   return <div className={`flex items-center justify-between gap-4 rounded-2xl border px-3.5 py-3 ${cash ? "border-emerald-300/12 bg-emerald-500/[0.05]" : "border-white/[0.07] bg-white/[0.025]"}`}><span className="text-sm font-bold text-white/58">{label}</span><strong className={cash ? "text-emerald-100" : "text-white/85"}>{value}</strong></div>
 }
 function EmptyText({ children }: { children: ReactNode }) {
-  return <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm font-semibold text-white/30">{children}</div>
+  return <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm font-semibold text-muted-foreground">{children}</div>
 }
 function Notice({ icon, text, positive = false }: { icon: ReactNode; text: string; positive?: boolean }) {
   return <div className={`flex items-start gap-2.5 rounded-2xl border p-3.5 text-sm font-semibold leading-6 ${positive ? "border-emerald-300/10 bg-emerald-500/[0.045] text-emerald-50/70" : "border-amber-300/10 bg-amber-500/[0.045] text-amber-50/70"}`}><span className="mt-1 shrink-0">{icon}</span><span>{text}</span></div>

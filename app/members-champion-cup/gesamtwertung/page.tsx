@@ -98,16 +98,16 @@ function getPlacementIcon(placement: number) {
 }
 
 function getRankBadgeClass(rank: number) {
-  const base = "inline-flex items-center justify-center w-10 h-10 rounded-2xl font-black text-sm shrink-0"
-  if (rank === 1) return `${base} bg-gradient-to-br from-yellow-300 to-yellow-600 text-white shadow-lg shadow-yellow-200`
-  if (rank === 2) return `${base} bg-gradient-to-br from-gray-300 to-gray-500 text-white shadow-lg shadow-gray-200`
-  if (rank === 3) return `${base} bg-gradient-to-br from-amber-400 to-amber-700 text-white shadow-lg shadow-amber-200`
-  return `${base} bg-white text-white/70 border border-gray-200`
+  const base = "inline-flex items-center justify-center w-10 h-10 rounded-2xl font-semibold text-sm shrink-0"
+  if (rank === 1) return `${base} bg-card   text-white shadow-lg shadow-yellow-200`
+  if (rank === 2) return `${base} bg-card   text-white shadow-lg shadow-gray-200`
+  if (rank === 3) return `${base} bg-card   text-white shadow-lg shadow-amber-200`
+  return `${base} bg-card text-white/70 border border-border`
 }
 
 function getRankIcon(rank: number) {
   if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />
-  if (rank === 2) return <Medal className="h-5 w-5 text-gray-400" />
+  if (rank === 2) return <Medal className="h-5 w-5 text-muted-foreground" />
   if (rank === 3) return <Award className="h-5 w-5 text-amber-600" />
   return null
 }
@@ -118,8 +118,8 @@ function PlayerRow({ player, rank, onClick }: { player: PlayerStanding; rank: nu
       variants={membersCupItemVariants}
       type="button"
       onClick={onClick}
-      className={`w-full rounded-2xl border bg-black/30 p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl ${
-        rank <= 3 ? "border-amber-400/20 bg-gradient-to-r from-amber-500/10 to-black/10" : "border-gray-200"
+      className={`w-full rounded-2xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl ${
+        rank <= 3 ? "text-foreground border-amber-400/20 bg-card  " : "border-border"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -127,7 +127,7 @@ function PlayerRow({ player, rank, onClick }: { player: PlayerStanding; rank: nu
           <div className={getRankBadgeClass(rank)}>{rank}</div>
           {getRankIcon(rank)}
 
-          <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-gray-200 bg-orange-500/10 shrink-0">
+          <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-border bg-orange-500/10 shrink-0">
             <Image
               src={player.profile_picture_url || "/placeholder-user.jpg"}
               alt={player.player_name}
@@ -139,38 +139,38 @@ function PlayerRow({ player, rank, onClick }: { player: PlayerStanding; rank: nu
           </div>
 
           <div className="min-w-0">
-            <div className="truncate font-black text-white">{player.player_name}</div>
-            <div className="mt-0.5 text-xs font-bold text-white/40">
+            <div className="truncate font-semibold text-white">{player.player_name}</div>
+            <div className="mt-0.5 text-xs font-bold text-muted-foreground">
               {player.tournaments_played} Antritt{player.tournaments_played === 1 ? "" : "e"} · Ø {player.average_points.toFixed(1)} Punkte
             </div>
           </div>
         </div>
 
         <div className="text-right shrink-0">
-          <div className="flex items-center justify-end gap-1 text-2xl font-black text-orange-300">
+          <div className="flex items-center justify-end gap-1 text-2xl font-semibold text-orange-300">
             {player.total_points}
             <Trophy className="h-5 w-5 text-orange-500" />
           </div>
-          <div className="text-[11px] font-bold text-white/40">Punkte</div>
+          <div className="text-xs font-bold text-muted-foreground">Punkte</div>
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 text-center">
         <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-2">
-          <div className="text-[10px] font-bold text-emerald-300">Siege</div>
-          <div className="text-sm font-black text-emerald-100">{player.wins}</div>
+          <div className="text-xs font-bold text-emerald-300">Siege</div>
+          <div className="text-sm font-semibold text-emerald-100">{player.wins}</div>
         </div>
         <div className="rounded-xl border border-amber-400/20 bg-amber-500/10 p-2">
-          <div className="text-[10px] font-bold text-amber-300">Podium</div>
-          <div className="text-sm font-black text-amber-100">{player.podiums}</div>
+          <div className="text-xs font-bold text-amber-300">Podium</div>
+          <div className="text-sm font-semibold text-amber-100">{player.podiums}</div>
         </div>
         <div className="rounded-xl border border-sky-400/20 bg-sky-500/10 p-2">
-          <div className="text-[10px] font-bold text-sky-300">Bestplatz</div>
-          <div className="text-sm font-black text-sky-100">{player.best_placement}.</div>
+          <div className="text-xs font-bold text-sky-300">Bestplatz</div>
+          <div className="text-sm font-semibold text-sky-100">{player.best_placement}.</div>
         </div>
         <div className="rounded-xl border border-violet-400/20 bg-violet-500/10 p-2">
-          <div className="text-[10px] font-bold text-violet-300">Schnitt</div>
-          <div className="text-sm font-black text-violet-100">{player.average_points.toFixed(1)}</div>
+          <div className="text-xs font-bold text-violet-300">Schnitt</div>
+          <div className="text-sm font-semibold text-violet-100">{player.average_points.toFixed(1)}</div>
         </div>
       </div>
     </motion.button>
@@ -184,14 +184,14 @@ function PodiumCard({ player, rank }: { player?: PlayerStanding; rank: number })
   return (
     <motion.div
       variants={membersCupItemVariants}
-      className={`relative overflow-hidden rounded-3xl border border-white bg-black/30 p-5 shadow-xl ${rank === 1 ? "lg:scale-105" : ""}`}
+      className={`relative overflow-hidden rounded-3xl border border-white bg-card p-5 shadow-xl ${rank === 1 ? "lg:scale-105" : ""}`}
     >
       <div className={`absolute inset-x-0 top-0 h-2 bg-gradient-to-r ${gradient}`} />
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-xs font-black uppercase tracking-wide text-white/40">{title}</div>
-          <div className="mt-1 flex items-center gap-2 text-lg font-black text-white">
-            {rank === 1 ? <Crown className="h-5 w-5 text-yellow-500" /> : rank === 2 ? <Medal className="h-5 w-5 text-gray-400" /> : <Award className="h-5 w-5 text-amber-600" />}
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</div>
+          <div className="mt-1 flex items-center gap-2 text-lg font-semibold text-white">
+            {rank === 1 ? <Crown className="h-5 w-5 text-yellow-500" /> : rank === 2 ? <Medal className="h-5 w-5 text-muted-foreground" /> : <Award className="h-5 w-5 text-amber-600" />}
             Platz {rank}
           </div>
         </div>
@@ -200,7 +200,7 @@ function PodiumCard({ player, rank }: { player?: PlayerStanding; rank: number })
 
       {player ? (
         <div className="mt-5 flex items-center gap-4">
-          <div className="relative h-16 w-16 overflow-hidden rounded-3xl border border-gray-200 bg-orange-500/10 shrink-0">
+          <div className="relative h-16 w-16 overflow-hidden rounded-3xl border border-border bg-orange-500/10 shrink-0">
             <Image
               src={player.profile_picture_url || "/placeholder-user.jpg"}
               alt={player.player_name}
@@ -211,17 +211,17 @@ function PodiumCard({ player, rank }: { player?: PlayerStanding; rank: number })
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-xl font-black text-white">{player.player_name}</div>
-            <div className="mt-1 text-sm font-bold text-white/40">
+            <div className="truncate text-xl font-semibold text-white">{player.player_name}</div>
+            <div className="mt-1 text-sm font-bold text-muted-foreground">
               {player.tournaments_played} Antritte · {player.wins} Siege
             </div>
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-500/10 px-4 py-2 text-sm font-black text-orange-300">
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-500/10 px-4 py-2 text-sm font-semibold text-orange-300">
               <Trophy className="h-4 w-4" /> {player.total_points} Punkte
             </div>
           </div>
         </div>
       ) : (
-        <div className="mt-5 rounded-2xl border border-dashed border-gray-200 bg-white/5 p-5 text-center text-sm font-bold text-white/40">
+        <div className="mt-5 rounded-2xl border border-dashed border-border bg-white/5 p-5 text-center text-sm font-bold text-muted-foreground">
           Noch kein Spieler vorhanden
         </div>
       )}
@@ -235,15 +235,15 @@ function TournamentCard({ tournament }: { tournament: TournamentHistory }) {
   const winnerText = teamWinners[0]?.team_name || "Noch kein Sieger"
 
   return (
-    <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-sm">
+    <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-2xl border border-white/10 bg-card shadow-sm">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between gap-3 p-4 text-left"
       >
         <div className="min-w-0">
-          <div className="truncate font-black text-white">{tournament.tournament_name}</div>
-          <div className="mt-1 text-xs font-bold text-white/40">
+          <div className="truncate font-semibold text-white">{tournament.tournament_name}</div>
+          <div className="mt-1 text-xs font-bold text-muted-foreground">
             {formatDate(tournament.created_at)} · Siegerteam: {winnerText}
           </div>
         </div>
@@ -259,17 +259,17 @@ function TournamentCard({ tournament }: { tournament: TournamentHistory }) {
               <div key={entry.id} className="rounded-xl border border-orange-100 bg-orange-500/10 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-300/20 bg-black/30 font-black">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-300/20 bg-card font-semibold">
                       {getPlacementIcon(entry.placement)}
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate font-black text-white">{entry.player_name}</div>
-                      <div className="truncate text-[11px] font-bold text-white/40">Team: {entry.team_name}</div>
+                      <div className="truncate font-semibold text-white">{entry.player_name}</div>
+                      <div className="truncate text-xs font-bold text-muted-foreground">Team: {entry.team_name}</div>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-xl font-black text-orange-300">{entry.points}</div>
-                    <div className="text-[10px] font-bold text-white/40">Punkte</div>
+                    <div className="text-xl font-semibold text-orange-300">{entry.points}</div>
+                    <div className="text-xs font-bold text-muted-foreground">Punkte</div>
                   </div>
                 </div>
               </div>
@@ -289,7 +289,7 @@ function DetailView({ player, tournaments, onClose }: { player: PlayerStanding; 
     .filter((item) => item.playerEntry)
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#050608] text-white pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-background text-white pb-24 md:pb-0">
       <Header variant="app" title="Gesamtwertung" subtitle="Members Champion Cup" backHref="/" />
       <MembersCupBackground />
       <main className="relative z-10 pt-12 sm:pt-14">
@@ -300,16 +300,16 @@ function DetailView({ player, tournaments, onClose }: { player: PlayerStanding; 
           animate="visible"
         >
           <motion.div variants={membersCupItemVariants}>
-            <button type="button" onClick={onClose} className="inline-flex items-center gap-2 font-black text-orange-300 hover:text-orange-200">
+            <button type="button" onClick={onClose} className="inline-flex items-center gap-2 font-semibold text-orange-300 hover:text-orange-200">
               <X className="h-5 w-5" /> Detail schließen
             </button>
           </motion.div>
 
-          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-3xl border border-white/10 bg-black/30 shadow-sm">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-yellow-500" />
+          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-3xl border border-white/10 bg-card shadow-sm">
+            <div className="text-foreground h-2 bg-card  " />
             <div className="p-5">
               <div className="flex items-start gap-4">
-                <div className="relative h-20 w-20 overflow-hidden rounded-3xl border border-gray-200 bg-orange-500/10 shrink-0">
+                <div className="relative h-20 w-20 overflow-hidden rounded-3xl border border-border bg-orange-500/10 shrink-0">
                   <Image
                     src={player.profile_picture_url || "/placeholder-user.jpg"}
                     alt={player.player_name}
@@ -320,56 +320,56 @@ function DetailView({ player, tournaments, onClose }: { player: PlayerStanding; 
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="truncate text-2xl font-black text-white">{player.player_name}</h1>
-                  <p className="mt-1 text-sm font-bold text-white/55">Members Champion Cup Detailansicht</p>
-                  <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-500/10 px-4 py-2 text-sm font-black text-orange-300">
+                  <h1 className="truncate text-2xl font-semibold text-white">{player.player_name}</h1>
+                  <p className="mt-1 text-sm font-bold text-muted-foreground">Members Champion Cup Detailansicht</p>
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-500/10 px-4 py-2 text-sm font-semibold text-orange-300">
                     <Trophy className="h-4 w-4" /> {player.total_points} Punkte
                   </div>
                 </div>
               </div>
 
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5 text-center">
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-3">
-                  <div className="text-[11px] font-bold text-white/55">Antritte</div>
-                  <div className="text-xl font-black text-white">{player.tournaments_played}</div>
+                <div className="rounded-2xl border border-white/10 bg-card p-3">
+                  <div className="text-xs font-bold text-muted-foreground">Antritte</div>
+                  <div className="text-xl font-semibold text-white">{player.tournaments_played}</div>
                 </div>
                 <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-3">
-                  <div className="text-[11px] font-bold text-emerald-300">Siege</div>
-                  <div className="text-xl font-black text-emerald-100">{player.wins}</div>
+                  <div className="text-xs font-bold text-emerald-300">Siege</div>
+                  <div className="text-xl font-semibold text-emerald-100">{player.wins}</div>
                 </div>
                 <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-3">
-                  <div className="text-[11px] font-bold text-amber-300">Podium</div>
-                  <div className="text-xl font-black text-amber-100">{player.podiums}</div>
+                  <div className="text-xs font-bold text-amber-300">Podium</div>
+                  <div className="text-xl font-semibold text-amber-100">{player.podiums}</div>
                 </div>
                 <div className="rounded-2xl border border-sky-400/20 bg-sky-500/10 p-3">
-                  <div className="text-[11px] font-bold text-sky-300">Bestplatz</div>
-                  <div className="text-xl font-black text-sky-100">{player.best_placement}.</div>
+                  <div className="text-xs font-bold text-sky-300">Bestplatz</div>
+                  <div className="text-xl font-semibold text-sky-100">{player.best_placement}.</div>
                 </div>
                 <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-3 col-span-2 sm:col-span-1">
-                  <div className="text-[11px] font-bold text-violet-300">Schnitt</div>
-                  <div className="text-xl font-black text-violet-100">{player.average_points.toFixed(1)}</div>
+                  <div className="text-xs font-bold text-violet-300">Schnitt</div>
+                  <div className="text-xl font-semibold text-violet-100">{player.average_points.toFixed(1)}</div>
                 </div>
               </div>
             </div>
           </motion.div>
 
           <motion.div variants={membersCupItemVariants} className="space-y-3">
-            <h2 className="flex items-center gap-2 font-black text-white">
+            <h2 className="flex items-center gap-2 font-semibold text-white">
               <Calendar className="h-5 w-5 text-orange-600" /> Spieler-Historie
             </h2>
             {playerTournaments.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-8 text-center font-bold text-white/40">Keine Teilnahmen gefunden.</div>
+              <div className="rounded-2xl border border-white/10 bg-card p-8 text-center font-bold text-muted-foreground">Keine Teilnahmen gefunden.</div>
             ) : (
               playerTournaments.map((tournament: any) => (
-                <div key={tournament.round_robin_id} className="rounded-2xl border border-white/10 bg-black/30 p-4 shadow-sm">
+                <div key={tournament.round_robin_id} className="rounded-2xl border border-white/10 bg-card p-4 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate font-black text-white">{tournament.tournament_name}</div>
-                      <div className="mt-1 text-xs font-bold text-white/40">{formatDate(tournament.created_at)}</div>
+                      <div className="truncate font-semibold text-white">{tournament.tournament_name}</div>
+                      <div className="mt-1 text-xs font-bold text-muted-foreground">{formatDate(tournament.created_at)}</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-xl font-black text-orange-300">{tournament.playerEntry.points}</div>
-                      <div className="text-[10px] font-bold text-white/40">Platz {tournament.playerEntry.placement}</div>
+                      <div className="text-xl font-semibold text-orange-300">{tournament.playerEntry.points}</div>
+                      <div className="text-xs font-bold text-muted-foreground">Platz {tournament.playerEntry.placement}</div>
                     </div>
                   </div>
                   <div className="mt-3 rounded-xl border border-orange-100 bg-orange-500/10 px-3 py-2 text-xs font-bold text-white/70">
@@ -524,11 +524,11 @@ export default function MembersChampionCupGesamtwertungPage() {
       <main className="min-h-screen flex flex-col bg-white/5 text-white pb-24 overflow-x-hidden">
         <Header />
         <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12">
-          <div className="flex flex-col items-center gap-5 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-gray-200">
+          <div className="flex flex-col items-center gap-5 rounded-3xl bg-card shadow-2xl px-10 py-10 border border-border">
             <Loader2 className="h-12 w-12 animate-spin text-orange-600" />
             <div className="text-center">
               <p className="text-lg font-bold text-white">Members Champion Cup wird geladen</p>
-              <p className="text-sm text-white/40 mt-1">Bitte kurz warten…</p>
+              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
             </div>
           </div>
         </div>
@@ -542,7 +542,7 @@ export default function MembersChampionCupGesamtwertungPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#050608] text-white pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-background text-white pb-24 md:pb-0">
       <Header />
 
       <main className="relative z-10 pt-12 sm:pt-14">
@@ -552,17 +552,17 @@ export default function MembersChampionCupGesamtwertungPage() {
           initial={false}
           animate="visible"
         >
-          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-[26px] border border-white/10 bg-black/30 shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
-            <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
+          <motion.div variants={membersCupItemVariants} className="overflow-hidden rounded-[26px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+            <div className="relative bg-card    p-4 text-white sm:p-5 lg:p-6">
               <div className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left sm:gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
                   <Crown className="h-7 w-7 text-orange-300" />
                 </div>
                 <div className="mt-3 min-w-0 flex-1 sm:mt-0">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-black text-orange-950">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-orange-950">
                     <Sparkles className="h-3.5 w-3.5" /> MEMBERS CHAMPIONS CUP 2026/27
                   </div>
-                  <h1 className="mt-2 text-2xl font-black sm:text-3xl lg:text-4xl">EMD MEMBERS CHAMPION CUP</h1>
+                  <h1 className="mt-2 text-2xl font-semibold sm:text-3xl lg:text-4xl">EMD MEMBERS CHAMPION CUP</h1>
                   <p className="mt-1 text-sm font-semibold text-orange-100 sm:text-base">
                     Offizielle Gesamtwertung · Doppel wird gespielt · Einzelwertung zählt
                   </p>
@@ -570,7 +570,7 @@ export default function MembersChampionCupGesamtwertungPage() {
                 <button
                   type="button"
                   onClick={fetchAll}
-                  className="mt-4 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15 sm:mt-0"
+                  className="mt-4 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15 sm:mt-0"
                 >
                   Aktualisieren
                 </button>
@@ -578,21 +578,21 @@ export default function MembersChampionCupGesamtwertungPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 p-4 sm:p-5 lg:grid-cols-4 lg:p-6">
-              <div className="rounded-2xl border border-slate-200 bg-white/5 p-4">
-                <div className="text-xs font-bold text-white/40">Spieler</div>
-                <div className="mt-1 text-2xl font-black text-white sm:text-3xl">{totalPlayers}</div>
+              <div className="rounded-2xl border border-border bg-white/5 p-4">
+                <div className="text-xs font-bold text-muted-foreground">Spieler</div>
+                <div className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{totalPlayers}</div>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white/5 p-4">
-                <div className="text-xs font-bold text-white/40">Spieltage</div>
-                <div className="mt-1 text-2xl font-black text-white sm:text-3xl">{completedTournaments}</div>
+              <div className="rounded-2xl border border-border bg-white/5 p-4">
+                <div className="text-xs font-bold text-muted-foreground">Spieltage</div>
+                <div className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{completedTournaments}</div>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white/5 p-4">
-                <div className="text-xs font-bold text-white/40">Antritte</div>
-                <div className="mt-1 text-2xl font-black text-white sm:text-3xl">{totalAppearances}</div>
+              <div className="rounded-2xl border border-border bg-white/5 p-4">
+                <div className="text-xs font-bold text-muted-foreground">Antritte</div>
+                <div className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{totalAppearances}</div>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white/5 p-4">
-                <div className="text-xs font-bold text-white/40">Punkte</div>
-                <div className="mt-1 text-2xl font-black text-white sm:text-3xl">{totalPoints}</div>
+              <div className="rounded-2xl border border-border bg-white/5 p-4">
+                <div className="text-xs font-bold text-muted-foreground">Punkte</div>
+                <div className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{totalPoints}</div>
               </div>
             </div>
           </motion.div>
@@ -607,18 +607,18 @@ export default function MembersChampionCupGesamtwertungPage() {
             <div className="flex items-start gap-3">
               <Star className="mt-0.5 h-5 w-5 text-amber-300 shrink-0" />
               <div>
-                <h2 className="font-black text-white">Punktesystem</h2>
+                <h2 className="font-semibold text-white">Punktesystem</h2>
                 <p className="mt-1 text-sm font-bold text-white/70">
                   Beide Doppelspieler erhalten jeweils die vollen Platzierungspunkte für ihr Team.
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-9">
                   {POINT_SYSTEM.map((item) => (
-                    <div key={item.place} className="rounded-2xl border border-amber-400/20 bg-black/30 p-3 text-center shadow-sm">
-                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 font-black text-yellow-800">
+                    <div key={item.place} className="rounded-2xl border border-amber-400/20 bg-card p-3 text-center shadow-sm">
+                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 font-semibold text-yellow-800">
                         {item.badge}
                       </div>
-                      <div className="mt-2 text-[10px] font-black text-white/40 min-h-[24px]">{item.place}</div>
-                      <div className="mt-1 text-lg font-black text-orange-300">{item.points}</div>
+                      <div className="mt-2 text-xs font-semibold text-muted-foreground min-h-[24px]">{item.place}</div>
+                      <div className="mt-1 text-lg font-semibold text-orange-300">{item.points}</div>
                     </div>
                   ))}
                 </div>
@@ -626,28 +626,28 @@ export default function MembersChampionCupGesamtwertungPage() {
             </div>
           </motion.div>
 
-          <motion.div variants={membersCupItemVariants} className="rounded-2xl border border-white/10 bg-black/30 p-3 shadow-sm">
-            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white/5 px-4 py-3">
-              <Search className="h-5 w-5 text-gray-400" />
+          <motion.div variants={membersCupItemVariants} className="rounded-2xl border border-white/10 bg-card p-3 shadow-sm">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-white/5 px-4 py-3">
+              <Search className="h-5 w-5 text-muted-foreground" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Spieler suchen…"
-                className="w-full bg-transparent text-sm font-bold outline-none placeholder:text-gray-400"
+                className="w-full bg-transparent text-sm font-bold outline-none placeholder:text-muted-foreground"
               />
             </div>
           </motion.div>
 
           <motion.div variants={membersCupContainerVariants} className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="flex items-center gap-2 font-black text-white">
+              <h2 className="flex items-center gap-2 font-semibold text-white">
                 <Trophy className="h-5 w-5 text-orange-600" /> Gesamtwertung
               </h2>
-              <div className="text-xs font-bold text-white/40">{filteredStandings.length} Spieler</div>
+              <div className="text-xs font-bold text-muted-foreground">{filteredStandings.length} Spieler</div>
             </div>
 
             {filteredStandings.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-10 text-center font-bold text-white/40">
+              <div className="rounded-2xl border border-white/10 bg-card p-10 text-center font-bold text-muted-foreground">
                 Noch keine Members-Cup-Daten vorhanden.
               </div>
             ) : (
@@ -663,11 +663,11 @@ export default function MembersChampionCupGesamtwertungPage() {
           </motion.div>
 
           <motion.div variants={membersCupItemVariants} className="space-y-3">
-            <h2 className="flex items-center gap-2 font-black text-white">
+            <h2 className="flex items-center gap-2 font-semibold text-white">
               <Calendar className="h-5 w-5 text-orange-600" /> Turnier-Historie
             </h2>
             {tournaments.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-10 text-center font-bold text-white/40">
+              <div className="rounded-2xl border border-white/10 bg-card p-10 text-center font-bold text-muted-foreground">
                 Noch keine gespeicherten Turniere vorhanden.
               </div>
             ) : (

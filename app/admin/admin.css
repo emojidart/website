@@ -1,14 +1,14 @@
 .emd-admin-shell {
-  --admin-bg: #05070a;
-  --admin-panel: rgba(10, 14, 20, 0.92);
+  --admin-bg: #0b1018;
+  --admin-panel: #131c29;
   --admin-panel-soft: rgba(255, 255, 255, 0.045);
   --admin-panel-hover: rgba(255, 255, 255, 0.07);
   --admin-border: rgba(255, 255, 255, 0.09);
   --admin-border-strong: rgba(255, 255, 255, 0.14);
   --admin-text: rgba(255, 255, 255, 0.96);
-  --admin-muted: rgba(255, 255, 255, 0.58);
-  --admin-subtle: rgba(255, 255, 255, 0.36);
-  --admin-orange: #f97316;
+  --admin-muted: #a7b4c6;
+  --admin-subtle: #8797ad;
+  --admin-orange: #f59b50;
   --admin-orange-soft: rgba(249, 115, 22, 0.13);
 
   position: relative;
@@ -25,19 +25,14 @@
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 10% 10%, rgba(249, 115, 22, 0.12), transparent 26%),
-    radial-gradient(circle at 86% 18%, rgba(14, 165, 233, 0.07), transparent 25%),
-    linear-gradient(180deg, #06080c 0%, #05070a 48%, #030507 100%);
+  background: var(--admin-panel);
 }
 
 .emd-admin-shell__background::after {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px),
-    linear-gradient(rgba(255,255,255,.012) 1px, transparent 1px);
+  background: var(--admin-panel);
   background-size: 42px 42px;
   mask-image: linear-gradient(to bottom, rgba(0,0,0,.45), transparent 72%);
 }
@@ -214,12 +209,12 @@
    ========================================================= */
 
 .emd-admin-shell {
-  --emd-admin-panel: rgba(8, 14, 21, 0.82);
-  --emd-admin-panel-strong: rgba(10, 17, 25, 0.92);
+  --emd-admin-panel: #131c29;
+  --emd-admin-panel-strong: #182333;
   --emd-admin-panel-soft: rgba(255, 255, 255, 0.035);
   --emd-admin-border: rgba(255, 255, 255, 0.085);
   --emd-admin-border-hover: rgba(251, 146, 60, 0.20);
-  --emd-admin-muted: rgba(255, 255, 255, 0.46);
+  --emd-admin-muted: #a7b4c6;
 }
 
 /* Einheitliches Seitenraster */
@@ -246,14 +241,11 @@
   margin-bottom: 20px;
   padding: 20px;
   border: 1px solid var(--emd-admin-border);
-  border-radius: 30px;
-  background:
-    radial-gradient(circle at 4% 20%, rgba(249,115,22,.14), transparent 31%),
-    radial-gradient(circle at 96% 18%, rgba(14,165,233,.10), transparent 31%),
-    linear-gradient(110deg, rgba(48,22,10,.70), rgba(7,12,18,.88) 43%, rgba(5,25,37,.72));
+  border-radius: 20px;
+  background: var(--admin-panel);
   box-shadow: 0 28px 90px -60px rgba(0,0,0,.96);
-  backdrop-filter: blur(22px) saturate(1.08);
-  -webkit-backdrop-filter: blur(22px) saturate(1.08);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .emd-admin-shell .emd-admin-hero::after {
@@ -263,7 +255,7 @@
   right: 8%;
   bottom: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(251,146,60,.24), transparent);
+  background: var(--admin-panel);
   pointer-events: none;
 }
 
@@ -283,23 +275,23 @@
   color: rgba(255,255,255,.95);
   border: 1px solid var(--emd-admin-border);
   background: var(--emd-admin-panel);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .emd-admin-shell .emd-admin-surface {
-  border-radius: 28px;
+  border-radius: 20px;
   box-shadow: 0 22px 70px -54px rgba(0,0,0,.92);
 }
 
 .emd-admin-shell .emd-admin-surface-lg {
-  border-radius: 30px;
+  border-radius: 20px;
   box-shadow: 0 26px 80px -58px rgba(0,0,0,.96);
 }
 
 .emd-admin-shell :is(.emd-admin-card,.emd-admin-card-hover) {
-  border-radius: 22px;
-  background: linear-gradient(145deg, rgba(12,19,28,.88), rgba(7,13,20,.78));
+  border-radius: 16px;
+  background: var(--admin-panel);
   box-shadow: 0 18px 55px -44px rgba(0,0,0,.90);
 }
 
@@ -310,7 +302,7 @@
 @media (hover:hover) {
   .emd-admin-shell .emd-admin-card-hover:hover {
     border-color: var(--emd-admin-border-hover);
-    background: linear-gradient(145deg, rgba(15,24,34,.94), rgba(9,16,24,.88));
+    background: var(--admin-panel);
   }
 }
 
@@ -342,7 +334,7 @@
   border-radius: 12px;
   padding-inline: 14px;
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 600;
   transition: background-color .16s ease, border-color .16s ease, color .16s ease;
 }
 
@@ -385,9 +377,9 @@
   height: 44px;
   border-radius: 12px !important;
   border: 1px solid rgba(251,146,60,.26) !important;
-  background: #f97316 !important;
-  color: white !important;
-  font-weight: 900 !important;
+  background: #f59b50 !important;
+  color: #21160e !important;
+  font-weight: 600 !important;
 }
 
 .emd-admin-shell .emd-admin-button-secondary {
@@ -396,7 +388,7 @@
   border: 1px solid rgba(255,255,255,.10) !important;
   background: rgba(10,18,26,.78) !important;
   color: rgba(255,255,255,.76) !important;
-  font-weight: 900 !important;
+  font-weight: 600 !important;
 }
 
 .emd-admin-shell .emd-admin-button-danger {
@@ -405,7 +397,7 @@
   border: 1px solid rgba(251,113,133,.20) !important;
   background: rgba(244,63,94,.10) !important;
   color: rgb(254 205 211) !important;
-  font-weight: 900 !important;
+  font-weight: 600 !important;
 }
 
 .emd-admin-shell .emd-admin-icon-button {
@@ -441,12 +433,11 @@
    ========================================================= */
 .emd-admin-shell .emd-admin-breadcrumb {
   border: 1px solid rgba(255,255,255,.085) !important;
-  background:
-    linear-gradient(110deg, rgba(11,18,26,.88), rgba(7,13,20,.82)) !important;
+  background: var(--admin-panel) !important;
   color: rgba(255,255,255,.92) !important;
   box-shadow: 0 18px 52px -42px rgba(0,0,0,.92) !important;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .emd-admin-shell .emd-admin-breadcrumb .text-gray-600,
@@ -681,10 +672,9 @@
 }
 
 .emd-admin-shell .emd-central-tabs {
-  background:
-    linear-gradient(180deg, rgba(5,7,10,.98) 0%, rgba(5,7,10,.92) 72%, rgba(5,7,10,0) 100%);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--admin-panel);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .emd-admin-shell .emd-central-stat {
@@ -702,7 +692,7 @@
   white-space: nowrap;
   font-size: 9px;
   line-height: 1.2;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: .10em;
   text-transform: uppercase;
   color: rgba(255,255,255,.28);
@@ -725,7 +715,7 @@
 @media (max-width: 639px) {
   .emd-admin-shell .emd-central-registration-hero {
     padding: 18px 16px;
-    border-radius: 22px;
+    border-radius: 16px;
   }
 
   .emd-admin-shell .emd-central-stat {
@@ -760,7 +750,7 @@
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-hero {
   margin-bottom: 18px;
-  border-radius: 30px;
+  border-radius: 20px;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-hero-line {
@@ -769,38 +759,32 @@
   right: 8%;
   bottom: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(249,115,22,.42), transparent);
+  background: var(--admin-panel);
   pointer-events: none;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-stat {
   padding: 14px 16px;
   min-width: 0;
-  background:
-    linear-gradient(145deg, rgba(12,19,28,.90), rgba(7,13,20,.78)) !important;
+  background: var(--admin-panel) !important;
   border-color: rgba(255,255,255,.08) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-surface,
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-surface {
-  background:
-    linear-gradient(155deg, rgba(10,16,24,.93), rgba(6,11,17,.86)) !important;
+  background: var(--admin-panel) !important;
   border: 1px solid rgba(255,255,255,.085) !important;
   box-shadow: 0 26px 80px -58px rgba(0,0,0,.96) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-card-header {
   border-bottom: 1px solid rgba(255,255,255,.07) !important;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)) !important;
+  background: var(--admin-panel) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-header {
   border-bottom: 1px solid rgba(255,255,255,.08) !important;
-  background:
-    radial-gradient(circle at 8% 20%, rgba(249,115,22,.18), transparent 31%),
-    radial-gradient(circle at 92% 18%, rgba(14,165,233,.10), transparent 31%),
-    linear-gradient(115deg, rgba(25,13,8,.92), rgba(7,12,18,.98) 48%, rgba(5,17,25,.94)) !important;
+  background: var(--admin-panel) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-list-item {
@@ -815,8 +799,7 @@
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-list-item.border-slate-400 {
   border-color: rgba(249,115,22,.30) !important;
-  background:
-    linear-gradient(135deg, rgba(249,115,22,.09), rgba(10,17,25,.90)) !important;
+  background: var(--admin-panel) !important;
   box-shadow: inset 3px 0 0 rgba(249,115,22,.62);
 }
 
@@ -828,44 +811,32 @@
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-neutral {
-  background:
-    radial-gradient(circle at 92% 8%, rgba(148,163,184,.05), transparent 28%),
-    rgba(5,10,16,.68) !important;
+  background: var(--admin-panel) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-green {
   border-color: rgba(52,211,153,.13) !important;
-  background:
-    radial-gradient(circle at 4% 0%, rgba(16,185,129,.10), transparent 30%),
-    rgba(5,12,15,.72) !important;
+  background: var(--admin-panel) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-blue {
   border-color: rgba(56,189,248,.13) !important;
-  background:
-    radial-gradient(circle at 4% 0%, rgba(14,165,233,.10), transparent 32%),
-    rgba(5,11,17,.72) !important;
+  background: var(--admin-panel) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-amber {
   border-color: rgba(251,191,36,.13) !important;
-  background:
-    radial-gradient(circle at 4% 0%, rgba(245,158,11,.10), transparent 32%),
-    rgba(12,10,5,.72) !important;
+  background: var(--admin-panel) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-violet {
   border-color: rgba(167,139,250,.13) !important;
-  background:
-    radial-gradient(circle at 4% 0%, rgba(139,92,246,.10), transparent 32%),
-    rgba(9,7,15,.72) !important;
+  background: var(--admin-panel) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-cyan {
   border-color: rgba(34,211,238,.13) !important;
-  background:
-    radial-gradient(circle at 4% 0%, rgba(6,182,212,.09), transparent 32%),
-    rgba(5,11,14,.72) !important;
+  background: var(--admin-panel) !important;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-section > div > h2,
@@ -897,7 +868,7 @@
 }
 
 .emd-admin-shell .emd-tournament-series-page input[type="checkbox"] {
-  accent-color: #f97316;
+  accent-color: #f59b50;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-section .bg-white,
@@ -915,8 +886,7 @@
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-savebar {
   border: 1px solid rgba(249,115,22,.20);
-  background:
-    linear-gradient(110deg, rgba(15,20,27,.97), rgba(8,13,19,.96)) !important;
+  background: var(--admin-panel) !important;
   box-shadow: 0 24px 65px -36px rgba(0,0,0,.98);
 }
 
@@ -983,7 +953,7 @@
 
 @media (max-width: 767px) {
   .emd-admin-shell .emd-tournament-series-page .emd-series-hero {
-    border-radius: 22px;
+    border-radius: 16px;
     padding: 18px 16px;
   }
 
@@ -1004,7 +974,7 @@
 /* Turnierserien – Modale / Schalter / Status */
 .emd-admin-shell .emd-tournament-series-page .emd-series-toggle {
   border: 1px solid rgba(255,255,255,.10) !important;
-  background: linear-gradient(145deg, rgba(12,18,26,.94), rgba(7,12,18,.88)) !important;
+  background: var(--admin-panel) !important;
   color: rgba(255,255,255,.92) !important;
 }
 
@@ -1019,12 +989,12 @@
 .emd-admin-shell .emd-tournament-series-page .emd-series-toggle input[type="checkbox"] {
   width: 20px;
   height: 20px;
-  accent-color: #f97316;
+  accent-color: #f59b50;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-status {
   border: 1px solid transparent;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-status-active {
@@ -1053,9 +1023,7 @@
 
 .emd-admin-shell .emd-series-confirm-modal {
   border: 1px solid rgba(255,255,255,.10) !important;
-  background:
-    radial-gradient(circle at 10% 0%, rgba(244,63,94,.10), transparent 34%),
-    rgba(6,10,15,.985) !important;
+  background: var(--admin-panel) !important;
 }
 
 .emd-admin-shell .emd-series-confirm-box {
@@ -1081,17 +1049,13 @@
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-orange {
   border-color: rgba(249,115,22,.15) !important;
-  background:
-    radial-gradient(circle at 4% 0%, rgba(249,115,22,.10), transparent 32%),
-    rgba(12,8,5,.72) !important;
+  background: var(--admin-panel) !important;
 }
 
 
 .emd-admin-shell .emd-tournament-series-page .emd-series-config-draw {
   border-color: rgba(217,70,239,.14) !important;
-  background:
-    radial-gradient(circle at 6% 0%, rgba(217,70,239,.09), transparent 34%),
-    rgba(10,7,13,.74) !important;
+  background: var(--admin-panel) !important;
 }
 
 
@@ -1112,7 +1076,7 @@
 
 .emd-admin-shell .emd-league-management [data-slot="card"] {
   border-color: rgba(255,255,255,.08) !important;
-  background: linear-gradient(145deg, rgba(12,19,28,.88), rgba(7,13,20,.78)) !important;
+  background: var(--admin-panel) !important;
   color: rgba(255,255,255,.94) !important;
   box-shadow: 0 18px 55px -44px rgba(0,0,0,.90) !important;
 }
@@ -1127,4 +1091,54 @@
 
 .emd-admin-shell .emd-league-management :is(.border,.border-t,.border-b) {
   border-color: rgba(255,255,255,.075);
+}
+
+/* Premium 2026: functional hierarchy and accessible native controls. */
+.emd-admin-shell__background { background: var(--admin-bg); }
+.emd-admin-shell__background::after { display: none; }
+.emd-admin-shell :is(.bg-white\/70,.bg-white\/80,.bg-white\/90,.bg-white\/95) {
+  background-color: var(--admin-panel) !important;
+}
+.emd-admin-shell [class*="bg-gradient-"]:is(.from-white,.from-gray-50,.from-slate-50,.from-blue-50,.from-orange-50,.from-amber-50,.from-green-50):not(.bg-clip-text) {
+  background-image: none !important;
+  background-color: var(--admin-panel) !important;
+}
+/* Radix dialogs mount beside the app shell, so use its active presence rather
+   than a descendant selector for legacy dialog-specific utility overrides. */
+body:has(.emd-admin-shell) :is([role="dialog"],[role="alertdialog"]) {
+  background: var(--popover);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+body:has(.emd-admin-shell) :is([role="dialog"],[role="alertdialog"]) :is(.text-gray-900,.text-gray-800,.text-slate-900,.text-slate-800) {
+  color: var(--foreground);
+}
+body:has(.emd-admin-shell) :is([role="dialog"],[role="alertdialog"]) :is(.text-gray-700,.text-gray-600,.text-gray-500,.text-slate-700,.text-slate-600,.text-slate-500) {
+  color: var(--muted-foreground);
+}
+.emd-admin-shell :is(h1,h2,h3) { text-wrap: balance; letter-spacing: -.025em; }
+.emd-admin-shell :is(.emd-admin-surface,.emd-admin-surface-lg,.emd-admin-card,.emd-admin-card-hover) {
+  box-shadow: 0 2px 8px rgb(0 0 0 / .12);
+}
+.emd-admin-shell :is(.emd-admin-input,.emd-admin-select)::placeholder { color: #8797ad !important; }
+.emd-admin-shell :is(button,a,input,textarea,select,[role="button"]):focus-visible {
+  outline: 2px solid #f59b50;
+  outline-offset: 3px;
+}
+.emd-admin-shell :is(.emd-admin-icon-button,.emd-admin-button-primary,.emd-admin-button-secondary,.emd-admin-button-danger) {
+  min-height: 44px;
+}
+.emd-admin-shell .emd-admin-icon-button { min-width: 44px; }
+.emd-admin-shell :is(table,output,.tabular-nums) { font-variant-numeric: tabular-nums; }
+.emd-admin-shell th { color: #a7b4c6; font-weight: 600; }
+.emd-admin-shell :is(td,th) { padding-block: 14px; }
+@media (max-width: 767px) {
+  .emd-admin-shell main { padding-inline: 16px !important; }
+  .emd-admin-shell .emd-admin-hero { padding: 20px; border-radius: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .emd-admin-shell *, .emd-admin-shell *::before, .emd-admin-shell *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
 }

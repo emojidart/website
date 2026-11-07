@@ -147,24 +147,17 @@ export default function KontoLoeschenPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
+      <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
         <Header />
 
         {/* Stabiler Hintergrund wie im Member-Profil – ohne Fade/Flackern */}
-        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
-          <div
-            className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-            style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-        <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
           <div className="w-full">
             <div className="flex items-center justify-center min-h-[60vh] gap-3">
               <Loader2 className="h-7 w-7 animate-spin text-orange-300" />
-              <span className="text-base font-medium text-white/55">
+              <span className="text-base font-medium text-muted-foreground">
                 Lade…
               </span>
             </div>
@@ -177,20 +170,13 @@ export default function KontoLoeschenPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
       <Header />
 
       {/* Stabiler Hintergrund wie im Member-Profil – ohne Fade/Flackern */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <motion.div
           className="w-full"
           variants={containerVariants}
@@ -199,24 +185,24 @@ export default function KontoLoeschenPage() {
         >
           {/* Header Card */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px]">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(239,68,68,.06)_78%,transparent)]" />
               <div className="relative flex items-start gap-4 p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-red-400/20 bg-red-400/10">
                   <ShieldAlert className="h-5 w-5 text-orange-300" />
                 </div>
                 <div className="min-w-0">
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-400/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-red-200"><span className="h-2 w-2 rounded-full bg-red-400" />Konto · Datenschutz</div>
-                  <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Konto löschen</h1>
-                  <p className="mt-2 text-sm font-medium text-white/55">Antrag auf Löschung deines EMD VereinsApp-Kontos.</p>
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-400/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-red-200"><span className="h-2 w-2 rounded-full bg-red-400" />Konto · Datenschutz</div>
+                  <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Konto löschen</h1>
+                  <p className="mt-2 text-sm font-medium text-muted-foreground">Antrag auf Löschung deines EMD VereinsApp-Kontos.</p>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          <Card className="rounded-[24px] border border-white/10 bg-black/35 shadow-[0_24px_80px_-54px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+          <Card className="rounded-[24px] border border-white/10 bg-card shadow-[0_24px_80px_-54px_rgba(0,0,0,.95)] ">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-black">
+              <CardTitle className="flex items-center gap-2 font-semibold">
                 <AlertTriangle className="w-5 h-5 text-orange-300" />
                 Löschanfrage
               </CardTitle>
@@ -250,7 +236,7 @@ export default function KontoLoeschenPage() {
                   value={otherReason}
                   onChange={(e) => setOtherReason(e.target.value)}
                   placeholder="Bitte kurz beschreiben"
-                  className="min-h-[110px] rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30"
+                  className="min-h-[110px] rounded-xl border-white/10 bg-white/5 text-white placeholder:text-muted-foreground"
                 />
               )}
 
@@ -258,7 +244,7 @@ export default function KontoLoeschenPage() {
                 placeholder="Kontakt E-Mail (optional)"
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
-                className="h-11 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30"
+                className="h-11 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-muted-foreground"
               />
 
               <div className="space-y-3">
@@ -285,7 +271,7 @@ export default function KontoLoeschenPage() {
                 <Button
                   onClick={submitRequest}
                   disabled={disabled}
-                  className="h-11 rounded-xl bg-orange-500 font-black text-white hover:bg-orange-600"
+                  className="h-11 rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-600"
                 >
                   {submitting && (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -295,7 +281,7 @@ export default function KontoLoeschenPage() {
 
                 <Button
                   variant="outline"
-                  className="h-11 rounded-xl border-white/10 bg-white/5 font-black text-white hover:bg-white/10"
+                  className="h-11 rounded-xl border-white/10 bg-white/5 font-semibold text-white hover:bg-white/10"
                   onClick={() => router.push("/member-profile-app")}
                 >
                   Abbrechen

@@ -65,7 +65,7 @@ const statusText:Record<string,string>={
 function TeamMark({team}:{team?:Team|null}) {
   if(team?.logo_url){
     return (
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-slate-200 shadow-sm">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card ring-1 ring-border shadow-sm">
         <img
           src={team.logo_url}
           alt={team.name}
@@ -76,7 +76,7 @@ function TeamMark({team}:{team?:Team|null}) {
   }
 
   return (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-orange-50 text-sm font-black text-orange-700 ring-1 ring-orange-100">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-orange-50 text-sm font-semibold text-orange-700 ring-1 ring-orange-100">
       {(team?.name||"?").slice(0,1).toUpperCase()}
     </div>
   )
@@ -85,13 +85,13 @@ function TeamMark({team}:{team?:Team|null}) {
 function PlayerMark({name,photoUrl}:{name:string;photoUrl?:string|null}) {
   if(photoUrl){
     return (
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-slate-200 shadow-sm">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card ring-1 ring-border shadow-sm">
         <img src={photoUrl} alt={name} className="h-full w-full object-cover" />
       </div>
     )
   }
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-50 text-sm font-black text-orange-700 ring-1 ring-orange-100">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-50 text-sm font-semibold text-orange-700 ring-1 ring-orange-100">
       {(name||"?").slice(0,1).toUpperCase()}
     </div>
   )
@@ -106,8 +106,8 @@ function StatusPill({status}:{status:string}) {
         ?"border-amber-200 bg-amber-50 text-amber-700"
         :status==="disputed"
           ?"border-red-200 bg-red-50 text-red-700"
-          :"border-slate-200 bg-slate-50 text-slate-600"
-  return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-black ${cls}`}>{status==="live"?<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600"/>:null}{statusText[status]||status}</span>
+          :"border-border bg-muted text-muted-foreground"
+  return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${cls}`}>{status==="live"?<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600"/>:null}{statusText[status]||status}</span>
 }
 
 export default function InternalMatchesPage() {
@@ -334,7 +334,7 @@ export default function InternalMatchesPage() {
       <Header variant="app" title="Interne Wettbewerbe" subtitle="Live · Spielplan · Tabelle · Ergebnisse" backHref="/member-profile-app"/>
 
       <main className="w-full px-4 pt-16 sm:px-6 lg:px-8 xl:px-10">
-        <section className="relative overflow-hidden rounded-[24px] bg-slate-950 text-white shadow-lg">
+        <section className="relative overflow-hidden rounded-[24px] bg-background text-white shadow-lg">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.24),transparent_38%)]"/>
           <div className="relative p-5 sm:p-6 lg:p-7">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -343,25 +343,25 @@ export default function InternalMatchesPage() {
                   <Swords className="h-6 w-6 text-orange-400"/>
                 </div>
                 <div>
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-300">EMD intern</div>
-                  <h1 className="mt-1 text-2xl font-black sm:text-3xl">Cups & Ligen</h1>
-                  <p className="mt-2 max-w-2xl text-sm font-semibold text-white/55">Live mitverfolgen, Spielplan prüfen, Tabelle ansehen und Ergebnisse öffnen.</p>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">EMD intern</div>
+                  <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">Cups & Ligen</h1>
+                  <p className="mt-2 max-w-2xl text-sm font-semibold text-muted-foreground">Live mitverfolgen, Spielplan prüfen, Tabelle ansehen und Ergebnisse öffnen.</p>
                 </div>
               </div>
 
               {nextOwn?(
                 <Link href={`/internal-matches/${nextOwn.id}`} className="group min-w-0 rounded-2xl bg-white/[0.04] p-4 transition hover:bg-white/[0.07] lg:min-w-[340px]">
-                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">Nächstes Spiel</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-300">Nächstes Spiel</div>
                   <div className="mt-3 flex items-center gap-2 sm:gap-3">
                     <TeamMark team={nextOwn.home_team}/>
                     <div className="min-w-0 flex-1 text-center">
-                      <div className="text-center text-sm font-black leading-tight break-words">{nextOwn.home_team?.name}</div>
-                      <div className="my-1 text-[10px] font-black text-white/25">VS</div>
-                      <div className="text-center text-sm font-black leading-tight break-words">{nextOwn.away_team?.name}</div>
+                      <div className="text-center text-sm font-semibold leading-tight break-words">{nextOwn.home_team?.name}</div>
+                      <div className="my-1 text-xs font-semibold text-white/25">VS</div>
+                      <div className="text-center text-sm font-semibold leading-tight break-words">{nextOwn.away_team?.name}</div>
                     </div>
                     <TeamMark team={nextOwn.away_team}/>
                   </div>
-                  <div className="mt-3 text-center text-xs font-bold text-white/45">{new Date(nextOwn.scheduled_at).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div>
+                  <div className="mt-3 text-center text-xs font-bold text-muted-foreground">{new Date(nextOwn.scheduled_at).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div>
                 </Link>
               ):null}
             </div>
@@ -373,26 +373,26 @@ export default function InternalMatchesPage() {
             <div className="mb-3 flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50"><Radio className="h-4 w-4 animate-pulse text-red-600"/></span>
               <div>
-                <div className="text-sm font-black text-slate-950">Jetzt live</div>
-                <div className="text-xs font-semibold text-slate-400">Aktuelle Begegnungen im Verein</div>
+                <div className="text-sm font-semibold text-foreground">Jetzt live</div>
+                <div className="text-xs font-semibold text-muted-foreground">Aktuelle Begegnungen im Verein</div>
               </div>
             </div>
             <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
               {liveReports.map(r=>{
                 const s=scoreFor(r.id)
                 return(
-                  <Link key={r.id} href={`/internal-matches/${r.id}`} className="group relative overflow-hidden rounded-[20px] bg-white p-4 shadow-[0_8px_28px_rgba(239,68,68,0.10)] outline outline-1 outline-red-200 transition hover:-translate-y-0.5 hover:shadow-lg">
+                  <Link key={r.id} href={`/internal-matches/${r.id}`} className="group relative overflow-hidden rounded-[20px] bg-card p-4 shadow-[0_8px_28px_rgba(239,68,68,0.10)] outline outline-1 outline-red-200 transition hover:-translate-y-0.5 hover:shadow-lg">
                     <div className="absolute inset-x-0 top-0 h-1 bg-red-500"/>
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-red-600">{r.competition?.name||"Interner Wettbewerb"}</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-red-600">{r.competition?.name||"Interner Wettbewerb"}</div>
                       <StatusPill status={r.status}/>
                     </div>
                     <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
-                      <div className="flex min-w-0 flex-col items-center text-center"><TeamMark team={r.home_team}/><div className="mt-2 w-full text-center text-sm font-black leading-tight break-words">{r.home_team?.name}</div></div>
-                      <div className="rounded-2xl bg-slate-950 px-3 py-2 text-xl font-black text-white">{s.home}<span className="mx-1 text-white/25">:</span>{s.away}</div>
-                      <div className="flex min-w-0 flex-col items-center text-center"><TeamMark team={r.away_team}/><div className="mt-2 w-full text-center text-sm font-black leading-tight break-words">{r.away_team?.name}</div></div>
+                      <div className="flex min-w-0 flex-col items-center text-center"><TeamMark team={r.home_team}/><div className="mt-2 w-full text-center text-sm font-semibold leading-tight break-words">{r.home_team?.name}</div></div>
+                      <div className="rounded-2xl bg-background px-3 py-2 text-xl font-semibold text-white">{s.home}<span className="mx-1 text-white/25">:</span>{s.away}</div>
+                      <div className="flex min-w-0 flex-col items-center text-center"><TeamMark team={r.away_team}/><div className="mt-2 w-full text-center text-sm font-semibold leading-tight break-words">{r.away_team?.name}</div></div>
                     </div>
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-bold text-slate-400">
+                    <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs font-bold text-muted-foreground">
                       <span>{s.confirmed}/{s.total} bestätigt</span><span className="text-red-600 group-hover:underline">Live ansehen</span>
                     </div>
                   </Link>
@@ -403,15 +403,15 @@ export default function InternalMatchesPage() {
         ):null}
 
         {loading?<div className="p-12 text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-orange-600"/></div>:null}
-        {message?<div className="mt-5 rounded-2xl border bg-white p-5 text-sm font-semibold">{message}</div>:null}
+        {message?<div className="mt-5 rounded-2xl border bg-card p-5 text-sm font-semibold">{message}</div>:null}
 
         {!loading&&!message?(
           <Tabs defaultValue="overview" className="mt-6 w-full">
-            <TabsList className="grid h-auto w-full grid-cols-4 rounded-2xl bg-slate-100 p-1">
-              <TabsTrigger value="overview" className="rounded-xl py-2.5 text-[11px] font-black sm:text-sm">Übersicht</TabsTrigger>
-              <TabsTrigger value="schedule" className="rounded-xl py-2.5 text-[11px] font-black sm:text-sm">Spielplan</TabsTrigger>
-              <TabsTrigger value="standings" className="rounded-xl py-2.5 text-[11px] font-black sm:text-sm">Tabelle</TabsTrigger>
-              <TabsTrigger value="results" className="rounded-xl py-2.5 text-[11px] font-black sm:text-sm">Ergebnisse</TabsTrigger>
+            <TabsList className="grid h-auto w-full grid-cols-4 rounded-2xl bg-muted p-1">
+              <TabsTrigger value="overview" className="rounded-xl py-2.5 text-xs font-semibold sm:text-sm">Übersicht</TabsTrigger>
+              <TabsTrigger value="schedule" className="rounded-xl py-2.5 text-xs font-semibold sm:text-sm">Spielplan</TabsTrigger>
+              <TabsTrigger value="standings" className="rounded-xl py-2.5 text-xs font-semibold sm:text-sm">Tabelle</TabsTrigger>
+              <TabsTrigger value="results" className="rounded-xl py-2.5 text-xs font-semibold sm:text-sm">Ergebnisse</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="mt-5 space-y-6">
@@ -422,39 +422,39 @@ export default function InternalMatchesPage() {
                   ["Kommend",upcoming.length,"geplante Spiele"],
                   ["Ergebnisse",completed.length,"abgeschlossen"],
                 ].map(([label,value,sub])=>(
-                  <div key={String(label)} className="rounded-[20px] bg-white p-5 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{label}</div>
-                    <div className="mt-2 text-3xl font-black text-slate-950">{value}</div>
-                    <div className="mt-1 text-xs font-semibold text-slate-400">{sub}</div>
+                  <div key={String(label)} className="rounded-[20px] bg-card p-5 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+                    <div className="mt-2 text-3xl font-semibold text-foreground">{value}</div>
+                    <div className="mt-1 text-xs font-semibold text-muted-foreground">{sub}</div>
                   </div>
                 ))}
               </div>
 
               <div>
-                <div className="mb-3 text-sm font-black text-slate-950">Als Nächstes</div>
+                <div className="mb-3 text-sm font-semibold text-foreground">Als Nächstes</div>
                 <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
                   {mySchedule.length ? mySchedule.slice(0,6).map(r=>(
-                    <Link key={r.id} href={`/internal-matches/${r.id}`} className={`group rounded-[20px] bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg ${isMyMatch(r)?"outline outline-1 outline-orange-200":""}`}>
+                    <Link key={r.id} href={`/internal-matches/${r.id}`} className={`group rounded-[20px] bg-card p-4 shadow-[0_6px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg ${isMyMatch(r)?"outline outline-1 outline-orange-200":""}`}>
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-600">{r.competition?.name||"Interner Wettbewerb"}</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-600">{r.competition?.name||"Interner Wettbewerb"}</div>
                         {isMyMatch(r)?<Badge className="bg-orange-50 text-orange-700 hover:bg-orange-50">Dein Team</Badge>:<StatusPill status={r.status}/>}
                       </div>
                       <div className="mt-4 flex items-center gap-3">
                         <TeamMark team={r.home_team}/>
                         <div className="min-w-0 flex-1 text-center">
-                          <div className="text-center text-sm font-black leading-tight break-words">{r.home_team?.name}</div>
-                          <div className="my-1 text-[10px] font-black text-slate-300">VS</div>
-                          <div className="text-center text-sm font-black leading-tight break-words">{r.away_team?.name}</div>
+                          <div className="text-center text-sm font-semibold leading-tight break-words">{r.home_team?.name}</div>
+                          <div className="my-1 text-xs font-semibold text-muted-foreground">VS</div>
+                          <div className="text-center text-sm font-semibold leading-tight break-words">{r.away_team?.name}</div>
                         </div>
                         <TeamMark team={r.away_team}/>
                       </div>
-                      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-semibold text-slate-500">
+                      <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs font-semibold text-muted-foreground">
                         <span>{new Date(r.scheduled_at).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>
-                        <ChevronRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5"/>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5"/>
                       </div>
                     </Link>
                   )) : (
-                    <div className="col-span-full rounded-[20px] bg-white p-8 text-center text-sm font-semibold text-slate-400 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+                    <div className="col-span-full rounded-[20px] bg-card p-8 text-center text-sm font-semibold text-muted-foreground shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
                       Für dein Team sind aktuell keine kommenden Spiele eingetragen.
                     </div>
                   )}
@@ -465,24 +465,24 @@ export default function InternalMatchesPage() {
             <TabsContent value="schedule" className="mt-5">
               <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <div className="text-lg font-black text-slate-950">Spielplan</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-400">
+                  <div className="text-lg font-semibold text-foreground">Spielplan</div>
+                  <div className="mt-1 text-sm font-semibold text-muted-foreground">
                     Deine Begegnungen oder den kompletten Wettbewerb anzeigen.
                   </div>
                 </div>
 
-                <div className="grid w-full grid-cols-2 rounded-2xl bg-slate-100 p-1 lg:w-[360px]">
+                <div className="grid w-full grid-cols-2 rounded-2xl bg-muted p-1 lg:w-[360px]">
                   <button
                     type="button"
                     onClick={()=>setScheduleView("mine")}
-                    className={`rounded-xl px-4 py-2.5 text-sm font-black transition ${scheduleView==="mine"?"bg-white text-slate-950 shadow-sm":"text-slate-500 hover:text-slate-800"}`}
+                    className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${scheduleView==="mine"?"bg-card text-foreground shadow-sm":"text-muted-foreground hover:text-foreground"}`}
                   >
                     Meine Spiele ({mySchedule.length})
                   </button>
                   <button
                     type="button"
                     onClick={()=>setScheduleView("all")}
-                    className={`rounded-xl px-4 py-2.5 text-sm font-black transition ${scheduleView==="all"?"bg-white text-slate-950 shadow-sm":"text-slate-500 hover:text-slate-800"}`}
+                    className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${scheduleView==="all"?"bg-card text-foreground shadow-sm":"text-muted-foreground hover:text-foreground"}`}
                   >
                     Alle Spiele ({allSchedule.length})
                   </button>
@@ -494,7 +494,7 @@ export default function InternalMatchesPage() {
 
                 if(!rows.length){
                   return (
-                    <div className="rounded-[20px] bg-white p-10 text-center text-sm font-semibold text-slate-400 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+                    <div className="rounded-[20px] bg-card p-10 text-center text-sm font-semibold text-muted-foreground shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
                       Keine Spiele vorhanden.
                     </div>
                   )
@@ -511,9 +511,9 @@ export default function InternalMatchesPage() {
                     {Object.entries(groupedByMonth).map(([month,monthRows])=>(
                       <section key={month}>
                         <div className="mb-3 flex items-center gap-3">
-                          <div className="h-px flex-1 bg-slate-200"/>
-                          <div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{month}</div>
-                          <div className="h-px flex-1 bg-slate-200"/>
+                          <div className="h-px flex-1 bg-secondary"/>
+                          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{month}</div>
+                          <div className="h-px flex-1 bg-secondary"/>
                         </div>
 
                         <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-3">
@@ -521,10 +521,10 @@ export default function InternalMatchesPage() {
                             <Link
                               key={r.id}
                               href={`/internal-matches/${r.id}`}
-                              className={`group rounded-[20px] bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg ${r.status==="live"?"outline outline-1 outline-red-200":isMyMatch(r)?"outline outline-1 outline-orange-200":""}`}
+                              className={`group rounded-[20px] bg-card p-4 shadow-[0_6px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg ${r.status==="live"?"outline outline-1 outline-red-200":isMyMatch(r)?"outline outline-1 outline-orange-200":""}`}
                             >
                               <div className="flex items-center justify-between gap-3">
-                                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-600">{r.competition?.name||"Interner Wettbewerb"}</div>
+                                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-600">{r.competition?.name||"Interner Wettbewerb"}</div>
                                 <div className="flex items-center gap-2">
                                   {isMyMatch(r)?<Badge className="bg-orange-50 text-orange-700 hover:bg-orange-50">Dein Team</Badge>:null}
                                   <StatusPill status={r.status}/>
@@ -534,25 +534,25 @@ export default function InternalMatchesPage() {
                               <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
                                 <div className="flex min-w-0 flex-col items-center text-center">
                                   <TeamMark team={r.home_team}/>
-                                  <div className="mt-2 w-full text-center text-sm font-black leading-tight break-words">{r.home_team?.name}</div>
+                                  <div className="mt-2 w-full text-center text-sm font-semibold leading-tight break-words">{r.home_team?.name}</div>
                                 </div>
-                                <div className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-400">VS</div>
+                                <div className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">VS</div>
                                 <div className="flex min-w-0 flex-col items-center text-center">
                                   <TeamMark team={r.away_team}/>
-                                  <div className="mt-2 w-full text-center text-sm font-black leading-tight break-words">{r.away_team?.name}</div>
+                                  <div className="mt-2 w-full text-center text-sm font-semibold leading-tight break-words">{r.away_team?.name}</div>
                                 </div>
                               </div>
 
-                              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
                                 <div>
-                                  <div className="text-sm font-black text-slate-900">
+                                  <div className="text-sm font-semibold text-foreground">
                                     {new Date(r.scheduled_at).toLocaleDateString("de-AT",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"})}
                                   </div>
-                                  <div className="mt-0.5 text-xs font-semibold text-slate-400">
+                                  <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
                                     {new Date(r.scheduled_at).toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit"})} Uhr
                                   </div>
                                 </div>
-                                <ChevronRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5"/>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5"/>
                               </div>
                             </Link>
                           ))}
@@ -567,25 +567,25 @@ export default function InternalMatchesPage() {
             <TabsContent value="standings" className="mt-5 space-y-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <div className="text-lg font-black text-slate-950">Tabelle</div>
-                  <div className="text-sm font-semibold text-slate-400">
+                  <div className="text-lg font-semibold text-foreground">Tabelle</div>
+                  <div className="text-sm font-semibold text-muted-foreground">
                     Mannschafts- oder Spielerwertung des gewählten Wettbewerbs.
                   </div>
                 </div>
 
                 <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-                  <div className="grid grid-cols-2 rounded-2xl bg-slate-100 p-1 sm:w-[260px]">
+                  <div className="grid grid-cols-2 rounded-2xl bg-muted p-1 sm:w-[260px]">
                     <button
                       type="button"
                       onClick={()=>setStandingsView("teams")}
-                      className={`rounded-xl px-4 py-2.5 text-sm font-black transition ${standingsView==="teams"?"bg-white text-slate-950 shadow-sm":"text-slate-500"}`}
+                      className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${standingsView==="teams"?"bg-card text-foreground shadow-sm":"text-muted-foreground"}`}
                     >
                       Teams
                     </button>
                     <button
                       type="button"
                       onClick={()=>setStandingsView("players")}
-                      className={`rounded-xl px-4 py-2.5 text-sm font-black transition ${standingsView==="players"?"bg-white text-slate-950 shadow-sm":"text-slate-500"}`}
+                      className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${standingsView==="players"?"bg-card text-foreground shadow-sm":"text-muted-foreground"}`}
                     >
                       Spieler
                     </button>
@@ -593,7 +593,7 @@ export default function InternalMatchesPage() {
 
                   <div className="w-full sm:w-[320px]">
                     <Select value={selectedCompetition} onValueChange={setTableCompetitionId}>
-                      <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white"><SelectValue placeholder="Wettbewerb wählen"/></SelectTrigger>
+                      <SelectTrigger className="h-11 rounded-xl border-border bg-card"><SelectValue placeholder="Wettbewerb wählen"/></SelectTrigger>
                       <SelectContent>{competitions.map(c=><SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
@@ -602,10 +602,10 @@ export default function InternalMatchesPage() {
 
               {standingsView==="teams" ? (
                 standings.length?(
-                  <div className="overflow-hidden rounded-[20px] bg-white shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+                  <div className="overflow-hidden rounded-[20px] bg-card shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[760px] text-sm">
-                        <thead className="bg-slate-950 text-white">
+                        <thead className="bg-background text-white">
                           <tr>
                             <th className="px-4 py-3.5 text-left">#</th>
                             <th className="px-4 py-3.5 text-left">Mannschaft</th>
@@ -620,14 +620,14 @@ export default function InternalMatchesPage() {
                         </thead>
                         <tbody>
                           {standings.map((r,idx)=>(
-                            <tr key={r.teamId} className={`border-t border-slate-100 ${myTeamIds.includes(r.teamId)?"bg-orange-50":"bg-white"}`}>
-                              <td className="px-4 py-3.5 font-black">{idx+1}</td>
+                            <tr key={r.teamId} className={`border-t border-border ${myTeamIds.includes(r.teamId)?"bg-orange-50":"bg-card"}`}>
+                              <td className="px-4 py-3.5 font-semibold">{idx+1}</td>
                               <td className="px-4 py-3.5">
                                 <div className="flex items-center gap-3">
                                   <TeamMark team={r.team}/>
-                                  <div className="font-black">
+                                  <div className="font-semibold">
                                     {r.team?.name||"Team"}
-                                    {myTeamIds.includes(r.teamId)?<span className="ml-2 text-[10px] uppercase text-orange-600">Dein Team</span>:null}
+                                    {myTeamIds.includes(r.teamId)?<span className="ml-2 text-xs uppercase text-orange-600">Dein Team</span>:null}
                                   </div>
                                 </div>
                               </td>
@@ -637,20 +637,20 @@ export default function InternalMatchesPage() {
                               <td className="px-3 py-3.5 text-center">{r.losses}</td>
                               <td className="px-3 py-3.5 text-center font-bold">{r.scored}:{r.conceded}</td>
                               <td className="px-3 py-3.5 text-center">{r.scored-r.conceded}</td>
-                              <td className="px-4 py-3.5 text-center text-lg font-black">{r.points}</td>
+                              <td className="px-4 py-3.5 text-center text-lg font-semibold">{r.points}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
                   </div>
-                ):<div className="rounded-[22px] border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-semibold text-slate-400">Noch keine abgeschlossenen Spiele für die Tabelle.</div>
+                ):<div className="rounded-[22px] border border-dashed border-border bg-card p-10 text-center text-sm font-semibold text-muted-foreground">Noch keine abgeschlossenen Spiele für die Tabelle.</div>
               ) : (
                 playerStandings.length ? (
-                  <div className="overflow-hidden rounded-[20px] bg-white shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+                  <div className="overflow-hidden rounded-[20px] bg-card shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[820px] text-sm">
-                        <thead className="bg-slate-950 text-white">
+                        <thead className="bg-background text-white">
                           <tr>
                             <th className="px-4 py-3.5 text-left">#</th>
                             <th className="px-4 py-3.5 text-left">Spieler</th>
@@ -667,12 +667,12 @@ export default function InternalMatchesPage() {
                           {playerStandings.map((r,idx)=>{
                             const winRate=r.played?Math.round((r.wins/r.played)*100):0
                             return (
-                              <tr key={r.playerId} className="border-t border-slate-100 bg-white">
-                                <td className="px-4 py-3.5 font-black">{idx+1}</td>
+                              <tr key={r.playerId} className="border-t border-border bg-card">
+                                <td className="px-4 py-3.5 font-semibold">{idx+1}</td>
                                 <td className="px-4 py-3.5">
                                   <div className="flex items-center gap-3">
                                     <PlayerMark name={r.name} photoUrl={r.photoUrl}/>
-                                    <div className="font-black text-slate-950">{r.name}</div>
+                                    <div className="font-semibold text-foreground">{r.name}</div>
                                   </div>
                                 </td>
                                 <td className="px-3 py-3.5 text-center">{r.played}</td>
@@ -681,7 +681,7 @@ export default function InternalMatchesPage() {
                                 <td className="px-3 py-3.5 text-center">{r.losses}</td>
                                 <td className="px-3 py-3.5 text-center font-bold">{r.legsWon}:{r.legsLost}</td>
                                 <td className="px-3 py-3.5 text-center">{r.legsWon-r.legsLost}</td>
-                                <td className="px-4 py-3.5 text-center font-black">{winRate}%</td>
+                                <td className="px-4 py-3.5 text-center font-semibold">{winRate}%</td>
                               </tr>
                             )
                           })}
@@ -690,7 +690,7 @@ export default function InternalMatchesPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-[22px] border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-semibold text-slate-400">
+                  <div className="rounded-[22px] border border-dashed border-border bg-card p-10 text-center text-sm font-semibold text-muted-foreground">
                     Noch keine bestätigten Einzel-/Doppelspiele für die Spielerwertung.
                   </div>
                 )
@@ -702,22 +702,22 @@ export default function InternalMatchesPage() {
                 {completed.length?completed.map(r=>{
                   const s=scoreFor(r.id)
                   return(
-                    <Link key={r.id} href={`/internal-matches/${r.id}`} className="group rounded-[20px] bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg">
+                    <Link key={r.id} href={`/internal-matches/${r.id}`} className="group rounded-[20px] bg-card p-4 shadow-[0_6px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-600">{r.competition?.name}</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-600">{r.competition?.name}</div>
                         <StatusPill status="completed"/>
                       </div>
                       <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
-                        <div className="flex min-w-0 flex-col items-center text-center"><TeamMark team={r.home_team}/><div className="mt-2 w-full text-center text-sm font-black leading-tight break-words">{r.home_team?.name}</div></div>
-                        <div className="rounded-2xl bg-slate-950 px-3 py-2 text-xl font-black text-white">{s.home}<span className="mx-1 text-white/25">:</span>{s.away}</div>
-                        <div className="flex min-w-0 flex-col items-center text-center"><TeamMark team={r.away_team}/><div className="mt-2 w-full text-center text-sm font-black leading-tight break-words">{r.away_team?.name}</div></div>
+                        <div className="flex min-w-0 flex-col items-center text-center"><TeamMark team={r.home_team}/><div className="mt-2 w-full text-center text-sm font-semibold leading-tight break-words">{r.home_team?.name}</div></div>
+                        <div className="rounded-2xl bg-background px-3 py-2 text-xl font-semibold text-white">{s.home}<span className="mx-1 text-white/25">:</span>{s.away}</div>
+                        <div className="flex min-w-0 flex-col items-center text-center"><TeamMark team={r.away_team}/><div className="mt-2 w-full text-center text-sm font-semibold leading-tight break-words">{r.away_team?.name}</div></div>
                       </div>
-                      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-semibold text-slate-400">
+                      <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs font-semibold text-muted-foreground">
                         <span>{new Date(r.scheduled_at).toLocaleDateString("de-AT")}</span><span>{s.confirmed}/{s.total} bestätigt</span>
                       </div>
                     </Link>
                   )
-                }):<div className="rounded-[22px] border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-semibold text-slate-400">Noch keine Ergebnisse.</div>}
+                }):<div className="rounded-[22px] border border-dashed border-border bg-card p-10 text-center text-sm font-semibold text-muted-foreground">Noch keine Ergebnisse.</div>}
               </div>
             </TabsContent>
           </Tabs>

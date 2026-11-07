@@ -119,15 +119,15 @@ export function PushNotificationDialog() {
   if (status === "success") {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black/50" />
-        <div className="relative bg-white rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4 z-50 text-center">
+        <div className="fixed inset-0 bg-card" />
+        <div className="relative bg-card rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4 z-50 text-center">
           <div className="flex justify-center">
             <div className="bg-green-100 p-3 rounded-full">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">Erfolgreich aktiviert!</h2>
-          <p className="text-sm text-gray-600">Du erhältst jetzt Push-Benachrichtigungen für Live-Updates.</p>
+          <h2 className="text-xl font-semibold text-foreground">Erfolgreich aktiviert!</h2>
+          <p className="text-sm text-muted-foreground">Du erhältst jetzt Push-Benachrichtigungen für Live-Updates.</p>
         </div>
       </div>
     )
@@ -136,15 +136,15 @@ export function PushNotificationDialog() {
   if (status === "error") {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black/50" />
-        <div className="relative bg-white rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4 z-50 text-center">
+        <div className="fixed inset-0 bg-card" />
+        <div className="relative bg-card rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4 z-50 text-center">
           <div className="flex justify-center">
             <div className="bg-red-100 p-3 rounded-full">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">Fehler</h2>
-          <p className="text-sm text-gray-600">{errorMessage}</p>
+          <h2 className="text-xl font-semibold text-foreground">Fehler</h2>
+          <p className="text-sm text-muted-foreground">{errorMessage}</p>
           <button
             onClick={() => setStatus("idle")}
             className="w-full px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700"
@@ -153,7 +153,7 @@ export function PushNotificationDialog() {
           </button>
           <button
             onClick={handleDismiss}
-            className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+            className="w-full px-4 py-2 text-sm font-medium text-muted-foreground bg-muted rounded-lg hover:bg-secondary"
           >
             Schließen
           </button>
@@ -164,12 +164,12 @@ export function PushNotificationDialog() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50" onClick={handleDismiss} aria-hidden="true" />
+      <div className="fixed inset-0 bg-card" onClick={handleDismiss} aria-hidden="true" />
 
-      <div className="relative bg-white rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4 z-50">
+      <div className="relative bg-card rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4 z-50">
         <button
           onClick={handleDismiss}
-          className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600"
+          className="absolute top-3 right-3 p-1 text-muted-foreground hover:text-muted-foreground"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -180,11 +180,11 @@ export function PushNotificationDialog() {
             <Bell className="w-5 h-5 text-orange-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Bleib immer auf dem Laufenden</h2>
+            <h2 className="text-lg font-semibold text-foreground">Bleib immer auf dem Laufenden</h2>
           </div>
         </div>
 
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Erhalte Push-Benachrichtigungen für Live-Scores, Turnierergebnisse und wichtige Updates direkt auf dein Gerät.
         </p>
 
@@ -192,7 +192,7 @@ export function PushNotificationDialog() {
           <button
             onClick={handleDismiss}
             disabled={status === "loading"}
-            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2 text-sm font-medium text-muted-foreground bg-muted rounded-lg hover:bg-secondary transition-colors disabled:opacity-50"
           >
             Später
           </button>
@@ -205,7 +205,7 @@ export function PushNotificationDialog() {
           </button>
         </div>
 
-        <p className="text-[11px] text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Hinweis: Push wird erst nach dem Login aktiviert, damit dein Gerät korrekt deinem Account zugeordnet wird.
         </p>
       </div>

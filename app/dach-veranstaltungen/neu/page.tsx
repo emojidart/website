@@ -382,7 +382,7 @@ export default function NeueVeranstaltungPage() {
 
   if (access === "loading") {
     return (
-      <div className="min-h-screen flex flex-col bg-[#050608] text-white">
+      <div className="min-h-screen flex flex-col bg-background text-white">
         <Header variant="app" title="Veranstaltung einreichen" subtitle="DACH Turniere" backHref="/dach-veranstaltungen" />
         <main className="flex-grow flex items-center justify-center">
           <Loader2 className="w-10 h-10 animate-spin text-orange-200" />
@@ -394,14 +394,14 @@ export default function NeueVeranstaltungPage() {
 
   if (access !== "allowed") {
     return (
-      <div className="min-h-screen flex flex-col bg-[#050608] text-white">
+      <div className="min-h-screen flex flex-col bg-background text-white">
         <Header variant="app" title="Veranstaltung einreichen" subtitle="DACH Turniere" backHref="/dach-veranstaltungen" />
         <main className="flex-grow px-4 pt-24 pb-28">
-          <Card className="mx-auto max-w-md rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]">
+          <Card className="mx-auto max-w-md rounded-[24px] border border-white/[0.08] bg-card shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)]">
             <CardContent className="p-6 text-center">
               <ShieldAlert className="w-12 h-12 mx-auto text-orange-200 mb-4" />
-              <h1 className="text-2xl font-black">Anmeldung erforderlich</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-2xl font-semibold">Anmeldung erforderlich</h1>
+              <p className="text-muted-foreground mt-2">
                 {access === "blocked"
                   ? "Mit diesem Zugang kann derzeit keine Veranstaltung erstellt werden."
                   : "Registrierte Mitglieder und freigeschaltete Gäste können Veranstaltungen einreichen."}
@@ -429,38 +429,31 @@ export default function NeueVeranstaltungPage() {
     <div className="min-h-screen overflow-x-hidden bg-[#f6f7f9] pb-24 text-white">
       <Header variant="app" title="Veranstaltung einreichen" subtitle="DACH Turniere" backHref="/dach-veranstaltungen" />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.70),rgba(3,5,9,.94)_46%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(14,165,233,.13),transparent_26%),radial-gradient(circle_at_88%_28%,rgba(249,115,22,.12),transparent_28%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] pt-14 sm:pt-16">
-        <section className="relative overflow-hidden bg-slate-950">
+        <section className="relative overflow-hidden bg-background">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.30),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_36%)]" />
           <div className="relative w-full max-w-none px-3 pb-20 pt-8 sm:px-4 sm:pb-24 sm:pt-12 lg:px-5 xl:px-6 2xl:px-8">
             <button
               type="button"
               onClick={() => router.push("/dach-veranstaltungen")}
-              className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25/10 px-4 py-2 text-sm font-bold text-white backdrop-blur transition hover:bg-black/25/15"
+              className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/15 bg-card/10 px-4 py-2 text-sm font-bold text-white  transition hover:bg-card/15"
             >
               <ArrowLeft className="h-4 w-4" />
               Zur Übersicht
             </button>
 
             <div className="max-w-3xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/25 bg-orange-500/[0.08]0/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-orange-300">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/25 bg-orange-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-orange-300">
                 <CalendarDays className="h-4 w-4" />
                 DACH Veranstaltungskalender
               </div>
-              <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
+              <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                 Veranstaltung einreichen
               </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                 Trage dein Dartturnier schnell und übersichtlich ein. Nach einer kurzen Prüfung wird die Veranstaltung im Kalender veröffentlicht.
               </p>
             </div>
@@ -470,8 +463,8 @@ export default function NeueVeranstaltungPage() {
         <div className="relative z-10 -mt-10 w-full max-w-none px-2 pb-10 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
           <div className="mb-4 grid gap-2 sm:grid-cols-3 xl:gap-3">
             {["Daten eintragen", "Prüfung durch den Verein", "Veröffentlichung im Kalender"].map((label, index) => (
-              <div key={label} className="flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-black/25 px-4 py-3.5 shadow-[0_12px_34px_-30px_rgba(15,23,42,0.35)]">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-300/[0.14] bg-orange-500/[0.08] text-sm font-black text-orange-200">
+              <div key={label} className="flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-card px-4 py-3.5 shadow-[0_12px_34px_-30px_rgba(15,23,42,0.35)]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-300/[0.14] bg-orange-500/[0.08] text-sm font-semibold text-orange-200">
                   {index + 1}
                 </span>
                 <span className="text-xs font-bold text-white/65 sm:text-sm">{label}</span>
@@ -479,14 +472,14 @@ export default function NeueVeranstaltungPage() {
             ))}
           </div>
 
-          <div className="mb-5 flex items-start gap-3 rounded-[18px] border border-white/[0.08] bg-black/25 p-4 text-sm text-white/65 shadow-[0_12px_34px_-30px_rgba(15,23,42,0.3)]">
+          <div className="mb-5 flex items-start gap-3 rounded-[18px] border border-white/[0.08] bg-card p-4 text-sm text-white/65 shadow-[0_12px_34px_-30px_rgba(15,23,42,0.3)]">
             <Info className="mt-0.5 h-5 w-5 shrink-0 text-orange-500" />
             <p><strong>Hinweis:</strong> Felder mit einem Stern sind Pflichtfelder. Je vollständiger die Angaben sind, desto schneller kann die Veranstaltung freigegeben werden.</p>
           </div>
 
           <form
             onSubmit={handleSubmit}
-            className="grid items-start gap-4 xl:grid-cols-2 xl:gap-5 [&_input]:h-12 [&_input]:rounded-xl [&_input]:border-white/[0.08] [&_input]:bg-black/25/[0.035]/70 [&_input]:transition [&_input]:focus-visible:bg-black/25 [&_button[role=combobox]]:h-12 [&_button[role=combobox]]:rounded-xl [&_button[role=combobox]]:border-white/[0.08] [&_button[role=combobox]]:bg-black/25/[0.035]/70"
+            className="grid items-start gap-4 xl:grid-cols-2 xl:gap-5 [&_input]:h-12 [&_input]:rounded-xl [&_input]:border-white/[0.08] [&_input]:bg-card [&_input]:transition [&_input]:focus-visible:bg-card [&_button[role=combobox]]:h-12 [&_button[role=combobox]]:rounded-xl [&_button[role=combobox]]:border-white/[0.08] [&_button[role=combobox]]:bg-card"
           >
             <Section
               title="Veranstaltung"
@@ -741,7 +734,7 @@ export default function NeueVeranstaltungPage() {
                   value={form.details}
                   onChange={(e) => setField("details", e.target.value)}
                   rows={7}
-                  className="w-full resize-y rounded-xl border border-white/[0.08] bg-black/25/[0.035]/70 px-4 py-3 text-sm outline-none transition placeholder:text-white/25 focus:border-orange-400 focus:bg-black/25 focus:ring-4 focus:ring-orange-100"
+                  className="w-full resize-y rounded-xl border border-white/[0.08] bg-card px-4 py-3 text-sm outline-none transition placeholder:text-white/25 focus:border-orange-400 focus:bg-card focus:ring-4 focus:ring-orange-100"
                   placeholder="Modus, Preisgeld, Einlass, Anmeldung und weitere Hinweise …"
                 />
               </Field>
@@ -769,11 +762,11 @@ export default function NeueVeranstaltungPage() {
               </div>
             ) : null}
 
-            <div className="sticky bottom-20 z-20 rounded-[20px] border border-white/[0.08] bg-black/25/95 p-3.5 shadow-[0_-8px_30px_rgba(15,23,42,0.10)] backdrop-blur sm:bottom-4 xl:col-span-2">
+            <div className="sticky bottom-20 z-20 rounded-[20px] border border-white/[0.08] bg-card/95 p-3.5 shadow-[0_-8px_30px_rgba(15,23,42,0.10)]  sm:bottom-4 xl:col-span-2">
               <Button
                 type="submit"
                 disabled={saving}
-                className="h-14 w-full rounded-xl bg-orange-500/[0.08]0 text-base font-black text-white shadow-none hover:bg-orange-400"
+                className="h-14 w-full rounded-xl bg-orange-500 text-base font-semibold text-primary-foreground shadow-none hover:bg-orange-400"
               >
               {saving ? (
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -783,7 +776,7 @@ export default function NeueVeranstaltungPage() {
                 {saving ? "Wird eingereicht …" : "Zur Freigabe einreichen"}
                 {!saving ? <ChevronRight className="ml-2 h-5 w-5" /> : null}
               </Button>
-              <p className="mt-2 text-center text-[11px] text-white/35">
+              <p className="mt-2 text-center text-xs text-muted-foreground">
                 Die Veröffentlichung erfolgt erst nach der Freigabe.
               </p>
             </div>
@@ -805,18 +798,18 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="h-full overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)] sm:rounded-[26px]">
+    <Card className="h-full overflow-hidden rounded-[24px] border border-white/[0.08] bg-card shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)] sm:rounded-[26px]">
       <CardContent className="p-0">
-        <div className="flex items-center gap-3 border-b border-white/[0.07] bg-black/25 px-4 py-4 sm:px-5 lg:px-6">
+        <div className="flex items-center gap-3 border-b border-white/[0.07] bg-card px-4 py-4 sm:px-5 lg:px-6">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08] text-orange-200">
             {icon}
           </span>
           <div>
-            <h2 className="text-lg font-black text-white">{title}</h2>
-            <p className="mt-0.5 text-xs font-medium text-white/35">Bitte möglichst vollständig ausfüllen</p>
+            <h2 className="text-lg font-semibold text-white">{title}</h2>
+            <p className="mt-0.5 text-xs font-medium text-muted-foreground">Bitte möglichst vollständig ausfüllen</p>
           </div>
         </div>
-        <div className="space-y-5 bg-black/25/[0.035]/30 p-4 sm:p-5 lg:p-6">{children}</div>
+        <div className="space-y-5 bg-card p-4 sm:p-5 lg:p-6">{children}</div>
       </CardContent>
     </Card>
   );
@@ -831,7 +824,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.1em] text-white/35">
+      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
         {label}
       </span>
       {children}

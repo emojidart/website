@@ -54,7 +54,7 @@ export default async function ClubPage() {
 
   if (playersError || teamsError || teamMembersError) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center p-8">
           <div className="text-center text-red-600">
@@ -86,7 +86,7 @@ export default async function ClubPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
       <Header />
       <main className="flex-grow pt-8 pb-24 md:pb-20">
         <ClubPageContent clubPlayers={clubPlayers} teamsWithPlayers={teamsWithPlayers} />

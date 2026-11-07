@@ -32,7 +32,7 @@ export function MatchVsAnimation({ player1, player2, isVisible, onComplete }: Ma
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 "
         >
           <div className="flex items-center justify-center gap-8 md:gap-16 px-4">
             {/* Player 1 */}
@@ -51,7 +51,7 @@ export function MatchVsAnimation({ player1, player2, isVisible, onComplete }: Ma
                   repeat: Number.POSITIVE_INFINITY,
                   ease: "easeInOut",
                 }}
-                className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-6 md:p-10 shadow-2xl"
+                className="text-foreground bg-card   rounded-2xl p-6 md:p-10 shadow-2xl"
               >
                 <p className="text-3xl md:text-6xl font-extrabold text-white uppercase tracking-tight break-words max-w-[200px] md:max-w-[400px]">
                   {player1}
@@ -77,7 +77,7 @@ export function MatchVsAnimation({ player1, player2, isVisible, onComplete }: Ma
                 }}
                 className="relative"
               >
-                <div className="text-6xl md:text-9xl font-black text-white drop-shadow-[0_0_30px_rgba(249,115,22,0.8)]">
+                <div className="text-6xl md:text-9xl font-semibold text-white drop-shadow-[0_0_30px_rgba(249,115,22,0.8)]">
                   VS
                 </div>
                 <motion.div
@@ -112,7 +112,7 @@ export function MatchVsAnimation({ player1, player2, isVisible, onComplete }: Ma
                   ease: "easeInOut",
                   delay: 0.75,
                 }}
-                className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-6 md:p-10 shadow-2xl"
+                className="text-foreground bg-card   rounded-2xl p-6 md:p-10 shadow-2xl"
               >
                 <p className="text-3xl md:text-6xl font-extrabold text-white uppercase tracking-tight break-words max-w-[200px] md:max-w-[400px]">
                   {player2}

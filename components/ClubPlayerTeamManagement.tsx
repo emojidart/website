@@ -149,8 +149,8 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
 
   return (
     <div className="w-full min-w-0 max-w-full mx-auto space-y-4 px-2 sm:px-4 overflow-hidden">
-      <Card className="w-full min-w-0 max-w-full border-gray-200 shadow-md rounded-2xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-4 sm:p-5">
+      <Card className="w-full min-w-0 max-w-full border-border shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-card   text-white p-4 sm:p-5">
           <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
             <Users className="h-5 w-5" />
             Vereinsverwaltung: Spieler & Mannschaften
@@ -161,7 +161,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
         </CardHeader>
 
         <CardContent className="min-w-0 max-w-full overflow-hidden p-3 sm:p-5 space-y-4 sm:space-y-6">
-          <div className="sticky top-0 z-10 min-w-0 max-w-full -mx-3 sm:-mx-5 px-3 sm:px-5 py-3 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-gray-100 overflow-hidden">
+          <div className="sticky top-0 z-10 min-w-0 max-w-full -mx-3 sm:-mx-5 px-3 sm:px-5 py-3 bg-card  supports-[backdrop-filter]:bg-card border-b border-border overflow-hidden">
             <div className="flex max-w-full gap-2 overflow-x-auto overflow-y-hidden pb-1 [-webkit-overflow-scrolling:touch]">
               <Button
                 variant={activeSection === "overview" ? "default" : "outline"}
@@ -170,7 +170,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "overview"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -184,13 +184,13 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "relative h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "guest-requests"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <Users className="h-4 w-4 mr-2" />
                 <span className="whitespace-nowrap text-sm">Gastzugänge</span>
                 {pendingGuestRequestsCount > 0 ? (
-                  <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-black text-white">
+                  <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
                     {pendingGuestRequestsCount}
                   </span>
                 ) : null}
@@ -203,13 +203,13 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "relative h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "join-requests"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <UserPlus className="h-4 w-4 mr-2" />
                 <span className="whitespace-nowrap text-sm">Beitrittsanfragen</span>
                 {pendingJoinRequestsCount > 0 ? (
-                  <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-black text-white">
+                  <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">
                     {pendingJoinRequestsCount}
                   </span>
                 ) : null}
@@ -222,7 +222,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "add-player"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <UserRoundPlus className="h-4 w-4 mr-2" />
@@ -236,7 +236,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "manage-players"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <ClipboardList className="h-4 w-4 mr-2" />
@@ -250,7 +250,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "manage-teams"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <Hand className="h-4 w-4 mr-2" />
@@ -264,7 +264,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "assign-player"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <UserRoundCog className="h-4 w-4 mr-2" />
@@ -278,7 +278,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "membership"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <CalendarPlus className="h-4 w-4 mr-2" />
@@ -292,7 +292,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "dues"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
@@ -306,7 +306,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "documents"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <FolderOpen className="h-4 w-4 mr-2" />
@@ -320,7 +320,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "match-reports"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <Swords className="h-4 w-4 mr-2" />
@@ -334,7 +334,7 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
                   "h-11 rounded-xl font-medium shadow-sm transition flex-none px-3",
                   activeSection === "inventory"
                     ? "bg-orange-600 hover:bg-orange-700 text-white"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                    : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 <FolderOpen className="h-4 w-4 mr-2" />
@@ -354,14 +354,14 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   >
     <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-cyan-700" />
     <div className="min-w-0 flex-1">
-      <div className="font-black text-cyan-900">
+      <div className="font-semibold text-cyan-900">
         {pendingGuestRequestsCount} offene {pendingGuestRequestsCount === 1 ? "Gastanfrage" : "Gastanfragen"}
       </div>
       <div className="mt-1 text-sm font-semibold text-cyan-800">
         Neue Gastzugänge warten auf Freigabe.
       </div>
     </div>
-    <span className="rounded-full bg-cyan-600 px-2.5 py-1 text-xs font-black text-white">Öffnen</span>
+    <span className="rounded-full bg-cyan-600 px-2.5 py-1 text-xs font-semibold text-white">Öffnen</span>
   </button>
 ) : null}
 
@@ -373,14 +373,14 @@ export function ClubPlayerTeamManagement({ user, onDataSaved }: ClubPlayerManage
   >
     <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-orange-700" />
     <div className="min-w-0 flex-1">
-      <div className="font-black text-orange-900">
+      <div className="font-semibold text-orange-900">
         {pendingJoinRequestsCount} offene {pendingJoinRequestsCount === 1 ? "Beitrittsanfrage" : "Beitrittsanfragen"}
       </div>
       <div className="mt-1 text-sm font-semibold text-orange-800">
         Bitte prüfen – Gäste werden erst nach deiner Bestätigung zu Vereinsmitgliedern.
       </div>
     </div>
-    <span className="rounded-full bg-orange-600 px-2.5 py-1 text-xs font-black text-white">Öffnen</span>
+    <span className="rounded-full bg-orange-600 px-2.5 py-1 text-xs font-semibold text-white">Öffnen</span>
   </button>
 ) : null}
 

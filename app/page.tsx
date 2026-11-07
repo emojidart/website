@@ -1,6 +1,7 @@
 "use client"
 
 import { Header } from "@/components/header"
+import "./emd-home-refresh.css"
 import { PushEnableBanner } from "@/components/push-enable-banner"
 import { InstallEmdApp } from "@/components/install-emd-app"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,9 @@ import {
   Loader2,
   UserPlus,
   ShoppingBag,
-  Tv2
+  Tv2,
+  AlertTriangle,
+  Activity
 } from "lucide-react"
 import Image from "next/image"
 import { FAQChatWidget } from "@/components/faq-chat-widget"
@@ -61,11 +64,11 @@ export default function Home() {
     matches,
     loading,
   } = useStartseitenNaechsteSpiele()
-  
 
-  
-  
-    
+
+
+
+
   // --- DKO Self Registration (Turniertag-Box) ---
   const authUserId = useStartseitenAuthUser()
   const {
@@ -174,11 +177,31 @@ export default function Home() {
 
 
   return (
-    <div className="emd-home-page min-h-screen bg-transparent text-white">
+    <div className="emd-home-page min-h-screen">
       <Header />
 
       {/* Abstand für fixed Header */}
       <div className="h-12 sm:h-14" aria-hidden="true" />
+
+      <section aria-label="Aktueller Systemstatus" className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pt-4 sm:px-5 sm:pt-5 lg:px-8 xl:px-10">
+        <div className="overflow-hidden rounded-2xl border border-amber-300/35 bg-[#1b2430] shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+          <div className="flex items-start gap-3 px-4 py-4 sm:gap-4 sm:px-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/10" aria-hidden="true">
+              <AlertTriangle className="h-5 w-5 text-amber-300" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold leading-6 tracking-tight text-white sm:text-base">Eingeschränkte Verfügbarkeit</h2>
+              <p className="mt-1 text-[13px] leading-5 text-slate-200 sm:text-sm sm:leading-6">
+                Einzelne Bereiche der Vereinsplattform sind derzeit nur eingeschränkt verfügbar. Bitte überprüfe wichtige Eingaben und Änderungen auf erfolgreiche Speicherung.
+              </p>
+              <div className="mt-2.5 inline-flex items-center gap-2 text-xs font-medium text-amber-200">
+                <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Systemstatus · Eingeschränkter Betrieb</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Vereinslokal / Öffnungszeiten – mit sauberem Abstand zum Header */}
       <section className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pt-4 sm:px-5 sm:pt-5 lg:px-8 xl:px-10">
@@ -206,17 +229,17 @@ export default function Home() {
                 <Trophy className="h-5 w-5" />
               </div>
               <div>
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">Neu · Vereinsintern</div>
-                <h2 className="text-lg font-black leading-tight text-slate-950 sm:text-xl">Jetzt anmelden</h2>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">Neu · Vereinsintern</div>
+                <h2 className="text-lg font-semibold leading-tight text-foreground sm:text-xl">Jetzt anmelden</h2>
               </div>
             </div>
-            <Button variant="ghost" className="rounded-xl font-black" onClick={() => (window.location.href = "/internal-events")}>
+            <Button variant="ghost" className="rounded-xl font-semibold" onClick={() => (window.location.href = "/internal-events")}>
               Alle anzeigen
             </Button>
           </div>
 
           {internalSignupLoading ? (
-            <div className="rounded-3xl border bg-white p-6 text-center text-sm font-bold text-slate-500">
+            <div className="rounded-3xl border bg-card p-6 text-center text-sm font-bold text-muted-foreground">
               <Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Interne Events werden geladen…
             </div>
           ) : (
@@ -244,14 +267,14 @@ export default function Home() {
 
 	  <HeuteImVerein events={todaysEvents} />	  {!birthdayLoading && birthdayPlayers.length > 0 && (
         <section className="mx-auto mt-3 w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8 xl:px-10">
-          <div className="flex flex-col gap-3 rounded-2xl border border-orange-300/20 bg-orange-500/[0.07] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="emd-home-birthday flex flex-col gap-3 rounded-2xl border border-orange-300/20 bg-orange-500/[0.07] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-300/20 bg-orange-500/10">
                 <PartyPopper className="h-5 w-5 text-orange-300" />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300/75">Geburtstag im Verein</div>
-                <div className="mt-0.5 text-sm font-black text-white sm:text-base">
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-300/75">Geburtstag im Verein</div>
+                <div className="mt-0.5 text-sm font-semibold text-white sm:text-base">
                   {birthdayPlayers.length === 1
                     ? `${birthdayPlayers[0].name}${birthdayPlayers[0].age ? ` · ${birthdayPlayers[0].age}. Geburtstag` : ""}`
                     : `${birthdayPlayers.length} Vereinsmitglieder feiern heute`}
@@ -260,7 +283,7 @@ export default function Home() {
             </div>
             <div className="flex flex-wrap gap-2 sm:justify-end">
               {birthdayPlayers.map((player) => (
-                <span key={player.id} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-bold text-white/65">
+                <span key={player.id} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-bold text-white/65">
                   {player.name}{player.age ? ` · ${player.age}` : ""}
                 </span>
               ))}
@@ -274,28 +297,28 @@ export default function Home() {
   <button
     type="button"
     onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/emd-tv" }}
-    className="group relative w-full overflow-hidden rounded-[26px] border border-orange-300/20 bg-[linear-gradient(135deg,rgba(249,115,22,.16),rgba(7,11,18,.96)_46%,rgba(14,165,233,.10))] p-5 text-left shadow-[0_24px_70px_-45px_rgba(249,115,22,.85)] transition-all hover:-translate-y-0.5 hover:border-orange-300/40 hover:shadow-[0_30px_80px_-42px_rgba(249,115,22,.95)] sm:p-6"
+    className="emd-home-tv text-foreground group relative w-full overflow-hidden rounded-[26px] border border-orange-300/20 bg-card p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-orange-300/40 shadow-sm sm:p-6"
   >
     <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-orange-500/10 blur-3xl transition group-hover:bg-orange-500/20" />
     <div className="pointer-events-none absolute -bottom-16 left-1/3 h-40 w-40 rounded-full bg-sky-500/10 blur-3xl" />
 
     <div className="relative flex items-center gap-4">
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-orange-300/30 bg-orange-500/12 shadow-[0_0_32px_rgba(249,115,22,.14)] sm:h-16 sm:w-16">
+      <div className="emd-home-tv-icon flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-orange-300/30 bg-orange-500/12 shadow-sm sm:h-16 sm:w-16">
         <Tv2 className="h-7 w-7 text-orange-300 sm:h-8 sm:w-8" />
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="mb-1.5 flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-orange-300/25 bg-orange-500/12 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-orange-200">
+          <span className="rounded-full border border-orange-300/25 bg-orange-500/12 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-200">
             Neu
           </span>
-          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/75">EMD TV</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/75">EMD TV</span>
         </div>
-        <div className="text-xl font-black tracking-[-0.03em] text-white sm:text-2xl">Starting Lineup</div>
-        <div className="mt-1 text-sm font-semibold text-white/45">Teamaufstellungen & Match-Intros ansehen</div>
+        <div className="text-xl font-semibold tracking-[-0.03em] text-foreground sm:text-2xl">Teamaufstellungen</div>
+        <div className="mt-1 text-sm font-semibold text-muted-foreground">Teamaufstellungen & Match-Intros ansehen</div>
       </div>
 
-      <div className="hidden shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-black text-white/80 transition group-hover:border-orange-300/20 group-hover:bg-orange-500/10 group-hover:text-white sm:flex">
+      <div className="hidden shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-white/80 transition group-hover:border-orange-300/20 group-hover:bg-orange-500/10 group-hover:text-white sm:flex">
         Jetzt ansehen
         <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
       </div>
@@ -305,43 +328,43 @@ export default function Home() {
   </button>
 
   <div className="mt-5 mb-3">
-    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">Weitere Bereiche</div>
+    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Weitere Bereiche</div>
   </div>
 
-  <div className="grid gap-3 sm:grid-cols-3">
-    <button type="button" onClick={() => (window.location.href = "/gastzugang-info")} className="group flex min-h-[98px] items-center gap-3 rounded-2xl border border-white/10 bg-[#080d14]/85 p-4 text-left transition hover:border-orange-300/25 hover:bg-white/[0.045]">
+  <div className="emd-home-quick-grid grid gap-3 sm:grid-cols-3">
+    <button type="button" onClick={() => (window.location.href = "/gastzugang-info")} className="group flex min-h-[98px] items-center gap-3 rounded-2xl border border-white/10 bg-background p-4 text-left transition hover:border-orange-300/25 hover:bg-white/[0.045]">
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-orange-300/20 bg-orange-500/10"><UserPlus className="h-5 w-5 text-orange-300" /></div>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300/70">Gastzugang</div>
-        <div className="mt-1 font-black text-white">VereinsApp kennenlernen</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-300/70">Gastzugang</div>
+        <div className="mt-1 font-semibold text-white">VereinsApp kennenlernen</div>
       </div>
-      <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition group-hover:translate-x-0.5 group-hover:text-orange-300" />
+      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-orange-300" />
     </button>
 
-    <button type="button" onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/dartboerse" }} className="group flex min-h-[98px] items-center gap-3 rounded-2xl border border-white/10 bg-[#080d14]/85 p-4 text-left transition hover:border-orange-300/25 hover:bg-white/[0.045]">
+    <button type="button" onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/dartboerse" }} className="group flex min-h-[98px] items-center gap-3 rounded-2xl border border-white/10 bg-background p-4 text-left transition hover:border-orange-300/25 hover:bg-white/[0.045]">
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]"><ShoppingBag className="h-5 w-5 text-orange-300" /></div>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300/70">Dartbörse DACH</div>
-        <div className="mt-1 font-black text-white">Darts kaufen & verkaufen</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-300/70">Dartbörse DACH</div>
+        <div className="mt-1 font-semibold text-white">Darts kaufen & verkaufen</div>
       </div>
-      <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition group-hover:translate-x-0.5 group-hover:text-orange-300" />
+      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-orange-300" />
     </button>
 
-    <button type="button" onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/turniere" }} className="group flex min-h-[98px] items-center gap-3 rounded-2xl border border-white/10 bg-[#080d14]/85 p-4 text-left transition hover:border-orange-300/25 hover:bg-white/[0.045]">
+    <button type="button" onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/turniere" }} className="group flex min-h-[98px] items-center gap-3 rounded-2xl border border-white/10 bg-background p-4 text-left transition hover:border-orange-300/25 hover:bg-white/[0.045]">
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-orange-300/20 bg-orange-500/10"><Trophy className="h-5 w-5 text-orange-300" /></div>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300/70">DACH Turniere</div>
-        <div className="mt-1 font-black text-white">Turniere entdecken</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-300/70">DACH Turniere</div>
+        <div className="mt-1 font-semibold text-white">Turniere entdecken</div>
       </div>
-      <ArrowRight className="h-4 w-4 shrink-0 text-white/30 transition group-hover:translate-x-0.5 group-hover:text-orange-300" />
+      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-orange-300" />
     </button>
   </div>
 </section>
 {activeTournament && (
   <div className="sticky top-12 sm:top-14 z-40">
     <div className="mx-auto mt-3 w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8 xl:px-10">
-      <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
-        
+      <div className="rounded-2xl border border-orange-200 bg-card shadow-lg overflow-hidden">
+
 
 
 
@@ -365,20 +388,20 @@ export default function Home() {
               {/* Text */}
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-600" />
                     Live
                   </span>
-                  <span className="hidden sm:inline text-[11px] font-bold text-gray-500">
+                  <span className="hidden sm:inline text-xs font-bold text-muted-foreground">
                     Turnier läuft gerade
                   </span>
                 </div>
 
-                <div className="text-sm sm:text-base font-black text-gray-900 truncate">
+                <div className="text-sm sm:text-base font-semibold text-foreground truncate">
                   {activeTournament.tournament_name}
                 </div>
 
-                <div className="text-[11px] sm:text-xs text-gray-600 truncate">
+                <div className="text-xs sm:text-xs text-muted-foreground truncate">
                   {activeTournament.tournament_type.replaceAll("_", " ").toUpperCase()}
                 </div>
               </div>
@@ -387,7 +410,7 @@ export default function Home() {
             {/* CTA */}
             <Button
               size="sm"
-              className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-sm px-3 sm:px-4"
+              className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold shadow-sm px-3 sm:px-4"
               onClick={() => (window.location.href = "/live-all-app")}
             >
              <span className="hidden sm:inline">Live öffnen</span>
@@ -401,9 +424,9 @@ export default function Home() {
   </div>
 )}
 
-      
-	  
-	  
+
+
+
       {liveRegistrationItems.length > 0 && (
         <section className="mx-auto mt-3 w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8 xl:px-10">
           <div
@@ -421,7 +444,7 @@ export default function Home() {
                   key={item.id}
                   type="button"
                   onClick={() => (window.location.href = `/turniere/serien/${item.slug}/anmeldung`)}
-                  className="group w-full rounded-2xl border border-white/[0.09] bg-[#0b1017]/92 p-4 text-left shadow-[0_18px_45px_-34px_rgba(0,0,0,.9)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-emerald-300/25 hover:bg-[#0d141b]"
+                  className="emd-home-reg-card group w-full rounded-2xl border border-white/[0.09] bg-[#0b1017]/92 p-4 text-left shadow-sm  transition-all hover:-translate-y-0.5 hover:border-emerald-300/25 hover:bg-[#0d141b]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-500/10">
@@ -430,22 +453,22 @@ export default function Home() {
 
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-300">
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-300">
                           Anmeldung offen
                         </span>
                         {item.accessType === "club_internal" ? (
-                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-violet-300">
+                          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-violet-300">
                             Intern
                           </span>
                         ) : null}
                       </div>
 
-                      <div className="truncate text-sm font-black text-white sm:text-base">
+                      <div className="truncate text-sm font-semibold text-white sm:text-base">
                         {item.name}
                       </div>
 
                       {eventDate ? (
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-white/45">
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5 text-orange-300" />
                             {eventDate.toLocaleDateString("de-AT", {
@@ -465,7 +488,7 @@ export default function Home() {
                       ) : null}
                     </div>
 
-                    <ArrowRight className="h-5 w-5 shrink-0 text-white/35 transition-transform group-hover:translate-x-0.5 group-hover:text-emerald-300" />
+                    <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-emerald-300" />
                   </div>
                 </button>
               )
@@ -475,15 +498,15 @@ export default function Home() {
       )}
 
       <section className="mx-auto w-full max-w-[var(--emd-content-max)] overflow-x-hidden px-3 py-7 sm:px-5 lg:px-8 lg:py-9 xl:px-10">
-        <div className="mb-4 flex items-end justify-between gap-3">
+        <div className="emd-home-section-header mb-4 flex items-end justify-between gap-3">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">Serien & Wettbewerbe</div>
-            <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Turnierserien</h2>
-            <p className="mt-1 text-xs font-semibold text-white/35">Aktive Serien, nächste Spieltage und Anmeldung</p>
+            <div className="emd-home-kicker text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/70">Serien & Wettbewerbe</div>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Turnierserien</h2>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">Aktive Serien, nächste Spieltage und Anmeldung</p>
           </div>
           <Button
             variant="ghost"
-            className="h-9 shrink-0 px-3 font-black text-orange-200 hover:bg-orange-500/10 hover:text-white"
+            className="h-9 shrink-0 px-3 font-semibold text-orange-200 hover:bg-orange-500/10 hover:text-white"
             onClick={() => (window.location.href = "/turniere/serien")}
           >
             Alle Serien
@@ -504,7 +527,7 @@ export default function Home() {
               return (
                 <article
                   key={item.id}
-                  className="group relative overflow-hidden rounded-[26px] border border-white/10 bg-[#080d14]/90 shadow-[0_24px_70px_-50px_rgba(0,0,0,.95)]"
+                  className="group relative overflow-hidden rounded-[26px] border border-white/10 bg-background shadow-sm"
                 >
                   <div
                     className="absolute inset-0 bg-cover bg-center opacity-[0.22] transition duration-700 group-hover:scale-[1.03]"
@@ -515,20 +538,20 @@ export default function Home() {
                   <div className="relative flex min-h-[230px] flex-col justify-between p-4 sm:p-5">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-orange-300/20 bg-orange-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-orange-200">
+                        <span className="rounded-full border border-orange-300/20 bg-orange-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-orange-200">
                           Turnierserie
                         </span>
                         {item.accessType === "club_internal" ? (
-                          <span className="rounded-full border border-violet-300/20 bg-violet-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-violet-200">Intern</span>
+                          <span className="rounded-full border border-violet-300/20 bg-violet-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-violet-200">Intern</span>
                         ) : (
-                          <span className="rounded-full border border-emerald-300/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-200">Öffentlich</span>
+                          <span className="rounded-full border border-emerald-300/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-200">Öffentlich</span>
                         )}
                         {item.registrationOpen ? (
-                          <span className="rounded-full border border-emerald-300/25 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-100">Anmeldung offen</span>
+                          <span className="rounded-full border border-emerald-300/25 bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-100">Anmeldung offen</span>
                         ) : null}
                       </div>
 
-                      <h3 className="mt-3 text-xl font-black leading-tight text-white">{item.name}</h3>
+                      <h3 className="mt-3 text-xl font-semibold leading-tight text-white">{item.name}</h3>
                       {item.description ? (
                         <p className="mt-1.5 line-clamp-2 text-xs font-semibold leading-5 text-white/38">{item.description}</p>
                       ) : null}
@@ -553,17 +576,17 @@ export default function Home() {
                           ) : null}
                         </div>
                       ) : (
-                        <div className="text-xs font-semibold text-white/35">Aktuell kein weiterer Spieltag eingetragen</div>
+                        <div className="text-xs font-semibold text-muted-foreground">Aktuell kein weiterer Spieltag eingetragen</div>
                       )}
 
                       <div className="mt-3 flex items-end justify-between gap-3">
-                        <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-white/35">
+                        <div className="flex flex-wrap gap-3 text-xs font-semibold text-muted-foreground">
                           <span>Startgeld <strong className="text-white/75">€ {item.startgeld.toFixed(2)}</strong></span>
                           {item.totalTournamentDays ? <span>{item.totalTournamentDays} Spieltage</span> : null}
                         </div>
                         <Button
                           size="sm"
-                          className="rounded-xl bg-orange-600 px-4 font-black text-white hover:bg-orange-500"
+                          className="rounded-xl bg-orange-600 px-4 font-semibold text-white hover:bg-orange-500"
                           onClick={() => (window.location.href = `/turniere/serien/${item.slug}`)}
                         >
                           Zur Serie
@@ -580,21 +603,21 @@ export default function Home() {
           <button
             type="button"
             onClick={() => (window.location.href = "/turniere/serien")}
-            className="flex w-full items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-[#080d14]/88 p-4 text-left transition hover:border-orange-300/25 hover:bg-[#0b111a] sm:p-5"
+            className="emd-home-light-surface flex w-full items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-background p-4 text-left transition hover:border-orange-300/25 hover:bg-[#0b111a] sm:p-5"
           >
             <div>
-              <div className="font-black text-white">Turnierserien</div>
-              <div className="mt-1 text-xs font-semibold text-white/35">Serienübersicht öffnen</div>
+              <div className="font-semibold text-white">Turnierserien</div>
+              <div className="mt-1 text-xs font-semibold text-muted-foreground">Serienübersicht öffnen</div>
             </div>
             <ArrowRight className="h-5 w-5 text-orange-300" />
           </button>
         )}
       </section>
- 
- 
- 
- 
- 
+
+
+
+
+
 
       <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-6 sm:px-5 sm:py-8 lg:px-8 xl:px-10">
   <div className="space-y-8">
@@ -602,8 +625,8 @@ export default function Home() {
     <section>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-base sm:text-lg font-black text-gray-900">Nächste Spiele</h2>
-          <p className="text-xs sm:text-sm text-gray-500">Die nächsten angesetzten Begegnungen</p>
+          <h2 className="text-base sm:text-lg font-semibold text-foreground">Nächste Spiele</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">Die nächsten angesetzten Begegnungen</p>
         </div>
 
         <Button
@@ -617,8 +640,8 @@ export default function Home() {
 
       {/* Mobile: horizontal scroll / Desktop: grid */}
       {matches.length === 0 ? (
-        <div className="rounded-[22px] border border-slate-200 bg-white shadow-sm p-8 text-center">
-          <p className="text-gray-600 font-semibold">Keine anstehenden Spiele</p>
+        <div className="rounded-[22px] border border-border bg-card shadow-sm p-8 text-center">
+          <p className="text-muted-foreground font-semibold">Keine anstehenden Spiele</p>
         </div>
       ) : (
         <div className="-mx-4 px-4 overflow-x-auto">
@@ -626,11 +649,11 @@ export default function Home() {
             {matches.slice(0, 4).map((match) => (
               <div
                 key={match.id}
-                className="min-w-[280px] sm:min-w-0 rounded-[22px] border border-slate-200 bg-white shadow-[0_14px_38px_-34px_rgba(15,23,42,0.55)] hover:shadow-md transition-shadow"
+                className="emd-home-match-card min-w-[280px] sm:min-w-0 rounded-[22px] border border-border bg-card shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2 text-xs text-gray-600 font-semibold">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
                       <Calendar className="w-4 h-4 text-orange-600" />
                       {new Date(match.match_date).toLocaleDateString("de-DE", {
                         day: "2-digit",
@@ -640,7 +663,7 @@ export default function Home() {
                     </div>
 
                     {match.match_time ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 text-[11px] font-bold">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 text-xs font-bold">
                         <Clock className="w-3.5 h-3.5" />
                         {String(match.match_time).slice(0, 5)}
                       </span>
@@ -654,19 +677,19 @@ export default function Home() {
                         <img
                           src={getTeamLogo(match, true) || "/placeholder.svg"}
                           alt={getTeamName(match, true)}
-                          className="w-14 h-14 rounded-full object-cover border border-gray-200 shadow-sm mb-2"
+                          className="w-14 h-14 rounded-full object-cover border border-border shadow-sm mb-2"
                         />
                       ) : (
-                        <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-2 border border-gray-200">
-                          <Trophy className="h-6 w-6 text-gray-400" />
+                        <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-2 border border-border">
+                          <Trophy className="h-6 w-6 text-muted-foreground" />
                         </div>
                       )}
-                      <p className="font-black text-xs text-center text-gray-900 truncate w-full">
+                      <p className="font-semibold text-xs text-center text-foreground truncate w-full">
                         {getTeamName(match, true)}
                       </p>
                     </div>
 
-                    <div className="text-xs font-black text-gray-400">VS</div>
+                    <div className="text-xs font-semibold text-muted-foreground">VS</div>
 
                     {/* Away */}
                     <div className="flex flex-col items-center flex-1 min-w-0">
@@ -674,21 +697,21 @@ export default function Home() {
                         <img
                           src={getTeamLogo(match, false) || "/placeholder.svg"}
                           alt={getTeamName(match, false)}
-                          className="w-14 h-14 rounded-full object-cover border border-gray-200 shadow-sm mb-2"
+                          className="w-14 h-14 rounded-full object-cover border border-border shadow-sm mb-2"
                         />
                       ) : (
-                        <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-2 border border-gray-200">
-                          <Trophy className="h-6 w-6 text-gray-400" />
+                        <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-2 border border-border">
+                          <Trophy className="h-6 w-6 text-muted-foreground" />
                         </div>
                       )}
-                      <p className="font-black text-xs text-center text-gray-900 truncate w-full">
+                      <p className="font-semibold text-xs text-center text-foreground truncate w-full">
                         {getTeamName(match, false)}
                       </p>
                     </div>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-[11px] text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {match.venue ? (
                         <span className="inline-flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5" />
@@ -701,7 +724,7 @@ export default function Home() {
 
                     <Button
                       size="sm"
-                      className="h-8 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black"
+                      className="h-8 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold"
                       onClick={() => (window.location.href = "/liga-statistiken-app")}
                     >
                       Öffnen
@@ -718,24 +741,24 @@ export default function Home() {
 
     {/* ================= VERANSTALTUNGEN & TURNIERE ================= */}
     <section>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="emd-home-section-header mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">Aktuell & demnächst</div>
-          <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Veranstaltungen & Turniere</h2>
-          <p className="mt-1 text-sm font-semibold text-white/40">EMD-Termine und ausgewählte DACH-Turniere auf einen Blick.</p>
+          <div className="emd-home-kicker text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/70">Aktuell & demnächst</div>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Veranstaltungen & Turniere</h2>
+          <p className="mt-1 text-sm font-semibold text-muted-foreground">EMD-Termine und ausgewählte DACH-Turniere auf einen Blick.</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
-            className="h-9 rounded-xl border-white/10 bg-white/[0.04] px-3 font-black text-white/70 hover:bg-white/[0.08] hover:text-white"
+            className="h-9 rounded-xl border-white/10 bg-white/[0.04] px-3 font-semibold text-white/70 hover:bg-white/[0.08] hover:text-white"
             onClick={() => (window.location.href = "/veranstaltungen")}
           >
             EMD-Veranstaltungen
           </Button>
           <Button
             variant="outline"
-            className="h-9 rounded-xl border-orange-300/20 bg-orange-500/[0.06] px-3 font-black text-orange-100 hover:bg-orange-500/[0.12]"
+            className="h-9 rounded-xl border-orange-300/20 bg-orange-500/[0.06] px-3 font-semibold text-orange-100 hover:bg-orange-500/[0.12]"
             onClick={() => { rememberPublicAreaOrigin(); window.location.href = "/turniere" }}
           >
             DACH-Turniere
@@ -744,9 +767,9 @@ export default function Home() {
       </div>
 
       {homepageEventItems.length === 0 ? (
-        <div className="rounded-[22px] border border-white/10 bg-[#080d14]/88 p-6 text-center">
+        <div className="rounded-[22px] border border-white/10 bg-background p-6 text-center">
           <Calendar className="mx-auto mb-3 h-8 w-8 text-white/20" />
-          <p className="font-semibold text-white/45">Derzeit sind keine kommenden Veranstaltungen verfügbar.</p>
+          <p className="font-semibold text-muted-foreground">Derzeit sind keine kommenden Veranstaltungen verfügbar.</p>
         </div>
       ) : (
         <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:overflow-visible sm:px-0">
@@ -756,7 +779,7 @@ export default function Home() {
                 key={`${item.sourceKind}:${item.id}`}
                 type="button"
                 onClick={() => openHomepageEvent(item)}
-                className="group min-w-[82vw] overflow-hidden rounded-[22px] border border-white/10 bg-[#080d14]/90 text-left shadow-[0_18px_55px_-42px_rgba(0,0,0,.95)] transition hover:-translate-y-0.5 hover:border-orange-300/25 sm:min-w-0"
+                className="emd-home-event-card group min-w-[82vw] overflow-hidden rounded-[22px] border border-white/10 bg-background text-left shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/25 sm:min-w-0"
               >
                 <div className="relative h-[112px] overflow-hidden bg-white/[0.035]">
                   {item.photo_url ? (
@@ -771,13 +794,13 @@ export default function Home() {
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#080d14]/45 via-transparent to-transparent" />
-                  <div className="absolute left-3 top-3 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white/75 backdrop-blur-md">
+                  <div className="absolute left-3 top-3 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white/75 ">
                     {item.sourceKind === "dach" ? "DACH" : "EMD"}
                   </div>
                 </div>
 
                 <div className="p-3.5">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-white/38">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold text-white/38">
                     <span className="inline-flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5 text-orange-300/70" />
                       {new Date(item.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
@@ -788,14 +811,14 @@ export default function Home() {
                     </span>
                   </div>
 
-                  <h3 className="mt-2 line-clamp-2 text-base font-black leading-tight text-white">{item.name}</h3>
+                  <h3 className="mt-2 line-clamp-2 text-base font-semibold leading-tight text-white">{item.name}</h3>
 
                   <div className="mt-2 flex items-center justify-between gap-3">
-                    <span className="inline-flex min-w-0 items-center gap-1 text-xs font-semibold text-white/40">
+                    <span className="inline-flex min-w-0 items-center gap-1 text-xs font-semibold text-muted-foreground">
                       <MapPin className="h-3.5 w-3.5 shrink-0 text-orange-300/70" />
                       <span className="truncate">{item.location || "Ort folgt"}</span>
                     </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 text-xs font-black text-orange-200">
+                    <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-orange-200">
                       Details
                       <ArrowRight className="h-3.5 w-3.5" />
                     </span>
@@ -809,33 +832,33 @@ export default function Home() {
     </section>
   </div>
 </div>
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
-	  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <section className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-6 sm:px-5 sm:py-8 lg:px-8 xl:px-10">
-  <div className="rounded-[28px] border border-white/10 bg-[#080d14]/88 p-4 shadow-[0_24px_80px_-55px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-5 lg:p-6">
+  <div className="emd-home-partner rounded-[28px] border border-white/10 bg-background p-4 shadow-sm  sm:p-5 lg:p-6">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">Unsere Partner</div>
-        <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Partner & Unterstützer</h2>
-        <p className="mt-1 text-sm font-semibold text-white/40">Danke an alle Unternehmen und Organisationen, die den Verein unterstützen.</p>
+        <div className="emd-home-kicker text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/70">Unsere Partner</div>
+        <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Partner & Unterstützer</h2>
+        <p className="mt-1 text-sm font-semibold text-muted-foreground">Danke an alle Unternehmen und Organisationen, die den Verein unterstützen.</p>
       </div>
 
       <Button
         variant="outline"
-        className="h-10 rounded-xl border-orange-300/20 bg-orange-500/[0.08] px-4 font-black text-orange-100 hover:bg-orange-500/[0.14] hover:text-white"
+        className="h-10 rounded-xl border-orange-300/20 bg-orange-500/[0.08] px-4 font-semibold text-orange-100 hover:bg-orange-500/[0.14] hover:text-white"
         onClick={() => (window.location.href = "/sponsoring")}
       >
         Sponsoring
@@ -845,7 +868,7 @@ export default function Home() {
 
     <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
       <div className="rounded-[22px] border border-orange-300/15 bg-orange-500/[0.05] p-4 sm:p-5">
-        <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-orange-200/60">Hauptsponsor</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-orange-200/60">Hauptsponsor</div>
         <div className="flex min-h-[110px] items-center justify-center rounded-2xl border border-white/[0.08] bg-black/20 px-5 py-4">
           <Image
             src="/images/sponsoren/sponsor1.png"
@@ -859,7 +882,7 @@ export default function Home() {
       </div>
 
       <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
-        <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Premium Partner</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Premium Partner</div>
         <div className="grid grid-cols-3 gap-2.5">
           {[2, 3, 4].map((num) => (
             <div key={num} className="flex min-h-[92px] items-center justify-center rounded-2xl border border-white/[0.08] bg-black/20 p-3">
@@ -877,7 +900,7 @@ export default function Home() {
     </div>
 
     <div className="mt-4 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
-      <div className="mb-3 text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Offizielle Partner</div>
+      <div className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Offizielle Partner</div>
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-8">
         {[5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
           <div key={num} className="flex min-h-[82px] items-center justify-center rounded-2xl border border-white/[0.08] bg-black/20 p-2.5">
@@ -902,19 +925,19 @@ export default function Home() {
 
 
 <section className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-8 sm:px-5 sm:pb-10 lg:px-8 xl:px-10">
-  <div className="overflow-hidden rounded-[26px] border border-orange-300/15 bg-[linear-gradient(135deg,rgba(249,115,22,.12),rgba(7,12,20,.92)_45%,rgba(7,12,20,.96))] shadow-[0_24px_80px_-55px_rgba(0,0,0,.95)] backdrop-blur-xl">
+  <div className="emd-home-install text-foreground overflow-hidden rounded-[26px] border border-orange-300/15 bg-card shadow-sm ">
     <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-6 lg:p-6">
       <div className="min-w-0">
-        <div className="inline-flex items-center rounded-full border border-orange-300/20 bg-orange-500/[0.08] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-orange-200/80">
+        <div className="inline-flex items-center rounded-full border border-orange-300/20 bg-orange-500/[0.08] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-orange-200/80">
           EMD Vereinsapp
         </div>
-        <h2 className="mt-2 text-xl font-black tracking-tight text-white sm:text-2xl">Liga, Turniere und Vereinsnews in einer App</h2>
-        <p className="mt-1.5 max-w-2xl text-sm font-semibold leading-6 text-white/45">
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Liga, Turniere und Vereinsnews in einer App</h2>
+        <p className="mt-1.5 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground">
           Live-Scores, Turniere, Push-News und Statistiken direkt auf deinem Smartphone.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {['Live-Scores','Turniere','Push-News','Statistiken'].map((item) => (
-            <span key={item} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-bold text-white/55">
+            <span key={item} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-xs font-bold text-muted-foreground">
               {item}
             </span>
           ))}
@@ -942,7 +965,7 @@ export default function Home() {
   </div>
 </section>
 
-<footer className="mt-10 border-t border-gray-200 bg-white">
+<footer className="mt-10 border-t border-border bg-card">
   <div className="container mx-auto px-4 py-6">
     {/* Social row */}
     <div className="flex flex-wrap items-center justify-center gap-2">
@@ -979,7 +1002,7 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={s.label}
-          className="inline-flex h-10 items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3 text-gray-700 shadow-sm active:scale-[0.98]"
+          className="inline-flex h-10 items-center gap-2 rounded-2xl border border-border bg-muted px-3 text-muted-foreground shadow-sm active:scale-[0.98]"
         >
           <span className="text-orange-600">{s.icon}</span>
           <span className="text-xs font-bold">{s.label}</span>
@@ -989,23 +1012,23 @@ export default function Home() {
 
     {/* Links */}
     <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
-      <a href="/impressum" className="text-gray-600 hover:text-orange-700 font-semibold">
+      <a href="/impressum" className="text-muted-foreground hover:text-orange-700 font-semibold">
         Impressum
       </a>
-      <a href="/datenschutz" className="text-gray-600 hover:text-orange-700 font-semibold">
+      <a href="/datenschutz" className="text-muted-foreground hover:text-orange-700 font-semibold">
         Datenschutz
       </a>
-      <a href="/kontakt" className="text-gray-600 hover:text-orange-700 font-semibold">
+      <a href="/kontakt" className="text-muted-foreground hover:text-orange-700 font-semibold">
         Kontakt
       </a>
     </div>
 
     {/* Copyright */}
     <div className="mt-5 text-center">
-      <p className="text-xs text-gray-500">
-        © {new Date().getFullYear()} EMD Salzburg • Erstellt von <span className="font-bold text-gray-700">Grafikguru</span>
+      <p className="text-xs text-muted-foreground">
+        © {new Date().getFullYear()} EMD Salzburg • Erstellt von <span className="font-bold text-muted-foreground">Grafikguru</span>
       </p>
-      <p className="text-[11px] text-gray-400 mt-1">Alle Rechte vorbehalten.</p>
+      <p className="text-xs text-muted-foreground mt-1">Alle Rechte vorbehalten.</p>
     </div>
   </div>
 </footer>
@@ -1014,7 +1037,7 @@ export default function Home() {
 
 
 
-      
+
 
 
 

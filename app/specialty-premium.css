@@ -1,0 +1,105 @@
+/* Specialty views share the EMD palette without changing their geometry.
+   In particular, TV scenes, tournament connectors and chat height remain owned
+   by their existing components. */
+.emd-terminal-shell {
+  --terminal-background: #0b1018;
+  --terminal-surface: #131c29;
+  --terminal-border: #283547;
+  background: var(--terminal-background);
+  color: #f3f6fa;
+  color-scheme: dark;
+}
+
+.emd-terminal-shell :is(main,header,section,article,form) { min-width: 0; }
+.emd-terminal-shell main { background-color: var(--terminal-background); }
+.emd-terminal-shell :is(h1,h2,h3) { letter-spacing: -.035em; text-wrap: balance; }
+.emd-terminal-shell :is(button,a,[role="button"]) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.emd-terminal-shell :is(button,a,[role="button"]):not([role="switch"]) { min-height: 48px; }
+.emd-terminal-shell :is(button,a,input,select,textarea,[role="button"]):focus-visible {
+  outline: 3px solid #f59b50;
+  outline-offset: 4px;
+}
+.emd-terminal-shell :is(input,textarea,select) {
+  font-size: 16px;
+  color: #f3f6fa;
+  background-color: #0d1520;
+  border-color: var(--terminal-border);
+}
+.emd-terminal-shell :is(input,textarea)::placeholder { color: #95a6bb; }
+.emd-terminal-shell :is([class*="backdrop-blur"],[class*="bg-black/"]):not([class*="fixed"]) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: var(--terminal-surface);
+}
+/* Quiet decorative overlays, never tournament graphics, photos or cameras. */
+.emd-terminal-shell :is(div,span)[class*="pointer-events-none"][class*="blur-"],
+.emd-terminal-shell .animate-particle-float {
+  display: none;
+}
+.emd-terminal-shell div[class*="absolute"][class*="inset-0"][class*="bg-[radial-gradient"] {
+  background-image: none;
+}
+.emd-terminal-shell .terminal-cta {
+  background: #f59b50;
+  border-color: #f59b50;
+  border-radius: 18px;
+  color: #21160e;
+  box-shadow: 0 4px 16px rgb(0 0 0 / .16);
+}
+.emd-terminal-shell .terminal-cta span { color: #21160e; }
+.emd-terminal-shell .terminal-cta > span:first-child { display: none; }
+.emd-terminal-shell .terminal-cta .animate-ping { animation: none; }
+.emd-terminal-shell :is(table,output,.tabular-nums) { font-variant-numeric: tabular-nums; }
+.emd-terminal-shell th { font-weight: 600; }
+
+/* Messenger uses its own fixed-height viewport and keyboard handling. */
+.emd-chat-app-shell {
+  color-scheme: dark;
+  background: #0b1018;
+  color: #f3f6fa;
+  --background: #0b1018;
+  --card: #131c29;
+  --popover: #182333;
+  --border: #283547;
+  --muted-foreground: #a7b4c6;
+}
+.emd-chat-app-shell :is(input,textarea) {
+  font-size: 16px;
+  caret-color: #f59b50;
+}
+.emd-chat-app-shell :is(button,a,input,textarea,[role="button"]):focus-visible {
+  outline: 2px solid #f59b50;
+  outline-offset: 2px;
+}
+.emd-chat-app-shell :is(button,a)[aria-label] { min-width: 44px; min-height: 44px; }
+
+/* Broadcast overlays retain every vw/vh/clamp scale and absolute position. */
+.emd-broadcast-overlay {
+  background-color: #0b1018;
+  color: #f3f6fa;
+  font-variant-numeric: tabular-nums;
+}
+.emd-broadcast-overlay > div[class*="pointer-events-none"][class*="bg-[radial-gradient"] {
+  background-image: none;
+}
+.emd-broadcast-overlay :is(.text-slate-400,.text-white\/40) { color: #a7b4c6; }
+.emd-tv-frame { border-color: #283547; }
+.emd-tv-page .emd-tv-page-header { background-color: #101823; }
+.emd-tv-page :is(button,a)[aria-label] { min-width: 44px; min-height: 44px; }
+.emd-tv-page :is(button,a):focus-visible {
+  outline: 2px solid #f59b50;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emd-terminal-shell *, .emd-terminal-shell *::before, .emd-terminal-shell *::after,
+  .emd-chat-app-shell *, .emd-broadcast-overlay * {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

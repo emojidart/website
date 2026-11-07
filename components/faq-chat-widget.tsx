@@ -83,9 +83,9 @@ export function FAQChatWidget() {
 
       {/* Chat Widget Panel - Responsive Größen für mobile Geräte hinzugefügt */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 sm:w-[380px] w-auto h-[calc(100vh-10rem)] sm:h-[600px] max-h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200">
+        <div className="fixed bottom-20 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 sm:w-[380px] w-auto h-[calc(100vh-10rem)] sm:h-[600px] max-h-[600px] bg-card rounded-2xl shadow-2xl flex flex-col z-50 border border-border">
           {/* Header - Padding für mobile optimiert */}
-          <div className="bg-gradient-to-r from-orange-600 to-orange-500 text-white p-3 sm:p-4 rounded-t-2xl flex-shrink-0">
+          <div className="bg-card   text-white p-3 sm:p-4 rounded-t-2xl flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -114,7 +114,7 @@ export function FAQChatWidget() {
                   <div
                     className={`px-3 sm:px-4 py-2 sm:py-3 rounded-2xl max-w-[85%] sm:max-w-[80%] shadow-sm ${
                       msg.from === "user"
-                        ? "bg-gray-100 text-gray-900 rounded-br-sm"
+                        ? "bg-muted text-foreground rounded-br-sm"
                         : "bg-orange-600 text-white rounded-bl-sm"
                     }`}
                   >
@@ -128,8 +128,8 @@ export function FAQChatWidget() {
           </div>
 
           {/* Input Area - Padding und Button-Größe für mobile optimiert */}
-          <div className="p-3 sm:p-4 border-t border-gray-200 flex-shrink-0">
-            <div className="flex gap-2 bg-gray-50 rounded-full p-1.5 sm:p-2 border border-gray-200">
+          <div className="p-3 sm:p-4 border-t border-border flex-shrink-0">
+            <div className="flex gap-2 bg-muted rounded-full p-1.5 sm:p-2 border border-border">
               <Input
                 placeholder="Deine Frage eingeben..."
                 value={input}
@@ -142,7 +142,7 @@ export function FAQChatWidget() {
                 onClick={() => handleAsk(input)}
                 disabled={isTyping || !input.trim()}
                 size="icon"
-                className="rounded-full bg-orange-600 hover:bg-orange-700 shrink-0 h-9 w-9 sm:h-10 sm:w-10"
+                className="rounded-full bg-primary hover:bg-primary/90 shrink-0 h-9 w-9 sm:h-10 sm:w-10 text-primary-foreground"
               >
                 <Send className="w-4 h-4" />
               </Button>

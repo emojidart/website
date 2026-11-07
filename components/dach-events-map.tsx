@@ -98,12 +98,12 @@ export function DachEventsMap({ events }: { events: MapEvent[] }) {
 
   if (visibleEvents.length === 0) {
     return (
-      <div className="flex min-h-[420px] items-center justify-center rounded-3xl border border-gray-200 bg-white p-8 text-center">
+      <div className="flex min-h-[420px] items-center justify-center rounded-3xl border border-border bg-card p-8 text-center">
         <div>
-          <p className="font-black text-gray-900">
+          <p className="font-semibold text-foreground">
             Noch keine Standorte auf der Karte
           </p>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Für die vorhandenen Veranstaltungen sind noch keine Koordinaten
             gespeichert.
           </p>
@@ -113,10 +113,10 @@ export function DachEventsMap({ events }: { events: MapEvent[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-1 border-b border-gray-200 bg-slate-950 px-4 py-3 text-white sm:flex-row sm:items-center sm:justify-between">
+    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+      <div className="flex flex-col gap-1 border-b border-border bg-background px-4 py-3 text-white sm:flex-row sm:items-center sm:justify-between">
         <strong>{visibleEvents.length} Standorte auf der Karte</strong>
-        <span className="text-xs text-slate-300">
+        <span className="text-xs text-muted-foreground">
           Klicke eine rote Fahne an, um die Veranstaltung zu öffnen.
         </span>
       </div>
@@ -142,7 +142,7 @@ export function DachEventsMap({ events }: { events: MapEvent[] }) {
           >
             <Popup minWidth={235}>
               <div className="space-y-2">
-                <p className="m-0 text-base font-black">{event.name}</p>
+                <p className="m-0 text-base font-semibold">{event.name}</p>
 
                 <p className="m-0 text-sm">
                   <strong>Datum:</strong>{" "}

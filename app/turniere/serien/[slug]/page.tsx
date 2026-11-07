@@ -192,7 +192,7 @@ export default function DynamicSeriesHubPage() {
     : []
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-white">
       <Header
         variant="app"
         title={series?.name || "Turnierserie"}
@@ -200,38 +200,31 @@ export default function DynamicSeriesHubPage() {
         backHref="/turniere/serien"
       />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[64%_50%] bg-no-repeat opacity-[0.30]"
-          style={{ backgroundImage: `url('${series ? imageUrl(series.image_path) : "/terminal/hero-startscreen.png"}')` }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.70),rgba(3,5,9,.94)_46%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_18%,rgba(245,158,11,.15),transparent_26%),radial-gradient(circle_at_88%_26%,rgba(249,115,22,.12),transparent_28%),radial-gradient(circle_at_52%_82%,rgba(14,165,233,.07),transparent_24%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
         {loading ? (
           <div className="min-h-[340px] animate-pulse rounded-[30px] border border-white/10 bg-white/[0.04]" />
         ) : !series ? (
-          <div className="rounded-[30px] border border-white/10 bg-black/35 px-6 py-16 text-center backdrop-blur-xl">
+          <div className="rounded-[30px] border border-white/10 bg-card px-6 py-16 text-center ">
             Turnierserie nicht gefunden oder nicht aktiv.
           </div>
         ) : !allowed ? (
-          <div className="rounded-[30px] border border-orange-300/15 bg-black/40 px-6 py-16 text-center backdrop-blur-xl">
+          <div className="rounded-[30px] border border-orange-300/15 bg-card px-6 py-16 text-center ">
             <LockKeyhole className="mx-auto h-9 w-9 text-orange-200" />
-            <h1 className="mt-4 text-2xl font-black">Nur für Vereinsmitglieder</h1>
-            <p className="mt-2 text-sm text-white/45">Diese Turnierserie ist nur im Mitgliederbereich verfügbar.</p>
+            <h1 className="mt-4 text-2xl font-semibold">Nur für Vereinsmitglieder</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Diese Turnierserie ist nur im Mitgliederbereich verfügbar.</p>
           </div>
         ) : (
           <>
-            <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-black/35 p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-7 lg:p-8">
+            <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-card p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-7 lg:p-8">
               <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div className="max-w-3xl">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/15 bg-orange-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-orange-100/80">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/15 bg-orange-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-100/80">
                     <Trophy className="h-3.5 w-3.5" />
                     Turnierserie
                   </div>
-                  <h1 className="mt-4 text-3xl font-black tracking-[-0.045em] text-white sm:text-4xl lg:text-5xl">
+                  <h1 className="mt-4 text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl lg:text-5xl">
                     {series.name}
                   </h1>
                   {series.description ? (
@@ -247,10 +240,10 @@ export default function DynamicSeriesHubPage() {
                     const date = new Date(effectiveDate(nextEvent))
                     return (
                       <>
-                        <div className="mt-2 text-sm font-black text-white">
+                        <div className="mt-2 text-sm font-semibold text-white">
                           Nächster Spieltag: {date.toLocaleDateString("de-AT")}
                         </div>
-                        <div className="mt-1 text-xs leading-5 text-white/40">
+                        <div className="mt-1 text-xs leading-5 text-muted-foreground">
                           {date.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
                           {nextEvent.location ? ` · ${nextEvent.location}` : ""}
                         </div>
@@ -258,8 +251,8 @@ export default function DynamicSeriesHubPage() {
                     )
                   })() : (
                     <>
-                      <div className="mt-2 text-sm font-black text-white">Kein weiterer Spieltag eingetragen</div>
-                      <div className="mt-1 text-xs leading-5 text-white/40">Neue Termine erscheinen hier automatisch.</div>
+                      <div className="mt-2 text-sm font-semibold text-white">Kein weiterer Spieltag eingetragen</div>
+                      <div className="mt-1 text-xs leading-5 text-muted-foreground">Neue Termine erscheinen hier automatisch.</div>
                     </>
                   )}
                 </div>
@@ -280,21 +273,21 @@ export default function DynamicSeriesHubPage() {
                   <Link
                     key={tile.href}
                     href={tile.href}
-                    className={`group relative min-h-[245px] overflow-hidden rounded-[30px] border ${tone} bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl transition duration-300 hover:-translate-y-1`}
+                    className={`group relative min-h-[245px] overflow-hidden rounded-[30px] border ${tone} bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  transition duration-300 hover:-translate-y-1`}
                   >
                     <div className="relative flex min-h-[245px] flex-col justify-between p-5 sm:p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] text-white">
                           <Icon className="h-6 w-6" />
                         </div>
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.10] bg-black/35 text-white/60 transition group-hover:bg-white/[0.08] group-hover:text-white">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.10] bg-card text-white/60 transition group-hover:bg-white/[0.08] group-hover:text-white">
                           <ArrowRight className="h-5 w-5 transition group-hover:translate-x-0.5" />
                         </div>
                       </div>
 
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.22em] text-white/38">{tile.eyebrow}</div>
-                        <h2 className="mt-1.5 text-2xl font-black tracking-[-0.035em] text-white">{tile.title}</h2>
+                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/38">{tile.eyebrow}</div>
+                        <h2 className="mt-1.5 text-2xl font-semibold tracking-[-0.035em] text-white">{tile.title}</h2>
                         <p className="mt-2 text-sm font-semibold leading-6 text-white/46">{tile.subtitle}</p>
                       </div>
                     </div>

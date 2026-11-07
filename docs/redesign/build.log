@@ -1,0 +1,367 @@
+
+> my-v0-project@0.1.0 build
+> next build
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+▲ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ Compiled successfully in 34.4s
+  Skipping validation of types
+  Collecting page data using 11 workers ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+  Generating static pages using 11 workers (0/277) ...
+  Generating static pages using 11 workers (69/277) 
+  Generating static pages using 11 workers (138/277) 
+  Generating static pages using 11 workers (207/277) 
+✓ Generating static pages using 11 workers (277/277) in 4.0s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /128erdko
+├ ○ /128erdko/beamer
+├ ○ /16erdko
+├ ○ /16erdko/beamer
+├ ○ /32erdko
+├ ○ /32erdko/beamer
+├ ○ /64erdko
+├ ○ /64erdko/beamer
+├ ○ /8erdko
+├ ○ /8erdko/beamer
+├ ○ /admin
+├ ○ /admin-faq
+├ ○ /admin/dach-veranstaltungen
+├ ○ /admin/dartboerse
+├ ○ /admin/einzelturnier
+├ ○ /admin/guest-requests
+├ ○ /admin/liga_statistik_full
+├ ○ /admin/member-availability-all
+├ ○ /admin/members-champion-cup/auslosung
+├ ○ /admin/members-champion-cup/level
+├ ○ /admin/members-champion-cup/simulation
+├ ○ /admin/mixed-cup
+├ ○ /admin/public-tournament-registrations
+├ ○ /admin/push-test
+├ ○ /admin/season_settings
+├ ○ /admin/send-notification
+├ ○ /admin/statistics-monitor
+├ ○ /admin/support-tickets
+├ ○ /admin/survival-einzel
+├ ○ /admin/survival-roulette
+├ ƒ /admin/survival-roulette/[tournamentId]
+├ ○ /admin/survival-start
+├ ○ /admin/tournament-center
+├ ○ /admin/tournament-schedules
+├ ○ /admin/tournaments
+├ ○ /admin/turnier_spieltage_starten
+├ ○ /admin/turnierserie-bearbeiten
+├ ○ /admin/users
+├ ○ /all-results
+├ ○ /animation
+├ ƒ /api/account-deletion
+├ ƒ /api/admin/clubhouse-managers
+├ ƒ /api/admin/league-sync-reviews
+├ ƒ /api/admin/membership-payments
+├ ƒ /api/admin/public-tournament-registrations
+├ ƒ /api/admin/spieldatenbank/sportdarts-sync
+├ ƒ /api/admin/sync-central-event
+├ ƒ /api/chat/presence
+├ ƒ /api/club-join-approved-mail
+├ ƒ /api/club-join-archive
+├ ƒ /api/club-meeting/jaas-token
+├ ƒ /api/credits/create-checkout-session
+├ ƒ /api/cron/members-cup-registration-push
+├ ƒ /api/dach-event-approved-mail
+├ ƒ /api/dach-event-rejected-mail
+├ ƒ /api/dach-events/geocode
+├ ƒ /api/face-id
+├ ƒ /api/face-id-labor/login
+├ ƒ /api/face-id-labor/logout
+├ ƒ /api/guest-approved-mail
+├ ƒ /api/guest-request
+├ ƒ /api/member-account-request
+├ ƒ /api/member-documents
+├ ƒ /api/member/payment-status
+├ ƒ /api/membership/approve-manual-payment
+├ ƒ /api/mission/submit-code
+├ ƒ /api/notify-new-request
+├ ƒ /api/public-tournament-registration
+├ ƒ /api/public-tournament-registration/cancel
+├ ƒ /api/public-tournament-registration/my-registration
+├ ƒ /api/push/availability-reminder
+├ ƒ /api/push/birthday-daily
+├ ƒ /api/push/board-invite
+├ ƒ /api/push/carpool
+├ ƒ /api/push/chat
+├ ƒ /api/push/chat-reply
+├ ƒ /api/push/check-old
+├ ƒ /api/push/clubhouse
+├ ƒ /api/push/lineup
+├ ƒ /api/push/lineup-confirmation-alert
+├ ƒ /api/push/register-fcm
+├ ƒ /api/push/register-public-fcm
+├ ƒ /api/push/send-admin-push
+├ ƒ /api/push/send-event
+├ ƒ /api/push/send-old
+├ ƒ /api/push/send-tournament
+├ ƒ /api/push/subscribe-old
+├ ƒ /api/push/team-event
+├ ƒ /api/push/team-match
+├ ƒ /api/push/unsubscribe-old
+├ ƒ /api/push/user
+├ ƒ /api/send-campus-confirmation-email
+├ ƒ /api/send-campus-email
+├ ƒ /api/send-registration-email
+├ ƒ /api/spontaneous-dko-face-winner
+├ ƒ /api/sportdarts
+├ ƒ /api/sportdarts/game/[gameId]
+├ ƒ /api/sportdarts/live
+├ ƒ /api/sportdarts/results
+├ ƒ /api/sportdarts/sync
+├ ƒ /api/sportdarts/tv-game/[gameId]
+├ ƒ /api/stripe/cancel-membership
+├ ƒ /api/stripe/create-checkout-session
+├ ƒ /api/stripe/webhook
+├ ƒ /api/terminal/tournament-player-search
+├ ƒ /api/test-push
+├ ƒ /api/volt/speak
+├ ○ /auth/callback
+├ ○ /beamer
+├ ○ /buffalo_steel_cup_results
+├ ○ /buffalo_steel_cup_tabelle
+├ ○ /buffalo-steel-cup
+├ ○ /chat
+├ ○ /chat-app
+├ ƒ /club
+├ ƒ /club-app
+├ ○ /club-join
+├ ○ /clubhouse
+├ ○ /community
+├ ○ /community-app
+├ ○ /dach-veranstaltungen
+├ ƒ /dach-veranstaltungen/[id]
+├ ƒ /dach-veranstaltungen/[id]/bearbeiten
+├ ○ /dach-veranstaltungen/entdecken
+├ ○ /dach-veranstaltungen/meine
+├ ○ /dach-veranstaltungen/neu
+├ ○ /dartboerse
+├ ƒ /dartboerse/[id]
+├ ƒ /dartboerse/[id]/bearbeiten
+├ ○ /dartboerse/meine
+├ ○ /dartboerse/nachrichten
+├ ƒ /dartboerse/nachrichten/[conversationId]
+├ ○ /dartboerse/neu
+├ ○ /datenschutz
+├ ○ /dko_tournament_registration
+├ ○ /dko-self-registration
+├ ○ /emd-campus
+├ ○ /emd-campus/termine
+├ ○ /emd-tv
+├ ○ /emd-tv-screen
+├ ƒ /emd-tv/[matchId]
+├ ○ /emd-vision-camera
+├ ○ /faq
+├ ƒ /game/[id]
+├ ○ /gastzugang
+├ ○ /gastzugang-info
+├ ○ /guest-app
+├ ○ /guest-login
+├ ○ /guest-profile-app
+├ ○ /hall-of-fame
+├ ○ /impressum
+├ ○ /internal-events
+├ ƒ /internal-events/[id]
+├ ○ /internal-matches
+├ ƒ /internal-matches/[id]
+├ ○ /kameraerkennung
+├ ○ /kontakt
+├ ○ /konto-loeschen
+├ ○ /kratzer-tournament
+├ ○ /kratzer-tournament/beamer
+├ ○ /landing
+├ ○ /league-mailbox
+├ ○ /liga-app
+├ ƒ /liga-app/player-profile/[id]
+├ ○ /liga-statistiken
+├ ○ /liga-statistiken-app
+├ ƒ /liga-statistiken-app/player-profile/[id]
+├ ○ /liga-tabellen
+├ ƒ /liga/spieler/[id]
+├ ○ /lion_cup_results
+├ ○ /lion-cup
+├ ○ /lion-cup/anmeldung
+├ ○ /lion-cup/halftime
+├ ○ /lion-cup/regelwerk
+├ ○ /lion-cup/tabelle
+├ ○ /live-all-app
+├ ƒ /live-statistics/[matchId]
+├ ○ /livestream
+├ ○ /livestream-app
+├ ○ /lobby
+├ ○ /lobby-app
+├ ○ /login
+├ ○ /losungs_tool
+├ ○ /match-galerie
+├ ○ /match-galerie-app
+├ ○ /match-today
+├ ƒ /matches/[matchId]/postpone
+├ ○ /meine-bonus-punkte
+├ ○ /meine-teams
+├ ○ /meine-teams-app
+├ ○ /meisten_freilose
+├ ○ /member-account-request
+├ ○ /member-availability
+├ ○ /member-bonus
+├ ○ /member-bonus-app
+├ ○ /member-card
+├ ○ /member-cup-anmeldung
+├ ○ /member-dashboard
+├ ○ /member-dashboard-app
+├ ○ /member-league
+├ ○ /member-league-app
+├ ○ /member-league-app/chat
+├ ○ /member-league-app/emd-tv
+├ ƒ /member-league-app/emd-tv/[matchId]
+├ ○ /member-league-app/ergebnisse
+├ ○ /member-league-app/liga-bonuswertung
+├ ○ /member-league-app/live
+├ ○ /member-league-app/match-galerie
+├ ○ /member-league-app/meine-statistik
+├ ○ /member-league-app/meine-teams
+├ ○ /member-league-app/spielplan
+├ ○ /member-league-app/tabellen
+├ ○ /member-login
+├ ○ /member-membership
+├ ○ /member-profile
+├ ○ /member-profile-app
+├ ○ /member-set-password
+├ ○ /member-statistics
+├ ○ /member-statistics-app
+├ ○ /member-tournament-app
+├ ○ /member-tournament-app/lion-cup
+├ ○ /member-tournament-app/lion-cup/anmeldung
+├ ○ /member-tournament-app/lion-cup/regelwerk
+├ ○ /member-tournament-app/lion-cup/tabelle
+├ ○ /member-tournament-statistics-app
+├ ○ /member-training-app
+├ ○ /members-champion-cup/anmeldung
+├ ○ /members-champion-cup/einstufungen
+├ ○ /members-champion-cup/gesamtwertung
+├ ○ /members-champion-cup/regelwerk
+├ ○ /messenger
+├ ○ /messenger-install
+├ ○ /mission/finale
+├ ○ /mission/protokoll-vier
+├ ○ /mission/test
+├ ƒ /new-club
+├ ○ /oster-mission
+├ ○ /player-of-the-week
+├ ○ /player-scanner
+├ ƒ /player-search
+├ ○ /players
+├ ○ /praemien
+├ ○ /praemien-rangliste
+├ ƒ /praemien/[slug]
+├ ○ /prediction
+├ ○ /profil-daten-app
+├ ○ /push_preferences
+├ ○ /push-notifications
+├ ○ /regelwerk
+├ ○ /regelwerk-app
+├ ○ /results
+├ ○ /roundrobin
+├ ○ /roundrobin/beamer
+├ ○ /sponsoring
+├ ○ /sprechertest
+├ ƒ /statistics/[matchId]
+├ ○ /steeldart-competition-regelwerk
+├ ○ /summer-special
+├ ○ /summer-special/anmeldung
+├ ○ /support
+├ ○ /support-app
+├ ○ /survival-einzel/beamer
+├ ○ /survival-roulette/beamer
+├ ○ /tables
+├ ○ /team-print-sheet
+├ ○ /team-scan-sheet
+├ ○ /terminal
+├ ○ /terminal/ergebnisse
+├ ○ /terminal/face-id-labor
+├ ○ /terminal/gast-registrierung
+├ ○ /terminal/liga
+├ ○ /terminal/mein-emd
+├ ○ /terminal/menu
+├ ○ /terminal/spielplaene
+├ ○ /terminal/statistiken
+├ ○ /terminal/tabellen
+├ ○ /terminal/teams
+├ ○ /terminal/turnier-anmeldung
+├ ○ /terminal/turniere
+├ ○ /terminal/turniere/alle
+├ ○ /terminal/turniere/ergebnisse
+├ ƒ /terminal/turniere/ergebnisse/[tournamentId]
+├ ○ /terminal/turniere/preisgeld
+├ ○ /terminal/turniere/ranglisten
+├ ○ /terminal/turniermodus
+├ ○ /terminal/veranstaltungen
+├ ƒ /terminal/veranstaltungen/[source]/[id]
+├ ○ /test-scan
+├ ○ /tournament
+├ ○ /tournament-history
+├ ƒ /tournament-history/[tournamentId]
+├ ○ /tournament-series
+├ ○ /training
+├ ○ /training_event
+├ ○ /training-app
+├ ○ /turnier-anmeldung/abmelden
+├ ○ /turnier-app
+├ ○ /turniere
+├ ƒ /turniere/[id]
+├ ƒ /turniere/[id]/bearbeiten
+├ ○ /turniere/entdecken
+├ ○ /turniere/meine
+├ ○ /turniere/neu
+├ ○ /turniere/serien
+├ ƒ /turniere/serien/[slug]
+├ ƒ /turniere/serien/[slug]/anmeldung
+├ ƒ /turniere/serien/[slug]/regelwerk
+├ ƒ /turniere/serien/[slug]/tabelle
+├ ○ /uber-uns
+├ ○ /ueber-uns
+├ ○ /upcoming-tournaments
+├ ○ /upcoming-tournaments-app
+├ ○ /urkunde_drucken
+├ ○ /veranstaltungen
+├ ƒ /veranstaltungen/[id]
+├ ƒ /verein-beitreten
+├ ○ /vereinsheim
+├ ○ /vereinskalender
+├ ○ /vereinskalender-app
+├ ○ /vereinssitzung
+└ ○ /vereinsverwaltung
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

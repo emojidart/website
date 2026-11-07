@@ -136,18 +136,18 @@ function RescheduleBadge({
   return (
     <div className="mt-2 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold shadow-sm ring-2 bg-orange-600 text-white border-orange-500/30 ring-orange-200">
+        <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ring-2 bg-orange-600 text-white border-orange-500/30 ring-orange-200">
           <RefreshCw className="h-3 w-3 opacity-90" />
           Neuer Termin: {newDate} • {newTime}
         </span>
 
-        <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-orange-700">
+        <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-orange-700">
           <span className="h-2 w-2 rounded-full bg-orange-600" />
           Verschoben
         </span>
       </div>
 
-      <div className="text-[11px] text-gray-600">
+      <div className="text-xs text-muted-foreground">
         <span className="opacity-70">Original:</span>{" "}
         <span className="line-through decoration-2 decoration-gray-400">
           {oldDate} • {oldTime}
@@ -219,7 +219,7 @@ export default function UpcomingTournamentsAppPage() {
       setDkoError(null)
 
       try {
-        
+
         const { data: seriesData, error: sErr } = await supabase
           .from("dko_series")
           .select("id,name,slug,is_active,startgeld")
@@ -384,7 +384,7 @@ export default function UpcomingTournamentsAppPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24 md:pb-0">
+    <div className="min-h-screen bg-muted text-foreground font-sans pb-24 md:pb-0">
       <Header />
 
       {/* */}
@@ -393,7 +393,7 @@ export default function UpcomingTournamentsAppPage() {
  variants={containerVariants} initial="hidden" animate="visible">
           {/* ===== Lion Cup Header (APP CARD STYLE) ===== */}
           <motion.div variants={itemVariants} className="mb-4">
-            <div className="rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
+            <div className="rounded-3xl border border-border/70 bg-card shadow-md ring-1 ring-black/5 overflow-hidden">
               <div className="p-5 sm:p-7">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
@@ -401,11 +401,11 @@ export default function UpcomingTournamentsAppPage() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
+                    <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-100">
                       EMD – LION CUP 2025/2026
                     </div>
 
-                    <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">Spieltag Anmeldung</h1>
+                    <h1 className="mt-2 text-2xl sm:text-3xl font-semibold leading-tight">Spieltag Anmeldung</h1>
 
                     <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2">
                       <div className="inline-flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-900">
@@ -413,14 +413,14 @@ export default function UpcomingTournamentsAppPage() {
                         Anmeldung bis spätestens <strong>10 Minuten</strong> vor Turnierbeginn.
                       </div>
 
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700">
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground">
                         <TrophyMini />
-                        <span className="font-black text-gray-900">{actualLionTournamentDays}</span>
+                        <span className="font-semibold text-foreground">{actualLionTournamentDays}</span>
                         <span>Turniertage + 1 Finaltag</span>
                       </div>
                     </div>
 
-                    <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700">
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground">
                       <Calendar className="h-4 w-4 text-orange-700" />
                       <span>{lionRange ? `${lionRange.from} – ${lionRange.to}` : "—"}</span>
                     </div>
@@ -428,23 +428,23 @@ export default function UpcomingTournamentsAppPage() {
                 </div>
               </div>
 
-              <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
+              <div className="text-foreground h-1.5 w-full bg-card   " />
             </div>
           </motion.div>
 
           {/* ===== Schedule Card ===== */}
           <motion.div variants={itemVariants} className="space-y-4">
-            <motion.div variants={cardVariants} className="rounded-2xl border border-gray-200/70 bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
-              <div className="px-4 sm:px-5 py-4 border-b border-gray-100">
+            <motion.div variants={cardVariants} className="rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/5 overflow-hidden">
+              <div className="px-4 sm:px-5 py-4 border-b border-border">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <Crown className="h-5 w-5 text-orange-600" />
-                    <h2 className="text-base sm:text-lg font-black text-gray-900">EMD – Lion Cup Spieltage</h2>
+                    <h2 className="text-base sm:text-lg font-semibold text-foreground">EMD – Lion Cup Spieltage</h2>
                   </div>
 
                   {!dkoLoading && !dkoError && lionEvents.length > 0 ? (
-                    <div className="text-xs text-gray-600">
-                      <span className="font-black text-gray-900">{lionEvents.length}</span> Termine
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">{lionEvents.length}</span> Termine
                     </div>
                   ) : null}
                 </div>
@@ -452,14 +452,14 @@ export default function UpcomingTournamentsAppPage() {
 
               <div className="p-3 sm:p-4">
                 {dkoLoading ? (
-                  <div className="flex items-center justify-center gap-2 text-gray-700 py-8">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground py-8">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span>Lade Termine…</span>
                   </div>
                 ) : dkoError ? (
                   <div className="p-3 rounded-xl border bg-red-50 text-red-700 text-sm">Fehler beim Laden: {dkoError}</div>
                 ) : lionSeries && lionEvents.length === 0 ? (
-                  <div className="text-sm text-gray-600 py-6">Noch keine Termine in der DB.</div>
+                  <div className="text-sm text-muted-foreground py-6">Noch keine Termine in der DB.</div>
                 ) : (
                   <div className="space-y-2">
                     {(showAllLionCup ? lionEvents : lionEvents.slice(0, 3)).map((ev, index) => {
@@ -502,41 +502,41 @@ export default function UpcomingTournamentsAppPage() {
                             spielfrei
                               ? "bg-yellow-50 border-yellow-200"
                               : past
-                                ? "bg-gray-50 border-gray-200 opacity-70"
+                                ? "bg-muted border-border opacity-70"
                                 : today
                                   ? "bg-orange-50 border-orange-200"
-                                  : "bg-white border-gray-200",
+                                  : "bg-card border-border",
                             ev.isRescheduled ? "shadow-sm" : "",
                           ].join(" ")}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <div className="font-black text-sm sm:text-base text-gray-900">
+                                <div className="font-semibold text-sm sm:text-base text-foreground">
                                   {ev.dateLabel}
                                   {today && !spielfrei ? <span className="text-orange-700"> • Heute</span> : null}
                                 </div>
 
                                 {spielfrei ? (
-                                  <span className="inline-flex items-center rounded-full bg-yellow-200 text-yellow-900 px-2.5 py-1 text-[11px] font-black">
+                                  <span className="inline-flex items-center rounded-full bg-yellow-200 text-yellow-900 px-2.5 py-1 text-xs font-semibold">
                                     Spielfrei
                                   </span>
                                 ) : past ? (
-                                  <span className="inline-flex items-center rounded-full bg-gray-200 text-gray-700 px-2.5 py-1 text-[11px] font-black">
+                                  <span className="inline-flex items-center rounded-full bg-secondary text-muted-foreground px-2.5 py-1 text-xs font-semibold">
                                     Vorbei
                                   </span>
                                 ) : today ? (
-                                  <span className="inline-flex items-center rounded-full bg-orange-600 text-white px-2.5 py-1 text-[11px] font-black">
+                                  <span className="inline-flex items-center rounded-full bg-orange-600 text-white px-2.5 py-1 text-xs font-semibold">
                                     Heute
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-800 px-2.5 py-1 text-[11px] font-black">
+                                  <span className="inline-flex items-center rounded-full bg-muted text-foreground px-2.5 py-1 text-xs font-semibold">
                                     Geplant
                                   </span>
                                 )}
                               </div>
 
-                              <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-gray-700">
+                              <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                                 <Clock className="h-4 w-4 text-orange-600" />
                                 <span>{ev.timeLabel}</span>
                               </div>
@@ -548,26 +548,26 @@ export default function UpcomingTournamentsAppPage() {
                               />
 
                               {countdownLine ? (
-                                <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-orange-100 bg-white px-3 py-2 text-[11px] font-semibold text-gray-800">
+                                <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-orange-100 bg-card px-3 py-2 text-xs font-semibold text-foreground">
                                   <Timer className="h-4 w-4 text-orange-600" />
                                   {countdownLine}
                                 </div>
                               ) : null}
 
                               {today && !spielfrei && cutoffDT ? (
-                                <div className="mt-2 text-[11px] text-gray-600">
+                                <div className="mt-2 text-xs text-muted-foreground">
                                   <div className="inline-flex items-center gap-2">
                                     <Info className="h-4 w-4 text-orange-600" />
                                     <span>
                                       Anmeldeschluss:{" "}
-                                      <strong className="text-gray-900">
+                                      <strong className="text-foreground">
                                         {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}
                                       </strong>
                                     </span>
                                   </div>
 
-                                  <div className="mt-2 rounded-xl border border-orange-200 bg-white/70 px-3 py-2">
-                                    <div className="flex items-start gap-2 text-[11px] leading-snug text-gray-700">
+                                  <div className="mt-2 rounded-xl border border-orange-200 bg-card px-3 py-2">
+                                    <div className="flex items-start gap-2 text-xs leading-snug text-muted-foreground">
                                       <Info className="h-4 w-4 mt-0.5 text-orange-600 shrink-0" />
                                       <span>
                                         Abmeldungen sind jederzeit bis 10 Minuten vor Turnierbeginn möglich, solange die Anmeldung offen ist.
@@ -595,12 +595,12 @@ export default function UpcomingTournamentsAppPage() {
                                         : undefined
                                   }
                                   className={[
-                                    "h-9 px-3 text-xs font-black rounded-xl",
+                                    "h-9 px-3 text-xs font-semibold rounded-xl",
                                     canClick
                                       ? alreadyRegistered
-                                        ? "bg-gray-800 hover:bg-gray-900 text-white"
+                                        ? "bg-background hover:bg-background text-white"
                                         : "bg-orange-600 hover:bg-orange-700 text-white"
-                                      : "bg-gray-200 text-gray-700",
+                                      : "bg-secondary text-muted-foreground",
                                   ].join(" ")}
                                 >
                                   {regLoading ? (
@@ -663,7 +663,7 @@ export default function UpcomingTournamentsAppPage() {
                 ) : null}
               </div>
 
-              <div className="bg-gray-50 px-3 sm:px-4 py-3 border-t border-gray-100">
+              <div className="bg-muted px-3 sm:px-4 py-3 border-t border-border">
                 <Link href="lion-cup-regelwerk">
                   <Button size="sm" variant="outline" className="w-full rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50">
                     <BookOpen className="h-4 w-4 mr-2" />
@@ -674,22 +674,22 @@ export default function UpcomingTournamentsAppPage() {
             </motion.div>
 
             {/* ===== Lion Cup Finale ===== */}
-            <motion.div variants={cardVariants} className="rounded-2xl border border-gray-200/70 bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
-              <div className="p-5 sm:p-6 bg-gradient-to-r from-orange-600 to-orange-800 text-white text-center">
+            <motion.div variants={cardVariants} className="rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/5 overflow-hidden">
+              <div className="p-5 sm:p-6 bg-card   text-white text-center">
                 <Crown className="h-10 w-10 mx-auto mb-3" />
-                <h2 className="text-lg sm:text-xl font-black uppercase mb-2">EMD - LION CUP FINALE</h2>
+                <h2 className="text-lg sm:text-xl font-semibold uppercase mb-2">EMD - LION CUP FINALE</h2>
                 <div className="text-base sm:text-lg font-extrabold">01. JUNI 2026</div>
               </div>
             </motion.div>
 
             {/* ===== Location ===== */}
-            <motion.div variants={cardVariants} className="rounded-2xl border border-gray-200/70 bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
+            <motion.div variants={cardVariants} className="rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/5 overflow-hidden">
               <div className="p-5 sm:p-6 text-center">
                 <MapPin className="h-8 w-8 text-red-600 mx-auto mb-3" />
-                <h2 className="text-base sm:text-lg font-black uppercase mb-3 text-gray-900">Veranstaltungsort</h2>
+                <h2 className="text-base sm:text-lg font-semibold uppercase mb-3 text-foreground">Veranstaltungsort</h2>
                 <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
-                  <div className="font-black text-red-700">Pfeil-OK e.V.</div>
-                  <div className="text-sm text-gray-700 mt-1">Linzer Bundesstrasse 16, 5020 Salzburg</div>
+                  <div className="font-semibold text-red-700">Pfeil-OK e.V.</div>
+                  <div className="text-sm text-muted-foreground mt-1">Linzer Bundesstrasse 16, 5020 Salzburg</div>
                 </div>
               </div>
             </motion.div>
@@ -707,7 +707,7 @@ export default function UpcomingTournamentsAppPage() {
         >
           <button
             onClick={() => setSelectedImage(null)}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+            className="absolute top-4 right-4 text-white hover:text-muted-foreground transition-colors"
             aria-label="Schließen"
           >
             <X className="h-8 w-8" />

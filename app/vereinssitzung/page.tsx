@@ -184,19 +184,19 @@ export default function ClubMeetingPage() {
   }, [meeting?.id, meeting?.status, meeting?.room_name])
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <Header />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:py-10">
         {loading ? (
           <div className="flex justify-center py-24"><Loader2 className="h-9 w-9 animate-spin text-red-600" /></div>
         ) : !meeting ? (
-          <Card className="mx-auto max-w-3xl rounded-3xl"><CardContent className="p-10 text-center"><Video className="mx-auto h-12 w-12 text-gray-300" /><h1 className="mt-4 text-2xl font-black">Keine Vereinssitzung vorhanden</h1><p className="mt-2 text-gray-600">Aktuell ist keine Sitzung vorbereitet oder live.</p></CardContent></Card>
+          <Card className="mx-auto max-w-3xl rounded-3xl"><CardContent className="p-10 text-center"><Video className="mx-auto h-12 w-12 text-muted-foreground" /><h1 className="mt-4 text-2xl font-semibold">Keine Vereinssitzung vorhanden</h1><p className="mt-2 text-muted-foreground">Aktuell ist keine Sitzung vorbereitet oder live.</p></CardContent></Card>
         ) : meeting.status === "ended" ? (
           <Card className="mx-auto max-w-3xl rounded-3xl shadow-md">
             <CardContent className="p-7 text-center sm:p-10">
-              <Video className="mx-auto h-11 w-11 text-gray-300" />
-              <h1 className="mt-4 text-3xl font-black">{meeting.title}</h1>
-              <p className="mt-3 text-gray-600">Diese Vereinssitzung wurde bereits beendet.</p>
+              <Video className="mx-auto h-11 w-11 text-muted-foreground" />
+              <h1 className="mt-4 text-3xl font-semibold">{meeting.title}</h1>
+              <p className="mt-3 text-muted-foreground">Diese Vereinssitzung wurde bereits beendet.</p>
             </CardContent>
           </Card>
         ) : meeting.status === "live" && meeting.room_name ? (
@@ -210,10 +210,10 @@ export default function ClubMeetingPage() {
                       <Badge className="animate-pulse bg-red-600 px-3 py-1.5 text-white"><Radio className="mr-2 h-4 w-4" /> LIVE</Badge>
                       {isModerator ? <Badge variant="outline">Moderator</Badge> : null}
                     </div>
-                    <h1 className="mt-3 text-2xl font-black sm:text-3xl">{meeting.title}</h1>
-                    <p className="mt-1 text-sm text-gray-600">Die Sitzung läuft direkt in der Emoji’s Dartverein App.</p>
+                    <h1 className="mt-3 text-2xl font-semibold sm:text-3xl">{meeting.title}</h1>
+                    <p className="mt-1 text-sm text-muted-foreground">Die Sitzung läuft direkt in der Emoji’s Dartverein App.</p>
                   </div>
-                  {joining ? <div className="flex items-center gap-2 text-sm font-bold text-gray-500"><Loader2 className="h-4 w-4 animate-spin" /> Videoraum wird verbunden …</div> : null}
+                  {joining ? <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Videoraum wird verbunden …</div> : null}
                 </div>
               </CardContent>
             </Card>
@@ -222,7 +222,7 @@ export default function ClubMeetingPage() {
               <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-800">{meetingError}</div>
             ) : null}
 
-            <div className="overflow-hidden rounded-3xl border border-gray-200 bg-black shadow-xl">
+            <div className="overflow-hidden rounded-3xl border border-border bg-black shadow-xl">
               <div ref={meetingHostRef} className="h-[72vh] min-h-[520px] w-full" />
             </div>
           </div>
@@ -230,10 +230,10 @@ export default function ClubMeetingPage() {
           <Card className="mx-auto max-w-3xl rounded-3xl shadow-md">
             <CardContent className="p-7 text-center sm:p-10">
               <CalendarClock className="mx-auto h-11 w-11 text-orange-500" />
-              <h1 className="mt-4 text-3xl font-black">{meeting.title}</h1>
-              <p className="mt-3 text-gray-600">Die Sitzung wurde vorbereitet, ist aber noch nicht gestartet.</p>
-              {meeting.scheduled_at ? <div className="mt-5 rounded-2xl bg-orange-50 p-4 font-black text-orange-900">Geplant: {new Date(meeting.scheduled_at).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })}</div> : null}
-              <p className="mt-5 text-sm text-gray-500">Diese Seite aktualisiert sich automatisch, sobald die Sitzung gestartet wird.</p>
+              <h1 className="mt-4 text-3xl font-semibold">{meeting.title}</h1>
+              <p className="mt-3 text-muted-foreground">Die Sitzung wurde vorbereitet, ist aber noch nicht gestartet.</p>
+              {meeting.scheduled_at ? <div className="mt-5 rounded-2xl bg-orange-50 p-4 font-semibold text-orange-900">Geplant: {new Date(meeting.scheduled_at).toLocaleString("de-AT", { dateStyle: "medium", timeStyle: "short" })}</div> : null}
+              <p className="mt-5 text-sm text-muted-foreground">Diese Seite aktualisiert sich automatisch, sobald die Sitzung gestartet wird.</p>
             </CardContent>
           </Card>
         )}

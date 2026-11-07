@@ -161,16 +161,9 @@ export default function NachrichtenPage() {
   }, [prepared, query]);
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-white">
       <Header />
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.95)_48%,rgba(2,4,7,.99))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.10),transparent_26%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-24 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
         <Button asChild variant="outline" className="mb-4 h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white/65 hover:bg-white/[0.06]/[0.09] hover:text-white">
@@ -180,13 +173,13 @@ export default function NachrichtenPage() {
           </Link>
         </Button>
 
-        <div className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/92 p-4 text-white shadow-[0_28px_90px_-50px_rgba(0,0,0,.98)] backdrop-blur-xl sm:p-6 lg:p-7">
+        <div className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/92 p-4 text-white shadow-[0_28px_90px_-50px_rgba(0,0,0,.98)]  sm:p-6 lg:p-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="text-xs font-black uppercase tracking-widest text-orange-300">
+              <div className="text-xs font-semibold uppercase tracking-widest text-orange-300">
                 Dartbörse
               </div>
-              <h1 className="mt-1 text-3xl font-black">Meine Nachrichten</h1>
+              <h1 className="mt-1 text-3xl font-semibold">Meine Nachrichten</h1>
               <p className="mt-2 text-white/42">
                 Fragen, Preisangebote und Gegenangebote direkt klären.
               </p>
@@ -196,7 +189,7 @@ export default function NachrichtenPage() {
               <div className="relative">
                 <MessageCircle className="h-7 w-7 text-orange-300" />
                 {totalUnread > 0 ? (
-                  <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-500/[0.08]0 px-1.5 text-[10px] font-black text-white ring-2 ring-slate-900">
+                  <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-semibold text-white ring-2 ring-border">
                     {totalUnread > 99 ? "99+" : totalUnread}
                   </span>
                 ) : null}
@@ -205,7 +198,7 @@ export default function NachrichtenPage() {
                 <div className="text-xs font-bold uppercase text-white/42">
                   Neue Nachrichten
                 </div>
-                <div className="text-xl font-black">{totalUnread}</div>
+                <div className="text-xl font-semibold">{totalUnread}</div>
               </div>
             </div>
           </div>
@@ -235,7 +228,7 @@ export default function NachrichtenPage() {
           <Card className="mt-5 rounded-[24px] border border-white/[0.08] bg-[#0b0f15]/92 shadow-[0_20px_70px_-52px_rgba(0,0,0,.95)]">
             <CardContent className="p-12 text-center">
               <Inbox className="mx-auto h-12 w-12 text-white/42" />
-              <h2 className="mt-4 text-xl font-black">
+              <h2 className="mt-4 text-xl font-semibold">
                 {query ? "Keine passende Unterhaltung" : "Noch keine Nachrichten"}
               </h2>
               <p className="mt-2 text-sm text-white/38">
@@ -259,9 +252,9 @@ export default function NachrichtenPage() {
               >
                 <div className="flex items-start gap-4">
                   <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl font-black ${
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl font-semibold ${
                       unread > 0
-                        ? "bg-orange-500/[0.08]0 text-white"
+                        ? "bg-orange-500 text-white"
                         : "bg-white/[0.05] text-white/38"
                     }`}
                   >
@@ -271,7 +264,7 @@ export default function NachrichtenPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-base font-black text-white">
+                        <div className="truncate text-base font-semibold text-white">
                           {otherName}
                         </div>
                         <div className="truncate text-sm font-bold text-white/38">
@@ -280,7 +273,7 @@ export default function NachrichtenPage() {
                       </div>
 
                       {unread > 0 ? (
-                        <span className="shrink-0 rounded-full bg-orange-500/[0.08]0 px-2.5 py-1 text-xs font-black text-white">
+                        <span className="shrink-0 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-semibold text-white">
                           {unread > 99 ? "99+" : unread} neu
                         </span>
                       ) : (
@@ -292,7 +285,7 @@ export default function NachrichtenPage() {
                       className={`mt-2 line-clamp-2 text-sm ${
                         unread > 0
                           ? "font-semibold text-white"
-                          : "text-white/50"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {last

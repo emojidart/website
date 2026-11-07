@@ -103,13 +103,13 @@ const Field = React.memo(function Field({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <Label htmlFor={id} className="text-sm font-semibold text-gray-900">
+        <Label htmlFor={id} className="text-sm font-semibold text-foreground">
           {label} {required ? <span className="text-orange-700">*</span> : null}
         </Label>
         {error ? <span className="text-xs font-semibold text-red-600">{error}</span> : null}
       </div>
       {children}
-      {hint ? <p className="text-xs text-gray-500">{hint}</p> : null}
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   )
 })
@@ -257,28 +257,28 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
         w-[calc(100vw-20px)]
         sm:max-w-[720px]
         p-0
-        bg-white
+        bg-card
         rounded-2xl
         overflow-hidden
-        border border-gray-200
+        border border-border
         shadow-2xl
         max-h-[92dvh]
         flex flex-col
       "
     >
-      <DialogHeader className="px-5 sm:px-6 py-4 border-b border-gray-200 bg-white">
-        <DialogTitle className="text-lg sm:text-xl font-black">Spielerbewerbung</DialogTitle>
-        <DialogDescription className="text-sm text-gray-600">
+      <DialogHeader className="px-5 sm:px-6 py-4 border-b border-border bg-card">
+        <DialogTitle className="text-lg sm:text-xl font-semibold">Spielerbewerbung</DialogTitle>
+        <DialogDescription className="text-sm text-muted-foreground">
           Pflichtfelder ausfüllen – optionales kannst du leer lassen.
         </DialogDescription>
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-6">
         {/* Person */}
-        <div className="rounded-2xl border border-gray-200/70 bg-gray-50 p-4 sm:p-5">
+        <div className="rounded-2xl border border-border/70 bg-muted p-4 sm:p-5">
           <div className="mb-3">
-            <h3 className="text-sm sm:text-base font-black text-gray-900">Persönliche Daten</h3>
-            <p className="text-xs sm:text-sm text-gray-600">Damit wir dich kontaktieren können.</p>
+            <h3 className="text-sm sm:text-base font-semibold text-foreground">Persönliche Daten</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">Damit wir dich kontaktieren können.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -347,10 +347,10 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
         </div>
 
         {/* Address */}
-        <div className="rounded-2xl border border-gray-200/70 bg-white p-4 sm:p-5">
+        <div className="rounded-2xl border border-border/70 bg-card p-4 sm:p-5">
           <div className="mb-3">
-            <h3 className="text-sm sm:text-base font-black text-gray-900">Adresse</h3>
-            <p className="text-xs sm:text-sm text-gray-600">Pflicht für die Anmeldung.</p>
+            <h3 className="text-sm sm:text-base font-semibold text-foreground">Adresse</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">Pflicht für die Anmeldung.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4">
@@ -409,10 +409,10 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
         </div>
 
         {/* Optional */}
-        <div className="rounded-2xl border border-gray-200/70 bg-gray-50 p-4 sm:p-5">
+        <div className="rounded-2xl border border-border/70 bg-muted p-4 sm:p-5">
           <div className="mb-3">
-            <h3 className="text-sm sm:text-base font-black text-gray-900">Optional</h3>
-            <p className="text-xs sm:text-sm text-gray-600">Kannst du leer lassen.</p>
+            <h3 className="text-sm sm:text-base font-semibold text-foreground">Optional</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">Kannst du leer lassen.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -467,7 +467,7 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
                 ? "bg-red-50 text-red-700 border border-red-200"
                 : formMessageType === "success"
                 ? "bg-green-50 text-green-700 border border-green-200"
-                : "bg-gray-50 text-gray-700 border border-gray-200"
+                : "bg-muted text-muted-foreground border border-border"
             }`}
           >
             {formMessageType === "error" && <AlertCircle className="w-4 h-4" />}
@@ -481,7 +481,7 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
         <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
       </form>
 
-      <div className="px-5 sm:px-6 py-4 border-t border-gray-200 bg-white space-y-3">
+      <div className="px-5 sm:px-6 py-4 border-t border-border bg-card space-y-3">
         <Button type="button" variant="outline" className="w-full" onClick={onApplicationSuccess}>
           Abbrechen
         </Button>
@@ -493,7 +493,7 @@ export function PlayerApplicationForm({ onApplicationSuccess }: PlayerApplicatio
             form?.requestSubmit()
           }}
           disabled={!canSubmit}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black rounded-xl shadow-lg disabled:opacity-60"
+          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl shadow-lg disabled:opacity-60"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
           Bewerbung absenden

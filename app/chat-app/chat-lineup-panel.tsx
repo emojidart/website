@@ -594,18 +594,18 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
     }
   }
 
-  if (loading) return <div className="flex h-full items-center justify-center text-white/35"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-  if (!profile) return <div className="p-6 text-sm text-white/50">Kein Mitgliedsprofil gefunden.</div>;
+  if (loading) return <div className="flex h-full items-center justify-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (!profile) return <div className="p-6 text-sm text-muted-foreground">Kein Mitgliedsprofil gefunden.</div>;
 
   if (!selectedMatch) {
     return (
       <div className="h-full overflow-y-auto bg-[#0b1117] pb-8">
-        <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-[#171f27]/95 px-4 py-4 backdrop-blur-xl">
-          <div className="text-xl font-black text-white">Aufstellung</div>
-          <div className="mt-1 text-xs text-white/40">Kommende Ligaspiele</div>
+        <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-[#171f27]/95 px-4 py-4 ">
+          <div className="text-xl font-semibold text-white">Aufstellung</div>
+          <div className="mt-1 text-xs text-muted-foreground">Kommende Ligaspiele</div>
         </div>
         <div className="mx-auto max-w-3xl p-3 sm:p-5">
-          {matches.length === 0 ? <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 text-center text-sm text-white/40">Keine kommenden Spiele.</div> : matches.map(m => {
+          {matches.length === 0 ? <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 text-center text-sm text-muted-foreground">Keine kommenden Spiele.</div> : matches.map(m => {
             const cs = cardStatus[m.id];
             const matchLocked = isMatchLocked(m);
             const savingAvailability = !!availabilitySaving[m.id];
@@ -613,32 +613,32 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
               <div key={m.id} onClick={()=>openMatch(m)} className="mb-2.5 w-full cursor-pointer rounded-2xl border border-white/[0.07] bg-[#141c24] p-4 text-left transition hover:bg-[#19232d] active:scale-[0.995]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[15px] font-black text-white">{matchName(m)}</div>
-                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-white/45"><span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-orange-300" />{fmtDate(m.match_date)}</span>{m.match_time && <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-orange-300" />{fmtTime(m.match_time)}</span>}<span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-orange-300" />{m.venue || "—"}</span></div>
+                    <div className="truncate text-[15px] font-semibold text-white">{matchName(m)}</div>
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-orange-300" />{fmtDate(m.match_date)}</span>{m.match_time && <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-orange-300" />{fmtTime(m.match_time)}</span>}<span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-orange-300" />{m.venue || "—"}</span></div>
                     {cs ? (
                       <>
                         <div className="mt-3 flex flex-wrap gap-2">
-                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${cs.lineupConfirmed ? "bg-emerald-500/15 text-emerald-200" : "bg-orange-500/15 text-orange-200"}`}>{cs.lineupConfirmed ? "✓ Aufstellung bestätigt" : `Aufstellung offen · ${cs.starters}/${cs.required}`}</span>
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${cs.lineupConfirmed ? "bg-emerald-500/15 text-emerald-200" : "bg-orange-500/15 text-orange-200"}`}>{cs.lineupConfirmed ? "✓ Aufstellung bestätigt" : `Aufstellung offen · ${cs.starters}/${cs.required}`}</span>
                           {!cs.lineupConfirmed ? (
-                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${cs.open === 0 ? "bg-emerald-500/10 text-emerald-200" : "bg-amber-500/15 text-amber-200"}`}>{cs.open === 0 ? "✓ Alle haben geantwortet" : `${cs.open} Rückmeldung${cs.open === 1 ? "" : "en"} offen`}</span>
+                            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${cs.open === 0 ? "bg-emerald-500/10 text-emerald-200" : "bg-amber-500/15 text-amber-200"}`}>{cs.open === 0 ? "✓ Alle haben geantwortet" : `${cs.open} Rückmeldung${cs.open === 1 ? "" : "en"} offen`}</span>
                           ) : null}
                         </div>
 
                         {!cs.lineupConfirmed ? (
                           <div className={`mt-3 flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 ${cs.myStatus ? "border-white/[0.07] bg-black/15" : "border-orange-300/15 bg-orange-500/[0.045]"}`}>
                             <div>
-                              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">Deine Zusage</div>
-                              <div className={`mt-0.5 text-xs font-black ${cs.myStatus === "yes" ? "text-emerald-200" : cs.myStatus === "maybe" ? "text-amber-200" : cs.myStatus === "no" ? "text-red-200" : "text-orange-200"}`}>
+                              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Deine Zusage</div>
+                              <div className={`mt-0.5 text-xs font-semibold ${cs.myStatus === "yes" ? "text-emerald-200" : cs.myStatus === "maybe" ? "text-amber-200" : cs.myStatus === "no" ? "text-red-200" : "text-orange-200"}`}>
                                 {cs.myStatus === "yes" ? "Ja · du bist dabei" : cs.myStatus === "maybe" ? "Wenn nötig" : cs.myStatus === "no" ? "Nein · du bist nicht dabei" : "Noch offen · Spiel öffnen"}
                               </div>
                             </div>
-                            <span className="text-lg text-white/30">›</span>
+                            <span className="text-lg text-muted-foreground">›</span>
                           </div>
                         ) : null}
                       </>
                     ) : null}
                   </div>
-                  <span className="shrink-0 rounded-full bg-orange-500/12 px-2.5 py-1 text-[10px] font-black text-orange-200">Spieltag {m.week_number}</span>
+                  <span className="shrink-0 rounded-full bg-orange-500/12 px-2.5 py-1 text-xs font-semibold text-orange-200">Spieltag {m.week_number}</span>
                 </div>
               </div>
             );
@@ -651,23 +651,23 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#0b1117]">
       <div className="shrink-0 border-b border-white/[0.06] bg-[#171f27] px-3 py-3 sm:px-4">
-        <div className="flex items-center gap-3"><Button variant="ghost" onClick={()=>setSelectedMatch(null)} className="h-9 rounded-full px-3 text-white/70 hover:bg-white/[0.07]">← Zurück</Button><div className="min-w-0 flex-1"><div className="truncate text-sm font-black text-white">{matchName(selectedMatch)}</div><div className="mt-0.5 text-[11px] text-white/40">{fmtDate(selectedMatch.match_date)}{selectedMatch.match_time ? ` · ${fmtTime(selectedMatch.match_time)} Uhr` : ""}</div></div>{confirmed && <Badge className="bg-emerald-500/15 text-emerald-200">Bestätigt</Badge>}</div>
-        {ownTeamsForMatch(selectedMatch).length > 1 && <div className="mt-3 flex gap-2 overflow-x-auto">{ownTeamsForMatch(selectedMatch).map(m => <button key={m.team_id} onClick={async()=>{setSelectedTeamId(m.team_id); await loadLineup(selectedMatch,m.team_id)}} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${selectedTeamId===m.team_id?"border-orange-400/30 bg-orange-500/15 text-orange-200":"border-white/10 text-white/55"}`}>{m.teams?.name}</button>)}</div>}
+        <div className="flex items-center gap-3"><Button variant="ghost" onClick={()=>setSelectedMatch(null)} className="h-9 rounded-full px-3 text-white/70 hover:bg-white/[0.07]">← Zurück</Button><div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold text-white">{matchName(selectedMatch)}</div><div className="mt-0.5 text-xs text-muted-foreground">{fmtDate(selectedMatch.match_date)}{selectedMatch.match_time ? ` · ${fmtTime(selectedMatch.match_time)} Uhr` : ""}</div></div>{confirmed && <Badge className="bg-emerald-500/15 text-emerald-200">Bestätigt</Badge>}</div>
+        {ownTeamsForMatch(selectedMatch).length > 1 && <div className="mt-3 flex gap-2 overflow-x-auto">{ownTeamsForMatch(selectedMatch).map(m => <button key={m.team_id} onClick={async()=>{setSelectedTeamId(m.team_id); await loadLineup(selectedMatch,m.team_id)}} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${selectedTeamId===m.team_id?"border-orange-400/30 bg-orange-500/15 text-orange-200":"border-white/10 text-muted-foreground"}`}>{m.teams?.name}</button>)}</div>}
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 sm:p-5">
         <div className="mx-auto max-w-3xl space-y-3">
-          <div className={`rounded-2xl border p-4 ${starters.length>=required?"border-emerald-300/15 bg-emerald-500/[0.05]":"border-amber-300/15 bg-amber-500/[0.05]"}`}><div className="flex items-center justify-between"><div><div className="text-[11px] font-black uppercase tracking-[.14em] text-white/30">Starter</div><div className="mt-1 text-sm font-bold text-white/60">{dartType==="edart"?"E-Dart · 4 Starter":dartType==="steeldart"?"Steeldart · 3 Starter":"Aufstellung"}</div></div><div className={`text-3xl font-black ${starters.length>=required?"text-emerald-300":"text-amber-300"}`}>{starters.length}<span className="text-lg text-white/25">/{required}</span></div></div></div>
+          <div className={`rounded-2xl border p-4 ${starters.length>=required?"border-emerald-300/15 bg-emerald-500/[0.05]":"border-amber-300/15 bg-amber-500/[0.05]"}`}><div className="flex items-center justify-between"><div><div className="text-xs font-semibold uppercase tracking-[.14em] text-muted-foreground">Starter</div><div className="mt-1 text-sm font-bold text-white/60">{dartType==="edart"?"E-Dart · 4 Starter":dartType==="steeldart"?"Steeldart · 3 Starter":"Aufstellung"}</div></div><div className={`text-3xl font-semibold ${starters.length>=required?"text-emerald-300":"text-amber-300"}`}>{starters.length}<span className="text-lg text-white/25">/{required}</span></div></div></div>
 
           {selectedCardStatus && (
             <div className={`rounded-2xl border p-4 ${selectedCardStatus.lineupConfirmed ? "border-emerald-300/15 bg-emerald-500/[0.045]" : selectedCardStatus.myStatus ? "border-white/[0.07] bg-[#141c24]" : "border-orange-300/15 bg-orange-500/[0.045]"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-[11px] font-black uppercase tracking-[0.13em] text-white/30">Deine Zusage</div>
-                  <div className="mt-1 text-sm font-black text-white">
+                  <div className="text-xs font-semibold uppercase tracking-[0.13em] text-muted-foreground">Deine Zusage</div>
+                  <div className="mt-1 text-sm font-semibold text-white">
                     {selectedCardStatus.myStatus === "yes" ? "Ja · du bist dabei" : selectedCardStatus.myStatus === "maybe" ? "Wenn nötig" : selectedCardStatus.myStatus === "no" ? "Nein · du bist nicht dabei" : "Noch keine Rückmeldung"}
                   </div>
-                  <div className="mt-1 text-xs font-semibold text-white/40">
+                  <div className="mt-1 text-xs font-semibold text-muted-foreground">
                     {selectedCardStatus.lineupConfirmed ? "Aufstellung bestätigt – Rückmeldung gesperrt." : locked ? "Spielbeginn erreicht – Rückmeldung gesperrt." : "Du kannst deine Rückmeldung bis zur bestätigten Aufstellung ändern."}
                   </div>
                 </div>
@@ -676,9 +676,9 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
 
               {!selectedCardStatus.lineupConfirmed && !locked ? (
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  <Button type="button" size="sm" disabled={!!availabilitySaving[selectedMatch.id]} onClick={()=>void setMyAvailability(selectedMatch,"yes")} className={`h-10 rounded-xl border text-xs font-black ${selectedCardStatus.myStatus === "yes" ? "border-emerald-300/30 bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/25" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07]"}`}>Ja</Button>
-                  <Button type="button" size="sm" disabled={!!availabilitySaving[selectedMatch.id]} onClick={()=>void setMyAvailability(selectedMatch,"maybe")} className={`h-10 rounded-xl border px-1 text-[11px] font-black ${selectedCardStatus.myStatus === "maybe" ? "border-amber-300/30 bg-amber-500/20 text-amber-100 hover:bg-amber-500/25" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07]"}`}>Wenn nötig</Button>
-                  <Button type="button" size="sm" disabled={!!availabilitySaving[selectedMatch.id]} onClick={()=>void setMyAvailability(selectedMatch,"no")} className={`h-10 rounded-xl border text-xs font-black ${selectedCardStatus.myStatus === "no" ? "border-red-300/30 bg-red-500/20 text-red-100 hover:bg-red-500/25" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07]"}`}>Nein</Button>
+                  <Button type="button" size="sm" disabled={!!availabilitySaving[selectedMatch.id]} onClick={()=>void setMyAvailability(selectedMatch,"yes")} className={`h-10 rounded-xl border text-xs font-semibold ${selectedCardStatus.myStatus === "yes" ? "border-emerald-300/30 bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/25" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07]"}`}>Ja</Button>
+                  <Button type="button" size="sm" disabled={!!availabilitySaving[selectedMatch.id]} onClick={()=>void setMyAvailability(selectedMatch,"maybe")} className={`h-10 rounded-xl border px-1 text-xs font-semibold ${selectedCardStatus.myStatus === "maybe" ? "border-amber-300/30 bg-amber-500/20 text-amber-100 hover:bg-amber-500/25" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07]"}`}>Wenn nötig</Button>
+                  <Button type="button" size="sm" disabled={!!availabilitySaving[selectedMatch.id]} onClick={()=>void setMyAvailability(selectedMatch,"no")} className={`h-10 rounded-xl border text-xs font-semibold ${selectedCardStatus.myStatus === "no" ? "border-red-300/30 bg-red-500/20 text-red-100 hover:bg-red-500/25" : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07]"}`}>Nein</Button>
                 </div>
               ) : null}
             </div>
@@ -686,31 +686,31 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
 
           <div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm font-black text-white">
+              <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <Users className="h-4 w-4 text-orange-300" />
                 Rückmeldungen
               </div>
-              <div className="text-[10px] font-bold text-white/35">
+              <div className="text-xs font-bold text-muted-foreground">
                 {players.length} Spieler
               </div>
             </div>
 
             <div className="mb-3 grid grid-cols-4 gap-1.5">
               <div className="rounded-xl bg-emerald-500/[0.08] px-2 py-2 text-center">
-                <div className="text-sm font-black text-emerald-200">{teamAvailabilitySummary.yes}</div>
-                <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-emerald-200/60">Zusage</div>
+                <div className="text-sm font-semibold text-emerald-200">{teamAvailabilitySummary.yes}</div>
+                <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-emerald-200/60">Zusage</div>
               </div>
               <div className="rounded-xl bg-amber-500/[0.08] px-2 py-2 text-center">
-                <div className="text-sm font-black text-amber-200">{teamAvailabilitySummary.maybe}</div>
-                <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-amber-200/60">Wenn nötig</div>
+                <div className="text-sm font-semibold text-amber-200">{teamAvailabilitySummary.maybe}</div>
+                <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-amber-200/60">Wenn nötig</div>
               </div>
               <div className="rounded-xl bg-red-500/[0.08] px-2 py-2 text-center">
-                <div className="text-sm font-black text-red-200">{teamAvailabilitySummary.no}</div>
-                <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-red-200/60">Absage</div>
+                <div className="text-sm font-semibold text-red-200">{teamAvailabilitySummary.no}</div>
+                <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-red-200/60">Absage</div>
               </div>
               <div className="rounded-xl bg-white/[0.04] px-2 py-2 text-center">
-                <div className="text-sm font-black text-white/55">{teamAvailabilitySummary.open}</div>
-                <div className="mt-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white/30">Offen</div>
+                <div className="text-sm font-semibold text-muted-foreground">{teamAvailabilitySummary.open}</div>
+                <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Offen</div>
               </div>
             </div>
 
@@ -736,7 +736,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                     ) : status === "no" ? (
                       <Badge className="shrink-0 bg-red-500/10 text-red-200">Absage</Badge>
                     ) : (
-                      <Badge className="shrink-0 bg-white/[0.05] text-white/45">Offen</Badge>
+                      <Badge className="shrink-0 bg-white/[0.05] text-muted-foreground">Offen</Badge>
                     )}
                   </div>
                 );
@@ -745,11 +745,11 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
           </div>
 
           {locked && <div className="rounded-2xl border border-red-300/15 bg-red-500/[0.05] p-3 text-sm font-semibold text-red-200">Ab Spielbeginn ist die Aufstellung gesperrt.</div>}
-          {!isCaptain && <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 text-sm text-white/50"><ShieldCheck className="mr-2 inline h-4 w-4 text-orange-300" />Nur Captain oder Co-Captain können ändern. Du siehst hier die aktuelle Aufstellung.</div>}
+          {!isCaptain && <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 text-sm text-muted-foreground"><ShieldCheck className="mr-2 inline h-4 w-4 text-orange-300" />Nur Captain oder Co-Captain können ändern. Du siehst hier die aktuelle Aufstellung.</div>}
           {error && <div className="rounded-2xl border border-red-300/15 bg-red-500/[0.05] p-3 text-sm text-red-200">{error}</div>}
 
-          {isCaptain && !locked && <div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-3 flex items-center gap-2 text-sm font-black text-white"><Users className="h-4 w-4 text-orange-300" />Spieler auswählen</div><div className="grid gap-2 sm:grid-cols-2">{players.map(p=>{const row=draft.find(x=>x.player_id===p.id); return <div key={p.id} className={`rounded-xl border p-3 ${row?"border-orange-300/15 bg-orange-500/[0.045]":"border-white/[0.06] bg-black/15"}`}><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={p.photo_url || undefined}/><AvatarFallback>{p.name.slice(0,1)}</AvatarFallback></Avatar><div className="min-w-0 flex-1 truncate text-sm font-bold text-white">{p.name}</div>
-{availabilityByPlayer.get(p.id) === "yes" ? <Badge className="bg-emerald-500/10 text-emerald-200">Zusage</Badge> : availabilityByPlayer.get(p.id) === "maybe" ? <Badge className="bg-amber-500/10 text-amber-200">Wenn nötig</Badge> : availabilityByPlayer.get(p.id) === "no" ? <Badge className="bg-red-500/10 text-red-200">Absage</Badge> : <Badge className="bg-white/[0.05] text-white/45">Offen</Badge>}
+          {isCaptain && !locked && <div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white"><Users className="h-4 w-4 text-orange-300" />Spieler auswählen</div><div className="grid gap-2 sm:grid-cols-2">{players.map(p=>{const row=draft.find(x=>x.player_id===p.id); return <div key={p.id} className={`rounded-xl border p-3 ${row?"border-orange-300/15 bg-orange-500/[0.045]":"border-white/[0.06] bg-black/15"}`}><div className="flex items-center gap-2"><Avatar className="h-8 w-8"><AvatarImage src={p.photo_url || undefined}/><AvatarFallback>{p.name.slice(0,1)}</AvatarFallback></Avatar><div className="min-w-0 flex-1 truncate text-sm font-bold text-white">{p.name}</div>
+{availabilityByPlayer.get(p.id) === "yes" ? <Badge className="bg-emerald-500/10 text-emerald-200">Zusage</Badge> : availabilityByPlayer.get(p.id) === "maybe" ? <Badge className="bg-amber-500/10 text-amber-200">Wenn nötig</Badge> : availabilityByPlayer.get(p.id) === "no" ? <Badge className="bg-red-500/10 text-red-200">Absage</Badge> : <Badge className="bg-white/[0.05] text-muted-foreground">Offen</Badge>}
 {row && <Badge className={row.is_substitute?"bg-sky-500/10 text-sky-200":"bg-orange-500/10 text-orange-200"}>{row.is_substitute?"Ersatz":"Starter"}</Badge>}</div>
 {!availabilityByPlayer.has(p.id) && p.id !== profile?.player_id ? (
   <Button
@@ -758,7 +758,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
     variant="outline"
     disabled={!!remindSending[p.id]}
     onClick={()=>void sendReminder(p.id)}
-    className={`mt-2 h-9 w-full border-white/10 text-xs font-black ${remindOk[p.id] ? "bg-emerald-500/10 text-emerald-200" : "bg-white/[0.03] text-white/65"}`}
+    className={`mt-2 h-9 w-full border-white/10 text-xs font-semibold ${remindOk[p.id] ? "bg-emerald-500/10 text-emerald-200" : "bg-white/[0.03] text-white/65"}`}
   >
     {remindSending[p.id] ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : remindOk[p.id] ? <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> : <Bell className="mr-1.5 h-3.5 w-3.5" />}
     {remindOk[p.id] ? "Erinnerung gesendet" : "Erinnern"}
@@ -766,13 +766,13 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
 ) : null}
 <div className="mt-2 grid grid-cols-2 gap-2">{!row?<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"starter")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Starter</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">Ersatz</Button></>:<><Button size="sm" variant="outline" onClick={()=>choose(p.id,"remove")} className="border-white/10 bg-white/[0.03] text-xs text-red-200">Raus</Button><Button size="sm" variant="outline" onClick={()=>choose(p.id,row.is_substitute?"starter":"substitute")} className="border-white/10 bg-white/[0.03] text-xs text-white/70">{row.is_substitute?"Starter":"Ersatz"}</Button></>}</div></div>})}</div></div>}
 
-          <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-2 text-sm font-black text-white">Starter ({starters.length})</div><div className="space-y-1.5">{starters.length?starters.map(x=><div key={x.player_id} className="rounded-xl bg-black/20 px-3 py-2 text-sm font-semibold text-white">{players.find(p=>p.id===x.player_id)?.name ?? x.club_players?.name ?? "Spieler"}</div>):<div className="text-xs text-white/30">Noch keine Starter</div>}</div></div><div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-2 text-sm font-black text-white">Ersatz ({subs.length})</div><div className="space-y-1.5">{subs.length?subs.map(x=><div key={x.player_id} className="rounded-xl bg-black/20 px-3 py-2 text-sm font-semibold text-white">{players.find(p=>p.id===x.player_id)?.name ?? x.club_players?.name ?? "Spieler"}</div>):<div className="text-xs text-white/30">Kein Ersatz</div>}</div></div></div>
+          <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-2 text-sm font-semibold text-white">Starter ({starters.length})</div><div className="space-y-1.5">{starters.length?starters.map(x=><div key={x.player_id} className="rounded-xl bg-black/20 px-3 py-2 text-sm font-semibold text-white">{players.find(p=>p.id===x.player_id)?.name ?? x.club_players?.name ?? "Spieler"}</div>):<div className="text-xs text-muted-foreground">Noch keine Starter</div>}</div></div><div className="rounded-2xl border border-white/[0.07] bg-[#141c24] p-3"><div className="mb-2 text-sm font-semibold text-white">Ersatz ({subs.length})</div><div className="space-y-1.5">{subs.length?subs.map(x=><div key={x.player_id} className="rounded-xl bg-black/20 px-3 py-2 text-sm font-semibold text-white">{players.find(p=>p.id===x.player_id)?.name ?? x.club_players?.name ?? "Spieler"}</div>):<div className="text-xs text-muted-foreground">Kein Ersatz</div>}</div></div></div>
 
           {isCaptain && !locked && (
             <div className="space-y-3 rounded-2xl border border-sky-300/10 bg-sky-500/[0.035] p-3">
               <div>
-                <div className="text-sm font-black text-white">Team-Chat & Erinnerungen</div>
-                <div className="mt-1 text-xs font-medium leading-5 text-white/45">
+                <div className="text-sm font-semibold text-white">Team-Chat & Erinnerungen</div>
+                <div className="mt-1 text-xs font-medium leading-5 text-muted-foreground">
                   Spiel veröffentlichen, Team per Push informieren und offene Rückmeldungen direkt hier erinnern.
                 </div>
               </div>
@@ -782,22 +782,22 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                 variant="outline"
                 onClick={()=>void publishToTeamChat()}
                 disabled={publishingChat}
-                className="h-11 w-full rounded-xl border-sky-300/15 bg-sky-500/[0.07] font-black text-sky-100 hover:bg-sky-500/[0.12]"
+                className="h-11 w-full rounded-xl border-sky-300/15 bg-sky-500/[0.07] font-semibold text-sky-100 hover:bg-sky-500/[0.12]"
               >
                 {publishingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
                 {publishingChat ? "Wird veröffentlicht …" : "Im Team-Chat veröffentlichen"}
               </Button>
 
               {publishResult ? (
-                <div className="rounded-xl border border-emerald-300/15 bg-emerald-500/[0.08] px-3 py-2.5 text-center text-xs font-black text-emerald-200">
+                <div className="rounded-xl border border-emerald-300/15 bg-emerald-500/[0.08] px-3 py-2.5 text-center text-xs font-semibold text-emerald-200">
                   {publishResult}
                 </div>
               ) : null}
 
               <div className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-white/[0.07] bg-black/15 p-3">
                 <div>
-                  <div className="text-xs font-black text-white">Offene Rückmeldungen</div>
-                  <div className="mt-0.5 text-[11px] font-semibold text-white/40">
+                  <div className="text-xs font-semibold text-white">Offene Rückmeldungen</div>
+                  <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
                     {openPlayerIds.length === 0 ? "Alle haben bereits geantwortet." : `${openPlayerIds.length} Spieler noch offen`}
                   </div>
                 </div>
@@ -807,7 +807,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   variant="outline"
                   onClick={()=>void remindAllOpen()}
                   disabled={remindAllSending || openPlayerIds.length === 0}
-                  className="h-9 rounded-xl border-orange-300/15 bg-orange-500/[0.07] px-3 text-xs font-black text-orange-100"
+                  className="h-9 rounded-xl border-orange-300/15 bg-orange-500/[0.07] px-3 text-xs font-semibold text-orange-100"
                 >
                   {remindAllSending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Bell className="mr-1.5 h-3.5 w-3.5" />}
                   Alle erinnern
@@ -825,11 +825,11 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
           {profile?.is_admin ? (
             <div className="space-y-3 rounded-2xl border border-red-300/20 bg-red-500/[0.07] p-3">
               <div>
-                <div className="flex items-center gap-2 text-sm font-black text-red-100">
+                <div className="flex items-center gap-2 text-sm font-semibold text-red-100">
                   <Bell className="h-4 w-4 text-red-300" />
                   🚨 EMD ALERT
                 </div>
-                <div className="mt-1 text-xs font-semibold leading-5 text-white/45">
+                <div className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
                   {confirmed ? "Aufstellung ist bereits bestätigt – der Alarm bleibt sichtbar, ist aber gesperrt." : "Großen Alarm direkt im Messenger anzeigen und zusätzlich den Alarm-Push senden."}
                 </div>
               </div>
@@ -841,7 +841,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   variant="outline"
                   disabled={confirmed || !!emdAlertSending}
                   onClick={()=>void sendEmdAlert("captain")}
-                  className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-[11px] font-black text-red-100"
+                  className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-xs font-semibold text-red-100"
                 >
                   {emdAlertSending === "captain" ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
                   Captain
@@ -852,7 +852,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   variant="outline"
                   disabled={confirmed || !!emdAlertSending}
                   onClick={()=>void sendEmdAlert("co_captain")}
-                  className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-[11px] font-black text-red-100"
+                  className="h-10 rounded-xl border-red-300/20 bg-red-500/10 px-1 text-xs font-semibold text-red-100"
                 >
                   {emdAlertSending === "co_captain" ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
                   Co-Captain
@@ -862,7 +862,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
                   size="sm"
                   disabled={confirmed || !!emdAlertSending}
                   onClick={()=>void sendEmdAlert("both")}
-                  className="h-10 rounded-xl bg-red-600 px-1 text-[11px] font-black text-white hover:bg-red-500"
+                  className="h-10 rounded-xl bg-red-600 px-1 text-xs font-semibold text-white hover:bg-red-500"
                 >
                   {emdAlertSending === "both" ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
                   Beide
@@ -870,7 +870,7 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
               </div>
 
               {emdAlertResult ? (
-                <div className="rounded-xl border border-red-300/15 bg-black/20 px-3 py-2 text-center text-xs font-black text-red-100">
+                <div className="rounded-xl border border-red-300/15 bg-black/20 px-3 py-2 text-center text-xs font-semibold text-red-100">
                   {emdAlertResult}
                 </div>
               ) : null}
@@ -878,12 +878,12 @@ export default function ChatLineupPanel({ initialMatchId, initialTeamId }: { ini
           ) : null}
 
           {confirmResult ? (
-            <div className="rounded-2xl border border-emerald-300/15 bg-emerald-500/[0.08] p-3 text-center text-sm font-black text-emerald-200">
+            <div className="rounded-2xl border border-emerald-300/15 bg-emerald-500/[0.08] p-3 text-center text-sm font-semibold text-emerald-200">
               {confirmResult}
             </div>
           ) : null}
 
-          {isCaptain && !locked && <Button onClick={confirm} disabled={saving || starters.length<required} className="h-12 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400 disabled:bg-white/10 disabled:text-white/25">{saving?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<CheckCircle2 className="mr-2 h-4 w-4"/>}{saving ? "Wird bestätigt …" : confirmed ? "Änderungen bestätigen" : "Aufstellung bestätigen"}</Button>}
+          {isCaptain && !locked && <Button onClick={confirm} disabled={saving || starters.length<required} className="h-12 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400 disabled:bg-white/10 disabled:text-white/25">{saving?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<CheckCircle2 className="mr-2 h-4 w-4"/>}{saving ? "Wird bestätigt …" : confirmed ? "Änderungen bestätigen" : "Aufstellung bestätigen"}</Button>}
         </div>
       </div>
     </div>

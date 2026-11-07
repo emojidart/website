@@ -507,32 +507,32 @@ export default function MatchPostponePage() {
         >
           {/* Top Card */}
           <motion.div variants={itemVariants} className="mb-5 sm:mb-6">
-            <div className="overflow-hidden rounded-[28px] border border-orange-300/[0.10] bg-black/35 shadow-[0_28px_80px_-50px_rgba(0,0,0,.98)] backdrop-blur-2xl">
-              <div className="h-1 bg-gradient-to-r from-orange-500 via-orange-400 to-sky-500/70" />
+            <div className="overflow-hidden rounded-[28px] border border-orange-300/[0.10] bg-card shadow-[0_28px_80px_-50px_rgba(0,0,0,.98)] ">
+              <div className="text-foreground h-1 bg-card   " />
               <div className="relative flex items-start gap-3 p-4 sm:p-5 lg:p-6">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-500/12 shadow-[0_0_24px_rgba(249,115,22,.08)]">
                   <CalendarClock className="h-5 w-5 text-orange-300" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-base font-black tracking-tight text-white sm:text-lg lg:text-xl">Spiel verschieben</h1>
+                  <h1 className="text-base font-semibold tracking-tight text-white sm:text-lg lg:text-xl">Spiel verschieben</h1>
                   <p className="mt-1 break-words text-sm font-medium text-white/60">
-                    {homeName} <span className="text-white/30">vs</span> {awayName}
+                    {homeName} <span className="text-muted-foreground">vs</span> {awayName}
                   </p>
-                  <p className="mt-1 text-xs font-medium text-white/40">
+                  <p className="mt-1 text-xs font-medium text-muted-foreground">
                     Aktuell: <span className="font-semibold text-white/80">{oldDate}</span>
-                    {oldTime ? <span className="text-white/40"> · {oldTime} Uhr</span> : null}
+                    {oldTime ? <span className="text-muted-foreground"> · {oldTime} Uhr</span> : null}
                   </p>
 
                   {/* Heim/Auswärts Badge */}
                   <div className="mt-2 flex flex-wrap gap-2">
                     {isHomeGame ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/15 bg-emerald-500/[0.08] px-2.5 py-1 text-xs font-black text-emerald-200">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/15 bg-emerald-500/[0.08] px-2.5 py-1 text-xs font-semibold text-emerald-200">
                         <Home className="h-3.5 w-3.5" />
                         Heimspiel
                       </span>
                     ) : null}
                     {isAwayGame ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-sky-300/15 bg-sky-500/[0.08] px-2.5 py-1 text-xs font-black text-sky-200">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-sky-300/15 bg-sky-500/[0.08] px-2.5 py-1 text-xs font-semibold text-sky-200">
                         <Bus className="h-3.5 w-3.5" />
                         Auswärtsspiel
                       </span>
@@ -548,7 +548,7 @@ export default function MatchPostponePage() {
             <Button
               variant="outline"
               onClick={() => router.push(backHref)}
-              className="h-11 w-full rounded-2xl border-white/[0.10] bg-white/[0.035] font-black text-white/80 hover:border-orange-300/20 hover:bg-white/[0.06] hover:text-white"
+              className="h-11 w-full rounded-2xl border-white/[0.10] bg-white/[0.035] font-semibold text-white/80 hover:border-orange-300/20 hover:bg-white/[0.06] hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {backLabel}
@@ -557,9 +557,9 @@ export default function MatchPostponePage() {
 
           {/* Hinweis */}
           <motion.div variants={itemVariants} className="mb-5">
-            <Alert className="rounded-[24px] border-orange-300/15 bg-orange-500/[0.055] text-white backdrop-blur-xl">
+            <Alert className="rounded-[24px] border-orange-300/15 bg-orange-500/[0.055] text-white ">
               <ShieldAlert className="h-4 w-4 text-orange-300" />
-              <AlertTitle className="font-black text-orange-200">Hinweis</AlertTitle>
+              <AlertTitle className="font-semibold text-orange-200">Hinweis</AlertTitle>
               <AlertDescription className="text-orange-100/70">
                 Bitte trage einen echten Grund ein (z.B. „2 Spieler krank“).
               </AlertDescription>
@@ -568,9 +568,9 @@ export default function MatchPostponePage() {
 
           {/* Planung / Heimspiele + interne Events + Urlaube + Lion Cup */}
           <motion.div variants={itemVariants} className="mb-5">
-            <Alert className="rounded-[26px] border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+            <Alert className="rounded-[26px] border-white/[0.08] bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
               <ListChecks className="h-4 w-4 text-white/65" />
-              <AlertTitle className="font-black text-white">
+              <AlertTitle className="font-semibold text-white">
                 Planung am {postponeData.newDate ? formatMatchDate(postponeData.newDate) : "…"}
               </AlertTitle>
 
@@ -610,26 +610,26 @@ export default function MatchPostponePage() {
                               <div
                                 key={m.id}
                                 className={cn(
-                                  "flex items-center justify-between rounded-xl border px-3 py-2 text-sm backdrop-blur-xl",
+                                  "flex items-center justify-between rounded-xl border px-3 py-2 text-sm ",
                                   isThis ? "border-orange-300/20 bg-orange-500/[0.07]" : "border-white/[0.08] bg-white/[0.03]",
                                 )}
                               >
                                 <div className="min-w-0">
-                                  <div className="truncate font-black text-white/90">
-                                    {h} <span className="text-white/30">vs</span> {a}
+                                  <div className="truncate font-semibold text-white/90">
+                                    {h} <span className="text-muted-foreground">vs</span> {a}
                                     {isThis ? (
-                                      <span className="ml-2 text-xs font-black text-orange-300">(dieses Spiel)</span>
+                                      <span className="ml-2 text-xs font-semibold text-orange-300">(dieses Spiel)</span>
                                     ) : null}
                                   </div>
-                                  <div className="truncate text-xs text-white/45">{m.venue || "—"}</div>
+                                  <div className="truncate text-xs text-muted-foreground">{m.venue || "—"}</div>
                                 </div>
-                                <div className="ml-3 tabular-nums font-black text-white/85">{t}</div>
+                                <div className="ml-3 tabular-nums font-semibold text-white/85">{t}</div>
                               </div>
                             )
                           })}
                       </div>
                     ) : (
-                      <div className="mt-2 text-sm text-white/45">Keine Heimspiele an diesem Datum gefunden.</div>
+                      <div className="mt-2 text-sm text-muted-foreground">Keine Heimspiele an diesem Datum gefunden.</div>
                     )}
 
                     {/* Interne Events Summary */}
@@ -652,21 +652,21 @@ export default function MatchPostponePage() {
                             return (
                               <div
                                 key={ev.id}
-                                className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm backdrop-blur-xl"
+                                className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm "
                               >
                                 <div className="min-w-0">
-                                  <div className="truncate font-black text-white/90">{ev.name}</div>
-                                  <div className="truncate text-xs text-white/45">
+                                  <div className="truncate font-semibold text-white/90">{ev.name}</div>
+                                  <div className="truncate text-xs text-muted-foreground">
                                     {ev.event_type ? ev.event_type : "event"}
                                   </div>
                                 </div>
-                                <div className="ml-3 tabular-nums font-black text-white/85">{t}</div>
+                                <div className="ml-3 tabular-nums font-semibold text-white/85">{t}</div>
                               </div>
                             )
                           })}
                       </div>
                     ) : (
-                      <div className="mt-2 text-sm text-white/45"></div>
+                      <div className="mt-2 text-sm text-muted-foreground"></div>
                     )}
 
                     {/* Urlaube Summary */}
@@ -692,13 +692,13 @@ export default function MatchPostponePage() {
                             return (
                               <div
                                 key={v.id}
-                                className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm backdrop-blur-xl"
+                                className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm "
                               >
                                 <div className="min-w-0">
-                                  <div className="truncate font-black text-white/90">{v.user_name}</div>
-                                  <div className="truncate text-xs text-white/45">
+                                  <div className="truncate font-semibold text-white/90">{v.user_name}</div>
+                                  <div className="truncate text-xs text-muted-foreground">
                                     {range}
-                                    {v.note ? <span className="text-white/40"> · {v.note}</span> : null}
+                                    {v.note ? <span className="text-muted-foreground"> · {v.note}</span> : null}
                                   </div>
                                 </div>
                               </div>
@@ -706,7 +706,7 @@ export default function MatchPostponePage() {
                           })}
                       </div>
                     ) : (
-                      <div className="mt-2 text-sm text-white/45"></div>
+                      <div className="mt-2 text-sm text-muted-foreground"></div>
                     )}
 
                     {/* Lion Cup Summary */}
@@ -732,31 +732,31 @@ export default function MatchPostponePage() {
                               <div
                                 key={ev.id}
                                 className={cn(
-                                  "flex items-center justify-between rounded-xl border px-3 py-2 text-sm backdrop-blur-xl",
+                                  "flex items-center justify-between rounded-xl border px-3 py-2 text-sm ",
                                   showRescheduled ? "border-orange-300/20 bg-orange-500/[0.07]" : "border-white/[0.08] bg-white/[0.03]",
                                 )}
                               >
                                 <div className="min-w-0">
-                                  <div className="truncate font-black text-white/90">
+                                  <div className="truncate font-semibold text-white/90">
                                     {title}
                                     {showRescheduled ? (
-                                      <span className="ml-2 text-xs font-black text-orange-300">(verschoben)</span>
+                                      <span className="ml-2 text-xs font-semibold text-orange-300">(verschoben)</span>
                                     ) : null}
                                   </div>
-                                  <div className="truncate text-xs text-white/45">
+                                  <div className="truncate text-xs text-muted-foreground">
                                     {ev.location ? ev.location : "—"}
                                     {showRescheduled && ev.reschedule_reason ? (
-                                      <span className="text-white/40"> · {ev.reschedule_reason}</span>
+                                      <span className="text-muted-foreground"> · {ev.reschedule_reason}</span>
                                     ) : null}
                                   </div>
                                 </div>
-                                <div className="ml-3 tabular-nums font-black text-white/85">{t}</div>
+                                <div className="ml-3 tabular-nums font-semibold text-white/85">{t}</div>
                               </div>
                             )
                           })}
                       </div>
                     ) : (
-                      <div className="mt-2 text-sm text-white/45"></div>
+                      <div className="mt-2 text-sm text-muted-foreground"></div>
                     )}
                   </>
                 )}
@@ -766,9 +766,9 @@ export default function MatchPostponePage() {
 
           {/* Form Card */}
           <motion.div variants={itemVariants}>
-            <Card className="rounded-[28px] border border-white/[0.08] bg-black/30 text-white shadow-[0_26px_80px_-50px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+            <Card className="rounded-[28px] border border-white/[0.08] bg-card text-white shadow-[0_26px_80px_-50px_rgba(0,0,0,.98)] ">
               <CardHeader className="pb-2 sm:px-5 lg:px-6">
-                <CardTitle className="flex items-center gap-2 text-sm font-black text-white sm:text-base">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-white sm:text-base">
                   <AlertTriangle className="h-5 w-5 text-orange-300" />
                   Neuer Termin
                 </CardTitle>
@@ -778,7 +778,7 @@ export default function MatchPostponePage() {
                 {error ? (
                   <Alert variant="destructive" className="rounded-2xl">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle className="font-black">Fehler</AlertTitle>
+                    <AlertTitle className="font-semibold">Fehler</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 ) : null}
@@ -786,7 +786,7 @@ export default function MatchPostponePage() {
                 {ok ? (
                   <Alert className="rounded-2xl border-emerald-300/15 bg-emerald-500/[0.055] text-white">
                     <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                    <AlertTitle className="font-black text-emerald-200">Gespeichert</AlertTitle>
+                    <AlertTitle className="font-semibold text-emerald-200">Gespeichert</AlertTitle>
                     <AlertDescription className="text-emerald-100/70">
                       Das Spiel wurde verschoben. Du kannst jetzt zurück zum Dashboard.
                     </AlertDescription>
@@ -794,7 +794,7 @@ export default function MatchPostponePage() {
                     <div className="mt-3">
                       <Button
                         onClick={() => router.push(backHref)}
-                        className="h-11 rounded-2xl bg-orange-500 font-black text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white"
+                        className="h-11 rounded-2xl bg-orange-500 font-semibold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white"
                       >
                         Zurück
                       </Button>
@@ -813,7 +813,7 @@ export default function MatchPostponePage() {
                       type="date"
                       value={postponeData.newDate}
                       onChange={(e) => setPostponeData((p) => ({ ...p, newDate: e.target.value }))}
-                      className="h-11 rounded-2xl border-white/[0.10] bg-white/[0.04] text-white [color-scheme:dark] placeholder:text-white/30 focus-visible:border-orange-300/30 focus-visible:ring-orange-400/15"
+                      className="h-11 rounded-2xl border-white/[0.10] bg-white/[0.04] text-white [color-scheme:dark] placeholder:text-muted-foreground focus-visible:border-orange-300/30 focus-visible:ring-orange-400/15"
                       disabled={ok}
                     />
                   </div>
@@ -827,7 +827,7 @@ export default function MatchPostponePage() {
                       type="time"
                       value={postponeData.newTime}
                       onChange={(e) => setPostponeData((p) => ({ ...p, newTime: e.target.value }))}
-                      className="h-11 rounded-2xl border-white/[0.10] bg-white/[0.04] text-white [color-scheme:dark] placeholder:text-white/30 focus-visible:border-orange-300/30 focus-visible:ring-orange-400/15"
+                      className="h-11 rounded-2xl border-white/[0.10] bg-white/[0.04] text-white [color-scheme:dark] placeholder:text-muted-foreground focus-visible:border-orange-300/30 focus-visible:ring-orange-400/15"
                       disabled={ok}
                     />
                   </div>
@@ -844,14 +844,14 @@ export default function MatchPostponePage() {
                     onChange={(e) => setPostponeData((p) => ({ ...p, reason: e.target.value }))}
                     placeholder='z.B. "2 Spieler krank", "Termin-Kollision"'
                     className={cn(
-                      "min-h-[110px] rounded-2xl border-white/[0.10] bg-white/[0.04] text-white placeholder:text-white/30 focus-visible:border-orange-300/30 focus-visible:ring-orange-400/15",
+                      "min-h-[110px] rounded-2xl border-white/[0.10] bg-white/[0.04] text-white placeholder:text-muted-foreground focus-visible:border-orange-300/30 focus-visible:ring-orange-400/15",
                       postponeData.reason.trim().length > 0 && postponeData.reason.trim().length < 3
                         ? "border-orange-300"
                         : "",
                     )}
                     disabled={ok}
                   />
-                  <p className="text-xs text-white/35">Mindestens 3 Zeichen.</p>
+                  <p className="text-xs text-muted-foreground">Mindestens 3 Zeichen.</p>
                 </div>
 
                 <Separator className="bg-white/[0.08]" />
@@ -862,8 +862,8 @@ export default function MatchPostponePage() {
                     onClick={postponeMatch}
                     disabled={disabled || ok || !canEdit}
                     className={cn(
-                      "h-11 rounded-2xl font-black",
-                      "bg-orange-500 text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white",
+                      "h-11 rounded-2xl font-semibold",
+                      "bg-orange-500 text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white",
                       "disabled:opacity-45 disabled:hover:bg-orange-500",
                     )}
                   >
@@ -874,7 +874,7 @@ export default function MatchPostponePage() {
                   <Button
                     variant="outline"
                     onClick={() => router.push(backHref)}
-                    className="h-11 rounded-2xl border-white/[0.10] bg-white/[0.035] font-black text-white/75 hover:bg-white/[0.06] hover:text-white"
+                    className="h-11 rounded-2xl border-white/[0.10] bg-white/[0.035] font-semibold text-white/75 hover:bg-white/[0.06] hover:text-white"
                     disabled={submitting}
                   >
                     Abbrechen

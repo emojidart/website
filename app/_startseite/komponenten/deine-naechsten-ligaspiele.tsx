@@ -49,7 +49,7 @@ export function DeineNaechstenLigaspiele({
         <section className="emd-saas-section mb-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-card shadow-sm">
                 <Swords className="h-5 w-5 text-orange-600" />
               </div>
 
@@ -58,7 +58,7 @@ export function DeineNaechstenLigaspiele({
                   Liga
                 </div>
 
-                <h2 className="text-lg font-semibold leading-tight text-gray-950 sm:text-xl emd-saas-heading">
+                <h2 className="text-lg font-semibold leading-tight text-foreground sm:text-xl emd-saas-heading">
                   Deine nächsten Spiele
                 </h2>
               </div>
@@ -66,7 +66,7 @@ export function DeineNaechstenLigaspiele({
 
             <Button
               variant="ghost"
-              className="h-9 rounded-xl px-3 font-bold text-gray-600 hover:bg-white hover:text-orange-700 emd-saas-card emd-saas-copy emd-saas-button"
+              className="h-9 rounded-xl px-3 font-bold text-muted-foreground hover:bg-card hover:text-orange-700 emd-saas-card emd-saas-copy emd-saas-button"
               onClick={() => (window.location.href = "/member-availability")}
             >
               Alle
@@ -74,23 +74,23 @@ export function DeineNaechstenLigaspiele({
           </div>
 
           {loading ? (
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm emd-saas-card">
-              <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-500 emd-saas-copy">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm emd-saas-card">
+              <div className="flex items-center justify-center gap-2 text-sm font-semibold text-muted-foreground emd-saas-copy">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Deine Ligaspiele werden geladen...
               </div>
             </div>
           ) : matches.length === 0 ? (
-            <div className="rounded-3xl border border-gray-200/80 bg-white p-7 text-center shadow-sm emd-saas-card">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-50">
-                <Calendar className="h-5 w-5 text-gray-400" />
+            <div className="rounded-3xl border border-border/80 bg-card p-7 text-center shadow-sm emd-saas-card">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
               </div>
 
-              <p className="mt-3 font-bold text-gray-800">
+              <p className="mt-3 font-bold text-foreground">
                 Aktuell kein Ligaspiel geplant
               </p>
 
-              <p className="mt-1 text-sm text-gray-500 emd-saas-copy">
+              <p className="mt-1 text-sm text-muted-foreground emd-saas-copy">
                 Sobald ein neues Spiel angesetzt ist, erscheint es hier.
               </p>
             </div>
@@ -103,21 +103,21 @@ export function DeineNaechstenLigaspiele({
                 return (
                   <div
                     key={match.id}
-                    className="group overflow-hidden rounded-[26px] border border-slate-200/90 bg-white shadow-[0_18px_55px_-45px_rgba(15,23,42,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_65px_-45px_rgba(15,23,42,0.62)] emd-saas-card"
+                    className="group overflow-hidden rounded-[26px] border border-border/90 bg-card shadow-[0_18px_55px_-45px_rgba(15,23,42,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_65px_-45px_rgba(15,23,42,0.62)] emd-saas-card"
                   >
-                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3.5">
+                    <div className="flex items-center justify-between gap-3 border-b border-border bg-card px-4 py-3.5">
                       <Badge
                         variant="outline"
                         className={
                           isSteel
-                            ? "rounded-full border-slate-200 bg-slate-900 px-3 py-1 text-sm font-semibold tracking-wide text-white"
+                            ? "rounded-full border-border bg-background px-3 py-1 text-sm font-semibold tracking-wide text-white"
                             : "rounded-full border-orange-200 bg-orange-600 px-3 py-1 text-sm font-semibold tracking-wide text-white"
                         }
                       >
                         {isSteel ? "STEELDART" : "E-DART"}
                       </Badge>
 
-                      <div className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-gray-600 ring-1 ring-gray-200 emd-saas-card emd-saas-copy emd-saas-tag">
+                      <div className="flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-bold text-muted-foreground ring-1 ring-border emd-saas-card emd-saas-copy emd-saas-tag">
                         <Calendar className="h-3.5 w-3.5 text-orange-600" />
                         {new Date(match.match_date).toLocaleDateString("de-DE", {
                           day: "2-digit",
@@ -131,14 +131,14 @@ export function DeineNaechstenLigaspiele({
                     </div>
 
                     <div className="p-4">
-                      <div className="text-xl font-semibold leading-tight tracking-tight text-gray-950 emd-saas-heading">
+                      <div className="text-xl font-semibold leading-tight tracking-tight text-foreground emd-saas-heading">
                         {getTeamName(match, true)}{" "}
-                        <span className="font-semibold text-gray-400">vs</span>{" "}
+                        <span className="font-semibold text-muted-foreground">vs</span>{" "}
                         {getTeamName(match, false)}
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 emd-saas-card">
-                        <div className="text-xs font-bold uppercase tracking-wide text-gray-500 emd-saas-copy">
+                      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/70 px-3.5 py-3 emd-saas-card">
+                        <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground emd-saas-copy">
                           Deine Antwort
                         </div>
 
@@ -188,7 +188,7 @@ export function DeineNaechstenLigaspiele({
                           size="sm"
                           disabled={!!saving}
                           onClick={() => void onSetAvailability(match, "yes")}
-                          className="rounded-xl border border-emerald-200 bg-white px-2 font-semibold text-slate-800 shadow-none hover:bg-emerald-50 hover:text-emerald-800 emd-saas-card emd-saas-button"
+                          className="rounded-xl border border-emerald-200 bg-card px-2 font-semibold text-foreground shadow-none hover:bg-emerald-50 hover:text-emerald-800 emd-saas-card emd-saas-button"
                         >
                           {saving === `${match.id}-yes` ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -202,7 +202,7 @@ export function DeineNaechstenLigaspiele({
                           size="sm"
                           disabled={!!saving}
                           onClick={() => void onSetAvailability(match, "maybe")}
-                          className="rounded-xl border border-amber-200 bg-white px-2 font-semibold text-slate-800 shadow-none hover:bg-amber-50 hover:text-amber-800 emd-saas-card emd-saas-button"
+                          className="rounded-xl border border-amber-200 bg-card px-2 font-semibold text-foreground shadow-none hover:bg-amber-50 hover:text-amber-800 emd-saas-card emd-saas-button"
                         >
                           {saving === `${match.id}-maybe` ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -216,7 +216,7 @@ export function DeineNaechstenLigaspiele({
                           size="sm"
                           disabled={!!saving}
                           onClick={() => void onSetAvailability(match, "no")}
-                          className="rounded-xl border border-rose-200 bg-white px-2 font-semibold text-slate-800 shadow-none hover:bg-rose-50 hover:text-rose-800 emd-saas-card emd-saas-button"
+                          className="rounded-xl border border-rose-200 bg-card px-2 font-semibold text-foreground shadow-none hover:bg-rose-50 hover:text-rose-800 emd-saas-card emd-saas-button"
                         >
                           {saving === `${match.id}-no` ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -229,7 +229,7 @@ export function DeineNaechstenLigaspiele({
                       <Button
                         type="button"
                         variant="outline"
-                        className="mt-3 w-full rounded-xl border-slate-200 bg-slate-950 font-semibold text-white hover:bg-slate-800 hover:text-white"
+                        className="mt-3 w-full rounded-xl border-border bg-background font-semibold text-white hover:bg-background hover:text-white"
                         onClick={() =>
                           (window.location.href = `/member-availability?match_id=${match.id}&team_id=${match.my_team_id}`)
                         }

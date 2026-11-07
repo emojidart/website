@@ -205,16 +205,16 @@ function willHappen(item: TrainingItem, counts: TrainingCounts | null) {
 
 function InfoCallout() {
   return (
-    <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-black/25 shadow-none backdrop-blur-xl sm:rounded-[26px]">
+    <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-card shadow-none  sm:rounded-[26px]">
       <div className="flex items-start gap-3 p-4 sm:p-5">
-        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/[0.14] bg-emerald-500/[0.08]0/[0.08]">
+        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/[0.14] bg-emerald-500/[0.08]">
           <ClipboardList className="h-5 w-5 text-emerald-200" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-black tracking-tight text-white">Kurz erklärt</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-white">Kurz erklärt</h2>
 
-          <p className="mt-1 max-w-3xl text-sm font-medium leading-6 text-white/50">
+          <p className="mt-1 max-w-3xl text-sm font-medium leading-6 text-muted-foreground">
             Hier können Team-Trainings, öffentliche Trainings und Trainingsturniere geplant werden.
             Team-Trainings sind nur für Teammitglieder sichtbar. Öffentliche Trainings und Turniere sind für alle Spieler sichtbar.
           </p>
@@ -687,8 +687,8 @@ function MemberTrainingsInner() {
     setMyStatus("maybe")
     setMyNote("")
   }
-  
-  
+
+
     async function sendTrainingPush(eventId: string, action: "created" | "updated" | "canceled", teamId?: string | null) {
     try {
       if (!session?.access_token || !profile?.id) return
@@ -717,9 +717,9 @@ function MemberTrainingsInner() {
       console.error("[team-event-push] error", err)
     }
   }
-  
-  
-  
+
+
+
 
   async function saveTrainingCreateOrUpdate() {
     if (!canCreateCurrentType && !canEditItem(dialogItem)) return
@@ -733,7 +733,7 @@ function MemberTrainingsInner() {
       setItemError("Bitte Datum & Startzeit angeben.")
       return
     }
-	
+
 	const startMs = new Date(startISO).getTime()
 if (Number.isFinite(startMs) && startMs < Date.now()) {
   setItemError("Startzeit darf nicht in der Vergangenheit liegen.")
@@ -807,10 +807,10 @@ if (endISO) {
           await loadTrainingData(data as any)
         }
       }
-	  
-	  
-	  
-	  
+
+
+
+
     } catch (e: any) {
       console.error("saveTrainingCreateOrUpdate error", e)
       setItemError(e?.message || e?.details || e?.hint || "Fehler beim Speichern. Bitte nochmal versuchen.")
@@ -866,18 +866,18 @@ if (endISO) {
 
   if (authLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#050608] text-white">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Trainingstreff" subtitle="Trainingsbereich" backHref="/member-training-app" />
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
           <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-white/[0.08] bg-black/35 px-8 py-9 shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl sm:px-10">
+            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-white/[0.08] bg-card px-8 py-9 shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)]  sm:px-10">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-emerald-500/[0.08]0/[0.08]0/20 blur-2xl animate-pulse" />
+                <div className="absolute inset-0 rounded-full bg-emerald-500/[0.08]0/20 blur-2xl animate-pulse" />
                 <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
               </div>
               <div className="text-center">
                 <p className="text-lg font-bold text-white">Trainings werden geladen</p>
-                <p className="text-sm text-white/35 mt-1">Bitte kurz warten…</p>
+                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
               </div>
             </div>
           </div>
@@ -887,36 +887,29 @@ if (endISO) {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans flex flex-col">
+    <div className="min-h-screen overflow-x-hidden bg-background text-white font-sans flex flex-col">
       <Header variant="app" title="Trainingstreff" subtitle="Trainingsbereich" backHref="/member-training-app" />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.70),rgba(3,5,9,.94)_46%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(16,185,129,.14),transparent_26%),radial-gradient(circle_at_88%_28%,rgba(14,165,233,.10),transparent_28%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
         <div className="w-full overflow-x-hidden">
-          <section className="relative mb-4 overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/30 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
-            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-500/[0.08]0/[0.12] blur-3xl" />
+          <section className="relative mb-4 overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-500/[0.12] blur-3xl" />
             <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
                 <div className="min-w-0">
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/25/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/[0.08]0/[0.08]0" />
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-card/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/60">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/[0.08]0" />
                     Trainingsplanung
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/[0.14] bg-emerald-500/[0.08]0/[0.08]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/[0.14] bg-emerald-500/[0.08]">
                       <ClipboardList className="h-6 w-6 text-emerald-200" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white/50">Training organisieren und Zusagen verwalten</p>
-                      <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Trainings</h1>
+                      <p className="text-sm font-medium text-muted-foreground">Training organisieren und Zusagen verwalten</p>
+                      <h1 className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Trainings</h1>
                     </div>
                   </div>
                 </div>
@@ -924,7 +917,7 @@ if (endISO) {
                   type="button"
                   variant="outline"
                   onClick={() => router.push("/member-profile-app")}
-                  className="h-11 w-full rounded-xl border-white/10 bg-black/25/10 px-4 font-black text-white shadow-none hover:bg-black/25/15 hover:text-white sm:w-auto"
+                  className="h-11 w-full rounded-xl border-white/10 bg-card/10 px-4 font-semibold text-white shadow-none hover:bg-card/15 hover:text-white sm:w-auto"
                 >
                   Zurück zum Profil
                 </Button>
@@ -936,16 +929,16 @@ if (endISO) {
             <InfoCallout />
           </div>
 
-          <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[30px]">
+          <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-card shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[30px]">
             <CardHeader className="space-y-4 border-b border-white/[0.07] px-4 py-5 sm:px-6 sm:py-6">
               <div className="flex items-center justify-between gap-2">
-                <CardTitle className="flex items-center gap-2 text-xl font-black tracking-tight text-white sm:text-2xl">
+                <CardTitle className="flex items-center gap-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">
                   <Calendar className="h-6 w-6 text-emerald-200" />
                   Team-Training / Öffentlich / Turnier
                 </CardTitle>
 
                 {profile?.player_id ? (
-                  <Button onClick={openCreateDialog} className="h-10 rounded-xl bg-emerald-500/[0.08]0/[0.08]0 font-black text-white shadow-none hover:bg-orange-600">
+                  <Button onClick={openCreateDialog} className="h-10 rounded-xl bg-emerald-500/[0.08]0 font-semibold text-white shadow-none hover:bg-orange-600">
                     <Plus className="h-4 w-4 mr-2" />
                     Neu
                   </Button>
@@ -970,11 +963,11 @@ if (endISO) {
 
             <CardContent className="px-3 py-4 sm:px-6 sm:py-6">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-                <TabsList className="mb-5 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-white/[0.08] bg-slate-100/80 p-1.5 shadow-none">
-                  <TabsTrigger value="upcoming" className="h-10 rounded-xl py-2 text-xs font-black text-white/35 data-[state=active]:bg-slate-950 data-[state=active]:text-white sm:text-sm">
+                <TabsList className="mb-5 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-white/[0.08] bg-muted/80 p-1.5 shadow-none">
+                  <TabsTrigger value="upcoming" className="h-10 rounded-xl py-2 text-xs font-semibold text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-white sm:text-sm">
                     Kommend ({upcomingItems.length})
                   </TabsTrigger>
-                  <TabsTrigger value="past" className="h-10 rounded-xl py-2 text-xs font-black text-white/35 data-[state=active]:bg-slate-950 data-[state=active]:text-white sm:text-sm">
+                  <TabsTrigger value="past" className="h-10 rounded-xl py-2 text-xs font-semibold text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-white sm:text-sm">
                     Vergangen ({pastItems.length})
                   </TabsTrigger>
                 </TabsList>
@@ -992,7 +985,7 @@ if (endISO) {
                         return (
                           <Card
                             key={item.id}
-                            className={`w-full overflow-hidden rounded-[20px] border border-white/[0.08] bg-black/25 shadow-[0_14px_42px_-34px_rgba(15,23,42,0.55)] transition-all hover:border-slate-300 hover:shadow-[0_18px_54px_-34px_rgba(15,23,42,0.5)] sm:rounded-[24px] ${
+                            className={`w-full overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-[0_14px_42px_-34px_rgba(15,23,42,0.55)] transition-all hover:border-border hover:shadow-[0_18px_54px_-34px_rgba(15,23,42,0.5)] sm:rounded-[24px] ${
                               locked ? "ring-1 ring-red-200 bg-red-500/[0.08]/20" : ""
                             }`}
                           >
@@ -1000,7 +993,7 @@ if (endISO) {
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
                                 <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
                                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                                    <div className="break-words text-base font-black leading-snug tracking-tight text-white md:text-lg">{item.title || trainingTypeLabel(item.type)}</div>
+                                    <div className="break-words text-base font-semibold leading-snug tracking-tight text-white md:text-lg">{item.title || trainingTypeLabel(item.type)}</div>
                                     {trainingTypeBadge(item.type)}
                                     {trainingStatusBadge(item.status)}
                                     <Badge variant="outline">{getScopeLabel(item)}</Badge>
@@ -1014,7 +1007,7 @@ if (endISO) {
                                     </div>
                                   ) : null}
 
-                                  <div className="mt-3 grid gap-2 text-sm text-white/50 sm:flex sm:flex-wrap sm:gap-x-3 sm:gap-y-2">
+                                  <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:flex sm:flex-wrap sm:gap-x-3 sm:gap-y-2">
                                     <span className="inline-flex items-center gap-1">
                                       <Calendar className="h-4 w-4 text-emerald-200" />
                                       {formatDateTime(item.start_at)}
@@ -1051,7 +1044,7 @@ if (endISO) {
                                   <Button
                                     size="sm"
                                     onClick={() => openTrainingDialog(item)}
-                                    className="h-11 w-full rounded-xl bg-slate-950 font-black text-white shadow-none hover:bg-slate-800 sm:w-auto"
+                                    className="h-11 w-full rounded-xl bg-background font-semibold text-white shadow-none hover:bg-background sm:w-auto"
                                   >
                                     <Eye className="h-4 w-4 mr-2" />
                                     Öffnen
@@ -1082,13 +1075,13 @@ if (endISO) {
                                 {trainingStatusBadge(item.status)}
                                 <Badge variant="outline">{getScopeLabel(item)}</Badge>
                               </div>
-                              <div className="text-sm text-white/50 mt-1">
+                              <div className="text-sm text-muted-foreground mt-1">
                                 {formatDateTime(item.start_at)}
                                 {item.end_at ? ` – ${formatTime(item.end_at)}` : ""}
                               </div>
                               {item.notes ? <div className="mt-2 text-sm text-white/65 break-words">{item.notes}</div> : null}
                               {c ? (
-                                <div className="mt-2 text-xs text-white/50">
+                                <div className="mt-2 text-xs text-muted-foreground">
                                   Ja: {c.yes_count ?? 0} • Vielleicht: {c.maybe_count ?? 0} • Nein: {c.no_count ?? 0}
                                 </div>
                               ) : null}
@@ -1126,7 +1119,7 @@ if (endISO) {
                 p-3
               "
             >
-              <DialogHeader className="sticky top-0 bg-black/25 z-10 pb-2">
+              <DialogHeader className="sticky top-0 bg-card z-10 pb-2">
                 <DialogTitle>{dialogItem ? "Training – Details" : "Neues Training"}</DialogTitle>
               </DialogHeader>
 
@@ -1134,7 +1127,7 @@ if (endISO) {
                 <div className="rounded-xl border border-red-300/[0.16] bg-red-500/[0.08] p-3 text-sm text-red-800">{itemError}</div>
               ) : null}
 
-              <Card className="border bg-black/25 shadow-sm rounded-2xl overflow-hidden">
+              <Card className="border bg-card shadow-sm rounded-2xl overflow-hidden">
                 <CardContent className="p-4 space-y-3">
                   {dialogItem ? (
                     <>
@@ -1150,7 +1143,7 @@ if (endISO) {
                         ) : null}
                       </div>
 
-                      <div className="text-sm text-white/50 flex flex-col gap-1">
+                      <div className="text-sm text-muted-foreground flex flex-col gap-1">
                         <div className="inline-flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-emerald-200" />
                           <span>
@@ -1190,7 +1183,7 @@ if (endISO) {
                       })()}
                     </>
                   ) : (
-                    <div className="text-sm text-white/50">Erstelle Team-Training, Öffentliches Training oder Trainingsturnier.</div>
+                    <div className="text-sm text-muted-foreground">Erstelle Team-Training, Öffentliches Training oder Trainingsturnier.</div>
                   )}
 
                   {canEditItem(dialogItem) ? (
@@ -1230,7 +1223,7 @@ if (endISO) {
               </Card>
 
               {editMode ? (
-                <Card className="border bg-black/25 shadow-sm rounded-2xl overflow-hidden">
+                <Card className="border bg-card shadow-sm rounded-2xl overflow-hidden">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Save className="h-4 w-4 text-emerald-200" />
@@ -1240,7 +1233,7 @@ if (endISO) {
 
                   <CardContent className="space-y-3">
                     <div className="grid gap-2">
-                      <div className="text-xs text-white/35">Typ</div>
+                      <div className="text-xs text-muted-foreground">Typ</div>
                       <div className="flex flex-wrap gap-2">
                         {(["training", "double_training", "special"] as TrainingType[]).map((t) => (
                           <Button
@@ -1276,12 +1269,12 @@ if (endISO) {
                     )}
 
                     <div className="grid gap-2">
-                      <div className="text-xs text-white/35">Titel</div>
+                      <div className="text-xs text-muted-foreground">Titel</div>
                       <Input value={fTitle} onChange={(e) => setFTitle(e.target.value)} placeholder="z. B. Team-Training" />
                     </div>
 
                     <div className="grid gap-2">
-                      <div className="text-xs text-white/35">Beschreibung (optional)</div>
+                      <div className="text-xs text-muted-foreground">Beschreibung (optional)</div>
                       <Textarea
                         value={fDescription}
                         onChange={(e) => setFDescription(e.target.value)}
@@ -1290,7 +1283,7 @@ if (endISO) {
                     </div>
 
                     <div className="grid gap-2">
-                      <div className="text-xs text-white/35">Mindestanzahl „Ja“</div>
+                      <div className="text-xs text-muted-foreground">Mindestanzahl „Ja“</div>
                       <Input
                         inputMode="numeric"
                         value={fMinYes}
@@ -1300,7 +1293,7 @@ if (endISO) {
                     </div>
 
                     <div className="grid gap-2">
-                      <div className="text-xs text-white/35">Datum & Uhrzeit</div>
+                      <div className="text-xs text-muted-foreground">Datum & Uhrzeit</div>
                       <div className="grid gap-2 sm:grid-cols-3">
                         <Input type="date" value={fDate} onChange={(e) => setFDate(e.target.value)} />
                         <Input type="time" value={fStart} onChange={(e) => setFStart(e.target.value)} />
@@ -1323,7 +1316,7 @@ if (endISO) {
                       <Button
                         onClick={saveTrainingCreateOrUpdate}
                         disabled={savingItem || (!dialogItem && !canCreateCurrentType)}
-                        className="bg-orange-600 hover:bg-orange-700"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         {savingItem ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                         Speichern
@@ -1334,7 +1327,7 @@ if (endISO) {
               ) : null}
 
               {dialogItem ? (
-                <Card className={`border bg-black/25 shadow-sm rounded-2xl overflow-hidden ${isTrainingLocked(dialogItem) ? "opacity-80" : ""}`}>
+                <Card className={`border bg-card shadow-sm rounded-2xl overflow-hidden ${isTrainingLocked(dialogItem) ? "opacity-80" : ""}`}>
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Users className="h-4 w-4 text-emerald-200" />
@@ -1376,7 +1369,7 @@ if (endISO) {
                     </div>
 
                     <div className="space-y-2">
-                      <div className="text-xs text-white/35">Notiz (optional)</div>
+                      <div className="text-xs text-muted-foreground">Notiz (optional)</div>
                       <Textarea
                         value={myNote}
                         onChange={(e) => setMyNote(e.target.value)}
@@ -1392,7 +1385,7 @@ if (endISO) {
               ) : null}
 
               {dialogItem ? (
-                <Card className="border bg-black/25 shadow-sm rounded-2xl overflow-hidden">
+                <Card className="border bg-card shadow-sm rounded-2xl overflow-hidden">
                   <CardHeader>
                     <CardTitle className="text-base">Zusagen</CardTitle>
                   </CardHeader>
@@ -1407,7 +1400,7 @@ if (endISO) {
                           <div key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border p-3 gap-3 min-w-0 overflow-hidden">
                             <div className="min-w-0 w-full sm:w-auto text-center sm:text-left">
                               <div className="font-medium truncate">{p.name}</div>
-                              {a?.note ? <div className="text-xs text-white/35 truncate">{a.note}</div> : null}
+                              {a?.note ? <div className="text-xs text-muted-foreground truncate">{a.note}</div> : null}
                             </div>
                             <div className="flex flex-wrap items-center gap-2 flex-shrink-0 justify-center sm:justify-end">
                               {statusBadge(s as any)}
@@ -1421,7 +1414,7 @@ if (endISO) {
               ) : null}
 
               {dialogItem ? (
-                <Card className="border bg-black/25 shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden">
+                <Card className="border bg-card shadow-sm hover:shadow-md transition-shadow rounded-2xl mx-auto w-full max-w-3xl overflow-hidden">
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <MessageCircle className="h-4 w-4 text-emerald-200" />
@@ -1460,7 +1453,7 @@ if (endISO) {
                                       <div className={`max-w-[80%] ${isMine ? "items-end" : "items-start"} flex flex-col min-w-0`}>
                                         <div className="flex items-center gap-2 mb-1 min-w-0">
                                           <span className="text-xs font-medium truncate">{isMine ? "Du" : name}</span>
-                                          <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1 flex-shrink-0">
+                                          <span className="text-xs text-muted-foreground inline-flex items-center gap-1 flex-shrink-0">
                                             <Clock className="h-3 w-3" />
                                             {new Date(m.created_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
                                           </span>
@@ -1496,7 +1489,7 @@ if (endISO) {
                           <Button
                             onClick={sendChatMessage}
                             disabled={!chatText.trim() || chatSending}
-                            className="bg-orange-600 hover:bg-orange-700 px-3 flex-shrink-0"
+                            className="bg-primary hover:bg-primary/90 px-3 flex-shrink-0 text-primary-foreground"
                           >
                             {chatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                           </Button>

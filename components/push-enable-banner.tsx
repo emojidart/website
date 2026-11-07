@@ -165,8 +165,8 @@ export function PushEnableBanner() {
 
   return (
     <div className="mx-4 sm:mx-6 mt-3">
-      <div className="rounded-2xl border border-orange-200 bg-white shadow-lg overflow-hidden">
-        <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
+      <div className="rounded-2xl border border-orange-200 bg-card shadow-lg overflow-hidden">
+        <div className="text-foreground h-1.5 bg-card   " />
 
         <div className="p-4">
           <div className="flex items-start justify-between gap-3">
@@ -180,16 +180,16 @@ export function PushEnableBanner() {
               </div>
 
               <div className="min-w-0">
-                <div className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                <div className="inline-flex items-center gap-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider">
                   <Bell className="w-3.5 h-3.5" />
                   Push-News
                 </div>
 
-                <div className="mt-1 text-sm sm:text-base font-black text-gray-900">
+                <div className="mt-1 text-sm sm:text-base font-semibold text-foreground">
                   Benachrichtigungen aktivieren
                 </div>
 
-                <div className="mt-1 text-[12px] sm:text-sm text-gray-600">
+                <div className="mt-1 text-[12px] sm:text-sm text-muted-foreground">
                   Erhalte wichtige Vereinsnews, Chat-Nachrichten und Updates direkt aufs Handy.
                 </div>
 
@@ -207,7 +207,7 @@ export function PushEnableBanner() {
                 setClosed(true)
                 setVisible(false)
               }}
-              className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-600"
+              className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-muted text-muted-foreground"
               aria-label="Schließen"
             >
               <X className="w-4 h-4" />
@@ -219,7 +219,7 @@ export function PushEnableBanner() {
               <Button
                 onClick={handleEnablePush}
                 disabled={loading}
-                className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black"
+                className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold"
               >
                 {loading ? (
                   <>
@@ -236,7 +236,7 @@ export function PushEnableBanner() {
             ) : (
               <Button
                 onClick={openAppSettings}
-                className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black"
+                className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold"
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Einstellungen öffnen
@@ -249,7 +249,7 @@ export function PushEnableBanner() {
                 setClosed(true)
                 setVisible(false)
               }}
-              className="rounded-xl font-black"
+              className="rounded-xl font-semibold"
             >
               Später
             </Button>

@@ -164,7 +164,7 @@ export default function MeineTeamsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -175,11 +175,11 @@ export default function MeineTeamsPage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">{error || "Profil nicht gefunden"}</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-4">{error || "Profil nicht gefunden"}</h1>
             <Button onClick={() => router.push("/member-profile")}>Zurück zum Profil</Button>
           </div>
         </main>
@@ -188,7 +188,7 @@ export default function MeineTeamsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl">
@@ -204,11 +204,11 @@ export default function MeineTeamsPage() {
 
         {/* Page Header */}
         <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
+          <div className="text-foreground inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-card   rounded-3xl mb-4 sm:mb-6 shadow-xl">
             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Meine Teams</h1>
-          <p className="text-lg sm:text-xl text-gray-600">Übersicht deiner Teams und Teammitglieder</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2">Meine Teams</h1>
+          <p className="text-lg sm:text-xl text-muted-foreground">Übersicht deiner Teams und Teammitglieder</p>
         </div>
 
         {/* Captain Player Management Section */}
@@ -219,7 +219,7 @@ export default function MeineTeamsPage() {
         )}
 
         {/* Team Memberships */}
-        <Card className="shadow-xl border-0 bg-white mb-6 sm:mb-8">
+        <Card className="shadow-xl border-0 bg-card mb-6 sm:mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl lg:text-2xl font-bold">
               <Users className="h-6 w-6 lg:h-7 lg:w-7 text-orange-600" />
@@ -228,8 +228,8 @@ export default function MeineTeamsPage() {
           </CardHeader>
           <CardContent>
             {teamMemberships.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="h-12 w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-gray-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 lg:h-16 lg:w-16 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-base lg:text-lg">Du bist noch keinem Team zugeordnet.</p>
                 <p className="text-sm lg:text-base mt-2">Wende dich an deinen Kapitän oder Co-Kapitän.</p>
               </div>
@@ -238,7 +238,7 @@ export default function MeineTeamsPage() {
                 {teamMemberships.map((membership) => (
                   <div
                     key={membership.id}
-                    className="border-2 border-gray-200 rounded-xl p-4 lg:p-6 hover:border-orange-300 transition-colors"
+                    className="border-2 border-border rounded-xl p-4 lg:p-6 hover:border-orange-300 transition-colors"
                   >
                     <div className="flex items-center gap-3 mb-3">
                       {membership.teams?.logo_url ? (
@@ -254,7 +254,7 @@ export default function MeineTeamsPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="font-bold text-gray-900">{membership.teams?.name || "Unbekanntes Team"}</h3>
+                        <h3 className="font-bold text-foreground">{membership.teams?.name || "Unbekanntes Team"}</h3>
                         <div className="flex items-center gap-2">
                           {getRoleIcon(membership.role)}
                           <Badge className={`text-xs border ${getRoleBadgeColor(membership.role)}`}>
@@ -271,7 +271,7 @@ export default function MeineTeamsPage() {
         </Card>
 
         {/* Team Members */}
-        <Card className="shadow-xl border-0 bg-white">
+        <Card className="shadow-xl border-0 bg-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl font-bold">
               <Users className="h-6 w-6 text-orange-600" />
@@ -280,8 +280,8 @@ export default function MeineTeamsPage() {
           </CardHeader>
           <CardContent>
             {teamMembers.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p>Keine Teammitglieder gefunden.</p>
               </div>
             ) : (
@@ -290,7 +290,7 @@ export default function MeineTeamsPage() {
                   const teamMembersForThisTeam = teamMembers.filter((member) => member.team_id === membership.team_id)
 
                   return (
-                    <div key={membership.id} className="border-2 border-gray-200 rounded-xl p-4">
+                    <div key={membership.id} className="border-2 border-border rounded-xl p-4">
                       <div className="flex items-center gap-3 mb-4">
                         {membership.teams?.logo_url ? (
                           <Avatar className="h-10 w-10">
@@ -304,7 +304,7 @@ export default function MeineTeamsPage() {
                             <Target className="h-5 w-5 text-orange-600" />
                           </div>
                         )}
-                        <h3 className="font-bold text-lg text-gray-900">
+                        <h3 className="font-bold text-lg text-foreground">
                           {membership.teams?.name || "Unbekanntes Team"}
                         </h3>
                         <Badge variant="outline" className="ml-auto">
@@ -319,7 +319,7 @@ export default function MeineTeamsPage() {
                             className={`p-3 rounded-lg border-2 transition-colors ${
                               member.player_id === profile?.player_id
                                 ? "border-orange-300 bg-orange-50"
-                                : "border-gray-200 bg-gray-50"
+                                : "border-border bg-muted"
                             }`}
                           >
                             <div className="flex items-center gap-2 mb-2">
@@ -338,7 +338,7 @@ export default function MeineTeamsPage() {
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-sm text-gray-900 truncate">
+                                <div className="font-medium text-sm text-foreground truncate">
                                   {member.club_players?.name || "Unbekannt"}
                                   {member.player_id === profile?.player_id && (
                                     <span className="text-orange-600 ml-1">(Du)</span>
@@ -346,12 +346,12 @@ export default function MeineTeamsPage() {
                                 </div>
                                 <div className="flex items-center gap-1">
                                   {getRoleIcon(member.role)}
-                                  <span className="text-xs text-gray-600">{getRoleText(member.role)}</span>
+                                  <span className="text-xs text-muted-foreground">{getRoleText(member.role)}</span>
                                 </div>
                               </div>
                             </div>
                             {member.club_players?.throwing_hand && (
-                              <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <div className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Hand className="h-3 w-3" />
                                 {member.club_players.throwing_hand}
                               </div>

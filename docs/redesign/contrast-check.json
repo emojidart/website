@@ -1,0 +1,47 @@
+{
+  "method": "WCAG relative luminance/sRGB contrast calculation for shared solid token pairs; does not claim every runtime element has these colors.",
+  "pairs": [
+    {
+      "name": "Body",
+      "foreground": "#edf2f8",
+      "background": "#0b1018",
+      "ratio": 16.94,
+      "normalTextAA": true
+    },
+    {
+      "name": "Card",
+      "foreground": "#edf2f8",
+      "background": "#131c29",
+      "ratio": 15.22,
+      "normalTextAA": true
+    },
+    {
+      "name": "Muted card text",
+      "foreground": "#a3b1c4",
+      "background": "#131c29",
+      "ratio": 7.87,
+      "normalTextAA": true
+    },
+    {
+      "name": "Primary button",
+      "foreground": "#211206",
+      "background": "#f59b50",
+      "ratio": 8.4,
+      "normalTextAA": true
+    },
+    {
+      "name": "Specialty muted text",
+      "foreground": "#a7b4c6",
+      "background": "#131c29",
+      "ratio": 8.15,
+      "normalTextAA": true
+    },
+    {
+      "name": "Terminal CTA",
+      "foreground": "#21160e",
+      "background": "#f59b50",
+      "ratio": 8.17,
+      "normalTextAA": true
+    }
+  ]
+}

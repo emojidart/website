@@ -167,17 +167,10 @@ export default function MemberLeagueLivePage() {
     status === "started" ? "Gestartet" : status === "scheduled" ? "Noch nicht gestartet" : "Beendet"
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] font-sans text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-white">
       <Header variant="app" title="LIVE-Spiele" subtitle="Ligazentrale" backHref="/member-league-app" />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
@@ -185,14 +178,14 @@ export default function MemberLeagueLivePage() {
             type="button"
             onClick={() => void loadGames()}
             disabled={loading}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/[0.08] bg-black/30 px-4 text-sm font-black text-white/55 transition hover:bg-white/[0.04] hover:text-white disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/[0.08] bg-card px-4 text-sm font-semibold text-muted-foreground transition hover:bg-white/[0.04] hover:text-white disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Aktualisieren
           </button>
         </div>
 
-        <section className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/30 backdrop-blur-xl">
+        <section className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-card ">
           <div className="border-b border-white/[0.07] p-5 sm:p-6">
             <div className="flex items-start gap-4">
               <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-red-300/15 bg-red-500/[0.08] text-red-200">
@@ -200,10 +193,10 @@ export default function MemberLeagueLivePage() {
                 <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-red-400 shadow-[0_0_12px_rgba(248,113,113,.9)]" />
               </div>
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-red-300/60">
+                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-red-300/60">
                   Sportdarts
                 </div>
-                <h1 className="mt-1 text-2xl font-black tracking-[-0.03em] text-white">
+                <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
                   LIVE-Spiele
                 </h1>
                 <p className="mt-1 text-sm font-semibold text-white/38">
@@ -212,7 +205,7 @@ export default function MemberLeagueLivePage() {
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.07] bg-black/25 p-1.5 sm:grid-cols-4">
+            <div className="mt-5 grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.07] bg-card p-1.5 sm:grid-cols-4">
               {[
                 ["all", "Alle", counts.all],
                 ["started", "Gestartet", counts.started],
@@ -224,13 +217,13 @@ export default function MemberLeagueLivePage() {
                   type="button"
                   onClick={() => setFilter(key as typeof filter)}
                   className={[
-                    "rounded-xl px-2 py-2.5 text-xs font-black transition",
+                    "rounded-xl px-2 py-2.5 text-xs font-semibold transition",
                     filter === key
-                      ? "bg-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,.13)]"
+                      ? "bg-orange-500 text-primary-foreground shadow-[0_0_20px_rgba(249,115,22,.13)]"
                       : "text-white/42 hover:bg-white/[0.05] hover:text-white/75",
                   ].join(" ")}
                 >
-                  {label} <span className="ml-1 text-white/45">{count}</span>
+                  {label} <span className="ml-1 text-muted-foreground">{count}</span>
                 </button>
               ))}
             </div>
@@ -248,7 +241,7 @@ export default function MemberLeagueLivePage() {
             ) : visibleGames.length === 0 ? (
               <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 text-center">
                 <Radio className="mx-auto h-7 w-7 text-white/20" />
-                <div className="mt-3 text-sm font-black text-white/55">Keine Spiele in diesem Bereich</div>
+                <div className="mt-3 text-sm font-semibold text-muted-foreground">Keine Spiele in diesem Bereich</div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -280,18 +273,18 @@ export default function MemberLeagueLivePage() {
                                     : "bg-white/25",
                               ].join(" ")}
                             />
-                            <div className="truncate text-[10px] font-black uppercase tracking-[0.12em] text-white/35">
+                            <div className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                               {game.division} · ST {game.weekNumber || "–"}
                             </div>
                           </div>
                           <div
                             className={[
-                              "shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.07em]",
+                              "shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.07em]",
                               game.status === "started"
                                 ? "border-red-300/15 bg-red-400/10 text-red-200"
                                 : game.status === "completed"
                                   ? "border-emerald-300/15 bg-emerald-400/10 text-emerald-200"
-                                  : "border-white/[0.08] bg-white/[0.03] text-white/35",
+                                  : "border-white/[0.08] bg-white/[0.03] text-muted-foreground",
                             ].join(" ")}
                           >
                             {statusLabel(game.status)}
@@ -299,13 +292,13 @@ export default function MemberLeagueLivePage() {
                         </div>
 
                         <div className="mt-3 grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] items-center gap-2">
-                          <div className="truncate text-right text-sm font-black text-white/82">
+                          <div className="truncate text-right text-sm font-semibold text-white/82">
                             {game.homeTeam}
                           </div>
-                          <div className="rounded-2xl border border-white/[0.08] bg-black/25 px-2 py-2 text-center text-lg font-black text-white">
+                          <div className="rounded-2xl border border-white/[0.08] bg-card px-2 py-2 text-center text-lg font-semibold text-white">
                             {game.homeScore ?? "–"} : {game.awayScore ?? "–"}
                           </div>
-                          <div className="truncate text-left text-sm font-black text-white/82">
+                          <div className="truncate text-left text-sm font-semibold text-white/82">
                             {game.awayTeam}
                           </div>
                         </div>
@@ -315,13 +308,13 @@ export default function MemberLeagueLivePage() {
                           onClick={() => toggleDetails(game.gameId)}
                           className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5 text-left transition hover:bg-white/[0.045]"
                         >
-                          <span className="flex items-center gap-2 text-xs font-black text-white/62">
+                          <span className="flex items-center gap-2 text-xs font-semibold text-white/62">
                             <Target className="h-4 w-4 text-orange-300" />
                             Spiel ansehen
                           </span>
                           <ChevronDown
                             className={[
-                              "h-4 w-4 text-white/35 transition-transform",
+                              "h-4 w-4 text-muted-foreground transition-transform",
                               openGameId === game.gameId ? "rotate-180" : "",
                             ].join(" ")}
                           />
@@ -348,7 +341,7 @@ export default function MemberLeagueLivePage() {
                                       key={String(title)}
                                       className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3"
                                     >
-                                      <div className="mb-2 text-[10px] font-black uppercase tracking-[0.10em] text-white/30">
+                                      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.10em] text-muted-foreground">
                                         {String(title)}
                                       </div>
                                       <div className="space-y-1.5">
@@ -358,7 +351,7 @@ export default function MemberLeagueLivePage() {
                                             className="flex items-center justify-between gap-2 text-xs"
                                           >
                                             <span className="truncate font-bold text-white/70">{player.player}</span>
-                                            <span className="shrink-0 font-black text-orange-200">{player.checks || "—"}</span>
+                                            <span className="shrink-0 font-semibold text-orange-200">{player.checks || "—"}</span>
                                           </div>
                                         ))}
                                       </div>
@@ -374,7 +367,7 @@ export default function MemberLeagueLivePage() {
                                 >
                                   <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2.5">
                                     <Trophy className="h-4 w-4 text-orange-300" />
-                                    <span className="text-xs font-black text-white/70">{block.title}</span>
+                                    <span className="text-xs font-semibold text-white/70">{block.title}</span>
                                   </div>
                                   <div className="divide-y divide-white/[0.05]">
                                     {block.matches.map((match, matchIndex) => (
@@ -385,7 +378,7 @@ export default function MemberLeagueLivePage() {
                                         <div className="break-words text-right text-xs font-bold text-white/65">
                                           {match.leftPlayer}
                                         </div>
-                                        <div className="text-center text-sm font-black text-white">
+                                        <div className="text-center text-sm font-semibold text-white">
                                           {match.leftScore} : {match.rightScore}
                                         </div>
                                         <div className="break-words text-left text-xs font-bold text-white/65">

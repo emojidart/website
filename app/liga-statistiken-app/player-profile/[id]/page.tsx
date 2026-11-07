@@ -141,7 +141,7 @@ export default function PlayerProfilePage() {
         achieved: stats.throws_180 >= 25,
         progress: stats.throws_180,
         target: 25,
-        color: "bg-gray-400",
+        color: "bg-accent",
       },
       {
         id: "ton_80_gold",
@@ -219,7 +219,7 @@ export default function PlayerProfilePage() {
         achieved: stats.throws_95_plus >= 50,
         progress: stats.throws_95_plus,
         target: 50,
-        color: "bg-gray-400",
+        color: "bg-accent",
       },
       {
         id: "high_finish_gold",
@@ -245,7 +245,7 @@ export default function PlayerProfilePage() {
         description: "70% Siegquote erreicht",
         icon: <Star className="h-6 w-6" />,
         achieved: stats.win_percentage >= 70,
-        color: "bg-gray-400",
+        color: "bg-accent",
       },
       {
         id: "winner_gold",
@@ -271,7 +271,7 @@ export default function PlayerProfilePage() {
         achieved: stats.total_legs >= 10,
         progress: stats.total_legs,
         target: 10,
-        color: "bg-slate-500",
+        color: "bg-accent",
       },
       {
         id: "veteran",
@@ -346,7 +346,7 @@ export default function PlayerProfilePage() {
         icon: <Crown className="h-6 w-6" />,
         achieved:
           stats.throws_180 >= 1 && stats.throws_tonne >= 1 && stats.throws_shanghai >= 1 && stats.throws_bull >= 1,
-        color: "bg-gradient-to-r from-purple-500 to-pink-500",
+        color: "text-foreground bg-card  ",
       },
       {
         id: "perfectionist",
@@ -355,7 +355,7 @@ export default function PlayerProfilePage() {
         icon: <Crown className="h-6 w-6" />,
         achieved:
           stats.throws_180 >= 10 && stats.throws_tonne >= 10 && stats.throws_shanghai >= 10 && stats.throws_bull >= 10,
-        color: "bg-gradient-to-r from-blue-500 to-purple-500",
+        color: "text-foreground bg-card  ",
       },
       {
         id: "century_180",
@@ -365,7 +365,7 @@ export default function PlayerProfilePage() {
         achieved: stats.throws_180 >= 100,
         progress: stats.throws_180,
         target: 100,
-        color: "bg-gradient-to-r from-red-500 to-orange-500",
+        color: "text-foreground bg-card  ",
       },
       {
         id: "win_streak_master",
@@ -375,7 +375,7 @@ export default function PlayerProfilePage() {
         achieved: stats.total_wins >= 100,
         progress: stats.total_wins,
         target: 100,
-        color: "bg-gradient-to-r from-green-500 to-emerald-500",
+        color: "text-foreground bg-card  ",
       },
     ]
 
@@ -393,10 +393,10 @@ export default function PlayerProfilePage() {
 
   if (loading) {
     return (
-      <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+      <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Spielerprofil" subtitle="Liga & Statistiken" backHref="/liga-statistiken-app" />
         <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-14 sm:px-5 sm:pt-16 lg:px-7 lg:pb-14 xl:px-8">
-          <div className="rounded-[24px] border border-white/[0.08] bg-black/25 p-8 text-center font-bold text-white/55 backdrop-blur-xl">Lade Spielerdaten...</div>
+          <div className="rounded-[24px] border border-white/[0.08] bg-card p-8 text-center font-bold text-muted-foreground ">Lade Spielerdaten...</div>
         </div>
         <MobileBottomNav />
       </div>
@@ -405,10 +405,10 @@ export default function PlayerProfilePage() {
 
   if (!player) {
     return (
-      <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+      <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Spielerprofil" subtitle="Liga & Statistiken" backHref="/liga-statistiken-app" />
         <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-14 sm:px-5 sm:pt-16 lg:px-7 lg:pb-14 xl:px-8">
-          <div className="rounded-[24px] border border-white/[0.08] bg-black/25 p-8 text-center font-bold text-white/55 backdrop-blur-xl">Spieler nicht gefunden</div>
+          <div className="rounded-[24px] border border-white/[0.08] bg-card p-8 text-center font-bold text-muted-foreground ">Spieler nicht gefunden</div>
         </div>
         <MobileBottomNav />
       </div>
@@ -416,12 +416,12 @@ export default function PlayerProfilePage() {
   }
 
   return (
-    <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+    <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-background text-white">
       <Header variant="app" title="Spielerprofil" subtitle="Liga & Statistiken" backHref="/liga-statistiken-app" />
 
       <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-14 sm:px-5 sm:pt-16 lg:px-7 lg:pb-14 xl:px-8">
   {}
-  <div className="mb-4 rounded-[18px] border border-white/[0.08] bg-black/25 p-2 backdrop-blur-xl sm:mb-5 sm:w-fit">
+  <div className="mb-4 rounded-[18px] border border-white/[0.08] bg-card p-2  sm:mb-5 sm:w-fit">
     <Button
       variant="outline"
       onClick={() => router.push("/liga-statistiken-app")}
@@ -433,13 +433,13 @@ export default function PlayerProfilePage() {
   </div>
 
   {/* Profil Header – Designsprache wie Mitgliederprofil */}
-  <section className="relative mb-5 overflow-hidden rounded-[28px] border border-white/[0.09] bg-black/35 p-4 text-white shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px] sm:p-6 lg:p-8">
+  <section className="relative mb-5 overflow-hidden rounded-[28px] border border-white/[0.09] bg-card p-4 text-white shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px] sm:p-6 lg:p-8">
     <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
     <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-500/[0.07]0/15 blur-[110px]" />
     <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
 
     <div className="relative">
-      <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55">
+      <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
         Liga Spielerprofil
       </div>
 
@@ -458,7 +458,7 @@ export default function PlayerProfilePage() {
           ) : null}
 
           <div
-            className={`h-full w-full items-center justify-center bg-[linear-gradient(135deg,rgba(249,115,22,.35),rgba(14,165,233,.22))] ${
+            className={`text-foreground h-full w-full items-center justify-center bg-card ${
               player.photo_url ? "hidden" : "flex"
             }`}
           >
@@ -467,8 +467,8 @@ export default function PlayerProfilePage() {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/35">Spieler</p>
-          <h1 className="mt-1 line-clamp-2 text-[clamp(1.8rem,5vw,3.4rem)] font-black leading-none tracking-[-0.055em] text-white">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Spieler</p>
+          <h1 className="mt-1 line-clamp-2 text-[clamp(1.8rem,5vw,3.4rem)] font-semibold leading-none tracking-[-0.055em] text-white">
             {player.name}
           </h1>
           <p className="mt-2 text-sm font-semibold text-white/48">Persönliche Liga-Statistiken</p>
@@ -477,24 +477,24 @@ export default function PlayerProfilePage() {
 
       <div className="mt-6 grid grid-cols-3 gap-2.5 sm:mt-7 sm:gap-3">
         <div className="rounded-[20px] border border-emerald-300/[0.12] bg-emerald-500/[0.07] p-3.5 text-center">
-          <div className="text-xl font-black text-emerald-300 sm:text-2xl">{player.total_wins}</div>
-          <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/35">Siege</div>
+          <div className="text-xl font-semibold text-emerald-300 sm:text-2xl">{player.total_wins}</div>
+          <div className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Siege</div>
         </div>
 
         <div className="rounded-[20px] border border-orange-300/[0.12] bg-orange-500/[0.07]0/[0.07] p-3.5 text-center">
-          <div className="text-xl font-black text-orange-300 sm:text-2xl">{player.win_percentage.toFixed(1)}%</div>
-          <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/35">Siegquote</div>
+          <div className="text-xl font-semibold text-orange-300 sm:text-2xl">{player.win_percentage.toFixed(1)}%</div>
+          <div className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Siegquote</div>
         </div>
 
         <div className="rounded-[20px] border border-sky-300/[0.12] bg-sky-500/[0.07] p-3.5 text-center">
-          <div className="text-xl font-black text-sky-300 sm:text-2xl">{player.total_legs}</div>
-          <div className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/35">Legs</div>
+          <div className="text-xl font-semibold text-sky-300 sm:text-2xl">{player.total_legs}</div>
+          <div className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Legs</div>
         </div>
       </div>
     </div>
   </section>
 
-        <Card className="mb-5 rounded-[24px] border border-white/[0.08] bg-black/25 text-white shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
+        <Card className="mb-5 rounded-[24px] border border-white/[0.08] bg-card text-white shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] ">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5" />
@@ -514,7 +514,7 @@ export default function PlayerProfilePage() {
                     <div className={`p-2 rounded-full text-white ${achievement.color}`}>{achievement.icon}</div>
                     <div>
                       <h3 className="font-semibold">{achievement.title}</h3>
-                      <p className="text-sm text-white/55">{achievement.description}</p>
+                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
                     </div>
                   </div>
                   {achievement.progress !== undefined && achievement.target && (
@@ -542,7 +542,7 @@ export default function PlayerProfilePage() {
         </Card>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-          <Card className="border-white/[0.08] bg-black/25 text-white shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
+          <Card className="border-white/[0.08] bg-card text-white shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] ">
             <CardHeader>
               <CardTitle>High Scores</CardTitle>
             </CardHeader>
@@ -570,7 +570,7 @@ export default function PlayerProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-white/[0.08] bg-black/25 text-white shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
+          <Card className="border-white/[0.08] bg-card text-white shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] ">
             <CardHeader>
               <CardTitle>Special-Scores</CardTitle>
             </CardHeader>
@@ -592,7 +592,7 @@ export default function PlayerProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-2 border-white/[0.08] bg-black/25 text-white shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl">
+          <Card className="lg:col-span-2 border-white/[0.08] bg-card text-white shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] ">
             <CardHeader>
               <CardTitle>Segment Statistiken</CardTitle>
             </CardHeader>
@@ -600,27 +600,27 @@ export default function PlayerProfilePage() {
               <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
                 <div className="text-center p-4 bg-amber-500/[0.07] rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-amber-300">{player.throws_20}</div>
-                  <div className="text-sm text-white/55">20er</div>
+                  <div className="text-sm text-muted-foreground">20er</div>
                 </div>
                 <div className="text-center p-4 bg-amber-500/[0.07] rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-amber-300">{player.throws_19}</div>
-                  <div className="text-sm text-white/55">19er</div>
+                  <div className="text-sm text-muted-foreground">19er</div>
                 </div>
                 <div className="text-center p-4 bg-amber-500/[0.07] rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-amber-300">{player.throws_18}</div>
-                  <div className="text-sm text-white/55">18er</div>
+                  <div className="text-sm text-muted-foreground">18er</div>
                 </div>
                 <div className="text-center p-4 bg-amber-500/[0.07] rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-amber-300">{player.throws_17}</div>
-                  <div className="text-sm text-white/55">17er</div>
+                  <div className="text-sm text-muted-foreground">17er</div>
                 </div>
                 <div className="text-center p-4 bg-amber-500/[0.07] rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-amber-300">{player.throws_16}</div>
-                  <div className="text-sm text-white/55">16er</div>
+                  <div className="text-sm text-muted-foreground">16er</div>
                 </div>
                 <div className="text-center p-4 bg-amber-500/[0.07] rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-amber-300">{player.throws_15}</div>
-                  <div className="text-sm text-white/55">15er</div>
+                  <div className="text-sm text-muted-foreground">15er</div>
                 </div>
               </div>
             </CardContent>

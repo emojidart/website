@@ -24,7 +24,7 @@ function Metric({
   tone?: "slate" | "orange" | "green" | "red" | "amber"
 }) {
   const toneClass = {
-    slate: "bg-white/[0.05] text-white/55",
+    slate: "bg-white/[0.05] text-muted-foreground",
     orange: "bg-orange-500/[0.10] text-orange-300",
     green: "bg-emerald-500/[0.10] text-emerald-300",
     red: "bg-rose-500/[0.10] text-rose-300",
@@ -35,8 +35,8 @@ function Metric({
     <div className="group rounded-[20px] border border-white/[0.08] bg-white/[0.025] p-4 transition hover:border-orange-300/15 hover:bg-white/[0.04]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/35">{label}</div>
-          <div className="mt-2 truncate text-2xl font-black tracking-tight text-white sm:text-3xl">{value}</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+          <div className="mt-2 truncate text-2xl font-semibold tracking-tight text-white sm:text-3xl">{value}</div>
         </div>
         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] ${toneClass}`}>{icon}</span>
       </div>
@@ -53,7 +53,7 @@ export function TournamentStatsCard({ players, currentRound, tournamentFinished,
   return (
     <Card className="mb-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#090b0f] text-white shadow-[0_18px_55px_-42px_rgba(0,0,0,.85)]">
       <CardHeader className="border-b border-white/[0.07] bg-white/[0.02] px-5 py-4 sm:px-6">
-        <CardTitle className="flex items-center gap-3 text-lg font-black text-white">
+        <CardTitle className="flex items-center gap-3 text-lg font-semibold text-white">
           <span className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-orange-300/20 bg-orange-500/[0.08] text-orange-300">
             <BarChart3 className="h-5 w-5 text-orange-400" />
           </span>

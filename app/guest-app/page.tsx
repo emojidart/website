@@ -146,8 +146,8 @@ function getPlacementLabel(placement?: number | null) {
 }
 
 function getPlacementBadgeClass(placement?: number | null) {
-  if (placement === 1) return "bg-amber-500/[0.08]0/[0.08]0 text-white"
-  if (placement === 2) return "bg-white/[0.035]0 text-white"
+  if (placement === 1) return "bg-amber-500 text-white"
+  if (placement === 2) return "bg-white/10 text-white"
   if (placement === 3) return "bg-amber-600 text-white"
   return "bg-orange-600 text-white"
 }
@@ -173,20 +173,20 @@ function StatBox({
           : tone === "gray"
             ? "border-white/[0.08] bg-white/[0.035] text-white/80"
             : tone === "yellow"
-              ? "border-amber-300/15 bg-amber-500/[0.08]0/[0.07] text-amber-100"
-              : "border-orange-300/15 bg-orange-500/[0.08]0/[0.07] text-orange-100"
+              ? "border-amber-300/15 bg-amber-500/[0.07] text-amber-100"
+              : "border-orange-300/15 bg-orange-500/[0.07] text-orange-100"
 
   return (
     <div className={`rounded-2xl border p-4 ${styles}`}>
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-xs font-black uppercase opacity-80">
+          <div className="text-xs font-semibold uppercase opacity-80">
             {label}
           </div>
-          <div className="text-2xl font-black mt-1">{value}</div>
+          <div className="text-2xl font-semibold mt-1">{value}</div>
         </div>
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-black/25">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-card">
           {icon}
         </div>
       </div>
@@ -203,10 +203,10 @@ function MiniInfo({
 }) {
   return (
     <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.035] p-3">
-      <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
         {label}
       </div>
-      <div className="mt-1 text-sm font-black text-white">{value}</div>
+      <div className="mt-1 text-sm font-semibold text-white">{value}</div>
     </div>
   )
 }
@@ -570,13 +570,13 @@ export default function GuestProfileAppPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#050608] text-white flex flex-col">
+      <div className="min-h-screen bg-background text-white flex flex-col">
         <Header />
 
         <main className="flex-grow flex items-center justify-center p-4 pb-24">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-orange-300" />
-            <p className="text-sm font-semibold text-white/45">
+            <p className="text-sm font-semibold text-muted-foreground">
               Gastprofil wird geladen...
             </p>
           </div>
@@ -589,7 +589,7 @@ export default function GuestProfileAppPage() {
 
   if (message || !guestRequest) {
     return (
-      <div className="min-h-screen bg-[#050608] text-white flex flex-col">
+      <div className="min-h-screen bg-background text-white flex flex-col">
         <Header />
 
         <main className="flex-grow flex items-center justify-center px-4 pb-24">
@@ -599,11 +599,11 @@ export default function GuestProfileAppPage() {
                 <AlertTriangle className="h-7 w-7 text-rose-300" />
               </div>
 
-              <h1 className="mb-2 text-2xl font-black text-white">
+              <h1 className="mb-2 text-2xl font-semibold text-white">
                 Gastprofil nicht verfügbar
               </h1>
 
-              <p className="mb-6 text-sm text-white/45">
+              <p className="mb-6 text-sm text-muted-foreground">
                 {message || "Es konnte kein Gastprofil geladen werden."}
               </p>
 
@@ -620,27 +620,20 @@ export default function GuestProfileAppPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] font-sans text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-white">
       <Header />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.30]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.76),rgba(3,5,9,.95)_48%,rgba(2,4,7,.99))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.18),transparent_28%),radial-gradient(circle_at_90%_30%,rgba(14,165,233,.12),transparent_28%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <div className="space-y-5 sm:space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-300">
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-300">
                 EMD VereinsApp
               </div>
 
-              <h1 className="mt-1 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">
+              <h1 className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
                 Gastprofil
               </h1>
 
@@ -663,12 +656,12 @@ export default function GuestProfileAppPage() {
 </div>
           </div>
 
-          <Card className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/94 shadow-[0_32px_100px_-55px_rgba(0,0,0,.98)] backdrop-blur-xl">
-            <div className="h-px bg-gradient-to-r from-orange-400/80 via-orange-500/30 to-sky-400/50" />
+          <Card className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/94 shadow-[0_32px_100px_-55px_rgba(0,0,0,.98)] ">
+            <div className="text-foreground h-px bg-card   " />
 
             <CardContent className="p-4 sm:p-6 lg:p-7">
               <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-                <div className="flex h-20 w-20 items-center justify-center rounded-[24px] border border-orange-300/20 bg-orange-500/[0.08]0/10 shadow-[0_18px_50px_rgba(0,0,0,.45)] sm:h-24 sm:w-24">
+                <div className="flex h-20 w-20 items-center justify-center rounded-[24px] border border-orange-300/20 bg-orange-500/10 shadow-[0_18px_50px_rgba(0,0,0,.45)] sm:h-24 sm:w-24">
                   <UserRound className="h-10 w-10 text-orange-300 sm:h-12 sm:w-12" />
                 </div>
 
@@ -679,12 +672,12 @@ export default function GuestProfileAppPage() {
                       Freigeschaltet
                     </Badge>
 
-                    <Badge variant="outline" className="rounded-full border-orange-300/20 bg-orange-500/[0.08]0/[0.07] text-orange-200">
+                    <Badge variant="outline" className="rounded-full border-orange-300/20 bg-orange-500/[0.07] text-orange-200">
                       Gastzugang
                     </Badge>
                   </div>
 
-                  <h2 className="text-2xl font-black tracking-[-0.03em] text-white">
+                  <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">
                     {guestRequest.full_name}
                   </h2>
 
@@ -693,7 +686,7 @@ export default function GuestProfileAppPage() {
                   </p>
 
                   {linkedPlayer?.verein || linkedPlayer?.ligastatus ? (
-                    <p className="mt-1 text-sm text-white/30">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {linkedPlayer?.verein || "Kein Verein"} ·{" "}
                       {linkedPlayer?.ligastatus || "Kein Ligastatus"}
                     </p>
@@ -703,7 +696,7 @@ export default function GuestProfileAppPage() {
 
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-[18px] border border-white/[0.08] bg-white/[0.035] p-4">
-                  <div className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                     E-Mail
                   </div>
 
@@ -714,7 +707,7 @@ export default function GuestProfileAppPage() {
                 </div>
 
                 <div className="rounded-[18px] border border-white/[0.08] bg-white/[0.035] p-4">
-                  <div className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                     Status
                   </div>
 
@@ -726,24 +719,24 @@ export default function GuestProfileAppPage() {
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] backdrop-blur-xl">
-            <div className="h-px bg-gradient-to-r from-orange-400/70 via-orange-500/25 to-transparent" />
+          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] ">
+            <div className="text-foreground h-px bg-card   " />
             <CardContent className="p-5 sm:p-6">
               {clubJoinRequest?.status === "pending" ? (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/[0.08]0/[0.08]">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/[0.08]">
                       <Clock3 className="h-5 w-5 text-orange-300" />
                     </div>
                     <div>
-                      <div className="font-black text-white">Beitrittsanfrage wird geprüft</div>
+                      <div className="font-semibold text-white">Beitrittsanfrage wird geprüft</div>
                       <p className="mt-1 text-sm font-semibold leading-6 text-white/42">
                         Deine Anfrage ist beim Verein eingelangt. Bis zur Bestätigung bleibst du ganz normal Gast.
                       </p>
                     </div>
                   </div>
 
-                  <Button asChild variant="outline" className="h-11 rounded-2xl border-orange-300/20 bg-orange-500/[0.08]0/[0.06] text-orange-100 hover:bg-orange-500/[0.08]0/[0.12]">
+                  <Button asChild variant="outline" className="h-11 rounded-2xl border-orange-300/20 bg-orange-500/[0.06] text-orange-100 hover:bg-orange-500/[0.12]">
                     <Link href="/club-join">Anfrage ansehen</Link>
                   </Button>
                 </div>
@@ -754,7 +747,7 @@ export default function GuestProfileAppPage() {
                       <ShieldCheck className="h-5 w-5 text-emerald-300" />
                     </div>
                     <div>
-                      <div className="font-black text-white">
+                      <div className="font-semibold text-white">
                         {membershipOverview.status === "membership"
                           ? "Mitgliedschaft aktiv"
                           : membershipOverview.status === "trial"
@@ -771,7 +764,7 @@ export default function GuestProfileAppPage() {
                     </div>
                   </div>
 
-                  <Button asChild className="h-11 rounded-2xl border border-emerald-300/20 bg-emerald-500 px-4 font-black text-white hover:bg-emerald-400">
+                  <Button asChild className="h-11 rounded-2xl border border-emerald-300/20 bg-emerald-500 px-4 font-semibold text-white hover:bg-emerald-400">
                     <Link href="/member-membership">
                       <ShieldCheck className="mr-2 h-4 w-4" />
                       {membershipOverview.status === "none"
@@ -783,18 +776,18 @@ export default function GuestProfileAppPage() {
               ) : (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/[0.08]0/[0.08]">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/[0.08]">
                       <UserPlus className="h-5 w-5 text-orange-300" />
                     </div>
                     <div>
-                      <div className="font-black text-white">Du möchtest Vereinsmitglied werden?</div>
+                      <div className="font-semibold text-white">Du möchtest Vereinsmitglied werden?</div>
                       <p className="mt-1 text-sm font-semibold leading-6 text-white/42">
                         Stelle direkt mit deinem bestehenden Gastkonto eine Beitrittsanfrage.
                       </p>
                     </div>
                   </div>
 
-                  <Button asChild className="h-11 rounded-2xl border border-orange-300/20 bg-orange-500/[0.08]0 px-4 font-black text-white hover:bg-orange-400">
+                  <Button asChild className="h-11 rounded-2xl border border-orange-300/20 bg-orange-500 px-4 font-semibold text-primary-foreground hover:bg-orange-400">
                     <Link href="/club-join">
                       <UserPlus className="mr-2 h-4 w-4" />
                       Verein beitreten
@@ -805,8 +798,8 @@ export default function GuestProfileAppPage() {
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] backdrop-blur-xl">
-            <div className="h-px bg-gradient-to-r from-cyan-400/70 via-orange-400/25 to-transparent" />
+          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] ">
+            <div className="text-foreground h-px bg-card   " />
             <CardContent className="p-5 sm:p-6">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex items-start gap-3">
@@ -814,10 +807,10 @@ export default function GuestProfileAppPage() {
                     <KeyRound className="h-5 w-5 text-cyan-200" />
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200/60">
+                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/60">
                       Club Terminal
                     </div>
-                    <h3 className="mt-1 text-xl font-black text-white">Terminal-PIN</h3>
+                    <h3 className="mt-1 text-xl font-semibold text-white">Terminal-PIN</h3>
                     <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-white/42">
                       Lege eine persönliche 4-stellige PIN fest. Damit kannst du dich später am Club-Terminal eindeutig erkennen lassen.
                     </p>
@@ -829,7 +822,7 @@ export default function GuestProfileAppPage() {
                   </div>
                 </div>
 
-                <Badge className={hasTerminalPin ? "border-emerald-300/20 bg-emerald-500/10 text-emerald-200" : "border-white/10 bg-white/[0.04] text-white/45"}>
+                <Badge className={hasTerminalPin ? "border-emerald-300/20 bg-emerald-500/10 text-emerald-200" : "border-white/10 bg-white/[0.04] text-muted-foreground"}>
                   {hasTerminalPin ? "PIN eingerichtet" : "Noch keine PIN"}
                 </Badge>
               </div>
@@ -842,7 +835,7 @@ export default function GuestProfileAppPage() {
                   value={terminalPin}
                   onChange={(e) => setTerminalPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
                   placeholder="Neue 4-stellige PIN"
-                  className="h-12 rounded-xl border-white/10 bg-black/25 text-white"
+                  className="h-12 rounded-xl border-white/10 bg-card text-white"
                 />
                 <Input
                   inputMode="numeric"
@@ -851,7 +844,7 @@ export default function GuestProfileAppPage() {
                   value={terminalPinConfirm}
                   onChange={(e) => setTerminalPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))}
                   placeholder="PIN wiederholen"
-                  className="h-12 rounded-xl border-white/10 bg-black/25 text-white"
+                  className="h-12 rounded-xl border-white/10 bg-card text-white"
                 />
               </div>
 
@@ -865,7 +858,7 @@ export default function GuestProfileAppPage() {
                 type="button"
                 onClick={() => void saveTerminalPin()}
                 disabled={terminalPinSaving}
-                className="mt-4 h-11 rounded-2xl bg-cyan-500 px-5 font-black text-white hover:bg-cyan-400"
+                className="mt-4 h-11 rounded-2xl bg-cyan-500 px-5 font-semibold text-white hover:bg-cyan-400"
               >
                 <KeyRound className="mr-2 h-4 w-4" />
                 {terminalPinSaving
@@ -877,16 +870,16 @@ export default function GuestProfileAppPage() {
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] backdrop-blur-xl">
-            <div className="h-px bg-gradient-to-r from-orange-400/70 via-sky-400/25 to-transparent" />
+          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] ">
+            <div className="text-foreground h-px bg-card   " />
 
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-300">
                     DACH-Turnierkalender
                   </div>
-                  <h3 className="mt-1 text-2xl font-black tracking-[-0.03em] text-white">
+                  <h3 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
                     Veranstaltungen verwalten
                   </h3>
                   <p className="mt-1 text-sm leading-6 text-white/42">
@@ -894,7 +887,7 @@ export default function GuestProfileAppPage() {
                   </p>
                 </div>
 
-                <Button asChild className="h-11 rounded-2xl border border-orange-300/20 bg-orange-500/[0.08]0 px-4 font-black text-white hover:bg-orange-400">
+                <Button asChild className="h-11 rounded-2xl border border-orange-300/20 bg-orange-500 px-4 font-semibold text-primary-foreground hover:bg-orange-400">
                   <Link href="/turniere/neu" onClick={rememberPublicAreaOrigin}>
                     <PlusCircle className="w-4 h-4 mr-2" />
                     Veranstaltung anlegen
@@ -908,10 +901,10 @@ export default function GuestProfileAppPage() {
                   onClick={rememberPublicAreaOrigin}
                   className="group rounded-[20px] border border-white/[0.08] bg-white/[0.035] p-4 transition hover:border-orange-300/20 hover:bg-white/[0.06]"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-black/25">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-card">
                     <ListChecks className="h-5 w-5 text-orange-300" />
                   </div>
-                  <div className="mt-3 font-black text-white">Meine Veranstaltungen</div>
+                  <div className="mt-3 font-semibold text-white">Meine Veranstaltungen</div>
                   <div className="mt-1 text-sm leading-6 text-white/42">
                     Status sehen, bearbeiten und absagen.
                   </div>
@@ -926,10 +919,10 @@ export default function GuestProfileAppPage() {
                   onClick={rememberPublicAreaOrigin}
                   className="group rounded-[20px] border border-white/[0.08] bg-white/[0.035] p-4 transition hover:border-orange-300/20 hover:bg-white/[0.06]"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-black/25">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-card">
                     <PlusCircle className="h-5 w-5 text-orange-300" />
                   </div>
-                  <div className="mt-3 font-black text-white">Neue Veranstaltung</div>
+                  <div className="mt-3 font-semibold text-white">Neue Veranstaltung</div>
                   <div className="mt-1 text-sm leading-6 text-white/42">
                     Turnier oder Event zur Prüfung einreichen.
                   </div>
@@ -944,10 +937,10 @@ export default function GuestProfileAppPage() {
                   onClick={rememberPublicAreaOrigin}
                   className="group rounded-[20px] border border-white/[0.08] bg-white/[0.035] p-4 transition hover:border-orange-300/20 hover:bg-white/[0.06]"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-black/25">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-card">
                     <Globe2 className="h-5 w-5 text-orange-300" />
                   </div>
-                  <div className="mt-3 font-black text-white">Alle Veranstaltungen</div>
+                  <div className="mt-3 font-semibold text-white">Alle Veranstaltungen</div>
                   <div className="mt-1 text-sm leading-6 text-white/42">
                     Freigegebene DACH-Turniere durchsuchen.
                   </div>
@@ -960,46 +953,46 @@ export default function GuestProfileAppPage() {
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] backdrop-blur-xl">
-            <div className="h-px bg-gradient-to-r from-orange-400/70 via-violet-400/20 to-transparent" />
+          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] ">
+            <div className="text-foreground h-px bg-card   " />
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300">Dartbörse</div>
-                  <h3 className="mt-1 text-2xl font-black tracking-[-0.03em] text-white">Kaufen, verkaufen und schreiben</h3>
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-300">Dartbörse</div>
+                  <h3 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">Kaufen, verkaufen und schreiben</h3>
                   <p className="mt-1 text-sm leading-6 text-white/42">Inserate durchsuchen, eigene Artikel anbieten und direkt mit Verkäufern schreiben.</p>
                 </div>
-                <Button asChild className="h-11 rounded-2xl border border-orange-300/20 bg-orange-500/[0.08]0 px-4 font-black text-white hover:bg-orange-400">
+                <Button asChild className="h-11 rounded-2xl border border-orange-300/20 bg-orange-500 px-4 font-semibold text-primary-foreground hover:bg-orange-400">
                   <Link href="/dartboerse/neu" onClick={rememberPublicAreaOrigin}><PlusCircle className="w-4 h-4 mr-2" />Inserat erstellen</Link>
                 </Button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Link href="/dartboerse" onClick={rememberPublicAreaOrigin} className="group rounded-[20px] border border-white/[0.08] bg-white/[0.035] p-4 transition hover:border-orange-300/20 hover:bg-white/[0.06]">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-black/25"><Store className="h-5 w-5 text-orange-300" /></div>
-                  <div className="mt-3 font-black text-white">Dartbörse öffnen</div><div className="mt-1 text-sm leading-6 text-white/42">Aktuelle Angebote entdecken.</div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-card"><Store className="h-5 w-5 text-orange-300" /></div>
+                  <div className="mt-3 font-semibold text-white">Dartbörse öffnen</div><div className="mt-1 text-sm leading-6 text-white/42">Aktuelle Angebote entdecken.</div>
                   <div className="mt-3 flex items-center text-sm font-bold text-orange-300">Öffnen<ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" /></div>
                 </Link>
                 <Link href="/dartboerse/meine" onClick={rememberPublicAreaOrigin} className="group rounded-[20px] border border-white/[0.08] bg-white/[0.035] p-4 transition hover:border-orange-300/20 hover:bg-white/[0.06]">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-black/25"><ShoppingBag className="h-5 w-5 text-orange-300" /></div>
-                  <div className="mt-3 font-black text-white">Meine Inserate</div><div className="mt-1 text-sm leading-6 text-white/42">Angebote verwalten und Status sehen.</div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-card"><ShoppingBag className="h-5 w-5 text-orange-300" /></div>
+                  <div className="mt-3 font-semibold text-white">Meine Inserate</div><div className="mt-1 text-sm leading-6 text-white/42">Angebote verwalten und Status sehen.</div>
                   <div className="mt-3 flex items-center text-sm font-bold text-orange-300">Verwalten<ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" /></div>
                 </Link>
                 <Link href="/dartboerse/nachrichten" onClick={rememberPublicAreaOrigin} className="group rounded-[20px] border border-white/[0.08] bg-white/[0.035] p-4 transition hover:border-orange-300/20 hover:bg-white/[0.06]">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-black/25"><MessageCircle className="h-5 w-5 text-orange-300" /></div>
-                  <div className="mt-3 font-black text-white">Meine Nachrichten</div><div className="mt-1 text-sm leading-6 text-white/42">Direkt mit Käufern und Verkäufern schreiben.</div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-card"><MessageCircle className="h-5 w-5 text-orange-300" /></div>
+                  <div className="mt-3 font-semibold text-white">Meine Nachrichten</div><div className="mt-1 text-sm leading-6 text-white/42">Direkt mit Käufern und Verkäufern schreiben.</div>
                   <div className="mt-3 flex items-center text-sm font-bold text-orange-300">Nachrichten<ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" /></div>
                 </Link>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] backdrop-blur-xl">
-            <div className="h-px bg-gradient-to-r from-orange-400/70 via-orange-500/25 to-transparent" />
+          <Card className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#0b0f15]/92 shadow-[0_24px_80px_-58px_rgba(0,0,0,.98)] ">
+            <div className="text-foreground h-px bg-card   " />
 
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                 <div>
-                  <h3 className="text-2xl font-black tracking-[-0.03em] text-white">
+                  <h3 className="text-2xl font-semibold tracking-[-0.03em] text-white">
                     Meine Statistiken
                   </h3>
 
@@ -1026,7 +1019,7 @@ export default function GuestProfileAppPage() {
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
                     <div>
-                      <div className="font-black">
+                      <div className="font-semibold">
                         Noch nicht mit Spieler verknüpft
                       </div>
                       <p className="text-sm mt-1">
@@ -1041,7 +1034,7 @@ export default function GuestProfileAppPage() {
                 <div className="flex items-center justify-center py-12">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-9 h-9 animate-spin text-orange-300" />
-                    <p className="text-sm font-semibold text-white/45">
+                    <p className="text-sm font-semibold text-muted-foreground">
                       Statistiken werden geladen...
                     </p>
                   </div>
@@ -1051,7 +1044,7 @@ export default function GuestProfileAppPage() {
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
                     <div>
-                      <div className="font-black">Hinweis</div>
+                      <div className="font-semibold">Hinweis</div>
                       <p className="text-sm mt-1">{statsMessage}</p>
                     </div>
                   </div>
@@ -1061,12 +1054,12 @@ export default function GuestProfileAppPage() {
                   <div className="flex items-start gap-3">
                     <Trophy className="w-5 h-5 mt-0.5 text-orange-300 flex-shrink-0" />
                     <div>
-                      <div className="font-black text-white">
+                      <div className="font-semibold text-white">
                         Noch keine Turnierdaten gefunden
                       </div>
                       <p className="text-sm mt-1">
                         Dein Spieler ist verknüpft. Sobald Ergebnisse für{" "}
-                        <span className="font-black">{displayPlayerName}</span>{" "}
+                        <span className="font-semibold">{displayPlayerName}</span>{" "}
                         gespeichert wurden, erscheinen deine Statistiken automatisch hier.
                       </p>
                     </div>
@@ -1078,7 +1071,7 @@ export default function GuestProfileAppPage() {
                     <section>
                       <div className="flex items-center gap-2 mb-4">
                         <Trophy className="h-5 w-5 text-orange-300" />
-                        <h4 className="text-xl font-black text-white">
+                        <h4 className="text-xl font-semibold text-white">
                           Summer Special Gesamtwertung
                         </h4>
                       </div>
@@ -1154,7 +1147,7 @@ export default function GuestProfileAppPage() {
                     <section>
                       <div className="flex items-center gap-2 mb-4">
                         <Medal className="h-5 w-5 text-orange-300" />
-                        <h4 className="text-xl font-black text-white">
+                        <h4 className="text-xl font-semibold text-white">
                           Meine Summer-Special Turniere
                         </h4>
                       </div>
@@ -1180,14 +1173,14 @@ export default function GuestProfileAppPage() {
                                     </Badge>
 
                                     {entry.winner_side_bonus ? (
-                                      <Badge className="bg-amber-500/[0.08]0/[0.08]0 text-white">
+                                      <Badge className="bg-amber-500 text-white">
                                         <Star className="w-3 h-3 mr-1" />
                                         Gewinnerseite +5
                                       </Badge>
                                     ) : null}
                                   </div>
 
-                                  <div className="font-black text-white">
+                                  <div className="font-semibold text-white">
                                     {entry.tournament_name || "Summer Special Turnier"}
                                   </div>
 
@@ -1227,7 +1220,7 @@ export default function GuestProfileAppPage() {
                     <section>
                       <div className="flex items-center gap-2 mb-4">
                         <Swords className="h-5 w-5 text-orange-300" />
-                        <h4 className="text-xl font-black text-white">
+                        <h4 className="text-xl font-semibold text-white">
                           Meine weiteren Turniere
                         </h4>
                       </div>
@@ -1250,7 +1243,7 @@ export default function GuestProfileAppPage() {
                                   </Badge>
                                 </div>
 
-                                <div className="font-black text-white">
+                                <div className="font-semibold text-white">
                                   {ranking.tournament_name || "DKO Turnier"}
                                 </div>
 

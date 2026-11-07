@@ -65,19 +65,19 @@ export default function LivestreamPage() {
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
                     <div className="text-center space-y-3 sm:space-y-4 px-4">
                       <div className="relative">
-                        <div className="absolute inset-0 bg-slate-600/20 blur-3xl" />
-                        <RadioOff className="h-16 w-16 sm:h-24 sm:w-24 text-slate-600 relative mx-auto" />
+                        <div className="absolute inset-0 bg-accent/20 blur-3xl" />
+                        <RadioOff className="h-16 w-16 sm:h-24 sm:w-24 text-muted-foreground relative mx-auto" />
                       </div>
                       <div className="space-y-1 sm:space-y-2">
                         <h3 className="text-lg sm:text-2xl font-bold text-white">Stream derzeit offline</h3>
-                        <p className="text-sm sm:text-base text-slate-400">
+                        <p className="text-sm sm:text-base text-muted-foreground">
                           EMD Darts - Nächster Stream wird bald angekündigt
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 sm:p-4">
+                  <div className="text-foreground absolute bottom-0 left-0 right-0 bg-card   p-2 sm:p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Button
@@ -89,7 +89,7 @@ export default function LivestreamPage() {
                           <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
                         </Button>
                         <div className="w-16 sm:w-24 h-1 bg-white/30 rounded-full overflow-hidden">
-                          <div className="w-0 h-full bg-white rounded-full" />
+                          <div className="w-0 h-full bg-card rounded-full" />
                         </div>
                       </div>
 
@@ -188,7 +188,7 @@ export default function LivestreamPage() {
                       <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground text-center">
+                  <p className="text-xs sm:text-xs text-muted-foreground text-center">
                     Chat-Funktion wird bald verfügbar sein
                   </p>
                 </div>

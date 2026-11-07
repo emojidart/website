@@ -31,12 +31,12 @@ export function RankingsTable({
       <Table>
         <TableHeader>
           <TableRow className="bg-white/[0.03] hover:bg-white/[0.03]">
-            <TableHead className="text-white/40">Rang</TableHead>
-            <TableHead className="text-white/40">Name</TableHead>
-            <TableHead className="text-white/40">Ligastatus</TableHead>
-            <TableHead className="text-white/40">Leben</TableHead>
-            <TableHead className="text-white/40">Ausgeschieden</TableHead>
-            <TableHead className="text-white/40">Aktionen</TableHead>
+            <TableHead className="text-muted-foreground">Rang</TableHead>
+            <TableHead className="text-muted-foreground">Name</TableHead>
+            <TableHead className="text-muted-foreground">Ligastatus</TableHead>
+            <TableHead className="text-muted-foreground">Leben</TableHead>
+            <TableHead className="text-muted-foreground">Ausgeschieden</TableHead>
+            <TableHead className="text-muted-foreground">Aktionen</TableHead>
           </TableRow>
         </TableHeader>
 

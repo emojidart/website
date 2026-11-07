@@ -24,7 +24,7 @@ export default function MemberSetPasswordPage() {
 
 function SetPasswordSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       <main className="flex-grow flex items-center justify-center p-4">
         <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -116,23 +116,25 @@ function MemberSetPasswordClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
 
-      <div className="container mx-auto px-4 py-10 max-w-md">
-        <Card className="shadow-xl border-0">
+      <div className="container mx-auto max-w-md px-4 pb-12 pt-24">
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-black">Passwort festlegen</CardTitle>
-            <p className="text-sm text-gray-600 mt-2">Bitte setze jetzt dein neues Passwort.</p>
+            <CardTitle className="text-2xl font-semibold">Passwort festlegen</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">Bitte setze jetzt dein neues Passwort.</p>
           </CardHeader>
 
           <CardContent>
             {msg ? (
               <div
+                role="status"
+                aria-live="polite"
                 className={`mb-4 p-3 rounded-xl text-sm font-medium ${
                   msg.includes("gespeichert")
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-red-50 text-red-700 border border-red-200"
+                    ? "bg-green-500/10 text-green-200 border border-green-400/25"
+                    : "bg-red-500/10 text-red-200 border border-red-400/25"
                 }`}
               >
                 {msg}
@@ -141,11 +143,12 @@ function MemberSetPasswordClient() {
 
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700">Neues Passwort</label>
+                <label htmlFor="password" className="text-sm font-medium text-foreground">Neues Passwort</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="password"
+                    id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-12 h-12 rounded-xl"
@@ -158,11 +161,12 @@ function MemberSetPasswordClient() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700">Passwort wiederholen</label>
+                <label htmlFor="password2" className="text-sm font-medium text-foreground">Passwort wiederholen</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="password"
+                    id="password2"
                     value={password2}
                     onChange={(e) => setPassword2(e.target.value)}
                     className="pl-12 h-12 rounded-xl"

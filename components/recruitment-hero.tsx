@@ -22,7 +22,7 @@ export function RecruitmentHero({
   showButton = true,
 }: RecruitmentHeroProps = {}) {
   return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b border-primary/20">
+    <div className="text-foreground relative overflow-hidden bg-card from-primary/10 via-primary/5  border-b border-primary/20">
       <div className="container mx-auto px-4 py-16 md:py-24">
         <div className="max-w-3xl">
           <div className="inline-block mb-4">

@@ -317,7 +317,7 @@ function calcPrediction(args: {
 function confBadgeClass(c: "low" | "medium" | "high") {
   if (c === "high") return "bg-green-100 text-green-700 border-green-200"
   if (c === "medium") return "bg-yellow-100 text-yellow-700 border-yellow-200"
-  return "bg-gray-100 text-gray-700 border-gray-200"
+  return "bg-muted text-muted-foreground border-border"
 }
 
 export default function DartLeaguePage() {
@@ -702,22 +702,22 @@ export default function DartLeaguePage() {
 
     if (!right) {
       return (
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-          <div className="text-sm text-gray-800 leading-relaxed">{left}</div>
+        <div className="rounded-xl border border-border bg-muted p-3">
+          <div className="text-sm text-foreground leading-relaxed">{left}</div>
         </div>
       )
     }
 
     return (
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+      <div className="rounded-xl border border-border bg-muted p-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">{homeLabel}</div>
-            <div className="text-sm text-gray-800 leading-relaxed">{left}</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">{homeLabel}</div>
+            <div className="text-sm text-foreground leading-relaxed">{left}</div>
           </div>
-          <div className="sm:border-l sm:border-gray-200 sm:pl-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">{awayLabel}</div>
-            <div className="text-sm text-gray-800 leading-relaxed">{right}</div>
+          <div className="sm:border-l sm:border-border sm:pl-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">{awayLabel}</div>
+            <div className="text-sm text-foreground leading-relaxed">{right}</div>
           </div>
         </div>
       </div>
@@ -726,15 +726,15 @@ export default function DartLeaguePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans">
+      <div className="min-h-screen bg-card text-foreground font-sans">
         <Header />
         <main className="pt-8 pb-24 relative">
           <div className="container mx-auto px-4 md:px-6 py-8">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6 backdrop-blur-sm">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6 ">
                 <Trophy className="h-12 w-12 text-white mx-auto" />
               </div>
-              <p className="mt-4 text-gray-600">Lade Liga-Daten...</p>
+              <p className="mt-4 text-muted-foreground">Lade Liga-Daten...</p>
             </div>
           </div>
         </main>
@@ -744,16 +744,16 @@ export default function DartLeaguePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="text-foreground min-h-screen bg-card  ">
       <Header />
 
       {/* ✅ Sticky Filter: klickbar am PC (Framer-transform umgehen) */}
-      <div className="sticky top-0 z-[2000] bg-gradient-to-br from-gray-50 to-gray-100/95 backdrop-blur border-b border-gray-200">
+      <div className="text-foreground sticky top-0 z-[2000] bg-card    border-b border-border">
         <div className="container mx-auto px-4 py-3">
           <div className="w-full max-w-2xl mx-auto pointer-events-auto">
             <div className="flex flex-col gap-3 sm:gap-4 items-stretch sm:items-center">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span className="text-sm font-semibold text-gray-700">Saison:</span>
+                <span className="text-sm font-semibold text-muted-foreground">Saison:</span>
 
                 <select
                   value={selectedSeasonId}
@@ -762,7 +762,7 @@ export default function DartLeaguePage() {
                     setSelectedSeasonId(e.target.value)
                     setCurrentPage(1)
                   }}
-                  className="w-full sm:w-auto bg-white text-gray-900 rounded-lg px-3 py-3 sm:py-2 text-sm border border-gray-200 shadow-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-orange-300"
+                  className="w-full sm:w-auto bg-card text-foreground rounded-lg px-3 py-3 sm:py-2 text-sm border border-border shadow-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-orange-300"
                 >
                   {seasons.length === 0 ? (
                     <option value="">Lade Saisonen…</option>
@@ -800,8 +800,8 @@ export default function DartLeaguePage() {
           animate="visible"
         >
           <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12 relative">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
+            <div className="bg-card   rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
+              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 ">
                 <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
               </div>
               <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
@@ -845,7 +845,7 @@ export default function DartLeaguePage() {
                 <PointsInfoBox />
 
                 <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-6">
+                  <CardHeader className="bg-card   text-white p-3 sm:p-6">
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                         <Target className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -857,7 +857,7 @@ export default function DartLeaguePage() {
                         <select
                           value={playersPerPage}
                           onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                          className="bg-white text-gray-900 rounded px-2 py-1 text-sm"
+                          className="bg-card text-foreground rounded px-2 py-1 text-sm"
                         >
                           <option value={10}>10</option>
                           <option value={25}>25</option>
@@ -870,8 +870,8 @@ export default function DartLeaguePage() {
 
                   <CardContent className="p-3 sm:p-6">
                     {playerLegStats.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
-                        <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Target className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                         <p className="text-lg">Keine Statistiken verfügbar</p>
                       </div>
                     ) : (
@@ -888,9 +888,9 @@ export default function DartLeaguePage() {
                         </div>
 
                         {totalPages > 1 && (
-                          <div className="p-4 border-t bg-gray-50">
+                          <div className="p-4 border-t bg-muted">
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                              <div className="text-sm text-gray-600">
+                              <div className="text-sm text-muted-foreground">
                                 Zeige {startIndex + 1} bis {Math.min(endIndex, playerLegStats.length)} von{" "}
                                 {playerLegStats.length} Spielern
                               </div>
@@ -934,7 +934,7 @@ export default function DartLeaguePage() {
 
               <TabsContent value="standings">
                 <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 sm:p-6">
+                  <CardHeader className="bg-card   text-white p-3 sm:p-6">
                     <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                       <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
                       Liga-Tabelle
@@ -953,7 +953,7 @@ export default function DartLeaguePage() {
 
               <TabsContent value="results">
                 <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 sm:p-6">
+                  <CardHeader className="bg-card   text-white p-3 sm:p-6">
                     <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                       <Target className="h-5 w-5 sm:h-6 sm:w-6" />
                       Alle Ergebnisse ({completedMatches.length})
@@ -961,7 +961,7 @@ export default function DartLeaguePage() {
                   </CardHeader>
                   <CardContent className="p-3 sm:p-6">
                     {completedMatches.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">Noch keine Ergebnisse verfügbar</p>
+                      <p className="text-center text-muted-foreground py-8">Noch keine Ergebnisse verfügbar</p>
                     ) : (
                       <div className="space-y-3 sm:space-y-4">
                         {completedMatches
@@ -981,7 +981,7 @@ export default function DartLeaguePage() {
                             const isOurHomeTeam = match.home_team?.id
                             const isOurAwayTeam = match.away_team?.id
 
-                            let matchColor = "bg-gray-50 border-gray-200"
+                            let matchColor = "bg-muted border-border"
                             let resultText = "Unentschieden"
 
                             if (isFutureDate) {
@@ -1024,32 +1024,32 @@ export default function DartLeaguePage() {
                                           <img
                                             src={match.home_team.logo_url || "/placeholder.svg"}
                                             alt={`${match.home_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                            className="w-8 h-8 rounded-full object-cover border border-border"
                                           />
                                         ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-muted-foreground" />
                                           </div>
                                         )}
                                       </div>
-                                      <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
+                                      <div className="font-bold text-lg sm:text-xl mb-1 text-foreground">
                                         {match.home_team?.name || match.home_opponent_team?.name || "Team nicht gefunden"}
                                       </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide">Heim</div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Heim</div>
                                     </div>
 
-                                    <div className="flex items-center gap-2 sm:gap-4 bg-white rounded-lg px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
+                                    <div className="flex items-center gap-2 sm:gap-4 bg-card rounded-lg px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
                                       {isPendingResult || isFutureDate ? (
                                         <div className="flex items-center gap-2">
                                           <div className="text-2xl sm:text-4xl font-bold text-orange-500">?</div>
-                                          <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
+                                          <div className="text-xl sm:text-2xl font-medium text-muted-foreground">:</div>
                                           <div className="text-2xl sm:text-4xl font-bold text-orange-500">?</div>
                                         </div>
                                       ) : (
                                         <>
-                                          <div className="text-2xl sm:text-4xl font-bold text-gray-800">{homeScore}</div>
-                                          <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
-                                          <div className="text-2xl sm:text-4xl font-bold text-gray-800">{awayScore}</div>
+                                          <div className="text-2xl sm:text-4xl font-bold text-foreground">{homeScore}</div>
+                                          <div className="text-xl sm:text-2xl font-medium text-muted-foreground">:</div>
+                                          <div className="text-2xl sm:text-4xl font-bold text-foreground">{awayScore}</div>
                                         </>
                                       )}
                                     </div>
@@ -1060,23 +1060,23 @@ export default function DartLeaguePage() {
                                           <img
                                             src={match.away_team.logo_url || "/placeholder.svg"}
                                             alt={`${match.away_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                            className="w-8 h-8 rounded-full object-cover border border-border"
                                           />
                                         ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-muted-foreground" />
                                           </div>
                                         )}
                                       </div>
-                                      <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
+                                      <div className="font-bold text-lg sm:text-xl mb-1 text-foreground">
                                         {match.away_team?.name || match.away_opponent_team?.name || "Team nicht gefunden"}
                                       </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Gast</div>
                                     </div>
                                   </div>
 
                                   <div className="text-center sm:text-right flex flex-col items-center sm:items-end gap-2">
-                                    <div className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
+                                    <div className="text-base sm:text-lg font-semibold text-muted-foreground mb-2">
                                       {new Date(match.match_date).toLocaleDateString("de-DE", {
                                         weekday: "short",
                                         day: "2-digit",
@@ -1114,7 +1114,7 @@ export default function DartLeaguePage() {
                 <div className="space-y-4">
                   {postponedMatches.length > 0 && (
                     <Card className="border-red-300 bg-red-50 shadow-lg">
-                      <CardHeader className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 sm:p-6">
+                      <CardHeader className="bg-card   text-white p-3 sm:p-6">
                         <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                           <Calendar className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
                           Verschobene Spiele ({postponedMatches.length})
@@ -1127,27 +1127,27 @@ export default function DartLeaguePage() {
                             .map((match: any) => (
                               <div
                                 key={match.id}
-                                className="border-2 border-red-300 rounded-xl p-3 sm:p-6 bg-white shadow-sm hover:shadow-md transition-all"
+                                className="border-2 border-red-300 rounded-xl p-3 sm:p-6 bg-card shadow-sm hover:shadow-md transition-all"
                               >
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                   <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
                                     <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                      <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                      <div className="font-semibold text-base sm:text-lg text-foreground">
                                         {match.home_team?.name || match.home_opponent_team?.name || "Team nicht gefunden"}
                                       </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Heim</div>
                                     </div>
                                     <div className="text-xl sm:text-2xl font-bold text-red-500">vs</div>
                                     <div className="text-center min-w-[120px] sm:min-w-[140px]">
-                                      <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                      <div className="font-semibold text-base sm:text-lg text-foreground">
                                         {match.away_team?.name || match.away_opponent_team?.name || "Team nicht gefunden"}
                                       </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Gast</div>
                                     </div>
                                   </div>
 
                                   <div className="text-center sm:text-right">
-                                    <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                                    <div className="text-base sm:text-lg font-semibold text-foreground mb-1">
                                       {new Date(match.match_date).toLocaleDateString("de-DE", {
                                         day: "2-digit",
                                         month: "2-digit",
@@ -1175,7 +1175,7 @@ export default function DartLeaguePage() {
                     </CardHeader>
                     <CardContent className="p-3 sm:p-6">
                       {upcomingMatches.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8">Keine kommenden Spiele geplant</p>
+                        <p className="text-center text-muted-foreground py-8">Keine kommenden Spiele geplant</p>
                       ) : (
                         <div className="space-y-3 sm:space-y-4">
                           {upcomingMatches
@@ -1231,7 +1231,7 @@ export default function DartLeaguePage() {
                                 <div
                                   key={match.id}
                                   className={`border rounded-lg p-3 sm:p-6 hover:shadow-md transition-shadow ${
-                                    isOverdue ? "border-orange-300 bg-orange-50" : "border-gray-200 bg-white"
+                                    isOverdue ? "border-orange-300 bg-orange-50" : "border-border bg-card"
                                   }`}
                                 >
                                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1242,21 +1242,21 @@ export default function DartLeaguePage() {
                                             <img
                                               src={match.home_team.logo_url || "/placeholder.svg"}
                                               alt={`${match.home_team.name} Logo`}
-                                              className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                              className="w-8 h-8 rounded-full object-cover border border-border"
                                             />
                                           ) : (
-                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                              <Trophy className="h-4 w-4 text-gray-500" />
+                                            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                              <Trophy className="h-4 w-4 text-muted-foreground" />
                                             </div>
                                           )}
                                         </div>
-                                        <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                        <div className="font-semibold text-base sm:text-lg text-foreground">
                                           {match.home_team?.name || match.home_opponent_team?.name || "Team nicht gefunden"}
                                         </div>
-                                        <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
+                                        <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Heim</div>
                                       </div>
 
-                                      <div className="text-xl sm:text-2xl font-bold text-gray-400">vs</div>
+                                      <div className="text-xl sm:text-2xl font-bold text-muted-foreground">vs</div>
 
                                       <div className="text-center min-w-[120px] sm:min-w-[140px]">
                                         <div className="flex items-center justify-center gap-2 mb-2">
@@ -1264,30 +1264,30 @@ export default function DartLeaguePage() {
                                             <img
                                               src={match.away_team.logo_url || "/placeholder.svg"}
                                               alt={`${match.away_team.name} Logo`}
-                                              className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                              className="w-8 h-8 rounded-full object-cover border border-border"
                                             />
                                           ) : (
-                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                              <Trophy className="h-4 w-4 text-gray-500" />
+                                            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                              <Trophy className="h-4 w-4 text-muted-foreground" />
                                             </div>
                                           )}
                                         </div>
-                                        <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                        <div className="font-semibold text-base sm:text-lg text-foreground">
                                           {match.away_team?.name || match.away_opponent_team?.name || "Team nicht gefunden"}
                                         </div>
-                                        <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
+                                        <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Gast</div>
                                       </div>
                                     </div>
 
                                     <div className="text-center sm:text-right">
-                                      <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                                      <div className="text-base sm:text-lg font-semibold text-foreground mb-1">
                                         {new Date(match.match_date).toLocaleDateString("de-DE", {
                                           day: "2-digit",
                                           month: "2-digit",
                                           year: "numeric",
                                         })}
                                       </div>
-                                      <div className="text-sm text-gray-600 mb-2">
+                                      <div className="text-sm text-muted-foreground mb-2">
                                         {new Date(match.match_date).toLocaleDateString("de-DE", { weekday: "long" })}
                                       </div>
                                       {isOverdue && (
@@ -1310,9 +1310,9 @@ export default function DartLeaguePage() {
                                   )}
 
                                   {prediction && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                    <div className="mt-4 pt-4 border-t border-border">
                                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                        <div className="font-semibold text-gray-900">
+                                        <div className="font-semibold text-foreground">
                                           Prediction: <span className="text-orange-600">{favText}</span>
                                         </div>
                                         <Badge className={`${confBadgeClass(prediction.confidence)} border font-medium w-fit`}>
@@ -1321,19 +1321,19 @@ export default function DartLeaguePage() {
                                       </div>
 
                                       <div className="mt-3">
-                                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
                                           <span>{homeName} (W)</span>
                                           <span>X</span>
                                           <span>{awayName} (W)</span>
                                         </div>
 
-                                        <div className="h-3 w-full rounded-full overflow-hidden bg-gray-100 flex">
+                                        <div className="h-3 w-full rounded-full overflow-hidden bg-muted flex">
                                           <div style={{ width: `${pct(prediction.homeWin)}%` }} className="h-full bg-green-500/70" />
                                           <div style={{ width: `${pct(prediction.draw)}%` }} className="h-full bg-yellow-500/70" />
                                           <div style={{ width: `${pct(prediction.awayWin)}%` }} className="h-full bg-red-500/70" />
                                         </div>
 
-                                        <div className="flex justify-between text-xs text-gray-700 mt-1">
+                                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
                                           <span className="font-medium">{pct(prediction.homeWin)}%</span>
                                           <span className="font-medium">{pct(prediction.draw)}%</span>
                                           <span className="font-medium">{pct(prediction.awayWin)}%</span>
@@ -1346,7 +1346,7 @@ export default function DartLeaguePage() {
                                         ))}
                                       </div>
 
-                                      <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-800">
+                                      <div className="mt-3 pt-3 border-t border-border text-sm text-foreground">
                                         <span className="font-semibold">{prediction.lastDuelText}</span>
                                       </div>
                                     </div>
@@ -1365,7 +1365,7 @@ export default function DartLeaguePage() {
                 <div className="space-y-4 sm:space-y-6">
                   <div className="flex items-center gap-2 mb-4 sm:mb-6">
                     <Users className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Teams & Kader</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teams & Kader</h2>
                   </div>
 
                   <div className="grid gap-4 sm:gap-8">
@@ -1377,7 +1377,7 @@ export default function DartLeaguePage() {
 
                         return (
                           <Card key={team.id} className="overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b p-3 sm:p-6">
+                            <CardHeader className="text-foreground bg-card   border-b p-3 sm:p-6">
                               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                                 <div className="flex items-center gap-3">
                                   {team.logo_url ? (
@@ -1391,7 +1391,7 @@ export default function DartLeaguePage() {
                                       <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
                                     </div>
                                   )}
-                                  <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{team.name}</CardTitle>
+                                  <CardTitle className="text-lg sm:text-xl font-bold text-foreground">{team.name}</CardTitle>
                                 </div>
                                 <div className="flex items-center gap-2 sm:gap-4">
                                   <Badge variant="secondary" className="bg-orange-100 text-orange-800 font-semibold text-xs sm:text-sm">
@@ -1410,51 +1410,51 @@ export default function DartLeaguePage() {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 {teamStats && (
                                   <div>
-                                    <h4 className="font-semibold text-gray-900 mb-3">Saisonstatistik</h4>
+                                    <h4 className="font-semibold text-foreground mb-3">Saisonstatistik</h4>
                                     <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center">
-                                        <div className="text-xl sm:text-2xl font-bold text-gray-900">{teamStats.played}</div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Spiele</div>
+                                      <div className="bg-muted rounded-lg p-2 sm:p-3 text-center">
+                                        <div className="text-xl sm:text-2xl font-bold text-foreground">{teamStats.played}</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Spiele</div>
                                       </div>
                                       <div className="bg-green-50 rounded-lg p-2 sm:p-3 text-center">
                                         <div className="text-xl sm:text-2xl font-bold text-green-600">{teamStats.won}</div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Siege</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Siege</div>
                                       </div>
                                       <div className="bg-yellow-50 rounded-lg p-2 sm:p-3 text-center">
                                         <div className="text-xl sm:text-2xl font-bold text-yellow-600">{teamStats.drawn}</div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Unentschieden</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Unentschieden</div>
                                       </div>
                                       <div className="bg-red-50 rounded-lg p-2 sm:p-3 text-center">
                                         <div className="text-xl sm:text-2xl font-bold text-red-600">{teamStats.lost}</div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Niederlagen</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Niederlagen</div>
                                       </div>
                                       <div className="bg-blue-50 rounded-lg p-2 sm:p-3 text-center col-span-2">
                                         <div className="text-xl sm:text-2xl font-bold text-blue-600">
                                           {teamStats.legsDifference > 0 ? "+" : ""}
                                           {teamStats.legsDifference}
                                         </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Legs-Differenz</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Legs-Differenz</div>
                                       </div>
                                     </div>
                                   </div>
                                 )}
 
                                 <div>
-                                  <h4 className="font-semibold text-gray-900 mb-3">Spielerkader</h4>
+                                  <h4 className="font-semibold text-foreground mb-3">Spielerkader</h4>
                                   {teamPlayers.length === 0 ? (
-                                    <div className="text-center py-8 text-gray-500">
-                                      <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                                    <div className="text-center py-8 text-muted-foreground">
+                                      <Users className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                                       <p>Keine Spieler zugeordnet</p>
                                     </div>
                                   ) : (
                                     <div className="grid gap-2">
                                       {teamPlayers.map((player: any, index: number) => (
-                                        <div key={player.id} className="flex items-center gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+                                        <div key={player.id} className="flex items-center gap-3 p-2 sm:p-3 bg-muted rounded-lg">
                                           <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
                                             <span className="text-xs sm:text-sm font-semibold text-orange-600">{index + 1}</span>
                                           </div>
                                           <div className="flex-1">
-                                            <div className="font-medium text-gray-900 text-sm sm:text-base">{player.name}</div>
+                                            <div className="font-medium text-foreground text-sm sm:text-base">{player.name}</div>
                                           </div>
                                         </div>
                                       ))}

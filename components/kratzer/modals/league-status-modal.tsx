@@ -25,8 +25,8 @@ export function LeagueStatusModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[540px] rounded-[26px] shadow-2xl">
-        <div className="bg-slate-950 px-6 py-6 text-white"><DialogHeader>
-          <DialogTitle className="text-2xl font-black text-white">Leben pro Ligastatus verwalten</DialogTitle>
+        <div className="bg-background px-6 py-6 text-white"><DialogHeader>
+          <DialogTitle className="text-2xl font-semibold text-white">Leben pro Ligastatus verwalten</DialogTitle>
         </DialogHeader></div>
 
         <div className="space-y-3 px-6 py-6">
@@ -36,8 +36,8 @@ export function LeagueStatusModal({
             const currentLives = players.find((p) => p.ligastatus === status)?.lives || getDefaultLives(status)
 
             return (
-              <div key={status} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                <Label htmlFor={`status-${status}`} className="text-slate-700 font-black">
+              <div key={status} className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-muted/70 p-4">
+                <Label htmlFor={`status-${status}`} className="text-muted-foreground font-semibold">
                   Ligastatus {status}:
                 </Label>
 
@@ -54,19 +54,19 @@ export function LeagueStatusModal({
                     }
                     leagueStatusLivesMap.current = newLivesMap
                   }}
-                  className="h-11 w-24 rounded-xl border-slate-200 bg-white text-center font-black"
+                  className="h-11 w-24 rounded-xl border-border bg-card text-center font-semibold"
                 />
               </div>
             )
           })}
         </div>
 
-        <DialogFooter className="flex justify-end gap-3 border-t border-slate-100 px-6 py-5">
+        <DialogFooter className="flex justify-end gap-3 border-t border-border px-6 py-5">
           <Button onClick={() => onOpenChange(false)} variant="outline">
             Abbrechen
           </Button>
 
-          <Button onClick={() => onSave(leagueStatusLivesMap.current)} className="h-11 rounded-xl bg-orange-600 px-5 font-black hover:bg-orange-700">
+          <Button onClick={() => onSave(leagueStatusLivesMap.current)} className="h-11 rounded-xl bg-primary px-5 font-semibold hover:bg-primary/90 text-primary-foreground">
             Speichern
           </Button>
         </DialogFooter>

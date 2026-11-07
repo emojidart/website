@@ -190,7 +190,7 @@ function EventContent(){
 
   if(loading){
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+      <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
         <InternalEventsBackground />
         <div className="relative z-10 flex min-h-[420px] items-center justify-center gap-2 text-white/65">
           <Loader2 className="h-5 w-5 animate-spin text-orange-300"/> Wird geladen…
@@ -200,7 +200,7 @@ function EventContent(){
   }
   if(!event){
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+      <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
         <InternalEventsBackground />
         <div className="relative z-10 mx-auto max-w-2xl p-6 pt-24 text-center font-bold text-white/65">
           {message||"Event nicht gefunden."}
@@ -214,26 +214,26 @@ function EventContent(){
   const active=registration?.status==="registered"||registration?.status==="waitlist"
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-white">
       <Header variant="app" title="Internes Turnier" subtitle="Anmeldung & Details" backHref="/internal-events" />
       <InternalEventsBackground />
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-16 pt-20 sm:px-5 lg:px-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-orange-300"><ArrowLeft className="h-4 w-4"/> Zur Startseite</Link>
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-orange-300"><ArrowLeft className="h-4 w-4"/> Zur Startseite</Link>
 
-        <section className="mt-4 overflow-hidden rounded-[30px] border border-white/10 bg-black/35 text-white shadow-[0_28px_80px_-50px_rgba(0,0,0,.95)] backdrop-blur-xl">
+        <section className="mt-4 overflow-hidden rounded-[30px] border border-white/10 bg-card text-white shadow-[0_28px_80px_-50px_rgba(0,0,0,.95)] ">
           {internalEventImageUrl(event.image_path,event.image_url)?(
             <div className="relative z-0 aspect-video w-full overflow-hidden bg-black">
               <img src={internalEventImageUrl(event.image_path,event.image_url)} alt={event.title} className="block h-full w-full object-contain"/>
             </div>
           ):null}
-          <div className="relative z-10 border-t border-white/10 bg-black/40 p-5 sm:p-8">
-            <div className="inline-flex rounded-full bg-orange-500 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">Interne Veranstaltung</div>
-            <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">{event.title}</h1>
+          <div className="relative z-10 border-t border-white/10 bg-card p-5 sm:p-8">
+            <div className="inline-flex rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white">Interne Veranstaltung</div>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">{event.title}</h1>
             {event.subtitle?<p className="mt-2 text-base font-semibold text-white/60">{event.subtitle}</p>:null}
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white/[0.06] p-4"><CalendarDays className="h-5 w-5 text-orange-300"/><div className="mt-2 font-black">{dateRangeLabel(event.event_date,event.end_date,event.date_open)}</div></div>
-              <div className="rounded-2xl bg-white/[0.06] p-4"><Clock3 className="h-5 w-5 text-orange-300"/><div className="mt-2 font-black">Beginn {timeLabel(event.start_time)}</div></div>
-              <div className="rounded-2xl bg-white/[0.06] p-4"><MapPin className="h-5 w-5 text-orange-300"/><div className="mt-2 font-black">{event.location||"Vereinsheim"}</div></div>
+              <div className="rounded-2xl bg-white/[0.06] p-4"><CalendarDays className="h-5 w-5 text-orange-300"/><div className="mt-2 font-semibold">{dateRangeLabel(event.event_date,event.end_date,event.date_open)}</div></div>
+              <div className="rounded-2xl bg-white/[0.06] p-4"><Clock3 className="h-5 w-5 text-orange-300"/><div className="mt-2 font-semibold">Beginn {timeLabel(event.start_time)}</div></div>
+              <div className="rounded-2xl bg-white/[0.06] p-4"><MapPin className="h-5 w-5 text-orange-300"/><div className="mt-2 font-semibold">{event.location||"Vereinsheim"}</div></div>
             </div>
           </div>
         </section>
@@ -242,37 +242,37 @@ function EventContent(){
 
         <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px]">
           <div className="space-y-5">
-            <Card className="rounded-3xl border-white/10 bg-black/30 text-white">
+            <Card className="rounded-3xl border-white/10 bg-card text-white">
               <CardContent className="p-5 sm:p-6">
-                <div className="flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-orange-600"/> Infos & Regeln</div>
-                <div className="mt-4 whitespace-pre-wrap text-sm font-semibold leading-7 text-white/55">{event.description||"Weitere Informationen folgen."}</div>
+                <div className="flex items-center gap-2 text-lg font-semibold"><Trophy className="h-5 w-5 text-orange-600"/> Infos & Regeln</div>
+                <div className="mt-4 whitespace-pre-wrap text-sm font-semibold leading-7 text-muted-foreground">{event.description||"Weitere Informationen folgen."}</div>
               </CardContent>
             </Card>
 
             {event.draw_mode?(
-              <Card className={`rounded-3xl bg-black/30 text-white ${event.draw_mode==="onsite"?"border-amber-400/20":"border-sky-400/20"}`}>
+              <Card className={`rounded-3xl bg-card text-white ${event.draw_mode==="onsite"?"border-amber-400/20":"border-sky-400/20"}`}>
                 <CardContent className="p-5 sm:p-6">
-                  <div className="flex items-center gap-2 text-lg font-black">
+                  <div className="flex items-center gap-2 text-lg font-semibold">
                     <Dices className={`h-5 w-5 ${event.draw_mode==="onsite"?"text-amber-600":"text-sky-600"}`}/>
                     Auslosung
                   </div>
                   {event.draft_date?<div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm font-bold text-white/75">Auslosung: {dateLabel(event.draft_date)} · {timeLabel(event.draft_time)}</div>:null}
-                  {event.draft_notes?<div className="mt-3 whitespace-pre-wrap text-sm font-semibold text-white/55">{event.draft_notes}</div>:null}
+                  {event.draft_notes?<div className="mt-3 whitespace-pre-wrap text-sm font-semibold text-muted-foreground">{event.draft_notes}</div>:null}
 
                   {captains.length>0?(
                     <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {rosters.map(({captain,players})=>(
                         <div key={captain.captain_player_id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-orange-600">Team {captain.draft_position}</div>
-                          <div className="mt-1 font-black">{captain.club_players?.name||"Captain"}</div>
+                          <div className="text-xs font-semibold uppercase tracking-widest text-orange-600">Team {captain.draft_position}</div>
+                          <div className="mt-1 font-semibold">{captain.club_players?.name||"Captain"}</div>
                           <div className="mt-3 space-y-1.5">
-                            {players.map((p)=><div key={p.id} className="rounded-xl bg-white/5 px-3 py-2 text-sm font-bold text-white/75">{p.club_players?.name||"Spieler"}{p.pick_type==="steal"?<span className="ml-2 text-[10px] uppercase text-red-600">Steal</span>:null}</div>)}
+                            {players.map((p)=><div key={p.id} className="rounded-xl bg-white/5 px-3 py-2 text-sm font-bold text-white/75">{p.club_players?.name||"Spieler"}{p.pick_type==="steal"?<span className="ml-2 text-xs uppercase text-red-600">Steal</span>:null}</div>)}
                           </div>
                         </div>
                       ))}
                     </div>
                   ):(
-                    <div className="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-4 text-sm font-semibold text-white/45">Die Draft-Reihenfolge wurde noch nicht ausgelost.</div>
+                    <div className="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-4 text-sm font-semibold text-muted-foreground">Die Draft-Reihenfolge wurde noch nicht ausgelost.</div>
                   )}
                 </CardContent>
               </Card>
@@ -280,21 +280,21 @@ function EventContent(){
           </div>
 
           <div>
-            <Card className="sticky top-20 rounded-3xl border-white/10 bg-black/30 text-white">
+            <Card className="sticky top-20 rounded-3xl border-white/10 bg-card text-white">
               <CardContent className="p-5">
-                <div className="flex items-center gap-2 text-lg font-black"><Users className="h-5 w-5 text-orange-600"/> Anmeldung</div>
+                <div className="flex items-center gap-2 text-lg font-semibold"><Users className="h-5 w-5 text-orange-600"/> Anmeldung</div>
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-[10px] font-black uppercase text-white/35">Angemeldet</div><div className="mt-1 text-2xl font-black">{registeredCount}</div></div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-[10px] font-black uppercase text-white/35">Limit</div><div className="mt-1 text-2xl font-black">{event.max_participants||"∞"}</div></div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-xs font-semibold uppercase text-muted-foreground">Angemeldet</div><div className="mt-1 text-2xl font-semibold">{registeredCount}</div></div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-xs font-semibold uppercase text-muted-foreground">Limit</div><div className="mt-1 text-2xl font-semibold">{event.max_participants||"∞"}</div></div>
                 </div>
                 {waitlistCount>0?<div className="mt-2 text-xs font-bold text-amber-700">{waitlistCount} auf Warteliste</div>:null}
 
                 {registration?.status==="registered"?(
                   <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-emerald-200">
-                    <div className="flex items-center gap-2 font-black"><CheckCircle2 className="h-5 w-5"/> Du bist angemeldet</div>
+                    <div className="flex items-center gap-2 font-semibold"><CheckCircle2 className="h-5 w-5"/> Du bist angemeldet</div>
                   </div>
                 ):registration?.status==="waitlist"?(
-                  <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-amber-200"><div className="font-black">Du stehst auf der Warteliste</div></div>
+                  <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-amber-200"><div className="font-semibold">Du stehst auf der Warteliste</div></div>
                 ):null}
 
                 <div className="mt-4 rounded-2xl border border-orange-300/20 bg-orange-500/10 p-3 text-xs font-bold text-orange-200">
@@ -302,17 +302,17 @@ function EventContent(){
                 </div>
 
                 {active?(
-                  <Button onClick={()=>void unregister()} disabled={busy} variant="outline" className="mt-4 h-11 w-full rounded-xl border-white/15 bg-white/5 font-black text-white hover:bg-white/10 hover:text-white">
+                  <Button onClick={()=>void unregister()} disabled={busy} variant="outline" className="mt-4 h-11 w-full rounded-xl border-white/15 bg-white/5 font-semibold text-white hover:bg-white/10 hover:text-white">
                     {busy?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:null} Anmeldung zurückziehen
                   </Button>
                 ):(
-                  <Button onClick={()=>void register()} disabled={busy||!open} className="mt-4 h-11 w-full rounded-xl bg-orange-600 font-black hover:bg-orange-700">
+                  <Button onClick={()=>void register()} disabled={busy||!open} className="mt-4 h-11 w-full rounded-xl bg-primary font-semibold hover:bg-primary/90 text-primary-foreground">
                     {busy?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:null}
                     {open?"Jetzt anmelden":"Anmeldung geschlossen"}
                   </Button>
                 )}
 
-                {event.registration_deadline?<div className="mt-3 text-center text-xs font-semibold text-white/35">Anmeldeschluss: {new Date(event.registration_deadline).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</div>:null}
+                {event.registration_deadline?<div className="mt-3 text-center text-xs font-semibold text-muted-foreground">Anmeldeschluss: {new Date(event.registration_deadline).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</div>:null}
               </CardContent>
             </Card>
           </div>

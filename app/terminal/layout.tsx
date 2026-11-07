@@ -6,11 +6,11 @@ import TerminalAutoTournamentMode from "./_components/TerminalAutoTournamentMode
 
 export default function TerminalLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-[100svh] bg-[#050608] text-white">
+    <div className="emd-terminal-shell min-h-[100svh] bg-[#0b1018] text-white" data-emd-view="terminal">
       <style jsx global>{`
         html,
         body {
-          background: #050608 !important;
+          background: #0b1018 !important;
           color-scheme: dark;
         }
 
@@ -22,7 +22,7 @@ export default function TerminalLayout({ children }: { children: ReactNode }) {
         #__next,
         body > div:first-child,
         [data-nextjs-scroll-focus-boundary] {
-          background: #050608 !important;
+          background: #0b1018 !important;
           min-height: 100%;
         }
 

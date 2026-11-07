@@ -479,8 +479,8 @@ export function DKOSelfRegistrationModal(props: {
         <div
           className={`h-1.5 ${
             alreadyRegistered
-              ? "bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600"
-              : "bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600"
+              ? "text-foreground bg-card   "
+              : "text-foreground bg-card   "
           }`}
         />
 
@@ -496,21 +496,21 @@ export function DKOSelfRegistrationModal(props: {
               </div>
 
               <div className="min-w-0">
-                <div className="text-base sm:text-lg font-black text-gray-900 truncate">{props.title ?? "Anmeldung"}</div>
+                <div className="text-base sm:text-lg font-semibold text-foreground truncate">{props.title ?? "Anmeldung"}</div>
 
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider">
+                  <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider">
                     {props.seriesLabel || "CUP"}
                   </span>
 
                   {alreadyRegistered ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[11px] font-black">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-xs font-semibold">
                       <CheckCircle className="h-3.5 w-3.5" />
                       Angemeldet
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 text-gray-800 border border-gray-200 px-2 py-0.5 text-[11px] font-black">
-                      <Clock className="h-3.5 w-3.5 text-gray-500" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted text-foreground border border-border px-2 py-0.5 text-xs font-semibold">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                       Anmeldung
                     </span>
                   )}
@@ -519,19 +519,19 @@ export function DKOSelfRegistrationModal(props: {
             </DialogTitle>
 
             <DialogDescription asChild>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 {(datePretty || timePretty) ? (
                   <div className="flex flex-col gap-1">
                     {datePretty ? (
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-orange-600" />
-                        <span className="font-semibold text-gray-800">{datePretty}</span>
+                        <span className="font-semibold text-foreground">{datePretty}</span>
                       </div>
                     ) : null}
                     {timePretty ? (
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-orange-600" />
-                        <span className="font-semibold text-gray-800">{timePretty}</span>
+                        <span className="font-semibold text-foreground">{timePretty}</span>
                       </div>
                     ) : null}
                   </div>
@@ -545,7 +545,7 @@ export function DKOSelfRegistrationModal(props: {
           {/* Content */}
           <div className="mt-4">
             {authLoading || initLoading ? (
-              <div className="py-10 flex items-center justify-center gap-3 text-gray-700">
+              <div className="py-10 flex items-center justify-center gap-3 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="font-semibold">Lade…</span>
               </div>
@@ -554,7 +554,7 @@ export function DKOSelfRegistrationModal(props: {
                 <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900 flex items-start gap-3">
                   <Lock className="h-5 w-5 mt-0.5 text-orange-700" />
                   <div>
-                    <div className="font-black">Bitte einloggen</div>
+                    <div className="font-semibold">Bitte einloggen</div>
                     <div className="text-orange-900/80">Du musst eingeloggt sein, um dich anzumelden.</div>
                   </div>
                 </div>
@@ -563,7 +563,7 @@ export function DKOSelfRegistrationModal(props: {
                   <Button variant="outline" onClick={props.onClose} className="rounded-xl">
                     Schließen
                   </Button>
-                  <Button onClick={doLogin} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black">
+                  <Button onClick={doLogin} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold">
                     <LogIn className="h-4 w-4 mr-2" />
                     Login
                   </Button>
@@ -572,28 +572,28 @@ export function DKOSelfRegistrationModal(props: {
             ) : (
               <div className="space-y-4">
                 {/* Wallet cards */}
-                <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <div className="rounded-2xl border border-border bg-card p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-black text-gray-900">
+                    <div className="flex items-center gap-2 font-semibold text-foreground">
                       <Wallet className="h-4 w-4 text-orange-600" />
                       Startgeld
                     </div>
-                    <div className="font-black text-gray-900">{formatMoney(resolvedStartgeld)} €</div>
+                    <div className="font-semibold text-foreground">{formatMoney(resolvedStartgeld)} €</div>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-black text-gray-900">
+                    <div className="flex items-center gap-2 font-semibold text-foreground">
                       <Coins className="h-4 w-4 text-orange-600" />
                       Guthaben
                     </div>
-                    <div className="font-black text-gray-900">{formatMoney(creditBalance)} €</div>
+                    <div className="font-semibold text-foreground">{formatMoney(creditBalance)} €</div>
                   </div>
                 </div>
 
                 {/* Payment selection */}
                 {!alreadyRegistered ? (
-                  <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-                    <div className="font-black text-gray-900">Bezahlung</div>
+                  <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+                    <div className="font-semibold text-foreground">Bezahlung</div>
 
                     <div className="flex flex-col gap-2">
                       <button
@@ -602,14 +602,14 @@ export function DKOSelfRegistrationModal(props: {
                         className={`w-full rounded-2xl border px-3 py-3 text-left text-sm transition ${
                           paymentMode === "on_site"
                             ? "border-orange-200 bg-orange-50"
-                            : "border-gray-200 hover:bg-gray-50"
+                            : "border-border hover:bg-muted"
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-black text-gray-900">Vor Ort bezahlen</span>
+                          <span className="font-semibold text-foreground">Vor Ort bezahlen</span>
                           {paymentMode === "on_site" && <CheckCircle className="h-4 w-4 text-orange-700" />}
                         </div>
-                        <div className="text-gray-600 mt-1">Du zahlst beim Turnierabend.</div>
+                        <div className="text-muted-foreground mt-1">Du zahlst beim Turnierabend.</div>
                       </button>
 
                       <button
@@ -619,14 +619,14 @@ export function DKOSelfRegistrationModal(props: {
                         className={`w-full rounded-2xl border px-3 py-3 text-left text-sm transition ${
                           paymentMode === "credit"
                             ? "border-orange-200 bg-orange-50"
-                            : "border-gray-200 hover:bg-gray-50"
+                            : "border-border hover:bg-muted"
                         } ${!canUseCredit ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-black text-gray-900">Vom Guthaben abziehen</span>
+                          <span className="font-semibold text-foreground">Vom Guthaben abziehen</span>
                           {paymentMode === "credit" && <CheckCircle className="h-4 w-4 text-orange-700" />}
                         </div>
-                        <div className="text-gray-600 mt-1">Startgeld wird sofort abgezogen.</div>
+                        <div className="text-muted-foreground mt-1">Startgeld wird sofort abgezogen.</div>
                       </button>
                     </div>
                   </div>
@@ -634,11 +634,11 @@ export function DKOSelfRegistrationModal(props: {
                   <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900 flex items-start gap-3">
                     <Info className="h-5 w-5 mt-0.5 text-orange-700" />
                     <div>
-                      <div className="font-black">Abmeldung</div>
+                      <div className="font-semibold">Abmeldung</div>
                       {latestReg?.payment_method === "credit" ? (
                         <>
                           <div className="text-orange-900/80">Bei Abmeldung wird das abgezogene Startgeld automatisch rückerstattet.</div>
-                          <div className="mt-1 font-black">Rückerstattung: {formatMoney(refundAmount)} €</div>
+                          <div className="mt-1 font-semibold">Rückerstattung: {formatMoney(refundAmount)} €</div>
                         </>
                       ) : latestReg?.payment_method === "admin" ? (
                         <div className="text-orange-900/80">Du wurdest vor Ort angemeldet. Abmeldung ist nur vor Ort bei der Turnierleitung möglich.</div>
@@ -689,7 +689,7 @@ export function DKOSelfRegistrationModal(props: {
                       Abmelden
                     </Button>
                   ) : (
-                    <Button onClick={doRegister} disabled={busy} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black">
+                    <Button onClick={doRegister} disabled={busy} className="rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold">
                       {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                       Anmelden
                     </Button>

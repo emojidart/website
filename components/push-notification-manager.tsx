@@ -195,18 +195,18 @@ export function PushNotificationManager() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
           <div className="flex items-center gap-3">
             {isSubscribed ? (
               <CheckCircle className="w-5 h-5 text-green-500" />
             ) : (
-              <BellOff className="w-5 h-5 text-gray-400" />
+              <BellOff className="w-5 h-5 text-muted-foreground" />
             )}
             <div>
               <p className="font-semibold text-sm">
                 {isSubscribed ? "Benachrichtigungen aktiviert" : "Benachrichtigungen deaktiviert"}
               </p>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-muted-foreground">
                 {isSubscribed
                   ? "Du erhältst Push-Benachrichtigungen"
                   : "Aktiviere Benachrichtigungen, um Updates zu erhalten"}
@@ -243,7 +243,7 @@ export function PushNotificationManager() {
           )}
         </div>
 
-        <div className="text-xs text-gray-500 space-y-1">
+        <div className="text-xs text-muted-foreground space-y-1">
           <p>💡 Tipp: Installiere die App auf deinem Startbildschirm für das beste Erlebnis</p>
           <p>📱 iOS: Teilen → Zum Home-Bildschirm</p>
           <p>🤖 Android: Menü → App installieren</p>

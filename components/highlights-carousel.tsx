@@ -40,10 +40,10 @@ export function HighlightsCarousel() {
   }
 
   return (
-    <section className="py-4 md:py-8 px-4 bg-gray-50">
+    <section className="py-4 md:py-8 px-4 bg-muted">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-2xl font-bold text-gray-900">Highlights</h2>
+          <h2 className="text-lg md:text-2xl font-bold text-foreground">Highlights</h2>
           <div className="hidden md:flex gap-2">
             <Button variant="outline" size="icon" onClick={prev} className="rounded-full bg-transparent">
               <ChevronLeft className="w-4 h-4" />
@@ -58,15 +58,15 @@ export function HighlightsCarousel() {
         <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
           <div className="flex gap-3 pb-2">
             {highlights.map((highlight, index) => (
-              <div key={index} className="flex-shrink-0 w-72 p-4 rounded-2xl bg-white shadow-md">
+              <div key={index} className="flex-shrink-0 w-72 p-4 rounded-2xl bg-card shadow-md">
                 <div
-                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${highlight.color} flex items-center justify-center mb-3`}
+                  className={`text-foreground w-12 h-12 rounded-xl bg-card ${highlight.color} flex items-center justify-center mb-3`}
                 >
                   <highlight.icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-base font-bold text-gray-900 mb-1">{highlight.title}</h3>
-                <p className="text-sm text-gray-600 mb-2">{highlight.description}</p>
-                <p className="text-xs text-gray-500">{highlight.date}</p>
+                <h3 className="text-base font-bold text-foreground mb-1">{highlight.title}</h3>
+                <p className="text-sm text-muted-foreground mb-2">{highlight.description}</p>
+                <p className="text-xs text-muted-foreground">{highlight.date}</p>
               </div>
             ))}
           </div>
@@ -76,15 +76,15 @@ export function HighlightsCarousel() {
         <div className="hidden md:block">
           <div className="grid grid-cols-3 gap-4">
             {highlights.map((highlight, index) => (
-              <div key={index} className="p-6 rounded-2xl bg-white shadow-md hover:shadow-lg transition-shadow">
+              <div key={index} className="p-6 rounded-2xl bg-card shadow-md hover:shadow-lg transition-shadow">
                 <div
-                  className={`w-14 h-14 rounded-xl bg-gradient-to-br ${highlight.color} flex items-center justify-center mb-4`}
+                  className={`text-foreground w-14 h-14 rounded-xl bg-card ${highlight.color} flex items-center justify-center mb-4`}
                 >
                   <highlight.icon className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{highlight.title}</h3>
-                <p className="text-sm text-gray-600 mb-2">{highlight.description}</p>
-                <p className="text-xs text-gray-500">{highlight.date}</p>
+                <h3 className="text-lg font-bold text-foreground mb-2">{highlight.title}</h3>
+                <p className="text-sm text-muted-foreground mb-2">{highlight.description}</p>
+                <p className="text-xs text-muted-foreground">{highlight.date}</p>
               </div>
             ))}
           </div>

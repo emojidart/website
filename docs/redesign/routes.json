@@ -1,0 +1,5504 @@
+[
+  {
+    "file": "app/128erdko/beamer/page.tsx",
+    "route": "/128erdko/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/emd-tv/use-dko-tv-events"
+    ],
+    "tables": [
+      "dko_match_states",
+      "dko_rankings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/128erdko/loading.tsx",
+    "route": "/128erdko",
+    "mode": "App",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/128erdko/page.tsx",
+    "route": "/128erdko",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/emd-dko-keyed-bracket",
+      "@/components/header"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/16erdko/beamer/page.tsx",
+    "route": "/16erdko/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/emd-tv/use-dko-tv-events"
+    ],
+    "tables": [
+      "dko_match_states",
+      "dko_rankings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/16erdko/loading.tsx",
+    "route": "/16erdko",
+    "mode": "App",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/16erdko/page.tsx",
+    "route": "/16erdko",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/emd-dko-keyed-bracket",
+      "@/components/header"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/32erdko/beamer/page.tsx",
+    "route": "/32erdko/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/emd-tv/use-dko-tv-events"
+    ],
+    "tables": [
+      "dko_match_states",
+      "dko_rankings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/32erdko/loading.tsx",
+    "route": "/32erdko",
+    "mode": "App",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/32erdko/page.tsx",
+    "route": "/32erdko",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/emd-dko-keyed-bracket",
+      "@/components/header"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/64erdko/beamer/page.tsx",
+    "route": "/64erdko/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/emd-tv/use-dko-tv-events"
+    ],
+    "tables": [
+      "dko_match_states",
+      "dko_rankings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/64erdko/loading.tsx",
+    "route": "/64erdko",
+    "mode": "App",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/64erdko/page.tsx",
+    "route": "/64erdko",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/emd-dko-keyed-bracket",
+      "@/components/header"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/8erdko/beamer/page.tsx",
+    "route": "/8erdko/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/emd-tv/use-dko-tv-events"
+    ],
+    "tables": [
+      "dko_match_states",
+      "dko_rankings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/8erdko/loading.tsx",
+    "route": "/8erdko",
+    "mode": "App",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/8erdko/page.tsx",
+    "route": "/8erdko",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/emd-dko-keyed-bracket",
+      "@/components/header",
+      "@/components/player-scanner-modal"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/admin/dach-veranstaltungen/page.tsx",
+    "route": "/admin/dach-veranstaltungen",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/image",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/textarea",
+      "@/components/ui/badge"
+    ],
+    "tables": [
+      "user_profiles",
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/dartboerse/page.tsx",
+    "route": "/admin/dartboerse",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/input",
+      "@/components/ui/textarea",
+      "@/components/ui/alert-dialog"
+    ],
+    "tables": [
+      "user_profiles",
+      "dart_marketplace_listings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/einzelturnier/page.tsx",
+    "route": "/admin/einzelturnier",
+    "mode": "Administration",
+    "imports": [
+      "next/navigation",
+      "lucide-react",
+      "@/app/admin/_komponenten/turniere/einzelturnier/einzelturnier-setup"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/admin/guest-requests/page.tsx",
+    "route": "/admin/guest-requests",
+    "mode": "Administration",
+    "imports": [
+      "@/app/admin/_komponenten/vereinsverwaltung/gast-anfragen"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/admin/layout.tsx",
+    "route": "/admin",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "./admin.css"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/admin/liga_statistik_full/page.tsx",
+    "route": "/admin/liga_statistik_full",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/components/header",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "lucide-react"
+    ],
+    "tables": [
+      "teams",
+      "team_members",
+      "matches",
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/loading.tsx",
+    "route": "/admin",
+    "mode": "Administration",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/admin/member-availability-all/page.tsx",
+    "route": "/admin/member-availability-all",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "@/components/ui/dialog",
+      "@/components/ui/alert-dialog",
+      "@/components/ui/input",
+      "@/components/ui/scroll-area",
+      "@/components/ui/avatar",
+      "lucide-react"
+    ],
+    "tables": [
+      "match_lineup_headers",
+      "user_profiles",
+      "teams",
+      "opponent_teams",
+      "matches",
+      "team_members",
+      "match_availability",
+      "match_lineups",
+      "club_players",
+      "chat_messages"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/members-champion-cup/auslosung/page.tsx",
+    "route": "/admin/members-champion-cup/auslosung",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "framer-motion",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/supabase",
+      "@/components/members-cup-draw-show",
+      "@/hooks/use-auth",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/card"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_tournament_registration",
+      "dko_series_player_levels",
+      "dko_event_attendance",
+      "round_robin",
+      "round_robin_groups",
+      "round_robin_group_players",
+      "members_cup_team_members",
+      "round_robin_matches",
+      "tournaments_status"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/members-champion-cup/level/page.tsx",
+    "route": "/admin/members-champion-cup/level",
+    "mode": "Administration",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/app/admin/_komponenten/turniere/members-cup-einstufung",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/hooks/use-auth",
+      "lucide-react",
+      "next/navigation"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/admin/members-champion-cup/simulation/page.tsx",
+    "route": "/admin/members-champion-cup/simulation",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "@/lib/supabase",
+      "lucide-react"
+    ],
+    "tables": [
+      "spieldatenbank",
+      "dko_series_player_levels"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/mixed-cup/page.tsx",
+    "route": "/admin/mixed-cup",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/components/header",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/ui/button",
+      "lucide-react"
+    ],
+    "tables": [
+      "teams",
+      "team_members"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/page.tsx",
+    "route": "/admin",
+    "mode": "Administration",
+    "imports": [
+      "@/components/header",
+      "@/components/ui/button",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/components/auth-section",
+      "@/components/player-list-modal",
+      "@/components/player-registration",
+      "@/components/player-management",
+      "./_komponenten/vereinsverwaltung/verwaltung",
+      "@/app/admin/season_settings/page",
+      "./_komponenten/push-nachrichten",
+      "@/components/player-recruitment-form",
+      "@/components/player-recruitment-list",
+      "@/components/player-applications-list",
+      "./_komponenten/veranstaltungen",
+      "@/hooks/use-auth",
+      "@/components/ui/badge",
+      "@/components/ui/card",
+      "@supabase/supabase-js",
+      "next/link",
+      "@/components/user-management",
+      "./_komponenten/bonus/bonussystem",
+      "./_komponenten/turniere/spieldatenbank/verwaltung",
+      "@/components/league-management",
+      "./_komponenten/rechteverwaltung",
+      "./_komponenten/turniere/members-cup-einstufung",
+      "./_komponenten/bonus/bonusvergabe",
+      "./_komponenten/bonus/praemien-ausgabe",
+      "./_komponenten/mitgliedschaften/verwaltung",
+      "./_komponenten/freigaben",
+      "./_komponenten/vereinssitzung",
+      "./_komponenten/vereinsheim",
+      "./_komponenten/turniere/interne-veranstaltungen",
+      "./_komponenten/turniere/turnier-zentrale",
+      "lucide-react",
+      "./_komponenten/navigation",
+      "./_komponenten/dashboard",
+      "./_komponenten/profil-aenderungen",
+      "./_komponenten/ligapostfach",
+      "./_konfiguration/admin-seiten"
+    ],
+    "tables": [
+      "user_profiles",
+      "user_page_permissions",
+      "profile_change_requests",
+      "seasons",
+      "matches",
+      "guest_requests",
+      "club_join_requests",
+      "dach_events",
+      "dart_marketplace_listings",
+      "player_applications"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/public-tournament-registrations/page.tsx",
+    "route": "/admin/public-tournament-registrations",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/link",
+      "lucide-react",
+      "@/components/header",
+      "@/app/admin/_komponenten/turniere/turnier-navigation",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/lib/supabase"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/admin/push-test/page.tsx",
+    "route": "/admin/push-test",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/admin/season_settings/page.tsx",
+    "route": "/admin/season_settings",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "@/lib/supabase",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/switch",
+      "@/components/ui/alert",
+      "@/components/ui/badge",
+      "lucide-react",
+      "sonner"
+    ],
+    "tables": [
+      "dko_series",
+      "tournament_series_standings",
+      "spieldatenbank",
+      "dko_series_player_divisions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/send-notification/page.tsx",
+    "route": "/admin/send-notification",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/label",
+      "@/components/ui/textarea",
+      "lucide-react",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/admin/statistics-monitor/page.tsx",
+    "route": "/admin/statistics-monitor",
+    "mode": "Administration",
+    "imports": [
+      "@/components/header",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/select",
+      "@/components/ui/tabs",
+      "react",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "lucide-react",
+      "next/link",
+      "@/components/ui/dialog",
+      "@/components/ui/textarea"
+    ],
+    "tables": [
+      "leg_statistics",
+      "matches",
+      "team_members",
+      "teams",
+      "notifications",
+      "club_players"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/support-tickets/page.tsx",
+    "route": "/admin/support-tickets",
+    "mode": "Administration",
+    "imports": [
+      "@/components/header",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/textarea",
+      "@/components/ui/select",
+      "react",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "lucide-react",
+      "next/link"
+    ],
+    "tables": [
+      "support_tickets"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/survival-einzel/page.tsx",
+    "route": "/admin/survival-einzel",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/header",
+      "@/components/survival/survival-single-martin"
+    ],
+    "tables": [
+      "survival_single_tournaments",
+      "survival_single_players",
+      "survival_single_matches",
+      "survival_single_multi_tiebreaks",
+      "survival_single_multi_tiebreak_matches",
+      "survival_single_tiebreaks",
+      "central_tournament_events",
+      "central_tournament_registrations",
+      "spieldatenbank"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/survival-roulette/page.tsx",
+    "route": "/admin/survival-roulette",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/components/header",
+      "@/app/admin/_komponenten/turniere/turnier-navigation",
+      "@/components/ui/button",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/tournament-registration/tournament-registration-panel"
+    ],
+    "tables": [
+      "spieldatenbank",
+      "survival_tournaments",
+      "central_tournament_events",
+      "central_tournament_registrations",
+      "survival_players",
+      "survival_stage_cuts"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/survival-roulette/[tournamentId]/page.tsx",
+    "route": "/admin/survival-roulette/[tournamentId]",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/components/header",
+      "@/components/survival/survival-martin-announcer",
+      "@/components/survival/emd-youtube-player",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "survival_tournaments",
+      "survival_ranking",
+      "survival_stage_cuts",
+      "survival_rounds",
+      "survival_matches",
+      "survival_result_audit",
+      "survival_tiebreaks",
+      "survival_players",
+      "tournaments_status",
+      "central_tournament_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/survival-start/page.tsx",
+    "route": "/admin/survival-start",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/hooks/use-auth"
+    ],
+    "tables": [
+      "central_tournament_events",
+      "central_tournament_registrations",
+      "tournaments_status",
+      "survival_tournaments",
+      "survival_players",
+      "survival_stage_cuts"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/tournament-center/page.tsx",
+    "route": "/admin/tournament-center",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/components/header"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/admin/tournament-schedules/page.tsx",
+    "route": "/admin/tournament-schedules",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/admin/tournaments/page.tsx",
+    "route": "/admin/tournaments",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/card",
+      "@/components/ui/table",
+      "@/components/ui/dialog",
+      "@/components/ui/label",
+      "@/components/ui/tabs",
+      "lucide-react",
+      "@/hooks/use-toast",
+      "@/components/header",
+      "@/hooks/use-auth"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/admin/turnierserie-bearbeiten/page.tsx",
+    "route": "/admin/turnierserie-bearbeiten",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/card",
+      "next/link",
+      "@/components/ui/alert-dialog",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react"
+    ],
+    "tables": [
+      "tournament_series_standings",
+      "buffalo_steel_cup_standings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin/turnier_spieltage_starten/page.tsx",
+    "route": "/admin/turnier_spieltage_starten",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/components/header",
+      "@/lib/supabase",
+      "@/components/ui/button",
+      "@/app/admin/_komponenten/turniere/turniertage-betrieb",
+      "@/app/admin/_komponenten/navigation",
+      "@/app/admin/_konfiguration/admin-seiten"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/admin/users/page.tsx",
+    "route": "/admin/users",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/badge",
+      "lucide-react"
+    ],
+    "tables": [
+      "club_players",
+      "user_profiles",
+      "teams",
+      "team_members",
+      "fcm_tokens",
+      "page_view_counts",
+      "page_view_daily_counts"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/admin-faq/page.tsx",
+    "route": "/admin-faq",
+    "mode": "Administration",
+    "imports": [
+      "react",
+      "@supabase/supabase-js"
+    ],
+    "tables": [
+      "faqs"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/all-results/page.tsx",
+    "route": "/all-results",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "lucide-react",
+      "@/components/ui/tabs",
+      "@/components/dko-results-section",
+      "@/components/kratzer-results-section"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/animation/page.tsx",
+    "route": "/animation",
+    "mode": "App",
+    "imports": [
+      "next/image",
+      "react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/auth/callback/page.tsx",
+    "route": "/auth/callback",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/components/header"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/beamer/page.tsx",
+    "route": "/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/members-cup-draw-show",
+      "@/components/emd-multi-dko-beamer-switcher",
+      "@/components/emd-live-announcement-display"
+    ],
+    "tables": [
+      "tournaments_status",
+      "kratzer_tournaments"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/buffalo-steel-cup/page.tsx",
+    "route": "/buffalo-steel-cup",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "lucide-react",
+      "framer-motion",
+      "@/components/mobile-bottom-nav",
+      "react",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/buffalo_steel_cup_results/page.tsx",
+    "route": "/buffalo_steel_cup_results",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/Image",
+      "@/components/mobile-bottom-nav",
+      "lucide-react"
+    ],
+    "tables": [
+      "buffalo_steel_cup_standings",
+      "dko_match_states"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/buffalo_steel_cup_tabelle/page.tsx",
+    "route": "/buffalo_steel_cup_tabelle",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/lib/supabase",
+      "@/components/header",
+      "next/image",
+      "lucide-react",
+      "@/components/ui/button",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "buffalo_steel_cup_standings",
+      "dko_match_states",
+      "buffalo_steel_cup_aggregated",
+      "spieldatenbank"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/chat/page.tsx",
+    "route": "/chat",
+    "mode": "Nachrichten",
+    "imports": [
+      "react",
+      "./chat-app-client"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/chat-app/layout.tsx",
+    "route": "/chat-app",
+    "mode": "Nachrichten",
+    "imports": [
+      "next"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/chat-app/page.tsx",
+    "route": "/chat-app",
+    "mode": "Nachrichten",
+    "imports": [
+      "react",
+      "./chat-app-client"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/club/page.tsx",
+    "route": "/club",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/footer",
+      "@/lib/supabase/server",
+      "lucide-react",
+      "@/components/club-page-content",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "club_players",
+      "teams",
+      "team_members"
+    ],
+    "client": false
+  },
+  {
+    "file": "app/club-app/page.tsx",
+    "route": "/club-app",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/lib/supabase/server",
+      "lucide-react",
+      "@/components/club-page-content",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "club_players",
+      "teams",
+      "team_members"
+    ],
+    "client": false
+  },
+  {
+    "file": "app/club-join/page.tsx",
+    "route": "/club-join",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/link",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/label",
+      "@/components/ui/textarea"
+    ],
+    "tables": [
+      "club_join_requests",
+      "guest_requests",
+      "club_join_documents",
+      "club_join_settings",
+      "club-documents"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/clubhouse/page.tsx",
+    "route": "/clubhouse",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/label",
+      "@/components/ui/textarea",
+      "@/lib/supabase",
+      "lucide-react"
+    ],
+    "tables": [
+      "clubhouse_openings",
+      "user_profiles",
+      "user_page_permissions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/community/page.tsx",
+    "route": "/community",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/avatar",
+      "@/components/ui/textarea",
+      "@/hooks/use-auth",
+      "react",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/auth-modal",
+      "@/components/delete-modal",
+      "next/navigation"
+    ],
+    "tables": [
+      "posts",
+      "user_profiles",
+      "community-photos",
+      "likes",
+      "comments"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/community-app/page.tsx",
+    "route": "/community-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/avatar",
+      "@/components/ui/textarea",
+      "@/hooks/use-auth",
+      "react",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/auth-modal",
+      "@/components/delete-modal",
+      "next/navigation",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "posts",
+      "user_profiles",
+      "community-photos",
+      "likes",
+      "comments"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dach-veranstaltungen/entdecken/page.tsx",
+    "route": "/dach-veranstaltungen/entdecken",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/image",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dach-veranstaltungen/meine/page.tsx",
+    "route": "/dach-veranstaltungen/meine",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/alert-dialog",
+      "@/components/ui/input",
+      "@/components/ui/textarea"
+    ],
+    "tables": [
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dach-veranstaltungen/neu/page.tsx",
+    "route": "/dach-veranstaltungen/neu",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "user_profiles",
+      "dach-event-flyers",
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dach-veranstaltungen/page.tsx",
+    "route": "/dach-veranstaltungen",
+    "mode": "App",
+    "imports": [
+      "next/navigation",
+      "@/components/header",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/dach-veranstaltungen/[id]/bearbeiten/page.tsx",
+    "route": "/dach-veranstaltungen/[id]/bearbeiten",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/textarea",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "dach_events",
+      "dach-event-flyers"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dach-veranstaltungen/[id]/page.tsx",
+    "route": "/dach-veranstaltungen/[id]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/image",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/public-tournament-registration"
+    ],
+    "tables": [
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dartboerse/meine/page.tsx",
+    "route": "/dartboerse/meine",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/alert-dialog"
+    ],
+    "tables": [
+      "dart_marketplace_listings",
+      "dart_marketplace_images"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dartboerse/nachrichten/page.tsx",
+    "route": "/dartboerse/nachrichten",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input"
+    ],
+    "tables": [
+      "dart_marketplace_conversations"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dartboerse/nachrichten/[conversationId]/page.tsx",
+    "route": "/dartboerse/nachrichten/[conversationId]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/textarea"
+    ],
+    "tables": [
+      "dart_marketplace_offers",
+      "dart_marketplace_conversations",
+      "dart_marketplace_messages"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dartboerse/neu/page.tsx",
+    "route": "/dartboerse/neu",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/select",
+      "@/components/ui/textarea"
+    ],
+    "tables": [
+      "user_profiles",
+      "guest_requests",
+      "club_players",
+      "dart-marketplace-images",
+      "dart_marketplace_images",
+      "dart_marketplace_listings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dartboerse/page.tsx",
+    "route": "/dartboerse",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/image",
+      "next/link",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "dart_marketplace_listings",
+      "dart_marketplace_images"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dartboerse/[id]/bearbeiten/page.tsx",
+    "route": "/dartboerse/[id]/bearbeiten",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/select",
+      "@/components/ui/textarea",
+      "@/components/ui/alert-dialog"
+    ],
+    "tables": [
+      "user_profiles",
+      "guest_requests",
+      "club_players",
+      "dart_marketplace_listings",
+      "dart_marketplace_images",
+      "dart-marketplace-images"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dartboerse/[id]/page.tsx",
+    "route": "/dartboerse/[id]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react-dom",
+      "next/image",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card"
+    ],
+    "tables": [
+      "dart_marketplace_listings",
+      "dart_marketplace_images",
+      "dart_marketplace_conversations"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/datenschutz/page.tsx",
+    "route": "/datenschutz",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/dko-self-registration/page.tsx",
+    "route": "/dko-self-registration",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/components/header",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "spieldatenbank",
+      "dko_tournament_registration"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/dko_tournament_registration/loading.tsx",
+    "route": "/dko_tournament_registration",
+    "mode": "App",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/dko_tournament_registration/page.tsx",
+    "route": "/dko_tournament_registration",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/emd-campus/page.tsx",
+    "route": "/emd-campus",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/campus-registration-modal",
+      "framer-motion",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/emd-campus/termine/page.tsx",
+    "route": "/emd-campus/termine",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/emd-tv/page.tsx",
+    "route": "/emd-tv",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/supabase",
+      "lucide-react",
+      "next/navigation",
+      "react"
+    ],
+    "tables": [
+      "match_lineup_headers",
+      "matches",
+      "opponent_teams",
+      "match_lineups",
+      "teams"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/emd-tv/[matchId]/page.tsx",
+    "route": "/emd-tv/[matchId]",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "match_lineup_headers",
+      "matches",
+      "match_lineups",
+      "teams",
+      "team_members",
+      "opponent_teams"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/emd-tv-screen/page.tsx",
+    "route": "/emd-tv-screen",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/members-cup-draw-show",
+      "@/components/emd-live-announcement-display",
+      "@/components/emd-tv/lineup-display",
+      "@/components/emd-tv/birthday-tv",
+      "@/components/emd-tv/today-tv",
+      "@/components/emd-tv/sportdarts-tv"
+    ],
+    "tables": [
+      "tournament-photos",
+      "tournaments_status",
+      "kratzer_tournaments",
+      "survival_tournaments",
+      "survival_single_tournaments",
+      "central_tournament_events",
+      "dko_series",
+      "dach_events",
+      "match_lineup_headers",
+      "club_players",
+      "matches",
+      "opponent_teams",
+      "dko_series_events",
+      "teams",
+      "match_lineups"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/emd-vision-camera/page.tsx",
+    "route": "/emd-vision-camera",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/lib/emd-vision/game",
+      "@/lib/emd-vision/scoring",
+      "@/lib/emd-vision/vision"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/error.tsx",
+    "route": "/",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "lucide-react",
+      "@/components/ui/button"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/faq/page.tsx",
+    "route": "/faq",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/lib/supabase",
+      "@/components/ui/input",
+      "@/components/ui/button",
+      "@/components/header",
+      "@/components/typing-indicator",
+      "lucide-react",
+      "@/components/mobile-bottom-nav",
+      "framer-motion"
+    ],
+    "tables": [
+      "faqs"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/game/[id]/page.tsx",
+    "route": "/game/[id]",
+    "mode": "App",
+    "imports": [
+      "@/components/game"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/gastzugang/page.tsx",
+    "route": "/gastzugang",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/link",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/gastzugang-info/page.tsx",
+    "route": "/gastzugang-info",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/guest-app/page.tsx",
+    "route": "/guest-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "next/link",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/dartboerse/marketplace-unread-badge",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "guest_requests",
+      "club_join_requests",
+      "member_memberships",
+      "membership_trials",
+      "spieldatenbank",
+      "summer_special_total_standings",
+      "summer_special_standings",
+      "dko_rankings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/guest-login/page.tsx",
+    "route": "/guest-login",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/link",
+      "next/navigation",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "lucide-react"
+    ],
+    "tables": [
+      "member_memberships",
+      "membership_trials",
+      "user_profiles"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/guest-profile-app/page.tsx",
+    "route": "/guest-profile-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "next/link",
+      "@/components/header",
+      "@/components/terminal/PatternPad",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/badge",
+      "@/components/dartboerse/marketplace-unread-badge",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "guest_requests",
+      "club_join_requests",
+      "member_memberships",
+      "membership_trials",
+      "spieldatenbank",
+      "summer_special_total_standings",
+      "summer_special_standings",
+      "dko_rankings",
+      "guest-profile-avatars"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/hall-of-fame/page.tsx",
+    "route": "/hall-of-fame",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@supabase/ssr",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/badge",
+      "@/components/ui/card",
+      "@/components/ui/select",
+      "@/components/ui/tabs",
+      "lucide-react"
+    ],
+    "tables": [
+      "seasons",
+      "teams",
+      "matches",
+      "match_lineups",
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/impressum/page.tsx",
+    "route": "/impressum",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/internal-events/page.tsx",
+    "route": "/internal-events",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "lucide-react",
+      "@/components/header",
+      "@/app/internal-events/_komponenten/internal-events-design",
+      "@/components/member/membership/membership-access-gate",
+      "@/lib/supabase",
+      "@/components/ui/card"
+    ],
+    "tables": [
+      "internal-events",
+      "internal_tournament_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/internal-events/[id]/page.tsx",
+    "route": "/internal-events/[id]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "next/link",
+      "lucide-react",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/app/internal-events/_komponenten/internal-events-design",
+      "@/components/member/membership/membership-access-gate",
+      "@/components/ui/badge",
+      "@/components/ui/button",
+      "@/components/ui/card"
+    ],
+    "tables": [
+      "internal-events",
+      "internal_tournament_events",
+      "user_profiles",
+      "internal_tournament_event_registrations",
+      "internal_tournament_event_captains",
+      "internal_tournament_event_draft_picks"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/internal-matches/page.tsx",
+    "route": "/internal-matches",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "@/components/ui/select",
+      "@/lib/supabase",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members",
+      "match_reports",
+      "match_report_competition_teams",
+      "match_report_games",
+      "match_report_game_players"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/internal-matches/[id]/page.tsx",
+    "route": "/internal-matches/[id]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/badge",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/textarea",
+      "@/components/ui/select",
+      "@/lib/supabase",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "match_reports",
+      "match_report_games",
+      "match_report_game_players",
+      "team_members",
+      "match_report_lineups",
+      "match_report_lineup_headers"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/kameraerkennung/page.tsx",
+    "route": "/kameraerkennung",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "lucide-react",
+      "@/components/header",
+      "@/app/actions/analyze-dart"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/kontakt/page.tsx",
+    "route": "/kontakt",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/konto-loeschen/page.tsx",
+    "route": "/konto-loeschen",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/textarea",
+      "@/components/ui/input",
+      "@/components/ui/checkbox",
+      "@/components/ui/separator",
+      "@/components/ui/label",
+      "@/components/ui/alert",
+      "@/components/ui/radio-group",
+      "@/hooks/use-auth",
+      "@/lib/supabase",
+      "framer-motion",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/kratzer-tournament/beamer/page.tsx",
+    "route": "/kratzer-tournament/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "@/components/kratzer/beamer/kratzer-beamer-view"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/kratzer-tournament/page.tsx",
+    "route": "/kratzer-tournament",
+    "mode": "App",
+    "imports": [
+      "@/components/kratzer/kratzer-tournament-page"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/landing/page.tsx",
+    "route": "/landing",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "next/image"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/layout.tsx",
+    "route": "/",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next",
+      "next/font/google",
+      "@/components/presence-tracker",
+      "@/components/push-subscription-repair",
+      "@/components/KillServiceWorker",
+      "./PushInit",
+      "./AppPlatformClass",
+      "@/components/SupabaseSessionGuard",
+      "@/components/auth/app-route-guard",
+      "@/components/AppThemeShell",
+      "@/components/emd-lineup-alert",
+      "./globals.css",
+      "./premium.css",
+      "./specialty-premium.css"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/league-mailbox/page.tsx",
+    "route": "/league-mailbox",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/hooks/use-auth",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "league_mail_participants",
+      "league_mail_threads",
+      "league_mail_messages"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/liga/spieler/[id]/page.tsx",
+    "route": "/liga/spieler/[id]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "@/components/header",
+      "@/components/ui/badge",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "lucide-react"
+    ],
+    "tables": [
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/liga-app/page.tsx",
+    "route": "/liga-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "lucide-react",
+      "@/components/header",
+      "@supabase/ssr",
+      "@/components/ui/button",
+      "@/components/player-statistics-card-app",
+      "@/components/points-info-box",
+      "@/components/mobile-bottom-nav",
+      "@/components/team-standings-card-app"
+    ],
+    "tables": [
+      "seasons",
+      "teams",
+      "opponent_teams",
+      "matches",
+      "team_members",
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/liga-app/player-profile/[id]/page.tsx",
+    "route": "/liga-app/player-profile/[id]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "@/components/header",
+      "@/components/ui/button",
+      "lucide-react",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/liga-statistiken/page.tsx",
+    "route": "/liga-statistiken",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "lucide-react",
+      "@/components/header",
+      "@supabase/ssr",
+      "@/components/ui/button",
+      "@/components/player-statistics-row",
+      "@/components/points-info-box"
+    ],
+    "tables": [
+      "teams",
+      "opponent_teams",
+      "matches",
+      "team_members",
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/liga-statistiken-app/page.tsx",
+    "route": "/liga-statistiken-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "lucide-react",
+      "@/components/header",
+      "@supabase/ssr",
+      "@/components/ui/button",
+      "@/components/player-statistics-card-app",
+      "@/components/points-info-box",
+      "@/components/mobile-bottom-nav",
+      "@/components/team-standings-card-app"
+    ],
+    "tables": [
+      "seasons",
+      "teams",
+      "opponent_teams",
+      "matches",
+      "team_members",
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/liga-statistiken-app/player-profile/[id]/page.tsx",
+    "route": "/liga-statistiken-app/player-profile/[id]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "@/components/header",
+      "@/components/ui/badge",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "lucide-react",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/liga-tabellen/page.tsx",
+    "route": "/liga-tabellen",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/lion-cup/anmeldung/page.tsx",
+    "route": "/lion-cup/anmeldung",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/dko-self-registration-modal",
+      "lucide-react",
+      "framer-motion",
+      "react",
+      "@/components/ui/button",
+      "@/lib/supabase",
+      "@/hooks/use-auth"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_events",
+      "dko_tournament_registration",
+      "user_profiles",
+      "guest_requests",
+      "spieldatenbank"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/lion-cup/halftime/page.tsx",
+    "route": "/lion-cup/halftime",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/lib/supabase",
+      "@/components/header",
+      "next/image",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "lucide-react",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "season_settings",
+      "tournament_series_standings",
+      "spieldatenbank",
+      "player_divisions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/lion-cup/page.tsx",
+    "route": "/lion-cup",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "@/components/header",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/lion-cup/regelwerk/page.tsx",
+    "route": "/lion-cup/regelwerk",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "framer-motion",
+      "lucide-react",
+      "next/link"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/lion-cup/tabelle/page.tsx",
+    "route": "/lion-cup/tabelle",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/image",
+      "lucide-react",
+      "lucide-react",
+      "@/components/ui/button",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "dko_series",
+      "tournament_series_standings",
+      "dko_match_states",
+      "spieldatenbank",
+      "dko_series_player_divisions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/lion_cup_results/page.tsx",
+    "route": "/lion_cup_results",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "lucide-react"
+    ],
+    "tables": [
+      "dko_series",
+      "tournament_series_standings",
+      "dko_match_states"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/live-all-app/page.tsx",
+    "route": "/live-all-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/ui/tabs",
+      "@/components/header",
+      "@/components/live-dko-section",
+      "@/components/live-kratzer-section",
+      "@/components/mobile-bottom-nav",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/live-statistics/[matchId]/loading.tsx",
+    "route": "/live-statistics/[matchId]",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/live-statistics/[matchId]/page.tsx",
+    "route": "/live-statistics/[matchId]",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/header",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "lucide-react",
+      "@/components/live/dart-stats-classic"
+    ],
+    "tables": [
+      "matches",
+      "teams",
+      "match_lineups",
+      "team_members",
+      "club_players"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/livestream/page.tsx",
+    "route": "/livestream",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/livestream-app/page.tsx",
+    "route": "/livestream-app",
+    "mode": "App",
+    "imports": [
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "lucide-react",
+      "@/components/mobile-bottom-nav",
+      "next/navigation"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/loading.tsx",
+    "route": "/",
+    "mode": "App",
+    "imports": [
+      "@/components/ui/skeleton"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/lobby/page.tsx",
+    "route": "/lobby",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/lobby",
+      "@/components/ui/button",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/lobby-app/page.tsx",
+    "route": "/lobby-app",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/lobby",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/login/page.tsx",
+    "route": "/login",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/losungs_tool/page.tsx",
+    "route": "/losungs_tool",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/badge",
+      "@/lib/supabase",
+      "@/lib/utils",
+      "lucide-react"
+    ],
+    "tables": [
+      "spieldatenbank",
+      "dko_tournament_registration"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/match-galerie/page.tsx",
+    "route": "/match-galerie",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/faq-chat-widget",
+      "@supabase/ssr",
+      "@/components/ui/dialog",
+      "next/image",
+      "@/hooks/use-mobile",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "@/components/ui/button",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "seasons",
+      "matches",
+      "opponent_teams",
+      "match_photo_likes",
+      "match_photo_comments",
+      "user_profiles"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/match-galerie-app/page.tsx",
+    "route": "/match-galerie-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "lucide-react",
+      "@supabase/ssr",
+      "@/components/ui/button",
+      "@/components/ui/dialog",
+      "next/image",
+      "@/hooks/use-mobile",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "@/components/mobile-bottom-nav",
+      "@/components/header",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "seasons",
+      "match_photo_likes",
+      "match_photo_comments",
+      "user_profiles",
+      "matches",
+      "opponent_teams"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/match-today/page.tsx",
+    "route": "/match-today",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@supabase/ssr",
+      "framer-motion",
+      "lucide-react"
+    ],
+    "tables": [
+      "opponent_teams",
+      "matches"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/matches/[matchId]/postpone/page.tsx",
+    "route": "/matches/[matchId]/postpone",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "framer-motion",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/label",
+      "@/components/ui/textarea",
+      "@/components/ui/alert",
+      "@/components/ui/separator",
+      "@/lib/utils",
+      "@/hooks/use-auth",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "matches",
+      "opponent_teams",
+      "events",
+      "team_members",
+      "dko_series_events",
+      "club_players",
+      "vacations"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/meine-bonus-punkte/page.tsx",
+    "route": "/meine-bonus-punkte",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "next/link",
+      "next/navigation",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/button",
+      "@/components/ui/progress",
+      "@/lib/utils"
+    ],
+    "tables": [
+      "membership_modules",
+      "member_memberships",
+      "member_membership_modules",
+      "membership_trials",
+      "user_profiles",
+      "bonus_transactions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/meine-teams/page.tsx",
+    "route": "/meine-teams",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/avatar",
+      "@/components/ui/badge",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/components/captain-player-management"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/meine-teams-app/page.tsx",
+    "route": "/meine-teams-app",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/avatar",
+      "@/components/ui/badge",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/components/captain-player-management",
+      "@/components/ui/alert-dialog"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/meisten_freilose/page.tsx",
+    "route": "/meisten_freilose",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/lib/supabase",
+      "@/components/header",
+      "lucide-react",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "tournament_series_standings",
+      "dko_match_states"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-account-request/page.tsx",
+    "route": "/member-account-request",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-availability/page.tsx",
+    "route": "/member-availability",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/member/membership/membership-access-gate",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "@/components/ui/dialog",
+      "@/components/ui/textarea",
+      "@/components/ui/input",
+      "@/components/ui/scroll-area",
+      "@/components/ui/avatar",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members",
+      "matches",
+      "opponent_teams",
+      "chat_messages",
+      "club_players",
+      "match_availability",
+      "match_lineups",
+      "match_lineup_headers"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-bonus/page.tsx",
+    "route": "/member-bonus",
+    "mode": "App",
+    "imports": [
+      "@/components/bonus-section",
+      "@/components/ui/button",
+      "lucide-react",
+      "next/navigation",
+      "@/hooks/use-auth",
+      "react",
+      "@/lib/supabase",
+      "@/components/ui/select",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members",
+      "club_players",
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-bonus-app/page.tsx",
+    "route": "/member-bonus-app",
+    "mode": "App",
+    "imports": [
+      "@/components/bonus-section",
+      "@/components/header",
+      "next/navigation",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access",
+      "react",
+      "@/lib/supabase",
+      "@/components/ui/select",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "lucide-react"
+    ],
+    "tables": [
+      "seasons",
+      "user_profiles",
+      "team_members",
+      "club_players",
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-card/page.tsx",
+    "route": "/member-card",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/avatar",
+      "lucide-react",
+      "@/types",
+      "qrcode.react",
+      "html2canvas",
+      "next/image",
+      "@/components/credit-topup-card"
+    ],
+    "tables": [
+      "user_profiles",
+      "player_credits",
+      "credit_transactions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-cup-anmeldung/page.tsx",
+    "route": "/member-cup-anmeldung",
+    "mode": "App",
+    "imports": [
+      "next/navigation"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/member-dashboard/page.tsx",
+    "route": "/member-dashboard",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/input",
+      "@/components/ui/label",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/components/ui/dialog",
+      "@/components/ui/use-toast",
+      "next/image",
+      "@/components/ui/alert",
+      "@/components/dashboard-tutorial",
+      "@/components/ui/tabs"
+    ],
+    "tables": [
+      "matches",
+      "user_profiles",
+      "team_members",
+      "player-avatars",
+      "club_players",
+      "leg_statistics",
+      "opponent_teams",
+      "team-photos"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-dashboard-app/page.tsx",
+    "route": "/member-dashboard-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/input",
+      "@/components/ui/label",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/components/ui/dialog",
+      "@/components/ui/use-toast",
+      "next/image",
+      "@/components/ui/alert",
+      "@/components/dashboard-tutorial",
+      "@/components/ui/tabs",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "matches",
+      "user_profiles",
+      "team_members",
+      "player-avatars",
+      "club_players",
+      "leg_statistics",
+      "opponent_teams",
+      "team-photos"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-league/page.tsx",
+    "route": "/member-league",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/league-section",
+      "next/navigation",
+      "@/hooks/use-auth",
+      "react",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/chat/page.tsx",
+    "route": "/member-league-app/chat",
+    "mode": "Nachrichten",
+    "imports": [
+      "react",
+      "@/app/chat-app/chat-app-client",
+      "@/components/member/membership/membership-access-gate"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/member-league-app/emd-tv/page.tsx",
+    "route": "/member-league-app/emd-tv",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/hooks/use-auth",
+      "@/lib/supabase",
+      "lucide-react",
+      "next/navigation",
+      "react"
+    ],
+    "tables": [
+      "match_lineup_headers",
+      "matches",
+      "opponent_teams",
+      "match_lineups",
+      "teams"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/emd-tv/[matchId]/page.tsx",
+    "route": "/member-league-app/emd-tv/[matchId]",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/hooks/use-auth",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "match_lineup_headers",
+      "matches",
+      "match_lineups",
+      "teams",
+      "team_members",
+      "opponent_teams"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/ergebnisse/page.tsx",
+    "route": "/member-league-app/ergebnisse",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/league-section",
+      "@/components/mobile-bottom-nav",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/liga-bonuswertung/page.tsx",
+    "route": "/member-league-app/liga-bonuswertung",
+    "mode": "App",
+    "imports": [
+      "@/components/bonus-section",
+      "@/components/header",
+      "next/navigation",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access",
+      "react",
+      "@/lib/supabase",
+      "@/components/ui/select",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "lucide-react"
+    ],
+    "tables": [
+      "league_bonus_fixed_rates",
+      "seasons",
+      "user_profiles",
+      "team_members",
+      "club_players",
+      "leg_statistics",
+      "matches",
+      "match_lineup_headers",
+      "match_lineups"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/live/page.tsx",
+    "route": "/member-league-app/live",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/hooks/use-auth",
+      "lucide-react",
+      "next/navigation",
+      "react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/match-galerie/page.tsx",
+    "route": "/member-league-app/match-galerie",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/faq-chat-widget",
+      "@supabase/ssr",
+      "@/components/ui/dialog",
+      "next/image",
+      "@/hooks/use-mobile",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "@/components/ui/button",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "matches",
+      "opponent_teams",
+      "seasons",
+      "match_photo_likes",
+      "match_photo_comments",
+      "user_profiles"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/meine-statistik/page.tsx",
+    "route": "/member-league-app/meine-statistik",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/statistics-section",
+      "@/components/ui/button",
+      "lucide-react",
+      "next/navigation",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access",
+      "@/components/member/membership/membership-access-gate",
+      "react",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "seasons",
+      "user_profiles",
+      "team_members",
+      "leg_statistics",
+      "matches"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/meine-teams/page.tsx",
+    "route": "/member-league-app/meine-teams",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/avatar",
+      "@/components/ui/badge",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/components/captain-player-management",
+      "@/components/ui/alert-dialog"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/page.tsx",
+    "route": "/member-league-app",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/hooks/use-auth",
+      "lucide-react",
+      "next/navigation",
+      "react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/spielplan/page.tsx",
+    "route": "/member-league-app/spielplan",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/input",
+      "@/components/ui/label",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/components/ui/dialog",
+      "@/components/ui/use-toast",
+      "next/image",
+      "@/components/ui/alert",
+      "@/components/league-guide",
+      "@/components/ui/tabs",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "matches",
+      "user_profiles",
+      "team_members",
+      "player-avatars",
+      "club_players",
+      "leg_statistics",
+      "opponent_teams",
+      "match_player_extra_stats",
+      "team-photos",
+      "team_sportdarts_assignments",
+      "match_lineup_headers",
+      "match_lineups"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-league-app/tabellen/page.tsx",
+    "route": "/member-league-app/tabellen",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/league-section",
+      "@/components/mobile-bottom-nav",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-login/page.tsx",
+    "route": "/member-login",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "next/link",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "lucide-react"
+    ],
+    "tables": [
+      "club_join_requests",
+      "member_memberships",
+      "membership_trials",
+      "user_profiles"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-membership/page.tsx",
+    "route": "/member-membership",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/member/membership/member-membership"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-profile/page.tsx",
+    "route": "/member-profile",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "react",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/avatar",
+      "@/components/ui/badge",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/types"
+    ],
+    "tables": [
+      "notifications",
+      "leg_statistics",
+      "matches",
+      "club_players",
+      "user_profiles",
+      "team_members",
+      "opponent_teams",
+      "player-avatars"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-profile-app/page.tsx",
+    "route": "/member-profile-app",
+    "mode": "App",
+    "imports": [
+      "@/components/member/membership-payment-notice",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "react",
+      "@/components/terminal/PatternPad",
+      "@/components/ui/button",
+      "lucide-react",
+      "next/link",
+      "@/components/ui/card",
+      "@/components/ui/avatar",
+      "@/components/ui/badge",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access",
+      "@/hooks/vereinsverwaltung/useDues",
+      "next/navigation",
+      "react",
+      "@capacitor/core",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/types"
+    ],
+    "tables": [
+      "profile_change_requests",
+      "notifications",
+      "leg_statistics",
+      "matches",
+      "club_players",
+      "user_room_visits",
+      "chat_messages",
+      "league_mail_participants",
+      "league_mail_threads",
+      "match_availability",
+      "match_lineups",
+      "team_members",
+      "user_profiles",
+      "user_page_permissions",
+      "club_join_settings",
+      "club_join_documents",
+      "member_document_acceptances",
+      "club_join_archives",
+      "club-documents",
+      "messenger_devices",
+      "profile-change-requests"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-set-password/page.tsx",
+    "route": "/member-set-password",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/lib/supabase",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-statistics/page.tsx",
+    "route": "/member-statistics",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/statistics-section",
+      "@/components/ui/button",
+      "lucide-react",
+      "next/navigation",
+      "@/hooks/use-auth",
+      "react",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members",
+      "leg_statistics",
+      "matches"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-statistics-app/page.tsx",
+    "route": "/member-statistics-app",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/statistics-section",
+      "@/components/ui/button",
+      "lucide-react",
+      "next/navigation",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access",
+      "@/components/member/membership/membership-access-gate",
+      "react",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "seasons",
+      "user_profiles",
+      "team_members",
+      "leg_statistics",
+      "matches"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-tournament-app/lion-cup/anmeldung/page.tsx",
+    "route": "/member-tournament-app/lion-cup/anmeldung",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/dko-self-registration-modal",
+      "lucide-react",
+      "framer-motion",
+      "react",
+      "@/components/ui/button",
+      "@/lib/supabase",
+      "@/hooks/use-auth"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_events",
+      "dko_tournament_registration",
+      "user_profiles",
+      "guest_requests",
+      "spieldatenbank"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-tournament-app/lion-cup/page.tsx",
+    "route": "/member-tournament-app/lion-cup",
+    "mode": "App",
+    "imports": [
+      "next/navigation",
+      "@/components/header",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-tournament-app/lion-cup/regelwerk/page.tsx",
+    "route": "/member-tournament-app/lion-cup/regelwerk",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "framer-motion",
+      "lucide-react",
+      "next/link"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-tournament-app/lion-cup/tabelle/page.tsx",
+    "route": "/member-tournament-app/lion-cup/tabelle",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/image",
+      "lucide-react",
+      "lucide-react",
+      "@/components/ui/button",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "dko_series",
+      "tournament_series_standings",
+      "dko_match_states",
+      "spieldatenbank",
+      "dko_series_player_divisions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-tournament-app/page.tsx",
+    "route": "/member-tournament-app",
+    "mode": "App",
+    "imports": [
+      "next/navigation",
+      "@/components/header",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/member-tournament-statistics-app/page.tsx",
+    "route": "/member-tournament-statistics-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "summer_special_total_standings",
+      "summer_special_standings",
+      "dko_rankings",
+      "kratzer_tournament_players",
+      "kratzer_tournaments",
+      "kratzer_tournament_results"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/member-training-app/page.tsx",
+    "route": "/member-training-app",
+    "mode": "App",
+    "imports": [
+      "next/navigation",
+      "@/components/header",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/members-champion-cup/anmeldung/page.tsx",
+    "route": "/members-champion-cup/anmeldung",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/app/members-champion-cup/_komponenten/members-cup-design",
+      "@/components/mobile-bottom-nav",
+      "@/components/dko-self-registration-modal",
+      "lucide-react",
+      "framer-motion",
+      "react",
+      "@/components/ui/button",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/hooks/use-membership-access"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_events",
+      "dko_tournament_registration",
+      "user_profiles"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/members-champion-cup/einstufungen/page.tsx",
+    "route": "/members-champion-cup/einstufungen",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/app/members-champion-cup/_komponenten/members-cup-design",
+      "@/components/mobile-bottom-nav",
+      "framer-motion",
+      "next/image",
+      "lucide-react",
+      "next/link"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/members-champion-cup/gesamtwertung/page.tsx",
+    "route": "/members-champion-cup/gesamtwertung",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/image",
+      "@/components/header",
+      "@/app/members-champion-cup/_komponenten/members-cup-design",
+      "@/components/mobile-bottom-nav",
+      "@/lib/supabase",
+      "lucide-react"
+    ],
+    "tables": [
+      "members_cup_results",
+      "spieldatenbank"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/members-champion-cup/regelwerk/page.tsx",
+    "route": "/members-champion-cup/regelwerk",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/app/members-champion-cup/_komponenten/members-cup-design",
+      "@/components/mobile-bottom-nav",
+      "framer-motion",
+      "next/image",
+      "lucide-react",
+      "next/link"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/messenger/page.tsx",
+    "route": "/messenger",
+    "mode": "Nachrichten",
+    "imports": [
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/messenger-install/layout.tsx",
+    "route": "/messenger-install",
+    "mode": "Nachrichten",
+    "imports": [
+      "next"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/messenger-install/page.tsx",
+    "route": "/messenger-install",
+    "mode": "Nachrichten",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/mission/finale/page.tsx",
+    "route": "/mission/finale",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "next/image",
+      "react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "framer-motion",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/mission/protokoll-vier/page.tsx",
+    "route": "/mission/protokoll-vier",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/button",
+      "framer-motion",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/mission/test/page.tsx",
+    "route": "/mission/test",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "react",
+      "framer-motion",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/new-club/page.tsx",
+    "route": "/new-club",
+    "mode": "App",
+    "imports": [
+      "@/lib/supabase/server",
+      "./NewClubClient"
+    ],
+    "tables": [
+      "teams",
+      "team_members"
+    ],
+    "client": false
+  },
+  {
+    "file": "app/oster-mission/page.tsx",
+    "route": "/oster-mission",
+    "mode": "App",
+    "imports": [
+      "next/link",
+      "react",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/input",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "framer-motion",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "oster_mission_progress",
+      "oster_mission_submissions",
+      "oster_mission_secret_progress"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/page.tsx",
+    "route": "/",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/push-enable-banner",
+      "@/components/install-emd-app",
+      "@/components/ui/button",
+      "@supabase/ssr",
+      "lucide-react",
+      "next/image",
+      "@/components/faq-chat-widget",
+      "@/components/mobile-bottom-nav",
+      "@/components/clubhouse-status-card",
+      "@/hooks/use-membership-access",
+      "@/components/push-notification-dialog",
+      "@/app/_startseite/komponenten/interne-turnier-anmeldekarte",
+      "@/app/_startseite/komponenten/startseiten-hero",
+      "@/app/_startseite/komponenten/deine-naechsten-ligaspiele",
+      "@/app/_startseite/komponenten/heute-im-verein",
+      "@/app/_startseite/hooks/use-startseiten-liga",
+      "@/app/_startseite/hooks/use-startseiten-veranstaltungen",
+      "@/app/_startseite/hooks/use-startseiten-dynamische-serien",
+      "@/app/_startseite/hooks/use-aktives-startseiten-turnier",
+      "@/app/_startseite/hooks/use-interne-startseiten-anmeldungen",
+      "@/app/_startseite/hooks/use-startseiten-geburtstage",
+      "@/app/_startseite/hooks/use-startseiten-naechste-spiele",
+      "@/app/_startseite/hooks/use-startseiten-auth-user",
+      "@/app/_startseite/typen"
+    ],
+    "tables": [
+      "internal-events",
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/player-of-the-week/page.tsx",
+    "route": "/player-of-the-week",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/avatar",
+      "@/components/ui/tabs",
+      "lucide-react",
+      "@/components/header",
+      "@supabase/ssr"
+    ],
+    "tables": [
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/player-scanner/page.tsx",
+    "route": "/player-scanner",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/button",
+      "@/lib/supabase",
+      "lucide-react",
+      "next/link",
+      "next/image"
+    ],
+    "tables": [
+      "spieldatenbank",
+      "dko_match_states",
+      "tournaments_status"
+    ],
+    "client": false
+  },
+  {
+    "file": "app/player-search/page.tsx",
+    "route": "/player-search",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/supabase/server",
+      "next/link",
+      "lucide-react",
+      "@/components/ui/button"
+    ],
+    "tables": [
+      "player_recruitment_needs"
+    ],
+    "client": false
+  },
+  {
+    "file": "app/players/loading.tsx",
+    "route": "/players",
+    "mode": "App",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/players/page.tsx",
+    "route": "/players",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/dialog",
+      "@/components/player-profile-card",
+      "lucide-react",
+      "next/image",
+      "@radix-ui/react-visually-hidden"
+    ],
+    "tables": [
+      "tournament_series_aggregated",
+      "spieldatenbank"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/praemien/page.tsx",
+    "route": "/praemien",
+    "mode": "App",
+    "imports": [
+      "next/image",
+      "next/link",
+      "react",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/praemien-products",
+      "@/lib/supabase",
+      "@/hooks/use-auth"
+    ],
+    "tables": [
+      "membership_modules",
+      "member_memberships",
+      "member_membership_modules",
+      "membership_trials",
+      "praemien_redemptions",
+      "user_profiles",
+      "bonus_transactions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/praemien/[slug]/page.tsx",
+    "route": "/praemien/[slug]",
+    "mode": "App",
+    "imports": [
+      "next/image",
+      "next/link",
+      "next/navigation",
+      "react",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/praemien-products",
+      "@/lib/supabase",
+      "@/hooks/use-auth"
+    ],
+    "tables": [
+      "membership_modules",
+      "member_memberships",
+      "member_membership_modules",
+      "membership_trials",
+      "praemien_redemptions",
+      "user_profiles",
+      "bonus_transactions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/praemien-rangliste/page.tsx",
+    "route": "/praemien-rangliste",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/supabase",
+      "@/lib/praemien-products"
+    ],
+    "tables": [
+      "bonus_transactions",
+      "praemien_redemptions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/prediction/page.tsx",
+    "route": "/prediction",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "lucide-react",
+      "@/components/header",
+      "@supabase/ssr",
+      "@/components/ui/button",
+      "@/components/player-statistics-card-app",
+      "@/components/points-info-box",
+      "@/components/mobile-bottom-nav",
+      "@/components/team-standings-card-app"
+    ],
+    "tables": [
+      "seasons",
+      "teams",
+      "opponent_teams",
+      "matches",
+      "team_members",
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/profil-daten-app/page.tsx",
+    "route": "/profil-daten-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/badge",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [
+      "user_profiles",
+      "club_players",
+      "profile_change_requests"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/push-notifications/page.tsx",
+    "route": "/push-notifications",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/push-notification-manager",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/push_preferences/page.tsx",
+    "route": "/push_preferences",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/switch",
+      "@/lib/utils",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "push_preferences",
+      "dko_match_states"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/regelwerk/page.tsx",
+    "route": "/regelwerk",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "framer-motion",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/regelwerk-app/page.tsx",
+    "route": "/regelwerk-app",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "framer-motion",
+      "lucide-react",
+      "next/link"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/results/page.tsx",
+    "route": "/results",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/hooks/use-auth",
+      "@/lib/supabase",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/avatar",
+      "@/components/ui/tabs",
+      "lucide-react",
+      "@/components/header",
+      "next/navigation"
+    ],
+    "tables": [
+      "live_matches",
+      "user_profiles",
+      "match_throws"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/roundrobin/beamer/page.tsx",
+    "route": "/roundrobin/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "next/navigation",
+      "lucide-react",
+      "@/lib/supabase"
+    ],
+    "tables": [
+      "round_robin_groups",
+      "round_robin_matches",
+      "dko_match_states",
+      "round_robin_group_players"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/roundrobin/page.tsx",
+    "route": "/roundrobin",
+    "mode": "App",
+    "imports": [
+      "react",
+      "./RoundRobinClient"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/sponsoring/page.tsx",
+    "route": "/sponsoring",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "lucide-react",
+      "framer-motion",
+      "@/components/ui/card",
+      "@/components/ui/button"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/sprechertest/page.tsx",
+    "route": "/sprechertest",
+    "mode": "App",
+    "imports": [
+      "react",
+      "lucide-react",
+      "@/components/speech-announcer"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/statistics/[matchId]/loading.tsx",
+    "route": "/statistics/[matchId]",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/statistics/[matchId]/page.tsx",
+    "route": "/statistics/[matchId]",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "@/components/ui/use-toast",
+      "@/components/match-statistics-page"
+    ],
+    "tables": [
+      "matches",
+      "teams"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/steeldart-competition-regelwerk/page.tsx",
+    "route": "/steeldart-competition-regelwerk",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "framer-motion",
+      "next/image",
+      "lucide-react",
+      "next/link"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/summer-special/anmeldung/page.tsx",
+    "route": "/summer-special/anmeldung",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/dko-self-registration-modal",
+      "lucide-react",
+      "framer-motion",
+      "react",
+      "@/components/ui/button",
+      "@/lib/supabase",
+      "@/hooks/use-auth"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_events",
+      "dko_tournament_registration",
+      "user_profiles",
+      "guest_requests",
+      "spieldatenbank"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/summer-special/page.tsx",
+    "route": "/summer-special",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/components/image",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/supabase",
+      "next/link",
+      "lucide-react"
+    ],
+    "tables": [
+      "summer_special_settings",
+      "summer_special_total_standings",
+      "spieldatenbank",
+      "summer_special_standings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/support/page.tsx",
+    "route": "/support",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/lib/supabase",
+      "react",
+      "next/navigation",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/textarea",
+      "@/components/ui/select",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "@/components/header",
+      "lucide-react"
+    ],
+    "tables": [
+      "support_tickets"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/support-app/page.tsx",
+    "route": "/support-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "react",
+      "next/navigation",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/textarea",
+      "@/components/ui/select",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "lucide-react"
+    ],
+    "tables": [
+      "support_tickets"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/survival-einzel/beamer/page.tsx",
+    "route": "/survival-einzel/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "@/components/survival/survival-tv-board"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/survival-roulette/beamer/page.tsx",
+    "route": "/survival-roulette/beamer",
+    "mode": "Live / TV / Turnieranzeige",
+    "imports": [
+      "react",
+      "@/components/survival/survival-tv-board"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/tables/page.tsx",
+    "route": "/tables",
+    "mode": "App",
+    "imports": [
+      "framer-motion",
+      "lucide-react",
+      "react",
+      "canvas-confetti",
+      "@/components/header"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/team-print-sheet/page.tsx",
+    "route": "/team-print-sheet",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/checkbox",
+      "@/components/ui/select",
+      "lucide-react",
+      "qrcode.react"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/team-scan-sheet/page.tsx",
+    "route": "/team-scan-sheet",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/select",
+      "@/components/ui/input",
+      "@/components/ui/badge",
+      "lucide-react",
+      "jsqr"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/ergebnisse/loading.tsx",
+    "route": "/terminal/ergebnisse",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLoader"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/ergebnisse/page.tsx",
+    "route": "/terminal/ergebnisse",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLink",
+      "react",
+      "@supabase/ssr",
+      "lucide-react"
+    ],
+    "tables": [
+      "seasons",
+      "teams",
+      "opponent_teams",
+      "matches"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/face-id-labor/page.tsx",
+    "route": "/terminal/face-id-labor",
+    "mode": "Terminal",
+    "imports": [
+      "./FaceLab"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/gast-registrierung/page.tsx",
+    "route": "/terminal/gast-registrierung",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/terminal/layout.tsx",
+    "route": "/terminal",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "./_components/TerminalTransition",
+      "./_components/TerminalAutoTournamentMode"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/terminal/liga/loading.tsx",
+    "route": "/terminal/liga",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLoader"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/liga/page.tsx",
+    "route": "/terminal/liga",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLink",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/terminal/loading.tsx",
+    "route": "/terminal",
+    "mode": "Terminal",
+    "imports": [
+      "./_components/TerminalLoader"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/mein-emd/loading.tsx",
+    "route": "/terminal/mein-emd",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLoader"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/mein-emd/page.tsx",
+    "route": "/terminal/mein-emd",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "@zxing/browser",
+      "lucide-react",
+      "../_components/TerminalLink",
+      "../_components/TerminalIdentityAuth",
+      "../_components/TerminalLoader",
+      "../_components/TerminalFaceCandidate",
+      "../_components/TerminalIdentityAuth"
+    ],
+    "tables": [
+      "spieldatenbank",
+      "club_players",
+      "player_credits",
+      "credit_transactions",
+      "dko_series",
+      "dko_series_events",
+      "dko_tournament_registration"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/menu/loading.tsx",
+    "route": "/terminal/menu",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLoader"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/menu/page.tsx",
+    "route": "/terminal/menu",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLink",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/terminal/page.tsx",
+    "route": "/terminal",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "lucide-react",
+      "./_components/TerminalLink"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/terminal/spielplaene/loading.tsx",
+    "route": "/terminal/spielplaene",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLoader"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/spielplaene/page.tsx",
+    "route": "/terminal/spielplaene",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLink",
+      "react",
+      "@supabase/ssr",
+      "lucide-react"
+    ],
+    "tables": [
+      "seasons",
+      "teams",
+      "opponent_teams",
+      "matches"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/statistiken/page.tsx",
+    "route": "/terminal/statistiken",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "lucide-react",
+      "../_components/TerminalLink"
+    ],
+    "tables": [
+      "seasons",
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/tabellen/page.tsx",
+    "route": "/terminal/tabellen",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "lucide-react",
+      "../_components/TerminalLink"
+    ],
+    "tables": [
+      "seasons",
+      "teams",
+      "matches"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/teams/page.tsx",
+    "route": "/terminal/teams",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "lucide-react",
+      "../_components/TerminalLink"
+    ],
+    "tables": [
+      "teams",
+      "team_members"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/turnier-anmeldung/loading.tsx",
+    "route": "/terminal/turnier-anmeldung",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLoader"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/turnier-anmeldung/page.tsx",
+    "route": "/terminal/turnier-anmeldung",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "lucide-react",
+      "../_components/TerminalLink",
+      "../_components/TerminalIdentityAuth"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_events",
+      "dko_tournament_registration",
+      "player_credits"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/turniere/alle/page.tsx",
+    "route": "/terminal/turniere/alle",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "lucide-react",
+      "../../_components/TerminalLink"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/turniere/ergebnisse/page.tsx",
+    "route": "/terminal/turniere/ergebnisse",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "lucide-react",
+      "../../_components/TerminalLink"
+    ],
+    "tables": [
+      "tournaments_history_overview",
+      "kratzer_tournaments",
+      "kratzer_tournament_results",
+      "kratzer_tournament_players"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/turniere/ergebnisse/[tournamentId]/page.tsx",
+    "route": "/terminal/turniere/ergebnisse/[tournamentId]",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "../../../_components/TerminalLink"
+    ],
+    "tables": [
+      "tournaments_history_overview",
+      "members_cup_results",
+      "kratzer_tournament_results",
+      "dko_match_states",
+      "dko_rankings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/turniere/loading.tsx",
+    "route": "/terminal/turniere",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLoader"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/turniere/page.tsx",
+    "route": "/terminal/turniere",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLink",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/terminal/turniere/preisgeld/page.tsx",
+    "route": "/terminal/turniere/preisgeld",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "lucide-react",
+      "../../_components/TerminalLink"
+    ],
+    "tables": [
+      "dko_series",
+      "tournament_series_standings",
+      "members_cup_results"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/turniere/ranglisten/page.tsx",
+    "route": "/terminal/turniere/ranglisten",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "../../_components/TerminalLink"
+    ],
+    "tables": [
+      "dko_series",
+      "members_cup_results",
+      "spieldatenbank",
+      "tournament_series_standings",
+      "dko_series_player_divisions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/turniermodus/loading.tsx",
+    "route": "/terminal/turniermodus",
+    "mode": "Terminal",
+    "imports": [
+      "../_components/TerminalLoader"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/terminal/turniermodus/page.tsx",
+    "route": "/terminal/turniermodus",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "lucide-react",
+      "@/lib/supabase",
+      "../_components/TerminalLink",
+      "../_components/TerminalLoader"
+    ],
+    "tables": [
+      "tournaments_status",
+      "dko_match_states"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/veranstaltungen/page.tsx",
+    "route": "/terminal/veranstaltungen",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "lucide-react",
+      "../_components/TerminalLink"
+    ],
+    "tables": [
+      "events",
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/terminal/veranstaltungen/[source]/[id]/page.tsx",
+    "route": "/terminal/veranstaltungen/[source]/[id]",
+    "mode": "Terminal",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "../../../_components/TerminalLink"
+    ],
+    "tables": [
+      "dach_events",
+      "events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/test-scan/page.tsx",
+    "route": "/test-scan",
+    "mode": "App",
+    "imports": [
+      "@/components/SheetScanDemo"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/tournament/page.tsx",
+    "route": "/tournament",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/tournament-registration-modal",
+      "lucide-react",
+      "framer-motion",
+      "react",
+      "@/components/ui/button",
+      "next/link"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/tournament-history/page.tsx",
+    "route": "/tournament-history",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [
+      "tournaments_history_overview",
+      "kratzer_tournaments",
+      "kratzer_tournament_results",
+      "kratzer_tournament_players"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/tournament-history/[tournamentId]/page.tsx",
+    "route": "/tournament-history/[tournamentId]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/button",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [
+      "kratzer_tournaments",
+      "kratzer_tournament_results",
+      "kratzer_tournament_players",
+      "tournaments_status",
+      "dko_match_states",
+      "dko_rankings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/tournament-series/page.tsx",
+    "route": "/tournament-series",
+    "mode": "App",
+    "imports": [
+      "react",
+      "framer-motion",
+      "@/lib/supabase",
+      "@/components/header",
+      "next/image",
+      "lucide-react",
+      "@/components/ui/button"
+    ],
+    "tables": [
+      "dko_match_states",
+      "tournament_series_aggregated",
+      "spieldatenbank",
+      "tournament_series_standings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/training/page.tsx",
+    "route": "/training",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/progress",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "@/components/ui/alert-dialog",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react"
+    ],
+    "tables": [
+      "training_sessions",
+      "user_profiles",
+      "club_players"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/training-app/page.tsx",
+    "route": "/training-app",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/progress",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "@/components/ui/alert-dialog",
+      "@/hooks/use-auth",
+      "next/navigation",
+      "react",
+      "@/lib/supabase",
+      "lucide-react",
+      "lucide-react"
+    ],
+    "tables": [
+      "training_sessions",
+      "user_profiles",
+      "club_players"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/training_event/page.tsx",
+    "route": "/training_event",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/hooks/use-auth",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/tabs",
+      "@/components/ui/dialog",
+      "@/components/ui/textarea",
+      "@/components/ui/input",
+      "@/components/ui/scroll-area",
+      "@/components/ui/avatar",
+      "lucide-react"
+    ],
+    "tables": [
+      "user_profiles",
+      "team_members",
+      "team_events",
+      "team_event_counts",
+      "team_event_availability",
+      "club_players",
+      "chat_messages"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turnier-anmeldung/abmelden/page.tsx",
+    "route": "/turnier-anmeldung/abmelden",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "next/link",
+      "lucide-react",
+      "@/components/header",
+      "@/components/ui/button"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/turnier-app/page.tsx",
+    "route": "/turnier-app",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "lucide-react",
+      "next/link"
+    ],
+    "tables": [],
+    "client": false
+  },
+  {
+    "file": "app/turniere/entdecken/page.tsx",
+    "route": "/turniere/entdecken",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/image",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turniere/meine/page.tsx",
+    "route": "/turniere/meine",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/alert-dialog",
+      "@/components/ui/input",
+      "@/components/ui/textarea"
+    ],
+    "tables": [
+      "user_profiles",
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turniere/neu/page.tsx",
+    "route": "/turniere/neu",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "user_profiles",
+      "dach-event-flyers",
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turniere/page.tsx",
+    "route": "/turniere",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@/components/header",
+      "lucide-react"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/turniere/serien/page.tsx",
+    "route": "/turniere/serien",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "club_players",
+      "user_profiles",
+      "tournament-photos",
+      "dko_series",
+      "dko_series_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turniere/serien/[slug]/anmeldung/page.tsx",
+    "route": "/turniere/serien/[slug]/anmeldung",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "../../_komponenten/serien-anmeldung"
+    ],
+    "tables": [
+      "dko_series"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turniere/serien/[slug]/page.tsx",
+    "route": "/turniere/serien/[slug]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "club_players",
+      "user_profiles",
+      "tournament-photos",
+      "dko_series",
+      "dko_series_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turniere/serien/[slug]/regelwerk/page.tsx",
+    "route": "/turniere/serien/[slug]/regelwerk",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_point_rules",
+      "dko_series_participation_bonuses",
+      "dko_series_cash_rewards",
+      "dko_series_tiebreak_rules"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turniere/serien/[slug]/tabelle/page.tsx",
+    "route": "/turniere/serien/[slug]/tabelle",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "dko_series",
+      "members_cup_results",
+      "tournament_series_standings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turniere/[id]/bearbeiten/page.tsx",
+    "route": "/turniere/[id]/bearbeiten",
+    "mode": "App",
+    "imports": [
+      "react",
+      "react",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/textarea",
+      "@/components/ui/select"
+    ],
+    "tables": [
+      "dach_events",
+      "dach-event-flyers"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/turniere/[id]/page.tsx",
+    "route": "/turniere/[id]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/image",
+      "next/link",
+      "next/navigation",
+      "@supabase/ssr",
+      "lucide-react",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/public-tournament-registration"
+    ],
+    "tables": [
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/uber-uns/page.tsx",
+    "route": "/uber-uns",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/ueber-uns/page.tsx",
+    "route": "/ueber-uns",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "lucide-react",
+      "framer-motion"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/upcoming-tournaments/page.tsx",
+    "route": "/upcoming-tournaments",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/dko-self-registration-modal",
+      "lucide-react",
+      "framer-motion",
+      "react",
+      "@/components/ui/button",
+      "@/lib/supabase",
+      "next/image",
+      "next/link",
+      "@/hooks/use-auth"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_events",
+      "tournaments",
+      "user_profiles",
+      "dko_tournament_registration"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/upcoming-tournaments-app/page.tsx",
+    "route": "/upcoming-tournaments-app",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/dko-self-registration-modal",
+      "lucide-react",
+      "framer-motion",
+      "react",
+      "@/components/ui/button",
+      "@/lib/supabase",
+      "next/image",
+      "next/link",
+      "@/hooks/use-auth"
+    ],
+    "tables": [
+      "dko_series",
+      "dko_series_events",
+      "user_profiles",
+      "dko_tournament_registration"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/urkunde_drucken/page.tsx",
+    "route": "/urkunde_drucken",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@supabase/ssr",
+      "pdf-lib",
+      "file-saver",
+      "@/components/ui/card",
+      "@/components/ui/button"
+    ],
+    "tables": [
+      "leg_statistics"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/veranstaltungen/page.tsx",
+    "route": "/veranstaltungen",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/image",
+      "@supabase/ssr",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/select",
+      "lucide-react",
+      "@/components/faq-chat-widget",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "events",
+      "dach_events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/veranstaltungen/[id]/page.tsx",
+    "route": "/veranstaltungen/[id]",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "next/image",
+      "next/navigation",
+      "@supabase/ssr",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "lucide-react",
+      "@/components/mobile-bottom-nav",
+      "@/hooks/use-membership-access",
+      "@/actions/event-participation"
+    ],
+    "tables": [
+      "user_profiles",
+      "event_participants",
+      "guest_requests",
+      "events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/verein-beitreten/page.tsx",
+    "route": "/verein-beitreten",
+    "mode": "App",
+    "imports": [
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/lib/supabase/server",
+      "next/link",
+      "lucide-react",
+      "@/components/ui/button",
+      "@/components/verein-app-install"
+    ],
+    "tables": [
+      "player_recruitment_needs"
+    ],
+    "client": false
+  },
+  {
+    "file": "app/vereinsheim/page.tsx",
+    "route": "/vereinsheim",
+    "mode": "App",
+    "imports": [
+      "react",
+      "next/link",
+      "@/components/header",
+      "@/components/mobile-bottom-nav",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/input",
+      "@/components/ui/label",
+      "@/components/ui/textarea",
+      "@/lib/supabase",
+      "lucide-react"
+    ],
+    "tables": [
+      "clubhouse_openings",
+      "user_profiles",
+      "user_page_permissions"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/vereinskalender/page.tsx",
+    "route": "/vereinskalender",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/avatar",
+      "lucide-react",
+      "@/components/ui/dialog",
+      "@/components/ui/select",
+      "@/lib/supabase",
+      "next/navigation",
+      "date-fns"
+    ],
+    "tables": [
+      "matches",
+      "events"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/vereinskalender-app/page.tsx",
+    "route": "/vereinskalender-app",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/components/header",
+      "@/components/ui/card",
+      "@/components/ui/button",
+      "@/components/ui/badge",
+      "@/components/ui/avatar",
+      "lucide-react",
+      "@/components/ui/dialog",
+      "@/components/ui/select",
+      "@/components/ui/input",
+      "@/components/ui/textarea",
+      "@/components/ui/label",
+      "@/lib/supabase",
+      "next/navigation",
+      "date-fns",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "club_players",
+      "club_roles",
+      "teams",
+      "matches",
+      "events",
+      "dko_series_events",
+      "board_events",
+      "vacations",
+      "user_profiles",
+      "calendar_private_entries",
+      "match_lineups",
+      "board_event_files",
+      "vorstand-uploads",
+      "board_event_invites"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/vereinssitzung/page.tsx",
+    "route": "/vereinssitzung",
+    "mode": "App",
+    "imports": [
+      "react",
+      "lucide-react",
+      "next/navigation",
+      "@/lib/supabase",
+      "@/components/header",
+      "@/components/ui/badge",
+      "@/components/ui/card"
+    ],
+    "tables": [
+      "club_meetings"
+    ],
+    "client": true
+  },
+  {
+    "file": "app/vereinsverwaltung/page.tsx",
+    "route": "/vereinsverwaltung",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/app/admin/_komponenten/vereinsverwaltung/verwaltung",
+      "@/lib/supabase",
+      "@supabase/supabase-js"
+    ],
+    "tables": [],
+    "client": true
+  },
+  {
+    "file": "app/____advent/page.tsx",
+    "route": "/____advent",
+    "mode": "App",
+    "imports": [
+      "react",
+      "@/lib/supabase",
+      "@/components/advent-calendar-doors",
+      "@/components/quiz-dialog",
+      "@/components/ui/dialog",
+      "lucide-react",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/label",
+      "@/components/header",
+      "@/components/mobile-bottom-nav"
+    ],
+    "tables": [
+      "advent_quiz_responses",
+      "advent_participants"
+    ],
+    "client": true
+  }
+]

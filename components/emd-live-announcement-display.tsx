@@ -42,13 +42,13 @@ export default function EmdLiveAnnouncementDisplay({ tv = false }: { tv?: boolea
   const title = announcement.central_tournament_events?.title || "EMD Turnier"
   return (
     <div className="pointer-events-none fixed inset-0 z-[180] grid place-items-center bg-[#06080e]/[.96] p-[4vw] text-center text-white" aria-live="off">
-      <div className="w-full max-w-[1100px] rounded-[2.5vw] border border-orange-400/25 bg-gradient-to-b from-[#171b26] to-[#07090f] px-[5vw] py-[5vh] shadow-[0_0_100px_rgba(249,115,22,.12)]">
-        <div className="mb-[3vh] text-[clamp(12px,1.3vw,24px)] font-black uppercase tracking-[.24em] text-orange-400">EMD · LIVE ANKÜNDIGUNG</div>
-        <h2 className="text-[clamp(24px,3.3vw,65px)] font-black uppercase leading-tight tracking-tight">{TITLES[announcement.kind] || "EMD"}</h2>
+      <div className="text-foreground w-full max-w-[1100px] rounded-[2.5vw] border border-orange-400/25 bg-card   px-[5vw] py-[5vh] shadow-[0_0_100px_rgba(249,115,22,.12)]">
+        <div className="mb-[3vh] text-[clamp(12px,1.3vw,24px)] font-semibold uppercase tracking-[.24em] text-orange-400">EMD · LIVE ANKÜNDIGUNG</div>
+        <h2 className="text-[clamp(24px,3.3vw,65px)] font-semibold uppercase leading-tight tracking-tight">{TITLES[announcement.kind] || "EMD"}</h2>
         {announcement.kind === "custom" ? (
           <div className="mx-auto mt-[4vh] max-w-4xl break-words text-[clamp(26px,3.4vw,64px)] font-bold leading-snug">{announcement.message}</div>
         ) : (
-          <div className="mt-[3vh] text-[clamp(70px,10.5vw,200px)] font-black tabular-nums leading-none tracking-[-.07em] text-orange-400">{displayTime}</div>
+          <div className="mt-[3vh] text-[clamp(70px,10.5vw,200px)] font-semibold tabular-nums leading-none tracking-[-.07em] text-orange-400">{displayTime}</div>
         )}
         <div className="mt-[4vh] text-[clamp(16px,2vw,34px)] font-bold text-white/80">{title}{announcement.scope !== "all" ? ` · ${announcement.scope === "herren" ? "Herren-DKO" : "Damen-DKO"}` : ""}</div>
       </div>

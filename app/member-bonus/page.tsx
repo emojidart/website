@@ -323,7 +323,7 @@ export default function MemberBonusPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20">
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
         </main>
@@ -333,7 +333,7 @@ export default function MemberBonusPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20">
       <main className="flex-grow container mx-auto px-4 py-4 max-w-7xl">
         <div className="mb-4">
           <Button variant="outline" size="sm" onClick={() => router.back()} className="flex items-center gap-2 mb-3">
@@ -343,8 +343,8 @@ export default function MemberBonusPage() {
 
           <div className="flex flex-col gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Bonusgeld</h1>
-              <p className="text-sm text-gray-600 mt-1">Ihre Bonuspunkte und Belohnungen</p>
+              <h1 className="text-2xl font-bold text-foreground">Bonusgeld</h1>
+              <p className="text-sm text-muted-foreground mt-1">Ihre Bonuspunkte und Belohnungen</p>
             </div>
 
             {teamMemberships.length > 1 && (

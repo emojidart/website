@@ -158,7 +158,7 @@ export default function DKOSelfRegistrationPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div className="min-h-screen flex flex-col bg-muted">
       <Header />
 
       <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
@@ -167,7 +167,7 @@ export default function DKOSelfRegistrationPage() {
 
           <CardContent className="space-y-4">
             {authLoading || loading ? (
-              <div className="flex items-center justify-center gap-2 text-gray-700">
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>Lade…</span>
               </div>
@@ -178,7 +178,7 @@ export default function DKOSelfRegistrationPage() {
                 </div>
                 <Button
                   onClick={() => router.push("/member-login")}
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold"
+                  className="w-full bg-background hover:bg-background text-white font-semibold"
                 >
                   <div className="flex items-center gap-2">
                     <LogIn className="w-4 h-4" />
@@ -192,9 +192,9 @@ export default function DKOSelfRegistrationPage() {
               </div>
             ) : (
               <>
-                <div className="p-3 rounded-md text-sm bg-white border">
-                  <div className="font-semibold text-gray-900">Angemeldet als:</div>
-                  <div className="mt-1 text-gray-700">
+                <div className="p-3 rounded-md text-sm bg-card border">
+                  <div className="font-semibold text-foreground">Angemeldet als:</div>
+                  <div className="mt-1 text-muted-foreground">
                     <div>
                       <span className="font-medium">Name:</span> {playerName}
                     </div>
@@ -222,7 +222,7 @@ export default function DKOSelfRegistrationPage() {
                   <Button
                     onClick={handleUnregister}
                     disabled={!canAct}
-                    className="w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold disabled:opacity-60"
+                    className="w-full bg-accent hover:bg-background text-white font-semibold disabled:opacity-60"
                   >
                     {actionLoading ? (
                       <div className="flex items-center gap-2">
@@ -256,7 +256,7 @@ export default function DKOSelfRegistrationPage() {
                   </Button>
                 )}
 
-                <div className="text-xs text-gray-500 text-center">
+                <div className="text-xs text-muted-foreground text-center">
                   Nach der Anmeldung erscheinst du automatisch in der Admin-Registrierungsliste.
                 </div>
               </>

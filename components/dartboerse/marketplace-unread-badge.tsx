@@ -79,7 +79,7 @@ export function MarketplaceUnreadBadge({
   return (
     <Link
       href="/dartboerse/nachrichten"
-      className={`relative inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white font-bold text-slate-700 shadow-sm transition hover:border-orange-300 hover:text-orange-700 ${
+      className={`relative inline-flex items-center justify-center rounded-xl border border-border bg-card font-bold text-muted-foreground shadow-sm transition hover:border-orange-300 hover:text-orange-700 ${
         compact ? "h-10 w-10" : "h-10 gap-2 px-3"
       }`}
       aria-label={`${count} ungelesene Dartbörsen-Nachrichten`}
@@ -88,7 +88,7 @@ export function MarketplaceUnreadBadge({
       {!compact ? <span>Nachrichten</span> : null}
 
       {count > 0 ? (
-        <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-600 px-1.5 text-[10px] font-black text-white ring-2 ring-white">
+        <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-600 px-1.5 text-xs font-semibold text-white ring-2 ring-white">
           {count > 99 ? "99+" : count}
         </span>
       ) : null}

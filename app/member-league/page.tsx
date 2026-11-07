@@ -29,7 +29,7 @@ export default function MemberLeaguePage() {
         className="pointer-events-none fixed inset-0 bg-cover bg-center bg-no-repeat opacity-35"
         style={{ backgroundImage: 'url("/terminal/hero-startscreen.png")' }}
       />
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(249,115,22,.13),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(14,165,233,.08),transparent_26%),linear-gradient(180deg,rgba(4,6,9,.68),rgba(4,6,9,.94))]" />
+      <div className="text-foreground pointer-events-none fixed inset-0 bg-card" />
       <div className="relative z-10">
       <Header
         variant="app"

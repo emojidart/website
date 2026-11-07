@@ -108,9 +108,9 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 sm:p-6 flex items-center justify-between flex-shrink-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-card ">
+      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="bg-card   text-white p-4 sm:p-6 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-lg flex items-center justify-center">
               <UserPlus className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -134,8 +134,8 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Anmeldung erfolgreich!</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">Anmeldung erfolgreich!</h3>
+              <p className="text-muted-foreground mb-4">
                 Vielen Dank für die Anmeldung. Wir werden uns in Kürze bei dir melden.
               </p>
             </div>
@@ -145,40 +145,40 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                 <div className="flex items-start gap-3">
                   <Users className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-1">Informationen zum Kind</h3>
-                    <p className="text-sm text-gray-600">Bitte gib die Daten des Kindes ein</p>
+                    <h3 className="font-bold text-foreground mb-1">Informationen zum Kind</h3>
+                    <p className="text-sm text-muted-foreground">Bitte gib die Daten des Kindes ein</p>
                   </div>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Vorname des Kindes *</label>
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Vorname des Kindes *</label>
                   <input
                     type="text"
                     name="childFirstName"
                     value={formData.childFirstName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nachname des Kindes *</label>
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Nachname des Kindes *</label>
                   <input
                     type="text"
                     name="childLastName"
                     value={formData.childLastName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">
                     <Calendar className="w-4 h-4 inline mr-1" />
                     Geburtsdatum *
                   </label>
@@ -188,17 +188,17 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                     value={formData.birthDate}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Altersgruppe *</label>
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Altersgruppe *</label>
                   <select
                     name="ageGroup"
                     value={formData.ageGroup}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   >
                     <option value="kids">Kids (6-10 Jahre)</option>
                     <option value="junior">Junior (11-14 Jahre)</option>
@@ -208,13 +208,13 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Dart-Erfahrung *</label>
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">Dart-Erfahrung *</label>
                 <select
                   name="experienceLevel"
                   value={formData.experienceLevel}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="beginner">Anfänger - noch keine Erfahrung</option>
                   <option value="intermediate">Fortgeschritten - erste Erfahrungen</option>
@@ -226,40 +226,40 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                 <div className="flex items-start gap-3">
                   <Users className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-1">Erziehungsberechtigte/r</h3>
-                    <p className="text-sm text-gray-600">Kontaktdaten der Eltern/Erziehungsberechtigten</p>
+                    <h3 className="font-bold text-foreground mb-1">Erziehungsberechtigte/r</h3>
+                    <p className="text-sm text-muted-foreground">Kontaktdaten der Eltern/Erziehungsberechtigten</p>
                   </div>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Vorname *</label>
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Vorname *</label>
                   <input
                     type="text"
                     name="parentFirstName"
                     value={formData.parentFirstName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nachname *</label>
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Nachname *</label>
                   <input
                     type="text"
                     name="parentLastName"
                     value={formData.parentLastName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">
                     <Mail className="w-4 h-4 inline mr-1" />
                     E-Mail *
                   </label>
@@ -269,11 +269,11 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">
                     <Phone className="w-4 h-4 inline mr-1" />
                     Telefon *
                   </label>
@@ -283,13 +283,13 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                     value={formData.phone}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">
                   <MapPin className="w-4 h-4 inline mr-1" />
                   Adresse *
                 </label>
@@ -300,37 +300,37 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                   onChange={handleChange}
                   required
                   placeholder="Straße und Hausnummer"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Postleitzahl *</label>
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Postleitzahl *</label>
                   <input
                     type="text"
                     name="postalCode"
                     value={formData.postalCode}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Stadt *</label>
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Stadt *</label>
                   <input
                     type="text"
                     name="city"
                     value={formData.city}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">
                   Medizinische Hinweise (optional)
                 </label>
                 <textarea
@@ -339,18 +339,18 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                   onChange={handleChange}
                   rows={3}
                   placeholder="Allergien, Medikamente, besondere Bedürfnisse..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Gewünschter Startmonat *</label>
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">Gewünschter Startmonat *</label>
                 <select
                   name="startMonth"
                   value={formData.startMonth}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="januar">Jänner 2026</option>
                   <option value="februar">Februar 2026</option>
@@ -368,7 +368,7 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-muted-foreground mb-2">
                   Zusätzliche Nachricht (optional)
                 </label>
                 <textarea
@@ -377,7 +377,7 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                   onChange={handleChange}
                   rows={4}
                   placeholder="Fragen, Wünsche oder zusätzliche Informationen..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
 
@@ -393,11 +393,11 @@ export function CampusRegistrationModal({ isOpen, onClose, preselectedAgeGroup }
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-4 sticky bottom-0 bg-white pb-4 -mb-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 sticky bottom-0 bg-card pb-4 -mb-4">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-full sm:flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 text-sm sm:text-base font-bold rounded-lg hover:bg-gray-50 transition-colors"
+                  className="w-full sm:flex-1 px-4 py-3 border-2 border-border text-muted-foreground text-sm sm:text-base font-bold rounded-lg hover:bg-muted transition-colors"
                 >
                   Abbrechen
                 </button>

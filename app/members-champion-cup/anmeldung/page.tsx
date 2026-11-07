@@ -389,7 +389,7 @@ export default function UpcomingTournamentsAppPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-background text-white font-sans pb-24 md:pb-0">
       <Header variant="app" title="Members Champion Cup" subtitle="Interne Spieltag-Anmeldung" backHref="/" />
       <MembersCupBackground />
 
@@ -401,19 +401,19 @@ export default function UpcomingTournamentsAppPage() {
           animate="visible"
         >
           <motion.div variants={membersCupItemVariants} className="mb-4">
-            <div className="rounded-[26px] border border-white/10 bg-black/30 shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)] overflow-hidden">
-              <div className="bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
+            <div className="rounded-[26px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)] overflow-hidden">
+              <div className="bg-card    p-4 text-white sm:p-5 lg:p-6">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0 rounded-2xl border border-white/20 bg-white/10 p-3 text-orange-300">
                     <Crown className="h-6 w-6" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-black text-orange-950">
+                    <div className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-orange-950">
                       EMD MEMBERS CHAMPION CUP
                     </div>
 
-                    <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black leading-tight text-white">
+                    <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-white">
                       Spieltag Anmeldung
                     </h1>
 
@@ -428,14 +428,14 @@ export default function UpcomingTournamentsAppPage() {
                         Abmeldung nur bis <strong>14:00 Uhr</strong>
                       </div>
 
-                      <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs font-semibold text-white/70">
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-card px-3 py-2 text-xs font-semibold text-white/70">
                         <Trophy className="h-4 w-4 text-orange-300" />
-                        <span className="font-black text-white">{tournamentDays}</span>
+                        <span className="font-semibold text-white">{tournamentDays}</span>
                         <span>Spieltage</span>
                       </div>
                     </div>
 
-                    <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs font-semibold text-white/70">
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-card px-3 py-2 text-xs font-semibold text-white/70">
                       <Calendar className="h-4 w-4 text-orange-300" />
                       <span>{range ? `${range.from} – ${range.to}` : "—"}</span>
                     </div>
@@ -443,7 +443,7 @@ export default function UpcomingTournamentsAppPage() {
                 </div>
               </div>
 
-              <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
+              <div className="text-foreground h-1.5 w-full bg-card   " />
             </div>
           </motion.div>
 
@@ -451,18 +451,18 @@ export default function UpcomingTournamentsAppPage() {
             <motion.div variants={membersCupItemVariants} className="mb-4">
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white border border-amber-200">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-card border border-amber-200">
                     <ShieldAlert className="h-4 w-4 text-amber-700" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-black text-white">
+                    <div className="text-sm font-semibold text-white">
                       Internes Vereinsturnier
                     </div>
                     <div className="mt-1 text-sm font-semibold text-white/70">
                       Für die Anmeldung zum Members Champion Cup benötigst du das Paket
-                      <span className="font-black"> „Interne Turniere“</span>.
+                      <span className="font-semibold"> „Interne Turniere“</span>.
                     </div>
-                    <div className="mt-1 text-xs font-semibold text-white/40">
+                    <div className="mt-1 text-xs font-semibold text-muted-foreground">
                       Eine aktive Testfreischaltung für „Interne Turniere“ zählt ebenfalls.
                     </div>
                   </div>
@@ -472,9 +472,9 @@ export default function UpcomingTournamentsAppPage() {
           ) : null}
 
           {loading ? (
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-6 text-center shadow-sm">
+            <div className="rounded-2xl border border-white/10 bg-card p-6 text-center shadow-sm">
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-orange-600" />
-              <div className="mt-2 text-sm font-semibold text-white/55">Members Cup wird geladen...</div>
+              <div className="mt-2 text-sm font-semibold text-muted-foreground">Members Cup wird geladen...</div>
             </div>
           ) : error ? (
             <div className="rounded-2xl border border-red-200 bg-red-500/10 p-5 text-red-800 font-semibold">
@@ -483,11 +483,11 @@ export default function UpcomingTournamentsAppPage() {
           ) : (
             <>
               <motion.div variants={membersCupItemVariants} className="mb-4">
-                <div className="rounded-2xl border border-white/10 bg-black/30 shadow-sm p-4 sm:p-5">
+                <div className="rounded-2xl border border-white/10 bg-card shadow-sm p-4 sm:p-5">
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div>
-                      <div className="text-sm text-white/40 font-semibold">Aktuelle Anmeldungen</div>
-                      <div className="mt-1 text-3xl font-black">{registeredPlayers.length}</div>
+                      <div className="text-sm text-muted-foreground font-semibold">Aktuelle Anmeldungen</div>
+                      <div className="mt-1 text-3xl font-semibold">{registeredPlayers.length}</div>
                     </div>
 
                     <div
@@ -497,7 +497,7 @@ export default function UpcomingTournamentsAppPage() {
                           : "rounded-2xl border border-green-200 bg-green-50 px-4 py-3"
                       }
                     >
-                      <div className="flex items-center gap-2 font-black">
+                      <div className="flex items-center gap-2 font-semibold">
                         {isOdd ? (
                           <>
                             <AlertTriangle className="h-5 w-5 text-orange-300" />
@@ -529,21 +529,21 @@ export default function UpcomingTournamentsAppPage() {
                             className={
                               waiting
                                 ? "rounded-2xl border-2 border-orange-300 bg-orange-500/10 p-4 shadow-sm"
-                                : "rounded-2xl border border-white/10 bg-black/30 p-4 shadow-sm"
+                                : "rounded-2xl border border-white/10 bg-card p-4 shadow-sm"
                             }
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div>
-                                <div className="text-xs text-white/40 font-semibold">#{index + 1}</div>
-                                <div className="font-black text-white">{player.player_name}</div>
+                                <div className="text-xs text-muted-foreground font-semibold">#{index + 1}</div>
+                                <div className="font-semibold text-white">{player.player_name}</div>
                               </div>
 
                               {waiting ? (
-                                <span className="rounded-full bg-orange-600 text-white px-3 py-1 text-[11px] font-black">
+                                <span className="rounded-full bg-orange-600 text-white px-3 py-1 text-xs font-semibold">
                                   WARTET
                                 </span>
                               ) : (
-                                <span className="rounded-full bg-green-600 text-white px-3 py-1 text-[11px] font-black">
+                                <span className="rounded-full bg-green-600 text-white px-3 py-1 text-xs font-semibold">
                                   FIX
                                 </span>
                               )}
@@ -559,24 +559,24 @@ export default function UpcomingTournamentsAppPage() {
                       })}
                     </div>
                   ) : (
-                    <div className="mt-4 rounded-2xl border border-gray-200 bg-white/5 p-4 text-sm text-white/55">
+                    <div className="mt-4 rounded-2xl border border-border bg-white/5 p-4 text-sm text-muted-foreground">
                       Noch keine Anmeldungen vorhanden.
                     </div>
                   )}
                 </div>
               </motion.div>
 
-              <motion.div variants={membersCupItemVariants} className="rounded-[22px] border border-white/10 bg-black/30 shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
+              <motion.div variants={membersCupItemVariants} className="rounded-[22px] border border-white/10 bg-card shadow-[0_18px_50px_-42px_rgba(15,23,42,0.55)] overflow-hidden">
                 <div className="px-4 sm:px-5 py-4 border-b border-white/10">
                   <div className="flex items-center gap-2">
                     <Crown className="h-5 w-5 text-orange-600" />
-                    <h2 className="text-base sm:text-lg font-black text-white">
+                    <h2 className="text-base sm:text-lg font-semibold text-white">
                       {series?.name || "EMD MEMBERS Champion Cup"} Spieltage
                     </h2>
                   </div>
                 </div>
 
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-border">
                   {events.map((ev) => {
                     const today = isToday(ev.effectiveDT)
                     const past = isPastDay(ev.effectiveDT)
@@ -590,32 +590,32 @@ export default function UpcomingTournamentsAppPage() {
                       timeAllowsRegistration
 
                     return (
-                      <div key={ev.id} className={today ? "p-4 sm:p-5 bg-orange-500/10/50" : "p-4 sm:p-5 bg-white"}>
+                      <div key={ev.id} className={today ? "p-4 sm:p-5 bg-orange-500/10/50" : "p-4 sm:p-5 bg-card"}>
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <div className="font-black text-white">{ev.title}</div>
+                              <div className="font-semibold text-white">{ev.title}</div>
 
                               {today ? (
-                                <span className="rounded-full bg-orange-600 text-white px-3 py-1 text-[11px] font-black">
+                                <span className="rounded-full bg-orange-600 text-white px-3 py-1 text-xs font-semibold">
                                   HEUTE
                                 </span>
                               ) : null}
 
                               {past ? (
-                                <span className="rounded-full bg-gray-200 text-white/70 px-3 py-1 text-[11px] font-black">
+                                <span className="rounded-full bg-secondary text-white/70 px-3 py-1 text-xs font-semibold">
                                   VORBEI
                                 </span>
                               ) : null}
 
                               {ev.isRescheduled ? (
-                                <span className="rounded-full bg-blue-600 text-white px-3 py-1 text-[11px] font-black">
+                                <span className="rounded-full bg-blue-600 text-white px-3 py-1 text-xs font-semibold">
                                   VERSCHOBEN
                                 </span>
                               ) : null}
                             </div>
 
-                            <div className="mt-2 flex flex-wrap gap-3 text-sm text-white/55">
+                            <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
                               <span className="inline-flex items-center gap-1">
                                 <Calendar className="h-4 w-4 text-orange-600" />
                                 {ev.dateLabel}
@@ -627,7 +627,7 @@ export default function UpcomingTournamentsAppPage() {
                             </div>
 
                             {ev.isRescheduled ? (
-                              <div className="mt-2 text-xs text-white/55">
+                              <div className="mt-2 text-xs text-muted-foreground">
                                 Original:{" "}
                                 <span className="line-through">
                                   {formatDateLabel(ev.originalDT)} • {formatTimeLabel(ev.originalDT)}
@@ -636,7 +636,7 @@ export default function UpcomingTournamentsAppPage() {
                             ) : null}
 
                             {!today && !past ? (
-                              <div className="mt-2 text-xs font-semibold text-white/40">
+                              <div className="mt-2 text-xs font-semibold text-muted-foreground">
                                 Anmeldung öffnet am Turniertag.
                               </div>
                             ) : null}

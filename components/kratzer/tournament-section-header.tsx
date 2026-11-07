@@ -13,7 +13,7 @@ export function TournamentSectionHeader({
 }: TournamentSectionHeaderProps) {
   return (
     <div className="border-b pb-4 mb-6">
-      <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900">
+      <h2 className="text-xl font-semibold flex items-center gap-2 text-foreground">
         {icon}
         {title}
       </h2>

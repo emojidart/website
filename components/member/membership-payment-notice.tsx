@@ -30,7 +30,7 @@ export function MembershipPaymentNotice() {
       <div className="flex items-start gap-3">
         <div className="mt-0.5 text-amber-400"><AlertTriangle className="h-5 w-5" /></div>
         <div className="min-w-0 flex-1">
-          <h2 className="font-black text-white">{status.expired ? "Zugang wegen offener Zahlung pausiert" : "Zahlung fehlgeschlagen – 14 Tage Zeit zum Nachzahlen"}</h2>
+          <h2 className="font-semibold text-white">{status.expired ? "Zugang wegen offener Zahlung pausiert" : "Zahlung fehlgeschlagen – 14 Tage Zeit zum Nachzahlen"}</h2>
           <p className="mt-1 text-sm text-white/75">{status.expired ? "Die Zahlungsfrist ist abgelaufen. Bitte alle offenen Rechnungen begleichen, um den Zugang wieder freizuschalten." : "Deine Mitgliedschaft bleibt bis zum Ende der Frist freigeschaltet. Bitte begleiche die offene Rechnung rechtzeitig."}</p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-white/90">
             <span className="inline-flex items-center gap-1.5"><CreditCard className="h-4 w-4" /> Offen: {eur(status.amountCents)} ({status.unpaidCount} Rechnung{status.unpaidCount === 1 ? "" : "en"})</span>

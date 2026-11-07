@@ -57,13 +57,13 @@ function SectionCard({
   return (
     <motion.section
       variants={itemVariants}
-      className="rounded-2xl border border-gray-200/70 bg-white shadow-sm ring-1 ring-black/5"
+      className="rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/5"
     >
       <div className="p-4 sm:p-6">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">{icon}</div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg sm:text-xl font-black text-gray-900">{title}</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground">{title}</h2>
           </div>
         </div>
         <div className="mt-4">{children}</div>
@@ -88,7 +88,7 @@ function SubCard({
         ? "bg-yellow-50 border-yellow-200"
         : tone === "success"
           ? "bg-emerald-50 border-emerald-100"
-          : "bg-gray-50 border-gray-100"
+          : "bg-muted border-border"
 
   const titleCls =
     tone === "info"
@@ -97,19 +97,19 @@ function SubCard({
         ? "text-yellow-900"
         : tone === "success"
           ? "text-emerald-900"
-          : "text-gray-900"
+          : "text-foreground"
 
   return (
     <div className={`rounded-xl border p-4 ${toneCls}`}>
-      {title ? <div className={`font-black mb-2 ${titleCls}`}>{title}</div> : null}
-      <div className="text-sm text-gray-700 leading-relaxed">{children}</div>
+      {title ? <div className={`font-semibold mb-2 ${titleCls}`}>{title}</div> : null}
+      <div className="text-sm text-muted-foreground leading-relaxed">{children}</div>
     </div>
   )
 }
 
 export default function SummerSpecialRegelwerkPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24 md:pb-0">
+    <div className="min-h-screen bg-muted text-foreground font-sans pb-24 md:pb-0">
       <Header />
 
       <main className="pt-16 sm:pt-14">
@@ -122,21 +122,21 @@ export default function SummerSpecialRegelwerkPage() {
           <motion.div variants={itemVariants} className="mb-4">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-bold text-muted-foreground shadow-sm hover:bg-muted"
             >
               <ArrowLeft className="w-4 h-4" />
               Zurück
             </Link>
           </motion.div>
-		  
-		  
-		  
-		  
-		  
+
+
+
+
+
 
 {/* HERO */}
 <motion.div variants={itemVariants} className="mb-6">
-  <div className="relative rounded-3xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 overflow-hidden">
+  <div className="relative rounded-3xl border border-border/70 bg-card shadow-md ring-1 ring-black/5 overflow-hidden">
 
   {/* LOGO */}
 <div className="flex justify-center pt-6 pb-2">
@@ -158,19 +158,19 @@ export default function SummerSpecialRegelwerkPage() {
 
         <div className="min-w-0 flex-1">
           <div className="inline-flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-orange-50 text-orange-700 border border-orange-100">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-100">
               EMD – SUMMER SPECIAL K26
             </span>
-            <span className="text-xs text-gray-500">Stand Sommer 2026</span>
+            <span className="text-xs text-muted-foreground">Stand Sommer 2026</span>
           </div>
 
-          <h1 className="mt-2 text-2xl sm:text-3xl font-black leading-tight">
+          <h1 className="mt-2 text-2xl sm:text-3xl font-semibold leading-tight">
             Regelwerk & Prämierungsliste
           </h1>
 
-          <p className="mt-1 text-sm sm:text-base text-gray-600">
+          <p className="mt-1 text-sm sm:text-base text-muted-foreground">
             Steeldart Tournament Competition Cup K26{" "}
-            <span className="font-semibold text-gray-900">09.06.2026 – 01.09.2026</span>
+            <span className="font-semibold text-foreground">09.06.2026 – 01.09.2026</span>
           </p>
 
           <div className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 p-4">
@@ -183,29 +183,29 @@ export default function SummerSpecialRegelwerkPage() {
       </div>
     </div>
 
-    <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700" />
+    <div className="text-foreground h-1.5 w-full bg-card   " />
   </div>
 </motion.div>
-		  
-		  
-		  
-		  
-		  
+
+
+
+
+
 
           <div className="space-y-4">
             <SectionCard icon={<FileText className="w-5 h-5" />} title="EMD Summer Special – Überblick">
               <div className="space-y-3">
                 <SubCard tone="info" title="Where Champions are Made!">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-bold text-blue-900">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-card px-3 py-1 text-xs font-bold text-blue-900">
                       <Trophy className="w-4 h-4" />
                       13 Turniertage + 1 Mega-Finaltag
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-bold text-blue-900">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-card px-3 py-1 text-xs font-bold text-blue-900">
                       <Calendar className="w-4 h-4" />
                       Jeden Dienstag
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-bold text-blue-900">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-card px-3 py-1 text-xs font-bold text-blue-900">
                       <Clock className="w-4 h-4" />
                       19:00 Uhr
                     </span>
@@ -295,14 +295,14 @@ export default function SummerSpecialRegelwerkPage() {
                   <ul className="space-y-2">
                     <li>• <strong>Turnierstartgeld pro Teilnahme:</strong> € 5,00</li>
                     <li>• <strong>Teilnahmebeitrag einmalig:</strong> € 10,00</li>
-                    <li className="text-xs text-gray-600">Berechtigung für 13 Turniertage</li>
+                    <li className="text-xs text-muted-foreground">Berechtigung für 13 Turniertage</li>
                   </ul>
                 </SubCard>
 
                 <SubCard title="Finaltag">
                   <ul className="space-y-2">
                     <li>• <strong>Qualifizierte Teilnehmer einmalig:</strong> € 5,00</li>
-                    <li className="text-xs text-gray-600">Berechtigung für den Finaltag</li>
+                    <li className="text-xs text-muted-foreground">Berechtigung für den Finaltag</li>
                   </ul>
                 </SubCard>
               </div>
@@ -328,7 +328,7 @@ export default function SummerSpecialRegelwerkPage() {
                     <li>• <strong>Jede bessere Platzierung:</strong> +2 Punkte zusätzlich</li>
                     <li>• <strong>Ergebnis-Punkte:</strong> Zusätzlich zu den Platzierungspunkten</li>
                   </ul>
-                  <div className="mt-3 rounded-xl bg-white border border-gray-200 p-3 text-xs text-gray-700">
+                  <div className="mt-3 rounded-xl bg-card border border-border p-3 text-xs text-muted-foreground">
                     <strong>Beispiel:</strong> 1:2 + 1:2 = 2 Punkte + Platzierungspunkte 10 = 12 Gesamtpunkte
                   </div>
                 </SubCard>
@@ -339,24 +339,24 @@ export default function SummerSpecialRegelwerkPage() {
 
                 <SubCard title="Teilnahme-Bonuspunkte">
                   <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div className="rounded-xl bg-white border border-gray-200 p-4 text-center">
-                      <div className="text-2xl font-black text-orange-600">+2</div>
-                      <div className="text-sm font-semibold text-gray-900 mt-1">5 Teilnahmen</div>
+                    <div className="rounded-xl bg-card border border-border p-4 text-center">
+                      <div className="text-2xl font-semibold text-orange-600">+2</div>
+                      <div className="text-sm font-semibold text-foreground mt-1">5 Teilnahmen</div>
                     </div>
 
-                    <div className="rounded-xl bg-white border border-gray-200 p-4 text-center">
-                      <div className="text-2xl font-black text-orange-600">+5</div>
-                      <div className="text-sm font-semibold text-gray-900 mt-1">8 Teilnahmen</div>
+                    <div className="rounded-xl bg-card border border-border p-4 text-center">
+                      <div className="text-2xl font-semibold text-orange-600">+5</div>
+                      <div className="text-sm font-semibold text-foreground mt-1">8 Teilnahmen</div>
                     </div>
 
-                    <div className="rounded-xl bg-white border border-gray-200 p-4 text-center">
-                      <div className="text-2xl font-black text-orange-600">+8</div>
-                      <div className="text-sm font-semibold text-gray-900 mt-1">11 Teilnahmen</div>
+                    <div className="rounded-xl bg-card border border-border p-4 text-center">
+                      <div className="text-2xl font-semibold text-orange-600">+8</div>
+                      <div className="text-sm font-semibold text-foreground mt-1">11 Teilnahmen</div>
                     </div>
 
-                    <div className="rounded-xl bg-white border border-gray-200 p-4 text-center">
-                      <div className="text-2xl font-black text-orange-600">+12</div>
-                      <div className="text-sm font-semibold text-gray-900 mt-1">Alle 13 gespielt</div>
+                    <div className="rounded-xl bg-card border border-border p-4 text-center">
+                      <div className="text-2xl font-semibold text-orange-600">+12</div>
+                      <div className="text-sm font-semibold text-foreground mt-1">Alle 13 gespielt</div>
                     </div>
                   </div>
 
@@ -524,7 +524,7 @@ export default function SummerSpecialRegelwerkPage() {
               <SubCard tone="warn">
                 Sollten die <strong>1.–5. Platzierten nach dem Finaltag punktegleich</strong> sein, gilt folgende
                 Reihenfolge:
-                <div className="mt-3 rounded-xl border border-yellow-200 bg-white p-3 text-sm text-yellow-900 font-semibold">
+                <div className="mt-3 rounded-xl border border-yellow-200 bg-card p-3 text-sm text-yellow-900 font-semibold">
                   1. Tabellenpunkte → 2. Check-Punkte → 3. Direktes Duell → 4. Antritte
                 </div>
               </SubCard>
@@ -566,9 +566,9 @@ export default function SummerSpecialRegelwerkPage() {
                 <SubCard title="Einverständniserklärung">
                   Der Teilnehmer willigt ein, dass der Veranstalter, bis auf Widerruf, gemäß §78 KunstUrhG Fotos und
                   Videos veröffentlicht.
-                  <div className="mt-3 rounded-xl border border-gray-200 bg-white p-3">
-                    <div className="font-black text-gray-900 mb-2">Rechte umfassen:</div>
-                    <ul className="text-sm text-gray-700 space-y-1">
+                  <div className="mt-3 rounded-xl border border-border bg-card p-3">
+                    <div className="font-semibold text-foreground mb-2">Rechte umfassen:</div>
+                    <ul className="text-sm text-muted-foreground space-y-1">
                       <li>• Sendung, Vortrag, Dokumentation</li>
                       <li>• Vor-/Aufführung & öffentliche Zugänglichkeit</li>
                       <li>• Vervielfältigung, Verbreitung, Wiedergabe</li>
@@ -609,9 +609,9 @@ export default function SummerSpecialRegelwerkPage() {
                 </SubCard>
 
                 <SubCard title="Auszahlungsübersicht">
-                  <div className="rounded-xl bg-white border border-gray-200 p-4">
-                    <div className="font-black text-gray-900">100% Auszahlung nach Finalspiel am Finaltag</div>
-                    <div className="text-sm text-gray-700 mt-1">1.–3. Platzierung</div>
+                  <div className="rounded-xl bg-card border border-border p-4">
+                    <div className="font-semibold text-foreground">100% Auszahlung nach Finalspiel am Finaltag</div>
+                    <div className="text-sm text-muted-foreground mt-1">1.–3. Platzierung</div>
                   </div>
 
                   <div className="mt-3 grid sm:grid-cols-3 gap-3">
@@ -620,9 +620,9 @@ export default function SummerSpecialRegelwerkPage() {
                       ["2. Platz", "30%"],
                       ["3. Platz", "20%"],
                     ].map(([place, percent]) => (
-                      <div key={place} className="rounded-xl bg-white border border-gray-200 p-4 text-center">
-                        <div className="text-2xl font-black text-orange-600">{percent}</div>
-                        <div className="text-sm font-bold text-gray-900 mt-1">{place}</div>
+                      <div key={place} className="rounded-xl bg-card border border-border p-4 text-center">
+                        <div className="text-2xl font-semibold text-orange-600">{percent}</div>
+                        <div className="text-sm font-bold text-foreground mt-1">{place}</div>
                       </div>
                     ))}
                   </div>
@@ -630,7 +630,7 @@ export default function SummerSpecialRegelwerkPage() {
                   <div className="mt-3 grid sm:grid-cols-3 gap-3">
                     {["4.–5. Platzierung: Sachpreise", "Urkunden", "Überraschung"].map((item) => (
                       <div key={item} className="rounded-xl bg-orange-50 border border-orange-100 p-4 text-center">
-                        <div className="text-sm font-black text-orange-900">{item}</div>
+                        <div className="text-sm font-semibold text-orange-900">{item}</div>
                       </div>
                     ))}
                   </div>
@@ -639,8 +639,8 @@ export default function SummerSpecialRegelwerkPage() {
             </SectionCard>
 
             <motion.div variants={itemVariants} className="pb-6">
-              <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm ring-1 ring-black/5 p-5 text-center">
-                <p className="text-gray-600 text-xs sm:text-sm">
+              <div className="rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/5 p-5 text-center">
+                <p className="text-muted-foreground text-xs sm:text-sm">
                   <strong>Druck- und Satzfehler vorbehalten!</strong>
                   <br />
                   Stand: Sommer 2026

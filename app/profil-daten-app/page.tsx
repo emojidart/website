@@ -106,14 +106,14 @@ function TileInput(props: {
 }) {
   const { label, placeholder, value, onChange, type = "text", icon } = props
   return (
-    <div className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-black/25 px-3.5 py-3.5 shadow-none backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-orange-300/20 hover:bg-white/[0.05] sm:border-white/[0.08] sm:bg-white/[0.035] sm:px-4 sm:py-4">
+    <div className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-card px-3.5 py-3.5 shadow-none  transition duration-300 hover:-translate-y-0.5 hover:border-orange-300/20 hover:bg-white/[0.05] sm:border-white/[0.08] sm:bg-white/[0.035] sm:px-4 sm:py-4">
       <div className="flex items-center gap-2.5">
         {icon ? (
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-300/[0.14] bg-orange-500/[0.07] text-orange-300 shadow-none">
             {icon}
           </div>
         ) : null}
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[11px]">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">{label}</p>
       </div>
 
       <Input
@@ -130,12 +130,12 @@ function TileInput(props: {
 function ThrowingHandSelect(props: { value: string; onChange: (v: string) => void }) {
   const { value, onChange } = props
   return (
-    <div className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-black/25 px-3.5 py-3.5 shadow-none backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-orange-300/20 hover:bg-white/[0.05] sm:border-white/[0.08] sm:bg-white/[0.035] sm:px-4 sm:py-4">
+    <div className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-card px-3.5 py-3.5 shadow-none  transition duration-300 hover:-translate-y-0.5 hover:border-orange-300/20 hover:bg-white/[0.05] sm:border-white/[0.08] sm:bg-white/[0.035] sm:px-4 sm:py-4">
       <div className="flex items-center gap-2.5">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-300/[0.14] bg-orange-500/[0.07] shadow-none">
           <Target className="h-4 w-4 text-orange-300" />
         </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[11px]">Wurfhand</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Wurfhand</p>
       </div>
 
       <select
@@ -434,25 +434,21 @@ export default function ProfilDatenAppPage() {
 
   if (loading) {
     return (
-      <main className="profile-data-premium relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+      <main className="profile-data-premium relative min-h-screen overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Meine Mitgliedsdaten" subtitle="Mein EMD" backHref="/member-profile-app" />
 
-        <div className="pointer-events-none fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.30]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.72),rgba(3,5,9,.95)_47%,rgba(2,4,7,.99))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.16),transparent_26%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.10),transparent_28%)]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
         <div className="relative z-10 flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 pb-24 pt-20">
-          <div className="w-full max-w-sm overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/35 shadow-[0_28px_90px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+          <div className="w-full max-w-sm overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-[0_28px_90px_-48px_rgba(0,0,0,.95)] ">
             <div className="h-1.5 bg-orange-500" />
             <div className="flex flex-col items-center gap-5 px-6 py-9 sm:px-8">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.07]">
                 <Loader2 className="h-6 w-6 animate-spin text-orange-300" />
               </div>
               <div className="text-center">
-                <div className="text-lg font-black tracking-tight text-white">Deine Daten werden geladen</div>
-                <div className="mt-1 text-sm font-medium text-white/40">Einen Moment bitte.</div>
+                <div className="text-lg font-semibold tracking-tight text-white">Deine Daten werden geladen</div>
+                <div className="mt-1 text-sm font-medium text-muted-foreground">Einen Moment bitte.</div>
               </div>
             </div>
           </div>
@@ -463,14 +459,10 @@ export default function ProfilDatenAppPage() {
   }
 
   return (
-    <div className="profile-data-premium relative min-h-screen overflow-x-hidden bg-[#050608] text-white">
+    <div className="profile-data-premium relative min-h-screen overflow-x-hidden bg-background text-white">
       <Header variant="app" title="Meine Mitgliedsdaten" subtitle="Mein EMD" backHref="/member-profile-app" />
 
-        <div className="pointer-events-none fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.30]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.72),rgba(3,5,9,.95)_47%,rgba(2,4,7,.99))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.16),transparent_26%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.10),transparent_28%)]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
@@ -483,7 +475,7 @@ export default function ProfilDatenAppPage() {
           {/* Premium Header */}
           <motion.section
             variants={itemVariants}
-            className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl"
+            className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] "
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(249,115,22,.20),transparent_30%),radial-gradient(circle_at_90%_0%,rgba(14,165,233,.10),transparent_28%)]" />
 
@@ -491,25 +483,25 @@ export default function ProfilDatenAppPage() {
               <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-orange-500/[0.08] text-orange-100 backdrop-blur-sm sm:h-12 sm:w-12">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-orange-500/[0.08] text-orange-100  sm:h-12 sm:w-12">
                       <User className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
 
                     <div className="min-w-0">
-                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-200 sm:text-xs">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-200 sm:text-xs">
                         Mein Profil
                       </div>
-                      <h1 className="mt-1 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl lg:text-4xl">
+                      <h1 className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl lg:text-4xl">
                         Meine Mitgliedsdaten
                       </h1>
                     </div>
                   </div>
 
-                  <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-white/35 sm:text-base">
+                  <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-muted-foreground sm:text-base">
                     Halte deine persönlichen Daten, Adresse und Kontaktdaten aktuell.
                   </p>
 
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-white/55">
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-muted-foreground">
                     <CalendarDays className="h-3.5 w-3.5 text-orange-200" />
                     Mitglied seit {clubJoinedLabel}
                   </div>
@@ -540,18 +532,18 @@ export default function ProfilDatenAppPage() {
                     </div>
 
                     <div>
-                      <div className={`text-[10px] font-black uppercase tracking-[0.16em] ${
+                      <div className={`text-xs font-semibold uppercase tracking-[0.16em] ${
                         nameDecision.status === "approved" ? "text-emerald-200/60" : "text-red-200/60"
                       }`}>
                         Namensänderung
                       </div>
-                      <div className="mt-1 text-lg font-black text-white">
+                      <div className="mt-1 text-lg font-semibold text-white">
                         {nameDecision.status === "approved"
                           ? "Deine Namensänderung wurde übernommen."
                           : "Deine Namensänderung wurde nicht übernommen."}
                       </div>
                       {nameDecision.requested_name ? (
-                        <div className="mt-1 text-sm font-semibold text-white/45">
+                        <div className="mt-1 text-sm font-semibold text-muted-foreground">
                           Angefragter Name: {nameDecision.requested_name}
                         </div>
                       ) : null}
@@ -567,7 +559,7 @@ export default function ProfilDatenAppPage() {
                     type="button"
                     variant="outline"
                     onClick={() => void acknowledgeNameDecision()}
-                    className="shrink-0 rounded-xl border-white/10 bg-white/[0.05] font-black text-white/75 hover:bg-white/[0.09] hover:text-white"
+                    className="shrink-0 rounded-xl border-white/10 bg-white/[0.05] font-semibold text-white/75 hover:bg-white/[0.09] hover:text-white"
                   >
                     Verstanden
                   </Button>
@@ -596,15 +588,15 @@ export default function ProfilDatenAppPage() {
             <div className="min-w-0 space-y-4">
               {/* Persönliche Daten */}
               <motion.section variants={itemVariants}>
-                <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/30 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:rounded-[28px]">
+                <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:rounded-[28px]">
                   <CardHeader className="border-b border-white/[0.07] px-4 py-5 sm:px-6 sm:py-6">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.07]">
                         <User className="h-5 w-5 text-orange-300" />
                       </div>
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-xs">Persönlich</div>
-                        <CardTitle className="mt-0.5 text-lg font-black tracking-tight text-white sm:text-xl">
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Persönlich</div>
+                        <CardTitle className="mt-0.5 text-lg font-semibold tracking-tight text-white sm:text-xl">
                           Persönliche Daten
                         </CardTitle>
                       </div>
@@ -613,18 +605,18 @@ export default function ProfilDatenAppPage() {
 
                   <CardContent className="p-4 sm:p-6">
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-2">
-                      <div className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-black/25 px-3.5 py-3.5 sm:border-white/[0.08] sm:bg-white/[0.035] sm:px-4 sm:py-4">
+                      <div className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-card px-3.5 py-3.5 sm:border-white/[0.08] sm:bg-white/[0.035] sm:px-4 sm:py-4">
                         <div className="flex items-center gap-2.5">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-300/[0.14] bg-orange-500/[0.07]">
                             <LockKeyhole className="h-4 w-4 text-orange-300" />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-[11px]">Name</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Name</p>
                             <div className="mt-1 text-xs font-bold text-white/25">Nur über Änderungsanfrage</div>
                           </div>
                         </div>
 
-                        <div className="mt-3 rounded-xl border border-white/[0.09] bg-[#080c12]/95 px-3.5 py-3 font-black text-white">
+                        <div className="mt-3 rounded-xl border border-white/[0.09] bg-[#080c12]/95 px-3.5 py-3 font-semibold text-white">
                           {form.name || "—"}
                         </div>
 
@@ -642,7 +634,7 @@ export default function ProfilDatenAppPage() {
                             setNameRequestMessage("")
                             setNameRequestOpen(true)
                           }}
-                          className="mt-3 h-10 w-full rounded-xl border-orange-300/20 bg-orange-500/[0.07] font-black text-orange-100 hover:bg-orange-500/[0.13] hover:text-white"
+                          className="mt-3 h-10 w-full rounded-xl border-orange-300/20 bg-orange-500/[0.07] font-semibold text-orange-100 hover:bg-orange-500/[0.13] hover:text-white"
                         >
                           <Send className="mr-2 h-4 w-4" />
                           Namensänderung anfragen
@@ -693,15 +685,15 @@ export default function ProfilDatenAppPage() {
 
               {/* Adresse */}
               <motion.section variants={itemVariants}>
-                <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/30 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:rounded-[28px]">
+                <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:rounded-[28px]">
                   <CardHeader className="border-b border-white/[0.07] px-4 py-5 sm:px-6 sm:py-6">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.07]">
                         <MapPin className="h-5 w-5 text-orange-300" />
                       </div>
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-xs">Wohnadresse</div>
-                        <CardTitle className="mt-0.5 text-lg font-black tracking-tight text-white sm:text-xl">
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Wohnadresse</div>
+                        <CardTitle className="mt-0.5 text-lg font-semibold tracking-tight text-white sm:text-xl">
                           Adresse
                         </CardTitle>
                       </div>
@@ -754,15 +746,15 @@ export default function ProfilDatenAppPage() {
             <div className="min-w-0 space-y-4 xl:sticky xl:top-20">
               {/* Kontakt */}
               <motion.section variants={itemVariants}>
-                <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/30 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:rounded-[28px]">
+                <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:rounded-[28px]">
                   <CardHeader className="border-b border-white/[0.07] px-4 py-5 sm:px-6">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.07]">
                         <Mail className="h-5 w-5 text-orange-300" />
                       </div>
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/35 sm:text-xs">Erreichbarkeit</div>
-                        <CardTitle className="mt-0.5 text-lg font-black tracking-tight text-white sm:text-xl">
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Erreichbarkeit</div>
+                        <CardTitle className="mt-0.5 text-lg font-semibold tracking-tight text-white sm:text-xl">
                           Kontakt
                         </CardTitle>
                       </div>
@@ -791,23 +783,23 @@ export default function ProfilDatenAppPage() {
 
               {/* Speichern */}
               <motion.section variants={itemVariants}>
-                <Card className="relative overflow-hidden rounded-[24px] border border-orange-300/[0.11] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:rounded-[28px]">
+                <Card className="relative overflow-hidden rounded-[24px] border border-orange-300/[0.11] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:rounded-[28px]">
                   <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_0%,rgba(249,115,22,0.18),transparent_38%)]" />
                   <CardContent className="relative p-4 sm:p-6">
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-200 sm:text-xs">
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-200 sm:text-xs">
                       Änderungen übernehmen
                     </div>
-                    <h2 className="mt-1 text-xl font-black tracking-tight text-white">
+                    <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">
                       Daten speichern
                     </h2>
-                    <p className="mt-2 text-sm font-medium leading-6 text-white/35">
+                    <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
                       Prüfe deine Angaben kurz und speichere anschließend deine Änderungen.
                     </p>
 
                     <Button
                       onClick={handleSave}
                       disabled={saving}
-                      className="mt-5 h-12 w-full rounded-xl bg-orange-500 font-black text-white shadow-[0_0_28px_rgba(249,115,22,.16)] hover:bg-orange-400 active:scale-[0.99]"
+                      className="mt-5 h-12 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground shadow-[0_0_28px_rgba(249,115,22,.16)] hover:bg-orange-400 active:scale-[0.99]"
                     >
                       {saving ? (
                         <>
@@ -830,17 +822,17 @@ export default function ProfilDatenAppPage() {
       </main>
 
       {nameRequestOpen ? (
-        <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/75 p-0 backdrop-blur-md sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/75 p-0  sm:items-center sm:p-4">
           <div className="w-full overflow-hidden rounded-t-[28px] border border-white/10 bg-[#0b0f15] shadow-2xl sm:max-w-md sm:rounded-[28px]">
             <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4">
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-orange-300/60">Mitgliedsdaten</div>
-                <h3 className="mt-1 text-xl font-black text-white">Namensänderung anfragen</h3>
+                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-300/60">Mitgliedsdaten</div>
+                <h3 className="mt-1 text-xl font-semibold text-white">Namensänderung anfragen</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setNameRequestOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/50"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -852,14 +844,14 @@ export default function ProfilDatenAppPage() {
               </div>
 
               <div>
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/35">Aktueller Name</div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 font-black text-white/60">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Aktueller Name</div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 font-semibold text-white/60">
                   {form.name || "—"}
                 </div>
               </div>
 
               <div>
-                <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/35">Gewünschter neuer Name</div>
+                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Gewünschter neuer Name</div>
                 <Input
                   value={requestedName}
                   onChange={(e) => setRequestedName(e.target.value)}
@@ -878,7 +870,7 @@ export default function ProfilDatenAppPage() {
                 type="button"
                 onClick={() => void submitNameChangeRequest()}
                 disabled={nameRequestSaving}
-                className="h-12 w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400 disabled:opacity-40"
+                className="h-12 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400 disabled:opacity-40"
               >
                 {nameRequestSaving ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Wird gesendet …</>

@@ -50,16 +50,16 @@ export function AuthModal({ isOpen, onClose, action }: AuthModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md border-0 shadow-2xl bg-white">
+      <DialogContent className="sm:max-w-md border-0 shadow-2xl bg-card">
         <DialogHeader className="text-center space-y-4">
           <div className="flex justify-center">{getIcon()}</div>
-          <DialogTitle className="text-2xl font-bold text-gray-900">{getTitle()}</DialogTitle>
-          <DialogDescription className="text-base text-gray-600 leading-relaxed">{getDescription()}</DialogDescription>
+          <DialogTitle className="text-2xl font-bold text-foreground">{getTitle()}</DialogTitle>
+          <DialogDescription className="text-base text-muted-foreground leading-relaxed">{getDescription()}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 mt-6">
           <Button
             onClick={handleLogin}
-            className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-bold py-6 text-base shadow-lg"
+            className="w-full bg-card     text-white font-bold py-6 text-base shadow-lg"
           >
             <Lock className="h-5 w-5 mr-2" />
             Jetzt anmelden

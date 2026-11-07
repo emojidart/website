@@ -181,8 +181,8 @@ export function BonusSection({
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
             <Euro className="h-6 w-6 text-orange-600" />
           </div>
-          <p className="font-semibold text-gray-900">Keine Bonusgelder gefunden.</p>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="font-semibold text-foreground">Keine Bonusgelder gefunden.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
             {dartType === "edart"
               ? "Keine eDart-Bonuswerte vorhanden."
               : dartType === "steeldart"
@@ -201,11 +201,11 @@ export function BonusSection({
 
     return (
       <div className="space-y-4 sm:space-y-6">
-        <div className="overflow-x-auto rounded-2xl border border-gray-200/70 bg-white ring-1 ring-black/5">
+        <div className="overflow-x-auto rounded-2xl border border-border/70 bg-card ring-1 ring-black/5">
           <UITable className="min-w-full">
             <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead className="font-bold text-gray-700 w-[120px] sm:w-auto">Spieler</TableHead>
+              <TableRow className="bg-muted">
+                <TableHead className="font-bold text-muted-foreground w-[120px] sm:w-auto">Spieler</TableHead>
                 <TableHead className="font-bold text-center text-red-700 w-[64px] sm:w-[90px]">
                   <span className="hidden sm:inline">Unter 26</span>
                   <span className="sm:hidden">U26</span>
@@ -218,12 +218,12 @@ export function BonusSection({
                   <span className="hidden sm:inline">Semperit</span>
                   <span className="sm:hidden">Semp</span>
                 </TableHead>
-                <TableHead className="font-bold text-center text-gray-700 w-[70px] sm:w-[110px]">
+                <TableHead className="font-bold text-center text-muted-foreground w-[70px] sm:w-[110px]">
                   <span className="hidden sm:inline">Gesamt</span>
                   <span className="sm:hidden">Total</span>
                 </TableHead>
-                <TableHead className="font-bold text-center text-gray-700">Einsätze</TableHead>
-                <TableHead className="font-bold text-center text-gray-700 w-[70px] sm:w-[110px]">
+                <TableHead className="font-bold text-center text-muted-foreground">Einsätze</TableHead>
+                <TableHead className="font-bold text-center text-muted-foreground w-[70px] sm:w-[110px]">
                   <span className="hidden sm:inline">Kosten (€)</span>
                   <span className="sm:hidden">€</span>
                 </TableHead>
@@ -232,7 +232,7 @@ export function BonusSection({
 
             <TableBody>
               {sortedPenalties.map((penalty) => (
-                <TableRow key={penalty.playerId} className="hover:bg-gray-50/70">
+                <TableRow key={penalty.playerId} className="hover:bg-muted/70">
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2 min-w-0">
                       <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
@@ -247,7 +247,7 @@ export function BonusSection({
 
                   <TableCell className="text-center">
                     {penalty.under26 > 0 ? (
-                      <Badge className="bg-red-600 text-white text-[11px]">{penalty.under26}</Badge>
+                      <Badge className="bg-red-600 text-white text-xs">{penalty.under26}</Badge>
                     ) : (
                       <span className="text-emerald-700 font-semibold text-sm">0</span>
                     )}
@@ -255,7 +255,7 @@ export function BonusSection({
 
                   <TableCell className="text-center">
                     {penalty.under30 > 0 ? (
-                      <Badge className="bg-red-600 text-white text-[11px]">{penalty.under30}</Badge>
+                      <Badge className="bg-red-600 text-white text-xs">{penalty.under30}</Badge>
                     ) : (
                       <span className="text-emerald-700 font-semibold text-sm">0</span>
                     )}
@@ -263,19 +263,19 @@ export function BonusSection({
 
                   <TableCell className="text-center">
                     {penalty.semperit > 0 ? (
-                      <Badge className="bg-red-600 text-white text-[11px]">{penalty.semperit}</Badge>
+                      <Badge className="bg-red-600 text-white text-xs">{penalty.semperit}</Badge>
                     ) : (
                       <span className="text-emerald-700 font-semibold text-sm">0</span>
                     )}
                   </TableCell>
 
                   <TableCell className="text-center">
-                    <Badge variant="outline" className="text-[11px] border-gray-200 font-bold">
+                    <Badge variant="outline" className="text-xs border-border font-bold">
                       {penalty.totalPenalties}
                     </Badge>
                   </TableCell>
 
-                  <TableCell className="text-center text-sm">{penalty.appearances}{penalty.fixedRate !== undefined ? <div className="text-[10px] text-orange-600">Fix {euro(penalty.fixedRate)}</div> : null}</TableCell>
+                  <TableCell className="text-center text-sm">{penalty.appearances}{penalty.fixedRate !== undefined ? <div className="text-xs text-orange-600">Fix {euro(penalty.fixedRate)}</div> : null}</TableCell>
                   <TableCell className="text-center">
                     <span className="font-bold text-red-700 text-sm">{penalty.totalCost.toFixed(2)}€</span>
                   </TableCell>
@@ -290,7 +290,7 @@ export function BonusSection({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
               <div className="flex items-center gap-2">
                 <Euro className="h-5 w-5 text-red-700" />
-                <span className="font-bold text-base sm:text-lg text-gray-900">
+                <span className="font-bold text-base sm:text-lg text-foreground">
                   {dartType === "edart"
                     ? "eDart Bonusgelder"
                     : dartType === "steeldart"
@@ -302,15 +302,15 @@ export function BonusSection({
               <span className="text-xl sm:text-2xl font-extrabold text-red-700">{totalCost.toFixed(2)}€</span>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
               <div>
-                <span className="font-semibold text-gray-800">Gesamt Unter 26:</span> {totalU26}
+                <span className="font-semibold text-foreground">Gesamt Unter 26:</span> {totalU26}
               </div>
               <div>
-                <span className="font-semibold text-gray-800">Gesamt Unter 30:</span> {totalU30}
+                <span className="font-semibold text-foreground">Gesamt Unter 30:</span> {totalU30}
               </div>
               <div>
-                <span className="font-semibold text-gray-800">Gesamt Semperit:</span> {totalSemp}
+                <span className="font-semibold text-foreground">Gesamt Semperit:</span> {totalSemp}
               </div>
             </div>
           </CardContent>
@@ -321,15 +321,15 @@ export function BonusSection({
 
   return (
     <div className="space-y-5 sm:space-y-7">
-      <Card className="border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5 rounded-2xl">
+      <Card className="border border-border/70 bg-card shadow-md ring-1 ring-black/5 rounded-2xl">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-gray-900">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-foreground">
                 <Euro className="h-5 w-5 text-orange-600" />
                 Bonusgeld Übersicht
               </CardTitle>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Bonusgeld für Würfe unter 26 ({bonusConfig.under26.toFixed(2)}€), unter 30 ({bonusConfig.under30.toFixed(2)}€) und Semperit ({bonusConfig.semperit.toFixed(2)}€)
               </p>
             </div>
@@ -338,7 +338,7 @@ export function BonusSection({
               variant="outline"
               size="sm"
               onClick={() => setIsBonusConfigOpen(true)}
-              className="rounded-xl border-gray-200/70 bg-white shadow-sm"
+              className="rounded-xl border-border/70 bg-card shadow-sm"
             >
               <Settings className="h-4 w-4 mr-2" />
               Konfiguration
@@ -348,9 +348,9 @@ export function BonusSection({
 
         <CardContent className="p-4 sm:p-6 pt-0">
           {ratesError ? <p className="mb-3 text-sm text-red-600">{ratesError}</p> : null}
-          <div className="mb-5 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-gray-900">
+          <div className="mb-5 rounded-2xl border border-orange-200 bg-primary/10 p-4 text-foreground">
             <p className="mb-2 font-bold">Fixbetrag je Spieler und Ligaabend</p>
-            <p className="mb-3 text-xs text-gray-600">Standardmäßig zählt nur ein tatsächlicher Einsatz, auch als Ersatzspieler. Optional können alle abgeschlossenen Ligaabende der Mannschaft berechnet werden. Nie pro Leg.</p>
+            <p className="mb-3 text-xs text-muted-foreground">Standardmäßig zählt nur ein tatsächlicher Einsatz, auch als Ersatzspieler. Optional können alle abgeschlossenen Ligaabende der Mannschaft berechnet werden. Nie pro Leg.</p>
             {selectedSeasonId === "all" ? <p className="text-sm text-red-700">Zum Bearbeiten eine Saison auswählen.</p> : null}
             <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Dartart filtern">
               {([ ["all", "Alle"], ["edart", "E-Dart"], ["steeldart", "Steeldart"] ] as const).map(([value, label]) => (
@@ -365,15 +365,15 @@ export function BonusSection({
                 const count = new Set(lineupAppearances.filter((r:any)=>r.player_id === member.player_id && r.team_id === member.team_id).map((r:any)=>r.match_id)).size
                 const totalNights = new Set(completedTeamMatches.filter((r:any)=>r.team_id === member.team_id).map((r:any)=>r.match_id)).size
                 const chargeAbsent = chargeAbsentByPlayer[`${member.team_id}:${selectedSeasonId}:${member.player_id}`] || false
-                return <div key={key} className="rounded-xl bg-white border p-3">
+                return <div key={key} className="rounded-xl bg-card border p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div><p className="font-semibold text-sm">{member.club_players.name} <span className="ml-2 text-xs font-normal text-orange-700">{String(member.team?.dart_type || "").toLowerCase().replace(/[-_\s]/g, "") === "steeldart" ? "Steeldart" : "E-Dart"}</span></p><p className="text-xs text-gray-500">{member.team?.name ? `${member.team.name} · ` : ""}{count} Einsätze · {rate === undefined ? "Fehlwürfe" : `Fix ${euro(rate)} / Abend · ${euro(rate*(chargeAbsent ? totalNights : count))}${chargeAbsent ? " (alle Ligaabende)" : ""}`}</p></div>
+                    <div><p className="font-semibold text-sm">{member.club_players.name} <span className="ml-2 text-xs font-normal text-orange-700">{String(member.team?.dart_type || "").toLowerCase().replace(/[-_\s]/g, "") === "steeldart" ? "Steeldart" : "E-Dart"}</span></p><p className="text-xs text-muted-foreground">{member.team?.name ? `${member.team.name} · ` : ""}{count} Einsätze · {rate === undefined ? "Fehlwürfe" : `Fix ${euro(rate)} / Abend · ${euro(rate*(chargeAbsent ? totalNights : count))}${chargeAbsent ? " (alle Ligaabende)" : ""}`}</p></div>
                     <Button size="sm" variant="outline" disabled={selectedSeasonId === "all"} onClick={()=>{setEditingPlayer(editing ? "" : key);setEditingMode(rate === undefined ? "penalty" : "fixed");setEditingRate(String(rate ?? 10));setEditingChargeAbsent(chargeAbsent)}}>Einstellen</Button>
                   </div>
                   {editing ? <div className="mt-3 space-y-2">
-                    <select aria-label="Abrechnungsart" className="w-full rounded-lg border bg-white p-2 text-sm" value={editingMode} onChange={e=>setEditingMode(e.target.value)}><option value="penalty">Normal nach Fehlwürfen</option><option value="fixed">Fixbetrag pro Ligaabend</option></select>
+                    <select aria-label="Abrechnungsart" className="w-full rounded-lg border bg-card p-2 text-sm" value={editingMode} onChange={e=>setEditingMode(e.target.value)}><option value="penalty">Normal nach Fehlwürfen</option><option value="fixed">Fixbetrag pro Ligaabend</option></select>
                     {editingMode === "fixed" ? <><Input aria-label="Euro pro Ligaabend" type="number" min="0" step="0.01" value={editingRate} onChange={e=>setEditingRate(e.target.value)} />
-                    <label className="flex items-start gap-3 rounded-xl border border-orange-100 bg-orange-50/70 p-3 text-sm"><input type="checkbox" className="mt-1 h-4 w-4 accent-orange-600" checked={editingChargeAbsent} onChange={e=>setEditingChargeAbsent(e.target.checked)} /><span><strong>Auch ohne Einsatz berechnen</strong><span className="mt-1 block text-xs text-gray-600">Bei jeder abgeschlossenen Mannschaftsbegegnung berechnen, auch wenn der Spieler nicht in der Aufstellung stand. Standard: aus.</span></span></label></> : null}
+                    <label className="flex items-start gap-3 rounded-xl border border-orange-100 bg-orange-50/70 p-3 text-sm"><input type="checkbox" className="mt-1 h-4 w-4 accent-orange-600" checked={editingChargeAbsent} onChange={e=>setEditingChargeAbsent(e.target.checked)} /><span><strong>Auch ohne Einsatz berechnen</strong><span className="mt-1 block text-xs text-muted-foreground">Bei jeder abgeschlossenen Mannschaftsbegegnung berechnen, auch wenn der Spieler nicht in der Aufstellung stand. Standard: aus.</span></span></label></> : null}
                     <Button size="sm" disabled={ratesSaving || (editingMode === "fixed" && (editingRate.trim() === "" || !Number.isFinite(Number(editingRate)) || Number(editingRate)<0))} onClick={async()=>{await savePlayerRate(member.team_id,member.player_id,editingMode === "fixed" ? Math.round(Number(editingRate)*100)/100 : null, editingMode === "fixed" && editingChargeAbsent);setEditingPlayer("")}}>Speichern</Button>
                   </div> : null}
                 </div>
@@ -383,36 +383,36 @@ export function BonusSection({
           {legStatsLoading ? (
             <div className="py-10 text-center">
               <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
-              <p className="mt-3 text-sm text-gray-500">Lade Bonusgeld...</p>
+              <p className="mt-3 text-sm text-muted-foreground">Lade Bonusgeld...</p>
             </div>
           ) : getPenaltyStatistics().length === 0 ? (
             <div className="py-10 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">
                 <Euro className="h-6 w-6 text-orange-600" />
               </div>
-              <p className="font-semibold text-gray-900">Keine Bonusgelder gefunden.</p>
-              <p className="mt-1 text-sm text-gray-500">Für diese Auswahl gibt es keine Bonuswerte.</p>
+              <p className="font-semibold text-foreground">Keine Bonusgelder gefunden.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Für diese Auswahl gibt es keine Bonuswerte.</p>
             </div>
           ) : (
             <Tabs defaultValue="gesamt" className="w-full">
               <TabsList className="flex w-full gap-2 bg-transparent p-0 border-0 shadow-none mb-4 sm:mb-6">
                 <TabsTrigger
                   value="gesamt"
-                  className="flex-1 h-8 rounded-lg px-2 text-[11px] sm:text-xs font-semibold text-gray-600
+                  className="flex-1 h-8 rounded-lg px-2 text-xs sm:text-xs font-semibold text-muted-foreground
                     data-[state=active]:bg-orange-600 data-[state=active]:text-white"
                 >
                   Gesamt
                 </TabsTrigger>
                 <TabsTrigger
                   value="edart"
-                  className="flex-1 h-8 rounded-lg px-2 text-[11px] sm:text-xs font-semibold text-gray-600
+                  className="flex-1 h-8 rounded-lg px-2 text-xs sm:text-xs font-semibold text-muted-foreground
                     data-[state=active]:bg-orange-600 data-[state=active]:text-white"
                 >
                   E-Dart
                 </TabsTrigger>
                 <TabsTrigger
                   value="steeldart"
-                  className="flex-1 h-8 rounded-lg px-2 text-[11px] sm:text-xs font-semibold text-gray-600
+                  className="flex-1 h-8 rounded-lg px-2 text-xs sm:text-xs font-semibold text-muted-foreground
                     data-[state=active]:bg-orange-600 data-[state=active]:text-white"
                 >
                   Steeldart
@@ -436,20 +436,20 @@ export function BonusSection({
       </Card>
 
       <Dialog open={isBonusConfigOpen} onOpenChange={setIsBonusConfigOpen}>
-        <DialogContent className="w-[95vw] max-w-sm sm:max-w-md mx-auto rounded-2xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5">
+        <DialogContent className="w-[95vw] max-w-sm sm:max-w-md mx-auto rounded-2xl border border-border/70 bg-card shadow-md ring-1 ring-black/5">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg text-gray-900">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg text-foreground">
               <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
               Bonusgeld Konfiguration
             </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500">
+            <DialogDescription className="text-sm text-muted-foreground">
               Passen Sie die Bonusgeld-Beträge für Ihren Verein an.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="under26" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="under26" className="text-sm font-medium text-muted-foreground">
                 Bonusgeld für Würfe unter 26 (€)
               </Label>
               <Input
@@ -458,7 +458,7 @@ export function BonusSection({
                 step="0.01"
                 min="0"
                 value={tempBonusConfig.under26}
-                className="rounded-xl border-gray-200/70"
+                className="rounded-xl border-border/70"
                 onChange={(e) =>
                   setTempBonusConfig((prev) => ({
                     ...prev,
@@ -469,7 +469,7 @@ export function BonusSection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="under30" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="under30" className="text-sm font-medium text-muted-foreground">
                 Bonusgeld für Würfe unter 30 (€)
               </Label>
               <Input
@@ -478,7 +478,7 @@ export function BonusSection({
                 step="0.01"
                 min="0"
                 value={tempBonusConfig.under30}
-                className="rounded-xl border-gray-200/70"
+                className="rounded-xl border-border/70"
                 onChange={(e) =>
                   setTempBonusConfig((prev) => ({
                     ...prev,
@@ -489,7 +489,7 @@ export function BonusSection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="semperit" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="semperit" className="text-sm font-medium text-muted-foreground">
                 Bonusgeld für Semperit (€)
               </Label>
               <Input
@@ -498,7 +498,7 @@ export function BonusSection({
                 step="0.01"
                 min="0"
                 value={tempBonusConfig.semperit}
-                className="rounded-xl border-gray-200/70"
+                className="rounded-xl border-border/70"
                 onChange={(e) =>
                   setTempBonusConfig((prev) => ({
                     ...prev,
@@ -513,7 +513,7 @@ export function BonusSection({
             <Button
               variant="outline"
               onClick={() => setIsBonusConfigOpen(false)}
-              className="rounded-xl border-gray-200/70"
+              className="rounded-xl border-border/70"
             >
               Abbrechen
             </Button>

@@ -64,23 +64,23 @@ export default function MembersCupDrawShow() {
   return (
     <div className="pointer-events-none fixed inset-0 z-[210] flex items-center justify-center overflow-hidden bg-[#05080d] p-[4vw] text-white" aria-live="off">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_25%,rgba(249,115,22,.19),transparent_58%)]" />
-      <div className="relative w-full max-w-[1100px] rounded-[2.3vw] border border-orange-500/30 bg-gradient-to-b from-[#161c23] to-[#090d12] px-[3vw] py-[4vh] text-center shadow-[0_0_100px_rgba(249,115,22,.13)]">
+      <div className="text-foreground relative w-full max-w-[1100px] rounded-[2.3vw] border border-orange-500/30 bg-card   px-[3vw] py-[4vh] text-center shadow-[0_0_100px_rgba(249,115,22,.13)]">
         <div className="text-[clamp(11px,1vw,16px)] font-extrabold tracking-[.23em] text-orange-400">EMD MEMBERS CHAMPION CUP</div>
-        <div className="mt-[3vh] text-[clamp(18px,2vw,30px)] font-black">{phaseTitle}</div>
+        <div className="mt-[3vh] text-[clamp(18px,2vw,30px)] font-semibold">{phaseTitle}</div>
         <div className="mt-[3vh] flex min-h-[26vh] flex-col items-center justify-center gap-[1.6vh]">
           {isIntro ? (
             <div className="text-[clamp(18px,2.4vw,36px)] font-bold text-white/75">Die Auslosung beginnt …</div>
           ) : finished ? (
-            <div className="text-[clamp(20px,2.6vw,40px)] font-black text-emerald-400">{showEnd ? "AUSLOSUNG ABGESCHLOSSEN" : "GRUPPEN SIND FIXIERT"}</div>
+            <div className="text-[clamp(20px,2.6vw,40px)] font-semibold text-emerald-400">{showEnd ? "AUSLOSUNG ABGESCHLOSSEN" : "GRUPPEN SIND FIXIERT"}</div>
           ) : (
             <div key={`${show.id}-${current}`} className="flex w-full flex-col items-center justify-center gap-[1.2vh] animate-[fadeIn_.6s_ease-out]">
-              <div className="rounded-full border border-orange-400/30 bg-orange-500/10 px-6 py-2 text-[clamp(16px,1.8vw,25px)] font-black tracking-[.13em] text-orange-300">{heading}</div>
+              <div className="rounded-full border border-orange-400/30 bg-orange-500/10 px-6 py-2 text-[clamp(16px,1.8vw,25px)] font-semibold tracking-[.13em] text-orange-300">{heading}</div>
               <div className="mt-[1vh] w-full max-w-[980px] break-words [overflow-wrap:anywhere] px-2 text-[clamp(19px,2.4vw,38px)] font-extrabold leading-[1.2] text-white">{firstPlayer}</div>
               {secondPlayer && (
                 <>
                   <div className="flex w-full max-w-[520px] items-center gap-5 py-[.6vh]" aria-label="und">
                     <div className="h-px flex-1 bg-orange-400/25" />
-                    <span className="text-[clamp(22px,2.3vw,34px)] font-black text-orange-400">&amp;</span>
+                    <span className="text-[clamp(22px,2.3vw,34px)] font-semibold text-orange-400">&amp;</span>
                     <div className="h-px flex-1 bg-orange-400/25" />
                   </div>
                   <div className="w-full max-w-[980px] break-words [overflow-wrap:anywhere] px-2 text-[clamp(19px,2.4vw,38px)] font-extrabold leading-[1.2] text-white">{secondPlayer}</div>

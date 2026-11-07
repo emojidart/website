@@ -146,7 +146,7 @@ const NumberInput = ({
           size="sm"
           onClick={handleDecrement}
           disabled={value <= min}
-          className="h-11 w-11 p-0 rounded-none border-r hover:bg-gray-100"
+          className="h-11 w-11 p-0 rounded-none border-r hover:bg-muted"
         >
           <Minus className="h-4 w-4" />
         </Button>
@@ -164,7 +164,7 @@ const NumberInput = ({
           variant="ghost"
           size="sm"
           onClick={handleIncrement}
-          className="h-11 w-11 p-0 rounded-none border-l hover:bg-gray-100"
+          className="h-11 w-11 p-0 rounded-none border-l hover:bg-muted"
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -547,7 +547,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                   {!isLegActive ? (
                     <Button
                       onClick={startLeg}
-                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 min-h-[44px] touch-manipulation"
+                      className="flex items-center gap-2 bg-green-700 hover:bg-green-700 min-h-[44px] touch-manipulation text-white"
                     >
                       <Play className="h-4 w-4" />
                       <span className="hidden sm:inline">Leg starten</span>
@@ -557,7 +557,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                     <Button
                       onClick={saveLegStatistics}
                       disabled={selectedPlayers.length === 0 || loading}
-                      className="bg-blue-600 hover:bg-blue-700 min-h-[44px] touch-manipulation"
+                      className="bg-blue-600 hover:bg-blue-700 min-h-[44px] touch-manipulation text-white"
                     >
                       <Save className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">Leg speichern</span>
@@ -569,7 +569,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
               {isLegActive && (
                 <Card className="border-2 border-primary/20 flex-1 flex flex-col">
-                  <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
+                  <CardHeader className="text-foreground bg-card from-primary/5 to-primary/10">
                     <CardTitle className="flex items-center gap-2">
                       <Target className="h-5 w-5 text-primary" />
                       Spieler für Leg {currentLeg} auswählen
@@ -665,7 +665,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                   const player = players.find((p) => p.id === playerId)
                                   if (!player) return null
                                   return (
-                                    <div key={playerId} className="p-4 border rounded-lg bg-white">
+                                    <div key={playerId} className="p-4 border rounded-lg bg-card">
                                       <Label className="text-sm font-medium mb-2 block">{player.name}</Label>
                                       <div className="flex items-center gap-4">
                                         <div className="flex-1">
@@ -691,7 +691,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                         </div>
                                         <div className="w-20">
                                           <Label className="text-xs text-muted-foreground">Legs gewonnen</Label>
-                                          <div className="mt-1 text-lg font-bold text-center p-2 bg-gray-50 rounded">
+                                          <div className="mt-1 text-lg font-bold text-center p-2 bg-muted rounded">
                                             {individualMatchResults[playerId]?.score
                                               ? individualMatchResults[playerId].score.replace(":", "/")
                                               : "0/0"}
@@ -802,7 +802,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                 selectedPlayers.length > 1 ? "border-2 border-primary shadow-lg" : ""
                               }`}
                             >
-                              <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
+                              <CardHeader className="text-foreground bg-card from-primary/10 to-primary/5">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                   {selectedPlayers.length > 1 && "🎯 "}
                                   {player.name}
@@ -951,7 +951,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
               {legStats.length > 0 && (
                 <Card className="border-2 flex-1 flex flex-col">
-                  <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
+                  <CardHeader className="text-foreground bg-card   border-b">
                     <CardTitle className="flex items-center gap-2 text-xl">
                       <Trophy className="h-6 w-6 text-amber-600" />
                       Bisherige Legs
@@ -974,7 +974,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                           )
 
                           return (
-                            <Card key={legNumber} className="border border-slate-200 shadow-sm">
+                            <Card key={legNumber} className="border border-border shadow-sm">
                               <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
@@ -1013,8 +1013,8 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                       key={stat.id}
                                       className={`transition-all duration-200 ${
                                         stat.leg_wins > 0
-                                          ? "border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100 shadow-md"
-                                          : "bg-gradient-to-br from-white to-slate-50 border-slate-200"
+                                          ? "text-foreground border-amber-300 bg-card   shadow-md"
+                                          : "text-foreground bg-card   border-border"
                                       }`}
                                     >
                                       <CardContent className="p-4">
@@ -1101,7 +1101,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                                                     return (
                                                       <div
                                                         key={num}
-                                                        className="flex items-center justify-between bg-slate-50 px-2 py-1 rounded border"
+                                                        className="flex items-center justify-between bg-muted px-2 py-1 rounded border"
                                                       >
                                                         <span className="font-medium">{num}er</span>
                                                         <span className="font-bold">{count}×</span>
@@ -1153,7 +1153,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
 
                                           {/* Notes */}
                                           {stat.notes && (
-                                            <div className="pt-2 border-t border-slate-200">
+                                            <div className="pt-2 border-t border-border">
                                               <p className="text-xs text-muted-foreground italic break-words">
                                                 "{stat.notes}"
                                               </p>

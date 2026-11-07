@@ -132,7 +132,7 @@ export default function TournamentHistory() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-4 py-6 pb-24 max-w-6xl">
@@ -171,7 +171,7 @@ export default function TournamentHistory() {
                   </div>
                   <div className="text-sm">Teilnehmer: {r.participants ?? 0}</div>
                   <div className="text-sm">Sieger: {r.winner || "—"}</div>
-                  <div className="text-xs text-gray-500 mt-2">Erstellt: {formatDateTime(r.created_at)}</div>
+                  <div className="text-xs text-muted-foreground mt-2">Erstellt: {formatDateTime(r.created_at)}</div>
                   <Button className="w-full mt-3">Öffnen</Button>
                 </CardContent>
               </Card>

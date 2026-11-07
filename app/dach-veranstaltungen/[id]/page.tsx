@@ -89,42 +89,35 @@ export default function DachVeranstaltungDetailPage() {
     : ""
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-white">
       <Header variant="app" title="Turnierdetails" subtitle="DACH Turniere" backHref="/dach-veranstaltungen/entdecken" />
-      
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.70),rgba(3,5,9,.94)_46%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(14,165,233,.13),transparent_26%),radial-gradient(circle_at_88%_28%,rgba(249,115,22,.12),transparent_28%)]" />
-      </div>
+
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto max-w-5xl px-3 pb-24 pt-20 sm:px-5 sm:pt-24">
 
         {loading ? (
           <div className="flex min-h-[320px] items-center justify-center">
-            <div className="rounded-[24px] border border-white/[0.08] bg-black/35 px-6 py-5 text-center text-sm font-bold text-white/55 backdrop-blur-xl">
+            <div className="rounded-[24px] border border-white/[0.08] bg-card px-6 py-5 text-center text-sm font-bold text-muted-foreground ">
               Veranstaltung wird geladen…
             </div>
           </div>
         ) : null}
         {error ? <div className="py-20 text-center font-semibold text-red-200">{error}</div> : null}
-        {!loading && !error && !event ? <div className="py-20 text-center text-white/45">Veranstaltung nicht gefunden.</div> : null}
+        {!loading && !error && !event ? <div className="py-20 text-center text-muted-foreground">Veranstaltung nicht gefunden.</div> : null}
 
         {event ? (
-          <Card className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
+          <Card className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
             {event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf") ? (
               <button
                 type="button"
                 onClick={() => setFlyerOpen(true)}
-                className="group relative h-72 w-full border-b border-white/[0.07] bg-black/30 sm:h-[420px]"
+                className="group relative h-72 w-full border-b border-white/[0.07] bg-card sm:h-[420px]"
                 aria-label="Flyer vergrößern"
               >
                 <Image src={event.photo_url} alt={event.name} fill className="object-contain" />
                 <div className="absolute inset-0 bg-black/0 transition duration-300 group-hover:bg-black/15" />
-                <div className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-black/65 px-3 py-2 text-xs font-bold text-white backdrop-blur-md">
+                <div className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-black/65 px-3 py-2 text-xs font-bold text-white ">
                   <ZoomIn className="h-4 w-4" />
                   Flyer vergrößern
                 </div>
@@ -133,18 +126,18 @@ export default function DachVeranstaltungDetailPage() {
               <button
                 type="button"
                 onClick={() => setFlyerOpen(true)}
-                className="flex h-44 w-full flex-col items-center justify-center gap-3 border-b border-white/[0.07] bg-[linear-gradient(135deg,rgba(14,165,233,.08),rgba(249,115,22,.08))] text-white transition hover:bg-white/[0.04]"
+                className="flex h-44 w-full flex-col items-center justify-center gap-3 border-b border-white/[0.07] bg-card text-white transition hover:bg-white/[0.04]"
               >
                 <FileText className="h-10 w-10" />
-                <span className="font-black">PDF-Flyer anzeigen</span>
+                <span className="font-semibold">PDF-Flyer anzeigen</span>
               </button>
             ) : null}
             <CardContent className="p-5 sm:p-7 lg:p-8">
               <div className="mb-6">
-                <div className="text-[10px] font-black uppercase tracking-[0.20em] text-sky-200/60">
+                <div className="text-xs font-semibold uppercase tracking-[0.20em] text-sky-200/60">
                   DACH Turnier
                 </div>
-                <h1 className="mt-1.5 text-3xl font-black tracking-[-0.035em] text-white sm:text-4xl">
+                <h1 className="mt-1.5 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
                   {event.name}
                 </h1>
               </div>
@@ -152,21 +145,21 @@ export default function DachVeranstaltungDetailPage() {
                 <div className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
                   <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-orange-200" />
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/28">Datum</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/28">Datum</div>
                     <div className="mt-1 font-bold text-white/80">{dateDE(event.start_date)}{event.end_date !== event.start_date ? ` – ${dateDE(event.end_date)}` : ""}</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
                   <Clock className="mt-0.5 h-4 w-4 shrink-0 text-sky-200" />
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/28">Beginn</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/28">Beginn</div>
                     <div className="mt-1 font-bold text-white/80">{event.event_time ? `${event.event_time.slice(0, 5)} Uhr` : "Uhrzeit offen"}</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-200" />
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/28">Ort</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/28">Ort</div>
                     <div className="mt-1 font-bold text-white/80">{location || event.location}</div>
                   </div>
                 </div>
@@ -175,23 +168,23 @@ export default function DachVeranstaltungDetailPage() {
                     {event.discipline === "edart" ? <Target className="h-4 w-4" /> : event.discipline === "steeldart" ? <Swords className="h-4 w-4" /> : <Users className="h-4 w-4" />}
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/28">Dartart</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/28">Dartart</div>
                     <div className="mt-1 font-bold text-white/80">{disciplineLabel(event.discipline)}</div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 rounded-[22px] border border-white/[0.08] bg-black/25 p-4 sm:grid-cols-2">
-                <p className="text-white/55"><strong className="text-white/80">Veranstalter</strong><br />{event.organizer_name}</p>
-                <p className="text-white/55"><strong className="text-white/80">Startgeld</strong><br />{event.startgeld_details || (event.entry_fee != null ? `€ ${event.entry_fee}` : "Keine Angabe")}</p>
-                <p className="text-white/55"><strong className="text-white/80">Teilnehmer</strong><br />{event.max_participants ? `Maximal ${event.max_participants}` : "Keine Begrenzung angegeben"}</p>
-                <p className="text-white/55"><strong className="text-white/80">Kontakt</strong><br />{event.organizer_email || event.organizer_phone || "Keine Angabe"}</p>
+              <div className="mt-5 grid gap-3 rounded-[22px] border border-white/[0.08] bg-card p-4 sm:grid-cols-2">
+                <p className="text-muted-foreground"><strong className="text-white/80">Veranstalter</strong><br />{event.organizer_name}</p>
+                <p className="text-muted-foreground"><strong className="text-white/80">Startgeld</strong><br />{event.startgeld_details || (event.entry_fee != null ? `€ ${event.entry_fee}` : "Keine Angabe")}</p>
+                <p className="text-muted-foreground"><strong className="text-white/80">Teilnehmer</strong><br />{event.max_participants ? `Maximal ${event.max_participants}` : "Keine Begrenzung angegeben"}</p>
+                <p className="text-muted-foreground"><strong className="text-white/80">Kontakt</strong><br />{event.organizer_email || event.organizer_phone || "Keine Angabe"}</p>
               </div>
 
-              {event.details ? <p className="mt-6 whitespace-pre-line text-white/55">{event.details}</p> : null}
+              {event.details ? <p className="mt-6 whitespace-pre-line text-muted-foreground">{event.details}</p> : null}
 
               <div className="mt-6 flex flex-wrap gap-3">
-                {event.registration_mode !== "public_form" && event.registration_url ? <Button asChild className="rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400"><a href={event.registration_url} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" />Zur Anmeldung</a></Button> : null}
+                {event.registration_mode !== "public_form" && event.registration_url ? <Button asChild className="rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400"><a href={event.registration_url} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" />Zur Anmeldung</a></Button> : null}
                 {event.photo_url ? (
                   <Button
                     type="button"
@@ -215,7 +208,7 @@ export default function DachVeranstaltungDetailPage() {
 
       {flyerOpen && event?.photo_url ? (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-3 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-3 "
           role="dialog"
           aria-modal="true"
           onMouseDown={() => setFlyerOpen(false)}
@@ -238,7 +231,7 @@ export default function DachVeranstaltungDetailPage() {
               <iframe
                 src={event.photo_url}
                 title={`Flyer: ${event.name}`}
-                className="h-full w-full bg-black/25"
+                className="h-full w-full bg-card"
               />
             ) : (
               <Image

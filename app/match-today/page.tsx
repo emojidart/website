@@ -73,8 +73,8 @@ function TeamBlock({
           )}
         />
         {/* Ring */}
-        <div className="relative rounded-full p-[2px] bg-gradient-to-b from-white/35 to-white/5">
-          <div className="rounded-full bg-white/10 backdrop-blur-sm border border-white/15 p-2">
+        <div className="text-foreground relative rounded-full p-[2px] bg-card  ">
+          <div className="rounded-full bg-white/10  border border-white/15 p-2">
             {logoUrl ? (
               <img
                 src={logoUrl}
@@ -91,7 +91,7 @@ function TeamBlock({
       </div>
 
       <div className="text-center px-2">
-        <div className="text-xl sm:text-2xl lg:text-3xl font-black leading-tight line-clamp-2">
+        <div className="text-xl sm:text-2xl lg:text-3xl font-semibold leading-tight line-clamp-2">
           {name}
         </div>
         <div className="mt-1 text-xs font-bold uppercase tracking-wider text-white/70">
@@ -239,13 +239,13 @@ export default function MatchTodayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <Header />
 
       <div className="pt-20 lg:pt-24">
         <div className="container mx-auto px-4">
           {/* HERO */}
-          <div className="relative overflow-hidden rounded-2xl shadow-2xl border border-gray-200 bg-gradient-to-br from-slate-950 via-slate-950 to-orange-950 text-white">
+          <div className="relative overflow-hidden rounded-2xl shadow-2xl border border-border bg-card    text-white">
             <div className="absolute inset-0">
               <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-orange-500/25 blur-3xl" />
               <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
@@ -256,12 +256,12 @@ export default function MatchTodayPage() {
             <div className="relative p-5 sm:p-8 lg:p-10">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                  <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider">
+                  <div className="inline-flex items-center gap-2 bg-white/10  border border-white/15 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider">
                     <Zap className="w-4 h-4 text-yellow-300" />
                     Match Today
                   </div>
 
-                  <h1 className="mt-3 text-2xl sm:text-3xl lg:text-5xl font-black leading-tight">
+                  <h1 className="mt-3 text-2xl sm:text-3xl lg:text-5xl font-semibold leading-tight">
                     Spiele am {formatGermanDateLong(todayISO)}
                   </h1>
                   <p className="mt-2 text-sm sm:text-base text-white/80 max-w-2xl">
@@ -296,7 +296,7 @@ export default function MatchTodayPage() {
                     <Card className="border-0 bg-white/10 text-white shadow-xl">
                       <CardContent className="p-10 text-center">
                         <Trophy className="h-12 w-12 mx-auto mb-4 text-white/70" />
-                        <p className="text-lg font-black">Heute keine Spiele</p>
+                        <p className="text-lg font-semibold">Heute keine Spiele</p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -305,7 +305,7 @@ export default function MatchTodayPage() {
                       <div className="mb-3">
                         <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
                           <motion.div
-                            className="h-full rounded-full bg-gradient-to-r from-orange-400 via-orange-500 to-yellow-300"
+                            className="text-foreground h-full rounded-full bg-card   "
                             initial={{ width: "0%" }}
                             animate={{ width: `${Math.round(progress * 100)}%` }}
                             transition={{ duration: 0.08, ease: "linear" }}
@@ -328,7 +328,7 @@ export default function MatchTodayPage() {
                           initial="enter"
                           animate="center"
                           exit="exit"
-                          className="relative overflow-hidden rounded-2xl shadow-2xl border border-white/15 bg-white/10 backdrop-blur-sm"
+                          className="relative overflow-hidden rounded-2xl shadow-2xl border border-white/15 bg-white/10 "
                         >
                           {/* meta row */}
                           <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10">
@@ -386,7 +386,7 @@ export default function MatchTodayPage() {
                                 <div className="relative">
                                   <div className="absolute -inset-14 rounded-full bg-orange-500/25 blur-3xl" />
                                   <motion.div
-                                    className="relative text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight"
+                                    className="relative text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight"
                                     animate={{ scale: [1, 1.06, 1] }}
                                     transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
                                   >
@@ -394,7 +394,7 @@ export default function MatchTodayPage() {
                                   </motion.div>
                                 </div>
 
-                                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-4 py-2 text-xs font-black text-white/85">
+                                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-4 py-2 text-xs font-semibold text-white/85">
                                   <Sparkles className="w-4 h-4 text-yellow-300" />
                                   {matchesToday.length} Spiel{matchesToday.length === 1 ? "" : "e"} heute
                                 </div>
@@ -421,7 +421,7 @@ export default function MatchTodayPage() {
                                   }}
                                   className={cn(
                                     "h-2.5 rounded-full transition-all",
-                                    i === index ? "w-12 bg-white" : "w-2.5 bg-white/30 hover:bg-white/55"
+                                    i === index ? "w-12 bg-card" : "w-2.5 bg-white/30 hover:bg-card"
                                   )}
                                   aria-label={`Spiel ${i + 1}`}
                                   type="button"
@@ -439,9 +439,9 @@ export default function MatchTodayPage() {
                 <div className="space-y-4">
                   <Card className="border-0 shadow-xl overflow-hidden">
                     <CardContent className="p-0">
-                      <div className="bg-gradient-to-br from-orange-500 to-orange-700 text-white p-5">
+                      <div className="bg-card   text-white p-5">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 rounded-full px-3 py-1 text-xs font-black">
+                          <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 rounded-full px-3 py-1 text-xs font-semibold">
                             <Sparkles className="w-4 h-4 text-yellow-200" />
                             Next Up
                           </div>
@@ -463,11 +463,11 @@ export default function MatchTodayPage() {
                               transition={{ duration: 0.35, ease: "easeOut" }}
                               className="space-y-3"
                             >
-                              <div className="text-sm font-black">
+                              <div className="text-sm font-semibold">
                                 {ensureHHMM(next.match_time)} Uhr
                               </div>
 
-                              <div className="text-sm font-black">
+                              <div className="text-sm font-semibold">
                                 {getTeamName(next, true)} <span className="text-white/75">vs</span> {getTeamName(next, false)}
                               </div>
                             </motion.div>
@@ -502,16 +502,16 @@ export default function MatchTodayPage() {
                   {/* Übersicht */}
                   <Card className="border-0 shadow-lg">
                     <CardContent className="p-5">
-                      <div className="flex items-center gap-2 text-gray-900 font-black">
+                      <div className="flex items-center gap-2 text-foreground font-semibold">
                         <Trophy className="w-5 h-5 text-orange-600" />
                         Heute Übersicht
                       </div>
 
                       <div className="mt-3 space-y-2">
                         {loading ? (
-                          <div className="text-sm text-gray-600">Lade…</div>
+                          <div className="text-sm text-muted-foreground">Lade…</div>
                         ) : matchesToday.length === 0 ? (
-                          <div className="text-sm text-gray-600">Keine Spiele geplant.</div>
+                          <div className="text-sm text-muted-foreground">Keine Spiele geplant.</div>
                         ) : (
                           matchesToday.slice(0, 10).map((m, i) => (
                             <button
@@ -527,21 +527,21 @@ export default function MatchTodayPage() {
                                 "w-full text-left rounded-xl border px-3 py-2 transition-all",
                                 i === index
                                   ? "border-orange-300 bg-orange-50 shadow-sm"
-                                  : "border-gray-200 bg-gray-50 hover:bg-white"
+                                  : "border-border bg-muted hover:bg-card"
                               )}
                               type="button"
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <div className="min-w-0">
-                                  <div className="text-xs font-black text-gray-900 truncate">
-                                    {getTeamName(m, true)} <span className="text-gray-400">vs</span>{" "}
+                                  <div className="text-xs font-semibold text-foreground truncate">
+                                    {getTeamName(m, true)} <span className="text-muted-foreground">vs</span>{" "}
                                     {getTeamName(m, false)}
                                   </div>
-                                  <div className="text-[11px] text-gray-600 mt-0.5">
+                                  <div className="text-xs text-muted-foreground mt-0.5">
                                     {ensureHHMM(m.match_time)} Uhr
                                   </div>
                                 </div>
-                                <div className="text-[10px] font-black text-gray-500">#{i + 1}</div>
+                                <div className="text-xs font-semibold text-muted-foreground">#{i + 1}</div>
                               </div>
                             </button>
                           ))

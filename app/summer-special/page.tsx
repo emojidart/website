@@ -99,16 +99,16 @@ const itemVariants = {
 }
 
 function getPositionBadge(position: number) {
-  const base = "inline-flex items-center justify-center w-9 h-9 rounded-full font-black text-sm"
-  if (position === 1) return `${base} bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-lg`
-  if (position === 2) return `${base} bg-gradient-to-r from-gray-300 to-gray-500 text-white shadow-lg`
-  if (position === 3) return `${base} bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-lg`
-  return `${base} bg-gray-100 text-gray-700 border border-gray-200`
+  const base = "inline-flex items-center justify-center w-9 h-9 rounded-full font-semibold text-sm"
+  if (position === 1) return `${base} bg-card   text-white shadow-lg`
+  if (position === 2) return `${base} bg-card   text-white shadow-lg`
+  if (position === 3) return `${base} bg-card   text-white shadow-lg`
+  return `${base} bg-muted text-muted-foreground border border-border`
 }
 
 function getPositionIcon(position: number) {
   if (position === 1) return <Crown className="h-5 w-5 text-yellow-500" />
-  if (position === 2) return <Medal className="h-5 w-5 text-gray-400" />
+  if (position === 2) return <Medal className="h-5 w-5 text-muted-foreground" />
   if (position === 3) return <Award className="h-5 w-5 text-amber-600" />
   return null
 }
@@ -144,15 +144,15 @@ function PlayerCard({ player, position, onClick }: { player: SummerStanding; pos
     <motion.div
       variants={itemVariants}
       onClick={onClick}
-      className={`rounded-2xl border bg-white p-4 shadow-sm cursor-pointer hover:shadow-lg transition-all ${
-        position <= 3 ? "border-yellow-200 bg-gradient-to-r from-yellow-50 to-white" : "border-gray-200"
+      className={`rounded-2xl border bg-card p-4 shadow-sm cursor-pointer hover:shadow-lg transition-all ${
+        position <= 3 ? "text-foreground border-yellow-200 bg-card  " : "border-border"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className={getPositionBadge(position)}>{position}</div>
           {getPositionIcon(position)}
-          <div className="relative h-12 w-12 rounded-2xl overflow-hidden border border-gray-200 bg-orange-50 flex-shrink-0">
+          <div className="relative h-12 w-12 rounded-2xl overflow-hidden border border-border bg-orange-50 flex-shrink-0">
             <Image
               src={player.profile_picture_url || "/placeholder-user.jpg"}
               alt={`Profilbild von ${player.player_name}`}
@@ -163,7 +163,7 @@ function PlayerCard({ player, position, onClick }: { player: SummerStanding; pos
             />
           </div>
           <div className="min-w-0">
-            <div className="font-black text-gray-900 truncate">{player.player_name}</div>
+            <div className="font-semibold text-foreground truncate">{player.player_name}</div>
             <div className="text-xs font-bold text-orange-700">
               {player.eligible_for_ranking
                 ? getNextBonusText(player.tournaments_played)
@@ -173,47 +173,47 @@ function PlayerCard({ player, position, onClick }: { player: SummerStanding; pos
         </div>
 
         <div className="text-right flex-shrink-0">
-          <div className="flex items-center justify-end gap-1 text-2xl font-black text-orange-700">
+          <div className="flex items-center justify-end gap-1 text-2xl font-semibold text-orange-700">
             {player.best8_points}
             <Trophy className="h-5 w-5 text-orange-500" />
           </div>
-          <div className="text-[11px] font-bold text-gray-500">Best-8 Punkte</div>
+          <div className="text-xs font-bold text-muted-foreground">Best-8 Punkte</div>
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
         <div className="rounded-xl bg-blue-50 border border-blue-100 p-2">
-          <div className="text-[10px] font-bold text-blue-700">Platzierung</div>
-          <div className="text-sm font-black text-blue-900">{player.placement_points}</div>
+          <div className="text-xs font-bold text-blue-700">Platzierung</div>
+          <div className="text-sm font-semibold text-blue-900">{player.placement_points}</div>
         </div>
         <div className="rounded-xl bg-green-50 border border-green-100 p-2">
-          <div className="text-[10px] font-bold text-green-700">Legs W</div>
-          <div className="text-sm font-black text-green-900">{player.legs_won}</div>
+          <div className="text-xs font-bold text-green-700">Legs W</div>
+          <div className="text-sm font-semibold text-green-900">{player.legs_won}</div>
         </div>
         <div className="rounded-xl bg-yellow-50 border border-yellow-100 p-2">
-          <div className="text-[10px] font-bold text-yellow-700">Bonus</div>
-          <div className="text-sm font-black text-yellow-900">
+          <div className="text-xs font-bold text-yellow-700">Bonus</div>
+          <div className="text-sm font-semibold text-yellow-900">
             {player.manual_bonus_points + player.winner_side_bonus_points + player.participation_bonus_points}
           </div>
         </div>
-        <div className="rounded-xl bg-gray-50 border border-gray-100 p-2">
-          <div className="text-[10px] font-bold text-gray-700">Antritte</div>
-          <div className="text-sm font-black text-gray-900">{player.tournaments_played}/13</div>
+        <div className="rounded-xl bg-muted border border-border p-2">
+          <div className="text-xs font-bold text-muted-foreground">Antritte</div>
+          <div className="text-sm font-semibold text-foreground">{player.tournaments_played}/13</div>
         </div>
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-xl bg-purple-50 border border-purple-100 p-2">
-          <div className="text-[10px] font-bold text-purple-700">Matches</div>
-          <div className="text-sm font-black text-purple-900">{player.total_matches_played}</div>
+          <div className="text-xs font-bold text-purple-700">Matches</div>
+          <div className="text-sm font-semibold text-purple-900">{player.total_matches_played}</div>
         </div>
         <div className="rounded-xl bg-teal-50 border border-teal-100 p-2">
-          <div className="text-[10px] font-bold text-teal-700">Siegrate</div>
-          <div className="text-sm font-black text-teal-900">{winRate}%</div>
+          <div className="text-xs font-bold text-teal-700">Siegrate</div>
+          <div className="text-sm font-semibold text-teal-900">{winRate}%</div>
         </div>
         <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-2">
-          <div className="text-[10px] font-bold text-indigo-700">Leg-Diff</div>
-          <div className={`text-sm font-black ${legDiff >= 0 ? "text-green-800" : "text-red-800"}`}>
+          <div className="text-xs font-bold text-indigo-700">Leg-Diff</div>
+          <div className={`text-sm font-semibold ${legDiff >= 0 ? "text-green-800" : "text-red-800"}`}>
             {legDiff >= 0 ? "+" : ""}{legDiff}
           </div>
         </div>
@@ -226,11 +226,11 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <motion.div variants={itemVariants} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <motion.div variants={itemVariants} className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
       <button type="button" onClick={() => setOpen((v) => !v)} className="w-full p-4 text-left flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="font-black text-gray-900 truncate">{tournament.tournament_name}</div>
-          <div className="text-xs font-bold text-gray-500">
+          <div className="font-semibold text-foreground truncate">{tournament.tournament_name}</div>
+          <div className="text-xs font-bold text-muted-foreground">
             {new Date(tournament.tournament_date).toLocaleDateString("de-DE")} · {tournament.tournament_type}
           </div>
         </div>
@@ -238,30 +238,30 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
       </button>
 
       {open && (
-        <div className="border-t border-gray-100 p-3 space-y-2">
+        <div className="border-t border-border p-3 space-y-2">
           {tournament.rankings.map((entry) => {
             const total = entry.placement_points + entry.legs_won + entry.bonus_points + (entry.winner_side_bonus ? 5 : 0)
             return (
               <div key={entry.id} className="rounded-xl border border-orange-100 bg-orange-50 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl bg-white border border-orange-200 flex items-center justify-center font-black">
+                    <div className="w-9 h-9 rounded-xl bg-card border border-orange-200 flex items-center justify-center font-semibold">
                       {getPlacementIcon(entry.placement)}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-black text-gray-900 truncate">{entry.player_name}</div>
-                      <div className="text-[11px] font-bold text-gray-500">
+                      <div className="font-semibold text-foreground truncate">{entry.player_name}</div>
+                      <div className="text-xs font-bold text-muted-foreground">
                         {entry.legs_won}:{entry.legs_lost} Legs · {entry.matches_won}/{entry.matches_played} Siege
                       </div>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-xl font-black text-orange-700">{total}</div>
-                    <div className="text-[10px] font-bold text-gray-500">Punkte</div>
+                    <div className="text-xl font-semibold text-orange-700">{total}</div>
+                    <div className="text-xs font-bold text-muted-foreground">Punkte</div>
                   </div>
                 </div>
                 {entry.winner_side_bonus && (
-                  <div className="mt-2 text-right text-xs font-black text-yellow-700">+5 Gewinner-Seite</div>
+                  <div className="mt-2 text-right text-xs font-semibold text-yellow-700">+5 Gewinner-Seite</div>
                 )}
               </div>
             )
@@ -451,14 +451,14 @@ const totalPrizePool = oneTimeFees + tournamentFees
 
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+      <main className="min-h-screen flex flex-col bg-muted text-foreground pb-24 overflow-x-hidden">
         <Header />
         <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12">
-          <div className="flex flex-col items-center gap-5 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-gray-200">
+          <div className="flex flex-col items-center gap-5 rounded-3xl bg-card shadow-2xl px-10 py-10 border border-border">
             <Loader2 className="h-12 w-12 animate-spin text-orange-600" />
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-900">Summer Special wird geladen</p>
-              <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+              <p className="text-lg font-bold text-foreground">Summer Special wird geladen</p>
+              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
             </div>
           </div>
         </div>
@@ -472,64 +472,64 @@ const totalPrizePool = oneTimeFees + tournamentFees
     const legDiff = selected.legs_won - selected.legs_lost
 
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+      <div className="min-h-screen bg-muted text-foreground pb-24 overflow-x-hidden">
         <Header />
         <main className="pt-12 sm:pt-14">
           <motion.div className="mx-auto w-full px-4 py-6 max-w-2xl lg:max-w-screen-xl space-y-6" variants={containerVariants} initial="hidden" animate="visible">
             <motion.div variants={itemVariants}>
-              <button onClick={() => setSelectedPlayer(null)} type="button" className="inline-flex items-center gap-2 text-orange-700 hover:text-orange-800 font-black">
+              <button onClick={() => setSelectedPlayer(null)} type="button" className="inline-flex items-center gap-2 text-orange-700 hover:text-orange-800 font-semibold">
                 <ChevronDown className="h-5 w-5 rotate-90" /> Zurück zur Tabelle
               </button>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-yellow-500" />
+            <motion.div variants={itemVariants} className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+              <div className="text-foreground h-2 bg-card  " />
               <div className="p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-gray-200 bg-orange-50 flex-shrink-0">
+                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-border bg-orange-50 flex-shrink-0">
                     <Image src={selected.profile_picture_url || "/placeholder-user.jpg"} alt={selected.player_name} width={64} height={64} className="object-cover" unoptimized />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h1 className="text-xl sm:text-2xl font-black text-gray-900 truncate">{selected.player_name}</h1>
-                    <p className="text-sm font-bold text-gray-600">Summer Special Detailansicht</p>
-                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-orange-50 border border-orange-200 px-4 py-2 text-sm font-black text-orange-700">
+                    <h1 className="text-xl sm:text-2xl font-semibold text-foreground truncate">{selected.player_name}</h1>
+                    <p className="text-sm font-bold text-muted-foreground">Summer Special Detailansicht</p>
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-orange-50 border border-orange-200 px-4 py-2 text-sm font-semibold text-orange-700">
                       <Trophy className="h-4 w-4" /> {selected.best8_points} Best-8 Punkte
                     </div>
                   </div>
                 </div>
-				
-				
-				
-				
-				
-				
+
+
+
+
+
+
 
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                  <div className="rounded-xl border border-gray-200 bg-white p-3"><div className="text-[11px] font-bold text-gray-600">Antritte</div><div className="text-xl font-black">{selected.tournaments_played}/13</div></div>
-                  <div className="rounded-xl border border-gray-200 bg-white p-3"><div className="text-[11px] font-bold text-gray-600">Siegrate</div><div className="text-xl font-black text-green-700">{winRate}%</div></div>
-                  <div className="rounded-xl border border-gray-200 bg-white p-3"><div className="text-[11px] font-bold text-gray-600">Leg-Diff</div><div className={`text-xl font-black ${legDiff >= 0 ? "text-green-700" : "text-red-700"}`}>{legDiff >= 0 ? "+" : ""}{legDiff}</div></div>
-                  <div className="rounded-xl border border-gray-200 bg-white p-3"><div className="text-[11px] font-bold text-gray-600">Teilnahmebonus</div><div className="text-xl font-black text-yellow-700">+{selected.participation_bonus_points}</div></div>
+                  <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs font-bold text-muted-foreground">Antritte</div><div className="text-xl font-semibold">{selected.tournaments_played}/13</div></div>
+                  <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs font-bold text-muted-foreground">Siegrate</div><div className="text-xl font-semibold text-green-700">{winRate}%</div></div>
+                  <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs font-bold text-muted-foreground">Leg-Diff</div><div className={`text-xl font-semibold ${legDiff >= 0 ? "text-green-700" : "text-red-700"}`}>{legDiff >= 0 ? "+" : ""}{legDiff}</div></div>
+                  <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs font-bold text-muted-foreground">Teilnahmebonus</div><div className="text-xl font-semibold text-yellow-700">+{selected.participation_bonus_points}</div></div>
                 </div>
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-orange-500 to-yellow-500" />
-              <div className="p-4 border-b border-gray-100 flex items-center gap-3">
+            <motion.div variants={itemVariants} className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+              <div className="text-foreground h-2 bg-card  " />
+              <div className="p-4 border-b border-border flex items-center gap-3">
                 <Target className="h-5 w-5 text-orange-600" />
-                <div><h2 className="font-black text-gray-900">Punkte-Aufteilung</h2><p className="text-xs font-bold text-gray-500">Platzierung, Legs und Bonus</p></div>
+                <div><h2 className="font-semibold text-foreground">Punkte-Aufteilung</h2><p className="text-xs font-bold text-muted-foreground">Platzierung, Legs und Bonus</p></div>
               </div>
               <div className="p-4 grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
-                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4"><div className="text-xs font-bold text-blue-700">Platzierung</div><div className="text-2xl font-black text-blue-900">{selected.placement_points}</div></div>
-                <div className="rounded-2xl border border-green-100 bg-green-50 p-4"><div className="text-xs font-bold text-green-700">Legs gewonnen</div><div className="text-2xl font-black text-green-900">{selected.legs_won}</div></div>
-                <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-4"><div className="text-xs font-bold text-yellow-700">Gewinner-Seite</div><div className="text-2xl font-black text-yellow-900">+{selected.winner_side_bonus_points}</div></div>
-                <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4"><div className="text-xs font-bold text-orange-700">Teilnahmebonus</div><div className="text-2xl font-black text-orange-900">+{selected.participation_bonus_points}</div></div>
+                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4"><div className="text-xs font-bold text-blue-700">Platzierung</div><div className="text-2xl font-semibold text-blue-900">{selected.placement_points}</div></div>
+                <div className="rounded-2xl border border-green-100 bg-green-50 p-4"><div className="text-xs font-bold text-green-700">Legs gewonnen</div><div className="text-2xl font-semibold text-green-900">{selected.legs_won}</div></div>
+                <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-4"><div className="text-xs font-bold text-yellow-700">Gewinner-Seite</div><div className="text-2xl font-semibold text-yellow-900">+{selected.winner_side_bonus_points}</div></div>
+                <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4"><div className="text-xs font-bold text-orange-700">Teilnahmebonus</div><div className="text-2xl font-semibold text-orange-900">+{selected.participation_bonus_points}</div></div>
               </div>
             </motion.div>
 
             <motion.div variants={itemVariants} className="space-y-3">
-              <h2 className="font-black text-gray-900 flex items-center gap-2"><Calendar className="h-5 w-5 text-orange-600" /> Turnier-Historie</h2>
-              {playerTournaments.length === 0 ? <div className="rounded-2xl bg-white border border-gray-200 p-8 text-center text-gray-500">Keine Teilnahmen gefunden</div> : playerTournaments.map((t: any) => <TournamentCard key={t.tournament_id} tournament={t} />)}
+              <h2 className="font-semibold text-foreground flex items-center gap-2"><Calendar className="h-5 w-5 text-orange-600" /> Turnier-Historie</h2>
+              {playerTournaments.length === 0 ? <div className="rounded-2xl bg-card border border-border p-8 text-center text-muted-foreground">Keine Teilnahmen gefunden</div> : playerTournaments.map((t: any) => <TournamentCard key={t.tournament_id} tournament={t} />)}
             </motion.div>
           </motion.div>
         </main>
@@ -539,32 +539,32 @@ const totalPrizePool = oneTimeFees + tournamentFees
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+    <div className="min-h-screen bg-muted text-foreground pb-24 overflow-x-hidden">
       <Header />
       <main className="pt-12 sm:pt-14">
         <motion.div className="mx-auto w-full px-4 py-6 max-w-2xl lg:max-w-screen-xl space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-          <motion.div variants={itemVariants} className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="h-2 bg-gradient-to-r from-orange-500 to-yellow-500" />
+          <motion.div variants={itemVariants} className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="text-foreground h-2 bg-card  " />
             <div className="p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center flex-shrink-0"><Trophy className="w-5 h-5 text-orange-600" /></div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-lg sm:text-2xl font-black text-gray-900">EMD - SUMMER SPECIAL</h1>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-black text-orange-700"><Crown className="w-3.5 h-3.5" /> 2026</span>
+                    <h1 className="text-lg sm:text-2xl font-semibold text-foreground">EMD - SUMMER SPECIAL</h1>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-semibold text-orange-700"><Crown className="w-3.5 h-3.5" /> 2026</span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1"><span className="font-semibold">Best-8 Gesamtwertung</span> · mindestens 8 Antritte für die Wertung</p>
+                  <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Best-8 Gesamtwertung</span> · mindestens 8 Antritte für die Wertung</p>
                 </div>
               </div>
-			  
+
 
               <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-center">
-                <h2 className="text-base sm:text-lg font-black text-gray-900">AKTUELLER POT</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-foreground">AKTUELLER POT</h2>
                 <div className="mt-2 flex items-baseline justify-center gap-2">
-                  <span className="text-2xl text-gray-600 font-bold">€</span>
-                  <span className="text-5xl sm:text-6xl font-black text-orange-700">{totalPrizePool.toFixed(2)}</span>
+                  <span className="text-2xl text-muted-foreground font-bold">€</span>
+                  <span className="text-5xl sm:text-6xl font-semibold text-orange-700">{totalPrizePool.toFixed(2)}</span>
                 </div>
-                <p className="mt-3 text-xs sm:text-sm font-bold text-gray-700">
+                <p className="mt-3 text-xs sm:text-sm font-bold text-muted-foreground">
                   €{settings.entry_fee_per_tournament.toFixed(2)} je Teilnahme + €{settings.one_time_participation_fee.toFixed(2)} einmalig je Teilnehmer + €{settings.final_day_fee.toFixed(2)} Finaltag
                 </p>
               </div>
@@ -572,36 +572,36 @@ const totalPrizePool = oneTimeFees + tournamentFees
           </motion.div>
 
           <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"><div className="flex items-center gap-2"><Users className="h-5 w-5 text-orange-600" /><span className="text-xs font-bold text-gray-600">Teilnehmer</span></div><div className="text-2xl font-black mt-1">{totalParticipants}</div></div>
-            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"><div className="flex items-center gap-2"><Calendar className="h-5 w-5 text-blue-600" /><span className="text-xs font-bold text-gray-600">Turniertage</span></div><div className="text-2xl font-black mt-1">{completedTournaments}/{settings.total_tournament_days}</div></div>
-            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"><div className="flex items-center gap-2"><Activity className="h-5 w-5 text-green-600" /><span className="text-xs font-bold text-gray-600">Antritte</span></div><div className="text-2xl font-black mt-1">{totalAppearances}</div></div>
-            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"><div className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-purple-600" /><span className="text-xs font-bold text-gray-600">Verbleibend</span></div><div className="text-2xl font-black mt-1">{remainingTournaments}</div></div>
+            <div className="rounded-xl border border-border bg-card p-3 shadow-sm"><div className="flex items-center gap-2"><Users className="h-5 w-5 text-orange-600" /><span className="text-xs font-bold text-muted-foreground">Teilnehmer</span></div><div className="text-2xl font-semibold mt-1">{totalParticipants}</div></div>
+            <div className="rounded-xl border border-border bg-card p-3 shadow-sm"><div className="flex items-center gap-2"><Calendar className="h-5 w-5 text-blue-600" /><span className="text-xs font-bold text-muted-foreground">Turniertage</span></div><div className="text-2xl font-semibold mt-1">{completedTournaments}/{settings.total_tournament_days}</div></div>
+            <div className="rounded-xl border border-border bg-card p-3 shadow-sm"><div className="flex items-center gap-2"><Activity className="h-5 w-5 text-green-600" /><span className="text-xs font-bold text-muted-foreground">Antritte</span></div><div className="text-2xl font-semibold mt-1">{totalAppearances}</div></div>
+            <div className="rounded-xl border border-border bg-card p-3 shadow-sm"><div className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-purple-600" /><span className="text-xs font-bold text-muted-foreground">Verbleibend</span></div><div className="text-2xl font-semibold mt-1">{remainingTournaments}</div></div>
           </motion.div>
 
           <motion.div variants={itemVariants} className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
             <div className="flex items-start gap-3">
               <Gift className="h-5 w-5 text-yellow-700 flex-shrink-0 mt-0.5" />
               <div>
-                <h2 className="font-black text-gray-900">Bonus-Regeln</h2>
-                <p className="text-sm font-bold text-gray-700 mt-1">Für die Serienwertung zählen die 8 besten Turnierergebnisse. Mindestens 8 Antritte sind erforderlich. Teilnahmebonus: 5 Antritte +2 · 8 Antritte +5 · 11 Antritte +8 · alle 13 gespielt +12 · Gewinner-Seite Platz 1 zusätzlich +5.</p>
+                <h2 className="font-semibold text-foreground">Bonus-Regeln</h2>
+                <p className="text-sm font-bold text-muted-foreground mt-1">Für die Serienwertung zählen die 8 besten Turnierergebnisse. Mindestens 8 Antritte sind erforderlich. Teilnahmebonus: 5 Antritte +2 · 8 Antritte +5 · 11 Antritte +8 · alle 13 gespielt +12 · Gewinner-Seite Platz 1 zusätzlich +5.</p>
               </div>
             </div>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Spieler suchen…" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold outline-none focus:border-orange-400" />
+          <motion.div variants={itemVariants} className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Spieler suchen…" className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm font-bold outline-none focus:border-orange-400" />
           </motion.div>
 
           <motion.div variants={containerVariants} className="space-y-3">
             {filteredStandings.length === 0 ? (
-              <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center text-gray-500 font-bold">Noch keine Summer-Special-Daten vorhanden.</div>
+              <div className="rounded-2xl border border-border bg-card p-10 text-center text-muted-foreground font-bold">Noch keine Summer-Special-Daten vorhanden.</div>
             ) : (
               filteredStandings.map((player, index) => <PlayerCard key={player.player_name} player={player} position={index + 1} onClick={() => setSelectedPlayer(player.player_name)} />)
             )}
           </motion.div>
 
           <motion.div variants={itemVariants} className="space-y-3">
-            <h2 className="font-black text-gray-900 flex items-center gap-2"><Sparkles className="h-5 w-5 text-orange-600" /> Turnier-Historie</h2>
+            <h2 className="font-semibold text-foreground flex items-center gap-2"><Sparkles className="h-5 w-5 text-orange-600" /> Turnier-Historie</h2>
             {tournaments.map((t) => <TournamentCard key={t.tournament_id} tournament={t} />)}
           </motion.div>
         </motion.div>

@@ -177,11 +177,11 @@ export default function BuffaloTournamentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
+      <div className="min-h-screen bg-muted text-foreground font-sans">
         <Header />
         <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6">
+          <div className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
+            <div className="text-foreground bg-card   p-4 sm:p-6">
               <div className="flex items-center gap-3">
                 <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 <h2 className="text-lg sm:text-2xl font-bold text-white">Buffalo Steel Cup Turniere</h2>
@@ -189,7 +189,7 @@ export default function BuffaloTournamentsPage() {
             </div>
             <div className="p-6 sm:p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-sm sm:text-base text-gray-600">Lade Turniere...</p>
+              <p className="mt-4 text-sm sm:text-base text-muted-foreground">Lade Turniere...</p>
             </div>
           </div>
         </main>
@@ -198,7 +198,7 @@ export default function BuffaloTournamentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
+    <div className="min-h-screen bg-muted text-foreground font-sans">
       <Header />
 
       <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl space-y-6 sm:space-y-8 pb-24">
@@ -210,68 +210,68 @@ export default function BuffaloTournamentsPage() {
           Zurück zur Tabelle
         </a>
         <div className="px-4">
-          <div className="bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50 rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden">
+          <div className="text-foreground bg-card    rounded-2xl shadow-2xl border-2 border-blue-200 overflow-hidden">
             <div className="text-center pt-6 pb-4 px-4">
               <div className="flex justify-center mb-4">
                 <div className="relative">
-                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 shadow-xl">
+                  <div className="text-foreground bg-card   rounded-2xl p-4 shadow-xl">
                     <Trophy className="h-10 w-10 text-white" />
                   </div>
                   <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full w-4 h-4 border-2 border-white"></div>
                 </div>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-3">
-                <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold mb-3">
+                <span className="text-primary      ">
                   BUFFALO STEEL CUP TURNIERE
                 </span>
               </h1>
 
-              <p className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">
+              <p className="text-xl sm:text-2xl font-semibold text-muted-foreground mb-2">
                 Alle Turniere & Spielergebnisse
               </p>
-              <p className="text-sm sm:text-base text-gray-500 mb-4">
+              <p className="text-sm sm:text-base text-muted-foreground mb-4">
                 Komplette Übersicht aller gespielten Matches
               </p>
 
               <div className="flex justify-center items-center gap-4">
-                <div className="h-1 w-12 bg-gradient-to-r from-blue-500 to-yellow-500 rounded-full"></div>
+                <div className="text-foreground h-1 w-12 bg-card   rounded-full"></div>
                 <Star className="h-4 w-4 text-yellow-500" />
-                <div className="h-1 w-12 bg-gradient-to-r from-yellow-500 to-blue-500 rounded-full"></div>
+                <div className="text-foreground h-1 w-12 bg-card   rounded-full"></div>
               </div>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 px-4">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+          <div className="bg-card rounded-xl shadow-lg border border-border p-4">
             <div className="flex items-center gap-3">
               <Trophy className="w-8 h-8 text-blue-600 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-gray-600 text-xs sm:text-sm">Turniere</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{tournaments.length}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm">Turniere</p>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{tournaments.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+          <div className="bg-card rounded-xl shadow-lg border border-border p-4">
             <div className="flex items-center gap-3">
               <Target className="w-8 h-8 text-green-600 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-gray-600 text-xs sm:text-sm">Gesamt Matches</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                <p className="text-muted-foreground text-xs sm:text-sm">Gesamt Matches</p>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">
                   {tournaments.reduce((sum, t) => sum + (t.match_count || 0), 0)}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 col-span-2 lg:col-span-1">
+          <div className="bg-card rounded-xl shadow-lg border border-border p-4 col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3">
               <Calendar className="w-8 h-8 text-purple-600 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-gray-600 text-xs sm:text-sm">Letztes Turnier</p>
-                <p className="text-base sm:text-lg font-bold text-gray-900">
+                <p className="text-muted-foreground text-xs sm:text-sm">Letztes Turnier</p>
+                <p className="text-base sm:text-lg font-bold text-foreground">
                   {tournaments.length > 0
                     ? new Date(tournaments[0].tournament_date).toLocaleDateString('de-DE')
                     : '-'}
@@ -282,8 +282,8 @@ export default function BuffaloTournamentsPage() {
         </div>
 
         <div className="px-4">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 sm:p-6">
+          <div className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
+            <div className="text-foreground bg-card   p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -310,21 +310,21 @@ export default function BuffaloTournamentsPage() {
                   return (
                     <div
                       key={tournament.tournament_id}
-                      className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden hover:border-blue-500 transition-colors"
+                      className="bg-card rounded-xl shadow-lg border-2 border-border overflow-hidden hover:border-blue-500 transition-colors"
                     >
                       <button
                         onClick={() => handleToggleTournament(tournament.tournament_id)}
-                        className="w-full p-3 sm:p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        className="w-full p-3 sm:p-4 flex items-center justify-between hover:bg-muted transition-colors"
                       >
                         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
                           <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 text-white rounded-full font-bold text-sm sm:text-base flex-shrink-0">
                             {tournaments.length - index}
                           </div>
                           <div className="text-left min-w-0 flex-1">
-                            <h3 className="text-sm sm:text-xl font-bold text-gray-900 truncate">
+                            <h3 className="text-sm sm:text-xl font-bold text-foreground truncate">
                               {tournament.tournament_name}
                             </h3>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1 text-xs sm:text-sm text-gray-600">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1 text-xs sm:text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Award className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                                 <span className="truncate">{getTournamentTypeLabel(tournament.tournament_type)}</span>
@@ -341,22 +341,22 @@ export default function BuffaloTournamentsPage() {
                           </div>
                         </div>
                         {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
+                          <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground flex-shrink-0" />
                         ) : (
-                          <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
+                          <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground flex-shrink-0" />
                         )}
                       </button>
 
                       {isExpanded && (
-                        <div className="border-t-2 border-gray-200 p-3 sm:p-6 bg-gray-50">
-                          <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
+                        <div className="border-t-2 border-border p-3 sm:p-6 bg-muted">
+                          <h4 className="text-base sm:text-lg font-bold text-foreground mb-3 sm:mb-4">
                             Spielergebnisse
                           </h4>
 
                           {isLoadingMatches ? (
                             <div className="text-center py-8">
                               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                              <p className="mt-3 text-sm text-gray-600">Lade Spielergebnisse...</p>
+                              <p className="mt-3 text-sm text-muted-foreground">Lade Spielergebnisse...</p>
                             </div>
                           ) : tournamentMatches.length > 0 ? (
                             <div className="space-y-3">
@@ -365,12 +365,12 @@ export default function BuffaloTournamentsPage() {
                                 return (
                                   <div
                                     key={match.id}
-                                    className="bg-white rounded-lg border-2 border-gray-200 p-3 sm:p-4 hover:border-blue-300 transition-colors"
+                                    className="bg-card rounded-lg border-2 border-border p-3 sm:p-4 hover:border-blue-300 transition-colors"
                                   >
                                     <div className="flex items-center justify-between mb-3">
                                       <div className="flex items-center gap-2">
-                                        <div className="bg-gray-100 rounded-lg px-2 py-1">
-                                          <span className="text-xs font-bold text-gray-600">ID: {match.id}</span>
+                                        <div className="bg-muted rounded-lg px-2 py-1">
+                                          <span className="text-xs font-bold text-muted-foreground">ID: {match.id}</span>
                                         </div>
                                         <div className="bg-blue-100 rounded-lg px-2 py-1">
                                           <span className="text-xs font-bold text-blue-700">
@@ -385,7 +385,7 @@ export default function BuffaloTournamentsPage() {
                                           </div>
                                         )}
                                       </div>
-                                      <div className="text-xs text-gray-500">
+                                      <div className="text-xs text-muted-foreground">
                                         {new Date(match.updated_at).toLocaleDateString('de-DE')}
                                       </div>
                                     </div>
@@ -395,16 +395,16 @@ export default function BuffaloTournamentsPage() {
                                         className={`rounded-lg p-3 border-2 ${
                                           winner === match.player1
                                             ? 'bg-green-50 border-green-500'
-                                            : 'bg-gray-50 border-gray-300'
+                                            : 'bg-muted border-border'
                                         }`}
                                       >
-                                        <div className="text-xs text-gray-600 mb-1">Spieler 1</div>
-                                        <div className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                                        <div className="text-xs text-muted-foreground mb-1">Spieler 1</div>
+                                        <div className="font-bold text-foreground text-sm sm:text-base truncate">
                                           {match.player1}
                                         </div>
                                         <div
-                                          className={`text-2xl font-black mt-2 ${
-                                            winner === match.player1 ? 'text-green-600' : 'text-gray-600'
+                                          className={`text-2xl font-semibold mt-2 ${
+                                            winner === match.player1 ? 'text-green-600' : 'text-muted-foreground'
                                           }`}
                                         >
                                           {match.score1}
@@ -412,23 +412,23 @@ export default function BuffaloTournamentsPage() {
                                       </div>
 
                                       <div className="flex items-center justify-center">
-                                        <div className="text-2xl font-black text-gray-400">VS</div>
+                                        <div className="text-2xl font-semibold text-muted-foreground">VS</div>
                                       </div>
 
                                       <div
                                         className={`rounded-lg p-3 border-2 ${
                                           winner === match.player2
                                             ? 'bg-green-50 border-green-500'
-                                            : 'bg-gray-50 border-gray-300'
+                                            : 'bg-muted border-border'
                                         }`}
                                       >
-                                        <div className="text-xs text-gray-600 mb-1">Spieler 2</div>
-                                        <div className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                                        <div className="text-xs text-muted-foreground mb-1">Spieler 2</div>
+                                        <div className="font-bold text-foreground text-sm sm:text-base truncate">
                                           {match.player2}
                                         </div>
                                         <div
-                                          className={`text-2xl font-black mt-2 ${
-                                            winner === match.player2 ? 'text-green-600' : 'text-gray-600'
+                                          className={`text-2xl font-semibold mt-2 ${
+                                            winner === match.player2 ? 'text-green-600' : 'text-muted-foreground'
                                           }`}
                                         >
                                           {match.score2}
@@ -437,9 +437,9 @@ export default function BuffaloTournamentsPage() {
                                     </div>
 
                                     {match.winner && (
-                                      <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-center gap-2">
+                                      <div className="mt-3 pt-3 border-t border-border flex items-center justify-center gap-2">
                                         <Trophy className="h-4 w-4 text-yellow-500" />
-                                        <span className="text-sm font-bold text-gray-700">
+                                        <span className="text-sm font-bold text-muted-foreground">
                                           Gewinner: <span className="text-green-600">{match.winner}</span>
                                         </span>
                                       </div>
@@ -449,8 +449,8 @@ export default function BuffaloTournamentsPage() {
                               })}
                             </div>
                           ) : (
-                            <div className="text-center py-12 text-gray-600">
-                              <Target className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                            <div className="text-center py-12 text-muted-foreground">
+                              <Target className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                               <p>Keine Spielergebnisse gefunden</p>
                             </div>
                           )}
@@ -460,8 +460,8 @@ export default function BuffaloTournamentsPage() {
                   )
                 })
               ) : (
-                <div className="text-center py-12 text-gray-600">
-                  <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <div className="text-center py-12 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                   <p>Noch keine Turniere vorhanden</p>
                 </div>
               )}
@@ -470,7 +470,7 @@ export default function BuffaloTournamentsPage() {
         </div>
       </main>
 
-      <footer className="py-4 sm:py-6 bg-gray-200 text-gray-600 text-xs sm:text-sm text-center mt-8 border-t border-gray-300 px-4">
+      <footer className="py-4 sm:py-6 bg-secondary text-muted-foreground text-xs sm:text-sm text-center mt-8 border-t border-border px-4">
         <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
       </footer>
 

@@ -271,7 +271,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
             ? "border-red-200 bg-red-50 text-red-700"
             : actionMessageType === "success"
             ? "border-green-200 bg-green-50 text-green-700"
-            : "border-gray-200 bg-gray-50 text-gray-700"
+            : "border-border bg-muted text-muted-foreground"
         }`}
       >
         {actionMessageType === "error" ? (
@@ -287,27 +287,27 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
 
   return (
     <div className="w-full">
-      <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <CardHeader className="border-b border-gray-100 px-4 py-4 sm:px-5">
+      <Card className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <CardHeader className="border-b border-border px-4 py-4 sm:px-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
-                <Mail className="h-4 w-4 text-gray-700" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+                <Mail className="h-4 w-4 text-muted-foreground" />
               </div>
               <div>
-                <CardTitle className="text-base font-black text-gray-900 sm:text-lg">Spielerbewerbungen</CardTitle>
-                <p className="mt-0.5 text-xs font-semibold text-gray-500 sm:text-sm">Eingegangene Bewerbungen prüfen und bearbeiten</p>
+                <CardTitle className="text-base font-semibold text-foreground sm:text-lg">Spielerbewerbungen</CardTitle>
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground sm:text-sm">Eingegangene Bewerbungen prüfen und bearbeiten</p>
               </div>
             </div>
 
             <div className="w-full sm:w-[320px]">
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Suchen (Name, E-Mail, Ort, PLZ)…"
-                  className="h-10 rounded-xl border-gray-200 pl-9 text-sm"
+                  className="h-10 rounded-xl border-border pl-9 text-sm"
                 />
               </div>
             </div>
@@ -317,8 +317,8 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
         <CardContent className="p-4 sm:p-5">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
-              <p className="ml-3 text-gray-600">Lade Spielerbewerbungen...</p>
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <p className="ml-3 text-muted-foreground">Lade Spielerbewerbungen...</p>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center py-8 text-red-600">
@@ -326,9 +326,9 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
               <p>{error}</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Mail className="mx-auto mb-3 h-8 w-8 text-gray-300" />
-              <p className="text-sm font-black text-gray-700">Keine Bewerbungen gefunden.</p>
+            <div className="text-center py-8 text-muted-foreground">
+              <Mail className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-semibold text-muted-foreground">Keine Bewerbungen gefunden.</p>
               <p className="mt-1 text-xs font-semibold">Neue Bewerbungen erscheinen hier.</p>
             </div>
           ) : (
@@ -341,22 +341,22 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                     <div
                       key={app.id}
                       className={cn(
-                        "rounded-xl border bg-white p-3",
-                        app.is_read ? "border-gray-200" : "border-orange-200 bg-orange-50/40",
+                        "rounded-xl border bg-card p-3",
+                        app.is_read ? "border-border" : "border-orange-200 bg-orange-50/40",
                       )}
                     >
                       <div className="flex items-start gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <div className="text-sm font-black text-gray-900">
+                            <div className="text-sm font-semibold text-foreground">
                               {app.first_name} {app.last_name}
                             </div>
                             <Badge
                               variant="outline"
                               className={cn(
-                                "rounded-full px-2 py-0 text-[10px] font-black",
+                                "rounded-full px-2 py-0 text-xs font-semibold",
                                 app.is_read
-                                  ? "border-gray-200 bg-gray-50 text-gray-600"
+                                  ? "border-border bg-muted text-muted-foreground"
                                   : "border-orange-200 bg-orange-50 text-orange-700",
                               )}
                             >
@@ -364,11 +364,11 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                             </Badge>
                           </div>
 
-                          <div className="mt-1 truncate text-xs font-semibold text-gray-600">
+                          <div className="mt-1 truncate text-xs font-semibold text-muted-foreground">
                             {app.email}
                           </div>
 
-                          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-[11px] font-semibold text-gray-400">
+                          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs font-semibold text-muted-foreground">
                             <span>{app.postal_code} {app.city}</span>
                             <span>·</span>
                             <span>
@@ -384,7 +384,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                             size="icon"
                             onClick={() => handleViewClick(app)}
                             disabled={isBusy}
-                            className="h-8 w-8 rounded-lg text-gray-600 hover:bg-gray-100"
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted"
                           >
                             {isBusy && actionMessageType === "info" ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -453,7 +453,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                           <TableCell>
                             <Badge
                               variant={app.is_read ? "secondary" : "default"}
-                              className={app.is_read ? "bg-gray-100 text-gray-600" : "bg-orange-100 text-orange-700"}
+                              className={app.is_read ? "bg-muted text-muted-foreground" : "bg-orange-100 text-orange-700"}
                             >
                               {app.is_read ? "Gelesen" : "Neu"}
                             </Badge>
@@ -468,7 +468,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                           <TableCell>{format(new Date(app.created_at), "dd.MM.yyyy HH:mm", { locale: de })}</TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="icon" onClick={() => handleViewClick(app)} className="mr-2" disabled={isBusy}>
-                              <Eye className="h-4 w-4 text-gray-600" />
+                              <Eye className="h-4 w-4 text-muted-foreground" />
                               <span className="sr-only">Ansehen</span>
                             </Button>
 
@@ -480,7 +480,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
                               disabled={isBusy}
                             >
                               {isBusy ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                               ) : (
                                 <UserCheck className="h-4 w-4 text-green-700" />
                               )}
@@ -514,14 +514,14 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
           </DialogHeader>
 
           {currentApplication && (
-            <div className="grid gap-3 py-2 text-sm text-gray-700">
+            <div className="grid gap-3 py-2 text-sm text-muted-foreground">
               <div className="flex items-center justify-between">
                 <div className="font-semibold">
                   {currentApplication.first_name} {currentApplication.last_name}
                 </div>
                 <Badge
                   variant={currentApplication.is_read ? "secondary" : "default"}
-                  className={currentApplication.is_read ? "bg-gray-200 text-gray-700" : "bg-blue-500"}
+                  className={currentApplication.is_read ? "bg-secondary text-muted-foreground" : "bg-blue-500"}
                 >
                   {currentApplication.is_read ? "Gelesen" : "Neu"}
                 </Badge>
@@ -575,7 +575,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
             <Button
               onClick={() => openApproveDialog(currentApplication!)}
               disabled={actionLoading}
-              className="rounded-xl bg-gray-950 text-white font-black hover:bg-gray-800"
+              className="rounded-xl bg-background text-white font-semibold hover:bg-background"
             >
               <UserCheck className="h-4 w-4 mr-2" />
               Genehmigen
@@ -600,7 +600,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
           </DialogHeader>
 
           {currentApplication ? (
-            <div className="space-y-2 text-sm text-gray-700">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <div className="font-semibold">
                 {currentApplication.first_name} {currentApplication.last_name}
               </div>
@@ -625,7 +625,7 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
             <Button
               onClick={handleApproveConfirm}
               disabled={!currentApplication || actionLoading}
-              className="rounded-xl bg-gray-950 text-white font-black hover:bg-gray-800"
+              className="rounded-xl bg-background text-white font-semibold hover:bg-background"
             >
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
               Genehmigen & übernehmen
@@ -646,10 +646,10 @@ export function PlayerApplicationsList({ onDataChanged }: PlayerApplicationsList
 
           {currentApplication && (
             <div className="py-4">
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-muted-foreground">
                 <strong>Name:</strong> {currentApplication.first_name} {currentApplication.last_name}
               </p>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-muted-foreground">
                 <strong>E-Mail:</strong> {currentApplication.email}
               </p>
               {actionMessage ? <div className="mt-4"><ActionBanner /></div> : null}

@@ -344,18 +344,18 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
 
   if (loading)
     return (
-      <div className="flex h-full items-center justify-center text-white/35">
+      <div className="flex h-full items-center justify-center text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
       </div>
     );
 
   return (
     <div className="h-full overflow-y-auto bg-[#0b1117] pb-8">
-      <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-[#171f27]/95 px-4 py-4 backdrop-blur-xl">
+      <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-[#171f27]/95 px-4 py-4 ">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-xl font-black text-white">Aktuell</div>
-            <div className="mt-1 text-xs text-white/40">Wichtiges, Termine und was du noch erledigen musst</div>
+            <div className="text-xl font-semibold text-white">Aktuell</div>
+            <div className="mt-1 text-xs text-muted-foreground">Wichtiges, Termine und was du noch erledigen musst</div>
           </div>
           {actionCount > 0 ? (
             <Badge className="bg-orange-500/15 text-orange-200">{actionCount} offen</Badge>
@@ -369,7 +369,7 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
         <section>
           <div className="mb-3 flex items-center gap-2 px-1">
             <Sparkles className="h-4 w-4 text-orange-300" />
-            <div className="text-sm font-black text-white">Für dich wichtig</div>
+            <div className="text-sm font-semibold text-white">Für dich wichtig</div>
           </div>
 
           {summaries.length === 0 ? (
@@ -377,8 +377,8 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="h-6 w-6 text-emerald-300" />
                 <div>
-                  <div className="font-black text-white">Nichts offen</div>
-                  <div className="mt-1 text-sm text-white/40">Aktuell gibt es keine offenen Ligathemen für dich.</div>
+                  <div className="font-semibold text-white">Nichts offen</div>
+                  <div className="mt-1 text-sm text-muted-foreground">Aktuell gibt es keine offenen Ligathemen für dich.</div>
                 </div>
               </div>
             </div>
@@ -399,20 +399,20 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
                     <div className="border-b border-white/[0.06] p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="text-[10px] font-black uppercase tracking-[.14em] text-orange-300/70">
+                          <div className="text-xs font-semibold uppercase tracking-[.14em] text-orange-300/70">
                             {idx === 0 ? "Nächstes Spiel" : `Spieltag ${s.match.week_number}`}
                           </div>
-                          <div className="mt-1 truncate text-[15px] font-black text-white">
+                          <div className="mt-1 truncate text-[15px] font-semibold text-white">
                             {home || "Unbekannt"} <span className="text-white/25">vs.</span> {away || "Unbekannt"}
                           </div>
-                          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-white/45">
+                          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                             <span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-orange-300" />{fmtDate(s.match.match_date)}</span>
                             {s.match.match_time && <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-orange-300" />{fmtTime(s.match.match_time)}</span>}
                             <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-orange-300" />{s.match.venue || "—"}</span>
                           </div>
                         </div>
                         <Badge
-                          className={`shrink-0 whitespace-nowrap px-3 py-1 text-xs font-black ${
+                          className={`shrink-0 whitespace-nowrap px-3 py-1 text-xs font-semibold ${
                             s.lineupConfirmed
                               ? "bg-emerald-500/15 text-emerald-200"
                               : !s.myStatus
@@ -444,8 +444,8 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
                         <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-3">
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <div className="text-xs font-black text-white/40">DEINE ZUSAGE</div>
-                              <div className="mt-1 text-sm font-black text-white">
+                              <div className="text-xs font-semibold text-muted-foreground">DEINE ZUSAGE</div>
+                              <div className="mt-1 text-sm font-semibold text-white">
                                 {s.myStatus === "yes" ? "Ja, ich bin dabei" : s.myStatus === "maybe" ? "Nur wenn nötig" : s.myStatus === "no" ? "Nein" : "Noch nicht beantwortet"}
                               </div>
                             </div>
@@ -453,9 +453,9 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
                           </div>
                           {!s.myStatus && (
                             <div className="mt-3 grid grid-cols-3 gap-2">
-                              <Button disabled={saving === key} onClick={() => setMyStatus(s, "yes")} className="h-9 rounded-xl bg-emerald-500/15 text-xs font-black text-emerald-200 hover:bg-emerald-500/25">Ja</Button>
-                              <Button disabled={saving === key} onClick={() => setMyStatus(s, "maybe")} className="h-9 rounded-xl bg-amber-500/15 text-xs font-black text-amber-200 hover:bg-amber-500/25">Wenn nötig</Button>
-                              <Button disabled={saving === key} onClick={() => setMyStatus(s, "no")} className="h-9 rounded-xl bg-red-500/15 text-xs font-black text-red-200 hover:bg-red-500/25">Nein</Button>
+                              <Button disabled={saving === key} onClick={() => setMyStatus(s, "yes")} className="h-9 rounded-xl bg-emerald-500/15 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/25">Ja</Button>
+                              <Button disabled={saving === key} onClick={() => setMyStatus(s, "maybe")} className="h-9 rounded-xl bg-amber-500/15 text-xs font-semibold text-amber-200 hover:bg-amber-500/25">Wenn nötig</Button>
+                              <Button disabled={saving === key} onClick={() => setMyStatus(s, "no")} className="h-9 rounded-xl bg-red-500/15 text-xs font-semibold text-red-200 hover:bg-red-500/25">Nein</Button>
                             </div>
                           )}
                         </div>
@@ -465,10 +465,10 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
                         <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-3">
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="flex items-center gap-1.5 text-xs font-black text-white/40"><Users className="h-3.5 w-3.5" />TEAM-RÜCKMELDUNGEN</div>
-                              <div className="mt-1 text-sm font-black text-white">{s.open > 0 ? `${s.open} noch offen` : "Alle haben geantwortet"}</div>
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Users className="h-3.5 w-3.5" />TEAM-RÜCKMELDUNGEN</div>
+                              <div className="mt-1 text-sm font-semibold text-white">{s.open > 0 ? `${s.open} noch offen` : "Alle haben geantwortet"}</div>
                             </div>
-                            <div className="text-right text-[11px] font-bold text-white/45"><span className="text-emerald-300">{s.yes} Ja</span> · <span className="text-amber-300">{s.maybe} ?</span> · <span className="text-red-300">{s.no} Nein</span></div>
+                            <div className="text-right text-xs font-bold text-muted-foreground"><span className="text-emerald-300">{s.yes} Ja</span> · <span className="text-amber-300">{s.maybe} ?</span> · <span className="text-red-300">{s.no} Nein</span></div>
                           </div>
                           {captain && s.open > 0 && <div className="mt-2 text-xs font-semibold text-orange-200/75">Captain/Co: Rückmeldungen fehlen noch.</div>}
                         </div>
@@ -477,13 +477,13 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
                       <div className="rounded-2xl border border-white/[0.06] bg-black/20 p-3">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <div className="flex items-center gap-1.5 text-xs font-black text-white/40"><ShieldCheck className="h-3.5 w-3.5" />AUFSTELLUNG</div>
-                            <div className={`mt-1 text-sm font-black ${s.lineupConfirmed ? "text-emerald-200" : "text-white"}`}>{s.lineupConfirmed ? "Bestätigt ✓" : "Noch nicht bestätigt"}</div>
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5" />AUFSTELLUNG</div>
+                            <div className={`mt-1 text-sm font-semibold ${s.lineupConfirmed ? "text-emerald-200" : "text-white"}`}>{s.lineupConfirmed ? "Bestätigt ✓" : "Noch nicht bestätigt"}</div>
                           </div>
-                          <Button variant="ghost" onClick={onOpenLineup} className="h-9 rounded-xl px-3 text-xs font-black text-orange-300 hover:bg-orange-500/10">Öffnen <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                          <Button variant="ghost" onClick={onOpenLineup} className="h-9 rounded-xl px-3 text-xs font-semibold text-orange-300 hover:bg-orange-500/10">Öffnen <ChevronRight className="ml-1 h-4 w-4" /></Button>
                         </div>
                         {s.lineupConfirmed && s.starters.length > 0 && (
-                          <div className="mt-2 text-xs leading-5 text-white/50">
+                          <div className="mt-2 text-xs leading-5 text-muted-foreground">
                             <span className="font-bold text-white/65">Starter:</span> {s.starters.join(" · ")}
                             {s.subs.length ? <><br /><span className="font-bold text-white/65">Ersatz:</span> {s.subs.join(" · ")}</> : null}
                           </div>
@@ -499,7 +499,7 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
 
         {todayItems.length > 0 && (
           <section>
-            <div className="mb-3 flex items-center gap-2 px-1"><Target className="h-4 w-4 text-emerald-300" /><div className="text-sm font-black text-white">Heute</div></div>
+            <div className="mb-3 flex items-center gap-2 px-1"><Target className="h-4 w-4 text-emerald-300" /><div className="text-sm font-semibold text-white">Heute</div></div>
             <div className="space-y-2">
               {todayItems.map((item) => <CalendarFeedCard key={item.id} item={item} />)}
             </div>
@@ -507,9 +507,9 @@ export default function ChatUpdatesPanel({ onOpenLineup }: { onOpenLineup: () =>
         )}
 
         <section>
-          <div className="mb-3 flex items-center gap-2 px-1"><CalendarDays className="h-4 w-4 text-sky-300" /><div className="text-sm font-black text-white">Demnächst</div></div>
+          <div className="mb-3 flex items-center gap-2 px-1"><CalendarDays className="h-4 w-4 text-sky-300" /><div className="text-sm font-semibold text-white">Demnächst</div></div>
           {upcomingItems.length === 0 ? (
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 text-sm text-white/40">In den nächsten Wochen ist im Vereinskalender nichts Weiteres eingetragen.</div>
+            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 text-sm text-muted-foreground">In den nächsten Wochen ist im Vereinskalender nichts Weiteres eingetragen.</div>
           ) : (
             <div className="space-y-2">
               {upcomingItems.map((item) => <CalendarFeedCard key={item.id} item={item} />)}
@@ -530,15 +530,15 @@ function CalendarFeedCard({ item }: { item: CalendarFeedItem }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0 text-sm font-black text-white">{item.title}</div>
+            <div className="min-w-0 text-sm font-semibold text-white">{item.title}</div>
             <FeedBadge kind={item.kind} />
           </div>
-          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-white/45">
+          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-orange-300/80" />{fmtDate(item.date)}</span>
             {item.time ? <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-orange-300/80" />{fmtTime(item.time)}</span> : null}
             {item.location ? <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-orange-300/80" />{item.location}</span> : null}
           </div>
-          {item.description ? <div className="mt-2 line-clamp-2 text-xs leading-5 text-white/40">{item.description}</div> : null}
+          {item.description ? <div className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{item.description}</div> : null}
         </div>
       </div>
     </div>

@@ -26,15 +26,15 @@ export function DeleteModal({ isOpen, onClose, onConfirm, type }: DeleteModalPro
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md border-0 shadow-2xl bg-white">
+      <DialogContent className="sm:max-w-md border-0 shadow-2xl bg-card">
         <DialogHeader>
-          <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl mx-auto mb-4 shadow-lg">
+          <div className="text-foreground flex items-center justify-center w-16 h-16 bg-card   rounded-2xl mx-auto mb-4 shadow-lg">
             <AlertTriangle className="h-8 w-8 text-white" />
           </div>
-          <DialogTitle className="text-2xl font-bold text-center text-gray-900">
+          <DialogTitle className="text-2xl font-bold text-center text-foreground">
             {type === "post" ? "Beitrag löschen?" : "Kommentar löschen?"}
           </DialogTitle>
-          <DialogDescription className="text-center text-gray-600 text-base pt-2">
+          <DialogDescription className="text-center text-muted-foreground text-base pt-2">
             {type === "post"
               ? "Möchtest du diesen Beitrag wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
               : "Möchtest du diesen Kommentar wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."}
@@ -44,13 +44,13 @@ export function DeleteModal({ isOpen, onClose, onConfirm, type }: DeleteModalPro
           <Button
             variant="outline"
             onClick={onClose}
-            className="w-full sm:w-auto border-2 border-gray-300 hover:bg-gray-50 font-semibold bg-transparent"
+            className="w-full sm:w-auto border-2 border-border hover:bg-muted font-semibold bg-transparent"
           >
             Abbrechen
           </Button>
           <Button
             onClick={handleConfirm}
-            className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold shadow-lg"
+            className="w-full sm:w-auto bg-card     text-white font-bold shadow-lg"
           >
             Ja, löschen
           </Button>

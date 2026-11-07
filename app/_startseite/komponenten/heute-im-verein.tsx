@@ -27,13 +27,13 @@ export function HeuteImVerein({
 
   return (
     <div className="mx-auto mt-3 w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-8 xl:px-10">
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg emd-saas-card">
-        <div className="h-1.5 bg-gradient-to-r from-slate-900 via-orange-500 to-slate-900" />
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg emd-saas-card">
+        <div className="text-foreground h-1.5 bg-card   " />
 
         <div className="p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-orange-50">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-orange-50">
                 <Calendar className="h-6 w-6 text-orange-700" />
               </div>
 
@@ -42,7 +42,7 @@ export function HeuteImVerein({
                   Heute im Verein
                 </div>
 
-                <div className="text-lg font-semibold text-gray-900 sm:text-xl emd-saas-heading">
+                <div className="text-lg font-semibold text-foreground sm:text-xl emd-saas-heading">
                   {events.length === 1
                     ? events[0].name
                     : `${events.length} Veranstaltungen heute`}
@@ -52,13 +52,13 @@ export function HeuteImVerein({
                   {events.map((event) => (
                     <div
                       key={`${event.type}-${event.id}`}
-                      className="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 emd-saas-card"
+                      className="rounded-2xl border border-border bg-muted/80 px-3 py-2.5 emd-saas-card"
                     >
-                      <div className="text-sm font-semibold text-gray-900 emd-saas-copy">
+                      <div className="text-sm font-semibold text-foreground emd-saas-copy">
                         {event.name}
                       </div>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-gray-600 emd-saas-copy">
+                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold text-muted-foreground emd-saas-copy">
                         <span className="inline-flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5 text-orange-700" />
                           {ensureUhr(event.time)}
@@ -76,7 +76,7 @@ export function HeuteImVerein({
                         )}
 
                         {event.type === "event" && event.eventType && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 font-semibold text-slate-800 emd-saas-card emd-saas-tag">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 font-semibold text-foreground emd-saas-card emd-saas-tag">
                             {getEventTypeLabel(event.eventType)}
                           </span>
                         )}
@@ -89,7 +89,7 @@ export function HeuteImVerein({
 
             <Button
               type="button"
-              className="w-full rounded-xl bg-slate-950 font-semibold text-white shadow-sm hover:bg-slate-800 sm:w-auto"
+              className="w-full rounded-xl bg-background font-semibold text-white shadow-sm hover:bg-background sm:w-auto"
               onClick={() => {
                 if (events.length === 1) {
                   window.location.href = getDetailsHref(events[0])

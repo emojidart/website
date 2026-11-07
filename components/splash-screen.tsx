@@ -27,7 +27,7 @@ export function SplashScreen() {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 flex items-center justify-center transition-opacity duration-700 ${
+      className={`text-foreground fixed inset-0 z-[9999] bg-card    flex items-center justify-center transition-opacity duration-700 ${
         isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
@@ -46,10 +46,10 @@ export function SplashScreen() {
         </div>
 
         <div className="animate-splash-text-enter text-center">
-          <h1 className="text-2xl sm:text-4xl font-black text-white text-shadow">
+          <h1 className="text-2xl sm:text-4xl font-semibold text-white text-shadow">
             Offizielle Website des EMD
           </h1>
-          
+
         </div>
 
         {/* Ladebalken (wie SplashIntro) */}

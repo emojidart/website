@@ -35,7 +35,7 @@ export function PlayerProfileCard({ player, rank, className }: PlayerProfileCard
       <CardHeader className="text-center pb-4">
         <div className="flex flex-col items-center space-y-4">
           <div className="relative">
-            <div className="h-24 w-24 rounded-full overflow-hidden border-4 border-red-500 bg-gray-200 flex items-center justify-center">
+            <div className="h-24 w-24 rounded-full overflow-hidden border-4 border-red-500 bg-secondary flex items-center justify-center">
               {player.profile_picture_url ? (
                 <Image
                   src={player.profile_picture_url || "/placeholder.svg"}
@@ -46,22 +46,22 @@ export function PlayerProfileCard({ player, rank, className }: PlayerProfileCard
                   unoptimized={true}
                 />
               ) : (
-                <span className="text-4xl font-bold text-gray-600">{player.player_name.charAt(0).toUpperCase()}</span>
+                <span className="text-4xl font-bold text-muted-foreground">{player.player_name.charAt(0).toUpperCase()}</span>
               )}
             </div>
-            <div className="absolute -bottom-2 -right-2 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-sm shadow-lg">
+            <div className="absolute -bottom-2 -right-2 bg-card   text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-sm shadow-lg">
               #{rank}
             </div>
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-gray-900">{player.player_name}</CardTitle>
-            <p className="text-sm text-gray-500 mt-1">Rang {rank} in der Gesamtwertung</p>
+            <CardTitle className="text-2xl font-bold text-foreground">{player.player_name}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">Rang {rank} in der Gesamtwertung</p>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Total Score */}
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border-2 border-yellow-300">
+        <div className="text-foreground bg-card   rounded-lg p-4 border-2 border-yellow-300">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Trophy className="h-5 w-5 text-yellow-600" />
@@ -89,42 +89,42 @@ export function PlayerProfileCard({ player, rank, className }: PlayerProfileCard
 
         {/* Statistics */}
         <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+          <div className="flex items-center justify-between py-2 border-b border-border">
             <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Antritte</span>
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Antritte</span>
             </div>
-            <span className="font-semibold text-gray-900">{player.tournaments_played}</span>
+            <span className="font-semibold text-foreground">{player.tournaments_played}</span>
           </div>
 
-          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+          <div className="flex items-center justify-between py-2 border-b border-border">
             <div className="flex items-center space-x-2">
-              <Target className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Matches gespielt</span>
+              <Target className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Matches gespielt</span>
             </div>
-            <span className="font-semibold text-gray-900">{player.total_matches_played}</span>
+            <span className="font-semibold text-foreground">{player.total_matches_played}</span>
           </div>
 
-          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+          <div className="flex items-center justify-between py-2 border-b border-border">
             <div className="flex items-center space-x-2">
-              <Award className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Matches gewonnen</span>
+              <Award className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Matches gewonnen</span>
             </div>
             <span className="font-semibold text-green-600">{player.total_matches_won}</span>
           </div>
 
-          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+          <div className="flex items-center justify-between py-2 border-b border-border">
             <div className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Siegrate</span>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Siegrate</span>
             </div>
-            <span className="font-semibold text-gray-900">{winRate}%</span>
+            <span className="font-semibold text-foreground">{winRate}%</span>
           </div>
 
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center space-x-2">
-              <Trophy className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Leg-Differenz</span>
+              <Trophy className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Leg-Differenz</span>
             </div>
             <span className={`font-semibold ${legDifference >= 0 ? "text-green-600" : "text-red-600"}`}>
               {legDifference >= 0 ? "+" : ""}

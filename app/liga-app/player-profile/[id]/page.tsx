@@ -139,7 +139,7 @@ export default function PlayerProfilePage() {
         achieved: stats.throws_180 >= 25,
         progress: stats.throws_180,
         target: 25,
-        color: "bg-gray-400",
+        color: "bg-accent",
       },
       {
         id: "ton_80_gold",
@@ -217,7 +217,7 @@ export default function PlayerProfilePage() {
         achieved: stats.throws_95_plus >= 50,
         progress: stats.throws_95_plus,
         target: 50,
-        color: "bg-gray-400",
+        color: "bg-accent",
       },
       {
         id: "high_finish_gold",
@@ -243,7 +243,7 @@ export default function PlayerProfilePage() {
         description: "70% Siegquote erreicht",
         icon: <Star className="h-6 w-6" />,
         achieved: stats.win_percentage >= 70,
-        color: "bg-gray-400",
+        color: "bg-accent",
       },
       {
         id: "winner_gold",
@@ -269,7 +269,7 @@ export default function PlayerProfilePage() {
         achieved: stats.total_legs >= 10,
         progress: stats.total_legs,
         target: 10,
-        color: "bg-slate-500",
+        color: "bg-accent",
       },
       {
         id: "veteran",
@@ -344,7 +344,7 @@ export default function PlayerProfilePage() {
         icon: <Crown className="h-6 w-6" />,
         achieved:
           stats.throws_180 >= 1 && stats.throws_tonne >= 1 && stats.throws_shanghai >= 1 && stats.throws_bull >= 1,
-        color: "bg-gradient-to-r from-purple-500 to-pink-500",
+        color: "text-foreground bg-card  ",
       },
       {
         id: "perfectionist",
@@ -353,7 +353,7 @@ export default function PlayerProfilePage() {
         icon: <Crown className="h-6 w-6" />,
         achieved:
           stats.throws_180 >= 10 && stats.throws_tonne >= 10 && stats.throws_shanghai >= 10 && stats.throws_bull >= 10,
-        color: "bg-gradient-to-r from-blue-500 to-purple-500",
+        color: "text-foreground bg-card  ",
       },
       {
         id: "century_180",
@@ -363,7 +363,7 @@ export default function PlayerProfilePage() {
         achieved: stats.throws_180 >= 100,
         progress: stats.throws_180,
         target: 100,
-        color: "bg-gradient-to-r from-red-500 to-orange-500",
+        color: "text-foreground bg-card  ",
       },
       {
         id: "win_streak_master",
@@ -373,7 +373,7 @@ export default function PlayerProfilePage() {
         achieved: stats.total_wins >= 100,
         progress: stats.total_wins,
         target: 100,
-        color: "bg-gradient-to-r from-green-500 to-emerald-500",
+        color: "text-foreground bg-card  ",
       },
     ]
 
@@ -393,14 +393,14 @@ export default function PlayerProfilePage() {
     return (
       <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden text-white">
         <Header />
-        <main className="mx-auto w-full max-w-[1680px] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
+        <main className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
           <div className="flex min-h-[55vh] items-center justify-center">
-            <div className="w-full max-w-md rounded-[28px] border border-white/[0.08] bg-black/25 p-8 text-center shadow-[0_30px_90px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+            <div className="w-full max-w-md rounded-[28px] border border-white/[0.08] bg-card p-8 text-center shadow-[0_30px_90px_-55px_rgba(0,0,0,.95)] ">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[20px] border border-orange-300/[0.14] bg-orange-500/[0.08]">
                 <Target className="h-7 w-7 animate-pulse text-orange-300" />
               </div>
-              <div className="mt-5 text-lg font-black text-white">Spielerdaten werden geladen</div>
-              <div className="mt-1 text-sm font-semibold text-white/40">Einen Moment bitte …</div>
+              <div className="mt-5 text-lg font-semibold text-white">Spielerdaten werden geladen</div>
+              <div className="mt-1 text-sm font-semibold text-muted-foreground">Einen Moment bitte …</div>
             </div>
           </div>
         </main>
@@ -413,13 +413,13 @@ export default function PlayerProfilePage() {
     return (
       <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden text-white">
         <Header />
-        <main className="mx-auto w-full max-w-[1680px] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
+        <main className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
           <div className="flex min-h-[55vh] items-center justify-center">
-            <div className="w-full max-w-md rounded-[28px] border border-white/[0.08] bg-black/25 p-8 text-center shadow-[0_30px_90px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+            <div className="w-full max-w-md rounded-[28px] border border-white/[0.08] bg-card p-8 text-center shadow-[0_30px_90px_-55px_rgba(0,0,0,.95)] ">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[20px] border border-red-300/[0.14] bg-red-500/[0.08]">
                 <User className="h-7 w-7 text-red-200" />
               </div>
-              <div className="mt-5 text-lg font-black text-white">Spieler nicht gefunden</div>
+              <div className="mt-5 text-lg font-semibold text-white">Spieler nicht gefunden</div>
               <Button
                 variant="outline"
                 onClick={() => router.push("/liga-statistiken-app")}
@@ -471,25 +471,25 @@ export default function PlayerProfilePage() {
     <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden text-white">
       <Header />
 
-      <main className="mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+      <main className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         {/* TOP BAR */}
         <div className="mb-4 flex items-center justify-between gap-3">
           <Button
             variant="outline"
             onClick={() => router.push("/liga-statistiken-app")}
-            className="h-10 rounded-xl border-white/10 bg-black/25 px-3 font-bold text-white/70 backdrop-blur-xl hover:bg-white/[0.07] hover:text-white"
+            className="h-10 rounded-xl border-white/10 bg-card px-3 font-bold text-white/70  hover:bg-white/[0.07] hover:text-white"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Liga & Statistiken
           </Button>
 
-          <div className="hidden rounded-full border border-white/[0.08] bg-black/25 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/35 backdrop-blur-xl sm:block">
+          <div className="hidden rounded-full border border-white/[0.08] bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground  sm:block">
             Spielerprofil
           </div>
         </div>
 
         {/* HERO - bewusst komplett anderes Layout als davor */}
-        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-black/30 shadow-[0_40px_130px_-62px_rgba(0,0,0,.98)] backdrop-blur-2xl sm:rounded-[36px]">
+        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-card shadow-[0_40px_130px_-62px_rgba(0,0,0,.98)]  sm:rounded-[36px]">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(125deg,rgba(249,115,22,.10),transparent_34%,rgba(14,165,233,.07)_78%,transparent)]" />
           <div className="pointer-events-none absolute -left-28 top-[-150px] h-[420px] w-[420px] rounded-full bg-orange-500/14 blur-[135px]" />
           <div className="pointer-events-none absolute -right-28 bottom-[-160px] h-[430px] w-[430px] rounded-full bg-sky-500/11 blur-[140px]" />
@@ -520,19 +520,19 @@ export default function PlayerProfilePage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/15 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-black/35" />
 
               <div className="absolute bottom-5 left-5 right-5 lg:hidden">
-                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/80">Liga Spieler</div>
-                <h1 className="mt-1 text-3xl font-black leading-none tracking-[-0.05em] text-white">{player.name}</h1>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/80">Liga Spieler</div>
+                <h1 className="mt-1 text-3xl font-semibold leading-none tracking-[-0.05em] text-white">{player.name}</h1>
               </div>
             </div>
 
             {/* Content */}
             <div className="p-4 sm:p-6 lg:p-8 xl:p-10">
               <div className="hidden lg:block">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/80">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/80">
                   <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
                   Liga Spieler
                 </div>
-                <h1 className="mt-4 text-[clamp(2.4rem,4vw,4.4rem)] font-black leading-[0.92] tracking-[-0.065em] text-white">
+                <h1 className="mt-4 text-[clamp(2.4rem,4vw,4.4rem)] font-semibold leading-[0.92] tracking-[-0.065em] text-white">
                   {player.name}
                 </h1>
                 <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-white/48 sm:text-base">
@@ -543,47 +543,47 @@ export default function PlayerProfilePage() {
               {/* Hauptkennzahlen */}
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:mt-9">
                 <div className="rounded-[20px] border border-emerald-300/[0.12] bg-emerald-500/[0.07] p-3.5 sm:p-4">
-                  <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35">Siege</div>
-                  <div className="mt-2 text-2xl font-black text-emerald-200 sm:text-3xl">{player.total_wins}</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Siege</div>
+                  <div className="mt-2 text-2xl font-semibold text-emerald-200 sm:text-3xl">{player.total_wins}</div>
                 </div>
 
                 <div className="rounded-[20px] border border-orange-300/[0.12] bg-orange-500/[0.07] p-3.5 sm:p-4">
-                  <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35">Siegquote</div>
-                  <div className="mt-2 text-2xl font-black text-orange-200 sm:text-3xl">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Siegquote</div>
+                  <div className="mt-2 text-2xl font-semibold text-orange-200 sm:text-3xl">
                     {player.win_percentage.toFixed(1)}%
                   </div>
                 </div>
 
                 <div className="rounded-[20px] border border-sky-300/[0.12] bg-sky-500/[0.07] p-3.5 sm:p-4">
-                  <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35">Legs</div>
-                  <div className="mt-2 text-2xl font-black text-sky-200 sm:text-3xl">{player.total_legs}</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Legs</div>
+                  <div className="mt-2 text-2xl font-semibold text-sky-200 sm:text-3xl">{player.total_legs}</div>
                 </div>
 
                 <div className="rounded-[20px] border border-violet-300/[0.12] bg-violet-500/[0.07] p-3.5 sm:p-4">
-                  <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35">Abzeichen</div>
-                  <div className="mt-2 text-2xl font-black text-violet-200 sm:text-3xl">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Abzeichen</div>
+                  <div className="mt-2 text-2xl font-semibold text-violet-200 sm:text-3xl">
                     {achievedCount}
-                    <span className="ml-1 text-sm text-white/30">/{achievements.length}</span>
+                    <span className="ml-1 text-sm text-muted-foreground">/{achievements.length}</span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/30">180er</div>
-                  <div className="mt-1 text-lg font-black text-white">{player.throws_180}</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">180er</div>
+                  <div className="mt-1 text-lg font-semibold text-white">{player.throws_180}</div>
                 </div>
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/30">Tonnen</div>
-                  <div className="mt-1 text-lg font-black text-white">{player.throws_tonne}</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Tonnen</div>
+                  <div className="mt-1 text-lg font-semibold text-white">{player.throws_tonne}</div>
                 </div>
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/30">95+</div>
-                  <div className="mt-1 text-lg font-black text-white">{player.throws_95_plus}</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">95+</div>
+                  <div className="mt-1 text-lg font-semibold text-white">{player.throws_95_plus}</div>
                 </div>
                 <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/30">Bull</div>
-                  <div className="mt-1 text-lg font-black text-white">{player.throws_bull}</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Bull</div>
+                  <div className="mt-1 text-lg font-semibold text-white">{player.throws_bull}</div>
                 </div>
               </div>
             </div>
@@ -593,18 +593,18 @@ export default function PlayerProfilePage() {
         {/* Scores */}
         <section className="mt-5">
           <div className="mb-3">
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300/70">Performance</div>
-            <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">High & Special Scores</h2>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-300/70">Performance</div>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">High & Special Scores</h2>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
             {scoreRows.map((item) => (
               <div
                 key={item.label}
-                className={`rounded-[20px] border p-4 backdrop-blur-xl ${toneClasses[item.tone]}`}
+                className={`rounded-[20px] border p-4  ${toneClasses[item.tone]}`}
               >
-                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/35">{item.label}</div>
-                <div className="mt-2 text-2xl font-black">{item.value}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{item.label}</div>
+                <div className="mt-2 text-2xl font-semibold">{item.value}</div>
               </div>
             ))}
           </div>
@@ -612,34 +612,34 @@ export default function PlayerProfilePage() {
 
         {/* Segmente + Erfolge */}
         <section className="mt-5 grid gap-5 xl:grid-cols-[390px_minmax(0,1fr)]">
-          <div className="rounded-[26px] border border-white/[0.08] bg-black/25 p-4 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-5">
+          <div className="rounded-[26px] border border-white/[0.08] bg-card p-4 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)]  sm:p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-300/[0.12] bg-amber-500/[0.07]">
                 <Target className="h-5 w-5 text-amber-200" />
               </div>
               <div>
-                <div className="text-lg font-black text-white">Segment-Statistik</div>
-                <div className="text-xs font-semibold text-white/35">15 bis 20</div>
+                <div className="text-lg font-semibold text-white">Segment-Statistik</div>
+                <div className="text-xs font-semibold text-muted-foreground">15 bis 20</div>
               </div>
             </div>
 
             <div className="mt-4 grid grid-cols-3 gap-2">
               {segmentRows.map((item) => (
                 <div key={item.label} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-3 text-center">
-                  <div className="text-xl font-black text-amber-200">{item.value}</div>
-                  <div className="mt-1 text-[10px] font-bold text-white/35">{item.label}</div>
+                  <div className="text-xl font-semibold text-amber-200">{item.value}</div>
+                  <div className="mt-1 text-xs font-bold text-muted-foreground">{item.label}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-[26px] border border-white/[0.08] bg-black/25 p-4 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl sm:p-5">
+          <div className="rounded-[26px] border border-white/[0.08] bg-card p-4 shadow-[0_22px_64px_-46px_rgba(0,0,0,.95)]  sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-300/70">Achievements</div>
-                <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Erfolge & Abzeichen</h2>
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300/70">Achievements</div>
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">Erfolge & Abzeichen</h2>
               </div>
-              <div className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-black text-white/50">
+              <div className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-semibold text-muted-foreground">
                 {achievedCount}/{achievements.length}
               </div>
             </div>
@@ -661,8 +661,8 @@ export default function PlayerProfilePage() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-black text-white">{achievement.title}</div>
-                      <div className="mt-0.5 line-clamp-2 text-xs font-semibold leading-5 text-white/40">
+                      <div className="truncate text-sm font-semibold text-white">{achievement.title}</div>
+                      <div className="mt-0.5 line-clamp-2 text-xs font-semibold leading-5 text-muted-foreground">
                         {achievement.description}
                       </div>
                     </div>
@@ -670,7 +670,7 @@ export default function PlayerProfilePage() {
 
                   {achievement.progress !== undefined && achievement.target ? (
                     <div className="mt-3">
-                      <div className="mb-1.5 flex items-center justify-between text-[10px] font-bold text-white/35">
+                      <div className="mb-1.5 flex items-center justify-between text-xs font-bold text-muted-foreground">
                         <span>Fortschritt</span>
                         <span>{achievement.progress}/{achievement.target}</span>
                       </div>

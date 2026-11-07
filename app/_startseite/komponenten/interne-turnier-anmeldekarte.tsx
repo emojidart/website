@@ -18,7 +18,7 @@ export function InterneTurnierAnmeldekarte({
   return (
     <Link
       href={`/internal-events/${event.id}`}
-      className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md emd-saas-card"
+      className="group overflow-hidden rounded-[26px] border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md emd-saas-card"
     >
       <div className="grid h-full sm:grid-cols-[240px_1fr]">
         <div className="relative overflow-hidden bg-black">
@@ -31,7 +31,7 @@ export function InterneTurnierAnmeldekarte({
               />
             </div>
           ) : (
-            <div className="flex aspect-video min-h-[170px] items-center justify-center bg-gradient-to-br from-slate-950 to-orange-950">
+            <div className="text-foreground flex aspect-video min-h-[170px] items-center justify-center bg-card  ">
               <Trophy className="h-14 w-14 text-orange-400" />
             </div>
           )}
@@ -41,19 +41,19 @@ export function InterneTurnierAnmeldekarte({
           </div>
         </div>
 
-        <div className="relative z-10 flex min-w-0 flex-col justify-between bg-white p-5">
+        <div className="relative z-10 flex min-w-0 flex-col justify-between bg-card p-5">
           <div>
-            <div className="text-xl font-semibold leading-tight text-slate-950 emd-saas-heading">
+            <div className="text-xl font-semibold leading-tight text-foreground emd-saas-heading">
               {event.title}
             </div>
 
             {event.subtitle ? (
-              <div className="mt-1 text-sm font-semibold text-slate-500 emd-saas-copy">
+              <div className="mt-1 text-sm font-semibold text-muted-foreground emd-saas-copy">
                 {event.subtitle}
               </div>
             ) : null}
 
-            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-slate-500 emd-saas-copy">
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-muted-foreground emd-saas-copy">
               <span className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 text-orange-600" />
                 {formatInternalEventDateRange(
@@ -98,13 +98,13 @@ export function InterneTurnierAnmeldekarte({
                       Auslosung
                     </div>
 
-                    <div className="mt-1 text-sm font-semibold text-slate-950 emd-saas-copy">
+                    <div className="mt-1 text-sm font-semibold text-foreground emd-saas-copy">
                       {event.draw_datetime
                         ? formatInternalEventDrawDateTime(event.draw_datetime)
                         : "Termin folgt"}
                     </div>
 
-                    <div className="mt-0.5 text-xs font-bold text-slate-600 emd-saas-copy">
+                    <div className="mt-0.5 text-xs font-bold text-muted-foreground emd-saas-copy">
                       {event.draw_mode === "onsite" ? "Live vor Ort" : "Online"}
                       {event.draw_mode === "onsite" &&
                       event.draw_attendance_required
@@ -118,7 +118,7 @@ export function InterneTurnierAnmeldekarte({
                       Turnier
                     </div>
 
-                    <div className="mt-1 text-sm font-semibold text-slate-950 emd-saas-copy">
+                    <div className="mt-1 text-sm font-semibold text-foreground emd-saas-copy">
                       {formatInternalEventDateRange(
                         event.event_date,
                         event.end_date,
@@ -126,7 +126,7 @@ export function InterneTurnierAnmeldekarte({
                       )}
                     </div>
 
-                    <div className="mt-0.5 text-xs font-bold text-slate-600 emd-saas-copy">
+                    <div className="mt-0.5 text-xs font-bold text-muted-foreground emd-saas-copy">
                       {event.start_time
                         ? `Beginn ${event.start_time.slice(0, 5)} Uhr`
                         : "Spieltermine laut Spielplan"}

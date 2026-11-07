@@ -47,16 +47,16 @@ export function PlayerPointsModal({ isOpen, onClose, player, pointsBreakdown }: 
 
         <div className="space-y-6 mt-4">
           {/* Total Points */}
-          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg p-4 border-2 border-amber-200">
+          <div className="text-foreground bg-card   rounded-lg p-4 border-2 border-amber-200">
             <div className="text-center">
-              <div className="text-sm text-gray-600 mb-1">Gesamtpunkte</div>
+              <div className="text-sm text-muted-foreground mb-1">Gesamtpunkte</div>
               <div className="text-4xl font-bold text-amber-600">{pointsBreakdown.totalPoints.toFixed(1)}</div>
             </div>
           </div>
 
           {/* Leg Wins */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
               <Target className="w-4 h-4" />
               Leg-Wins
             </div>
@@ -68,7 +68,7 @@ export function PlayerPointsModal({ isOpen, onClose, player, pointsBreakdown }: 
 
           {/* Special Throws */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
               <Award className="w-4 h-4" />
               Spezielle Würfe
             </div>
@@ -118,7 +118,7 @@ export function PlayerPointsModal({ isOpen, onClose, player, pointsBreakdown }: 
 
           {/* Number Throws */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
               <Target className="w-4 h-4" />
               Standart-Würfe (15-20)
             </div>

@@ -146,7 +146,7 @@ const NumberInput = ({
           size="sm"
           onClick={handleDecrement}
           disabled={value <= min}
-          className="h-9 w-7 sm:h-11 sm:w-9 p-0 rounded-none border-r hover:bg-gray-100 flex-shrink-0"
+          className="h-9 w-7 sm:h-11 sm:w-9 p-0 rounded-none border-r hover:bg-muted flex-shrink-0"
         >
           <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
@@ -164,7 +164,7 @@ const NumberInput = ({
           variant="ghost"
           size="sm"
           onClick={handleIncrement}
-          className="h-9 w-7 sm:h-11 sm:w-9 p-0 rounded-none border-l hover:bg-gray-100 flex-shrink-0"
+          className="h-9 w-7 sm:h-11 sm:w-9 p-0 rounded-none border-l hover:bg-muted flex-shrink-0"
         >
           <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
@@ -698,7 +698,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
       </Card>
 
       {showHeader && (
-        <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+        <Card className="text-foreground border-0 shadow-lg bg-card  ">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
               <Button
@@ -711,7 +711,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
               </Button>
             </div>
             <div className="space-y-3">
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
                 🎯 Spielstatistiken - {teamName} vs {getOpponentName()}
               </h1>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-muted-foreground">
@@ -726,7 +726,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                 )}
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-lg">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-card px-4 py-2 rounded-lg shadow-sm border w-full sm:w-auto">
                   <span className="font-bold text-blue-600">{teamName}</span>
                   <Badge variant="secondary" className="text-lg px-3 py-1 font-bold bg-blue-100 text-blue-800">
                     {getScoreDisplay()}
@@ -739,7 +739,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
         </Card>
       )}
 
-      <Card className="shadow-xl border-0 bg-white">
+      <Card className="shadow-xl border-0 bg-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5" />
@@ -776,7 +776,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
 
           {selectedPlayerId && (
             <Card className="border-2 border-primary/20">
-              <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
+              <CardHeader className="text-foreground bg-card from-primary/5 to-primary/10">
                 <CardTitle className="flex items-center gap-2">🎯 Statistiken für {currentStats.player_name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
@@ -985,7 +985,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                     onClick={savePlayerStats}
                     disabled={loading || !isLegCountValid}
                     className={`min-h-[44px] px-8 ${
-                      isLegCountValid ? "bg-green-600 hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"
+                      isLegCountValid ? "bg-green-700 text-white hover:bg-green-800" : "bg-accent cursor-not-allowed"
                     }`}
                   >
                     <Save className="h-4 w-4 mr-2" />
@@ -998,7 +998,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
 
           {legStats.length > 0 && (
             <Card className="border-2">
-              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b">
+              <CardHeader className="text-foreground bg-card   border-b">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Trophy className="h-6 w-6 text-amber-600" />
                   Eingegebene Statistiken
@@ -1010,11 +1010,11 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
               <CardContent className="p-4 space-y-4">
                 <div className="space-y-4">
                   {legStats.map((stat) => (
-                    <Card key={stat.id} className="border border-slate-200 shadow-sm">
+                    <Card key={stat.id} className="border border-border shadow-sm">
                       <CardContent className="p-4">
                         <div className="space-y-4">
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-3">
-                            <h5 className="font-bold text-xl text-gray-900">{stat.player_name}</h5>
+                            <h5 className="font-bold text-xl text-foreground">{stat.player_name}</h5>
                             <div className="text-sm text-muted-foreground">{formatDate(match.match_date)}</div>
                           </div>
 
@@ -1069,29 +1069,29 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
                                 🎲 Zahlen-Scores
                               </h6>
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                                <div className="flex justify-between items-center p-2 bg-muted rounded">
                                   <span className="text-sm font-medium">15er:</span>
-                                  <span className="text-lg font-bold text-slate-600">{stat.throws_15}</span>
+                                  <span className="text-lg font-bold text-muted-foreground">{stat.throws_15}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                                <div className="flex justify-between items-center p-2 bg-muted rounded">
                                   <span className="text-sm font-medium">16er:</span>
-                                  <span className="text-lg font-bold text-slate-600">{stat.throws_16}</span>
+                                  <span className="text-lg font-bold text-muted-foreground">{stat.throws_16}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                                <div className="flex justify-between items-center p-2 bg-muted rounded">
                                   <span className="text-sm font-medium">17er:</span>
-                                  <span className="text-lg font-bold text-slate-600">{stat.throws_17}</span>
+                                  <span className="text-lg font-bold text-muted-foreground">{stat.throws_17}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                                <div className="flex justify-between items-center p-2 bg-muted rounded">
                                   <span className="text-sm font-medium">18er:</span>
-                                  <span className="text-lg font-bold text-slate-600">{stat.throws_18}</span>
+                                  <span className="text-lg font-bold text-muted-foreground">{stat.throws_18}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                                <div className="flex justify-between items-center p-2 bg-muted rounded">
                                   <span className="text-sm font-medium">19er:</span>
-                                  <span className="text-lg font-bold text-slate-600">{stat.throws_19}</span>
+                                  <span className="text-lg font-bold text-muted-foreground">{stat.throws_19}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                                <div className="flex justify-between items-center p-2 bg-muted rounded">
                                   <span className="text-sm font-medium">20er:</span>
-                                  <span className="text-lg font-bold text-slate-600">{stat.throws_20}</span>
+                                  <span className="text-lg font-bold text-muted-foreground">{stat.throws_20}</span>
                                 </div>
                               </div>
                             </div>
@@ -1155,12 +1155,12 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
               <span className="text-4xl">⚠️</span>
             </div>
             <DialogTitle className="text-xl font-bold text-red-800">Ungültige Leg-Anzahl!</DialogTitle>
-            <DialogDescription className="text-base text-gray-700 mt-4 text-left">
+            <DialogDescription className="text-base text-muted-foreground mt-4 text-left">
               {validationErrorMessage}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="sm:justify-center">
-            <Button onClick={() => setValidationErrorOpen(false)} className="bg-red-600 hover:bg-red-700 px-8">
+            <Button onClick={() => setValidationErrorOpen(false)} className="bg-red-600 hover:bg-red-700 px-8 text-white">
               Verstanden
             </Button>
           </DialogFooter>
@@ -1176,17 +1176,17 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
             <DialogTitle className="text-xl font-bold text-green-800">
               Statistik erfolgreich gespeichert! 🎯
             </DialogTitle>
-            <DialogDescription className="text-base text-gray-600 mt-2">
+            <DialogDescription className="text-base text-muted-foreground mt-2">
               Die Statistiken für <strong className="text-green-700">{savedPlayerName}</strong> wurden erfolgreich
               eingegeben und gespeichert.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="sm:justify-center">
-            <Button onClick={() => setSuccessModalOpen(false)} className="bg-green-600 hover:bg-green-700 px-8">
+            <Button onClick={() => setSuccessModalOpen(false)} className="bg-green-700 hover:bg-green-700 px-8 text-white">
               Perfekt!
             </Button>
           </DialogFooter>
-          <div className="text-center text-xs text-gray-500 mt-2">Schließt automatisch in 3 Sekunden...</div>
+          <div className="text-center text-xs text-muted-foreground mt-2">Schließt automatisch in 3 Sekunden...</div>
         </DialogContent>
       </Dialog>
 

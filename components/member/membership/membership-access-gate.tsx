@@ -48,7 +48,7 @@ export function MembershipAccessGate({
 
     return (
       <div className="flex min-h-[320px] items-center justify-center">
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
+        <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
           Zugriff wird geprüft...
         </div>
@@ -60,10 +60,10 @@ export function MembershipAccessGate({
     return (
       <Card className="mx-auto mt-8 max-w-xl rounded-2xl border-red-200">
         <CardContent className="p-6 text-center">
-          <div className="font-black text-red-700">
+          <div className="font-semibold text-red-700">
             Mitgliedschaft konnte nicht geprüft werden
           </div>
-          <div className="mt-2 text-sm font-semibold text-gray-600">{error}</div>
+          <div className="mt-2 text-sm font-semibold text-muted-foreground">{error}</div>
         </CardContent>
       </Card>
     )
@@ -81,15 +81,15 @@ export function MembershipAccessGate({
   }
 
   return (
-    <Card className="mx-auto mt-8 max-w-xl overflow-hidden rounded-2xl border-orange-200 bg-white shadow-sm">
+    <Card className="mx-auto mt-8 max-w-xl overflow-hidden rounded-2xl border-orange-200 bg-card shadow-sm">
       <CardContent className="p-6 text-center sm:p-8">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
           <LockKeyhole className="h-7 w-7 text-orange-600" />
         </div>
 
-        <h2 className="mt-4 text-xl font-black text-gray-900">{title}</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{title}</h2>
 
-        <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-gray-600">
+        <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-muted-foreground">
           {!hasMembership
             ? "Für dein Konto ist derzeit keine aktive Mitgliedschaft hinterlegt."
             : description}
@@ -97,7 +97,7 @@ export function MembershipAccessGate({
 
         <Button
           asChild
-          className="mt-5 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+          className="mt-5 rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
         >
           <Link href="/member-membership">
             Mitgliedschaft ansehen

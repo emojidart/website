@@ -86,7 +86,7 @@ export function BoardComponent({
           <span>Board {board.id}</span>
           <div className="flex items-center gap-2">
             {board.gameMode && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3 py-1 text-xs font-black tracking-wide text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-background px-3 py-1 text-xs font-semibold tracking-wide text-white">
                 <Dices className="h-3.5 w-3.5 text-orange-400" />
                 {board.gameMode}
               </span>
@@ -99,14 +99,14 @@ export function BoardComponent({
       <CardContent className="p-4">
         {board.gameMode && (
           <div className="mb-4 rounded-2xl border border-orange-300/20 bg-orange-500/[0.08] p-3 text-center">
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300">Runde {currentRound}</div>
-            <div className="mt-0.5 text-lg font-black text-white">{board.gameMode}</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">Runde {currentRound}</div>
+            <div className="mt-0.5 text-lg font-semibold text-white">{board.gameMode}</div>
           </div>
         )}
 
         <div className="mb-4">
           {board.players.length === 0 ? (
-            <p className="text-white/40">Keine Spieler auf diesem Board.</p>
+            <p className="text-muted-foreground">Keine Spieler auf diesem Board.</p>
           ) : (
             <ul className="space-y-2">
               {board.players.map((player) => (
@@ -130,7 +130,7 @@ export function BoardComponent({
 
         {boardStartTime && isGameActive && (
           <div className="mb-4">
-            <p className="text-sm font-medium text-white/40">
+            <p className="text-sm font-medium text-muted-foreground">
               Spiel gestartet: <span className="board-timer font-semibold">Lädt...</span>
             </p>
           </div>
@@ -159,7 +159,7 @@ export function BoardComponent({
               <Mic2 className="mr-2 h-4 w-4" />
               {completedCalls === 0 ? "Spielergruppe aufrufen" : completedCalls === 1 ? "Zweiter Aufruf" : "Letzter Aufruf"}
             </Button>
-            <div className="mt-2 text-center text-[11px] text-white/40">
+            <div className="mt-2 text-center text-xs text-muted-foreground">
               {completedCalls === 3 ? "Letzter Aufruf kann wiederholt werden" : `Aufruf ${completedCalls} von 3 abgeschlossen`}
             </div>
           </div>
@@ -167,10 +167,10 @@ export function BoardComponent({
 
         <div className="flex justify-between gap-3">
           {!isGameActive ? (
-            <Button onClick={handleStartGame} className="w-1/2 rounded-xl border border-white/[0.10] bg-[#11161e] font-black text-white hover:border-orange-300/15 hover:bg-[#171d26]">Start</Button>
+            <Button onClick={handleStartGame} className="w-1/2 rounded-xl border border-white/[0.10] bg-[#11161e] font-semibold text-white hover:border-orange-300/15 hover:bg-[#171d26]">Start</Button>
           ) : (
             <>
-              <Button onClick={handleFinishGame} className="w-1/2 rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400">Beenden</Button>
+              <Button onClick={handleFinishGame} className="w-1/2 rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400">Beenden</Button>
               <Button
                 onClick={handleCancelGame}
                 variant="outline"

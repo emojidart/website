@@ -342,7 +342,7 @@ export default function CalendarPage() {
     } else if (eventType === "Spielfrei") {
       return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Spielfrei</Badge>
     } else {
-      return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Event</Badge>
+      return <Badge className="bg-muted text-foreground border-border">Event</Badge>
     }
   }
 
@@ -361,14 +361,14 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-card">
         <Header />
         <main className="flex-grow pt-8 pb-20">
-          <div className="container mx-auto px-4 max-w-6xl bg-white">
+          <div className="container mx-auto px-4 max-w-6xl bg-card">
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Lade Spieldaten...</p>
+                <p className="text-muted-foreground">Lade Spieldaten...</p>
               </div>
             </div>
           </div>
@@ -378,7 +378,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <Header />
 
       <main className="flex-grow pt-8 pb-20">
@@ -391,18 +391,18 @@ export default function CalendarPage() {
           </div>
 
           <div className="mb-6 lg:mb-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-2 uppercase tracking-wide">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground mb-2 uppercase tracking-wide">
               Vereinskalender
             </h1>
-            <p className="text-gray-600 text-base lg:text-lg">Alle Liga-Spiele und Termine von Emoj!'s Dartverein</p>
+            <p className="text-muted-foreground text-base lg:text-lg">Alle Liga-Spiele und Termine von Emoj!'s Dartverein</p>
           </div>
 
           <div className="mb-6 lg:mb-8">
-            <Card className="shadow-lg border-0 bg-white">
+            <Card className="shadow-lg border-0 bg-card">
               <CardContent className="p-4 lg:p-6">
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-center">
-                    <div className="flex bg-gray-100 rounded-lg p-1">
+                    <div className="flex bg-muted rounded-lg p-1">
                       <Button
                         variant={viewMode === "month" ? "default" : "outline"}
                         size="sm"
@@ -505,7 +505,7 @@ export default function CalendarPage() {
                         setSelectedTeam("Alle Teams")
                         setSelectedResultType("Alle")
                       }}
-                      className="w-full sm:w-auto bg-white hover:bg-gray-50 border-gray-200"
+                      className="w-full sm:w-auto bg-card hover:bg-muted border-border"
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Zurücksetzen
@@ -517,7 +517,7 @@ export default function CalendarPage() {
           </div>
 
           {viewMode === "month" && (
-            <Card className="shadow-xl border-0 bg-white">
+            <Card className="shadow-xl border-0 bg-card">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl lg:text-2xl font-bold">
@@ -539,7 +539,7 @@ export default function CalendarPage() {
               <CardContent>
                 <div className="grid grid-cols-7 gap-1 lg:gap-2 mb-2">
                   {dayNames.map((day) => (
-                    <div key={day} className="text-center text-xs lg:text-sm font-medium text-gray-500 p-2">
+                    <div key={day} className="text-center text-xs lg:text-sm font-medium text-muted-foreground p-2">
                       {day}
                     </div>
                   ))}
@@ -553,9 +553,9 @@ export default function CalendarPage() {
                     return (
                       <div
                         key={index}
-                        className={`p-1 lg:p-2 border border-gray-200 rounded-lg transition-colors overflow-hidden ${
-                          isToday ? "bg-orange-50 border-orange-300" : "bg-white hover:bg-gray-50"
-                        } 
+                        className={`p-1 lg:p-2 border border-border rounded-lg transition-colors overflow-hidden ${
+                          isToday ? "bg-orange-50 border-orange-300" : "bg-card hover:bg-muted"
+                        }
                         h-20 sm:h-24 md:h-32 lg:h-44 cursor-pointer`}
                         onClick={() => {
                           if (day && itemsForDay.length > 0) {
@@ -575,7 +575,7 @@ export default function CalendarPage() {
                         {day && (
                           <div
                             className={`text-sm sm:text-base lg:text-xl font-medium mb-1 ${
-                              isToday ? "text-orange-600" : "text-gray-900"
+                              isToday ? "text-orange-600" : "text-foreground"
                             }`}
                           >
                             {day.getDate()}
@@ -713,7 +713,7 @@ export default function CalendarPage() {
                                   e.stopPropagation()
                                   openMultiItemDialog(day!, itemsForDay)
                                 }}
-                                className="w-full text-left p-1.5 rounded text-xs sm:text-sm bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors font-medium min-h-[28px] border-2 border-dashed border-gray-400"
+                                className="w-full text-left p-1.5 rounded text-xs sm:text-sm bg-secondary text-muted-foreground hover:bg-secondary transition-colors font-medium min-h-[28px] border-2 border-dashed border-border"
                               >
                                 <div className="flex items-center justify-center gap-1">
                                   <span className="font-semibold">+{itemsForDay.length - 4} weitere Termine</span>
@@ -733,11 +733,11 @@ export default function CalendarPage() {
           {viewMode === "list" && (
             <div className="space-y-4 lg:space-y-6">
               {[...filteredMatches, ...filteredEvents].length === 0 ? (
-                <Card className="shadow-lg border-0 bg-white">
+                <Card className="shadow-lg border-0 bg-card">
                   <CardContent className="p-8 lg:p-12 text-center">
-                    <Target className="h-16 w-16 lg:h-20 lg:w-20 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg lg:text-xl font-semibold text-gray-900 mb-2">Keine Termine gefunden</h3>
-                    <p className="text-gray-600">Mit den aktuellen Filtern wurden keine Termine gefunden.</p>
+                    <Target className="h-16 w-16 lg:h-20 lg:w-20 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg lg:text-xl font-semibold text-foreground mb-2">Keine Termine gefunden</h3>
+                    <p className="text-muted-foreground">Mit den aktuellen Filtern wurden keine Termine gefunden.</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -750,7 +750,7 @@ export default function CalendarPage() {
                   .map((item) => {
                     if (isEvent(item)) {
                       return (
-                        <Card key={item.id} className="shadow-lg border-0 bg-white hover:shadow-xl transition-shadow">
+                        <Card key={item.id} className="shadow-lg border-0 bg-card hover:shadow-xl transition-shadow">
                           <CardContent className="p-4 lg:p-6">
                             <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
                               <div className="flex-1">
@@ -759,11 +759,11 @@ export default function CalendarPage() {
                                 </div>
 
                                 <div className="mb-3">
-                                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
-                                  {item.description && <p className="text-gray-600 text-sm">{item.description}</p>}
+                                  <h3 className="text-lg font-semibold text-foreground mb-2">{item.name}</h3>
+                                  {item.description && <p className="text-muted-foreground text-sm">{item.description}</p>}
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-sm text-gray-600">
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-sm text-muted-foreground">
                                   <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
                                     {new Date(item.event_date).toLocaleDateString("de-DE", {
@@ -806,7 +806,7 @@ export default function CalendarPage() {
                     } else {
                       const match = item as Match
                       return (
-                        <Card key={match.id} className="shadow-lg border-0 bg-white hover:shadow-xl transition-shadow">
+                        <Card key={match.id} className="shadow-lg border-0 bg-card hover:shadow-xl transition-shadow">
                           <CardContent className="p-4 lg:p-6">
                             <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
                               <div className="flex-1">
@@ -817,7 +817,7 @@ export default function CalendarPage() {
                                       {match.season?.name || "Liga"}
                                     </Badge>
                                   </div>
-                                  <div className="text-sm text-gray-600">Spieltag {match.week_number}</div>
+                                  <div className="text-sm text-muted-foreground">Spieltag {match.week_number}</div>
                                 </div>
 
                                 <div className="flex items-center gap-4 mb-3">
@@ -841,7 +841,7 @@ export default function CalendarPage() {
                                         {match.home_score} : {match.away_score}
                                       </div>
                                     ) : (
-                                      <div className="text-gray-400 font-bold">vs</div>
+                                      <div className="text-muted-foreground font-bold">vs</div>
                                     )}
                                   </div>
 
@@ -860,7 +860,7 @@ export default function CalendarPage() {
                                   </div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-sm text-gray-600">
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-sm text-muted-foreground">
                                   <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
                                     {new Date(match.match_date).toLocaleDateString("de-DE", {
@@ -945,7 +945,7 @@ export default function CalendarPage() {
                             {selectedMatch.home_score} : {selectedMatch.away_score}
                           </div>
                         ) : (
-                          <div className="text-2xl text-gray-400 font-bold">vs</div>
+                          <div className="text-2xl text-muted-foreground font-bold">vs</div>
                         )}
                       </div>
 
@@ -963,9 +963,9 @@ export default function CalendarPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-3 bg-white p-4 rounded-lg border">
+                  <div className="space-y-3 bg-card p-4 rounded-lg border">
                     <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-gray-600" />
+                      <Calendar className="h-5 w-5 text-muted-foreground" />
                       <span>
                         {new Date(selectedMatch.match_date).toLocaleDateString("de-DE", {
                           weekday: "long",
@@ -976,15 +976,15 @@ export default function CalendarPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-gray-600" />
+                      <Clock className="h-5 w-5 text-muted-foreground" />
                       <span>{formatTimeWithoutSeconds(selectedMatch.match_time)} Uhr</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <MapPin className="h-5 w-5 text-gray-600" />
+                      <MapPin className="h-5 w-5 text-muted-foreground" />
                       <span>{selectedMatch.venue}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Trophy className="h-5 w-5 text-gray-600" />
+                      <Trophy className="h-5 w-5 text-muted-foreground" />
                       <span>
                         {selectedMatch.season?.name || "Liga"} - Spieltag {selectedMatch.week_number}
                       </span>
@@ -1028,21 +1028,21 @@ export default function CalendarPage() {
 
                   <div className="text-center">
                     <div className="mb-4">
-                      <div className="h-16 w-16 mx-auto mb-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center">
+                      <div className="text-foreground h-16 w-16 mx-auto mb-4 bg-card   rounded-full flex items-center justify-center">
                         {selectedEvent.event_type === "Turnier" ? (
                           <Trophy className="h-8 w-8 text-orange-600" />
                         ) : (
                           <CalendarDays className="h-8 w-8 text-orange-600" />
                         )}
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900">{selectedEvent.name}</h3>
-                      {selectedEvent.description && <p className="text-gray-600 mt-2">{selectedEvent.description}</p>}
+                      <h3 className="text-xl font-bold text-foreground">{selectedEvent.name}</h3>
+                      {selectedEvent.description && <p className="text-muted-foreground mt-2">{selectedEvent.description}</p>}
                     </div>
                   </div>
 
-                  <div className="space-y-3 bg-white p-4 rounded-lg border">
+                  <div className="space-y-3 bg-card p-4 rounded-lg border">
                     <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-gray-600" />
+                      <Calendar className="h-5 w-5 text-muted-foreground" />
                       <span>
                         {new Date(selectedEvent.event_date).toLocaleDateString("de-DE", {
                           weekday: "long",
@@ -1091,7 +1091,7 @@ export default function CalendarPage() {
                   {getItemsForDate(selectedDate).map((item) => (
                     <Card
                       key={item.id}
-                      className="cursor-pointer hover:bg-gray-50"
+                      className="cursor-pointer hover:bg-muted"
                       onClick={() => {
                         setIsMultiItemDialogOpen(false)
                         handleItemClick(item)
@@ -1141,13 +1141,13 @@ export default function CalendarPage() {
           {isMobileBottomSheetOpen && mobileSelectedDate && (
             <div className="fixed inset-0 z-50 md:hidden">
               {/* Backdrop */}
-              <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileBottomSheetOpen(false)} />
+              <div className="absolute inset-0 bg-card" onClick={() => setIsMobileBottomSheetOpen(false)} />
 
               {/* Bottom Sheet */}
-              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-xl max-h-[70vh] overflow-hidden">
+              <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-xl max-h-[70vh] overflow-hidden">
                 {/* Handle */}
                 <div className="flex justify-center py-3">
-                  <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                  <div className="w-10 h-1 bg-secondary rounded-full" />
                 </div>
 
                 {/* Header */}
@@ -1159,7 +1159,7 @@ export default function CalendarPage() {
                       month: "long",
                     })}
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     {getItemsForDate(mobileSelectedDate).length}{" "}
                     {getItemsForDate(mobileSelectedDate).length === 1 ? "Termin" : "Termine"}
                   </p>
@@ -1171,7 +1171,7 @@ export default function CalendarPage() {
                     {getItemsForDate(mobileSelectedDate).map((item) => (
                       <Card
                         key={item.id}
-                        className="cursor-pointer hover:bg-gray-50 transition-colors"
+                        className="cursor-pointer hover:bg-muted transition-colors"
                         onClick={() => {
                           setIsMobileBottomSheetOpen(false)
                           handleItemClick(item)
@@ -1186,7 +1186,7 @@ export default function CalendarPage() {
                                 </div>
                                 <div>
                                   <div className="font-medium text-base">{item.name}</div>
-                                  <div className="text-sm text-gray-600">
+                                  <div className="text-sm text-muted-foreground">
                                     {item.start_time && format(new Date(`2000-01-01T${item.start_time}`), "HH:mm")} Uhr
                                   </div>
                                 </div>
@@ -1207,7 +1207,7 @@ export default function CalendarPage() {
                                   <div className="font-medium text-base">
                                     {getTeamDisplayName(item, true)} vs {getTeamDisplayName(item, false)}
                                   </div>
-                                  <div className="text-sm text-gray-600">
+                                  <div className="text-sm text-muted-foreground">
                                     {item.match_time && format(new Date(`2000-01-01T${item.match_time}`), "HH:mm")} Uhr
                                     {item.season?.name && ` • ${item.season.name}`}
                                   </div>

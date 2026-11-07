@@ -298,12 +298,12 @@ function MemberSignaturePad({ label, onChange }: { label: string; onChange: (val
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
-        <div className="text-sm font-black text-slate-900">{label}</div>
+        <div className="text-sm font-semibold text-foreground">{label}</div>
         <Button type="button" variant="ghost" size="sm" onClick={clear} disabled={!hasInk}>
           <RotateCcw className="mr-1 h-4 w-4" /> Neu
         </Button>
       </div>
-      <div className="overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 bg-white">
+      <div className="overflow-hidden rounded-2xl border-2 border-dashed border-border bg-card">
         <canvas
           ref={canvasRef}
           className="block h-[175px] w-full touch-none cursor-crosshair"
@@ -314,7 +314,7 @@ function MemberSignaturePad({ label, onChange }: { label: string; onChange: (val
           onPointerLeave={finish}
         />
       </div>
-      <div className="text-xs font-semibold text-slate-500">Mit Maus, Touchpad, Finger oder Stift unterschreiben.</div>
+      <div className="text-xs font-semibold text-muted-foreground">Mit Maus, Touchpad, Finger oder Stift unterschreiben.</div>
     </div>
   )
 }
@@ -1121,7 +1121,7 @@ const fetchProfile = async () => {
 
 
 
-	  
+
 
 
   const loadMemberDocuments = async () => {
@@ -1497,9 +1497,9 @@ const fetchProfile = async () => {
       case "Captain":
         return <Crown className="h-5 w-5 text-yellow-600" />
       case "Co-Captain":
-        return <ShieldCheck className="h-5 w-5 text-blue-600" />
+        return <ShieldCheck className="h-5 w-5 text-blue-200" />
       default:
-        return <Target className="h-5 w-5 text-orange-600" />
+        return <Target className="h-5 w-5 text-orange-200" />
     }
   }
 
@@ -1566,23 +1566,23 @@ const fetchProfile = async () => {
     return teamMemberships.some((m: any) => m.role === "Captain" || m.role === "Co-Captain")
   }
 
-   // ✅ LOADING VIEW 
+   // ✅ LOADING VIEW
   if (loading) {
   return (
-    <main className="min-h-screen flex flex-col bg-gray-50 text-gray-900 pb-24 overflow-x-hidden">
+    <main className="min-h-screen flex flex-col bg-background text-foreground pb-24 overflow-x-hidden">
       <Header />
 
       <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
         <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-gray-200">
+          <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-sm px-10 py-10 border border-border">
             <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
+
+              <Loader2 className="relative h-12 w-12 animate-spin text-orange-200" />
             </div>
 
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-900">Profil wird geladen</p>
-              <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+              <p className="text-lg font-semibold text-foreground">Profil wird geladen</p>
+              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
             </div>
           </div>
         </div>
@@ -1594,13 +1594,13 @@ const fetchProfile = async () => {
 }
 if (isBlocked) {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
       <Header />
       <main className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <Card className="border-0 shadow-2xl bg-white overflow-hidden rounded-3xl">
+          <Card className="border-0 shadow-sm bg-card overflow-hidden rounded-3xl">
             <CardContent className="p-0">
-              <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-5 text-white">
+              <div className="bg-red-500/15 px-6 py-5 text-white">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center">
                     <AlertTriangle className="h-6 w-6" />
@@ -1609,7 +1609,7 @@ if (isBlocked) {
                     <div className="text-sm uppercase tracking-wide text-white/80">
                       Zugang gesperrt
                     </div>
-                    <div className="text-xl font-extrabold">
+                    <div className="text-xl font-semibold">
                       Konto derzeit nicht verfügbar
                     </div>
                   </div>
@@ -1617,17 +1617,17 @@ if (isBlocked) {
               </div>
 
               <div className="p-6">
-                <p className="text-gray-700 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Dein Zugang wurde vorübergehend gesperrt.
                 </p>
 
                 {blockedReason && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 mb-4">
+                  <div className="rounded-xl border border-red-400/25 bg-red-500/10 p-4 text-sm text-red-200 mb-4">
                     <span className="font-semibold">Grund:</span> {blockedReason}
                   </div>
                 )}
 
-                <p className="text-sm text-gray-600 mb-6">
+                <p className="text-sm text-muted-foreground mb-6">
                   Bitte wende dich an die Vereinsleitung, falls du glaubst, dass das ein Fehler ist.
                 </p>
 
@@ -1649,21 +1649,21 @@ if (isBlocked) {
 
 if (error || !profile) {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
       <Header />
       <main className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <Card className="border-0 shadow-2xl bg-white overflow-hidden rounded-3xl">
+          <Card className="border-0 shadow-sm bg-card overflow-hidden rounded-3xl">
             <CardContent className="p-6 text-center">
-              <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center">
-                <AlertTriangle className="h-7 w-7 text-orange-600" />
+              <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-orange-500/10 flex items-center justify-center">
+                <AlertTriangle className="h-7 w-7 text-orange-200" />
               </div>
 
-              <h1 className="text-2xl font-bold text-gray-900 mb-3">
+              <h1 className="text-2xl font-semibold text-foreground mb-3">
                 {error || "Profil nicht gefunden"}
               </h1>
 
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 Es konnte kein vollständiges Mitgliederprofil geladen werden.
               </p>
 
@@ -1683,33 +1683,25 @@ if (error || !profile) {
   const hasMultipleTeams = teamMemberships.length > 1
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
       <Header />
 
-      {/* High-End 2026 background */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.68),rgba(3,5,9,.93)_46%,rgba(2,4,7,.98))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.18),transparent_26%),radial-gradient(circle_at_88%_30%,rgba(14,165,233,.14),transparent_28%),radial-gradient(circle_at_55%_82%,rgba(99,102,241,.09),transparent_24%)]" />
-        <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:68px_68px]" />
-      </div>
+      {/* Persönlicher Mitgliederbereich */}
 
-      <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
+
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
         <MembershipPaymentNotice />
 
         {/* HERO */}
-        <section className="relative overflow-hidden rounded-[28px] border border-white/[0.09] bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
-          <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-500/15 blur-[110px]" />
-          <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
+        <section className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-card shadow-sm  sm:rounded-[34px]">
+
+
+
 
           <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
             <div className="flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
               <div className="min-w-0">
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-white/55 backdrop-blur-xl">
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground ">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-50" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-400" />
@@ -1719,13 +1711,13 @@ if (error || !profile) {
 
                 <div className="flex items-center gap-4 sm:gap-6">
                   <div className="relative shrink-0">
-                    <div className="absolute inset-[-6px] rounded-full bg-[conic-gradient(from_90deg,rgba(249,115,22,.85),rgba(255,255,255,.12),rgba(14,165,233,.7),rgba(249,115,22,.85))] opacity-70 blur-[1px]" />
-                    <Avatar className="relative h-[76px] w-[76px] border-2 border-[#080b10] shadow-[0_16px_50px_rgba(0,0,0,.55)] sm:h-24 sm:w-24">
+
+                    <Avatar className="relative h-[76px] w-[76px] border-2 border-[#080b10] shadow-sm sm:h-24 sm:w-24">
                       <AvatarImage
                         src={profile.club_players?.photo_url || "/placeholder.svg?height=96&width=96&query=dart player avatar"}
                         alt={profile.club_players?.name || "Spieler"}
                       />
-                      <AvatarFallback className="bg-orange-500 text-2xl font-black text-white sm:text-3xl">
+                      <AvatarFallback className="bg-primary text-2xl font-semibold text-primary-foreground sm:text-3xl">
                         {(profile.club_players?.name || "U")
                           .split(" ")
                           .map((n) => n[0])
@@ -1736,7 +1728,7 @@ if (error || !profile) {
                     <button
                       type="button"
                       onClick={() => setIsPhotoDialogOpen(true)}
-                      className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-[#11151c] text-white shadow-xl transition duration-300 hover:scale-105 hover:bg-orange-500"
+                      className="absolute -bottom-1 -right-1 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#11151c] text-white shadow-sm transition-colors duration-150 motion-reduce:transition-none hover:scale-105 hover:bg-orange-500"
                       aria-label="Profilfoto-Änderung anfragen"
                     >
                       <Camera className="h-4 w-4" />
@@ -1744,8 +1736,8 @@ if (error || !profile) {
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/35">Willkommen zurück</p>
-                    <h1 className="mt-1 truncate text-[clamp(1.8rem,5vw,3.4rem)] font-black leading-none tracking-[-0.055em] text-white">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Willkommen zurück</p>
+                    <h1 className="mt-1 break-words text-[clamp(1.8rem,5vw,3rem)] font-semibold leading-none tracking-[-0.055em] text-white">
                       {profile.club_players?.name || "Vereinsmitglied"}
                     </h1>
 
@@ -1754,18 +1746,18 @@ if (error || !profile) {
                         teamMemberships.slice(0, 3).map((membership: any) => (
                           <span
                             key={membership.id}
-                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.055] px-2.5 py-1.5 text-[11px] font-bold text-white/70"
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.055] px-2.5 py-1.5 text-[11px] font-semibold text-white/70"
                           >
                             <span className="truncate">{membership.teams?.name || "Team"}</span>
-                            <span className="text-white/25">·</span>
+                            <span className="text-muted-foreground">·</span>
                             <span className="shrink-0 text-orange-300">{getRoleLabel(membership.role)}</span>
                           </span>
                         ))
                       ) : (
-                        <span className="text-sm font-semibold text-white/45">Emoj!´s Dartverein</span>
+                        <span className="text-sm font-semibold text-muted-foreground">Emoj!´s Dartverein</span>
                       )}
                       {teamMemberships.length > 3 ? (
-                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-bold text-white/45">
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-muted-foreground">
                           +{teamMemberships.length - 3} weitere
                         </span>
                       ) : null}
@@ -1774,11 +1766,11 @@ if (error || !profile) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:max-w-[620px] xl:justify-end">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:max-w-[620px] xl:justify-end [&>button]:h-auto [&>button]:min-h-11 [&>button]:whitespace-normal [&>button]:px-2 [&>button]:py-2 [&>a]:h-auto [&>a]:min-h-11 [&>a]:whitespace-normal [&>a]:px-2 [&>a]:py-2">
                 <Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
                   <Link href="/profil-daten-app"><Pencil className="mr-2 h-4 w-4" />Profil</Link>
                 </Button>
-                <Button asChild className="h-11 rounded-2xl border border-orange-400/30 bg-orange-500 px-4 font-black text-white shadow-[0_0_30px_rgba(249,115,22,.17)] hover:bg-orange-400">
+                <Button asChild className="h-11 rounded-2xl border border-orange-400/30 bg-orange-500 px-4 font-semibold text-white shadow-sm hover:bg-orange-400">
                   <Link href="/member-card"><CreditCard className="mr-2 h-4 w-4" />Mitgliedskarte</Link>
                 </Button>
                 <Button
@@ -1793,7 +1785,7 @@ if (error || !profile) {
                     if (savedTerminalAuthMethod) setTerminalAuthMethod(savedTerminalAuthMethod)
                     setIsTerminalPinDialogOpen(true)
                   }}
-                  className={`h-11 rounded-2xl px-4 font-black ${
+                  className={`h-11 rounded-2xl px-4 font-semibold ${
                     savedTerminalAuthMethod
                       ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-100 hover:bg-emerald-500/[0.13] hover:text-white"
                       : "border-white/10 bg-white/[0.045] text-white hover:bg-white/[0.09]"
@@ -1828,11 +1820,11 @@ if (error || !profile) {
               ].map((item) => {
                 const Icon = item.icon
                 return (
-                  <div key={item.label} className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-white/[0.05] p-3.5 shadow-[0_0_24px_rgba(249,115,22,.055)] backdrop-blur-xl sm:border-white/[0.08] sm:bg-white/[0.045] sm:shadow-none sm:p-4">
-                    <div className="pointer-events-none absolute inset-0 opacity-100 transition duration-500 bg-[radial-gradient(circle_at_15%_100%,rgba(249,115,22,.10),transparent_42%),radial-gradient(circle_at_92%_0%,rgba(14,165,233,.055),transparent_38%)] sm:opacity-0 sm:bg-[linear-gradient(130deg,rgba(249,115,22,.08),transparent_52%)] group-hover:opacity-100" />
-                    <div className="relative text-[9px] font-black uppercase tracking-[0.16em] text-white/35 sm:text-[10px]">{item.label}</div>
+                  <div key={item.label} className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-white/[0.05] p-3.5 shadow-sm  sm:border-white/[0.08] sm:bg-white/[0.045] sm:shadow-none sm:p-4">
+
+                    <div className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-xs">{item.label}</div>
                     <div className="relative mt-2.5 flex items-end justify-between gap-2">
-                      <div className="truncate text-lg font-black tracking-tight text-white sm:text-2xl">{item.value}</div>
+                      <div className="truncate text-lg font-semibold tracking-tight text-white sm:text-2xl">{item.value}</div>
                       <Icon className="h-4 w-4 shrink-0 text-orange-400 sm:h-5 sm:w-5" />
                     </div>
                   </div>
@@ -1843,22 +1835,22 @@ if (error || !profile) {
         </section>
 
         <section className="mt-4">
-          <div className="group relative overflow-hidden rounded-[26px] border border-orange-300/[0.14] bg-[#090b10]/92 p-4 shadow-[0_26px_90px_-52px_rgba(249,115,22,.65)] backdrop-blur-2xl sm:p-5">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,rgba(249,115,22,.18),transparent_38%),radial-gradient(circle_at_100%_0%,rgba(14,165,233,.09),transparent_34%)]" />
-            <div className="pointer-events-none absolute inset-x-[10%] bottom-0 h-px bg-gradient-to-r from-transparent via-orange-300/35 to-transparent" />
+          <div className="group relative overflow-hidden rounded-2xl border border-orange-300/[0.14] bg-card p-4 shadow-sm  sm:p-5">
+
+
 
             <div className="relative">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-orange-300/20 bg-orange-500/10 text-orange-200 shadow-[0_0_28px_rgba(249,115,22,.13)]">
+                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-orange-300/20 bg-orange-500/10 text-orange-200 shadow-sm">
                     <MessageCircle className="h-7 w-7" />
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#090b10] bg-orange-500 px-1 text-[9px] font-black text-white">EMD</span>
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#090b10] bg-orange-500 px-1 text-[11px] font-semibold text-white">EMD</span>
                   </div>
 
                   <div className="min-w-0">
-                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/70">EMD Messenger</div>
-                    <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">Messenger verbinden</h2>
-                    <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-white/45">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-300/70">EMD Messenger</div>
+                    <h2 className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">Messenger verbinden</h2>
+                    <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-muted-foreground">
                       Messenger installieren und anschließend einmalig mit einem 6-stelligen Code mit deinem EMD Konto verbinden.
                     </p>
                   </div>
@@ -1867,18 +1859,18 @@ if (error || !profile) {
                 <Button
                   type="button"
                   onClick={openMessengerInstall}
-                  className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-orange-500 px-5 font-black text-white shadow-[0_0_30px_rgba(249,115,22,.22)] transition hover:bg-orange-400 active:scale-[0.985]"
+                  className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-orange-500 px-5 font-semibold text-white shadow-sm transition hover:bg-orange-400 active:scale-[0.985]"
                 >
                   <Download className="mr-2 h-4 w-4" /> Messenger installieren
                 </Button>
               </div>
 
               <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_.95fr]">
-                <div className="rounded-[22px] border border-white/[0.07] bg-white/[0.035] p-4">
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Aktivierung</div>
-                      <div className="mt-1 text-base font-black text-white">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Aktivierung</div>
+                      <div className="mt-1 text-base font-semibold text-white">
                         {messengerActivationCode ? "Dein einmaliger Code" : "Messenger auf neuem Gerät verbinden"}
                       </div>
                     </div>
@@ -1888,17 +1880,17 @@ if (error || !profile) {
                   {messengerActivationCode ? (
                     <div className="mt-4">
                       <div className="rounded-2xl border border-orange-300/20 bg-orange-500/10 px-4 py-4 text-center">
-                        <div className="select-all text-3xl font-black tracking-[0.32em] text-orange-100">
+                        <div className="select-all text-3xl font-semibold tracking-[0.32em] text-orange-100">
                           {messengerActivationCode}
                         </div>
                       </div>
-                      <div className="mt-2 text-xs font-semibold text-white/40">
+                      <div className="mt-2 text-xs font-semibold text-muted-foreground">
                         {messengerActivationMessage || "10 Minuten gültig · einmal verwendbar"}
                         {messengerActivationExpiresAt ? ` · bis ${new Date(messengerActivationExpiresAt).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}` : ""}
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-3 text-sm font-semibold leading-5 text-white/40">
+                    <p className="mt-3 text-sm font-semibold leading-5 text-muted-foreground">
                       Öffne danach den EMD Messenger und gib diesen Code dort ein. Dein Passwort wird im Messenger nicht benötigt.
                     </p>
                   )}
@@ -1907,7 +1899,7 @@ if (error || !profile) {
                     type="button"
                     onClick={() => void createMessengerActivationCode()}
                     disabled={messengerActivationLoading}
-                    className="mt-4 h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.055] font-black text-white hover:bg-white/[0.09]"
+                    className="mt-4 h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.055] font-semibold text-white hover:bg-white/[0.09]"
                   >
                     <KeyRound className="mr-2 h-4 w-4 text-orange-300" />
                     {messengerActivationLoading
@@ -1922,25 +1914,25 @@ if (error || !profile) {
                   ) : null}
                 </div>
 
-                <div className="rounded-[22px] border border-white/[0.07] bg-white/[0.035] p-4">
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/35">Verbundene Geräte</div>
-                      <div className="mt-1 text-base font-black text-white">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Verbundene Geräte</div>
+                      <div className="mt-1 text-base font-semibold text-white">
                         {messengerDevices.length > 0
                           ? `${messengerDevices.length} ${messengerDevices.length === 1 ? "Gerät" : "Geräte"} aktiviert`
                           : "Noch kein Gerät aktiviert"}
                       </div>
                     </div>
-                    <ShieldCheck className={`h-5 w-5 shrink-0 ${messengerDevices.length > 0 ? "text-emerald-300" : "text-white/25"}`} />
+                    <ShieldCheck className={`h-5 w-5 shrink-0 ${messengerDevices.length > 0 ? "text-emerald-300" : "text-muted-foreground"}`} />
                   </div>
 
                   <div className="mt-3 space-y-2">
                     {messengerDevices.length > 0 ? messengerDevices.slice(0, 3).map((device) => (
                       <div key={device.id} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-black/15 px-3 py-3">
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-black text-white">{device.device_name || "EMD Messenger Gerät"}</div>
-                          <div className="mt-0.5 text-[11px] font-semibold text-white/35">
+                          <div className="truncate text-sm font-semibold text-white">{device.device_name || "EMD Messenger Gerät"}</div>
+                          <div className="mt-0.5 text-[11px] font-semibold text-muted-foreground">
                             Aktiviert am {new Date(device.activated_at).toLocaleDateString("de-AT")}
                             {device.app_version ? ` · App ${device.app_version}` : ""}
                           </div>
@@ -1950,7 +1942,7 @@ if (error || !profile) {
                         </div>
                       </div>
                     )) : (
-                      <div className="rounded-2xl border border-dashed border-white/[0.08] px-3 py-4 text-sm font-semibold leading-5 text-white/35">
+                      <div className="rounded-2xl border border-dashed border-white/[0.08] px-3 py-4 text-sm font-semibold leading-5 text-muted-foreground">
                         Nach der ersten erfolgreichen Code-Eingabe erscheint dein Messenger-Gerät hier automatisch.
                       </div>
                     )}
@@ -1964,7 +1956,7 @@ if (error || !profile) {
         {(photoDecision || nameDecision) ? (
           <section className="mt-4 grid gap-3">
             {nameDecision ? (
-              <div className={`overflow-hidden rounded-[24px] border p-4 backdrop-blur-xl sm:p-5 ${
+              <div className={`overflow-hidden rounded-2xl border p-4  sm:p-5 ${
                 nameDecision.status === "approved"
                   ? "border-emerald-300/20 bg-emerald-500/[0.08]"
                   : "border-red-300/20 bg-red-500/[0.08]"
@@ -1983,23 +1975,23 @@ if (error || !profile) {
                       )}
                     </div>
                     <div>
-                      <div className={`text-[10px] font-black uppercase tracking-[0.18em] ${
+                      <div className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
                         nameDecision.status === "approved" ? "text-emerald-200/60" : "text-red-200/60"
                       }`}>
                         Namensänderung
                       </div>
-                      <div className="mt-1 text-lg font-black text-white">
+                      <div className="mt-1 text-lg font-semibold text-white">
                         {nameDecision.status === "approved"
                           ? "Deine Namensänderung wurde übernommen."
                           : "Deine Namensänderung wurde nicht übernommen."}
                       </div>
                       {nameDecision.requested_name ? (
-                        <div className="mt-1 text-sm font-semibold text-white/45">
+                        <div className="mt-1 text-sm font-semibold text-muted-foreground">
                           Angefragter Name: {nameDecision.requested_name}
                         </div>
                       ) : null}
                       {nameDecision.admin_note ? (
-                        <div className="mt-2 text-sm font-semibold leading-6 text-white/55">
+                        <div className="mt-2 text-sm font-semibold leading-6 text-muted-foreground">
                           Hinweis: {nameDecision.admin_note}
                         </div>
                       ) : null}
@@ -2010,7 +2002,7 @@ if (error || !profile) {
                     type="button"
                     variant="outline"
                     onClick={() => void acknowledgeProfileDecision(nameDecision.id, "name")}
-                    className="shrink-0 rounded-xl border-white/10 bg-white/[0.05] font-black text-white/75 hover:bg-white/[0.09] hover:text-white"
+                    className="shrink-0 rounded-xl border-white/10 bg-white/[0.05] font-semibold text-white/75 hover:bg-white/[0.09] hover:text-white"
                   >
                     Verstanden
                   </Button>
@@ -2019,7 +2011,7 @@ if (error || !profile) {
             ) : null}
 
             {photoDecision ? (
-              <div className={`overflow-hidden rounded-[24px] border p-4 backdrop-blur-xl sm:p-5 ${
+              <div className={`overflow-hidden rounded-2xl border p-4  sm:p-5 ${
                 photoDecision.status === "approved"
                   ? "border-emerald-300/20 bg-emerald-500/[0.08]"
                   : "border-red-300/20 bg-red-500/[0.08]"
@@ -2038,18 +2030,18 @@ if (error || !profile) {
                       )}
                     </div>
                     <div>
-                      <div className={`text-[10px] font-black uppercase tracking-[0.18em] ${
+                      <div className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
                         photoDecision.status === "approved" ? "text-emerald-200/60" : "text-red-200/60"
                       }`}>
                         Profilbild-Anfrage
                       </div>
-                      <div className="mt-1 text-lg font-black text-white">
+                      <div className="mt-1 text-lg font-semibold text-white">
                         {photoDecision.status === "approved"
                           ? "Dein neues Profilbild wurde übernommen."
                           : "Deine Profilbild-Änderung wurde nicht übernommen."}
                       </div>
                       {photoDecision.admin_note ? (
-                        <div className="mt-2 text-sm font-semibold leading-6 text-white/55">
+                        <div className="mt-2 text-sm font-semibold leading-6 text-muted-foreground">
                           Hinweis: {photoDecision.admin_note}
                         </div>
                       ) : null}
@@ -2060,7 +2052,7 @@ if (error || !profile) {
                     type="button"
                     variant="outline"
                     onClick={() => void acknowledgeProfileDecision(photoDecision.id, "photo")}
-                    className="shrink-0 rounded-xl border-white/10 bg-white/[0.05] font-black text-white/75 hover:bg-white/[0.09] hover:text-white"
+                    className="shrink-0 rounded-xl border-white/10 bg-white/[0.05] font-semibold text-white/75 hover:bg-white/[0.09] hover:text-white"
                   >
                     Verstanden
                   </Button>
@@ -2073,14 +2065,14 @@ if (error || !profile) {
         {!membershipAccessLoading && (showNormalMembershipExpiry || expiringTrials.length > 0) ? (
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {showNormalMembershipExpiry && normalMembershipEndsOn ? (
-              <div className="flex flex-col gap-3 rounded-[22px] border border-amber-300/15 bg-amber-300/[0.07] px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-2xl border border-amber-300/15 bg-amber-300/[0.07] px-4 py-4  sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-300/10 text-amber-200">
                     <AlertTriangle className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <div className="font-black text-white">Mitgliedschaft läuft bald aus</div>
-                    <div className="mt-0.5 text-sm text-white/50">Freigeschaltet bis {formatShortDateAT(normalMembershipEndsOn)}.</div>
+                    <div className="font-semibold text-white">Mitgliedschaft läuft bald aus</div>
+                    <div className="mt-0.5 text-sm text-muted-foreground">Freigeschaltet bis {formatShortDateAT(normalMembershipEndsOn)}.</div>
                   </div>
                 </div>
                 <Button asChild size="sm" variant="outline" className="rounded-xl border-white/10 bg-white/[0.05] text-white hover:bg-white/10 hover:text-white">
@@ -2090,57 +2082,57 @@ if (error || !profile) {
             ) : null}
 
             {expiringTrials.map((trial: any) => (
-              <div key={trial.id} className="flex flex-col gap-3 rounded-[22px] border border-violet-300/15 bg-violet-400/[0.07] px-4 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+              <div key={trial.id} className="flex flex-col gap-3 rounded-2xl border border-violet-300/15 bg-violet-400/[0.07] px-4 py-4  sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-violet-300/20 bg-violet-300/10 text-violet-200">
                     <Gift className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <div className="font-black text-white">Testphase: {trialModuleLabel(trial.module_code)}</div>
-                    <div className="mt-0.5 text-sm text-white/50">Kostenlos bis {formatShortDateAT(trial.ends_on)}.</div>
+                    <div className="font-semibold text-white">Testphase: {trialModuleLabel(trial.module_code)}</div>
+                    <div className="mt-0.5 text-sm text-muted-foreground">Kostenlos bis {formatShortDateAT(trial.ends_on)}.</div>
                   </div>
                 </div>
-                <div className="text-xs font-black uppercase tracking-wide text-violet-200">Noch {trial.daysLeft} Tage</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-violet-200">Noch {trial.daysLeft} Tage</div>
               </div>
             ))}
           </div>
         ) : null}
 
         {/* Documents */}
-        <section id="vereinsunterlagen" className="mt-4 overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+        <section id="vereinsunterlagen" className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-card shadow-sm ">
           <div className="flex flex-col gap-3 border-b border-white/[0.07] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/35">
+              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 <FileCheck2 className="h-4 w-4 text-orange-400" /> Vereinsunterlagen
               </div>
-              <h2 className="mt-1 text-lg font-black tracking-tight text-white sm:text-xl">Meine Dokumente & Bestätigungen</h2>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-white sm:text-xl">Meine Dokumente & Bestätigungen</h2>
             </div>
             {memberDocsEnabled && requiredMemberDocs.length > 0 ? (
               <Badge className={memberDocsCurrent ? "w-fit border border-emerald-300/20 bg-emerald-500/15 text-emerald-200" : "w-fit border border-amber-300/20 bg-amber-500/15 text-amber-200"}>
                 {memberDocsCurrent ? "Aktuell vollständig" : "Bestätigung offen"}
               </Badge>
             ) : (
-              <Badge variant="outline" className="w-fit border-white/10 bg-white/[0.04] text-white/45">Noch nicht freigeschaltet</Badge>
+              <Badge variant="outline" className="w-fit border-white/10 bg-white/[0.04] text-muted-foreground">Noch nicht freigeschaltet</Badge>
             )}
           </div>
 
           <div className="space-y-4 p-4 sm:p-5">
             {memberDocsLoading ? (
-              <div className="flex items-center gap-2 text-sm font-semibold text-white/55"><Loader2 className="h-4 w-4 animate-spin text-orange-400" /> Unterlagen werden geladen…</div>
+              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin text-orange-400" /> Unterlagen werden geladen…</div>
             ) : !memberDocsEnabled ? (
               <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-5">
-                <div className="font-black text-white">Aktuell keine Vereinsunterlagen zur digitalen Bestätigung freigeschaltet.</div>
-                <div className="mt-1 text-sm font-semibold text-white/45">Sobald die Vereinsleitung die finalen Dokumente freigibt, erscheinen sie automatisch hier.</div>
+                <div className="font-semibold text-white">Aktuell keine Vereinsunterlagen zur digitalen Bestätigung freigeschaltet.</div>
+                <div className="mt-1 text-sm font-semibold text-muted-foreground">Sobald die Vereinsleitung die finalen Dokumente freigibt, erscheinen sie automatisch hier.</div>
               </div>
             ) : visibleMemberDocs.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-5 text-sm font-semibold text-white/50">Aktuell sind keine aktiven Dokumente hinterlegt.</div>
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-5 text-sm font-semibold text-muted-foreground">Aktuell sind keine aktiven Dokumente hinterlegt.</div>
             ) : (
               <div className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="font-black text-white">{visibleMemberDocs.length} Dokument{visibleMemberDocs.length === 1 ? "" : "e"} freigeschaltet</div>
-                  <div className="mt-1 text-sm font-semibold text-white/50">{memberDocsCurrent ? "Du hast die aktuell erforderlichen Versionen bereits bestätigt." : "Bitte lies und bestätige die aktuell erforderlichen Unterlagen."}</div>
+                  <div className="font-semibold text-white">{visibleMemberDocs.length} Dokument{visibleMemberDocs.length === 1 ? "" : "e"} freigeschaltet</div>
+                  <div className="mt-1 text-sm font-semibold text-muted-foreground">{memberDocsCurrent ? "Du hast die aktuell erforderlichen Versionen bereits bestätigt." : "Bitte lies und bestätige die aktuell erforderlichen Unterlagen."}</div>
                 </div>
-                <Button type="button" onClick={() => setMemberDocsModalOpen(true)} className="rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400">
+                <Button type="button" onClick={() => setMemberDocsModalOpen(true)} className="rounded-xl bg-orange-500 font-semibold text-white hover:bg-orange-400">
                   <FileText className="mr-2 h-4 w-4" /> {memberDocsCurrent ? "Unterlagen ansehen" : "Jetzt bestätigen"}
                 </Button>
               </div>
@@ -2148,35 +2140,35 @@ if (error || !profile) {
 
             {(joinArchives.length > 0 || memberDocAcceptances.some((r) => r.archive_file_name)) ? (
               <div>
-                <div className="mb-2 text-sm font-black text-white/80">Meine PDF-Akten</div>
+                <div className="mb-2 text-sm font-semibold text-white/80">Meine PDF-Akten</div>
                 <div className="grid gap-2 md:grid-cols-2">
                   {joinArchives.map((row) => (
                     <button key={row.id} type="button" onClick={() => void downloadJoinArchiveForMember(row)} className="group flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-left transition hover:border-orange-400/25 hover:bg-white/[0.065]">
-                      <div className="min-w-0"><div className="truncate text-sm font-black text-white">{row.stage === "approved" ? "Aufnahmebestätigung" : "Beitrittsanfrage"}</div><div className="text-xs font-semibold text-white/35">{formatDate(row.generated_at)}</div></div>
-                      {memberArchiveLoading === `join:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin text-orange-400" /> : <Download className="h-4 w-4 text-white/35 transition group-hover:text-orange-300" />}
+                      <div className="min-w-0"><div className="truncate text-sm font-semibold text-white">{row.stage === "approved" ? "Aufnahmebestätigung" : "Beitrittsanfrage"}</div><div className="text-xs font-semibold text-muted-foreground">{formatDate(row.generated_at)}</div></div>
+                      {memberArchiveLoading === `join:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin text-orange-400" /> : <Download className="h-4 w-4 text-muted-foreground transition group-hover:text-orange-300" />}
                     </button>
                   ))}
                   {memberDocAcceptances.filter((r) => r.archive_file_name).map((row) => (
                     <button key={row.id} type="button" onClick={() => void downloadMemberAcceptance(row)} className="group flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-left transition hover:border-orange-400/25 hover:bg-white/[0.065]">
-                      <div className="min-w-0"><div className="truncate text-sm font-black text-white">Vereinsunterlagen bestätigt</div><div className="text-xs font-semibold text-white/35">{formatDate(row.created_at)}</div></div>
-                      {memberArchiveLoading === `member:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin text-orange-400" /> : <Download className="h-4 w-4 text-white/35 transition group-hover:text-orange-300" />}
+                      <div className="min-w-0"><div className="truncate text-sm font-semibold text-white">Vereinsunterlagen bestätigt</div><div className="text-xs font-semibold text-muted-foreground">{formatDate(row.created_at)}</div></div>
+                      {memberArchiveLoading === `member:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin text-orange-400" /> : <Download className="h-4 w-4 text-muted-foreground transition group-hover:text-orange-300" />}
                     </button>
                   ))}
                 </div>
               </div>
             ) : null}
 
-            {memberDocsMessage ? <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm font-bold text-white/60">{memberDocsMessage}</div> : null}
+            {memberDocsMessage ? <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white/60">{memberDocsMessage}</div> : null}
           </div>
         </section>
 
         {/* Main dashboard */}
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(310px,0.72fr)]">
-          <section className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+          <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-card shadow-sm ">
             <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-4 sm:px-5">
               <div>
-                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">Nächstes Spiel</div>
-                <h2 className="mt-1 text-lg font-black tracking-tight text-white sm:text-xl">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Nächstes Spiel</div>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-white sm:text-xl">
                   {nextMatchSummary ? "Dein nächster Termin" : "Aktuell kein Spiel geplant"}
                 </h2>
               </div>
@@ -2184,7 +2176,7 @@ if (error || !profile) {
                 size="sm"
                 disabled={!nextMatchSummary}
                 onClick={() => nextMatchSummary && router.push(`/member-availability?matchId=${(nextMatchSummary.match as any).id}`)}
-                className="rounded-xl border border-white/10 bg-white/[0.06] px-3.5 font-black text-white hover:bg-orange-500 disabled:opacity-30"
+                className="rounded-xl border border-white/10 bg-white/[0.06] px-3.5 font-semibold text-white hover:bg-orange-500 disabled:opacity-30"
               >
                 Öffnen <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
@@ -2192,26 +2184,26 @@ if (error || !profile) {
 
             <div className="p-4 sm:p-5">
               {!nextMatchSummary ? (
-                <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-white/40">
+                <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-muted-foreground">
                   Sobald ein neues Ligaspiel feststeht, erscheint es hier.
                 </div>
               ) : (
                 <>
-                  <div className="relative overflow-hidden rounded-[22px] border border-white/[0.09] bg-[#080b10] px-4 py-5 text-white sm:px-5">
-                    <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-orange-500/15 blur-[70px]" />
-                    <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-sky-500/10 blur-[80px]" />
+                  <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-[#080b10] px-4 py-5 text-white sm:px-5">
+
+
                     <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                       <div className="min-w-0">
-                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30">Begegnung</div>
-                        <div className="mt-2 text-xl font-black tracking-[-0.03em] sm:text-2xl">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Begegnung</div>
+                        <div className="mt-2 text-xl font-semibold tracking-[-0.03em] sm:text-2xl">
                           {getTeamDisplayName(nextMatchSummary.match, true)}
                           <span className="mx-2 font-medium text-white/20">vs</span>
                           {getTeamDisplayName(nextMatchSummary.match, false)}
                         </div>
                       </div>
                       <div className="shrink-0 rounded-2xl border border-orange-300/15 bg-orange-500/[0.08] px-3.5 py-2.5">
-                        <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/30">Start in</div>
-                        <div className="mt-0.5 whitespace-nowrap text-sm font-black text-orange-300">{countdown || "—"}</div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Start in</div>
+                        <div className="mt-0.5 whitespace-nowrap text-sm font-semibold text-orange-300">{countdown || "—"}</div>
                       </div>
                     </div>
                   </div>
@@ -2228,8 +2220,8 @@ if (error || !profile) {
                             <Icon className="h-4 w-4 text-orange-400" />
                           </div>
                           <div className="min-w-0">
-                            <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/30">{item.label}</div>
-                            <div className="truncate text-sm font-bold text-white/75">{item.value}</div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{item.label}</div>
+                            <div className="truncate text-sm font-semibold text-white/75">{item.value}</div>
                           </div>
                         </div>
                       )
@@ -2244,29 +2236,29 @@ if (error || !profile) {
                       { label: "Offen", value: nextMatchSummary.counts.none, dot: "bg-white/25" },
                     ].map((item) => (
                       <div key={item.label} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 py-3.5">
-                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.14em] text-white/30">
+                        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                           <span className={`h-2 w-2 rounded-full ${item.dot}`} />{item.label}
                         </div>
-                        <div className="mt-2 text-2xl font-black tracking-tight text-white">{item.value}</div>
+                        <div className="mt-2 text-2xl font-semibold tracking-tight text-white">{item.value}</div>
                       </div>
                     ))}
                   </div>
 
                   <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/30">Dein Status</div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Dein Status</div>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {statusBadge(nextMatchSummary.myStatus)}
                         {nextMatchSummary.myLineup === "starter" ? (
-                          <Badge className="rounded-full bg-orange-500 text-white">Stamm</Badge>
+                          <Badge className="rounded-full bg-primary text-primary-foreground">Stamm</Badge>
                         ) : nextMatchSummary.myLineup === "substitute" ? (
                           <Badge className="rounded-full border border-white/10 bg-white/[0.06] text-white/70">Ersatz</Badge>
                         ) : (
-                          <Badge className="rounded-full border border-white/10 bg-transparent text-white/45">Noch nicht aufgestellt</Badge>
+                          <Badge className="rounded-full border border-white/10 bg-transparent text-muted-foreground">Noch nicht aufgestellt</Badge>
                         )}
                       </div>
                     </div>
-                    <p className="max-w-md text-sm leading-relaxed text-white/50">{getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}</p>
+                    <p className="max-w-md text-sm leading-relaxed text-muted-foreground">{getAvailabilityNudge(nextMatchSummary.myStatus, nextMatchSummary.myLineup)}</p>
                   </div>
                 </>
               )}
@@ -2274,12 +2266,12 @@ if (error || !profile) {
           </section>
 
           <aside className="space-y-4">
-            <section className="relative overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 p-4 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:p-5">
-              <div className="pointer-events-none absolute right-[-50px] top-[-50px] h-36 w-36 rounded-full bg-sky-500/10 blur-[55px]" />
+            <section className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card p-4 shadow-sm  sm:p-5">
+
               <div className="relative flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30">Performance</div>
-                  <h2 className="mt-1 text-lg font-black text-white">Liga-Statistik</h2>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Performance</div>
+                  <h2 className="mt-1 text-lg font-semibold text-white">Liga-Statistik</h2>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
                   <BarChart3 className="h-5 w-5 text-orange-400" />
@@ -2294,8 +2286,8 @@ if (error || !profile) {
                   { label: "180er", value: statistics.total180s },
                 ].map((stat) => (
                   <div key={stat.label} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 py-3.5">
-                    <div className="text-[9px] font-black uppercase tracking-[0.13em] text-white/28">{stat.label}</div>
-                    <div className="mt-1.5 text-xl font-black tracking-tight text-white">{stat.value}</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.13em] text-white/28">{stat.label}</div>
+                    <div className="mt-1.5 text-xl font-semibold tracking-tight text-white">{stat.value}</div>
                   </div>
                 ))}
               </div>
@@ -2305,14 +2297,14 @@ if (error || !profile) {
               <button
                 type="button"
                 onClick={() => router.push('/chat-app')}
-                className="group relative w-full overflow-hidden rounded-[26px] border border-orange-300/15 bg-orange-500/[0.075] p-4 text-left backdrop-blur-xl transition duration-300 hover:border-orange-300/30 hover:bg-orange-500/[0.12] sm:p-5"
+                className="group relative w-full overflow-hidden rounded-2xl border border-orange-300/15 bg-orange-500/[0.075] p-4 text-left  transition-colors duration-150 motion-reduce:transition-none hover:border-orange-300/30 hover:bg-orange-500/[0.12] sm:p-5"
               >
-                <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-orange-500/20 blur-[45px]" />
+
                 <div className="relative flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/75">Team-Chat</div>
-                    <div className="mt-1 text-lg font-black text-white">{totalUnread} neue Nachricht{totalUnread === 1 ? '' : 'en'}</div>
-                    <div className="mt-1 text-sm text-white/45">Direkt zu deinen Team-Chats</div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-300/75">Team-Chat</div>
+                    <div className="mt-1 text-lg font-semibold text-white">{totalUnread} neue Nachricht{totalUnread === 1 ? '' : 'en'}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">Direkt zu deinen Team-Chats</div>
                   </div>
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-orange-300 transition group-hover:scale-105 group-hover:bg-orange-500 group-hover:text-white">
                     <MessageCircle className="h-5 w-5" />
@@ -2325,14 +2317,14 @@ if (error || !profile) {
               <button
                 type="button"
                 onClick={() => router.push('/league-mailbox')}
-                className="group relative w-full overflow-hidden rounded-[26px] border border-sky-300/15 bg-sky-500/[0.075] p-4 text-left backdrop-blur-xl transition duration-300 hover:border-sky-300/30 hover:bg-sky-500/[0.12] sm:p-5"
+                className="group relative w-full overflow-hidden rounded-2xl border border-sky-300/15 bg-sky-500/[0.075] p-4 text-left  transition-colors duration-150 motion-reduce:transition-none hover:border-sky-300/30 hover:bg-sky-500/[0.12] sm:p-5"
               >
-                <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-sky-500/20 blur-[45px]" />
+
                 <div className="relative flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-300/75">Liga-Postfach</div>
-                    <div className="mt-1 text-lg font-black text-white">{leagueMailboxUnread} neue Nachricht{leagueMailboxUnread === 1 ? '' : 'en'}</div>
-                    <div className="mt-1 text-sm text-white/45">Private Liga-Fälle und Hinweise öffnen</div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-300/75">Liga-Postfach</div>
+                    <div className="mt-1 text-lg font-semibold text-white">{leagueMailboxUnread} neue Nachricht{leagueMailboxUnread === 1 ? '' : 'en'}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">Private Liga-Fälle und Hinweise öffnen</div>
                   </div>
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-sky-300 transition group-hover:scale-105 group-hover:bg-sky-500 group-hover:text-white">
                     <Inbox className="h-5 w-5" />
@@ -2347,12 +2339,12 @@ if (error || !profile) {
           <button
             type="button"
             onClick={() => router.push('/admin')}
-            className="group relative mt-4 flex w-full items-center justify-between gap-4 overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#080b10]/90 px-4 py-4 text-left text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] transition duration-300 hover:border-orange-400/25 sm:px-5"
+            className="group relative mt-4 flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-card px-4 py-4 text-left text-white shadow-sm transition-colors duration-150 motion-reduce:transition-none hover:border-orange-400/25 sm:px-5"
           >
-            <div className="pointer-events-none absolute right-[10%] top-[-80px] h-44 w-44 rounded-full bg-orange-500/10 blur-[60px]" />
+
             <div className="relative min-w-0">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/28">Vereinsbereich</div>
-              <div className="mt-1 text-lg font-black">Admin & Verwaltung</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/28">Vereinsbereich</div>
+              <div className="mt-1 text-lg font-semibold">Admin & Verwaltung</div>
               <div className="mt-0.5 text-sm text-white/42">Beiträge, Teams und Organisation</div>
             </div>
             <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.05] transition group-hover:bg-orange-500">
@@ -2364,9 +2356,9 @@ if (error || !profile) {
         {/* Zentrale Bereiche */}
         <section className="mt-5">
           <div className="mb-3 px-1">
-            <div className="text-[9px] font-black uppercase tracking-[0.22em] text-orange-300/55">Bereiche</div>
-            <h2 className="mt-1 text-xl font-black tracking-[-0.025em] text-white">Deine Bereiche</h2>
-            <p className="mt-1 text-sm text-white/38">Liga, Turniere und Training zentral gebündelt.</p>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-300">Bereiche</div>
+            <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-white">Deine Bereiche</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Liga, Turniere und Training zentral gebündelt.</p>
           </div>
         {/* Ligabereich – zentraler Einstieg */}
         <button
@@ -2378,43 +2370,37 @@ if (error || !profile) {
           }}
           aria-disabled={!hasLeagueAccess}
           className={[
-            "group relative mt-4 block min-h-[190px] w-full overflow-hidden rounded-[28px] border text-left backdrop-blur-xl transition duration-300 sm:min-h-[220px]",
+            "group relative mt-4 block min-h-[160px] w-full overflow-hidden rounded-2xl border text-left  transition-colors duration-150 motion-reduce:transition-none sm:min-h-[180px]",
             hasLeagueAccess
-              ? "cursor-pointer border-orange-300/[0.14] bg-black/35 shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)] hover:-translate-y-0.5 hover:border-orange-300/30 hover:shadow-[0_30px_85px_-42px_rgba(249,115,22,.22)] active:scale-[0.995]"
-              : "cursor-not-allowed border-white/[0.06] bg-black/30 opacity-55 grayscale",
+              ? "cursor-pointer border-orange-300/[0.14] bg-card shadow-sm hover:-translate-y-0.5 hover:border-orange-300/30 shadow-sm active:scale-[0.995]"
+              : "cursor-not-allowed border-white/[0.06] bg-card opacity-55 grayscale",
           ].join(" ")}
         >
-          <div
-            className={[
-              "pointer-events-none absolute inset-0 bg-cover bg-center transition duration-700",
-              hasLeagueAccess ? "group-hover:scale-[1.025]" : "",
-            ].join(" ")}
-            style={{ backgroundImage: "url('/league/spielplan.png')" }}
-          />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,9,.97)_0%,rgba(4,6,9,.84)_42%,rgba(4,6,9,.42)_72%,rgba(4,6,9,.60)_100%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.10),rgba(4,6,9,.18)_48%,rgba(4,6,9,.72))]" />
-          <div className="pointer-events-none absolute -left-12 bottom-[-50px] h-40 w-40 rounded-full bg-orange-500/[0.16] blur-[55px]" />
-          <div className="pointer-events-none absolute right-[18%] top-[-70px] h-44 w-44 rounded-full bg-sky-500/[0.10] blur-[65px]" />
 
-          <div className="relative flex min-h-[190px] flex-col justify-between p-5 sm:min-h-[220px] sm:p-7">
+
+
+
+
+
+          <div className="relative flex min-h-[160px] flex-col justify-between p-5 sm:min-h-[180px] sm:p-7">
             <div className="flex items-start justify-between gap-4">
               <div
                 className={[
                   "flex h-12 w-12 items-center justify-center rounded-2xl border",
                   hasLeagueAccess
-                    ? "border-orange-300/[0.18] bg-orange-500/[0.10] text-orange-200 shadow-[0_0_24px_rgba(249,115,22,.10)]"
-                    : "border-white/[0.08] bg-white/[0.04] text-white/35",
+                    ? "border-orange-300/[0.18] bg-orange-500/[0.10] text-orange-200 shadow-sm"
+                    : "border-white/[0.08] bg-white/[0.04] text-muted-foreground",
                 ].join(" ")}
               >
                 <Trophy className="h-6 w-6" />
               </div>
 
               {hasLeagueAccess ? (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-black/40 text-white/70 transition duration-300 group-hover:border-orange-300/35 group-hover:bg-orange-500 group-hover:text-white">
-                  <ArrowRight className="h-5 w-5 transition duration-300 group-hover:translate-x-0.5" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-card text-white/70 transition-colors duration-150 motion-reduce:transition-none group-hover:border-orange-300/35 group-hover:bg-orange-500 group-hover:text-white">
+                  <ArrowRight className="h-5 w-5 transition-colors duration-150 motion-reduce:transition-none group-hover:translate-x-0.5" />
                 </div>
               ) : (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 text-white/30">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-card text-muted-foreground">
                   <LockKeyhole className="h-5 w-5" />
                 </div>
               )}
@@ -2423,28 +2409,28 @@ if (error || !profile) {
             <div className="max-w-2xl">
               <div
                 className={[
-                  "text-[10px] font-black uppercase tracking-[0.22em]",
-                  hasLeagueAccess ? "text-orange-300/70" : "text-white/30",
+                  "text-[10px] font-semibold uppercase tracking-[0.12em]",
+                  hasLeagueAccess ? "text-orange-300/70" : "text-muted-foreground",
                 ].join(" ")}
               >
                 Liga
               </div>
 
-              <h2 className="mt-1.5 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
+              <h2 className="mt-1.5 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">
                 Ligabereich Sportdarts
               </h2>
 
               {hasLeagueAccess ? (
-                <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/50 sm:text-base">
+                <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-muted-foreground sm:text-base">
                   Sportdarts: Zusagen, Spielplan, Teams, Tabellen, Live-Spiele, Ergebnisse und Statistik.
                 </p>
               ) : (
                 <div className="mt-2 max-w-xl">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-black/35 px-3 py-1.5 text-[11px] font-black text-white/45">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-card px-3 py-1.5 text-[11px] font-semibold text-muted-foreground">
                     <LockKeyhole className="h-3.5 w-3.5" />
                     Kein Liga-Paket aktiv
                   </div>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-white/35 sm:text-base">
+                  <p className="mt-2 text-sm font-semibold leading-6 text-muted-foreground sm:text-base">
                     Für den Sportdarts-Ligabereich benötigst du ein E-Dart- oder Steeldart-Liga-Paket.
                   </p>
                 </div>
@@ -2457,7 +2443,7 @@ if (error || !profile) {
           <button
             type="button"
             onClick={() => router.push("/league-mailbox")}
-            className="group relative mt-3 block w-full overflow-hidden rounded-[24px] border border-sky-300/[0.12] bg-sky-500/[0.055] p-4 text-left backdrop-blur-xl transition duration-300 hover:border-sky-300/25 hover:bg-sky-500/[0.09] sm:p-5"
+            className="group relative mt-3 block w-full overflow-hidden rounded-2xl border border-sky-300/[0.12] bg-sky-500/[0.055] p-4 text-left  transition-colors duration-150 motion-reduce:transition-none hover:border-sky-300/25 hover:bg-sky-500/[0.09] sm:p-5"
           >
             <div className="flex items-center justify-between gap-4">
               <div className="flex min-w-0 items-center gap-4">
@@ -2465,16 +2451,16 @@ if (error || !profile) {
                   <Inbox className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-300/60">Liga-Kommunikation</div>
-                  <div className="mt-0.5 text-lg font-black text-white">Liga-Postfach</div>
-                  <div className="mt-0.5 text-sm font-semibold text-white/38">Nachrichten und Rückmeldungen direkt mit der Ligaverwaltung.</div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-300">Liga-Kommunikation</div>
+                  <div className="mt-0.5 text-lg font-semibold text-white">Liga-Postfach</div>
+                  <div className="mt-0.5 text-sm font-semibold text-muted-foreground">Nachrichten und Rückmeldungen direkt mit der Ligaverwaltung.</div>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {leagueMailboxUnread > 0 ? (
-                  <span className="rounded-full bg-orange-500 px-2.5 py-1 text-xs font-black text-white">{leagueMailboxUnread}</span>
+                  <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">{leagueMailboxUnread}</span>
                 ) : null}
-                <ArrowRight className="h-5 w-5 text-white/35 transition group-hover:translate-x-1 group-hover:text-sky-300" />
+                <ArrowRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-sky-300" />
               </div>
             </div>
           </button>
@@ -2486,34 +2472,31 @@ if (error || !profile) {
           disabled
           aria-disabled="true"
           onClick={() => router.push("/internal-matches")}
-          className="group relative mt-3 block min-h-[178px] w-full cursor-not-allowed overflow-hidden rounded-[28px] border border-white/[0.06] bg-black/30 text-left opacity-55 grayscale shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl sm:min-h-[205px]"
+          className="group relative mt-3 block min-h-[150px] w-full cursor-not-allowed overflow-hidden rounded-2xl border border-white/[0.06] bg-card text-left opacity-55 grayscale shadow-sm  sm:min-h-[170px]"
         >
-          <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.42]"
-            style={{ backgroundImage: "url('/league/meine-spiele.png')" }}
-          />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,9,.98)_0%,rgba(4,6,9,.91)_46%,rgba(4,6,9,.72)_100%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.25),rgba(4,6,9,.78))]" />
 
-          <div className="relative flex min-h-[178px] flex-col justify-between p-5 sm:min-h-[205px] sm:p-7">
+
+
+
+          <div className="relative flex min-h-[150px] flex-col justify-between p-5 sm:min-h-[170px] sm:p-7">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-white/35">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-muted-foreground">
                 <Trophy className="h-6 w-6" />
               </div>
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-black/35 text-white/30">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-card text-muted-foreground">
                 <LockKeyhole className="h-5 w-5" />
               </div>
             </div>
 
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-black/35 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-white/38">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-card px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
                 Demnächst verfügbar
               </div>
-              <h2 className="mt-2 text-2xl font-black tracking-[-0.035em] text-white/70 sm:text-3xl">
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-white/70 sm:text-3xl">
                 Ligabereich Intern
               </h2>
-              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/32 sm:text-base">
+              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-muted-foreground sm:text-base">
                 Interne Spiele, Aufstellungen und Live-Ergebnisse werden hier gebündelt.
               </p>
             </div>
@@ -2523,36 +2506,33 @@ if (error || !profile) {
         <button
           type="button"
           onClick={() => router.push("/member-tournament-app")}
-          className="group relative mt-3 block min-h-[178px] w-full overflow-hidden rounded-[28px] border border-sky-300/[0.12] bg-black/35 text-left shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-sky-300/28 hover:shadow-[0_30px_85px_-42px_rgba(14,165,233,.20)] active:scale-[0.995] sm:min-h-[205px]"
+          className="group relative mt-3 block min-h-[150px] w-full overflow-hidden rounded-2xl border border-sky-300/[0.12] bg-card text-left shadow-sm  transition-colors duration-150 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-sky-300/28 shadow-sm active:scale-[0.995] sm:min-h-[170px]"
         >
-          <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.88] transition duration-700 group-hover:scale-[1.025]"
-            style={{ backgroundImage: "url('/league/ergebnisse.png')" }}
-          />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,9,.97)_0%,rgba(4,6,9,.86)_43%,rgba(4,6,9,.48)_73%,rgba(4,6,9,.66)_100%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.08),rgba(4,6,9,.20)_50%,rgba(4,6,9,.76))]" />
-          <div className="pointer-events-none absolute -left-10 bottom-[-55px] h-40 w-40 rounded-full bg-orange-500/[0.14] blur-[55px]" />
-          <div className="pointer-events-none absolute right-[14%] top-[-65px] h-44 w-44 rounded-full bg-sky-500/[0.14] blur-[65px]" />
 
-          <div className="relative flex min-h-[178px] flex-col justify-between p-5 sm:min-h-[205px] sm:p-7">
+
+
+
+
+
+          <div className="relative flex min-h-[150px] flex-col justify-between p-5 sm:min-h-[170px] sm:p-7">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-300/[0.16] bg-sky-500/[0.09] text-sky-100 shadow-[0_0_24px_rgba(14,165,233,.10)]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-300/[0.16] bg-sky-500/[0.09] text-sky-100 shadow-sm">
                 <Trophy className="h-6 w-6" />
               </div>
 
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-black/40 text-white/70 transition duration-300 group-hover:border-sky-300/35 group-hover:bg-sky-500 group-hover:text-white">
-                <ArrowRight className="h-5 w-5 transition duration-300 group-hover:translate-x-0.5" />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-card text-white/70 transition-colors duration-150 motion-reduce:transition-none group-hover:border-sky-300/35 group-hover:bg-sky-500 group-hover:text-white">
+                <ArrowRight className="h-5 w-5 transition-colors duration-150 motion-reduce:transition-none group-hover:translate-x-0.5" />
               </div>
             </div>
 
             <div className="max-w-2xl">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-200/65">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-200/65">
                 Turniere
               </div>
-              <h2 className="mt-1.5 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
+              <h2 className="mt-1.5 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">
                 Turnierbereich
               </h2>
-              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/50 sm:text-base">
+              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-muted-foreground sm:text-base">
                 Turnierstatistiken, DACH-Turniere und weitere Turnierfunktionen zentral an einem Ort.
               </p>
             </div>
@@ -2563,35 +2543,32 @@ if (error || !profile) {
         <button
           type="button"
           onClick={() => router.push("/member-training-app")}
-          className="group relative mt-3 block min-h-[178px] w-full overflow-hidden rounded-[28px] border border-emerald-300/[0.11] bg-black/35 text-left shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:border-emerald-300/28 hover:shadow-[0_30px_85px_-42px_rgba(16,185,129,.16)] active:scale-[0.995] sm:min-h-[205px]"
+          className="group relative mt-3 block min-h-[150px] w-full overflow-hidden rounded-2xl border border-emerald-300/[0.11] bg-card text-left shadow-sm  transition-colors duration-150 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-emerald-300/28 shadow-sm active:scale-[0.995] sm:min-h-[170px]"
         >
-          <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.72] transition duration-700 group-hover:scale-[1.025]"
-            style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-          />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,9,.97)_0%,rgba(4,6,9,.86)_45%,rgba(4,6,9,.58)_76%,rgba(4,6,9,.72)_100%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,9,.12),rgba(4,6,9,.22)_50%,rgba(4,6,9,.78))]" />
-          <div className="pointer-events-none absolute -left-12 bottom-[-55px] h-40 w-40 rounded-full bg-emerald-500/[0.12] blur-[55px]" />
-          <div className="pointer-events-none absolute right-[16%] top-[-65px] h-44 w-44 rounded-full bg-sky-500/[0.09] blur-[65px]" />
 
-          <div className="relative flex min-h-[178px] flex-col justify-between p-5 sm:min-h-[205px] sm:p-7">
+
+
+
+
+
+          <div className="relative flex min-h-[150px] flex-col justify-between p-5 sm:min-h-[170px] sm:p-7">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-300/[0.16] bg-emerald-500/[0.08] text-emerald-100 shadow-[0_0_24px_rgba(16,185,129,.08)]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-300/[0.16] bg-emerald-500/[0.08] text-emerald-100 shadow-sm">
                 <Dumbbell className="h-6 w-6" />
               </div>
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-black/40 text-white/70 transition duration-300 group-hover:border-emerald-300/35 group-hover:bg-emerald-500 group-hover:text-white">
-                <ArrowRight className="h-5 w-5 transition duration-300 group-hover:translate-x-0.5" />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-card text-white/70 transition-colors duration-150 motion-reduce:transition-none group-hover:border-emerald-300/35 group-hover:bg-emerald-500 group-hover:text-white">
+                <ArrowRight className="h-5 w-5 transition-colors duration-150 motion-reduce:transition-none group-hover:translate-x-0.5" />
               </div>
             </div>
 
             <div className="max-w-2xl">
-              <div className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-200/60">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200/60">
                 Training
               </div>
-              <h2 className="mt-1.5 text-2xl font-black tracking-[-0.035em] text-white sm:text-3xl">
+              <h2 className="mt-1.5 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">
                 Trainingsbereich
               </h2>
-              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-white/50 sm:text-base">
+              <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-muted-foreground sm:text-base">
                 Training, Fortschritt, Trainingstreffs und Zusagen zentral an einem Ort.
               </p>
             </div>
@@ -2609,9 +2586,9 @@ if (error || !profile) {
             return (
               <section key={group.title}>
                 <div className="mb-3 px-1">
-                  <div className="text-[9px] font-black uppercase tracking-[0.22em] text-orange-300/55">Mein EMD</div>
-                  <h2 className="mt-1 text-xl font-black tracking-[-0.025em] text-white">{group.title}</h2>
-                  <p className="mt-1 text-sm text-white/38">{group.description}</p>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-300">Mein EMD</div>
+                  <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-white">{group.title}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{group.description}</p>
                 </div>
 
                 <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -2622,24 +2599,20 @@ if (error || !profile) {
                         key={item.href}
                         type="button"
                         onClick={() => router.push(item.href)}
-                        className="group relative flex min-h-[112px] w-full items-center gap-3.5 overflow-hidden rounded-[22px] border border-orange-300/[0.10] bg-black/30 p-3.5 text-left shadow-[0_0_28px_rgba(249,115,22,.065),0_18px_45px_-38px_rgba(0,0,0,.92)] backdrop-blur-xl transition duration-300 active:scale-[0.985] active:border-orange-300/25 active:bg-white/[0.055] hover:-translate-y-0.5 hover:border-orange-400/25 hover:bg-white/[0.05] sm:border-white/[0.075] sm:bg-black/25 sm:shadow-[0_18px_45px_-38px_rgba(0,0,0,.9)] sm:p-4"
+                        className="group relative flex min-h-[112px] w-full items-center gap-3.5 overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-card p-3.5 text-left shadow-sm  transition-colors duration-150 motion-reduce:transition-none active:scale-[0.985] active:border-orange-300/25 active:bg-white/[0.055] hover:-translate-y-0.5 hover:border-orange-400/25 hover:bg-white/[0.05] sm:border-white/[0.075] sm:bg-card shadow-sm sm:p-4"
                       >
-                        <div className="pointer-events-none absolute inset-0 sm:hidden">
-                          <div className="absolute -left-10 bottom-[-42px] h-28 w-28 rounded-full bg-orange-500/[0.13] blur-[34px]" />
-                          <div className="absolute -right-10 top-[-44px] h-24 w-24 rounded-full bg-sky-400/[0.075] blur-[30px]" />
-                          <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-orange-200/15 to-transparent" />
-                        </div>
-                        <div className="pointer-events-none absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-transparent via-orange-400/35 to-transparent transition duration-300 sm:via-orange-400/0 group-hover:via-orange-400/80" />
-                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.13] bg-orange-500/[0.055] shadow-[0_0_18px_rgba(249,115,22,.07)] transition duration-300 sm:border-white/[0.075] sm:bg-white/[0.035] sm:shadow-none group-hover:border-orange-400/20 group-hover:bg-orange-500/[0.1]">
-                          <div className="pointer-events-none absolute inset-[7px] rounded-xl bg-orange-400/[0.035] blur-[8px] sm:hidden" />
-                          <Icon className="relative h-5 w-5 text-orange-200/70 transition duration-300 sm:text-white/45 group-hover:text-orange-300" />
+
+
+                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.13] bg-orange-500/[0.055] shadow-sm transition-colors duration-150 motion-reduce:transition-none sm:border-white/[0.075] sm:bg-white/[0.035] sm:shadow-none group-hover:border-orange-400/20 group-hover:bg-orange-500/[0.1]">
+
+                          <Icon className="relative h-5 w-5 text-orange-200/70 transition-colors duration-150 motion-reduce:transition-none sm:text-muted-foreground group-hover:text-orange-300" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <div className="truncate text-sm font-black text-white/90">{item.title}</div>
-                            <ArrowRight className="h-4 w-4 shrink-0 text-white/18 transition duration-300 group-hover:translate-x-1 group-hover:text-orange-300" />
+                            <div className="truncate text-sm font-semibold text-white/90">{item.title}</div>
+                            <ArrowRight className="h-4 w-4 shrink-0 text-white/18 transition-colors duration-150 motion-reduce:transition-none group-hover:translate-x-1 group-hover:text-orange-300" />
                           </div>
-                          <div className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/35 sm:text-sm">{item.description}</div>
+                          <div className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">{item.description}</div>
                         </div>
                       </button>
                     )
@@ -2651,27 +2624,27 @@ if (error || !profile) {
         </div>
 
         {hasMultipleTeams ? (
-          <section className="mt-8 rounded-[24px] border border-white/[0.08] bg-black/25 p-4 backdrop-blur-xl sm:p-5">
-            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/28">Deine Teams</div>
-            <div className="mt-1 text-lg font-black text-white">{teamMemberships.length} aktive Teams</div>
+          <section className="mt-8 rounded-2xl border border-white/[0.08] bg-card p-4  sm:p-5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/28">Deine Teams</div>
+            <div className="mt-1 text-lg font-semibold text-white">{teamMemberships.length} aktive Teams</div>
             <div className="mt-4 flex flex-wrap gap-2">
               {teamMemberships.map((membership: any) => (
                 <div key={membership.id} className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm">
                   {getRoleIcon(membership.role)}
-                  <span className="font-bold text-white/75">{membership.teams?.name || 'Team'}</span>
+                  <span className="font-semibold text-white/75">{membership.teams?.name || 'Team'}</span>
                   <span className="text-white/20">·</span>
-                  <span className="text-white/40">{getRoleLabel(membership.role)}</span>
+                  <span className="text-muted-foreground">{getRoleLabel(membership.role)}</span>
                 </div>
               ))}
             </div>
           </section>
         ) : null}
 
-        <section className="mt-8 flex flex-col gap-3 rounded-[24px] border border-white/[0.08] bg-black/25 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <section className="mt-8 flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-card p-4  sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div>
-            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/28">Konto</div>
-            <div className="mt-1 text-base font-black text-white">Kontoeinstellungen</div>
-            <div className="mt-0.5 text-sm text-white/38">Profil verwalten oder eine Löschanfrage stellen.</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/28">Konto</div>
+            <div className="mt-1 text-base font-semibold text-white">Kontoeinstellungen</div>
+            <div className="mt-0.5 text-sm text-muted-foreground">Profil verwalten oder eine Löschanfrage stellen.</div>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex">
             <Button asChild variant="outline" className="rounded-xl border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white">
@@ -2686,7 +2659,7 @@ if (error || !profile) {
         <button
           type="button"
           onClick={handleLogout}
-          className="mx-auto mt-7 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-white/30 transition hover:bg-white/[0.04] hover:text-red-300"
+          className="mx-auto mt-7 flex min-h-11 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-white/[0.04] hover:text-red-300"
         >
           <LogOut className="h-4 w-4" />Abmelden
         </button>
@@ -2694,15 +2667,15 @@ if (error || !profile) {
 
 
       {isTerminalPinDialogOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/85 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Terminal-Anmeldung einrichten" onClick={() => !terminalPinSaving && setIsTerminalPinDialogOpen(false)}>
-          <div className="my-auto w-full max-w-lg rounded-3xl border border-orange-400/25 bg-[#101722] p-5 text-white shadow-2xl sm:p-7" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/85 p-3 " role="dialog" aria-modal="true" aria-label="Terminal-Anmeldung einrichten" onClick={() => !terminalPinSaving && setIsTerminalPinDialogOpen(false)}>
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-3xl border border-orange-400/25 bg-card p-5 text-white shadow-sm sm:p-7" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
-              <div><p className="text-xs font-bold uppercase tracking-widest text-orange-300">Mein EMD</p><h2 className="mt-2 text-2xl font-black">Terminal-Anmeldung</h2><p className="mt-2 text-sm text-slate-300">PIN oder Muster für das Vereinsterminal festlegen bzw. ändern.</p></div>
-              <button type="button" onClick={() => setIsTerminalPinDialogOpen(false)} disabled={terminalPinSaving} aria-label="Schließen" className="rounded-xl border border-white/15 p-2 text-white/70 disabled:opacity-40"><X className="h-5 w-5"/></button>
+              <div><p className="text-xs font-semibold uppercase tracking-widest text-orange-300">Mein EMD</p><h2 className="mt-2 text-2xl font-semibold">Terminal-Anmeldung</h2><p className="mt-2 text-sm text-muted-foreground">PIN oder Muster für das Vereinsterminal festlegen bzw. ändern.</p></div>
+              <button type="button" onClick={() => setIsTerminalPinDialogOpen(false)} disabled={terminalPinSaving} aria-label="Schließen" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 p-2 text-white/70 disabled:opacity-40"><X className="h-5 w-5"/></button>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <button type="button" className={`rounded-xl border p-3 font-bold ${terminalAuthMethod === "pin" ? "border-orange-400 bg-orange-500/20" : "border-white/10 bg-white/5"}`} onClick={() => {setTerminalAuthMethod("pin");setTerminalPinMessage("")}}>4-stellige PIN</button>
-              <button type="button" className={`rounded-xl border p-3 font-bold ${terminalAuthMethod === "pattern" ? "border-orange-400 bg-orange-500/20" : "border-white/10 bg-white/5"}`} onClick={() => {setTerminalAuthMethod("pattern");setTerminalPinMessage("")}}>Entsperrmuster</button>
+              <button type="button" className={`rounded-xl border p-3 font-semibold ${terminalAuthMethod === "pin" ? "border-orange-400 bg-orange-500/20" : "border-white/10 bg-white/5"}`} onClick={() => {setTerminalAuthMethod("pin");setTerminalPinMessage("")}}>4-stellige PIN</button>
+              <button type="button" className={`rounded-xl border p-3 font-semibold ${terminalAuthMethod === "pattern" ? "border-orange-400 bg-orange-500/20" : "border-white/10 bg-white/5"}`} onClick={() => {setTerminalAuthMethod("pattern");setTerminalPinMessage("")}}>Entsperrmuster</button>
             </div>
             {terminalAuthMethod === "pin" ? (
               <div className="mt-5 grid gap-3">
@@ -2713,7 +2686,7 @@ if (error || !profile) {
               <div className="mt-5 space-y-4"><div><p className="mb-2 text-sm font-semibold">Neues Muster zeichnen</p><PatternPad value={terminalPattern} onChange={setTerminalPattern}/></div><div><p className="mb-2 text-sm font-semibold">Muster wiederholen</p><PatternPad value={terminalPatternConfirm} onChange={setTerminalPatternConfirm}/></div></div>
             )}
             {terminalPinMessage && <p role="status" className="mt-4 rounded-xl bg-white/10 p-3 text-sm text-orange-200">{terminalPinMessage}</p>}
-            <div className="mt-6 flex gap-3"><button type="button" disabled={terminalPinSaving} onClick={() => setIsTerminalPinDialogOpen(false)} className="flex-1 rounded-xl border border-white/15 px-4 py-3 font-bold disabled:opacity-40">Abbrechen</button><button type="button" disabled={terminalPinSaving} onClick={() => void saveTerminalAuth()} className="flex-1 rounded-xl bg-orange-600 px-4 py-3 font-black disabled:opacity-40">{terminalPinSaving ? "Speichern …" : "Speichern"}</button></div>
+            <div className="mt-6 flex gap-3"><button type="button" disabled={terminalPinSaving} onClick={() => setIsTerminalPinDialogOpen(false)} className="flex-1 rounded-xl border border-white/15 px-4 py-3 font-semibold disabled:opacity-40">Abbrechen</button><button type="button" disabled={terminalPinSaving} onClick={() => void saveTerminalAuth()} className="flex-1 rounded-xl bg-orange-600 px-4 py-3 font-semibold disabled:opacity-40">{terminalPinSaving ? "Speichern …" : "Speichern"}</button></div>
           </div>
         </div>
       )}

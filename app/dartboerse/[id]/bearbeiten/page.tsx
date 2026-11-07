@@ -318,27 +318,23 @@ export default function DartboerseBearbeitenPage(){
    setSaving(false)
   }
  }
- if(loading)return <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white"><Header/>
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.95)_48%,rgba(2,4,7,.99))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.10),transparent_26%)]" />
-      </div><div className="pt-32 text-center"><Loader2 className="mx-auto h-10 w-10 animate-spin text-orange-300"/></div></div>
- if(!form)return <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white"><Header/><main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pt-24 sm:px-5 lg:px-7 xl:px-8"><Card className="mx-auto max-w-lg rounded-[24px]"><CardContent className="p-8 text-center"><ShieldAlert className="mx-auto h-10 w-10 text-orange-300"/><p className="mt-4 font-bold">{message}</p></CardContent></Card></main></div>
- return <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white pb-24"><Header/><main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-24 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8"><Button variant="outline" onClick={()=>router.push("/dartboerse/meine")} className="mb-4 h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white/65 hover:bg-white/[0.09] hover:text-white"><ArrowLeft className="mr-2 h-4 w-4"/>Zurück</Button><section className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/92 p-4 text-white shadow-[0_28px_90px_-50px_rgba(0,0,0,.98)] backdrop-blur-xl sm:p-6 lg:p-7"><div className="text-sm font-black uppercase tracking-[.18em] text-orange-300">Bearbeiten</div><h1 className="mt-2 text-3xl font-black">Inserat ändern</h1><p className="mt-2 text-white/42">Nach dem Speichern wird das Angebot erneut geprüft.</p></section><form onSubmit={save} className="mt-4 grid items-start gap-4 xl:grid-cols-2 xl:gap-5"><Card className="rounded-[24px] border border-white/[0.08] bg-[#10141b] text-white shadow-[0_18px_60px_-48px_rgba(0,0,0,.95)]"><CardContent className="space-y-4 p-6"><Field label="Titel"><Input value={form.title} onChange={e=>setField("title",e.target.value)} required/></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="Kategorie"><Select value={form.category} onValueChange={v=>setField("category",v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{Object.entries(categories).map(([v,l])=><SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select></Field><Field label="Zustand"><Select value={form.condition} onValueChange={v=>setField("condition",v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="new">Neu</SelectItem><SelectItem value="like_new">Wie neu</SelectItem><SelectItem value="good">Gut</SelectItem><SelectItem value="used">Gebraucht</SelectItem><SelectItem value="defective">Defekt</SelectItem></SelectContent></Select></Field></div><Field label="Beschreibung"><Textarea rows={7} value={form.description} onChange={e=>setField("description",e.target.value)}/></Field>
+ if(loading)return <div className="relative min-h-screen overflow-x-hidden bg-background text-white"><Header/>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" /><div className="pt-32 text-center"><Loader2 className="mx-auto h-10 w-10 animate-spin text-orange-300"/></div></div>
+ if(!form)return <div className="relative min-h-screen overflow-x-hidden bg-background text-white"><Header/><main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pt-24 sm:px-5 lg:px-7 xl:px-8"><Card className="mx-auto max-w-lg rounded-[24px]"><CardContent className="p-8 text-center"><ShieldAlert className="mx-auto h-10 w-10 text-orange-300"/><p className="mt-4 font-bold">{message}</p></CardContent></Card></main></div>
+ return <div className="relative min-h-screen overflow-x-hidden bg-background text-white pb-24"><Header/><main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-24 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8"><Button variant="outline" onClick={()=>router.push("/dartboerse/meine")} className="mb-4 h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white/65 hover:bg-white/[0.09] hover:text-white"><ArrowLeft className="mr-2 h-4 w-4"/>Zurück</Button><section className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/92 p-4 text-white shadow-[0_28px_90px_-50px_rgba(0,0,0,.98)]  sm:p-6 lg:p-7"><div className="text-sm font-semibold uppercase tracking-[.18em] text-orange-300">Bearbeiten</div><h1 className="mt-2 text-3xl font-semibold">Inserat ändern</h1><p className="mt-2 text-white/42">Nach dem Speichern wird das Angebot erneut geprüft.</p></section><form onSubmit={save} className="mt-4 grid items-start gap-4 xl:grid-cols-2 xl:gap-5"><Card className="rounded-[24px] border border-white/[0.08] bg-[#10141b] text-white shadow-[0_18px_60px_-48px_rgba(0,0,0,.95)]"><CardContent className="space-y-4 p-6"><Field label="Titel"><Input value={form.title} onChange={e=>setField("title",e.target.value)} required/></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="Kategorie"><Select value={form.category} onValueChange={v=>setField("category",v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{Object.entries(categories).map(([v,l])=><SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select></Field><Field label="Zustand"><Select value={form.condition} onValueChange={v=>setField("condition",v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="new">Neu</SelectItem><SelectItem value="like_new">Wie neu</SelectItem><SelectItem value="good">Gut</SelectItem><SelectItem value="used">Gebraucht</SelectItem><SelectItem value="defective">Defekt</SelectItem></SelectContent></Select></Field></div><Field label="Beschreibung"><Textarea rows={7} value={form.description} onChange={e=>setField("description",e.target.value)}/></Field>
 
 <div className="rounded-[24px] border border-white/[0.08] bg-[#07090c] p-4 sm:p-5">
  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
   <div>
-   <div className="flex items-center gap-2 font-black text-white">
+   <div className="flex items-center gap-2 font-semibold text-white">
     <ImagePlus className="h-5 w-5 text-orange-300"/>
     Bilder verwalten
    </div>
-   <p className="mt-1 text-sm text-white/35">
+   <p className="mt-1 text-sm text-muted-foreground">
     Bis zu fünf Bilder, jeweils maximal 8 MB. Das erste Bild ist das Titelbild.
    </p>
   </div>
-  <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-black text-white/60 shadow-sm">
+  <span className="w-fit rounded-full bg-card px-3 py-1 text-xs font-semibold text-white/60 shadow-sm">
    {totalImageCount}/5 Bilder
   </span>
  </div>
@@ -350,7 +346,7 @@ export default function DartboerseBearbeitenPage(){
      <div className="relative aspect-square overflow-hidden bg-white/[0.05]">
       <img src={image.image_url} alt={`Bild ${imageIndex+1}`} className="h-full w-full object-cover"/>
       {imageIndex===0?(
-       <span className="absolute left-2 top-2 rounded-full bg-orange-500/[0.08]0 px-2.5 py-1 text-[10px] font-black text-white shadow">
+       <span className="absolute left-2 top-2 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
         TITELBILD
        </span>
       ):null}
@@ -375,7 +371,7 @@ export default function DartboerseBearbeitenPage(){
       >
        <ChevronLeft className="h-4 w-4"/>
       </Button>
-      <span className="text-xs font-black text-white/35">{imageIndex+1}</span>
+      <span className="text-xs font-semibold text-muted-foreground">{imageIndex+1}</span>
       <Button
        type="button"
        size="sm"
@@ -394,15 +390,15 @@ export default function DartboerseBearbeitenPage(){
 
  {newImagePreviews.length>0?(
   <div className="mt-4">
-   <div className="mb-2 text-xs font-black uppercase tracking-wide text-emerald-300">
+   <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-300">
     Neue Bilder
    </div>
    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
     {newImagePreviews.map((preview,imageIndex)=>(
-     <div key={`${preview.file.name}-${imageIndex}`} className="overflow-hidden rounded-2xl border border-emerald-300/20 bg-white shadow-sm">
+     <div key={`${preview.file.name}-${imageIndex}`} className="overflow-hidden rounded-2xl border border-emerald-300/20 bg-card shadow-sm">
       <div className="relative aspect-square overflow-hidden bg-white/[0.05]">
        <img src={preview.url} alt={`Neues Bild ${imageIndex+1}`} className="h-full w-full object-cover"/>
-       <span className="absolute left-2 top-2 rounded-full bg-green-600 px-2.5 py-1 text-[10px] font-black text-white shadow">
+       <span className="absolute left-2 top-2 rounded-full bg-green-600 px-2.5 py-1 text-xs font-semibold text-white shadow">
         NEU
        </span>
        <button
@@ -423,7 +419,7 @@ export default function DartboerseBearbeitenPage(){
  {totalImageCount<5?(
   <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-orange-300 bg-orange-500/[0.08] px-4 py-6 text-center transition hover:bg-orange-500/[0.12]">
    <ImagePlus className="h-8 w-8 text-orange-300"/>
-   <span className="mt-2 font-black text-orange-100">Weitere Bilder hinzufügen</span>
+   <span className="mt-2 font-semibold text-orange-100">Weitere Bilder hinzufügen</span>
    <span className="mt-1 text-xs text-orange-300">JPG, PNG oder WebP</span>
    <Input
     type="file"
@@ -439,7 +435,7 @@ export default function DartboerseBearbeitenPage(){
  ):null}
 </div>
 
-<div className="grid gap-4 sm:grid-cols-2"><Field label="Preisart"><Select value={form.price_type} onValueChange={v=>setField("price_type",v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="fixed">Fixpreis</SelectItem><SelectItem value="negotiable">Verhandlungsbasis</SelectItem><SelectItem value="free">Zu verschenken</SelectItem></SelectContent></Select></Field><Field label="Preis"><Input disabled={form.price_type==="free"} value={form.price} onChange={e=>setField("price",e.target.value)}/></Field></div><div className="grid gap-4 sm:grid-cols-3"><Field label="Land"><Select value={form.country_code} onValueChange={v=>setField("country_code",v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="AT">Österreich</SelectItem><SelectItem value="DE">Deutschland</SelectItem><SelectItem value="CH">Schweiz</SelectItem></SelectContent></Select></Field><Field label="PLZ"><Input value={form.postal_code} onChange={e=>setField("postal_code",e.target.value.replace(/\D/g,""))}/></Field><Field label="Ort"><Input value={form.city} onChange={e=>setField("city",e.target.value)}/></Field></div><div className="grid gap-3 sm:grid-cols-2"><label className="rounded-2xl border p-4 font-bold"><input type="checkbox" className="mr-2" checked={form.shipping_available} onChange={e=>setField("shipping_available",e.target.checked)}/>Versand möglich</label><label className="rounded-2xl border p-4 font-bold"><input type="checkbox" className="mr-2" checked={form.pickup_available} onChange={e=>setField("pickup_available",e.target.checked)}/>Abholung möglich</label></div><div className="rounded-2xl border border-sky-300/20 bg-sky-500/[0.08] p-4 text-sm text-sky-100">Name und E-Mail werden automatisch aus deinem Profil übernommen und können nicht geändert werden.</div><Field label="Verkäufer"><Input value={form.seller_name} readOnly className="cursor-not-allowed bg-white/[0.05] text-white/60"/></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="E-Mail"><Input type="email" value={form.seller_email} readOnly className="cursor-not-allowed bg-white/[0.05] text-white/60"/></Field><Field label="Telefon (optional)"><Input value={form.seller_phone} onChange={e=>setField("seller_phone",e.target.value)}/></Field></div>{message?<div className="rounded-xl bg-rose-500/[0.08] p-3 text-sm font-bold text-rose-300">{message}</div>:null}<Button disabled={saving} className="h-12 w-full rounded-2xl border border-orange-300/20 bg-orange-500 font-black text-white/[0.08]0"><Save className="mr-2 h-4 w-4"/>{saving?"Speichert …":"Änderungen einreichen"}</Button></CardContent></Card></form></main>
+<div className="grid gap-4 sm:grid-cols-2"><Field label="Preisart"><Select value={form.price_type} onValueChange={v=>setField("price_type",v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="fixed">Fixpreis</SelectItem><SelectItem value="negotiable">Verhandlungsbasis</SelectItem><SelectItem value="free">Zu verschenken</SelectItem></SelectContent></Select></Field><Field label="Preis"><Input disabled={form.price_type==="free"} value={form.price} onChange={e=>setField("price",e.target.value)}/></Field></div><div className="grid gap-4 sm:grid-cols-3"><Field label="Land"><Select value={form.country_code} onValueChange={v=>setField("country_code",v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="AT">Österreich</SelectItem><SelectItem value="DE">Deutschland</SelectItem><SelectItem value="CH">Schweiz</SelectItem></SelectContent></Select></Field><Field label="PLZ"><Input value={form.postal_code} onChange={e=>setField("postal_code",e.target.value.replace(/\D/g,""))}/></Field><Field label="Ort"><Input value={form.city} onChange={e=>setField("city",e.target.value)}/></Field></div><div className="grid gap-3 sm:grid-cols-2"><label className="rounded-2xl border p-4 font-bold"><input type="checkbox" className="mr-2" checked={form.shipping_available} onChange={e=>setField("shipping_available",e.target.checked)}/>Versand möglich</label><label className="rounded-2xl border p-4 font-bold"><input type="checkbox" className="mr-2" checked={form.pickup_available} onChange={e=>setField("pickup_available",e.target.checked)}/>Abholung möglich</label></div><div className="rounded-2xl border border-sky-300/20 bg-sky-500/[0.08] p-4 text-sm text-sky-100">Name und E-Mail werden automatisch aus deinem Profil übernommen und können nicht geändert werden.</div><Field label="Verkäufer"><Input value={form.seller_name} readOnly className="cursor-not-allowed bg-white/[0.05] text-white/60"/></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="E-Mail"><Input type="email" value={form.seller_email} readOnly className="cursor-not-allowed bg-white/[0.05] text-white/60"/></Field><Field label="Telefon (optional)"><Input value={form.seller_phone} onChange={e=>setField("seller_phone",e.target.value)}/></Field></div>{message?<div className="rounded-xl bg-rose-500/[0.08] p-3 text-sm font-bold text-rose-300">{message}</div>:null}<Button disabled={saving} className="h-12 w-full rounded-2xl border border-orange-300/20 bg-orange-500 font-semibold text-white/80 text-primary-foreground"><Save className="mr-2 h-4 w-4"/>{saving?"Speichert …":"Änderungen einreichen"}</Button></CardContent></Card></form></main>
 
 <AlertDialog
  open={Boolean(deleteTarget)}
@@ -448,7 +444,7 @@ export default function DartboerseBearbeitenPage(){
  }}
 >
  <AlertDialogContent className="overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#090c11] p-0 text-white shadow-[0_32px_110px_-38px_rgba(0,0,0,.98)] sm:max-w-md">
-  <div className="h-2 bg-gradient-to-r from-red-600 via-red-500 to-orange-500"/>
+  <div className="text-foreground h-2 bg-card   "/>
   <div className="p-6">
    <AlertDialogHeader className="text-left">
     <div className="flex items-start gap-4">
@@ -456,7 +452,7 @@ export default function DartboerseBearbeitenPage(){
       <Trash2 className="h-7 w-7"/>
      </div>
      <div>
-      <AlertDialogTitle className="text-xl font-black">Bild wirklich löschen?</AlertDialogTitle>
+      <AlertDialogTitle className="text-xl font-semibold">Bild wirklich löschen?</AlertDialogTitle>
       <AlertDialogDescription className="mt-2 leading-6">
        Das Bild wird dauerhaft aus dem Inserat entfernt.
       </AlertDialogDescription>
@@ -471,7 +467,7 @@ export default function DartboerseBearbeitenPage(){
    ):null}
 
    <AlertDialogFooter className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
-    <AlertDialogCancel disabled={deletingImage} className="mt-0 h-11 rounded-xl font-black">
+    <AlertDialogCancel disabled={deletingImage} className="mt-0 h-11 rounded-xl font-semibold">
      Abbrechen
     </AlertDialogCancel>
     <AlertDialogAction
@@ -480,7 +476,7 @@ export default function DartboerseBearbeitenPage(){
       event.preventDefault()
       void deleteExistingImage()
      }}
-     className="h-11 rounded-xl bg-red-600 font-black text-white hover:bg-red-700"
+     className="h-11 rounded-xl bg-red-600 font-semibold text-white hover:bg-red-700"
     >
      {deletingImage?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Trash2 className="mr-2 h-4 w-4"/>}
      Bild löschen
@@ -493,4 +489,4 @@ export default function DartboerseBearbeitenPage(){
 <MobileBottomNav/>
 </div>
 }
-function Field({label,children}:{label:string;children:React.ReactNode}){return <label className="block"><span className="mb-1.5 block text-xs font-black uppercase tracking-wide text-white/48">{label}</span>{children}</label>}
+function Field({label,children}:{label:string;children:React.ReactNode}){return <label className="block"><span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/48">{label}</span>{children}</label>}

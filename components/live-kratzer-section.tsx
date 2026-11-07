@@ -18,13 +18,13 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, gradient }: StatCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-2xl shadow-md bg-white border border-gray-200">
+    <div className="relative overflow-hidden rounded-2xl shadow-md bg-card border border-border">
       <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20`}></div>
       <div className="relative p-6 flex items-center gap-4">
-        <div className="p-3 rounded-full bg-white shadow-sm flex-shrink-0">{icon}</div>
+        <div className="p-3 rounded-full bg-card shadow-sm flex-shrink-0">{icon}</div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">{label}</h3>
-          <p className="text-xl font-bold text-gray-900">{value}</p>
+          <h3 className="text-lg font-semibold text-foreground">{label}</h3>
+          <p className="text-xl font-bold text-foreground">{value}</p>
         </div>
       </div>
     </div>
@@ -57,14 +57,14 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
       ? "text-red-600 font-bold"
       : suddenDeathEnabled && remainingTime <= 180000
         ? "text-orange-500 font-bold"
-        : "text-gray-900"
+        : "text-foreground"
 
   const getStatusDisplay = () => {
     switch (board.status) {
       case "running":
         return <span className="ml-2 text-sm text-green-600 font-semibold">Läuft</span>
       case "finished":
-        return <span className="ml-2 text-sm text-gray-500 font-semibold">Beendet</span>
+        return <span className="ml-2 text-sm text-muted-foreground font-semibold">Beendet</span>
       case "not_started":
       default:
         return <span className="ml-2 text-sm text-orange-500 font-semibold">Bereit</span>
@@ -76,7 +76,7 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
       case "running":
         return "shadow-xl border-green-200 bg-green-50"
       case "finished":
-        return "shadow-md border-gray-300 bg-gray-100 opacity-75"
+        return "shadow-md border-border bg-muted opacity-75"
       case "not_started":
       default:
         return "shadow-lg border-orange-200 bg-orange-50"
@@ -94,12 +94,12 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
       <CardContent className="p-4">
         <div className="mb-4">
           {board.players.length === 0 ? (
-            <p className="text-gray-500">Keine Spieler auf diesem Board.</p>
+            <p className="text-muted-foreground">Keine Spieler auf diesem Board.</p>
           ) : (
             <ul className="space-y-2">
               {board.players.map((player) => (
-                <li key={player.id} className="flex items-center justify-between p-3 rounded-lg bg-white/70">
-                  <span className="font-medium text-gray-800">
+                <li key={player.id} className="flex items-center justify-between p-3 rounded-lg bg-card">
+                  <span className="font-medium text-foreground">
                     {player.name} ({player.lives} Leben)
                   </span>
                 </li>
@@ -110,11 +110,11 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
 
         {board.status === "running" && board.startTime && (
           <div className="mb-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Spielzeit: <span className={`font-semibold ${timerClass}`}>{formatTime(elapsedTime)}</span>
             </p>
             {suddenDeathEnabled && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Verbleibend: <span className={`font-semibold ${timerClass}`}>{formatTime(remainingTime)}</span>
               </p>
             )}
@@ -123,7 +123,7 @@ function LiveBoardComponent({ board, suddenDeathEnabled, suddenDeathTime }: Live
 
         {board.status === "finished" && board.endTime && (
           <div className="mb-4">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Spiel beendet: {formatTime(board.endTime - (board.startTime || board.endTime))} Spielzeit
             </p>
           </div>
@@ -166,13 +166,13 @@ function LiveRankingsTable({ players }: LiveRankingsTableProps) {
           {sortedPlayers.map((player, index) => (
             <TableRow
               key={player.id}
-              className={player.isEliminated ? "opacity-60 bg-gray-50" : "hover:bg-gray-50 transition-colors"}
+              className={player.isEliminated ? "opacity-60 bg-muted" : "hover:bg-muted transition-colors"}
             >
               <TableCell>{index + 1}</TableCell>
               <TableCell className="font-medium">{player.name}</TableCell>
               <TableCell>{player.ligastatus}</TableCell>
               <TableCell>
-                <span className="font-bold text-lg text-gray-900">{player.lives}</span>
+                <span className="font-bold text-lg text-foreground">{player.lives}</span>
               </TableCell>
               <TableCell>
                 {player.isEliminated ? `Ausgeschieden (Runde ${player.eliminationRound})` : "Aktiv"}
@@ -437,7 +437,7 @@ export default function LiveKratzerSection() {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="h-16 w-16 animate-spin text-primary-dark" />
-        <p className="mt-4 text-gray-700 text-lg font-semibold">Lade Kratzer Turnier-Daten...</p>
+        <p className="mt-4 text-muted-foreground text-lg font-semibold">Lade Kratzer Turnier-Daten...</p>
       </div>
     )
   }
@@ -453,20 +453,20 @@ export default function LiveKratzerSection() {
 
   if (!tournamentData.tournamentId) {
     return (
-      <div className="text-center py-12 bg-white rounded-xl shadow-lg">
-        <RefreshCcw className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-        <p className="text-gray-600 text-lg">Aktuell läuft kein Kratzer Turnier.</p>
-        <p className="text-gray-500 text-sm mt-2">Bitte warten Sie, bis ein Turnier gestartet wird.</p>
+      <div className="text-center py-12 bg-card rounded-xl shadow-lg">
+        <RefreshCcw className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+        <p className="text-muted-foreground text-lg">Aktuell läuft kein Kratzer Turnier.</p>
+        <p className="text-muted-foreground text-sm mt-2">Bitte warten Sie, bis ein Turnier gestartet wird.</p>
       </div>
     )
   }
 
   return (
     <>
-      <Card className="mb-8 p-5 shadow-xl border-gray-200">
+      <Card className="mb-8 p-5 shadow-xl border-border">
         <CardHeader className="border-b pb-4 mb-6">
-          <CardTitle className="text-xl font-semibold flex items-center gap-2 text-gray-900">
-            <Trophy className="h-6 w-6 text-gray-600" /> Turnier-Status
+          <CardTitle className="text-xl font-semibold flex items-center gap-2 text-foreground">
+            <Trophy className="h-6 w-6 text-muted-foreground" /> Turnier-Status
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -522,12 +522,12 @@ export default function LiveKratzerSection() {
       </Card>
 
       {isTournamentRunning && tournamentData.boards.length > 0 && (
-        <Card className="mb-8 p-5 shadow-xl border-gray-200">
+        <Card className="mb-8 p-5 shadow-xl border-border">
           <CardHeader className="border-b pb-4 mb-6">
-            <CardTitle className="text-xl font-semibold flex items-center gap-2 text-gray-900">
-              <Monitor className="h-6 w-6 text-gray-600" />
+            <CardTitle className="text-xl font-semibold flex items-center gap-2 text-foreground">
+              <Monitor className="h-6 w-6 text-muted-foreground" />
               Aktive Spiele
-              <span className="text-sm font-normal text-gray-500">
+              <span className="text-sm font-normal text-muted-foreground">
                 ({tournamentData.boards.filter((b) => b.status === "running").length} läuft,{" "}
                 {tournamentData.boards.filter((b) => b.status === "not_started").length} bereit)
               </span>
@@ -548,10 +548,10 @@ export default function LiveKratzerSection() {
         </Card>
       )}
 
-      <Card className="mb-8 p-5 shadow-xl border-gray-200">
+      <Card className="mb-8 p-5 shadow-xl border-border">
         <CardHeader className="border-b pb-4 mb-6">
-          <CardTitle className="text-xl font-semibold flex items-center gap-2 text-gray-900">
-            <Trophy className="h-6 w-6 text-gray-600" /> Rangliste
+          <CardTitle className="text-xl font-semibold flex items-center gap-2 text-foreground">
+            <Trophy className="h-6 w-6 text-muted-foreground" /> Rangliste
           </CardTitle>
         </CardHeader>
         <CardContent>

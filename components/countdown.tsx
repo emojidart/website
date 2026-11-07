@@ -43,7 +43,7 @@ const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
     timerComponents.push(
       <div
         key={interval}
-        className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-5 text-white backdrop-blur-md border border-white/20 shadow-xl"
+        className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-5 text-white  border border-white/20 shadow-xl"
       >
         <span className="text-5xl font-bold">{String(timeLeft[interval]).padStart(2, "0")}</span>
         <span className="text-base uppercase">{interval}</span>

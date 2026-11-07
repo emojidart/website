@@ -44,17 +44,17 @@ const quickAccessItems = [
 
 export function QuickAccessGrid() {
   return (
-    <section className="py-6 md:py-8 px-4 bg-white md:bg-white">
+    <section className="py-6 md:py-8 px-4 bg-card md:bg-card">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
           {quickAccessItems.map((item) => (
             <Link key={item.href} href={item.href} className="flex flex-col items-center gap-2 group">
               <div
-                className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${item.gradient} flex items-center justify-center shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-200`}
+                className={`text-foreground w-16 h-16 rounded-3xl bg-card ${item.gradient} flex items-center justify-center shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-200`}
               >
                 <item.icon className="w-7 h-7 text-white" strokeWidth={2} />
               </div>
-              <span className="text-xs font-medium text-gray-700 text-center leading-tight">{item.label}</span>
+              <span className="text-xs font-medium text-muted-foreground text-center leading-tight">{item.label}</span>
             </Link>
           ))}
         </div>

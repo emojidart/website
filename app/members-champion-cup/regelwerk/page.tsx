@@ -52,13 +52,13 @@ function SectionCard({
   return (
     <motion.section
       variants={membersCupItemVariants}
-      className="rounded-2xl border border-gray-200/70 bg-black/30 shadow-sm ring-1 ring-black/5"
+      className="rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/5"
     >
       <div className="p-4 sm:p-6">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">{icon}</div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg sm:text-xl font-black text-white">{title}</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-white">{title}</h2>
           </div>
         </div>
         <div className="mt-4">{children}</div>
@@ -100,7 +100,7 @@ function SubCard({
 
   return (
     <div className={`rounded-xl border p-4 ${toneCls}`}>
-      {title ? <div className={`font-black mb-2 ${titleCls}`}>{title}</div> : null}
+      {title ? <div className={`font-semibold mb-2 ${titleCls}`}>{title}</div> : null}
       <div className="text-sm text-white/70 leading-relaxed">{children}</div>
     </div>
   )
@@ -108,7 +108,7 @@ function SubCard({
 
 export default function MembersChampionCupRegelwerkPage() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-background text-white font-sans pb-24 md:pb-0">
       <Header variant="app" title="Regelwerk" subtitle="Members Champion Cup" backHref="/" />
       <MembersCupBackground />
 
@@ -122,35 +122,35 @@ export default function MembersChampionCupRegelwerkPage() {
           <motion.div variants={membersCupItemVariants} className="mb-4">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-4 py-2 text-sm font-bold text-white/70 shadow-sm hover:bg-white/5"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-card px-4 py-2 text-sm font-bold text-white/70 shadow-sm hover:bg-white/5"
             >
               <ArrowLeft className="w-4 h-4" />
               Zurück
             </Link>
           </motion.div>
-		  
-		  
-		  
-		  
-		  
-		  
-		  
+
+
+
+
+
+
+
 
 
   {/* KOMPAKTER HEADER – orientiert an aktueller Startseite */}
 <motion.div variants={membersCupItemVariants} className="mb-5">
-  <div className="overflow-hidden rounded-[26px] border border-white/10 bg-black/30 shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
-    <div className="relative bg-gradient-to-br from-slate-950 via-slate-950 to-[#2a170f] p-4 text-white sm:p-5 lg:p-6">
+  <div className="overflow-hidden rounded-[26px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+    <div className="relative bg-card    p-4 text-white sm:p-5 lg:p-6">
       <div className="flex flex-col items-center text-center sm:flex-row sm:text-left sm:gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
           <Crown className="h-8 w-8 text-orange-300" />
         </div>
 
         <div className="mt-3 min-w-0 flex-1 sm:mt-0">
-          <div className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-black text-orange-950">
+          <div className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-orange-950">
             MEMBERS CHAMPIONS CUP 2026/27
           </div>
-          <h1 className="mt-2 text-2xl font-black sm:text-3xl lg:text-4xl">
+          <h1 className="mt-2 text-2xl font-semibold sm:text-3xl lg:text-4xl">
             Offizielles Turnier- & Jahresreglement
           </h1>
           <p className="mt-1 text-sm font-semibold text-orange-100 sm:text-base">
@@ -161,7 +161,7 @@ export default function MembersChampionCupRegelwerkPage() {
     </div>
 
     <div className="p-4 sm:p-5">
-      <p className="text-sm font-semibold leading-relaxed text-white/55">
+      <p className="text-sm font-semibold leading-relaxed text-muted-foreground">
         Der EMD Members Champion Cup ist eine ganzjährige, strukturierte Vereinsserie mit
         Steeldart, E-Dart, Partner-Zulosung, Einzelwertung und Finaltag.
       </p>
@@ -174,15 +174,15 @@ export default function MembersChampionCupRegelwerkPage() {
               <div className="space-y-3">
                 <SubCard tone="info" title="EMD Members Champion Cup 2026/27">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-bold text-blue-900">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-card px-3 py-1 text-xs font-bold text-blue-900">
                       <Calendar className="w-4 h-4" />
                       Juli 2026 – Juni 2027
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-bold text-blue-900">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-card px-3 py-1 text-xs font-bold text-blue-900">
                       <Trophy className="w-4 h-4" />
                       Finale Juli 2027
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-bold text-blue-900">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-card px-3 py-1 text-xs font-bold text-blue-900">
                       <Clock className="w-4 h-4" />
                       Monatlich
                     </span>
@@ -203,13 +203,13 @@ export default function MembersChampionCupRegelwerkPage() {
 
                 <SubCard title="Disziplinen">
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                      <div className="font-black text-white">Steeldart</div>
+                    <div className="rounded-xl border border-white/10 bg-card p-4">
+                      <div className="font-semibold text-white">Steeldart</div>
                       <div className="text-sm text-white/70 mt-1">501 Double Out Team League</div>
                     </div>
 
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                      <div className="font-black text-white">E-Dart</div>
+                    <div className="rounded-xl border border-white/10 bg-card p-4">
+                      <div className="font-semibold text-white">E-Dart</div>
                       <div className="text-sm text-white/70 mt-1">501 Master Out Team League</div>
                     </div>
                   </div>
@@ -288,17 +288,17 @@ export default function MembersChampionCupRegelwerkPage() {
 
                 <div className="grid sm:grid-cols-3 gap-3">
                   <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-center">
-                    <div className="font-black text-emerald-900">Anfänger</div>
+                    <div className="font-semibold text-emerald-900">Anfänger</div>
                     <div className="text-xs text-white/70 mt-1">Einsteiger / Aufbauklasse</div>
                   </div>
 
                   <div className="rounded-xl border border-sky-400/20 bg-sky-500/10 p-4 text-center">
-                    <div className="font-black text-blue-900">Fortgeschrittene</div>
+                    <div className="font-semibold text-blue-900">Fortgeschrittene</div>
                     <div className="text-xs text-white/70 mt-1">solide Turniererfahrung</div>
                   </div>
 
                   <div className="rounded-xl border border-orange-300/20 bg-orange-500/10 p-4 text-center">
-                    <div className="font-black text-orange-100">Experten</div>
+                    <div className="font-semibold text-orange-100">Experten</div>
                     <div className="text-xs text-white/70 mt-1">starke Leistungsgruppe</div>
                   </div>
                 </div>
@@ -374,20 +374,20 @@ export default function MembersChampionCupRegelwerkPage() {
 
                 <SubCard tone="info" title="Zulosungsgruppen">
                   <div className="grid sm:grid-cols-3 gap-3">
-                    <div className="rounded-xl border border-orange-300/15 bg-black/30 p-4 text-center">
-                      <div className="font-black text-orange-100">Tabelle 1</div>
+                    <div className="rounded-xl border border-orange-300/15 bg-card p-4 text-center">
+                      <div className="font-semibold text-orange-100">Tabelle 1</div>
                       <div className="text-sm font-bold text-white mt-1">Stark</div>
                       <div className="text-xs text-white/70 mt-1">höchste Leistungsgruppe</div>
                     </div>
 
-                    <div className="rounded-xl border border-blue-100 bg-black/30 p-4 text-center">
-                      <div className="font-black text-blue-900">Tabelle 2</div>
+                    <div className="rounded-xl border border-blue-100 bg-card p-4 text-center">
+                      <div className="font-semibold text-blue-900">Tabelle 2</div>
                       <div className="text-sm font-bold text-white mt-1">Mitte</div>
                       <div className="text-xs text-white/70 mt-1">flexible Ausgleichsgruppe</div>
                     </div>
 
-                    <div className="rounded-xl border border-emerald-100 bg-black/30 p-4 text-center">
-                      <div className="font-black text-emerald-900">Tabelle 3</div>
+                    <div className="rounded-xl border border-emerald-100 bg-card p-4 text-center">
+                      <div className="font-semibold text-emerald-900">Tabelle 3</div>
                       <div className="text-sm font-bold text-white mt-1">Schwach</div>
                       <div className="text-xs text-white/70 mt-1">niedrigere Leistungsgruppe</div>
                     </div>
@@ -417,10 +417,10 @@ export default function MembersChampionCupRegelwerkPage() {
                     <li>• danach wird jeweils ein Spieler aus Gruppe A mit einem Spieler aus Gruppe B zusammengelost</li>
                   </ul>
                 </SubCard>
-				
-				
-				
-				
+
+
+
+
 
                 <SubCard tone="warn" title="Beispiel 2 – zu wenig schwächere Spieler">
   <p>
@@ -442,10 +442,10 @@ export default function MembersChampionCupRegelwerkPage() {
     Anschließend erfolgt die zufällige Partner-Zulosung zwischen beiden Gruppen.
   </p>
 </SubCard>
-				
-				
-				
-				
+
+
+
+
 
                 <SubCard title="Zielsetzung">
                   <ul className="space-y-2">
@@ -502,13 +502,13 @@ export default function MembersChampionCupRegelwerkPage() {
                   </p>
 
                   <div className="mt-3 grid sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                      <div className="font-black text-white">Winners Bracket</div>
+                    <div className="rounded-xl border border-white/10 bg-card p-4">
+                      <div className="font-semibold text-white">Winners Bracket</div>
                       <div className="text-sm text-white/70 mt-1">Gewinnerseite</div>
                     </div>
 
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                      <div className="font-black text-white">Losers Bracket</div>
+                    <div className="rounded-xl border border-white/10 bg-card p-4">
+                      <div className="font-semibold text-white">Losers Bracket</div>
                       <div className="text-sm text-white/70 mt-1">Verliererseite</div>
                     </div>
                   </div>
@@ -560,9 +560,9 @@ export default function MembersChampionCupRegelwerkPage() {
           ["alle 13. Platzierten", "15 Punkte"],
           ["alle 17. Platzierten", "10 Punkte"],
         ].map(([platz, punkte]) => (
-          <div key={platz} className="rounded-xl border border-white/10 bg-black/30 p-4">
-            <div className="text-sm font-black text-white">{platz}</div>
-            <div className="mt-1 text-xl font-black text-orange-600">{punkte}</div>
+          <div key={platz} className="rounded-xl border border-white/10 bg-card p-4">
+            <div className="text-sm font-semibold text-white">{platz}</div>
+            <div className="mt-1 text-xl font-semibold text-orange-600">{punkte}</div>
           </div>
         ))}
       </div>
@@ -587,15 +587,15 @@ export default function MembersChampionCupRegelwerkPage() {
     </SubCard>
   </div>
 </SectionCard>
-			
-			
-			
-			
-			
-			
-			
-			
-			
+
+
+
+
+
+
+
+
+
 
             <SectionCard icon={<ListChecks className="w-5 h-5" />} title="Kriterien bei Punktegleichheit">
               <SubCard tone="warn">
@@ -619,13 +619,13 @@ export default function MembersChampionCupRegelwerkPage() {
                   </p>
 
                   <div className="mt-3 grid sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                      <div className="font-black text-white">€ 10,00</div>
+                    <div className="rounded-xl border border-white/10 bg-card p-4">
+                      <div className="font-semibold text-white">€ 10,00</div>
                       <div className="text-sm text-white/70 mt-1">fließen in den Finalpreisfonds</div>
                     </div>
 
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                      <div className="font-black text-white">€ 5,00</div>
+                    <div className="rounded-xl border border-white/10 bg-card p-4">
+                      <div className="font-semibold text-white">€ 5,00</div>
                       <div className="text-sm text-white/70 mt-1">werden am jeweiligen Turniertag ausgeschüttet</div>
                     </div>
                   </div>
@@ -638,8 +638,8 @@ export default function MembersChampionCupRegelwerkPage() {
                       ["2. Platz", "30%"],
                       ["3. Platz", "20%"],
                     ].map(([place, percent]) => (
-                      <div key={place} className="rounded-xl bg-white border border-gray-200 p-4 text-center">
-                        <div className="text-2xl font-black text-orange-600">{percent}</div>
+                      <div key={place} className="rounded-xl bg-card border border-border p-4 text-center">
+                        <div className="text-2xl font-semibold text-orange-600">{percent}</div>
                         <div className="text-sm font-bold text-white mt-1">{place}</div>
                       </div>
                     ))}
@@ -661,8 +661,8 @@ export default function MembersChampionCupRegelwerkPage() {
                       ["2. Platz", "30%"],
                       ["3. Platz", "20%"],
                     ].map(([place, percent]) => (
-                      <div key={place} className="rounded-xl bg-white border border-gray-200 p-4 text-center">
-                        <div className="text-2xl font-black text-orange-600">{percent}</div>
+                      <div key={place} className="rounded-xl bg-card border border-border p-4 text-center">
+                        <div className="text-2xl font-semibold text-orange-600">{percent}</div>
                         <div className="text-sm font-bold text-white mt-1">{place}</div>
                       </div>
                     ))}
@@ -740,8 +740,8 @@ export default function MembersChampionCupRegelwerkPage() {
             </SectionCard>
 
             <motion.div variants={membersCupItemVariants} className="pb-6">
-              <div className="rounded-2xl border border-gray-200/70 bg-black/30 shadow-sm ring-1 ring-black/5 p-5 text-center">
-                <p className="text-white/55 text-xs sm:text-sm">
+              <div className="rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-black/5 p-5 text-center">
+                <p className="text-muted-foreground text-xs sm:text-sm">
                   <strong>Druck- und Satzfehler vorbehalten!</strong>
                   <br />
                   Stand: Saison 2026/27

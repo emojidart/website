@@ -77,7 +77,7 @@ export function InstallEmdApp() {
       <button
         type="button"
         onClick={install}
-        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-orange-300/30 bg-orange-600 px-4 text-sm font-black text-white shadow-lg shadow-orange-950/25 transition hover:bg-orange-500 sm:h-14"
+        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-orange-300/30 bg-orange-600 px-4 text-sm font-semibold text-white shadow-lg shadow-orange-950/25 transition hover:bg-orange-500 sm:h-14"
       >
         <MonitorDown size={19} /> App installieren
       </button>

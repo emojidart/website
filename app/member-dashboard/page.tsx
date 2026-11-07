@@ -818,7 +818,7 @@ export default function DashboardPage() {
       case "Co-Captain":
         return <ShieldCheck className="h-5 w-5 text-blue-600" />
       default:
-        return <Users className="h-5 w-5 text-gray-600" />
+        return <Users className="h-5 w-5 text-muted-foreground" />
     }
   }
 
@@ -840,7 +840,7 @@ export default function DashboardPage() {
       case "Co-Captain":
         return "bg-blue-100 text-blue-800 border-blue-300"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-300"
+        return "bg-muted text-foreground border-border"
     }
   }
 
@@ -1458,7 +1458,7 @@ export default function DashboardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="flex items-center gap-3">
@@ -1472,14 +1472,14 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center p-4">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Fehler</h1>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()} className="bg-orange-600 hover:bg-orange-700">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Fehler</h1>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               Erneut versuchen
             </Button>
           </div>
@@ -1523,7 +1523,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="text-foreground min-h-screen bg-card  ">
       <Header />
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
         {/* Changed DashboardTutorial prop name */}
@@ -1537,11 +1537,11 @@ export default function DashboardPage() {
         </div>
 
         {getPostponedMatches().length > 0 && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-l-orange-500">
+          <Card className="text-foreground mb-6 sm:mb-8 border-0 shadow-xl bg-card   border-l-4 border-l-orange-500">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-xl shadow-lg">
+                  <div className="text-foreground inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-card   rounded-xl shadow-lg">
                     <CalendarX className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
                 </div>
@@ -1549,11 +1549,11 @@ export default function DashboardPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Verschobene Spiele</h3>
+                      <h3 className="text-base sm:text-lg font-bold text-foreground">Verschobene Spiele</h3>
                     </div>
                     <Badge className="bg-orange-500 text-white w-fit">{getPostponedMatches().length}</Badge>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                  <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
                     {getPostponedMatches().length === 1
                       ? "Ein Spiel wurde"
                       : `${getPostponedMatches().length} Spiele wurden`}{" "}
@@ -1563,7 +1563,7 @@ export default function DashboardPage() {
                     {getPostponedMatches()
                       .slice(0, 3)
                       .map((match) => (
-                        <div key={match.id} className="bg-white/70 rounded-lg p-3 border border-orange-200">
+                        <div key={match.id} className="bg-card rounded-lg p-3 border border-orange-200">
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                               <Users className="h-4 w-4 text-orange-600 flex-shrink-0" />
@@ -1578,7 +1578,7 @@ export default function DashboardPage() {
                                   {match.original_date ? formatMatchDate(match.original_date) : "Ursprüngliches Datum"}
                                 </span>
                               </div>
-                              <ArrowRight className="h-3 w-3 text-gray-400 hidden sm:block" />
+                              <ArrowRight className="h-3 w-3 text-muted-foreground hidden sm:block" />
                               <div className="flex items-center gap-1 text-green-600 font-medium">
                                 <Check className="h-3 w-3" />
                                 <span>
@@ -1588,7 +1588,7 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             {match.postponement_reason && (
-                              <div className="flex items-start gap-1 text-xs text-gray-600 bg-gray-50 rounded p-2">
+                              <div className="flex items-start gap-1 text-xs text-muted-foreground bg-muted rounded p-2">
                                 <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
                                 <span className="italic">{match.postponement_reason}</span>
                               </div>
@@ -1597,7 +1597,7 @@ export default function DashboardPage() {
                         </div>
                       ))}
                     {getPostponedMatches().length > 3 && (
-                      <div className="text-xs sm:text-sm text-gray-600 text-center py-2">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-center py-2">
                         ... und {getPostponedMatches().length - 3} weitere
                       </div>
                     )}
@@ -1620,7 +1620,7 @@ export default function DashboardPage() {
             {/* Main Content */}
             <div className="xl:col-span-2 space-y-6 sm:space-8">
               {/* Spielplan Section with Tabs */}
-              <Card className="shadow-xl border-0 bg-white">
+              <Card className="shadow-xl border-0 bg-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-xl font-bold">
                     <Calendar className="h-6 w-6 text-orange-600" />
@@ -1636,21 +1636,21 @@ export default function DashboardPage() {
                     <TabsList className="grid w-full grid-cols-3 mb-6 h-auto gap-1 p-1">
                       <TabsTrigger
                         value="upcoming"
-                        className="text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight"
+                        className="text-xs xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight"
                       >
                         <span className="block">Kommende</span>
                         <span className="block">Spiele ({getUpcomingMatches().length})</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="postponed"
-                        className={`text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight ${getPostponedMatches().length > 0 ? "animate-pulse-red" : ""}`}
+                        className={`text-xs xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight ${getPostponedMatches().length > 0 ? "animate-pulse-red" : ""}`}
                       >
                         <span className="block">Verschoben</span>
                         <span className="block">({getPostponedMatches().length})</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="completed"
-                        className="text-[10px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight"
+                        className="text-xs xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-2 whitespace-normal leading-tight"
                       >
                         <span className="block">Abgeschl.</span>
                         <span className="block">Spiele ({getCompletedMatches().length})</span>
@@ -1659,8 +1659,8 @@ export default function DashboardPage() {
 
                     <TabsContent value="upcoming">
                       {getUpcomingMatches().length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                           <p>Keine kommenden Spiele gefunden.</p>
                         </div>
                       ) : (
@@ -1785,7 +1785,7 @@ export default function DashboardPage() {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8"
+                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8 text-white"
                                       onClick={() => {
                                         setSelectedMatchForResults(match.id)
                                         setIsResultsDialogOpen(true)
@@ -1850,8 +1850,8 @@ export default function DashboardPage() {
 
                     <TabsContent value="postponed">
                       {getPostponedMatches().length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                           <p>Keine verschobenen Spiele gefunden.</p>
                         </div>
                       ) : (
@@ -1929,7 +1929,7 @@ export default function DashboardPage() {
                                       </div>
                                       <div className="text-3xl font-bold text-blue-600">{match.home_score ?? "-"}</div>
                                     </div>
-                                    <div className="text-2xl font-bold text-gray-400">vs</div>
+                                    <div className="text-2xl font-bold text-muted-foreground">vs</div>
                                     <div className="text-center">
                                       <div className="font-semibold text-lg mb-1">{getTeamName(match, false)}</div>
                                       <div className="text-3xl font-bold text-red-600">{match.away_score ?? "-"}</div>
@@ -1963,7 +1963,7 @@ export default function DashboardPage() {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8"
+                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8 text-white"
                                       onClick={() => {
                                         setSelectedMatchForResults(match.id)
                                         setIsResultsDialogOpen(true)
@@ -2036,8 +2036,8 @@ export default function DashboardPage() {
 
                     <TabsContent value="completed">
                       {getCompletedMatches().length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                           <p>Keine abgeschlossenen Spiele gefunden.</p>
                         </div>
                       ) : (
@@ -2146,7 +2146,7 @@ export default function DashboardPage() {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8"
+                                      className="bg-blue-600 hover:bg-blue-700 w-full h-8 text-white"
                                       onClick={() => {
                                         setSelectedMatchForResults(match.id)
                                         setIsResultsDialogOpen(true)
@@ -2509,7 +2509,7 @@ export default function DashboardPage() {
                   <Button
                     onClick={handleTeamPhotoUpload}
                     disabled={teamPhotoUploading || !teamPhotoFile}
-                    className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm h-8"
+                    className="w-full bg-green-700 hover:bg-green-700 text-xs sm:text-sm h-8 text-white"
                   >
                     <Upload className="h-3 w-3 mr-1" />
                     {teamPhotoUploading ? "Wird hochgeladen..." : hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}
@@ -2575,7 +2575,7 @@ export default function DashboardPage() {
                 }
               }}
               disabled={!postponeData.newDate || !postponeData.newTime || !postponeData.reason}
-              className="bg-orange-600 hover:bg-orange-700"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               Verschieben
             </Button>

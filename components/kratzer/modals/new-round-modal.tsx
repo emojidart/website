@@ -120,9 +120,9 @@ export function NewRoundModal({
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !isRolling && onOpenChange(nextOpen)}>
       <DialogContent className="overflow-hidden rounded-[28px] border border-white/[0.10] bg-[#080b10] p-0 text-white shadow-[0_30px_100px_-40px_rgba(0,0,0,.98)] sm:max-w-[640px]">
-        <div className="bg-gradient-to-br from-slate-950 via-slate-950 to-[#25140d] px-6 pb-7 pt-6 text-white sm:px-8">
+        <div className="bg-card    px-6 pb-7 pt-6 text-white sm:px-8">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-black sm:text-3xl">
+            <DialogTitle className="text-center text-2xl font-semibold sm:text-3xl">
               Runde {currentRound + 1}
             </DialogTitle>
           </DialogHeader>
@@ -131,7 +131,7 @@ export function NewRoundModal({
             {settings.diceModeEnabled ? (
               <>
                 <div
-                  className={`mx-auto flex h-28 w-28 items-center justify-center rounded-[30px] border border-white/15 bg-white/10 text-[88px] leading-none shadow-[0_18px_50px_-25px_rgba(0,0,0,.9)] backdrop-blur-sm transition-all duration-200 sm:h-32 sm:w-32 sm:text-[100px] ${
+                  className={`mx-auto flex h-28 w-28 items-center justify-center rounded-[30px] border border-white/15 bg-white/10 text-[88px] leading-none shadow-[0_18px_50px_-25px_rgba(0,0,0,.9)]  transition-all duration-200 sm:h-32 sm:w-32 sm:text-[100px] ${
                     isRolling ? "scale-110 rotate-6" : "scale-100 rotate-0"
                   }`}
                 >
@@ -141,18 +141,18 @@ export function NewRoundModal({
                 <div className="mt-4">
                   {isRolling ? (
                     <>
-                      <div className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Wird ausgelost</div>
-                      <div className="mt-1 text-2xl font-black">Welcher Modus kommt?</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-300">Wird ausgelost</div>
+                      <div className="mt-1 text-2xl font-semibold">Welcher Modus kommt?</div>
                     </>
                   ) : rolledMode ? (
                     <>
-                      <div className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Runde {currentRound + 1}</div>
-                      <div className="mt-1 text-3xl font-black sm:text-4xl">{rolledMode}</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-300">Runde {currentRound + 1}</div>
+                      <div className="mt-1 text-3xl font-semibold sm:text-4xl">{rolledMode}</div>
                     </>
                   ) : (
                     <>
-                      <div className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Würfelmodus</div>
-                      <div className="mt-1 text-2xl font-black">Bereit zum Würfeln</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-300">Würfelmodus</div>
+                      <div className="mt-1 text-2xl font-semibold">Bereit zum Würfeln</div>
                     </>
                   )}
                 </div>
@@ -162,11 +162,11 @@ export function NewRoundModal({
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10">
                   <Play className="h-7 w-7 text-orange-300" />
                 </div>
-                <div className="mt-4 text-xl font-black">Neue Runde vorbereiten</div>
+                <div className="mt-4 text-xl font-semibold">Neue Runde vorbereiten</div>
               </div>
             )}
 
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-slate-200">
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-muted-foreground">
               <Users className="h-4 w-4 text-orange-300" />
               {activePlayers.length} Spieler dabei
             </div>
@@ -187,7 +187,7 @@ export function NewRoundModal({
                 value={settings.boardCount}
                 disabled={isRolling}
                 onChange={(e) => onSettingsChange("boardCount", Number.parseInt(e.target.value))}
-                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#11161e] font-black text-white placeholder:text-white/25 hover:border-white/[0.16] focus-visible:ring-orange-500/30"
+                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#11161e] font-semibold text-white placeholder:text-white/25 hover:border-white/[0.16] focus-visible:ring-orange-500/30"
               />
             </div>
 
@@ -203,7 +203,7 @@ export function NewRoundModal({
                 value={settings.maxGroupSize}
                 disabled={isRolling}
                 onChange={(e) => onSettingsChange("maxGroupSize", Number.parseInt(e.target.value))}
-                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#11161e] font-black text-white placeholder:text-white/25 hover:border-white/[0.16] focus-visible:ring-orange-500/30"
+                className="mt-2 h-11 rounded-xl border-white/[0.10] bg-[#11161e] font-semibold text-white placeholder:text-white/25 hover:border-white/[0.16] focus-visible:ring-orange-500/30"
               />
             </div>
           </div>
@@ -225,7 +225,7 @@ export function NewRoundModal({
               {(Object.entries(DICE_GAME_MODES) as Array<[string, GameMode]>).map(([face, mode]) => (
                 <div
                   key={face}
-                  className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2.5 text-xs font-black text-white/65"
+                  className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2.5 text-xs font-semibold text-white/65"
                 >
                   <span className="text-xl leading-none text-white">{DICE_SYMBOLS[Number(face) as DiceFace]}</span>
                   <span>{mode}</span>
@@ -248,7 +248,7 @@ export function NewRoundModal({
             <Button
               onClick={handleRoundStart}
               disabled={!enoughCapacity || isRolling || Boolean(rolledMode)}
-              className="h-11 rounded-xl bg-orange-500 px-5 font-black text-white hover:bg-orange-400"
+              className="h-11 rounded-xl bg-orange-500 px-5 font-semibold text-primary-foreground hover:bg-orange-400"
             >
               {settings.diceModeEnabled ? <Dices className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
               {isRolling

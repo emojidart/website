@@ -508,7 +508,7 @@ export default function EmdLineupAlert() {
       <div className="emd-alert-vignette pointer-events-none absolute inset-0" />
 
       <div
-        className="relative mx-auto flex h-[100dvh] w-full max-w-[560px] flex-col overflow-y-auto overflow-x-hidden overscroll-contain border-x border-red-300/30 bg-[linear-gradient(180deg,#1b0204_0%,#090102_46%,#020203_100%)] shadow-[0_0_70px_rgba(239,68,68,.68)]"
+        className="text-foreground relative mx-auto flex h-[100dvh] w-full max-w-[560px] flex-col overflow-y-auto overflow-x-hidden overscroll-contain border-x border-red-300/30 bg-card shadow-[0_0_70px_rgba(239,68,68,.68)]"
         style={{
           paddingTop: "max(8px, env(safe-area-inset-top))",
           paddingBottom: "max(8px, env(safe-area-inset-bottom))",
@@ -520,7 +520,7 @@ export default function EmdLineupAlert() {
         <button
           type="button"
           onClick={closeAlert}
-          className="absolute right-3 top-[max(10px,env(safe-area-inset-top))] z-30 flex h-11 w-11 items-center justify-center rounded-full border border-red-200/25 bg-black/55 text-white/90 shadow-[0_0_22px_rgba(239,68,68,.22)] backdrop-blur-xl"
+          className="absolute right-3 top-[max(10px,env(safe-area-inset-top))] z-30 flex h-11 w-11 items-center justify-center rounded-full border border-red-200/25 bg-black/55 text-white/90 shadow-[0_0_22px_rgba(239,68,68,.22)] "
           aria-label="Alert schließen"
         >
           <X className="h-6 w-6" />
@@ -535,13 +535,13 @@ export default function EmdLineupAlert() {
 
             <div className="mt-[clamp(12px,2.4vh,24px)] flex items-center gap-2.5">
               <span className="emd-alert-dot h-2.5 w-2.5 rounded-full bg-red-400" />
-              <div className="text-[clamp(10px,1.7vh,14px)] font-black uppercase tracking-[0.29em] text-red-200">
+              <div className="text-[clamp(10px,1.7vh,14px)] font-semibold uppercase tracking-[0.29em] text-red-200">
                 EMD ALERT · SOFORT HANDELN
               </div>
               <span className="emd-alert-dot h-2.5 w-2.5 rounded-full bg-red-400" />
             </div>
 
-            <h2 className="mt-[clamp(9px,1.8vh,18px)] text-[clamp(30px,6vh,52px)] font-black uppercase leading-[0.89] tracking-[-0.055em] drop-shadow-[0_4px_18px_rgba(0,0,0,.55)]">
+            <h2 className="mt-[clamp(9px,1.8vh,18px)] text-[clamp(30px,6vh,52px)] font-semibold uppercase leading-[0.89] tracking-[-0.055em] drop-shadow-[0_4px_18px_rgba(0,0,0,.55)]">
               Aufstellung
               <br />
               noch nicht
@@ -549,18 +549,18 @@ export default function EmdLineupAlert() {
               bestätigt!
             </h2>
 
-            <div className="mt-[clamp(12px,2.4vh,24px)] w-full rounded-[22px] border border-red-100/18 bg-black/52 p-[clamp(13px,2.1vh,20px)] text-left shadow-[inset_0_0_30px_rgba(239,68,68,.05),0_16px_45px_rgba(0,0,0,.42)] backdrop-blur-xl">
-              <div className="text-[clamp(17px,2.35vh,21px)] font-black leading-tight">
+            <div className="mt-[clamp(12px,2.4vh,24px)] w-full rounded-[22px] border border-red-100/18 bg-black/52 p-[clamp(13px,2.1vh,20px)] text-left shadow-[inset_0_0_30px_rgba(239,68,68,.05),0_16px_45px_rgba(0,0,0,.42)] ">
+              <div className="text-[clamp(17px,2.35vh,21px)] font-semibold leading-tight">
                 {details.homeName}
                 <span className="mx-1.5 text-white/22">vs.</span>
                 {details.awayName}
               </div>
 
-              <div className="mt-2 text-[10px] font-black uppercase tracking-[0.15em] text-red-100/45">
+              <div className="mt-2 text-xs font-semibold uppercase tracking-[0.15em] text-red-100/45">
                 {details.teamName} · {details.dartType}
               </div>
 
-              <div className="my-[clamp(9px,1.5vh,14px)] h-px bg-gradient-to-r from-transparent via-red-200/20 to-transparent" />
+              <div className="text-foreground my-[clamp(9px,1.5vh,14px)] h-px bg-card   " />
 
               <div className="grid gap-[clamp(5px,1.1vh,9px)] text-[clamp(13px,1.8vh,15px)] font-bold text-white/82">
                 <div className="flex items-center gap-3">
@@ -596,7 +596,7 @@ export default function EmdLineupAlert() {
                     `&tab=lineup`,
                 )
               }}
-              className="emd-alert-action h-[clamp(50px,6.7vh,62px)] w-full rounded-[19px] border border-red-100/45 bg-red-600 text-[clamp(14px,2vh,18px)] font-black uppercase tracking-[0.05em] text-white shadow-[0_0_34px_rgba(239,68,68,.58)] hover:bg-red-500"
+              className="emd-alert-action h-[clamp(50px,6.7vh,62px)] w-full rounded-[19px] border border-red-100/45 bg-red-600 text-[clamp(14px,2vh,18px)] font-semibold uppercase tracking-[0.05em] text-white shadow-[0_0_34px_rgba(239,68,68,.58)] hover:bg-red-500"
             >
               <BellRing className="mr-2 h-5 w-5" />
               Jetzt zur Aufstellung
@@ -606,12 +606,12 @@ export default function EmdLineupAlert() {
               type="button"
               variant="outline"
               onClick={closeAlert}
-              className="h-[clamp(42px,5.4vh,50px)] w-full rounded-[17px] border-white/10 bg-black/50 font-black text-white/60 hover:bg-white/[0.05] hover:text-white"
+              className="h-[clamp(42px,5.4vh,50px)] w-full rounded-[17px] border-white/10 bg-card font-semibold text-white/60 hover:bg-white/[0.05] hover:text-white"
             >
               Später
             </Button>
 
-            <div className="pb-1 text-center text-[9px] font-bold uppercase tracking-[0.16em] text-red-100/28">
+            <div className="pb-1 text-center text-xs font-bold uppercase tracking-[0.16em] text-red-100/28">
               Alert bleibt aktiv bis die Aufstellung bestätigt ist
             </div>
           </div>

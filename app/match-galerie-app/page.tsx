@@ -403,7 +403,7 @@ setFilterLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matches?.length, session?.user?.id])
 
-  
+
  const [commentsLoadedFor, setCommentsLoadedFor] = useState<string | null>(null)
 
 useEffect(() => {
@@ -418,7 +418,7 @@ useEffect(() => {
 }, [isPhotoModalOpen, selectedMatch?.id, commentsLoadedFor])
 
   const handlePhotoClick = (photoUrl: string, match: any) => {
-   
+
     setSelectedPhotoUrl(photoUrl)
     setSelectedMatch(match)
     setIsPhotoModalOpen(true)
@@ -461,7 +461,7 @@ useEffect(() => {
   }
 
   const PageShell = ({ children }: { children: React.ReactNode }) => (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col pb-20">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-4 max-w-6xl">{children}</main>
       <MobileBottomNav />
@@ -474,7 +474,7 @@ useEffect(() => {
         <div className="flex items-center justify-center py-16">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
         </div>
-        <p className="text-center text-gray-600 -mt-10">Lade Match-Galerie...</p>
+        <p className="text-center text-muted-foreground -mt-10">Lade Match-Galerie...</p>
       </PageShell>
     )
   }
@@ -483,8 +483,8 @@ useEffect(() => {
     return (
       <PageShell>
         <div className="text-center py-10">
-          <h1 className="text-xl font-bold text-gray-900 mb-4">Anmeldung erforderlich</h1>
-          <p className="text-gray-600 mb-6">Du musst angemeldet sein, um die Match-Galerie zu sehen.</p>
+          <h1 className="text-xl font-bold text-foreground mb-4">Anmeldung erforderlich</h1>
+          <p className="text-muted-foreground mb-6">Du musst angemeldet sein, um die Match-Galerie zu sehen.</p>
           <Button onClick={() => router.push("/member-login")}>Zur Anmeldung</Button>
         </div>
       </PageShell>
@@ -497,7 +497,7 @@ useEffect(() => {
       <Button
         variant="outline"
         onClick={() => router.push("/member-profile-app")}
-        className="mb-4 flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200"
+        className="mb-4 flex items-center gap-2 bg-card hover:bg-muted text-foreground border border-border"
         size="sm"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -507,8 +507,8 @@ useEffect(() => {
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         {/* HEADER */}
         <motion.div variants={itemVariants} className="text-center mb-2">
-          <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl shadow-xl border border-purple-200 p-6 text-white">
-            <div className="bg-white/10 rounded-full p-3 w-14 h-14 mx-auto mb-4 backdrop-blur-sm">
+          <div className="bg-card   rounded-2xl shadow-xl border border-purple-200 p-6 text-white">
+            <div className="bg-white/10 rounded-full p-3 w-14 h-14 mx-auto mb-4 ">
               <Camera className="h-8 w-8 text-white mx-auto" />
             </div>
 
@@ -556,7 +556,7 @@ useEffect(() => {
         {/* LISTE */}
         <motion.div variants={itemVariants}>
           <Card className="overflow-hidden shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4">
+            <CardHeader className="bg-card   text-white p-4">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Camera className="h-5 w-5" />
                 Match-Fotos ({matches.length})
@@ -565,8 +565,8 @@ useEffect(() => {
 
             <CardContent className="p-4">
               {matches.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <Camera className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <div className="text-center py-12 text-muted-foreground">
+                  <Camera className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                   <p className="text-base">Noch keine Match-Fotos verfügbar</p>
                   <p className="text-sm mt-2">Fotos werden nach den Spielen hochgeladen</p>
                 </div>
@@ -605,7 +605,7 @@ useEffect(() => {
 
                           <CardContent className="p-3">
                             <div className="space-y-2">
-                              <div className="flex items-center justify-between text-xs text-gray-500">
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
                                   <span>
@@ -629,16 +629,16 @@ useEffect(() => {
                                         className="w-4 h-4 rounded-full object-cover flex-shrink-0"
                                       />
                                     ) : (
-                                      <div className="w-4 h-4 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Trophy className="h-2 w-2 text-gray-500" />
+                                      <div className="w-4 h-4 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                                        <Trophy className="h-2 w-2 text-muted-foreground" />
                                       </div>
                                     )}
-                                    <span className="font-medium text-gray-900 truncate">
+                                    <span className="font-medium text-foreground truncate">
                                       {match.home_team?.name || match.home_opponent_team?.name || "Team"}
                                     </span>
                                   </div>
                                   {match.status === "completed" && (
-                                    <span className="text-xs font-bold text-gray-600">{match.home_score || 0}</span>
+                                    <span className="text-xs font-bold text-muted-foreground">{match.home_score || 0}</span>
                                   )}
                                 </div>
 
@@ -651,16 +651,16 @@ useEffect(() => {
                                         className="w-4 h-4 rounded-full object-cover flex-shrink-0"
                                       />
                                     ) : (
-                                      <div className="w-4 h-4 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Trophy className="h-2 w-2 text-gray-500" />
+                                      <div className="w-4 h-4 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                                        <Trophy className="h-2 w-2 text-muted-foreground" />
                                       </div>
                                     )}
-                                    <span className="font-medium text-gray-900 truncate">
+                                    <span className="font-medium text-foreground truncate">
                                       {match.away_team?.name || match.away_opponent_team?.name || "Team"}
                                     </span>
                                   </div>
                                   {match.status === "completed" && (
-                                    <span className="text-xs font-bold text-gray-600">{match.away_score || 0}</span>
+                                    <span className="text-xs font-bold text-muted-foreground">{match.away_score || 0}</span>
                                   )}
                                 </div>
                               </div>
@@ -671,7 +671,7 @@ useEffect(() => {
                                   <button
                                     type="button"
                                     className={`inline-flex items-center gap-1 text-sm ${
-                                      isLiked ? "text-red-600" : "text-gray-600"
+                                      isLiked ? "text-red-600" : "text-muted-foreground"
                                     } hover:text-red-600 transition-colors disabled:opacity-50`}
                                     disabled={isLikeBusy}
                                     onClick={(e) => {
@@ -686,7 +686,7 @@ useEffect(() => {
 
                                   <button
                                     type="button"
-                                    className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-purple-700 transition-colors"
+                                    className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-purple-700 transition-colors"
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       handlePhotoClick(match.team_photo_url, match)
@@ -698,7 +698,7 @@ useEffect(() => {
                                   </button>
                                 </div>
 
-                                <span className="text-[11px] text-gray-400">Tippe für Details</span>
+                                <span className="text-xs text-muted-foreground">Tippe für Details</span>
                               </div>
                             </div>
                           </CardContent>
@@ -742,7 +742,7 @@ useEffect(() => {
                       <Badge className={`text-xs ${getMatchResultColor(selectedMatch)}`}>
                         {getMatchResultText(selectedMatch)}
                       </Badge>
-                      <span className="text-sm text-gray-500 hidden sm:inline">
+                      <span className="text-sm text-muted-foreground hidden sm:inline">
                         {new Date(selectedMatch.match_date).toLocaleDateString("de-DE", {
                           day: "2-digit",
                           month: "2-digit",
@@ -754,11 +754,11 @@ useEffect(() => {
 
                   <button
                     type="button"
-                    className="inline-flex items-center justify-center w-9 h-9 rounded-xl border bg-white hover:bg-gray-50"
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-xl border bg-card hover:bg-muted"
                     onClick={() => setIsPhotoModalOpen(false)}
                     aria-label="Schließen"
                   >
-                    <X className="h-4 w-4 text-gray-700" />
+                    <X className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </div>
               </div>
@@ -779,22 +779,22 @@ useEffect(() => {
               </div>
 
               {/* Right panel: like + comments */}
-              <div className="lg:col-span-2 border-t lg:border-t-0 lg:border-l bg-white">
+              <div className="lg:col-span-2 border-t lg:border-t-0 lg:border-l bg-card">
                 {selectedMatch && (
                   <>
                     {/* Like bar */}
-                    <div className="p-4 border-b bg-gradient-to-r from-gray-50 to-white">
+                    <div className="text-foreground p-4 border-b bg-card  ">
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="text-[11px] uppercase tracking-wide text-gray-500">Interaktion</div>
-                          <div className="text-sm font-semibold text-gray-900">Gefällt dir das Foto?</div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">Interaktion</div>
+                          <div className="text-sm font-semibold text-foreground">Gefällt dir das Foto?</div>
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
                           <button
                             type="button"
-                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 transition-colors ${
-                              likedByMe[String(selectedMatch.id)] ? "text-red-600" : "text-gray-700"
+                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-card hover:bg-muted transition-colors ${
+                              likedByMe[String(selectedMatch.id)] ? "text-red-600" : "text-muted-foreground"
                             }`}
                             disabled={!!likeLoading[String(selectedMatch.id)]}
                             onClick={() => toggleLike(String(selectedMatch.id))}
@@ -807,7 +807,7 @@ useEffect(() => {
                             <span className="text-sm font-semibold">{likeCounts[String(selectedMatch.id)] || 0}</span>
                           </button>
 
-                          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white text-gray-700">
+                          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-card text-muted-foreground">
                             <MessageCircle className="h-4 w-4" />
                             <span className="text-sm font-semibold">{commentCounts[String(selectedMatch.id)] || 0}</span>
                           </div>
@@ -817,17 +817,17 @@ useEffect(() => {
 
                     {/* Comments */}
                     <div className="p-4">
-                      <div className="text-sm font-bold text-gray-900 mb-3">Kommentare</div>
+                      <div className="text-sm font-bold text-foreground mb-3">Kommentare</div>
 
-                      <div className="max-h-[220px] sm:max-h-[280px] overflow-auto rounded-xl border bg-gray-50 p-3">
+                      <div className="max-h-[220px] sm:max-h-[280px] overflow-auto rounded-xl border bg-muted p-3">
                         {commentsLoading ? (
-                          <div className="text-sm text-gray-500">Lade Kommentare…</div>
+                          <div className="text-sm text-muted-foreground">Lade Kommentare…</div>
                         ) : comments.length === 0 ? (
-                          <div className="text-sm text-gray-500">Noch keine Kommentare. Sei der Erste 🙂</div>
+                          <div className="text-sm text-muted-foreground">Noch keine Kommentare. Sei der Erste 🙂</div>
                         ) : (
                           <div className="space-y-3">
                             {comments.map((c) => (
-                              <div key={c.id} className="bg-white rounded-xl border p-3">
+                              <div key={c.id} className="bg-card rounded-xl border p-3">
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="flex items-center gap-2 min-w-0">
                                     {c.photo_url ? (
@@ -837,15 +837,15 @@ useEffect(() => {
                                         className="w-7 h-7 rounded-full object-cover"
                                       />
                                     ) : (
-                                      <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-600">
+                                      <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">
                                         {String(c.display_name || "U").slice(0, 1).toUpperCase()}
                                       </div>
                                     )}
                                     <div className="min-w-0">
-                                      <div className="text-xs font-semibold text-gray-900 truncate">
+                                      <div className="text-xs font-semibold text-foreground truncate">
                                         {c.display_name || "User"}
                                       </div>
-                                      <div className="text-[11px] text-gray-400">
+                                      <div className="text-xs text-muted-foreground">
                                         {new Date(c.created_at).toLocaleString("de-DE", {
                                           day: "2-digit",
                                           month: "2-digit",
@@ -858,7 +858,7 @@ useEffect(() => {
                                   </div>
                                 </div>
 
-                                <div className="mt-2 text-sm text-gray-800 whitespace-pre-wrap break-words">
+                                <div className="mt-2 text-sm text-foreground whitespace-pre-wrap break-words">
                                   {c.body}
                                 </div>
                               </div>
@@ -870,14 +870,14 @@ useEffect(() => {
                       {/* Comment input */}
                       <div className="mt-3 flex items-end gap-2">
                         <div className="flex-1">
-                          <label className="text-[11px] uppercase tracking-wide text-gray-500">
+                          <label className="text-xs uppercase tracking-wide text-muted-foreground">
                             Kommentar schreiben
                           </label>
                           <textarea
                             value={commentInput}
                             onChange={(e) => setCommentInput(e.target.value)}
                             placeholder="Schreib etwas…"
-                            className="mt-1 w-full min-h-[42px] max-h-[120px] rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-200"
+                            className="mt-1 w-full min-h-[42px] max-h-[120px] rounded-xl border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-200"
                           />
                         </div>
 
@@ -891,7 +891,7 @@ useEffect(() => {
                         </Button>
                       </div>
 
-                      <div className="mt-2 text-xs text-gray-400">
+                      <div className="mt-2 text-xs text-muted-foreground">
                         Tipp: Halte es kurz & freundlich 🙂
                       </div>
                     </div>
@@ -902,7 +902,7 @@ useEffect(() => {
 
             {/* Optional: Score footer (dein bestehender Teil) */}
             {selectedMatch && selectedMatch.status === "completed" && (
-              <div className="p-4 border-t bg-gray-50">
+              <div className="p-4 border-t bg-muted">
                 <div className="flex items-center justify-center gap-8 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
@@ -913,8 +913,8 @@ useEffect(() => {
                           className="w-5 h-5 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center">
-                          <Trophy className="h-3 w-3 text-gray-500" />
+                        <div className="w-5 h-5 bg-muted rounded-full flex items-center justify-center">
+                          <Trophy className="h-3 w-3 text-muted-foreground" />
                         </div>
                       )}
                       <span className="font-medium">
@@ -924,7 +924,7 @@ useEffect(() => {
                     <span className="text-xl font-bold">{selectedMatch.home_score || 0}</span>
                   </div>
 
-                  <span className="text-xl font-medium text-gray-400">:</span>
+                  <span className="text-xl font-medium text-muted-foreground">:</span>
 
                   <div className="flex items-center gap-2">
                     <span className="text-xl font-bold">{selectedMatch.away_score || 0}</span>
@@ -939,8 +939,8 @@ useEffect(() => {
                           className="w-5 h-5 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center">
-                          <Trophy className="h-3 w-3 text-gray-500" />
+                        <div className="w-5 h-5 bg-muted rounded-full flex items-center justify-center">
+                          <Trophy className="h-3 w-3 text-muted-foreground" />
                         </div>
                       )}
                     </div>

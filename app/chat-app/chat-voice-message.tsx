@@ -179,7 +179,7 @@ export default function ChatVoiceMessage({
             className="h-1.5 w-full cursor-pointer accent-orange-400"
             aria-label="Sprachnachricht Position"
           />
-          <div className="mt-1 flex items-center justify-between text-[10px] font-bold text-white/45">
+          <div className="mt-1 flex items-center justify-between text-xs font-bold text-muted-foreground">
             <span>{fmt(Math.min(current, displayDuration || current))}</span>
             <span className="inline-flex items-center gap-1">
               <Mic2 className="h-3 w-3" />

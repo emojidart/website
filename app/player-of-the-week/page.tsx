@@ -170,7 +170,7 @@ export default function PlayerOfTheWeekPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -184,15 +184,15 @@ export default function PlayerOfTheWeekPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl">
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-orange-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
             <Trophy className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Spieler der Woche</h1>
-          <div className="flex items-center justify-center gap-2 text-gray-600">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2">Spieler der Woche</h1>
+          <div className="flex items-center justify-center gap-2 text-muted-foreground">
             <Calendar className="h-5 w-5" />
             <p className="text-base sm:text-lg">
               Vorwoche: {weekRange.start} - {weekRange.end}
@@ -209,17 +209,17 @@ export default function PlayerOfTheWeekPage() {
           <TabsContent value={dartType} className="mt-6">
             {!topPlayer ? (
               <div className="text-center py-12">
-                <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Keine Daten verfügbar</h2>
-                <p className="text-gray-600">
+                <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <h2 className="text-2xl font-bold text-foreground mb-2">Keine Daten verfügbar</h2>
+                <p className="text-muted-foreground">
                   Für {getDartTypeLabel(dartType)} in der Vorwoche ({weekRange.start} - {weekRange.end}) wurden noch
                   keine Statistiken eingegeben.
                 </p>
               </div>
             ) : (
               <>
-                <Card className="shadow-xl border-0 bg-white mb-6 sm:mb-8">
-                  <CardHeader className="border-b border-gray-100">
+                <Card className="shadow-xl border-0 bg-card mb-6 sm:mb-8">
+                  <CardHeader className="border-b border-border">
                     <CardTitle className="flex items-center justify-center gap-2 text-xl lg:text-2xl font-bold">
                       <Award className="h-6 w-6 lg:h-7 lg:w-7 text-orange-600" />
                       {getDartTypeLabel(dartType)} - Gewinner der Vorwoche
@@ -240,48 +240,48 @@ export default function PlayerOfTheWeekPage() {
                       </div>
 
                       <div className="flex-1 text-center md:text-left">
-                        <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">{topPlayer.name}</h2>
+                        <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">{topPlayer.name}</h2>
                         <div className="flex items-center justify-center md:justify-start gap-3 mb-6">
                           <Badge className="bg-orange-600 text-white text-lg px-4 py-2 font-bold">
                             {topPlayer.total_points} Punkte
                           </Badge>
-                          <Badge className="bg-gray-100 text-gray-900 text-base px-3 py-1.5 border border-gray-200">
+                          <Badge className="bg-muted text-foreground text-base px-3 py-1.5 border border-border">
                             {topPlayer.win_percentage.toFixed(1)}% Gewinnrate
                           </Badge>
                         </div>
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
-                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="bg-muted rounded-lg p-3 border border-border">
                             <div className="text-2xl font-bold text-orange-600">{topPlayer.total_wins}</div>
-                            <div className="text-sm text-gray-600">Leg Wins</div>
+                            <div className="text-sm text-muted-foreground">Leg Wins</div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="bg-muted rounded-lg p-3 border border-border">
                             <div className="text-2xl font-bold text-orange-600">{topPlayer.throws_180}</div>
-                            <div className="text-sm text-gray-600">180er</div>
+                            <div className="text-sm text-muted-foreground">180er</div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="bg-muted rounded-lg p-3 border border-border">
                             <div className="text-2xl font-bold text-orange-600">{topPlayer.throws_171}</div>
-                            <div className="text-sm text-gray-600">171er</div>
+                            <div className="text-sm text-muted-foreground">171er</div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="bg-muted rounded-lg p-3 border border-border">
                             <div className="text-2xl font-bold text-orange-600">{topPlayer.throws_high_tonne}</div>
-                            <div className="text-sm text-gray-600">High Tonne</div>
+                            <div className="text-sm text-muted-foreground">High Tonne</div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="bg-muted rounded-lg p-3 border border-border">
                             <div className="text-2xl font-bold text-orange-600">{topPlayer.throws_tonne}</div>
-                            <div className="text-sm text-gray-600">Tonne</div>
+                            <div className="text-sm text-muted-foreground">Tonne</div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="bg-muted rounded-lg p-3 border border-border">
                             <div className="text-2xl font-bold text-orange-600">{topPlayer.throws_95_plus}</div>
-                            <div className="text-sm text-gray-600">95+</div>
+                            <div className="text-sm text-muted-foreground">95+</div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="bg-muted rounded-lg p-3 border border-border">
                             <div className="text-2xl font-bold text-orange-600">{topPlayer.throws_shanghai}</div>
-                            <div className="text-sm text-gray-600">Shanghai</div>
+                            <div className="text-sm text-muted-foreground">Shanghai</div>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="bg-muted rounded-lg p-3 border border-border">
                             <div className="text-2xl font-bold text-orange-600">{topPlayer.throws_bull}</div>
-                            <div className="text-sm text-gray-600">Bull</div>
+                            <div className="text-sm text-muted-foreground">Bull</div>
                           </div>
                         </div>
                       </div>
@@ -289,8 +289,8 @@ export default function PlayerOfTheWeekPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-xl border-0 bg-white">
-                  <CardHeader className="border-b border-gray-100">
+                <Card className="shadow-xl border-0 bg-card">
+                  <CardHeader className="border-b border-border">
                     <CardTitle className="flex items-center gap-2 text-xl font-bold">
                       <TrendingUp className="h-6 w-6 text-orange-600" />
                       {getDartTypeLabel(dartType)} - Top 3 der Vorwoche
@@ -301,46 +301,46 @@ export default function PlayerOfTheWeekPage() {
                       {topThreePlayers.map((player, index) => (
                         <div
                           key={player.player_id}
-                          className="border-2 border-gray-200 rounded-xl p-4 hover:border-orange-300 transition-colors"
+                          className="border-2 border-border rounded-xl p-4 hover:border-orange-300 transition-colors"
                         >
                           <div className="flex items-center gap-3 mb-4">
                             <div className="flex items-center justify-center w-10 h-10 bg-orange-100 rounded-full font-bold text-orange-700 text-lg">
                               #{index + 1}
                             </div>
                             {index === 0 && <Trophy className="h-5 w-5 text-orange-600" />}
-                            {index === 1 && <Award className="h-5 w-5 text-gray-500" />}
+                            {index === 1 && <Award className="h-5 w-5 text-muted-foreground" />}
                             {index === 2 && <Target className="h-5 w-5 text-orange-400" />}
                           </div>
 
                           <div className="text-center mb-4">
-                            <Avatar className="h-20 w-20 mx-auto mb-3 border-2 border-gray-200">
+                            <Avatar className="h-20 w-20 mx-auto mb-3 border-2 border-border">
                               <AvatarImage src={player.photo_url || "/placeholder.svg"} />
                               <AvatarFallback className="bg-orange-100 text-orange-700 text-2xl font-bold">
                                 {player.name?.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">{player.name}</h3>
+                            <h3 className="text-lg font-bold text-foreground mb-2">{player.name}</h3>
                             <Badge className="bg-orange-600 text-white px-3 py-1">{player.total_points} Punkte</Badge>
                           </div>
 
                           <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-gray-50 rounded-lg p-2 text-center border border-gray-200">
+                            <div className="bg-muted rounded-lg p-2 text-center border border-border">
                               <div className="text-lg font-bold text-orange-600">{player.total_wins}</div>
-                              <div className="text-xs text-gray-600">Wins</div>
+                              <div className="text-xs text-muted-foreground">Wins</div>
                             </div>
-                            <div className="bg-gray-50 rounded-lg p-2 text-center border border-gray-200">
+                            <div className="bg-muted rounded-lg p-2 text-center border border-border">
                               <div className="text-lg font-bold text-orange-600">{player.throws_180}</div>
-                              <div className="text-xs text-gray-600">180er</div>
+                              <div className="text-xs text-muted-foreground">180er</div>
                             </div>
-                            <div className="bg-gray-50 rounded-lg p-2 text-center border border-gray-200">
+                            <div className="bg-muted rounded-lg p-2 text-center border border-border">
                               <div className="text-lg font-bold text-orange-600">{player.throws_171}</div>
-                              <div className="text-xs text-gray-600">171er</div>
+                              <div className="text-xs text-muted-foreground">171er</div>
                             </div>
-                            <div className="bg-gray-50 rounded-lg p-2 text-center border border-gray-200">
+                            <div className="bg-muted rounded-lg p-2 text-center border border-border">
                               <div className="text-lg font-bold text-orange-600">
                                 {player.win_percentage.toFixed(1)}%
                               </div>
-                              <div className="text-xs text-gray-600">Win Rate</div>
+                              <div className="text-xs text-muted-foreground">Win Rate</div>
                             </div>
                           </div>
                         </div>

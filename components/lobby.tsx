@@ -601,14 +601,14 @@ export function Lobby() {
     }
 
     return (
-      <Card className={`bg-white shadow-md hover:shadow-lg transition-all ${isMyGame ? "border-orange-200" : ""}`}>
+      <Card className={`bg-card shadow-md hover:shadow-lg transition-all ${isMyGame ? "border-orange-200" : ""}`}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-base font-semibold whitespace-nowrap">501 Double Out</CardTitle>
             <div className="flex flex-col items-end gap-1.5">
               <div className="flex flex-col items-end text-xs text-muted-foreground">
                 <span className="font-medium">{formatDateShort(game.created_at)}</span>
-                <span className="text-[10px]">{formatTimeShort(game.created_at)}</span>
+                <span className="text-xs">{formatTimeShort(game.created_at)}</span>
               </div>
               {isMyGame && (
                 <Badge
@@ -625,14 +625,14 @@ export function Lobby() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {/* Player 1 */}
             <div
-              className={`flex flex-col items-center p-3 sm:p-4 rounded-lg ${isPlayer1Winner ? "bg-green-50" : "bg-gray-50"}`}
+              className={`flex flex-col items-center p-3 sm:p-4 rounded-lg ${isPlayer1Winner ? "bg-green-50" : "bg-muted"}`}
             >
               <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-blue-200 mb-2">
                 <AvatarImage
                   src={game.player1_photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
                   alt={game.player1_name}
                 />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                <AvatarFallback className="bg-card   text-white">
                   {(game.player1_name || "U")
                     .split(" ")
                     .map((n) => n[0])
@@ -647,20 +647,20 @@ export function Lobby() {
                 <p className="text-xl sm:text-2xl font-bold">{game.player1_score}</p>
                 {isPlayer1Winner && <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />}
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Würfe: {game.player1_throws}</p>
-              <p className="text-[10px] sm:text-xs font-semibold text-orange-600 mt-1">Ø {player1Average}</p>
+              <p className="text-xs sm:text-xs text-muted-foreground mt-1">Würfe: {game.player1_throws}</p>
+              <p className="text-xs sm:text-xs font-semibold text-orange-600 mt-1">Ø {player1Average}</p>
             </div>
 
             {/* Player 2 */}
             <div
-              className={`flex flex-col items-center p-3 sm:p-4 rounded-lg ${!isPlayer1Winner ? "bg-green-50" : "bg-gray-50"}`}
+              className={`flex flex-col items-center p-3 sm:p-4 rounded-lg ${!isPlayer1Winner ? "bg-green-50" : "bg-muted"}`}
             >
               <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-green-200 mb-2">
                 <AvatarImage
                   src={game.player2_photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
                   alt={game.player2_name}
                 />
-                <AvatarFallback className="bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                <AvatarFallback className="bg-card   text-white">
                   {(game.player2_name || "U")
                     .split(" ")
                     .map((n) => n[0])
@@ -675,8 +675,8 @@ export function Lobby() {
                 <p className="text-xl sm:text-2xl font-bold">{game.player2_score}</p>
                 {!isPlayer1Winner && <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />}
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Würfe: {game.player2_throws}</p>
-              <p className="text-[10px] sm:text-xs font-semibold text-orange-600 mt-1">Ø {player2Average}</p>
+              <p className="text-xs sm:text-xs text-muted-foreground mt-1">Würfe: {game.player2_throws}</p>
+              <p className="text-xs sm:text-xs font-semibold text-orange-600 mt-1">Ø {player2Average}</p>
             </div>
           </div>
 
@@ -715,7 +715,7 @@ export function Lobby() {
                           src={game.player1_photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
                           alt={game.player1_name}
                         />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                        <AvatarFallback className="bg-card   text-white">
                           {(game.player1_name || "U")
                             .split(" ")
                             .map((n) => n[0])
@@ -735,7 +735,7 @@ export function Lobby() {
                           src={game.player2_photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
                           alt={game.player2_name}
                         />
-                        <AvatarFallback className="bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                        <AvatarFallback className="bg-card   text-white">
                           {(game.player2_name || "U")
                             .split(" ")
                             .map((n) => n[0])
@@ -754,7 +754,7 @@ export function Lobby() {
                   {/* Round by Round Table */}
                   <div className="border rounded-lg overflow-hidden">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-100 border-b-2">
+                      <thead className="bg-muted border-b-2">
                         <tr>
                           <th className="px-3 py-3 text-center font-bold">Runde</th>
                           <th className="px-3 py-3 text-center font-bold bg-blue-50">{game.player1_name}</th>
@@ -772,8 +772,8 @@ export function Lobby() {
                           const roundNumber = index + 1
 
                           return (
-                            <tr key={roundNumber} className="border-t hover:bg-gray-50">
-                              <td className="px-3 py-3 text-center font-bold text-gray-700">{roundNumber}</td>
+                            <tr key={roundNumber} className="border-t hover:bg-muted">
+                              <td className="px-3 py-3 text-center font-bold text-muted-foreground">{roundNumber}</td>
                               <td className="px-3 py-3 text-center bg-blue-50/30">
                                 {p1Throw ? (
                                   <div className="flex flex-col items-center">
@@ -783,7 +783,7 @@ export function Lobby() {
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="text-gray-400">-</span>
+                                  <span className="text-muted-foreground">-</span>
                                 )}
                               </td>
                               <td className="px-3 py-3 text-center font-semibold text-orange-600 bg-blue-50/30">
@@ -798,7 +798,7 @@ export function Lobby() {
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="text-gray-400">-</span>
+                                  <span className="text-muted-foreground">-</span>
                                 )}
                               </td>
                               <td className="px-3 py-3 text-center font-semibold text-orange-600 bg-green-50/30">
@@ -864,7 +864,7 @@ export function Lobby() {
     setIsRefreshing(false)
   }
 
- 
+
 
   if (!user) {
     return null
@@ -875,7 +875,7 @@ export function Lobby() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white shadow-lg border-orange-200">
+      <Card className="bg-card shadow-lg border-orange-200">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -884,7 +884,7 @@ export function Lobby() {
                   src={currentUserPhoto || "/placeholder.svg?height=56&width=56&query=dart player avatar"}
                   alt={currentUserName}
                 />
-                <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-600 text-white text-xl font-bold">
+                <AvatarFallback className="bg-card   text-white text-xl font-bold">
                   {(currentUserName || "U")
                     .split(" ")
                     .map((n) => n[0])
@@ -931,7 +931,7 @@ export function Lobby() {
             <span className="hidden xs:inline">Herausforderungen</span>
             <span className="xs:hidden">Challenges</span>
             {(incomingChallenges.length > 0 || outgoingChallenges.length > 0) && (
-              <Badge variant="destructive" className="ml-1 text-[10px] sm:text-xs px-1 sm:px-2">
+              <Badge variant="destructive" className="ml-1 text-xs sm:text-xs px-1 sm:px-2">
                 {incomingChallenges.length + outgoingChallenges.length}
               </Badge>
             )}
@@ -948,7 +948,7 @@ export function Lobby() {
 
         <TabsContent value="players" className="space-y-4">
           {players.length === 0 ? (
-            <Card className="bg-white shadow-md">
+            <Card className="bg-card shadow-md">
               <CardContent className="py-12 text-center">
                 <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground font-medium">Keine Spieler online</p>
@@ -968,7 +968,7 @@ export function Lobby() {
                 return (
                   <Card
                     key={player.user_id}
-                    className="bg-white shadow-md hover:shadow-xl transition-all border-gray-200"
+                    className="bg-card shadow-md hover:shadow-xl transition-all border-border"
                   >
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between mb-4">
@@ -978,7 +978,7 @@ export function Lobby() {
                               src={player.photo_url || "/placeholder.svg?height=48&width=48&query=dart player avatar"}
                               alt={player.username}
                             />
-                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                            <AvatarFallback className="bg-card   text-white">
                               {(player.username || "U")
                                 .split(" ")
                                 .map((n) => n[0])
@@ -1020,7 +1020,7 @@ export function Lobby() {
               <h3 className="text-lg font-semibold">Eingehende Herausforderungen</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 {incomingChallenges.map((challenge) => (
-                  <Card key={challenge.id} className="border-orange-300 bg-white shadow-lg">
+                  <Card key={challenge.id} className="border-orange-300 bg-card shadow-lg">
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3 mb-4">
                         <Avatar className="w-12 h-12 border-2 border-orange-200">
@@ -1032,7 +1032,7 @@ export function Lobby() {
                             }
                             alt={challenge.challenger_name}
                           />
-                          <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-600 text-white">
+                          <AvatarFallback className="bg-card   text-white">
                             {(challenge.challenger_name || "U")
                               .split(" ")
                               .map((n) => n[0])
@@ -1069,10 +1069,10 @@ export function Lobby() {
               <h3 className="text-lg font-semibold">Gesendete Herausforderungen</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 {outgoingChallenges.map((challenge) => (
-                  <Card key={challenge.id} className="bg-white shadow-md">
+                  <Card key={challenge.id} className="bg-card shadow-md">
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
-                        <Avatar className="w-12 h-12 border-2 border-gray-300">
+                        <Avatar className="w-12 h-12 border-2 border-border">
                           <AvatarImage
                             src={
                               challenge.opponent_photo_url ||
@@ -1081,7 +1081,7 @@ export function Lobby() {
                             }
                             alt={challenge.opponent_name}
                           />
-                          <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white">
+                          <AvatarFallback className="bg-card   text-white">
                             {(challenge.opponent_name || "U")
                               .split(" ")
                               .map((n) => n[0])
@@ -1102,7 +1102,7 @@ export function Lobby() {
           )}
 
           {incomingChallenges.length === 0 && outgoingChallenges.length === 0 && (
-            <Card className="bg-white shadow-md">
+            <Card className="bg-card shadow-md">
               <CardContent className="py-12 text-center">
                 <Trophy className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground font-medium">Keine aktiven Herausforderungen</p>
@@ -1145,7 +1145,7 @@ export function Lobby() {
 
               <TabsContent value="my-results" className="space-y-4">
                 {myResults.length === 0 ? (
-                  <Card className="bg-white shadow-md">
+                  <Card className="bg-card shadow-md">
                     <CardContent className="py-12 text-center">
                       <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                       <p className="text-muted-foreground font-medium">Noch keine Spiele gespielt</p>
@@ -1165,7 +1165,7 @@ export function Lobby() {
 
               <TabsContent value="all-results" className="space-y-4">
                 {allResults.length === 0 ? (
-                  <Card className="bg-white shadow-md">
+                  <Card className="bg-card shadow-md">
                     <CardContent className="py-12 text-center">
                       <Trophy className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                       <p className="text-muted-foreground font-medium">Noch keine Spiele vorhanden</p>

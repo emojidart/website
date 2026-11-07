@@ -62,7 +62,7 @@ export default function FAQChat() {
   }
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-4 bg-white shadow rounded flex flex-col h-[500px]">
+    <div className="max-w-xl mx-auto mt-10 p-4 bg-card shadow rounded flex flex-col h-[500px]">
       <h2 className="text-xl font-bold mb-4">Live FAQ Chat</h2>
 
       <div className="flex-1 space-y-2 overflow-y-auto mb-4 border p-2 rounded">

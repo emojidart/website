@@ -227,39 +227,39 @@ export default function MemberAccountRequestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col text-gray-900">
+    <div className="min-h-screen bg-background flex flex-col text-foreground">
       <Header />
 
       <main className="flex-grow px-4 pt-20 pb-28">
         <div className="mx-auto w-full max-w-md">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center mb-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
-                <UserPlus className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
+                <UserPlus className="w-8 h-8" />
               </div>
             </div>
 
-            <h1 className="text-3xl font-black text-gray-900">Konto anfordern</h1>
+            <h1 className="text-3xl font-semibold text-foreground">Konto anfordern</h1>
 
-            <p className="text-gray-600 mt-2">
+            <p className="text-muted-foreground mt-2">
               Mitglieder-Code prüfen und danach E-Mail + Passwort festlegen
             </p>
           </div>
 
-          <Card className="rounded-3xl shadow-xl border border-gray-200 bg-white">
+          <Card className="rounded-3xl shadow-sm border border-border bg-card">
             <CardContent className="p-6 space-y-5">
-              <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4 shadow-sm">
+              <div className="rounded-2xl border border-orange-400/25 bg-orange-500/10 px-4 py-4 shadow-sm">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-100">
-                    <Shield className="h-5 w-5 text-orange-700" />
+                  <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-500/10">
+                    <Shield className="h-5 w-5 text-orange-200" />
                   </div>
 
                   <div className="min-w-0">
-                    <div className="text-base font-black text-orange-900">
+                    <div className="text-base font-semibold text-orange-200">
                       Nur für Vereinsmitglieder
                     </div>
 
-                    <div className="mt-1 text-sm text-orange-800">
+                    <div className="mt-1 text-sm text-orange-200">
                       Bitte nutze deinen Mitglieder-Code. Wenn du keinen Code hast,
                       melde dich beim Vorstand.
                     </div>
@@ -268,21 +268,22 @@ export default function MemberAccountRequestPage() {
               </div>
 
               <div>
-                <label className="text-sm font-bold text-gray-700 uppercase">
+                <label htmlFor="account-code" className="text-sm font-medium text-foreground">
                   Mitglieder-Code
                 </label>
 
                 <div className="mt-1 flex gap-2">
                   <div className="relative flex-1">
-                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input
+                      id="account-code"
                       value={form.code}
                       onChange={(e) => {
                         setForm((p) => ({ ...p, code: e.target.value }))
                         setLockedName(false)
                       }}
                       placeholder="z.B. QR-T639-P2D"
-                      className="w-full pl-12 pr-3 h-12 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none bg-white"
+                      className="w-full pl-12 pr-3 h-12 rounded-xl border-2 border-border focus:border-orange-500 focus:outline-none bg-card"
                       autoComplete="off"
                     />
                   </div>
@@ -291,7 +292,7 @@ export default function MemberAccountRequestPage() {
                     type="button"
                     onClick={lookupByCode}
                     disabled={lookingUp}
-                    className="h-12 rounded-xl bg-gray-900 hover:bg-gray-800 px-4"
+                    className="h-12 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4"
                   >
                     {lookingUp ? (
                       <>
@@ -307,107 +308,112 @@ export default function MemberAccountRequestPage() {
                   </Button>
                 </div>
 
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   Du kannst den Code mit oder ohne Bindestriche eingeben.
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-bold text-gray-700 uppercase">
+                <label htmlFor="account-firstName" className="text-sm font-medium text-foreground">
                   Vorname
                 </label>
 
                 <input
+                  id="account-firstName"
                   value={form.firstName}
                   onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
                   className={`mt-1 w-full px-4 h-12 rounded-xl border-2 focus:border-orange-500 focus:outline-none ${
-                    lockedName ? "border-green-200 bg-green-50" : "border-gray-200 bg-white"
+                    lockedName ? "border-green-400/25 bg-green-500/10" : "border-border bg-card"
                   }`}
                   disabled={lockedName}
                 />
               </div>
 
               <div>
-                <label className="text-sm font-bold text-gray-700 uppercase">
+                <label htmlFor="account-lastName" className="text-sm font-medium text-foreground">
                   Nachname
                 </label>
 
                 <input
+                  id="account-lastName"
                   value={form.lastName}
                   onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
                   placeholder={lockedName ? "kein Nachname hinterlegt" : ""}
                   className={`mt-1 w-full px-4 h-12 rounded-xl border-2 focus:border-orange-500 focus:outline-none ${
-                    lockedName ? "border-green-200 bg-green-50" : "border-gray-200 bg-white"
+                    lockedName ? "border-green-400/25 bg-green-500/10" : "border-border bg-card"
                   }`}
                   disabled={lockedName}
                 />
               </div>
 
               <div>
-                <label className="text-sm font-bold text-gray-700 uppercase">
+                <label htmlFor="account-email" className="text-sm font-medium text-foreground">
                   E-Mail-Adresse
                 </label>
 
                 <div className="relative mt-1">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <input
+                    id="account-email"
                     value={form.email}
                     onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                     placeholder="deine.email@example.com"
-                    className="w-full pl-12 pr-3 h-12 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none bg-white"
+                    className="w-full pl-12 pr-3 h-12 rounded-xl border-2 border-border focus:border-orange-500 focus:outline-none bg-card"
                     inputMode="email"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-bold text-gray-700 uppercase">
+                <label htmlFor="account-password" className="text-sm font-medium text-foreground">
                   Passwort
                 </label>
 
                 <div className="relative mt-1">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
 
                   <input
                     type={showPw ? "text" : "password"}
+                    id="account-password"
                     value={form.password}
                     onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
                     placeholder="mind. 8 Zeichen"
-                    className="w-full pl-12 pr-12 h-12 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none bg-white"
+                    className="w-full pl-12 pr-12 h-12 rounded-xl border-2 border-border focus:border-orange-500 focus:outline-none bg-card"
                     autoComplete="new-password"
                   />
 
                   <button
                     type="button"
                     onClick={() => setShowPw((s) => !s)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={showPw ? "Passwort verstecken" : "Passwort anzeigen"}
                   >
                     {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
 
-                <p className={`text-xs mt-2 ${form.password.length >= 8 ? "text-green-700" : "text-gray-500"}`}>
+                <p className={`text-xs mt-2 ${form.password.length >= 8 ? "text-green-200" : "text-muted-foreground"}`}>
                   Mindestens 8 Zeichen
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-bold text-gray-700 uppercase">
+                <label htmlFor="account-password2" className="text-sm font-medium text-foreground">
                   Passwort wiederholen
                 </label>
 
                 <input
                   type={showPw ? "text" : "password"}
+                  id="account-password2"
                   value={form.password2}
                   onChange={(e) => setForm((p) => ({ ...p, password2: e.target.value }))}
                   placeholder="nochmal eingeben"
-                  className="mt-1 w-full px-4 h-12 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none bg-white"
+                  className="mt-1 w-full px-4 h-12 rounded-xl border-2 border-border focus:border-orange-500 focus:outline-none bg-card"
                   autoComplete="new-password"
                 />
 
                 {form.password2 ? (
-                  <p className={`text-xs mt-2 ${form.password === form.password2 ? "text-green-700" : "text-red-600"}`}>
+                  <p className={`text-xs mt-2 ${form.password === form.password2 ? "text-green-200" : "text-red-200"}`}>
                     {form.password === form.password2
                       ? "✓ stimmt überein"
                       : "Passwörter sind nicht gleich"}
@@ -417,12 +423,14 @@ export default function MemberAccountRequestPage() {
 
               {status.type ? (
                 <div
+                  role="status"
+                  aria-live="polite"
                   className={`rounded-2xl p-4 text-sm border ${
                     status.type === "success"
-                      ? "bg-green-50 text-green-800 border-green-200"
+                      ? "bg-green-500/10 text-green-200 border-green-400/25"
                       : status.type === "info"
-                        ? "bg-blue-50 text-blue-800 border-blue-200"
-                        : "bg-red-50 text-red-700 border-red-200"
+                        ? "bg-blue-500/10 text-blue-200 border-blue-400/25"
+                        : "bg-red-500/10 text-red-200 border-red-400/25"
                   }`}
                 >
                   <div className="flex items-start gap-2">
@@ -439,7 +447,7 @@ export default function MemberAccountRequestPage() {
               <Button
                 onClick={submit}
                 disabled={!canSubmit}
-                className="w-full h-12 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-lg"
+                className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold text-lg"
               >
                 {submitting ? (
                   <>

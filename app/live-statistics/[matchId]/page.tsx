@@ -157,7 +157,7 @@ export default function LiveStatisticsPage() {
         }
       }
 
-      
+
       const finalPlayers = orderedLineup.length > 0 ? orderedLineup : fallbackPlayers
       setPlayers(finalPlayers)
       setPlayersReady(true)
@@ -196,7 +196,7 @@ export default function LiveStatisticsPage() {
 
   const headerSubtitle = myTeam ? `${myTeam.name} vs ${opponentName}` : "Live-Statistik"
 
- 
+
   if (authLoading || loading || !playersReady) {
     return <div className="min-h-[1px]" aria-hidden="true" />
   }
@@ -209,9 +209,9 @@ export default function LiveStatisticsPage() {
         <main className="flex-grow flex items-center justify-center p-4">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-black text-white mb-2">Fehler</h1>
-            <p className="text-white/50 mb-4">{error || "Daten nicht gefunden"}</p>
-            <Button onClick={() => router.push("/member-dashboard-app")} className="bg-orange-500 font-black text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white">
+            <h1 className="text-2xl font-semibold text-white mb-2">Fehler</h1>
+            <p className="text-muted-foreground mb-4">{error || "Daten nicht gefunden"}</p>
+            <Button onClick={() => router.push("/member-dashboard-app")} className="bg-orange-500 font-semibold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white">
               Zurück zum Dashboard
             </Button>
           </div>
@@ -230,13 +230,13 @@ export default function LiveStatisticsPage() {
       />
 
       <main className="w-full max-w-none px-3 pb-24 pt-16 sm:px-5 sm:pt-20 lg:px-8 xl:px-10 2xl:px-12">
-        <Card className="relative mb-4 w-full overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:mb-5">
+        <Card className="relative mb-4 w-full overflow-hidden rounded-[26px] border border-white/[0.08] bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  sm:mb-5">
           <CardHeader>
-            <CardTitle className="flex min-w-0 flex-wrap items-center gap-2 text-lg font-black leading-tight tracking-tight text-white sm:text-xl lg:text-2xl">
+            <CardTitle className="flex min-w-0 flex-wrap items-center gap-2 text-lg font-semibold leading-tight tracking-tight text-white sm:text-xl lg:text-2xl">
               <Target className="h-6 w-6 text-orange-300" />
               Live – {myTeam.name} vs {opponentName}
             </CardTitle>
-            <p className="mt-1 break-words text-xs font-medium leading-5 text-white/45 sm:text-sm">
+            <p className="mt-1 break-words text-xs font-medium leading-5 text-muted-foreground sm:text-sm">
               {formatDate(match.match_date)}
               {match.match_time ? ` • ${match.match_time}` : ""}
               {match.venue ? ` • ${match.venue}` : ""}

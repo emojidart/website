@@ -319,7 +319,7 @@ export function ChatRoom({ roomId, roomName }: ChatRoomProps) {
                   <div className={cn("flex-1 max-w-[70%]", isOwnMessage && "text-right")}>
                     <div className={cn("flex items-center gap-2 mb-1", isOwnMessage && "flex-row-reverse")}>
                       <span className="font-medium text-sm">{getUserDisplayName(message)}</span>
-                      <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-gray-500 text-white">
+                      <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-accent text-white">
                         Mitglied
                       </Badge>
                       <span className="text-xs text-muted-foreground">{formatTime(message.created_at)}</span>
@@ -371,7 +371,7 @@ export function ChatRoom({ roomId, roomName }: ChatRoomProps) {
           <Button
             onClick={handleSendMessage}
             disabled={!newMessage.trim()}
-            className="bg-orange-500 hover:bg-orange-600 text-white"
+            className="bg-orange-500 hover:bg-orange-600 text-primary-foreground"
           >
             <Send className="h-4 w-4" />
           </Button>

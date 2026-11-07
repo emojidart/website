@@ -277,7 +277,7 @@ export default function ChatCarpool({
 
   if (loading && !offers.length && !requests.length) {
     return (
-      <div className="rounded-2xl border border-white/[0.07] bg-black/20 p-3 text-xs text-white/45">
+      <div className="rounded-2xl border border-white/[0.07] bg-black/20 p-3 text-xs text-muted-foreground">
         <Loader2 className="mr-2 inline h-3.5 w-3.5 animate-spin" />
         Fahrgemeinschaften werden geladen …
       </div>
@@ -288,11 +288,11 @@ export default function ChatCarpool({
     <div className="rounded-2xl border border-sky-300/10 bg-sky-500/[0.04] p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-white/50">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             <Car className="h-4 w-4 text-sky-300" />
             Fahrgemeinschaft
           </div>
-          <div className="mt-1 text-[11px] font-semibold text-white/35">
+          <div className="mt-1 text-xs font-semibold text-muted-foreground">
             Wer fährt · wer braucht einen Platz?
           </div>
         </div>
@@ -310,7 +310,7 @@ export default function ChatCarpool({
               <div key={offer.id} className="rounded-xl border border-white/[0.07] bg-black/20 p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-black text-white">
+                    <div className="text-sm font-semibold text-white">
                       🚗 {offer.driver?.name || "Fahrer"} fährt
                     </div>
                     <div className="mt-1 text-xs font-semibold text-sky-200">
@@ -318,7 +318,7 @@ export default function ChatCarpool({
                     </div>
 
                     {(offer.departure_time || offer.meeting_point) ? (
-                      <div className="mt-2 space-y-1 text-[11px] font-semibold text-white/45">
+                      <div className="mt-2 space-y-1 text-xs font-semibold text-muted-foreground">
                         {offer.departure_time ? (
                           <div className="flex items-center gap-1.5">
                             <Clock3 className="h-3.5 w-3.5" />
@@ -342,7 +342,7 @@ export default function ChatCarpool({
                       variant="outline"
                       disabled={locked || !!busy}
                       onClick={() => void removeOwnOffer()}
-                      className="h-8 rounded-lg border-red-300/15 bg-red-500/[0.06] px-2 text-[10px] font-black text-red-200"
+                      className="h-8 rounded-lg border-red-300/15 bg-red-500/[0.06] px-2 text-xs font-semibold text-red-200"
                     >
                       <Trash2 className="mr-1 h-3.5 w-3.5" />
                       Löschen
@@ -353,7 +353,7 @@ export default function ChatCarpool({
                       size="sm"
                       disabled={locked || !!busy || (free <= 0 && !joined) || !!myOffer}
                       onClick={() => void joinOffer(offer)}
-                      className={`h-9 rounded-xl px-3 text-[11px] font-black ${
+                      className={`h-9 rounded-xl px-3 text-xs font-semibold ${
                         joined
                           ? "bg-emerald-600 text-white hover:bg-emerald-500"
                           : "bg-sky-600 text-white hover:bg-sky-500"
@@ -371,7 +371,7 @@ export default function ChatCarpool({
 
                 {pax.length ? (
                   <div className="mt-3 border-t border-white/[0.06] pt-2">
-                    <div className="mb-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide text-white/30">
+                    <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       <UsersRound className="h-3.5 w-3.5" />
                       Mitfahrer
                     </div>
@@ -385,21 +385,21 @@ export default function ChatCarpool({
           })}
         </div>
       ) : (
-        <div className="mt-3 rounded-xl border border-dashed border-white/[0.08] px-3 py-3 text-center text-xs font-semibold text-white/35">
+        <div className="mt-3 rounded-xl border border-dashed border-white/[0.08] px-3 py-3 text-center text-xs font-semibold text-muted-foreground">
           Noch niemand hat eine Fahrt angeboten.
         </div>
       )}
 
       {requests.length ? (
         <div className="mt-3">
-          <div className="mb-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+          <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             Brauchen Mitfahrt
           </div>
           <div className="flex flex-wrap gap-1.5">
             {requests.map((req) => (
               <span
                 key={req.id}
-                className="rounded-full border border-amber-300/10 bg-amber-500/[0.07] px-2.5 py-1 text-[11px] font-black text-amber-100"
+                className="rounded-full border border-amber-300/10 bg-amber-500/[0.07] px-2.5 py-1 text-xs font-semibold text-amber-100"
               >
                 🙋 {req.player?.name || "Spieler"} braucht Mitfahrt
               </span>
@@ -415,7 +415,7 @@ export default function ChatCarpool({
             variant="outline"
             disabled={!!busy || !!myOffer}
             onClick={() => setShowOfferForm((v) => !v)}
-            className="h-10 rounded-xl border-sky-300/15 bg-sky-500/[0.06] px-2 text-[11px] font-black text-sky-100"
+            className="h-10 rounded-xl border-sky-300/15 bg-sky-500/[0.06] px-2 text-xs font-semibold text-sky-100"
           >
             <Plus className="mr-1 h-4 w-4" />
             Fahrt anbieten
@@ -426,7 +426,7 @@ export default function ChatCarpool({
             variant="outline"
             disabled={!!busy || !!myOffer}
             onClick={() => void toggleNeedRide()}
-            className={`h-10 rounded-xl px-2 text-[11px] font-black ${
+            className={`h-10 rounded-xl px-2 text-xs font-semibold ${
               myRequest
                 ? "border-amber-300/25 bg-amber-500/15 text-amber-100"
                 : "border-white/10 bg-white/[0.03] text-white/60"
@@ -440,10 +440,10 @@ export default function ChatCarpool({
 
       {showOfferForm && !myOffer ? (
         <div className="mt-3 rounded-xl border border-sky-300/10 bg-black/20 p-3">
-          <div className="text-xs font-black text-white">Fahrt anbieten</div>
+          <div className="text-xs font-semibold text-white">Fahrt anbieten</div>
 
           <div className="mt-3">
-            <div className="mb-1.5 text-[10px] font-black uppercase tracking-wide text-white/35">
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Freie Plätze
             </div>
             <div className="grid grid-cols-6 gap-1.5">
@@ -452,10 +452,10 @@ export default function ChatCarpool({
                   key={n}
                   type="button"
                   onClick={() => setSeats(n)}
-                  className={`h-9 rounded-lg text-xs font-black ${
+                  className={`h-9 rounded-lg text-xs font-semibold ${
                     seats === n
                       ? "bg-sky-600 text-white"
-                      : "border border-white/[0.07] bg-white/[0.03] text-white/55"
+                      : "border border-white/[0.07] bg-white/[0.03] text-muted-foreground"
                   }`}
                 >
                   {n}
@@ -483,7 +483,7 @@ export default function ChatCarpool({
             type="button"
             disabled={!!busy}
             onClick={() => void createOffer()}
-            className="mt-3 h-10 w-full rounded-xl bg-sky-600 text-xs font-black text-white hover:bg-sky-500"
+            className="mt-3 h-10 w-full rounded-xl bg-sky-600 text-xs font-semibold text-white hover:bg-sky-500"
           >
             {busy === "offer" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Car className="mr-2 h-4 w-4" />}
             Fahrt veröffentlichen

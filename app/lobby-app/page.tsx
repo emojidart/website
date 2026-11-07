@@ -20,7 +20,7 @@ export default function LobbyPage() {
 
   if (authLoading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <main className="text-foreground min-h-screen flex flex-col bg-card   ">
         <Header
           variant="app"
           title="Challenge Lobby"
@@ -30,15 +30,15 @@ export default function LobbyPage() {
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
           <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10">
+            <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-2xl px-10 py-10">
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
                 <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
               </div>
 
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">Lobby wird geladen</p>
-                <p className="text-sm text-gray-500 mt-1">Bitte kurz warten…</p>
+                <p className="text-lg font-bold text-foreground">Lobby wird geladen</p>
+                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
               </div>
             </div>
           </div>
@@ -54,7 +54,7 @@ export default function LobbyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900 font-sans flex flex-col pb-20 overflow-x-hidden">
+    <div className="min-h-screen bg-card    text-foreground font-sans flex flex-col pb-20 overflow-x-hidden">
       <Header
         variant="app"
         title="Challenge Lobby"
@@ -66,12 +66,12 @@ export default function LobbyPage() {
   <div className="mx-auto w-full px-4 py-4 max-w-2xl lg:max-w-screen-xl 2xl:max-w-screen-2xl">
         {/* Page Header */}
         <div className="text-center mb-4">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 rounded-3xl mb-3 shadow-2xl">
+          <div className="text-foreground inline-flex items-center justify-center w-14 h-14 bg-card    rounded-3xl mb-3 shadow-2xl">
             <Users className="h-7 w-7 text-white" />
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Challenge Lobby</h1>
-          <p className="text-base text-gray-600">Fordere andere Spieler heraus oder nimm Challenges an</p>
+          <h1 className="text-2xl font-bold text-foreground mb-1">Challenge Lobby</h1>
+          <p className="text-base text-muted-foreground">Fordere andere Spieler heraus oder nimm Challenges an</p>
         </div>
 
         <Lobby />

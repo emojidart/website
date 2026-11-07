@@ -165,40 +165,33 @@ export default function ClubhousePage() {
   }
 
   return (
-    <div className="relative min-h-[100dvh] w-full overflow-x-hidden bg-[#050608] pb-24 text-white">
+    <div className="relative min-h-[100dvh] w-full overflow-x-hidden bg-background pb-24 text-white">
       <Header variant="app" title="Vereinsheim" subtitle="Pfeil OK · Öffentlich" backHref="/" />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[#050608]">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-30"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.96)_48%,rgba(2,4,7,.99))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.16),transparent_25%),radial-gradient(circle_at_90%_24%,rgba(14,165,233,.10),transparent_26%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <div className="h-12 sm:h-14" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-4 sm:px-5 sm:py-6 lg:px-7 xl:px-8">
-        <section className="overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_30px_90px_-52px_rgba(0,0,0,.95)] backdrop-blur-xl sm:rounded-[32px]">
+        <section className="overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_30px_90px_-52px_rgba(0,0,0,.95)]  sm:rounded-[32px]">
           <div className="relative overflow-hidden p-5 sm:p-7 lg:p-9">
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(249,115,22,.10),transparent_38%,rgba(14,165,233,.06))]" />
 
             <div className="relative">
-              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.20em] text-orange-300">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.20em] text-orange-300">
                 <DoorOpen className="h-4 w-4" />
                 EMD Vereinsheim
               </div>
 
-              <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+              <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
                 Ist heute offen?
               </h1>
 
-              <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-white/55 sm:text-base lg:text-lg">
+              <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-muted-foreground sm:text-base lg:text-lg">
                 Hier siehst du, ob das Pfeil OK heute geöffnet ist und wann es das nächste Mal offen hat.
               </p>
 
-              <div className="mt-6 rounded-[24px] border border-white/10 bg-black/30 p-4 backdrop-blur-xl sm:p-6 lg:p-7">
+              <div className="mt-6 rounded-[24px] border border-white/10 bg-card p-4  sm:p-6 lg:p-7">
                 {loading ? (
                   <div className="flex items-center gap-3 text-white/65">
                     <Loader2 className="h-5 w-5 animate-spin text-orange-300" />
@@ -206,11 +199,11 @@ export default function ClubhousePage() {
                   </div>
                 ) : todayRow?.status === "open" ? (
                   <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-sm font-black text-emerald-300">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-300">
                       <CheckCircle2 className="h-4 w-4" />
                       HEUTE GEÖFFNET
                     </div>
-                    <div className="mt-4 break-words text-2xl font-black leading-tight text-white sm:text-3xl">
+                    <div className="mt-4 break-words text-2xl font-semibold leading-tight text-white sm:text-3xl">
                       {todayRow.opens_at ? `ab ${shortTime(todayRow.opens_at)} Uhr` : "ab sofort"}
                       {todayRow.closes_at ? ` · bis ca. ${shortTime(todayRow.closes_at)} Uhr` : ""}
                     </div>
@@ -220,11 +213,11 @@ export default function ClubhousePage() {
                   </div>
                 ) : todayRow?.status === "planned" ? (
                   <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1.5 text-sm font-black text-sky-300">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-500/10 px-3 py-1.5 text-sm font-semibold text-sky-300">
                       <CalendarDays className="h-4 w-4" />
                       HEUTE GEPLANT GEÖFFNET
                     </div>
-                    <div className="mt-4 break-words text-2xl font-black leading-tight text-white sm:text-3xl">
+                    <div className="mt-4 break-words text-2xl font-semibold leading-tight text-white sm:text-3xl">
                       {todayRow.opens_at ? `ab ${shortTime(todayRow.opens_at)} Uhr` : "Öffnung geplant"}
                       {todayRow.closes_at ? ` · bis ca. ${shortTime(todayRow.closes_at)} Uhr` : ""}
                     </div>
@@ -234,7 +227,7 @@ export default function ClubhousePage() {
                   </div>
                 ) : todayRow?.status === "closed" ? (
                   <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1.5 text-sm font-black text-red-300">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1.5 text-sm font-semibold text-red-300">
                       <XCircle className="h-4 w-4" />
                       HEUTE GESCHLOSSEN
                     </div>
@@ -244,14 +237,14 @@ export default function ClubhousePage() {
                   </div>
                 ) : (
                   <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-black text-white/65">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-semibold text-white/65">
                       <Clock3 className="h-4 w-4" />
                       NOCH KEINE INFO
                     </div>
-                    <div className="mt-4 break-words text-xl font-black leading-tight text-white sm:text-2xl">
+                    <div className="mt-4 break-words text-xl font-semibold leading-tight text-white sm:text-2xl">
                       Für heute wurde noch keine Öffnung eingetragen.
                     </div>
-                    <p className="mt-2 text-sm font-semibold text-white/45">
+                    <p className="mt-2 text-sm font-semibold text-muted-foreground">
                       Sobald jemand aufsperrt oder eine Öffnung plant, erscheint es hier.
                     </p>
                   </div>
@@ -263,15 +256,15 @@ export default function ClubhousePage() {
 
         {canManage ? (
           <section className="mt-5">
-            <Card className="overflow-hidden rounded-[26px] border-white/10 bg-black/35 text-white shadow-[0_22px_65px_-48px_rgba(0,0,0,.9)] backdrop-blur-xl">
+            <Card className="overflow-hidden rounded-[26px] border-white/10 bg-card text-white shadow-[0_22px_65px_-48px_rgba(0,0,0,.9)] ">
               <CardContent className="p-4 sm:p-6 lg:p-7">
                 <div className="flex items-start gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/10">
                     <LockKeyhole className="h-5 w-5 text-orange-300" />
                   </div>
                   <div>
-                    <div className="font-black text-white">Vereinsheim verwalten</div>
-                    <div className="text-sm font-semibold text-white/45">Nur für freigeschaltete Personen sichtbar.</div>
+                    <div className="font-semibold text-white">Vereinsheim verwalten</div>
+                    <div className="text-sm font-semibold text-muted-foreground">Nur für freigeschaltete Personen sichtbar.</div>
                   </div>
                 </div>
 
@@ -279,7 +272,7 @@ export default function ClubhousePage() {
                   <Button
                     disabled={saving}
                     onClick={() => void saveDay("open", { push: true })}
-                    className="min-h-14 w-full whitespace-normal rounded-2xl bg-emerald-600 px-4 py-3 text-base font-black leading-tight hover:bg-emerald-700"
+                    className="min-h-14 w-full whitespace-normal rounded-2xl bg-emerald-700 px-4 py-3 text-base font-semibold leading-tight hover:bg-emerald-700 text-white"
                   >
                     <DoorOpen className="mr-2 h-5 w-5" />
                     Jetzt geöffnet
@@ -289,7 +282,7 @@ export default function ClubhousePage() {
                     disabled={saving}
                     onClick={() => void saveDay("closed", { push: true })}
                     variant="outline"
-                    className="min-h-14 w-full whitespace-normal rounded-2xl border-red-400/20 bg-red-500/5 px-4 py-3 text-base font-black leading-tight text-red-200 hover:bg-red-500/10 hover:text-red-100"
+                    className="min-h-14 w-full whitespace-normal rounded-2xl border-red-400/20 bg-red-500/5 px-4 py-3 text-base font-semibold leading-tight text-red-200 hover:bg-red-500/10 hover:text-red-100"
                   >
                     <XCircle className="mr-2 h-5 w-5" />
                     Heute geschlossen
@@ -342,7 +335,7 @@ export default function ClubhousePage() {
                 <Button
                   disabled={saving || !planDate}
                   onClick={() => void saveDay("planned", { date: planDate })}
-                  className="mt-4 min-h-12 w-full whitespace-normal rounded-xl border border-orange-300/15 bg-orange-500/15 px-4 py-3 font-black leading-tight text-white hover:bg-orange-500/20"
+                  className="mt-4 min-h-12 w-full whitespace-normal rounded-xl border border-orange-300/15 bg-orange-500/15 px-4 py-3 font-semibold leading-tight text-white hover:bg-orange-500/20"
                 >
                   {saving ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -365,11 +358,11 @@ export default function ClubhousePage() {
         <section className="mt-7">
           <div className="mb-3 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end sm:gap-3">
             <div>
-              <div className="text-xs font-black uppercase tracking-wider text-orange-300">Vorschau</div>
-              <h2 className="text-xl font-black text-white">Nächste Öffnungen</h2>
+              <div className="text-xs font-semibold uppercase tracking-wider text-orange-300">Vorschau</div>
+              <h2 className="text-xl font-semibold text-white">Nächste Öffnungen</h2>
             </div>
 
-            <Link href="/" className="text-sm font-black text-white/45 transition hover:text-orange-300">
+            <Link href="/" className="text-sm font-semibold text-muted-foreground transition hover:text-orange-300">
               Zur Startseite
             </Link>
           </div>
@@ -379,21 +372,21 @@ export default function ClubhousePage() {
               {upcoming.map((row) => (
                 <div
                   key={row.id}
-                  className="rounded-2xl border border-white/10 bg-black/30 p-4 shadow-sm backdrop-blur-xl"
+                  className="rounded-2xl border border-white/10 bg-card p-4 shadow-sm "
                 >
-                  <div className="font-black capitalize text-white">{formatDate(row.open_date)}</div>
+                  <div className="font-semibold capitalize text-white">{formatDate(row.open_date)}</div>
                   <div className="mt-1 text-sm font-bold text-white/60">
                     {row.opens_at ? `${shortTime(row.opens_at)} Uhr` : "Zeit folgt"}
                     {row.closes_at ? ` – ${shortTime(row.closes_at)} Uhr` : ""}
                   </div>
                   {row.note ? (
-                    <div className="mt-2 text-sm font-semibold text-white/45">{row.note}</div>
+                    <div className="mt-2 text-sm font-semibold text-muted-foreground">{row.note}</div>
                   ) : null}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-white/15 bg-black/25 p-6 text-center text-sm font-semibold text-white/45">
+            <div className="rounded-2xl border border-dashed border-white/15 bg-card p-6 text-center text-sm font-semibold text-muted-foreground">
               Aktuell sind keine weiteren Öffnungen geplant.
             </div>
           )}

@@ -176,11 +176,11 @@ function DummyCover({ label, title }: { label: string; title: string }) {
         <div className="w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.10),transparent_40%),radial-gradient(circle_at_30%_80%,rgba(255,255,255,0.12),transparent_45%)]" />
       </div>
       <div className="relative h-full flex flex-col items-center justify-center text-white px-5 text-center gap-2">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10  border border-white/10">
           <ImageIcon className="w-5 h-5" />
           <span className="text-sm font-semibold">{label}</span>
         </div>
-        <div className="text-xl font-black leading-tight line-clamp-2">{title}</div>
+        <div className="text-xl font-semibold leading-tight line-clamp-2">{title}</div>
       </div>
     </div>
   )
@@ -226,7 +226,7 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center"
+      className="fixed inset-0 z-[100] bg-black/85  flex items-center justify-center"
       onMouseDown={onClose}
       role="dialog"
       aria-modal="true"
@@ -299,10 +299,10 @@ export default function VeranstaltungDetailPage() {
       cancelled = true
     }
   }, [])
-  
-  
-  
-  
+
+
+
+
 
 async function loadParticipants(eventId: string) {
   const { data, error } = await supabase
@@ -367,9 +367,9 @@ async function loadParticipants(eventId: string) {
 
   setGuestNameMap(map)
 }
-  
-  
-  
+
+
+
 
   async function saveParticipation(status: ParticipantStatus) {
     if (!id || !currentUserId || !event) return
@@ -466,11 +466,11 @@ async function loadParticipants(eventId: string) {
     !membershipLoading && hasRequiredEventPackage
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white font-sans">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
       <Header />
 
       {/* Stabiler Hintergrund wie im Member-Profil – ohne Lade-/Fade-Effekt */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050608]">
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-background">
         <div
           className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.34]"
           style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
@@ -482,7 +482,7 @@ async function loadParticipants(eventId: string) {
       <main className="relative z-10 mx-auto w-full max-w-[1680px] px-3 pb-44 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
         <div className="w-full">
           <div className="sticky top-[56px] z-20 mb-4">
-            <div className="flex items-center justify-between gap-2 rounded-[20px] border border-white/10 bg-black/45 px-3 py-2 shadow-[0_18px_60px_-46px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+            <div className="flex items-center justify-between gap-2 rounded-[20px] border border-white/10 bg-black/45 px-3 py-2 shadow-[0_18px_60px_-46px_rgba(0,0,0,.95)] ">
               <Button
                 variant="outline"
                 size="sm"
@@ -501,18 +501,18 @@ async function loadParticipants(eventId: string) {
           </div>
 
           {loading ? (
-            <div className="rounded-[22px] border border-white/10 bg-white/5 py-16 text-center text-white/55">Lade Veranstaltung…</div>
+            <div className="rounded-[22px] border border-white/10 bg-white/5 py-16 text-center text-muted-foreground">Lade Veranstaltung…</div>
           ) : error ? (
             <div className="rounded-[22px] border border-red-400/20 bg-red-400/10 py-16 text-center text-red-300">{error}</div>
           ) : !event ? (
-            <div className="rounded-[22px] border border-white/10 bg-white/5 py-16 text-center text-white/55">Nicht gefunden.</div>
+            <div className="rounded-[22px] border border-white/10 bg-white/5 py-16 text-center text-muted-foreground">Nicht gefunden.</div>
           ) : (
             <>
-              <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-black/35 shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:rounded-[34px]">
+              <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px]">
                 {event.photo_url ? (
                   <button
                     type="button"
-                    className="group relative h-56 w-full bg-black/40 sm:h-72 lg:h-80"
+                    className="group relative h-56 w-full bg-card sm:h-72 lg:h-80"
                     onClick={() => setOpenImg(true)}
                     aria-label="Flyer vergrößern"
                   >
@@ -530,7 +530,7 @@ async function loadParticipants(eventId: string) {
                 )}
 
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-3xl font-black leading-tight tracking-[-0.035em] text-white sm:text-4xl">{event.name}</CardTitle>
+                  <CardTitle className="text-3xl font-semibold leading-tight tracking-[-0.035em] text-white sm:text-4xl">{event.name}</CardTitle>
 
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Chip tone="gray">
@@ -607,7 +607,7 @@ async function loadParticipants(eventId: string) {
                     </div>
 
                     <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_55px_-42px_rgba(0,0,0,.95)]">
-                      <div className="mb-2 text-sm font-black text-white">Details</div>
+                      <div className="mb-2 text-sm font-semibold text-white">Details</div>
                       <div className="whitespace-pre-wrap text-sm leading-relaxed text-white/65">
                         {event.details?.trim() ? event.details : "Keine weiteren Details."}
                       </div>
@@ -617,8 +617,8 @@ async function loadParticipants(eventId: string) {
                   <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_55px_-42px_rgba(0,0,0,.95)]">
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="text-sm font-black text-white">Teilnahme</div>
-                        <div className="text-xs text-white/45">
+                        <div className="text-sm font-semibold text-white">Teilnahme</div>
+                        <div className="text-xs text-muted-foreground">
                           {goingParticipants.length + maybeParticipants.length + declinedParticipants.length} Antwort(en)
                         </div>
                       </div>
@@ -631,7 +631,7 @@ async function loadParticipants(eventId: string) {
                             </div>
 
                             <div className="min-w-0">
-                              <div className="text-base font-black text-orange-100">Login erforderlich</div>
+                              <div className="text-base font-semibold text-orange-100">Login erforderlich</div>
                               <div className="mt-1 text-sm text-orange-200 leading-relaxed">
                                 Bitte einloggen, um für dieses Event zuzusagen, vielleicht anzugeben oder abzusagen.
                               </div>
@@ -645,12 +645,12 @@ async function loadParticipants(eventId: string) {
                           </div>
                         </div>
                       ) : membershipLoading ? (
-                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/55">
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-muted-foreground">
                           Berechtigung wird geprüft…
                         </div>
                       ) : isClubOnlyEvent && !hasRequiredEventPackage ? (
                         <div className="rounded-2xl border border-orange-400/25 bg-orange-400/10 px-4 py-4">
-                          <div className="font-black text-orange-100">
+                          <div className="font-semibold text-orange-100">
                             Paket „{requiredEventPackageLabel}“ erforderlich
                           </div>
                           <div className="mt-1 text-sm font-semibold text-orange-200">
@@ -714,7 +714,7 @@ async function loadParticipants(eventId: string) {
                           ) : null}
 
                           {view?.isPast ? (
-                            <div className="mt-2 text-xs text-white/40">
+                            <div className="mt-2 text-xs text-muted-foreground">
                               Für vergangene Events kann nichts mehr geändert werden.
                             </div>
                           ) : null}
@@ -723,7 +723,7 @@ async function loadParticipants(eventId: string) {
                     </div>
 
                     <div className="rounded-[22px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_55px_-42px_rgba(0,0,0,.95)]">
-                      <div className="mb-3 text-sm font-black text-white">Teilnehmer</div>
+                      <div className="mb-3 text-sm font-semibold text-white">Teilnehmer</div>
 
                       <div className="space-y-4">
                         <div>
@@ -732,7 +732,7 @@ async function loadParticipants(eventId: string) {
                           </div>
 
                           {goingParticipants.length === 0 ? (
-                            <div className="text-sm text-white/40">Noch niemand.</div>
+                            <div className="text-sm text-muted-foreground">Noch niemand.</div>
                           ) : (
                             <div className="space-y-2">
                               {goingParticipants.map((p) => (
@@ -740,7 +740,7 @@ async function loadParticipants(eventId: string) {
                                   key={p.id}
                                   className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2"
                                 >
-                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-card">
                                     {p.club_players?.photo_url ? (
                                       <img
                                         src={p.club_players.photo_url}
@@ -748,7 +748,7 @@ async function loadParticipants(eventId: string) {
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
-                                      <Users className="w-4 h-4 text-white/40" />
+                                      <Users className="w-4 h-4 text-muted-foreground" />
                                     )}
                                   </div>
                                   <span className="text-sm font-medium text-white/85">
@@ -766,7 +766,7 @@ async function loadParticipants(eventId: string) {
                           </div>
 
                           {maybeParticipants.length === 0 ? (
-                            <div className="text-sm text-white/40">Niemand.</div>
+                            <div className="text-sm text-muted-foreground">Niemand.</div>
                           ) : (
                             <div className="space-y-2">
                               {maybeParticipants.map((p) => (
@@ -774,7 +774,7 @@ async function loadParticipants(eventId: string) {
                                   key={p.id}
                                   className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2"
                                 >
-                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-card">
                                     {p.club_players?.photo_url ? (
                                       <img
                                         src={p.club_players.photo_url}
@@ -782,7 +782,7 @@ async function loadParticipants(eventId: string) {
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
-                                      <Users className="w-4 h-4 text-white/40" />
+                                      <Users className="w-4 h-4 text-muted-foreground" />
                                     )}
                                   </div>
                                   <span className="text-sm font-medium text-white/85">
@@ -800,7 +800,7 @@ async function loadParticipants(eventId: string) {
                           </div>
 
                           {declinedParticipants.length === 0 ? (
-                            <div className="text-sm text-white/40">Niemand.</div>
+                            <div className="text-sm text-muted-foreground">Niemand.</div>
                           ) : (
                             <div className="space-y-2">
                               {declinedParticipants.map((p) => (
@@ -808,7 +808,7 @@ async function loadParticipants(eventId: string) {
                                   key={p.id}
                                   className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2"
                                 >
-                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-card">
                                     {p.club_players?.photo_url ? (
                                       <img
                                         src={p.club_players.photo_url}
@@ -816,7 +816,7 @@ async function loadParticipants(eventId: string) {
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
-                                      <Users className="w-4 h-4 text-white/40" />
+                                      <Users className="w-4 h-4 text-muted-foreground" />
                                     )}
                                   </div>
                                   <span className="text-sm font-medium text-white/85">
@@ -835,7 +835,7 @@ async function loadParticipants(eventId: string) {
 
               <div className="fixed inset-x-0 z-30 px-3 sm:px-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] sm:bottom-6">
                 <div className="mx-auto max-w-3xl">
-                  <div className="rounded-3xl border border-white/10 bg-black/70 p-3 shadow-[0_24px_80px_-42px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+                  <div className="rounded-3xl border border-white/10 bg-black/70 p-3 shadow-[0_24px_80px_-42px_rgba(0,0,0,.98)] ">
                     <div className="grid grid-cols-2 gap-2">
                       <Button asChild variant="outline" className="h-12 rounded-2xl border-white/10 bg-white/5 font-semibold text-white hover:bg-white/10">
                         <Link href="/veranstaltungen">

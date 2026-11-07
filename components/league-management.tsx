@@ -1784,8 +1784,8 @@ const createMatch = useCallback(async () => {
     },
     [opponentTeams],
   )
-  
-  
+
+
   const handleEditTeamSelection = useCallback(
   (teamId: string, teamType: "own" | "opponent", position: "home" | "away") => {
     setEditMatchDetails((prev) => {
@@ -1813,10 +1813,10 @@ const createMatch = useCallback(async () => {
   },
   [opponentTeams],
 )
-  
-  
-  
-  
+
+
+
+
 
   // ✅ "App-Layout": Sticky Tabs + mobile friendly spacing
   if (loading) {
@@ -1829,24 +1829,24 @@ const createMatch = useCallback(async () => {
         <div className="emd-admin-hero">
           <div className="relative flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-200/45">Mein EMD · Verwaltung</div>
-              <h1 className="mt-1 text-2xl font-black tracking-[-0.025em] text-white sm:text-[30px]">Ligaverwaltung</h1>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-200/45">Mein EMD · Verwaltung</div>
+              <h1 className="mt-1 text-2xl font-semibold tracking-[-0.025em] text-white sm:text-[30px]">Ligaverwaltung</h1>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-white/38">Spielplan, Aufstellungen und Ligakontrolle zentral verwalten.</p>
             </div>
             <div className="hidden items-center gap-2 lg:flex">
               <div className="emd-admin-stat text-right">
-                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/25">Mannschaften</div>
-                <div className="mt-0.5 text-sm font-black text-white">{ownTeams.length}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-white/25">Mannschaften</div>
+                <div className="mt-0.5 text-sm font-semibold text-white">{ownTeams.length}</div>
               </div>
               <div className="emd-admin-stat text-right">
-                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/25">Handlungsbedarf</div>
-                <div className={cn("mt-0.5 text-sm font-black", leagueActionCount > 0 ? "text-amber-200" : "text-white")}>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-white/25">Handlungsbedarf</div>
+                <div className={cn("mt-0.5 text-sm font-semibold", leagueActionCount > 0 ? "text-amber-200" : "text-white")}>
                   {leagueActionCount}
                 </div>
               </div>
               <div className="emd-admin-stat text-right">
-                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/25">Überfällig</div>
-                <div className="mt-0.5 text-sm font-black text-white">{overdueMatches.length}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-white/25">Überfällig</div>
+                <div className="mt-0.5 text-sm font-semibold text-white">{overdueMatches.length}</div>
               </div>
             </div>
           </div>
@@ -1876,10 +1876,10 @@ const createMatch = useCallback(async () => {
                   onClick={() => setActiveTab(key as TabKey)}
                   className={cn(vv.navItem, activeTab === key ? vv.navActive : vv.navIdle)}
                 >
-                  <Icon className={cn("h-4 w-4", activeTab === key ? "text-orange-300" : "text-white/28 group-hover:text-white/55")} />
+                  <Icon className={cn("h-4 w-4", activeTab === key ? "text-orange-300" : "text-white/28 group-hover:text-muted-foreground")} />
                   <span className="whitespace-nowrap">{label}</span>
                   {key === "overdue" && overdueMatches.length > 0 ? (
-                    <span className="ml-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[10px] font-black text-amber-200">{overdueMatches.length}</span>
+                    <span className="ml-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-semibold text-amber-200">{overdueMatches.length}</span>
                   ) : null}
                 </button>
               ))}
@@ -1895,7 +1895,7 @@ const createMatch = useCallback(async () => {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <div className={vv.label}>Liga-Zentrale</div>
-                        <h2 className="mt-1 flex items-center gap-2 text-xl font-black text-white">
+                        <h2 className="mt-1 flex items-center gap-2 text-xl font-semibold text-white">
                           <AlertTriangle className={cn("h-5 w-5", leagueActionCount > 0 ? "text-amber-300" : "text-emerald-300")} />
                           Handlungsbedarf
                         </h2>
@@ -1924,16 +1924,16 @@ const createMatch = useCallback(async () => {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/30">
+                          <div className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                             Vor dem Spiel
                           </div>
-                          <div className="mt-1 text-base font-black text-white">Aufstellung fehlt</div>
+                          <div className="mt-1 text-base font-semibold text-white">Aufstellung fehlt</div>
                           <div className="mt-1 text-sm font-semibold leading-5 text-white/38">
                             Ab 12 Stunden vor Spielbeginn wird eine fehlende bestätigte Aufstellung hier als Handlungsbedarf angezeigt.
                           </div>
                         </div>
                         <span className={cn(
-                          "rounded-full px-3 py-1 text-sm font-black",
+                          "rounded-full px-3 py-1 text-sm font-semibold",
                           lineupActionItems.length > 0
                             ? "bg-amber-500/12 text-amber-200"
                             : "bg-emerald-500/10 text-emerald-200",
@@ -1946,8 +1946,8 @@ const createMatch = useCallback(async () => {
                         <div className="mt-4 space-y-2">
                           {lineupActionItems.slice(0, 3).map((item) => (
                             <div key={`${item.match.id}:${item.teamId}`} className={cn(vv.inset, "px-3 py-2.5")}>
-                              <div className="text-sm font-black text-white/80">{item.teamName}</div>
-                              <div className="mt-0.5 text-xs font-semibold text-white/35">
+                              <div className="text-sm font-semibold text-white/80">{item.teamName}</div>
+                              <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
                                 {getTeamName(item.match, true)} vs. {getTeamName(item.match, false)}
                                 {" · "}
                                 noch ca. {item.hoursUntil} Std.
@@ -1971,16 +1971,16 @@ const createMatch = useCallback(async () => {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/30">
+                          <div className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                             Nach dem Spiel
                           </div>
-                          <div className="mt-1 text-base font-black text-white">Ergebnis ausständig</div>
+                          <div className="mt-1 text-base font-semibold text-white">Ergebnis ausständig</div>
                           <div className="mt-1 text-sm font-semibold leading-5 text-white/38">
                             Spiele ohne Abschluss erscheinen 24 Stunden nach dem aktuell gültigen Spieltermin.
                           </div>
                         </div>
                         <span className={cn(
-                          "rounded-full px-3 py-1 text-sm font-black",
+                          "rounded-full px-3 py-1 text-sm font-semibold",
                           overdueMatches.length > 0
                             ? "bg-amber-500/12 text-amber-200"
                             : "bg-emerald-500/10 text-emerald-200",
@@ -1993,10 +1993,10 @@ const createMatch = useCallback(async () => {
                         <div className="mt-4 space-y-2">
                           {overdueMatches.slice(0, 3).map((match) => (
                             <div key={match.id} className={cn(vv.inset, "px-3 py-2.5")}>
-                              <div className="text-sm font-black text-white/80">
+                              <div className="text-sm font-semibold text-white/80">
                                 {getTeamName(match, true)} vs. {getTeamName(match, false)}
                               </div>
-                              <div className="mt-0.5 text-xs font-semibold text-white/35">
+                              <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
                                 {new Date(match.match_date).toLocaleDateString("de-AT")}
                                 {match.match_time ? ` · ${String(match.match_time).slice(0, 5)} Uhr` : ""}
                               </div>
@@ -2015,7 +2015,7 @@ const createMatch = useCallback(async () => {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <div className={vv.label}>Aktuelle Saison</div>
-                        <h2 className="mt-1 text-xl font-black text-white">{currentSeason ? seasonLabel(currentSeason) : "Keine aktive Saison"}</h2>
+                        <h2 className="mt-1 text-xl font-semibold text-white">{currentSeason ? seasonLabel(currentSeason) : "Keine aktive Saison"}</h2>
                         <p className="mt-1 text-sm font-semibold text-white/38">Sportdarts ist die führende Quelle für Spielplan und Ergebnisse.</p>
                       </div>
                       <Dialog open={isSeasonDialogOpen} onOpenChange={setIsSeasonDialogOpen}>
@@ -2053,26 +2053,26 @@ const createMatch = useCallback(async () => {
                     </div>
                   </div>
                   <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
-                    <div className={cn(vv.card, "p-4")}><div className={vv.label}>Eigene Teams</div><div className="mt-2 text-2xl font-black text-white">{ownTeams.length}</div></div>
-                    <div className={cn(vv.card, "p-4")}><div className={vv.label}>Gegner</div><div className="mt-2 text-2xl font-black text-white">{opponentTeams.length}</div></div>
-                    <div className={cn(vv.card, "p-4")}><div className={vv.label}>Saisons</div><div className="mt-2 text-2xl font-black text-white">{seasons.length}</div></div>
+                    <div className={cn(vv.card, "p-4")}><div className={vv.label}>Eigene Teams</div><div className="mt-2 text-2xl font-semibold text-white">{ownTeams.length}</div></div>
+                    <div className={cn(vv.card, "p-4")}><div className={vv.label}>Gegner</div><div className="mt-2 text-2xl font-semibold text-white">{opponentTeams.length}</div></div>
+                    <div className={cn(vv.card, "p-4")}><div className={vv.label}>Saisons</div><div className="mt-2 text-2xl font-semibold text-white">{seasons.length}</div></div>
                   </div>
                 </section>
 
                 <section className={vv.surface}>
                   <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
-                    <h2 className="text-lg font-black text-white">Saisons</h2>
+                    <h2 className="text-lg font-semibold text-white">Saisons</h2>
                   </div>
                   <div className="grid gap-3 p-4 md:grid-cols-2 sm:p-5">
                     {seasons.map((season) => (
                       <div key={season.id} className={cn(vv.cardHover, "p-4")}>
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="truncate text-base font-black text-white">{seasonLabel(season)}</div>
-                            <div className="mt-1 text-xs font-semibold text-white/35">{new Date(season.start_date).toLocaleDateString("de-AT")} – {new Date(season.end_date).toLocaleDateString("de-AT")}</div>
+                            <div className="truncate text-base font-semibold text-white">{seasonLabel(season)}</div>
+                            <div className="mt-1 text-xs font-semibold text-muted-foreground">{new Date(season.start_date).toLocaleDateString("de-AT")} – {new Date(season.end_date).toLocaleDateString("de-AT")}</div>
                           </div>
                           <div className="flex flex-wrap justify-end gap-2">
-                            {season.is_active ? <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-black text-emerald-200">Aktiv</span> : season.status === "completed" ? <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-black text-white/45">Abgeschlossen</span> : null}
+                            {season.is_active ? <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-200">Aktiv</span> : season.status === "completed" ? <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs font-semibold text-muted-foreground">Abgeschlossen</span> : null}
                           </div>
                         </div>
                         {season.is_active ? (
@@ -2093,7 +2093,7 @@ const createMatch = useCallback(async () => {
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                       <div>
                         <div className={vv.label}>Sportdarts-Sync</div>
-                        <h2 className="mt-1 text-xl font-black text-white">{currentSeason ? `${seasonLabel(currentSeason)} · Spielplan` : "Spielplan"}</h2>
+                        <h2 className="mt-1 text-xl font-semibold text-white">{currentSeason ? `${seasonLabel(currentSeason)} · Spielplan` : "Spielplan"}</h2>
                         <p className="mt-1 text-sm font-semibold text-white/38">Keine manuelle Bearbeitung: Spielplan und Ergebnisse kommen ausschließlich aus Sportdarts.</p>
                       </div>
                       <div className="flex flex-col gap-2 sm:flex-row">
@@ -2108,7 +2108,7 @@ const createMatch = useCallback(async () => {
                               <DialogHeader className={vv.modalHeader}><DialogTitle>Sportdarts-Spielplan synchronisieren</DialogTitle></DialogHeader>
                               <div className={vv.modalBody}>
                                 <div className="space-y-4">
-                                  <div className={cn(vv.inset, "p-4 text-sm font-semibold text-white/55")}>Ziel: <span className="font-black text-white">{currentSeason ? seasonLabel(currentSeason) : "ausgewählte Saison"}</span>. Bestehende Spiele werden beim Import nicht überschrieben.</div>
+                                  <div className={cn(vv.inset, "p-4 text-sm font-semibold text-muted-foreground")}>Ziel: <span className="font-semibold text-white">{currentSeason ? seasonLabel(currentSeason) : "ausgewählte Saison"}</span>. Bestehende Spiele werden beim Import nicht überschrieben.</div>
                                   <Button type="button" className={vv.buttonPrimary} onClick={() => void loadSportdartsImportPreview()} disabled={sportdartsImportLoading || sportdartsImporting}>{sportdartsImportLoading ? "Spielplan wird geladen…" : "Vorschau laden"}</Button>
                                   {sportdartsImportMessage ? <div className={cn(vv.inset, "p-3 text-sm font-semibold text-white/60")}>{sportdartsImportMessage}</div> : null}
                                   {sportdartsImportPreview.length > 0 ? (
@@ -2116,11 +2116,11 @@ const createMatch = useCallback(async () => {
                                       <div className="max-h-[48vh] overflow-y-auto rounded-[18px] border border-white/[0.07]">
                                         {sportdartsImportPreview.map((row) => (
                                           <div key={`${row.gameId}:${row.ownTeamId}`} className="grid gap-1 border-b border-white/[0.05] px-4 py-3 last:border-b-0 sm:grid-cols-[80px_110px_1fr_1fr_120px] sm:items-center">
-                                            <div className="text-xs font-black text-white/40">ST {row.weekNumber}</div>
-                                            <div className="text-xs font-bold text-white/55">{row.date.split("-").reverse().join(".")}</div>
-                                            <div className="truncate text-sm font-black text-white/80">{row.homeTeam}</div>
-                                            <div className="truncate text-sm font-black text-white/80">{row.awayTeam}</div>
-                                            <div className="text-xs font-black text-white/40">{row.alreadyExists ? "Vorhanden" : "Neu"}</div>
+                                            <div className="text-xs font-semibold text-muted-foreground">ST {row.weekNumber}</div>
+                                            <div className="text-xs font-bold text-muted-foreground">{row.date.split("-").reverse().join(".")}</div>
+                                            <div className="truncate text-sm font-semibold text-white/80">{row.homeTeam}</div>
+                                            <div className="truncate text-sm font-semibold text-white/80">{row.awayTeam}</div>
+                                            <div className="text-xs font-semibold text-muted-foreground">{row.alreadyExists ? "Vorhanden" : "Neu"}</div>
                                           </div>
                                         ))}
                                       </div>
@@ -2141,9 +2141,9 @@ const createMatch = useCallback(async () => {
 
                   <div className="p-3 sm:p-5">
                     {!selectedSeason ? (
-                      <div className={cn(vv.inset, "p-8 text-center text-sm font-semibold text-white/35")}>Bitte eine Saison auswählen.</div>
+                      <div className={cn(vv.inset, "p-8 text-center text-sm font-semibold text-muted-foreground")}>Bitte eine Saison auswählen.</div>
                     ) : filteredMatches.length === 0 ? (
-                      <div className={cn(vv.inset, "p-8 text-center text-sm font-semibold text-white/35")}>Noch keine Spiele vorhanden. Lade den Spielplan über Sportdarts.</div>
+                      <div className={cn(vv.inset, "p-8 text-center text-sm font-semibold text-muted-foreground")}>Noch keine Spiele vorhanden. Lade den Spielplan über Sportdarts.</div>
                     ) : (
                       <div className="space-y-4">
                         {Object.values(groupedMatches).map(({ team, matches: teamMatches }) => (
@@ -2152,10 +2152,10 @@ const createMatch = useCallback(async () => {
                               <CollapsibleTrigger asChild>
                                 <button type="button" className="flex w-full items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-4 text-left sm:px-5">
                                   <div className="min-w-0">
-                                    <div className="text-base font-black text-white">{team.name}</div>
-                                    <div className="mt-0.5 text-xs font-semibold text-white/35">{teamMatches.length} Spiele</div>
+                                    <div className="text-base font-semibold text-white">{team.name}</div>
+                                    <div className="mt-0.5 text-xs font-semibold text-muted-foreground">{teamMatches.length} Spiele</div>
                                   </div>
-                                  <ChevronDown className="h-4 w-4 shrink-0 text-white/35" />
+                                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                                 </button>
                               </CollapsibleTrigger>
                               <CollapsibleContent>
@@ -2174,19 +2174,19 @@ const createMatch = useCallback(async () => {
                                             {shownStatus === "postponed" && match.original_date ? (
                                               <div className="mt-2 space-y-1.5">
                                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-white/25">
+                                                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white/25">
                                                     Ursprünglich
                                                   </span>
-                                                  <span className="line-through decoration-red-400/70 text-white/35">
+                                                  <span className="line-through decoration-red-400/70 text-muted-foreground">
                                                     {new Date(match.original_date).toLocaleDateString("de-AT")}
                                                   </span>
                                                 </div>
 
                                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-amber-300/70">
+                                                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-300/70">
                                                     Neuer Termin
                                                   </span>
-                                                  <span className="font-black text-amber-100">
+                                                  <span className="font-semibold text-amber-100">
                                                     {new Date(match.match_date).toLocaleDateString("de-AT")}
                                                     {match.match_time ? ` · ${String(match.match_time).slice(0, 5)} Uhr` : ""}
                                                   </span>
@@ -2201,15 +2201,15 @@ const createMatch = useCallback(async () => {
                                           </div>
 
                                           <div className="min-w-0">
-                                            <div className="truncate text-sm font-black text-white/88">
+                                            <div className="truncate text-sm font-semibold text-white/88">
                                               {getTeamName(match, true)} <span className="text-white/25">vs.</span> {getTeamName(match, false)}
                                             </div>
-                                            <div className="mt-1 truncate text-xs font-semibold text-white/30">
+                                            <div className="mt-1 truncate text-xs font-semibold text-muted-foreground">
                                               {match.venue || "Spielort noch nicht hinterlegt"}
                                             </div>
 
                                             {shownStatus === "postponed" && match.postponement_reason ? (
-                                              <div className="mt-2 inline-flex max-w-full items-center rounded-full border border-amber-300/10 bg-amber-500/[0.07] px-2.5 py-1 text-[10px] font-bold text-amber-100/70">
+                                              <div className="mt-2 inline-flex max-w-full items-center rounded-full border border-amber-300/10 bg-amber-500/[0.07] px-2.5 py-1 text-xs font-bold text-amber-100/70">
                                                 <span className="mr-1 text-amber-300/70">Grund:</span>
                                                 <span className="truncate">{match.postponement_reason}</span>
                                               </div>
@@ -2218,14 +2218,14 @@ const createMatch = useCallback(async () => {
 
                                           <div className="flex items-center gap-3 lg:justify-end">
                                             {shownStatus === "completed" ? (
-                                              <div className="font-mono text-lg font-black text-white">
+                                              <div className="font-mono text-lg font-semibold text-white">
                                                 {shownHome ?? "–"}:{shownAway ?? "–"}
                                               </div>
                                             ) : null}
 
                                             <span
                                               className={cn(
-                                                "rounded-full border px-2.5 py-1 text-[11px] font-black",
+                                                "rounded-full border px-2.5 py-1 text-xs font-semibold",
                                                 shownStatus === "completed"
                                                   ? "border-emerald-300/10 bg-emerald-500/10 text-emerald-200"
                                                   : shownStatus === "live"
@@ -2263,12 +2263,12 @@ const createMatch = useCallback(async () => {
                 <section className={vv.surface}>
                   <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div><div className={vv.label}>Ligaplanung</div><h2 className="mt-1 text-xl font-black text-white">Aufstellungen & Zusagen</h2><p className="mt-1 text-sm font-semibold text-white/38">Pro Spiel aufklappen: Zusagen, offene Antworten und bestätigte Aufstellung auf einen Blick.</p></div>
+                      <div><div className={vv.label}>Ligaplanung</div><h2 className="mt-1 text-xl font-semibold text-white">Aufstellungen & Zusagen</h2><p className="mt-1 text-sm font-semibold text-white/38">Pro Spiel aufklappen: Zusagen, offene Antworten und bestätigte Aufstellung auf einen Blick.</p></div>
                       <Button variant="outline" className={vv.buttonSecondary} onClick={() => void fetchPlanningData()} disabled={planningLoading}>{planningLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Aktualisieren</Button>
                     </div>
                   </div>
                   <div className="space-y-3 p-3 sm:p-5">
-                    {planningLoading ? <div className={cn(vv.inset,"p-10 text-center text-sm font-bold text-white/35")}>Aufstellungen werden geladen …</div> : upcomingPlanningMatches.length === 0 ? <div className={cn(vv.inset,"p-10 text-center text-sm font-bold text-white/35")}>Keine kommenden Ligaspiele.</div> : upcomingPlanningMatches.flatMap((match) => getOwnTeamContexts(match).map(({teamId,teamName}) => {
+                    {planningLoading ? <div className={cn(vv.inset,"p-10 text-center text-sm font-bold text-muted-foreground")}>Aufstellungen werden geladen …</div> : upcomingPlanningMatches.length === 0 ? <div className={cn(vv.inset,"p-10 text-center text-sm font-bold text-muted-foreground")}>Keine kommenden Ligaspiele.</div> : upcomingPlanningMatches.flatMap((match) => getOwnTeamContexts(match).map(({teamId,teamName}) => {
                       const summary = getPlanningSummary(match, teamId)
                       const label = summary.confirmed ? "Bestätigt" : summary.stale ? "Bestätigung veraltet" : summary.lineup.length > 0 ? "Entwurf" : "Keine Aufstellung"
                       return (
@@ -2276,27 +2276,27 @@ const createMatch = useCallback(async () => {
                           <div className={cn(vv.cardHover,"overflow-hidden")}>
                             <CollapsibleTrigger asChild>
                               <button type="button" className="flex w-full flex-col gap-3 p-4 text-left sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-                                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[11px] font-black text-orange-200">{teamName}</span><span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-black text-white/45">{match.dart_type === "edart" ? "E-Dart" : "Steeldart"}</span></div><div className="mt-2 truncate text-base font-black text-white">{getTeamName(match,true)} <span className="text-white/25">vs.</span> {getTeamName(match,false)}</div><div className="mt-1 text-xs font-semibold text-white/35">{new Date(match.match_date).toLocaleDateString("de-AT")}{match.match_time ? ` · ${String(match.match_time).slice(0,5)} Uhr` : ""}</div></div>
-                                <div className="flex flex-wrap items-center gap-2 lg:justify-end"><span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-black text-emerald-200">Ja {summary.counts.yes}</span><span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-black text-amber-200">Notfall {summary.counts.maybe}</span><span className="rounded-full bg-red-500/10 px-2.5 py-1 text-[11px] font-black text-red-200">Nein {summary.counts.no}</span><span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-black text-white/45">Offen {summary.counts.none}</span><span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", summary.confirmed ? "bg-emerald-500/10 text-emerald-200" : summary.lineup.length > 0 ? "bg-amber-500/10 text-amber-200" : "bg-white/[0.05] text-white/45")}>{label}</span><ChevronDown className="h-4 w-4 text-white/30" /></div>
+                                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-xs font-semibold text-orange-200">{teamName}</span><span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs font-semibold text-muted-foreground">{match.dart_type === "edart" ? "E-Dart" : "Steeldart"}</span></div><div className="mt-2 truncate text-base font-semibold text-white">{getTeamName(match,true)} <span className="text-white/25">vs.</span> {getTeamName(match,false)}</div><div className="mt-1 text-xs font-semibold text-muted-foreground">{new Date(match.match_date).toLocaleDateString("de-AT")}{match.match_time ? ` · ${String(match.match_time).slice(0,5)} Uhr` : ""}</div></div>
+                                <div className="flex flex-wrap items-center gap-2 lg:justify-end"><span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-200">Ja {summary.counts.yes}</span><span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">Notfall {summary.counts.maybe}</span><span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-200">Nein {summary.counts.no}</span><span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs font-semibold text-muted-foreground">Offen {summary.counts.none}</span><span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", summary.confirmed ? "bg-emerald-500/10 text-emerald-200" : summary.lineup.length > 0 ? "bg-amber-500/10 text-amber-200" : "bg-white/[0.05] text-muted-foreground")}>{label}</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></div>
                               </button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                               <div className="grid gap-4 border-t border-white/[0.06] p-4 sm:p-5 xl:grid-cols-[1.2fr_.8fr]">
-                                <div className={cn(vv.inset,"p-3 sm:p-4")}><div className={vv.label}>Zusagen</div><div className="mt-3 grid gap-2 sm:grid-cols-2">{summary.members.map((member:any) => { const status = summary.availabilityByPlayer.get(member.player_id)?.status ?? "none"; return <div key={member.player_id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5"><div className="min-w-0"><div className="truncate text-sm font-black text-white/85">{member.club_players?.name || "Spieler"}</div>{member.role === "Captain" || member.role === "Co-Captain" ? <div className="mt-0.5 text-[10px] font-black uppercase tracking-wider text-orange-200/45">{member.role}</div> : null}</div><span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black",status === "yes" ? "bg-emerald-500/10 text-emerald-200" : status === "maybe" ? "bg-amber-500/10 text-amber-200" : status === "no" ? "bg-red-500/10 text-red-200" : "bg-white/[0.05] text-white/35")}>{status === "yes" ? "Ja" : status === "maybe" ? "Nur wenn nötig" : status === "no" ? "Nein" : "Keine Antwort"}</span></div> })}</div></div>
+                                <div className={cn(vv.inset,"p-3 sm:p-4")}><div className={vv.label}>Zusagen</div><div className="mt-3 grid gap-2 sm:grid-cols-2">{summary.members.map((member:any) => { const status = summary.availabilityByPlayer.get(member.player_id)?.status ?? "none"; return <div key={member.player_id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5"><div className="min-w-0"><div className="truncate text-sm font-semibold text-white/85">{member.club_players?.name || "Spieler"}</div>{member.role === "Captain" || member.role === "Co-Captain" ? <div className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-orange-200/45">{member.role}</div> : null}</div><span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold",status === "yes" ? "bg-emerald-500/10 text-emerald-200" : status === "maybe" ? "bg-amber-500/10 text-amber-200" : status === "no" ? "bg-red-500/10 text-red-200" : "bg-white/[0.05] text-muted-foreground")}>{status === "yes" ? "Ja" : status === "maybe" ? "Nur wenn nötig" : status === "no" ? "Nein" : "Keine Antwort"}</span></div> })}</div></div>
                                 <div className={cn(vv.inset,"p-3 sm:p-4")}>
                                   <div className="flex items-start justify-between gap-3">
                                     <div>
                                       <div className={vv.label}>Aufstellung</div>
-                                      <div className="mt-1 text-base font-black text-white">{label}</div>
+                                      <div className="mt-1 text-base font-semibold text-white">{label}</div>
                                     </div>
-                                    <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-black text-white/50">
+                                    <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-xs font-semibold text-muted-foreground">
                                       {summary.startersCount}/{summary.requiredStarters} Starter
                                     </span>
                                   </div>
 
                                   <div className="mt-3 space-y-2">
                                     {summary.lineup.length === 0 ? (
-                                      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-3 text-sm font-semibold text-white/35">
+                                      <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-3 text-sm font-semibold text-muted-foreground">
                                         Noch keine Aufstellung gespeichert.
                                       </div>
                                     ) : (
@@ -2305,7 +2305,7 @@ const createMatch = useCallback(async () => {
                                         return (
                                           <div key={row.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
                                             <span className="truncate text-sm font-bold text-white/80">{member?.club_players?.name || "Spieler"}</span>
-                                            <span className={cn("text-[11px] font-black",row.is_substitute ? "text-sky-200" : "text-orange-200")}>
+                                            <span className={cn("text-xs font-semibold",row.is_substitute ? "text-sky-200" : "text-orange-200")}>
                                               {row.is_substitute ? "Reserve" : `Starter ${row.position}`}
                                             </span>
                                           </div>
@@ -2318,7 +2318,7 @@ const createMatch = useCallback(async () => {
                                     <div className="mt-4 space-y-2">
                                       <Button
                                         type="button"
-                                        className="w-full rounded-xl border border-red-300/25 bg-red-500/10 font-black text-red-100 shadow-[0_0_20px_rgba(239,68,68,.10)] hover:bg-red-500/20"
+                                        className="w-full rounded-xl border border-red-300/25 bg-red-500/10 font-semibold text-red-100 shadow-[0_0_20px_rgba(239,68,68,.10)] hover:bg-red-500/20"
                                         onClick={() => openLineupAlertDialog(match, teamId, teamName, summary.members)}
                                       >
                                         <BellRing className="mr-2 h-4 w-4" />
@@ -2366,13 +2366,13 @@ const createMatch = useCallback(async () => {
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <div className={vv.label}>Offene Ergebnisse</div>
-                        <h2 className="mt-1 text-xl font-black text-white">Überfällige Ligaspiele</h2>
+                        <h2 className="mt-1 text-xl font-semibold text-white">Überfällige Ligaspiele</h2>
                         <p className="mt-1 text-sm font-semibold text-white/38">
                           Hier siehst du Spiele, deren Termin seit mindestens 24 Stunden vorbei ist und für die noch kein abgeschlossenes Ergebnis vorliegt.
                           Bei verschobenen Spielen zählt immer der neue Spieltermin.
                         </p>
                       </div>
-                      <span className="w-fit rounded-full border border-amber-300/15 bg-amber-500/10 px-3 py-1 text-xs font-black text-amber-100">
+                      <span className="w-fit rounded-full border border-amber-300/15 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-100">
                         {overdueMatches.length} offen
                       </span>
                     </div>
@@ -2382,8 +2382,8 @@ const createMatch = useCallback(async () => {
                     {overdueMatches.length === 0 ? (
                       <div className={cn(vv.inset, "p-10 text-center")}>
                         <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-300/70" />
-                        <div className="mt-3 font-black text-white">Keine überfälligen Spiele</div>
-                        <div className="mt-1 text-sm font-semibold text-white/35">
+                        <div className="mt-3 font-semibold text-white">Keine überfälligen Spiele</div>
+                        <div className="mt-1 text-sm font-semibold text-muted-foreground">
                           Aktuell ist in unserer App kein Spiel seit mindestens 24 Stunden offen.
                         </div>
                       </div>
@@ -2405,11 +2405,11 @@ const createMatch = useCallback(async () => {
                                   >
                                     <div>
                                       <div className="flex flex-wrap gap-2">
-                                        <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-black text-amber-200">
+                                        <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
                                           {hours}h überfällig
                                         </span>
                                         <span className={cn(
-                                          "rounded-full border px-2.5 py-1 text-[11px] font-black",
+                                          "rounded-full border px-2.5 py-1 text-xs font-semibold",
                                           match.status === "postponed"
                                             ? "border-amber-300/15 bg-amber-500/10 text-amber-200"
                                             : match.status === "live"
@@ -2424,21 +2424,21 @@ const createMatch = useCallback(async () => {
                                         </span>
                                       </div>
 
-                                      <div className="mt-2 text-base font-black text-white">
+                                      <div className="mt-2 text-base font-semibold text-white">
                                         {getTeamName(match, true)} <span className="text-white/25">vs.</span>{" "}
                                         {getTeamName(match, false)}
                                       </div>
 
                                       {match.status === "postponed" && match.original_date ? (
                                         <div className="mt-2 space-y-1 text-xs font-semibold">
-                                          <div className="flex flex-wrap items-center gap-2 text-white/30">
+                                          <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
                                             <span>Ursprünglich:</span>
                                             <span className="line-through decoration-red-400/70">
                                               {new Date(match.original_date).toLocaleDateString("de-AT")}
                                             </span>
                                           </div>
                                           <div className="flex flex-wrap items-center gap-2 text-amber-100/80">
-                                            <span className="font-black">Neuer Termin:</span>
+                                            <span className="font-semibold">Neuer Termin:</span>
                                             <span>
                                               {new Date(match.match_date).toLocaleDateString("de-AT")}
                                               {match.match_time ? ` · ${String(match.match_time).slice(0, 5)} Uhr` : ""}
@@ -2446,14 +2446,14 @@ const createMatch = useCallback(async () => {
                                           </div>
                                         </div>
                                       ) : (
-                                        <div className="mt-1 text-xs font-semibold text-white/35">
+                                        <div className="mt-1 text-xs font-semibold text-muted-foreground">
                                           {new Date(match.match_date).toLocaleDateString("de-AT")}
                                           {match.match_time ? ` · ${String(match.match_time).slice(0, 5)} Uhr` : ""}
                                         </div>
                                       )}
                                     </div>
 
-                                    <ChevronDown className="h-4 w-4 text-white/30" />
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                   </button>
                                 </CollapsibleTrigger>
 
@@ -2461,7 +2461,7 @@ const createMatch = useCallback(async () => {
                                   <div className="grid gap-3 border-t border-white/[0.06] p-4 text-sm sm:grid-cols-3 sm:p-5">
                                     <div className={cn(vv.inset, "p-3")}>
                                       <div className={vv.label}>Spielstatus</div>
-                                      <div className="mt-1 font-black text-white/80">
+                                      <div className="mt-1 font-semibold text-white/80">
                                         {match.status === "postponed"
                                           ? "Verschoben"
                                           : match.status === "live"
@@ -2472,7 +2472,7 @@ const createMatch = useCallback(async () => {
 
                                     <div className={cn(vv.inset, "p-3")}>
                                       <div className={vv.label}>Ergebnis</div>
-                                      <div className="mt-1 font-black text-white/80">
+                                      <div className="mt-1 font-semibold text-white/80">
                                         {match.home_score === null || match.away_score === null
                                           ? "Noch kein Ergebnis"
                                           : `${match.home_score}:${match.away_score}`}
@@ -2481,7 +2481,7 @@ const createMatch = useCallback(async () => {
 
                                     <div className={cn(vv.inset, "p-3")}>
                                       <div className={vv.label}>Überfällig</div>
-                                      <div className="mt-1 font-black text-amber-200">
+                                      <div className="mt-1 font-semibold text-amber-200">
                                         Seit mindestens 24 Stunden offen
                                       </div>
                                     </div>
@@ -2964,24 +2964,24 @@ const createMatch = useCallback(async () => {
                   <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl border border-red-300/20 bg-red-500/10">
                     <BellRing className="h-6 w-6 text-red-200" />
                   </div>
-                  <DialogTitle className="text-xl font-black text-white">EMD Alert senden</DialogTitle>
+                  <DialogTitle className="text-xl font-semibold text-white">EMD Alert senden</DialogTitle>
                 </DialogHeader>
 
                 {lineupAlertDialog ? (
                   <div className="space-y-4">
                     <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
-                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-red-200/60">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-red-200/60">
                         Aufstellung noch nicht bestätigt
                       </div>
-                      <div className="mt-1 font-black text-white">{lineupAlertDialog.matchTitle}</div>
-                      <div className="mt-1 text-xs font-semibold text-white/40">
+                      <div className="mt-1 font-semibold text-white">{lineupAlertDialog.matchTitle}</div>
+                      <div className="mt-1 text-xs font-semibold text-muted-foreground">
                         {lineupAlertDialog.teamName} · {lineupAlertDialog.matchDate}
                         {lineupAlertDialog.matchTime ? ` · ${lineupAlertDialog.matchTime} Uhr` : ""}
                       </div>
                     </div>
 
                     <div>
-                      <div className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-white/35">
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                         Empfänger auswählen
                       </div>
 
@@ -2999,10 +2999,10 @@ const createMatch = useCallback(async () => {
                           )}
                         >
                           <span>
-                            <span className="block font-black">Nur Kapitän</span>
+                            <span className="block font-semibold">Nur Kapitän</span>
                             <span className={cn(
                               "mt-0.5 block text-xs font-semibold",
-                              lineupAlertSelectedRecipient === "captain" ? "text-red-100/75" : "text-white/40",
+                              lineupAlertSelectedRecipient === "captain" ? "text-red-100/75" : "text-muted-foreground",
                             )}>
                               {lineupAlertDialog.captainName || "Kein Kapitän hinterlegt"}
                             </span>
@@ -3026,10 +3026,10 @@ const createMatch = useCallback(async () => {
                           )}
                         >
                           <span>
-                            <span className="block font-black">Nur Co-Kapitän</span>
+                            <span className="block font-semibold">Nur Co-Kapitän</span>
                             <span className={cn(
                               "mt-0.5 block text-xs font-semibold",
-                              lineupAlertSelectedRecipient === "co_captain" ? "text-red-100/75" : "text-white/40",
+                              lineupAlertSelectedRecipient === "co_captain" ? "text-red-100/75" : "text-muted-foreground",
                             )}>
                               {lineupAlertDialog.coCaptainName || "Kein Co-Kapitän hinterlegt"}
                             </span>
@@ -3056,10 +3056,10 @@ const createMatch = useCallback(async () => {
                           )}
                         >
                           <span>
-                            <span className="block font-black">An beide</span>
+                            <span className="block font-semibold">An beide</span>
                             <span className={cn(
                               "mt-0.5 block text-xs font-semibold",
-                              lineupAlertSelectedRecipient === "both" ? "text-red-100/75" : "text-white/40",
+                              lineupAlertSelectedRecipient === "both" ? "text-red-100/75" : "text-muted-foreground",
                             )}>
                               Kapitän + Co-Kapitän
                             </span>
@@ -3088,7 +3088,7 @@ const createMatch = useCallback(async () => {
                       disabled={!lineupAlertSelectedRecipient || lineupAlertSending}
                       onClick={() => void sendLineupConfirmationAlert()}
                       className={cn(
-                        "h-14 w-full rounded-2xl border font-black uppercase tracking-[0.08em] transition-all",
+                        "h-14 w-full rounded-2xl border font-semibold uppercase tracking-[0.08em] transition-all",
                         lineupAlertSelectedRecipient
                           ? "border-red-200/35 bg-red-600 text-white shadow-[0_0_28px_rgba(239,68,68,.28)] hover:bg-red-500"
                           : "border-white/10 bg-white/[0.04] text-white/25",
@@ -3116,7 +3116,7 @@ const createMatch = useCallback(async () => {
                     <div className="border-t border-white/[0.07] pt-4">
                       <div className="mb-2 flex items-center justify-between">
                         <div>
-                          <div className="text-xs font-black uppercase tracking-[0.14em] text-white/35">
+                          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                             Versandlog
                           </div>
                           <div className="mt-0.5 text-xs font-semibold text-white/25">
@@ -3129,18 +3129,18 @@ const createMatch = useCallback(async () => {
                           variant="outline"
                           disabled={lineupAlertLogsLoading}
                           onClick={() => void loadLineupAlertLogs(lineupAlertDialog.matchId, lineupAlertDialog.teamId)}
-                          className="h-8 rounded-xl border-white/10 bg-white/[0.03] px-3 text-xs text-white/55"
+                          className="h-8 rounded-xl border-white/10 bg-white/[0.03] px-3 text-xs text-muted-foreground"
                         >
                           {lineupAlertLogsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Neu laden"}
                         </Button>
                       </div>
 
                       {lineupAlertLogsLoading && lineupAlertLogs.length === 0 ? (
-                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs font-semibold text-white/30">
+                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs font-semibold text-muted-foreground">
                           Versandlog wird geladen …
                         </div>
                       ) : lineupAlertLogs.length === 0 ? (
-                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs font-semibold text-white/30">
+                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs font-semibold text-muted-foreground">
                           Für dieses Spiel wurde noch kein EMD Alert protokolliert.
                         </div>
                       ) : (
@@ -3160,19 +3160,19 @@ const createMatch = useCallback(async () => {
                               >
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0">
-                                    <div className="text-xs font-black text-white">
+                                    <div className="text-xs font-semibold text-white">
                                       {modeLabel}
                                       {row.recipient_names?.length
                                         ? ` · ${row.recipient_names.join(" + ")}`
                                         : ""}
                                     </div>
-                                    <div className="mt-1 text-[11px] font-semibold text-white/30">
+                                    <div className="mt-1 text-xs font-semibold text-muted-foreground">
                                       {new Date(row.created_at).toLocaleString("de-AT")} · Geräte {row.targeted_devices}
                                     </div>
                                   </div>
                                   <div
                                     className={cn(
-                                      "shrink-0 rounded-full px-2 py-1 text-[10px] font-black",
+                                      "shrink-0 rounded-full px-2 py-1 text-xs font-semibold",
                                       row.failed_count > 0
                                         ? "bg-amber-500/10 text-amber-200"
                                         : "bg-emerald-500/10 text-emerald-200",
@@ -3189,7 +3189,7 @@ const createMatch = useCallback(async () => {
                       )}
                     </div>
 
-                    <div className="text-xs font-semibold leading-5 text-white/30">
+                    <div className="text-xs font-semibold leading-5 text-muted-foreground">
                       Auswahl allein sendet nichts. Erst der rote Button „EMD Alert senden“ verschickt den Alert.
                     </div>
                   </div>

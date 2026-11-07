@@ -310,7 +310,7 @@ export default function ChatMatchCard({
 
   if (loading && !data) {
     return (
-      <div className="mx-auto my-2 flex w-full max-w-[560px] items-center justify-center rounded-[22px] border border-orange-300/10 bg-[#111820] p-5 text-white/45">
+      <div className="mx-auto my-2 flex w-full max-w-[560px] items-center justify-center rounded-[22px] border border-orange-300/10 bg-[#111820] p-5 text-muted-foreground">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         Spiel wird geladen …
       </div>
@@ -327,7 +327,7 @@ export default function ChatMatchCard({
 
   return (
     <div className="mx-auto my-2 w-full max-w-[560px] overflow-hidden rounded-[24px] border border-orange-300/15 bg-[#111820] text-white shadow-[0_18px_55px_-30px_rgba(249,115,22,.30)]">
-      <div className="border-b border-white/[0.07] bg-[radial-gradient(circle_at_0%_0%,rgba(249,115,22,.17),transparent_45%)] p-4">
+      <div className="text-foreground border-b border-white/[0.07] bg-card p-4">
         <div className="flex flex-wrap items-center gap-2">
           <Badge className="border border-orange-300/15 bg-orange-500/10 text-orange-200 hover:bg-orange-500/10">
             🎯 Ligaspiel
@@ -342,16 +342,16 @@ export default function ChatMatchCard({
               Aufstellung geändert
             </Badge>
           ) : (
-            <Badge variant="outline" className="border-white/10 bg-white/[0.03] text-white/50">
+            <Badge variant="outline" className="border-white/10 bg-white/[0.03] text-muted-foreground">
               Aufstellung offen
             </Badge>
           )}
         </div>
 
-        <div className="mt-3 text-[17px] font-black leading-tight text-white">
-          {data.homeName} <span className="text-white/30">vs.</span> {data.awayName}
+        <div className="mt-3 text-[17px] font-semibold leading-tight text-white">
+          {data.homeName} <span className="text-muted-foreground">vs.</span> {data.awayName}
         </div>
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-white/50">
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5 text-orange-300" />
             {fmtDate(data.match.match_date)}
@@ -371,7 +371,7 @@ export default function ChatMatchCard({
 
       <div className="space-y-3 p-4">
         <div>
-          <div className="text-[11px] font-black uppercase tracking-[0.14em] text-white/35">
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Bist du dabei?
           </div>
 
@@ -382,7 +382,7 @@ export default function ChatMatchCard({
                 disabled={locked || !!saving}
                 onClick={() => void setAvailability("yes")}
                 variant="outline"
-                className={`h-11 rounded-xl px-1 text-xs font-black ${
+                className={`h-11 rounded-xl px-1 text-xs font-semibold ${
                   data.myStatus === "yes"
                     ? "border-emerald-300/30 bg-emerald-500/15 text-emerald-200"
                     : "border-white/10 bg-white/[0.03] text-white/60"
@@ -397,7 +397,7 @@ export default function ChatMatchCard({
                 disabled={locked || !!saving}
                 onClick={() => void setAvailability("maybe")}
                 variant="outline"
-                className={`h-11 rounded-xl px-1 text-[11px] font-black ${
+                className={`h-11 rounded-xl px-1 text-xs font-semibold ${
                   data.myStatus === "maybe"
                     ? "border-amber-300/30 bg-amber-500/15 text-amber-200"
                     : "border-white/10 bg-white/[0.03] text-white/60"
@@ -412,7 +412,7 @@ export default function ChatMatchCard({
                 disabled={locked || !!saving}
                 onClick={() => void setAvailability("no")}
                 variant="outline"
-                className={`h-11 rounded-xl px-1 text-xs font-black ${
+                className={`h-11 rounded-xl px-1 text-xs font-semibold ${
                   data.myStatus === "no"
                     ? "border-red-300/30 bg-red-500/15 text-red-200"
                     : "border-white/10 bg-white/[0.03] text-white/60"
@@ -423,7 +423,7 @@ export default function ChatMatchCard({
               </Button>
             </div>
           ) : (
-            <div className="mt-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-xs text-white/45">
+            <div className="mt-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-xs text-muted-foreground">
               Für dieses Team kannst du keine Verfügbarkeit abgeben.
             </div>
           )}
@@ -437,37 +437,37 @@ export default function ChatMatchCard({
 
         <div className="grid grid-cols-4 gap-1.5">
           <div className="rounded-xl border border-emerald-300/10 bg-emerald-500/[0.06] p-2 text-center">
-            <div className="text-base font-black text-emerald-200">{data.yes}</div>
-            <div className="text-[9px] font-bold uppercase tracking-wide text-white/35">Ja</div>
+            <div className="text-base font-semibold text-emerald-200">{data.yes}</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Ja</div>
           </div>
           <div className="rounded-xl border border-amber-300/10 bg-amber-500/[0.06] p-2 text-center">
-            <div className="text-base font-black text-amber-200">{data.maybe}</div>
-            <div className="text-[9px] font-bold uppercase tracking-wide text-white/35">Wenn nötig</div>
+            <div className="text-base font-semibold text-amber-200">{data.maybe}</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Wenn nötig</div>
           </div>
           <div className="rounded-xl border border-red-300/10 bg-red-500/[0.06] p-2 text-center">
-            <div className="text-base font-black text-red-200">{data.no}</div>
-            <div className="text-[9px] font-bold uppercase tracking-wide text-white/35">Nein</div>
+            <div className="text-base font-semibold text-red-200">{data.no}</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Nein</div>
           </div>
           <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-2 text-center">
-            <div className="text-base font-black text-white/65">{data.open}</div>
-            <div className="text-[9px] font-bold uppercase tracking-wide text-white/35">Offen</div>
+            <div className="text-base font-semibold text-white/65">{data.open}</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Offen</div>
           </div>
         </div>
 
         {(data.lineupConfirmed || data.lineupStale) && (data.starters.length > 0 || data.substitutes.length > 0) ? (
           <div className="rounded-2xl border border-white/[0.07] bg-black/20 p-3">
-            <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-white/35">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               <Users className="h-3.5 w-3.5 text-orange-300" />
               Aufstellung
             </div>
             {data.starters.length > 0 ? (
               <div className="text-sm font-semibold text-white/80">
-                <span className="text-white/40">Starter:</span> {data.starters.join(" · ")}
+                <span className="text-muted-foreground">Starter:</span> {data.starters.join(" · ")}
               </div>
             ) : null}
             {data.substitutes.length > 0 ? (
               <div className="mt-1 text-sm font-semibold text-white/65">
-                <span className="text-white/35">Ersatz:</span> {data.substitutes.join(" · ")}
+                <span className="text-muted-foreground">Ersatz:</span> {data.substitutes.join(" · ")}
               </div>
             ) : null}
           </div>
@@ -481,7 +481,7 @@ export default function ChatMatchCard({
           onClick={() =>
             router.push(`/chat-app?tab=aufstellung&match_id=${encodeURIComponent(matchId)}&team_id=${encodeURIComponent(teamId)}`)
           }
-          className="h-10 w-full rounded-xl border-white/10 bg-white/[0.03] text-xs font-black text-white/65"
+          className="h-10 w-full rounded-xl border-white/10 bg-white/[0.03] text-xs font-semibold text-white/65"
         >
           Planung & Aufstellung öffnen
         </Button>

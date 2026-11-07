@@ -428,15 +428,15 @@ export default function DartLeaguePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 font-sans">
+      <div className="min-h-screen bg-card text-foreground font-sans">
         <Header />
         <main className="pt-8 pb-20">
           <div className="container mx-auto px-4 md:px-6 py-8">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6 backdrop-blur-sm">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6 ">
                 <Trophy className="h-12 w-12 text-white mx-auto" />
               </div>
-              <p className="mt-4 text-gray-600">Lade Liga-Daten...</p>
+              <p className="mt-4 text-muted-foreground">Lade Liga-Daten...</p>
             </div>
           </div>
         </main>
@@ -445,7 +445,7 @@ export default function DartLeaguePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="text-foreground min-h-screen bg-card  ">
       <Header />
       <main className="container mx-auto px-4 py-8">
         <motion.div
@@ -455,8 +455,8 @@ export default function DartLeaguePage() {
           animate="visible"
         >
           <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
+            <div className="bg-card   rounded-2xl shadow-xl border border-orange-200 p-4 sm:p-8 md:p-12 text-white">
+              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 ">
                 <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
               </div>
               <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
@@ -541,7 +541,7 @@ export default function DartLeaguePage() {
                 <PointsInfoBox />
 
                 <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-6">
+                  <CardHeader className="bg-card   text-white p-3 sm:p-6">
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                         <Target className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -553,7 +553,7 @@ export default function DartLeaguePage() {
                         <select
                           value={playersPerPage}
                           onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                          className="bg-white text-gray-900 rounded px-2 py-1 text-sm"
+                          className="bg-card text-foreground rounded px-2 py-1 text-sm"
                         >
                           <option value={10}>10</option>
                           <option value={25}>25</option>
@@ -566,8 +566,8 @@ export default function DartLeaguePage() {
 
                   <CardContent className="p-0">
                     {playerLegStats.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
-                        <Target className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Target className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                         <p className="text-lg">Keine Statistiken verfügbar</p>
                       </div>
                     ) : (
@@ -576,46 +576,46 @@ export default function DartLeaguePage() {
                           <table className="w-full min-w-[1200px]">
                             <thead className="bg-yellow-400">
                               <tr>
-                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-left p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Rang
                                 </th>
-                                <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-left p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Spieler
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Punkte
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Legs
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Wins
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Win%
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   180er
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   171er
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   High Tonne
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Tonne
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   95+
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Shanghai
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Bull
                                 </th>
-                                <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                                <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                                   Details
                                 </th>
                               </tr>
@@ -633,9 +633,9 @@ export default function DartLeaguePage() {
                           </table>
                         </div>
                         {totalPages > 1 && (
-                          <div className="p-4 border-t bg-gray-50">
+                          <div className="p-4 border-t bg-muted">
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                              <div className="text-sm text-gray-600">
+                              <div className="text-sm text-muted-foreground">
                                 Zeige {startIndex + 1} bis {Math.min(endIndex, playerLegStats.length)} von{" "}
                                 {playerLegStats.length} Spielern
                               </div>
@@ -694,7 +694,7 @@ export default function DartLeaguePage() {
 
               <TabsContent value="standings">
                 <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 sm:p-6">
+                  <CardHeader className="bg-card   text-white p-3 sm:p-6">
                     <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                       <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
                       Liga-Tabelle
@@ -703,25 +703,25 @@ export default function DartLeaguePage() {
                   <CardContent className="p-0">
                     <div className="overflow-x-auto custom-scrollbar">
                       <table className="w-full min-w-[640px]">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-muted">
                           <tr>
-                            <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">Pos</th>
-                            <th className="text-left p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                            <th className="text-left p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">Pos</th>
+                            <th className="text-left p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                               Team
                             </th>
-                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                            <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                               Sp
                             </th>
-                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">S</th>
-                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">U</th>
-                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">N</th>
-                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                            <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">S</th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">U</th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">N</th>
+                            <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                               Legs
                             </th>
-                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                            <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                               Diff
                             </th>
-                            <th className="text-center p-2 sm:p-4 font-semibold text-gray-700 text-xs sm:text-sm">
+                            <th className="text-center p-2 sm:p-4 font-semibold text-muted-foreground text-xs sm:text-sm">
                               Pkt
                             </th>
                           </tr>
@@ -730,7 +730,7 @@ export default function DartLeaguePage() {
                           {standings.map((team, index) => {
                             const teamData = teams.find((t) => t.name === team.team)
                             return (
-                              <tr key={team.team} className="border-b hover:bg-gray-50 transition-colors">
+                              <tr key={team.team} className="border-b hover:bg-muted transition-colors">
                                 <td className="p-2 sm:p-4">
                                   <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
                                     <span className="font-bold text-orange-600 text-xs sm:text-sm">{index + 1}</span>
@@ -742,14 +742,14 @@ export default function DartLeaguePage() {
                                       <img
                                         src={teamData.logo_url || "/placeholder.svg"}
                                         alt={`${team.team} Logo`}
-                                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-gray-200"
+                                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-border"
                                       />
                                     ) : (
                                       <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-100 rounded-full flex items-center justify-center">
                                         <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
                                       </div>
                                     )}
-                                    <div className="font-semibold text-gray-900 text-sm sm:text-lg">{team.team}</div>
+                                    <div className="font-semibold text-foreground text-sm sm:text-lg">{team.team}</div>
                                   </div>
                                 </td>
                                 <td className="text-center p-2 sm:p-4 font-medium text-sm">{team.played}</td>
@@ -796,7 +796,7 @@ export default function DartLeaguePage() {
 
               <TabsContent value="results">
                 <Card className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 sm:p-6">
+                  <CardHeader className="bg-card   text-white p-3 sm:p-6">
                     <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                       <Target className="h-5 w-5 sm:h-6 sm:w-6" />
                       Alle Ergebnisse ({completedMatches.length})
@@ -804,7 +804,7 @@ export default function DartLeaguePage() {
                   </CardHeader>
                   <CardContent className="p-3 sm:p-6">
                     {completedMatches.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">Noch keine Ergebnisse verfügbar</p>
+                      <p className="text-center text-muted-foreground py-8">Noch keine Ergebnisse verfügbar</p>
                     ) : (
                       <div className="space-y-3 sm:space-y-4">
                         {completedMatches
@@ -827,7 +827,7 @@ export default function DartLeaguePage() {
                             const isOurHomeTeam = match.home_team?.id
                             const isOurAwayTeam = match.away_team?.id
 
-                            let matchColor = "bg-gray-50 border-gray-200"
+                            let matchColor = "bg-muted border-border"
                             let resultText = "Unentschieden"
 
                             if (isFutureDate) {
@@ -870,35 +870,35 @@ export default function DartLeaguePage() {
                                           <img
                                             src={match.home_team.logo_url || "/placeholder.svg"}
                                             alt={`${match.home_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                            className="w-8 h-8 rounded-full object-cover border border-border"
                                           />
                                         ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-muted-foreground" />
                                           </div>
                                         )}
                                       </div>
-                                      <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
+                                      <div className="font-bold text-lg sm:text-xl mb-1 text-foreground">
                                         {match.home_team?.name ||
                                           match.home_opponent_team?.name ||
                                           "Team nicht gefunden"}
                                       </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide">Heim</div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Heim</div>
                                     </div>
-                                    <div className="flex items-center gap-2 sm:gap-4 bg-white rounded-lg px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
+                                    <div className="flex items-center gap-2 sm:gap-4 bg-card rounded-lg px-4 sm:px-6 py-2 sm:py-3 shadow-sm">
                                       {isPendingResult ? (
                                         <div className="flex items-center gap-2">
                                           <div className="text-2xl sm:text-4xl font-bold text-orange-500">?</div>
-                                          <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
+                                          <div className="text-xl sm:text-2xl font-medium text-muted-foreground">:</div>
                                           <div className="text-2xl sm:text-4xl font-bold text-orange-500">?</div>
                                         </div>
                                       ) : (
                                         <>
-                                          <div className="text-2xl sm:text-4xl font-bold text-gray-800">
+                                          <div className="text-2xl sm:text-4xl font-bold text-foreground">
                                             {homeScore}
                                           </div>
-                                          <div className="text-xl sm:text-2xl font-medium text-gray-400">:</div>
-                                          <div className="text-2xl sm:text-4xl font-bold text-gray-800">
+                                          <div className="text-xl sm:text-2xl font-medium text-muted-foreground">:</div>
+                                          <div className="text-2xl sm:text-4xl font-bold text-foreground">
                                             {awayScore}
                                           </div>
                                         </>
@@ -910,24 +910,24 @@ export default function DartLeaguePage() {
                                           <img
                                             src={match.away_team.logo_url || "/placeholder.svg"}
                                             alt={`${match.away_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                            className="w-8 h-8 rounded-full object-cover border border-border"
                                           />
                                         ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-muted-foreground" />
                                           </div>
                                         )}
                                       </div>
-                                      <div className="font-bold text-lg sm:text-xl mb-1 text-gray-800">
+                                      <div className="font-bold text-lg sm:text-xl mb-1 text-foreground">
                                         {match.away_team?.name ||
                                           match.away_opponent_team?.name ||
                                           "Team nicht gefunden"}
                                       </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Gast</div>
                                     </div>
                                   </div>
                                   <div className="text-center sm:text-right flex flex-col items-center sm:items-end gap-2">
-                                    <div className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
+                                    <div className="text-base sm:text-lg font-semibold text-muted-foreground mb-2">
                                       {formatMatchDateWithWeekday(match.match_date)}
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -987,7 +987,7 @@ export default function DartLeaguePage() {
                 <div className="space-y-4">
                   {postponedMatches.length > 0 && (
                     <Card className="border-red-300 bg-red-50 shadow-lg">
-                      <CardHeader className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 sm:p-6">
+                      <CardHeader className="bg-card   text-white p-3 sm:p-6">
                         <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                           <Calendar className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
                           Verschobene Spiele ({postponedMatches.length})
@@ -1000,7 +1000,7 @@ export default function DartLeaguePage() {
                             .map((match) => (
                               <div
                                 key={match.id}
-                                className="border-2 border-red-300 rounded-xl p-3 sm:p-6 bg-white shadow-sm hover:shadow-md transition-all"
+                                className="border-2 border-red-300 rounded-xl p-3 sm:p-6 bg-card shadow-sm hover:shadow-md transition-all"
                               >
                                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                   <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 w-full">
@@ -1010,20 +1010,20 @@ export default function DartLeaguePage() {
                                           <img
                                             src={match.home_team.logo_url || "/placeholder.svg"}
                                             alt={`${match.home_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                            className="w-8 h-8 rounded-full object-cover border border-border"
                                           />
                                         ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-muted-foreground" />
                                           </div>
                                         )}
                                       </div>
-                                      <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                      <div className="font-semibold text-base sm:text-lg text-foreground">
                                         {match.home_team?.name ||
                                           match.home_opponent_team?.name ||
                                           "Team nicht gefunden"}
                                       </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Heim</div>
                                     </div>
                                     <div className="text-xl sm:text-2xl font-bold text-red-500">vs</div>
                                     <div className="text-center min-w-[120px] sm:min-w-[140px]">
@@ -1032,27 +1032,27 @@ export default function DartLeaguePage() {
                                           <img
                                             src={match.away_team.logo_url || "/placeholder.svg"}
                                             alt={`${match.away_team.name} Logo`}
-                                            className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                            className="w-8 h-8 rounded-full object-cover border border-border"
                                           />
                                         ) : (
-                                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-gray-500" />
+                                          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                            <Trophy className="h-4 w-4 text-muted-foreground" />
                                           </div>
                                         )}
                                       </div>
-                                      <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                      <div className="font-semibold text-base sm:text-lg text-foreground">
                                         {match.away_team?.name ||
                                           match.away_opponent_team?.name ||
                                           "Team nicht gefunden"}
                                       </div>
-                                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Gast</div>
                                     </div>
                                   </div>
                                   <div className="text-center sm:text-right">
-                                    <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                                    <div className="text-base sm:text-lg font-semibold text-foreground mb-1">
                                       {formatMatchDate(match.match_date)}
                                     </div>
-                                    <div className="text-sm text-gray-600 mb-2">
+                                    <div className="text-sm text-muted-foreground mb-2">
                                       {new Date(match.match_date).toLocaleDateString("de-DE", {
                                         weekday: "long",
                                       })}
@@ -1084,7 +1084,7 @@ export default function DartLeaguePage() {
                     </CardHeader>
                     <CardContent className="p-3 sm:p-6">
                       {upcomingMatches.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8">Keine kommenden Spiele geplant</p>
+                        <p className="text-center text-muted-foreground py-8">Keine kommenden Spiele geplant</p>
                       ) : (
                         <div className="space-y-3 sm:space-y-4">
                           {upcomingMatches
@@ -1103,7 +1103,7 @@ export default function DartLeaguePage() {
                                 <div
                                   key={match.id}
                                   className={`border rounded-lg p-3 sm:p-6 hover:shadow-md transition-shadow ${
-                                    isOverdue ? "border-orange-300 bg-orange-50" : "border-gray-200 bg-white"
+                                    isOverdue ? "border-orange-300 bg-orange-50" : "border-border bg-card"
                                   }`}
                                 >
                                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1114,49 +1114,49 @@ export default function DartLeaguePage() {
                                             <img
                                               src={match.home_team.logo_url || "/placeholder.svg"}
                                               alt={`${match.home_team.name} Logo`}
-                                              className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                              className="w-8 h-8 rounded-full object-cover border border-border"
                                             />
                                           ) : (
-                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                              <Trophy className="h-4 w-4 text-gray-500" />
+                                            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                              <Trophy className="h-4 w-4 text-muted-foreground" />
                                             </div>
                                           )}
                                         </div>
-                                        <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                        <div className="font-semibold text-base sm:text-lg text-foreground">
                                           {match.home_team?.name ||
                                             match.home_opponent_team?.name ||
                                             "Team nicht gefunden"}
                                         </div>
-                                        <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Heim</div>
+                                        <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Heim</div>
                                       </div>
-                                      <div className="text-xl sm:text-2xl font-bold text-gray-400">vs</div>
+                                      <div className="text-xl sm:text-2xl font-bold text-muted-foreground">vs</div>
                                       <div className="text-center min-w-[120px] sm:min-w-[140px]">
                                         <div className="flex items-center justify-center gap-2 mb-2">
                                           {match.away_team?.logo_url ? (
                                             <img
                                               src={match.away_team.logo_url || "/placeholder.svg"}
                                               alt={`${match.away_team.name} Logo`}
-                                              className="w-8 h-8 rounded-full object-cover border border-gray-300"
+                                              className="w-8 h-8 rounded-full object-cover border border-border"
                                             />
                                           ) : (
-                                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                              <Trophy className="h-4 w-4 text-gray-500" />
+                                            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                              <Trophy className="h-4 w-4 text-muted-foreground" />
                                             </div>
                                           )}
                                         </div>
-                                        <div className="font-semibold text-base sm:text-lg text-gray-900">
+                                        <div className="font-semibold text-base sm:text-lg text-foreground">
                                           {match.away_team?.name ||
                                             match.away_opponent_team?.name ||
                                             "Team nicht gefunden"}
                                         </div>
-                                        <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Gast</div>
+                                        <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Gast</div>
                                       </div>
                                     </div>
                                     <div className="text-center sm:text-right">
-                                      <div className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                                      <div className="text-base sm:text-lg font-semibold text-foreground mb-1">
                                         {formatMatchDate(match.match_date)}
                                       </div>
-                                      <div className="text-sm text-gray-600 mb-2">
+                                      <div className="text-sm text-muted-foreground mb-2">
                                         {new Date(match.match_date).toLocaleDateString("de-DE", {
                                           weekday: "long",
                                         })}
@@ -1193,7 +1193,7 @@ export default function DartLeaguePage() {
                 <div className="space-y-4 sm:space-y-6">
                   <div className="flex items-center gap-2 mb-4 sm:mb-6">
                     <Users className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Teams & Kader</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">Teams & Kader</h2>
                   </div>
 
                   <div className="grid gap-4 sm:gap-8">
@@ -1208,7 +1208,7 @@ export default function DartLeaguePage() {
 
                         return (
                           <Card key={team.id} className="overflow-hidden">
-                            <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b p-3 sm:p-6">
+                            <CardHeader className="text-foreground bg-card   border-b p-3 sm:p-6">
                               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                                 <div className="flex items-center gap-3">
                                   {team.logo_url ? (
@@ -1222,7 +1222,7 @@ export default function DartLeaguePage() {
                                       <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
                                     </div>
                                   )}
-                                  <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+                                  <CardTitle className="text-lg sm:text-xl font-bold text-foreground">
                                     {team.name}
                                   </CardTitle>
                                 </div>
@@ -1245,48 +1245,48 @@ export default function DartLeaguePage() {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 {teamStats && (
                                   <div>
-                                    <h4 className="font-semibold text-gray-900 mb-3">Saisonstatistik</h4>
+                                    <h4 className="font-semibold text-foreground mb-3">Saisonstatistik</h4>
                                     <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center">
-                                        <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                                      <div className="bg-muted rounded-lg p-2 sm:p-3 text-center">
+                                        <div className="text-xl sm:text-2xl font-bold text-foreground">
                                           {teamStats.played}
                                         </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Spiele</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Spiele</div>
                                       </div>
                                       <div className="bg-green-50 rounded-lg p-2 sm:p-3 text-center">
                                         <div className="text-xl sm:text-2xl font-bold text-green-600">
                                           {teamStats.won}
                                         </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Siege</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Siege</div>
                                       </div>
                                       <div className="bg-yellow-50 rounded-lg p-2 sm:p-3 text-center">
                                         <div className="text-xl sm:text-2xl font-bold text-yellow-600">
                                           {teamStats.drawn}
                                         </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Unentschieden</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Unentschieden</div>
                                       </div>
                                       <div className="bg-red-50 rounded-lg p-2 sm:p-3 text-center">
                                         <div className="text-xl sm:text-2xl font-bold text-red-600">
                                           {teamStats.lost}
                                         </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Niederlagen</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Niederlagen</div>
                                       </div>
                                       <div className="bg-blue-50 rounded-lg p-2 sm:p-3 text-center col-span-2">
                                         <div className="text-xl sm:text-2xl font-bold text-blue-600">
                                           {teamStats.legsDifference > 0 ? "+" : ""}
                                           {teamStats.legsDifference}
                                         </div>
-                                        <div className="text-xs sm:text-sm text-gray-600">Legs-Differenz</div>
+                                        <div className="text-xs sm:text-sm text-muted-foreground">Legs-Differenz</div>
                                       </div>
                                     </div>
                                   </div>
                                 )}
 
                                 <div>
-                                  <h4 className="font-semibold text-gray-900 mb-3">Spielerkader</h4>
+                                  <h4 className="font-semibold text-foreground mb-3">Spielerkader</h4>
                                   {teamPlayers.length === 0 ? (
-                                    <div className="text-center py-8 text-gray-500">
-                                      <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                                    <div className="text-center py-8 text-muted-foreground">
+                                      <Users className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                                       <p>Keine Spieler zugeordnet</p>
                                     </div>
                                   ) : (
@@ -1294,7 +1294,7 @@ export default function DartLeaguePage() {
                                       {teamPlayers.map((player, index) => (
                                         <div
                                           key={player.id}
-                                          className="flex items-center gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg"
+                                          className="flex items-center gap-3 p-2 sm:p-3 bg-muted rounded-lg"
                                         >
                                           <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
                                             <span className="text-xs sm:text-sm font-semibold text-orange-600">
@@ -1302,7 +1302,7 @@ export default function DartLeaguePage() {
                                             </span>
                                           </div>
                                           <div className="flex-1">
-                                            <div className="font-medium text-gray-900 text-sm sm:text-base">
+                                            <div className="font-medium text-foreground text-sm sm:text-base">
                                               {player.name}
                                             </div>
                                           </div>

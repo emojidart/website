@@ -229,16 +229,16 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
 
   return (
     <div className="w-full max-w-none">
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-        <CardHeader className="border-b border-gray-100 pb-6">
+      <Card className="border-0 shadow-xl bg-card ">
+        <CardHeader className="border-b border-border pb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg">
+              <div className="text-foreground p-2 bg-card   rounded-lg shadow-lg">
                 <Users className="h-5 w-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Spielerverwaltung</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">
+                <CardTitle className="text-xl font-semibold text-foreground">Spielerverwaltung</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
                   Alle Spieler anzeigen, bearbeiten und löschen
                 </p>
               </div>
@@ -253,13 +253,13 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
           {/* Suchfeld */}
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Spieler suchen..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 bg-gray-50/50"
+                className="pl-10 h-12 border-border focus:border-purple-500 focus:ring-purple-500 bg-muted/50"
               />
             </div>
           </div>
@@ -272,7 +272,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                   ? "bg-red-50 text-red-700 border border-red-100"
                   : messageType === "success"
                     ? "bg-green-50 text-green-700 border border-green-100"
-                    : "bg-gray-50 text-gray-700 border border-gray-100"
+                    : "bg-muted text-muted-foreground border border-border"
               }`}
             >
               <div className="flex items-center space-x-2">
@@ -281,7 +281,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                 ) : messageType === "success" ? (
                   <CheckCircle className="h-4 w-4" />
                 ) : (
-                  <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
                 )}
                 <span>{message}</span>
               </div>
@@ -293,15 +293,15 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-gray-600">Spieler werden geladen...</p>
+                <p className="text-muted-foreground">Spieler werden geladen...</p>
               </div>
             </div>
           ) : (
             <div className="space-y-4">
               {filteredPlayers.length === 0 ? (
                 <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
                     {searchTerm ? "Keine Spieler gefunden" : "Noch keine Spieler vorhanden"}
                   </p>
                 </div>
@@ -309,12 +309,12 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                 filteredPlayers.map((player) => (
                   <div
                     key={player.player_id || player.player_name}
-                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
+                    className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         {/* Profilbild */}
-                        <div className="relative w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border border-gray-200">
+                        <div className="relative w-12 h-12 flex-shrink-0 rounded-full overflow-hidden border border-border">
                           <Image
                             src={player.profile_picture_url || "/placeholder.svg?height=48&width=48&query=player"}
                             alt={`${player.player_name} Profilbild`}
@@ -327,13 +327,13 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                         {/* Spielerinfo */}
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-semibold text-gray-900">{player.player_name}</h3>
+                            <h3 className="font-semibold text-foreground">{player.player_name}</h3>
                             <Badge variant="default" className="text-xs">
                               <Trophy className="h-3 w-3 mr-1" />
                               Lion Cup
                             </Badge>
                           </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                             <span>Punkte: <strong>{player.total_points}</strong></span>
                             <span>Bonus: <strong>{player.bonus_points}</strong></span>
                             <span>Antritte: <strong>{player.tournaments_played}</strong></span>
@@ -349,7 +349,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                               variant="outline"
                               size="sm"
                               onClick={() => handleEditPlayer(player)}
-                              className="border-gray-200 hover:bg-blue-50 hover:border-blue-300"
+                              className="border-border hover:bg-blue-50 hover:border-blue-300"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -361,7 +361,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                             <div className="space-y-4">
                               {/* Name */}
                               <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Name</label>
+                                <label className="text-sm font-medium text-muted-foreground">Name</label>
                                 <Input
                                   value={editForm.name}
                                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -371,13 +371,13 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
 
                               {/* Profilbild */}
                               <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Profilbild</label>
+                                <label className="text-sm font-medium text-muted-foreground">Profilbild</label>
                                 <div className="flex items-center space-x-3">
                                   <Input
                                     type="file"
                                     accept="image/*"
                                     onChange={handleFileChange}
-                                    className="flex-1 h-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:bg-gray-50"
+                                    className="flex-1 h-10 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:bg-muted"
                                   />
                                   {profilePicturePreview && (
                                     <div className="relative w-10 h-10 rounded-full overflow-hidden border">
@@ -394,38 +394,38 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
 
                               {/* Statistiken (read-only) */}
                               <div className="space-y-3">
-                                <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div className="text-sm text-muted-foreground bg-blue-50 border border-blue-200 rounded-lg p-3">
                                   <strong>Hinweis:</strong> Punkte, Bonus und Antritte werden aus Turnierdaten berechnet und können nicht direkt bearbeitet werden.
                                 </div>
                                 <div className="grid grid-cols-3 gap-3">
                                   <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-700">Punkte</label>
+                                    <label className="text-sm font-medium text-muted-foreground">Punkte</label>
                                     <Input
                                       type="number"
                                       value={editForm.points}
                                       readOnly
                                       disabled
-                                      className="h-10 bg-gray-50"
+                                      className="h-10 bg-muted"
                                     />
                                   </div>
                                   <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-700">Bonus</label>
+                                    <label className="text-sm font-medium text-muted-foreground">Bonus</label>
                                     <Input
                                       type="number"
                                       value={editForm.bonusPoints}
                                       readOnly
                                       disabled
-                                      className="h-10 bg-gray-50"
+                                      className="h-10 bg-muted"
                                     />
                                   </div>
                                   <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-700">Antritte</label>
+                                    <label className="text-sm font-medium text-muted-foreground">Antritte</label>
                                     <Input
                                       type="number"
                                       value={editForm.participations}
                                       readOnly
                                       disabled
-                                      className="h-10 bg-gray-50"
+                                      className="h-10 bg-muted"
                                     />
                                   </div>
                                 </div>
@@ -444,7 +444,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                                 <Button
                                   onClick={handleUpdatePlayer}
                                   disabled={uploadingImage}
-                                  className="bg-blue-600 hover:bg-blue-700"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white"
                                 >
                                   {uploadingImage ? (
                                     <>

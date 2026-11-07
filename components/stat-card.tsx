@@ -12,7 +12,7 @@ export default function StatCard({ icon, label, value, gradient }: StatCardProps
   return (
     <Card className="overflow-hidden shadow-lg">
       <CardContent className="p-0">
-        <div className={`bg-gradient-to-r ${gradient} p-4 text-white`}>
+        <div className={`text-foreground bg-card ${gradient} p-4 text-white`}>
           <div className="flex items-center gap-3">
             {icon}
             <div>

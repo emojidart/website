@@ -102,7 +102,7 @@ export function AdventCalendarDoors({ selectedDay, onSelectDay, completedQuizzes
 
                 <div className="relative z-10 flex flex-col items-center justify-center h-full">
                   <div className="text-4xl md:text-5xl lg:text-6xl mb-1 drop-shadow-lg">{icon}</div>
-                  <div className="text-3xl md:text-4xl lg:text-5xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                  <div className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                     {String(day).padStart(2, "0")}
                   </div>
                   {isCompleted && (

@@ -287,8 +287,8 @@ export function RegistrationTab({
       {/* Teilnahmeart */}
       <section className="emd-admin-surface p-5">
         <div className="mb-4">
-          <h2 className="text-lg font-black text-white">Teilnahme</h2>
-          <p className="mt-1 text-sm text-white/40">
+          <h2 className="text-lg font-semibold text-white">Teilnahme</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Wähle aus, wer an diesem Turnier teilnehmen darf.
           </p>
         </div>
@@ -333,11 +333,11 @@ export function RegistrationTab({
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <Icon className={`h-4 w-4 ${active ? "text-orange-300" : "text-white/40"}`} />
+                  <Icon className={`h-4 w-4 ${active ? "text-orange-300" : "text-muted-foreground"}`} />
                   <span className="font-bold text-white">{option.title}</span>
                   {active ? <CheckCircle2 className="ml-auto h-4 w-4 text-orange-300" /> : null}
                 </div>
-                <div className="mt-1 text-xs text-white/40">{option.description}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{option.description}</div>
               </button>
             )
           })}
@@ -383,28 +383,28 @@ export function RegistrationTab({
       />
 
       {showRegistrationSuccessModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_100px_-35px_rgba(15,23,42,.65)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/45 p-4 ">
+          <div className="w-full max-w-sm overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_30px_100px_-35px_rgba(15,23,42,.65)]">
             <div className="p-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50">
                 <CheckCircle2 className="h-6 w-6 text-emerald-600" />
               </div>
 
               <div className="mt-4 text-center">
-                <h3 className="text-xl font-black tracking-tight text-slate-950">Registrierung abgeschlossen</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <h3 className="text-xl font-semibold tracking-tight text-foreground">Registrierung abgeschlossen</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {lastRegistrationTotalRef.current === 1
                     ? "1 Spieler wurde zum Turnier hinzugefügt."
                     : `${lastRegistrationTotalRef.current || 0} Spieler wurden zum Turnier hinzugefügt.`}
                 </p>
-                <p className="mt-1 text-xs font-medium text-slate-400">
+                <p className="mt-1 text-xs font-medium text-muted-foreground">
                   Die Teilnehmerliste wurde aktualisiert.
                 </p>
               </div>
 
               <Button
                 onClick={() => setShowRegistrationSuccessModal(false)}
-                className="mt-5 h-11 w-full rounded-xl bg-slate-950 font-bold text-white hover:bg-slate-800"
+                className="mt-5 h-11 w-full rounded-xl bg-background font-bold text-white hover:bg-background"
               >
                 Schließen
               </Button>

@@ -54,7 +54,7 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
   return (
     <>
       <tr
-        className={`border-b hover:bg-gray-50 transition-colors ${index < 3 ? "bg-gradient-to-r from-amber-50 to-yellow-50" : ""}`}
+        className={`border-b hover:bg-muted transition-colors ${index < 3 ? "text-foreground bg-card  " : ""}`}
       >
         <td className="p-2 sm:p-4">
           <div
@@ -69,9 +69,9 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
           <div className="group relative">
             <a
               href={`/liga/spieler/${player.player_id}`}
-              className="font-semibold text-gray-900 text-sm sm:text-lg hover:text-blue-600 transition-all duration-200 cursor-pointer inline-flex items-center gap-3 group-hover:underline"
+              className="font-semibold text-foreground text-sm sm:text-lg hover:text-blue-600 transition-all duration-200 cursor-pointer inline-flex items-center gap-3 group-hover:underline"
             >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-muted flex-shrink-0">
                 {player.photo_url ? (
                   <img
                     src={player.photo_url || "/placeholder.svg"}
@@ -84,7 +84,7 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
                   />
                 ) : null}
                 <div
-                  className={`w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center ${player.photo_url ? "hidden" : "flex"}`}
+                  className={`text-foreground w-full h-full bg-card   flex items-center justify-center ${player.photo_url ? "hidden" : "flex"}`}
                 >
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
@@ -92,7 +92,7 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
               <div className="flex items-center gap-2">
                 {player.name}
                 <svg
-                  className="w-3 h-3 text-gray-400 group-hover:text-blue-600 transition-colors opacity-60 group-hover:opacity-100"
+                  className="w-3 h-3 text-muted-foreground group-hover:text-blue-600 transition-colors opacity-60 group-hover:opacity-100"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -106,7 +106,7 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
                 </svg>
               </div>
             </a>
-            <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+            <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-background text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
               Klicken für detaillierte Statistiken
             </div>
           </div>
@@ -174,34 +174,34 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
         </td>
       </tr>
       {showDetails && (
-        <tr className="bg-gray-50">
+        <tr className="bg-muted">
           <td colSpan={14} className="p-4">
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <h4 className="font-semibold text-gray-900 mb-3">Detaillierte Statistiken für {player.name}</h4>
+            <div className="bg-card rounded-lg p-4 shadow-sm">
+              <h4 className="font-semibold text-foreground mb-3">Detaillierte Statistiken für {player.name}</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 <div className="text-center p-2 bg-yellow-50 rounded">
                   <div className="text-lg font-bold text-yellow-600">{player.throws_20 || 0}</div>
-                  <div className="text-xs text-gray-600">20er</div>
+                  <div className="text-xs text-muted-foreground">20er</div>
                 </div>
                 <div className="text-center p-2 bg-yellow-50 rounded">
                   <div className="text-lg font-bold text-yellow-600">{playerDetailedStats.throws_19 || 0}</div>
-                  <div className="text-xs text-gray-600">19er</div>
+                  <div className="text-xs text-muted-foreground">19er</div>
                 </div>
                 <div className="text-center p-2 bg-yellow-50 rounded">
                   <div className="text-lg font-bold text-yellow-600">{playerDetailedStats.throws_18 || 0}</div>
-                  <div className="text-xs text-gray-600">18er</div>
+                  <div className="text-xs text-muted-foreground">18er</div>
                 </div>
                 <div className="text-center p-2 bg-yellow-50 rounded">
                   <div className="text-lg font-bold text-yellow-600">{playerDetailedStats.throws_17 || 0}</div>
-                  <div className="text-xs text-gray-600">17er</div>
+                  <div className="text-xs text-muted-foreground">17er</div>
                 </div>
                 <div className="text-center p-2 bg-yellow-50 rounded">
                   <div className="text-lg font-bold text-yellow-600">{playerDetailedStats.throws_16 || 0}</div>
-                  <div className="text-xs text-gray-600">16er</div>
+                  <div className="text-xs text-muted-foreground">16er</div>
                 </div>
                 <div className="text-center p-2 bg-yellow-50 rounded">
                   <div className="text-lg font-bold text-yellow-600">{playerDetailedStats.throws_15 || 0}</div>
-                  <div className="text-xs text-gray-600">15er</div>
+                  <div className="text-xs text-muted-foreground">15er</div>
                 </div>
               </div>
             </div>

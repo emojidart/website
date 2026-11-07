@@ -23,7 +23,7 @@ export function RecoveryBanner({
       </div>
 
       <div className="flex-1 text-center text-white/65 md:text-left">
-        <h3 className="mb-1 text-lg font-black text-white">Laufendes Turnier gefunden!</h3>
+        <h3 className="mb-1 text-lg font-semibold text-white">Laufendes Turnier gefunden!</h3>
         <p className="text-sm">
           Es wurde ein aktives Kratzer-Turnier gefunden (ID: {recoveryTournamentData.id}). Möchtest du es
           wiederherstellen?
@@ -31,7 +31,7 @@ export function RecoveryBanner({
       </div>
 
       <div className="flex gap-3 mt-3 md:mt-0">
-        <Button onClick={onRestore} className="h-11 rounded-xl bg-orange-500 px-5 font-black text-white hover:bg-orange-400">
+        <Button onClick={onRestore} className="h-11 rounded-xl bg-orange-500 px-5 font-semibold text-primary-foreground hover:bg-orange-400">
           <Play className="h-4 w-4 mr-2" />
           Wiederherstellen
         </Button>
@@ -39,7 +39,7 @@ export function RecoveryBanner({
         <Button
           onClick={onStartNew}
           variant="outline"
-          className="h-11 rounded-xl border-white/[0.10] bg-white/[0.025] px-5 font-black text-white/70 hover:border-orange-300/15 hover:bg-white/[0.05] hover:text-white"
+          className="h-11 rounded-xl border-white/[0.10] bg-white/[0.025] px-5 font-semibold text-white/70 hover:border-orange-300/15 hover:bg-white/[0.05] hover:text-white"
         >
           <PlusCircle className="h-4 w-4 mr-2" />
           Neues Turnier

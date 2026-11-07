@@ -88,7 +88,7 @@ const itemVariants = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 
 
 function medalIcon(rank: 1 | 2 | 3) {
   if (rank === 1) return <Crown className="h-5 w-5 text-yellow-600" />
-  if (rank === 2) return <Medal className="h-5 w-5 text-gray-500" />
+  if (rank === 2) return <Medal className="h-5 w-5 text-muted-foreground" />
   return <Medal className="h-5 w-5 text-amber-700" />
 }
 
@@ -283,12 +283,12 @@ export default function HallOfFamePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-gray-900">
+      <div className="min-h-screen bg-card text-foreground">
         <Header />
         <main className="pt-8 pb-24">
           <div className="container mx-auto px-4 py-10 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6" />
-            <p className="text-gray-600">Lade Hall of Fame...</p>
+            <p className="text-muted-foreground">Lade Hall of Fame...</p>
           </div>
         </main>
         <MobileBottomNav />
@@ -297,14 +297,14 @@ export default function HallOfFamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="text-foreground min-h-screen bg-card  ">
       <Header />
 
       <main className="container mx-auto px-4 py-8 pb-24">
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="px-2 sm:px-4 md:px-6">
           <motion.div variants={itemVariants} className="text-center mb-8 sm:mb-12">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-xl border border-orange-200 p-5 sm:p-8 md:p-12 text-white">
-              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 backdrop-blur-sm">
+            <div className="bg-card   rounded-2xl shadow-xl border border-orange-200 p-5 sm:p-8 md:p-12 text-white">
+              <div className="bg-white/10 rounded-full p-3 sm:p-4 w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 ">
                 <Trophy className="h-10 w-10 sm:h-12 sm:w-12 text-white mx-auto" />
               </div>
               <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold uppercase leading-none tracking-tighter mb-2 sm:mb-4">
@@ -320,9 +320,9 @@ export default function HallOfFamePage() {
           <motion.div variants={itemVariants} className="mb-6 sm:mb-8">
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-center gap-3 sm:gap-4">
               <div className="flex-1 max-w-xl">
-                <div className="text-xs uppercase tracking-wide text-gray-600 mb-2">Saison</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Saison</div>
                 <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-                  <SelectTrigger className="bg-white">
+                  <SelectTrigger className="bg-card">
                     <SelectValue placeholder="Saison auswählen" />
                   </SelectTrigger>
                   <SelectContent>
@@ -337,7 +337,7 @@ export default function HallOfFamePage() {
               </div>
 
               <div className="flex-1 max-w-xl">
-                <div className="text-xs uppercase tracking-wide text-gray-600 mb-2">Dart-Typ</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Dart-Typ</div>
                 <Tabs value={dartType} onValueChange={(v) => setDartType(v as DartType)} className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="edart">E-Dart</TabsTrigger>
@@ -347,7 +347,7 @@ export default function HallOfFamePage() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-600">
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Users className="h-4 w-4" />
               <span>Teams werden nur angezeigt, wenn in diesem Filter auch wirklich Daten vorhanden sind.</span>
             </div>
@@ -362,7 +362,7 @@ export default function HallOfFamePage() {
                     Keine Daten
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-gray-600">
+                <CardContent className="text-muted-foreground">
                   Für diesen Filter wurden keine Team-Statistiken gefunden.
                 </CardContent>
               </Card>
@@ -371,7 +371,7 @@ export default function HallOfFamePage() {
             <motion.div variants={itemVariants} className="grid gap-4 sm:gap-6">
               {visibleTeams.map((team) => (
                 <Card key={String(team.id)} className="overflow-hidden shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b p-4 sm:p-6">
+                  <CardHeader className="text-foreground bg-card   border-b p-4 sm:p-6">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         {team.logo_url ? (
@@ -386,8 +386,8 @@ export default function HallOfFamePage() {
                           </div>
                         )}
                         <div>
-                          <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{team.name}</CardTitle>
-                          <div className="text-xs text-gray-600 uppercase tracking-wide">Top 3 – {seasonName}</div>
+                          <CardTitle className="text-lg sm:text-xl font-bold text-foreground">{team.name}</CardTitle>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wide">Top 3 – {seasonName}</div>
                         </div>
                       </div>
 
@@ -402,21 +402,21 @@ export default function HallOfFamePage() {
                         return (
                           <div
                             key={String(p.player_id)}
-                            className={`rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all p-4 sm:p-5 ${
-                              rank === 1 ? "border-yellow-200" : rank === 2 ? "border-gray-200" : "border-amber-200"
+                            className={`rounded-2xl border bg-card shadow-sm hover:shadow-md transition-all p-4 sm:p-5 ${
+                              rank === 1 ? "border-yellow-200" : rank === 2 ? "border-border" : "border-amber-200"
                             }`}
                           >
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2">
                                 {medalIcon(rank)}
-                                <div className="text-sm font-semibold text-gray-900">{rank}. Platz</div>
+                                <div className="text-sm font-semibold text-foreground">{rank}. Platz</div>
                               </div>
                               <Badge
                                 className={`${
                                   rank === 1
                                     ? "bg-yellow-100 text-yellow-800"
                                     : rank === 2
-                                      ? "bg-gray-100 text-gray-800"
+                                      ? "bg-muted text-foreground"
                                       : "bg-amber-100 text-amber-900"
                                 }`}
                               >
@@ -428,14 +428,14 @@ export default function HallOfFamePage() {
                               {p.photo_url ? (
                                 <img src={p.photo_url || "/placeholder.svg"} alt={p.name} className="w-12 h-12 rounded-full object-cover border" />
                               ) : (
-                                <div className="w-12 h-12 rounded-full bg-gray-100 border flex items-center justify-center">
-                                  <span className="text-sm font-semibold text-gray-500">{String(p.name || "?").slice(0, 1)}</span>
+                                <div className="w-12 h-12 rounded-full bg-muted border flex items-center justify-center">
+                                  <span className="text-sm font-semibold text-muted-foreground">{String(p.name || "?").slice(0, 1)}</span>
                                 </div>
                               )}
 
                               <div className="min-w-0">
-                                <div className="font-bold text-gray-900 truncate">{p.name}</div>
-                                <div className="text-xs text-gray-600">
+                                <div className="font-bold text-foreground truncate">{p.name}</div>
+                                <div className="text-xs text-muted-foreground">
                                   Wins: <span className="font-semibold">{p.total_wins}</span> · Legs:{" "}
                                   <span className="font-semibold">{p.total_legs}</span>
                                 </div>
@@ -443,67 +443,67 @@ export default function HallOfFamePage() {
                             </div>
 
                             <div className="mt-3 grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
-                              <div className="rounded-lg bg-gray-50 border p-2 text-center">
-                                <div className="font-bold text-gray-900">{Number(p.win_percentage || 0).toFixed(1)}%</div>
-                                <div className="text-gray-600">Win%</div>
+                              <div className="rounded-lg bg-muted border p-2 text-center">
+                                <div className="font-bold text-foreground">{Number(p.win_percentage || 0).toFixed(1)}%</div>
+                                <div className="text-muted-foreground">Win%</div>
                               </div>
-                              <div className="rounded-lg bg-gray-50 border p-2 text-center">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_180)}</div>
-                                <div className="text-gray-600">180</div>
+                              <div className="rounded-lg bg-muted border p-2 text-center">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_180)}</div>
+                                <div className="text-muted-foreground">180</div>
                               </div>
-                              <div className="rounded-lg bg-gray-50 border p-2 text-center">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_171)}</div>
-                                <div className="text-gray-600">171</div>
+                              <div className="rounded-lg bg-muted border p-2 text-center">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_171)}</div>
+                                <div className="text-muted-foreground">171</div>
                               </div>
-                              <div className="rounded-lg bg-gray-50 border p-2 text-center">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_high_tonne)}</div>
-                                <div className="text-gray-600">High T.</div>
+                              <div className="rounded-lg bg-muted border p-2 text-center">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_high_tonne)}</div>
+                                <div className="text-muted-foreground">High T.</div>
                               </div>
-                              <div className="rounded-lg bg-gray-50 border p-2 text-center">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_tonne)}</div>
-                                <div className="text-gray-600">Tonne</div>
+                              <div className="rounded-lg bg-muted border p-2 text-center">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_tonne)}</div>
+                                <div className="text-muted-foreground">Tonne</div>
                               </div>
-                              <div className="rounded-lg bg-gray-50 border p-2 text-center">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_95_plus)}</div>
-                                <div className="text-gray-600">95+</div>
-                              </div>
-                            </div>
-
-                            <div className="mt-3 grid grid-cols-4 gap-2 text-[11px] text-center">
-                              <div className="rounded-lg bg-gray-50 border p-2">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_shanghai)}</div>
-                                <div className="text-gray-600">Shanghai</div>
-                              </div>
-                              <div className="rounded-lg bg-gray-50 border p-2">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_bull)}</div>
-                                <div className="text-gray-600">Bull</div>
-                              </div>
-                              <div className="rounded-lg bg-gray-50 border p-2">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_20)}</div>
-                                <div className="text-gray-600">20</div>
-                              </div>
-                              <div className="rounded-lg bg-gray-50 border p-2">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_19)}</div>
-                                <div className="text-gray-600">19</div>
+                              <div className="rounded-lg bg-muted border p-2 text-center">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_95_plus)}</div>
+                                <div className="text-muted-foreground">95+</div>
                               </div>
                             </div>
 
-                            <div className="mt-3 grid grid-cols-4 gap-2 text-[11px] text-center">
-                              <div className="rounded-lg bg-gray-50 border p-2">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_18)}</div>
-                                <div className="text-gray-600">18</div>
+                            <div className="mt-3 grid grid-cols-4 gap-2 text-xs text-center">
+                              <div className="rounded-lg bg-muted border p-2">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_shanghai)}</div>
+                                <div className="text-muted-foreground">Shanghai</div>
                               </div>
-                              <div className="rounded-lg bg-gray-50 border p-2">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_17)}</div>
-                                <div className="text-gray-600">17</div>
+                              <div className="rounded-lg bg-muted border p-2">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_bull)}</div>
+                                <div className="text-muted-foreground">Bull</div>
                               </div>
-                              <div className="rounded-lg bg-gray-50 border p-2">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_16)}</div>
-                                <div className="text-gray-600">16</div>
+                              <div className="rounded-lg bg-muted border p-2">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_20)}</div>
+                                <div className="text-muted-foreground">20</div>
                               </div>
-                              <div className="rounded-lg bg-gray-50 border p-2">
-                                <div className="font-bold text-gray-900">{safeNum(p.throws_15)}</div>
-                                <div className="text-gray-600">15</div>
+                              <div className="rounded-lg bg-muted border p-2">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_19)}</div>
+                                <div className="text-muted-foreground">19</div>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-4 gap-2 text-xs text-center">
+                              <div className="rounded-lg bg-muted border p-2">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_18)}</div>
+                                <div className="text-muted-foreground">18</div>
+                              </div>
+                              <div className="rounded-lg bg-muted border p-2">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_17)}</div>
+                                <div className="text-muted-foreground">17</div>
+                              </div>
+                              <div className="rounded-lg bg-muted border p-2">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_16)}</div>
+                                <div className="text-muted-foreground">16</div>
+                              </div>
+                              <div className="rounded-lg bg-muted border p-2">
+                                <div className="font-bold text-foreground">{safeNum(p.throws_15)}</div>
+                                <div className="text-muted-foreground">15</div>
                               </div>
                             </div>
                           </div>

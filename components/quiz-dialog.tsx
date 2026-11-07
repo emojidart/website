@@ -103,23 +103,23 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, pa
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] md:max-h-[90vh] overflow-y-auto bg-white border-4 border-green-600 shadow-2xl p-4 md:p-6">
+      <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] md:max-h-[90vh] overflow-y-auto bg-card border-4 border-green-600 shadow-2xl p-4 md:p-6">
         <DialogHeader className="border-b-4 border-green-600 pb-3 md:pb-4 mb-4 md:mb-6">
           <div className="flex items-center justify-between gap-2">
-            <DialogTitle className="text-2xl md:text-3xl font-black text-green-700 flex items-center gap-2 md:gap-3">
+            <DialogTitle className="text-2xl md:text-3xl font-semibold text-green-700 flex items-center gap-2 md:gap-3">
               <span className="text-3xl md:text-4xl">🎄</span>
               <span>Tag {dateStr}</span>
             </DialogTitle>
-            <span className="text-sm md:text-xl text-gray-400 whitespace-nowrap">Dez 2025</span>
+            <span className="text-sm md:text-xl text-muted-foreground whitespace-nowrap">Dez 2025</span>
           </div>
         </DialogHeader>
 
         <div className="space-y-4 md:space-y-6">
           {/* Question */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-6 rounded-xl border-2 border-green-200">
+          <div className="text-foreground bg-card   p-4 md:p-6 rounded-xl border-2 border-green-200">
             <div className="flex gap-2 md:gap-3 items-start">
               <span className="text-2xl md:text-3xl">❓</span>
-              <h3 className="text-lg md:text-2xl font-bold text-gray-800 leading-relaxed">{quiz.question}</h3>
+              <h3 className="text-lg md:text-2xl font-bold text-foreground leading-relaxed">{quiz.question}</h3>
             </div>
           </div>
 
@@ -132,13 +132,13 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, pa
                 disabled={isAnswered}
                 className={`w-full p-4 md:p-6 rounded-xl border-3 transition-all text-left ${
                   currentAnswer === option
-                    ? "bg-gradient-to-r from-green-500 to-emerald-500 border-green-600 text-white shadow-lg scale-[1.02]"
-                    : "bg-white border-gray-300 hover:border-green-400 hover:shadow-md text-gray-800"
+                    ? "bg-card   border-green-600 text-white shadow-lg scale-[1.02]"
+                    : "bg-card border-border hover:border-green-400 hover:shadow-md text-foreground"
                 } ${isAnswered ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:scale-[1.01]"}`}
               >
                 <div className="flex items-start gap-3 md:gap-4">
                   <span
-                    className={`text-xl md:text-3xl font-black ${
+                    className={`text-xl md:text-3xl font-semibold ${
                       currentAnswer === option ? "text-white" : "text-green-600"
                     }`}
                   >
@@ -153,7 +153,7 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, pa
 
           {/* Feedback */}
           {isAnswered && (
-            <div className="p-4 md:p-5 rounded-xl bg-gradient-to-r from-green-100 to-emerald-100 border-3 border-green-500">
+            <div className="text-foreground p-4 md:p-5 rounded-xl bg-card   border-3 border-green-500">
               <div className="flex items-center gap-2 md:gap-3">
                 <span className="text-2xl md:text-3xl">✓</span>
                 <p className="text-base md:text-lg font-bold text-green-800">Deine Antwort wurde gespeichert!</p>
@@ -166,7 +166,7 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, pa
             <Button
               onClick={onClose}
               variant="outline"
-              className="flex-1 h-12 md:h-14 text-base md:text-lg font-bold bg-gray-100 border-2 border-gray-300 text-gray-700 hover:bg-gray-200 hover:border-gray-400"
+              className="flex-1 h-12 md:h-14 text-base md:text-lg font-bold bg-muted border-2 border-border text-muted-foreground hover:bg-secondary hover:border-border"
             >
               Schließen
             </Button>
@@ -174,7 +174,7 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, pa
               <Button
                 onClick={handleSubmit}
                 disabled={!selectedAnswer || loading}
-                className="flex-1 h-12 md:h-14 text-base md:text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg disabled:opacity-50"
+                className="flex-1 h-12 md:h-14 text-base md:text-lg font-bold bg-card     text-white shadow-lg disabled:opacity-50"
               >
                 {loading ? "Speichert..." : "Senden 🎯"}
               </Button>

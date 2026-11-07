@@ -141,9 +141,9 @@ export default function DKOResultsSection() {
 
   const getPlacementColor = (placement: number) => {
     if (placement === 1) return "bg-yellow-500 text-white"
-    if (placement === 2) return "bg-gray-400 text-white"
+    if (placement === 2) return "bg-accent text-white"
     if (placement === 3) return "bg-orange-600 text-white"
-    return "bg-gray-200 text-gray-700"
+    return "bg-secondary text-muted-foreground"
   }
 
   const getPlacementIcon = (placement: number) => {
@@ -157,19 +157,19 @@ export default function DKOResultsSection() {
     <div>
       {loading ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">Lade DKO Turnierergebnisse...</p>
+          <p className="text-muted-foreground text-lg">Lade DKO Turnierergebnisse...</p>
         </div>
       ) : tournaments.length === 0 ? (
         <div className="text-center py-12">
-          <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">Noch keine DKO Turniere gespielt</p>
+          <Trophy className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground text-lg">Noch keine DKO Turniere gespielt</p>
         </div>
       ) : (
         <div className="space-y-4">
           {tournaments.map((tournament, index) => (
             <div
               key={index}
-              className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:border-orange-500 transition-colors"
+              className="bg-card border-2 border-border rounded-lg overflow-hidden hover:border-orange-500 transition-colors"
             >
               {/* Tournament Header */}
               <button
@@ -178,15 +178,15 @@ export default function DKOResultsSection() {
                     expandedTournament === tournament.tournament_name ? null : tournament.tournament_name,
                   )
                 }
-                className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full p-6 flex items-center justify-between hover:bg-muted transition-colors"
               >
                 <div className="flex items-center gap-4">
                   <div className="flex items-center justify-center w-12 h-12 bg-orange-500 text-white rounded-full font-bold">
                     {index + 1}
                   </div>
                   <div className="text-left">
-                    <h3 className="text-xl font-bold text-gray-900">{tournament.tournament_name}</h3>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                    <h3 className="text-xl font-bold text-foreground">{tournament.tournament_name}</h3>
+                    <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Medal className="w-4 h-4" />
                         {getTournamentTypeLabel(tournament.tournament_type)}
@@ -203,30 +203,30 @@ export default function DKOResultsSection() {
                   </div>
                 </div>
                 {expandedTournament === tournament.tournament_name ? (
-                  <ChevronUp className="w-6 h-6 text-gray-400" />
+                  <ChevronUp className="w-6 h-6 text-muted-foreground" />
                 ) : (
-                  <ChevronDown className="w-6 h-6 text-gray-400" />
+                  <ChevronDown className="w-6 h-6 text-muted-foreground" />
                 )}
               </button>
 
               {/* Tournament Rankings */}
               {expandedTournament === tournament.tournament_name && (
-                <div className="border-t-2 border-gray-200 p-6 bg-gray-50">
-                  <h4 className="text-lg font-bold text-gray-900 mb-4">Platzierungen</h4>
-                  <div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
+                <div className="border-t-2 border-border p-6 bg-muted">
+                  <h4 className="text-lg font-bold text-foreground mb-4">Platzierungen</h4>
+                  <div className="bg-card border-2 border-border rounded-lg overflow-hidden">
                     {/* Table Header */}
-                    <div className="grid grid-cols-[80px_1fr_100px_100px] gap-4 p-4 bg-gray-100 border-b-2 border-gray-200 font-bold text-sm text-gray-700">
+                    <div className="grid grid-cols-[80px_1fr_100px_100px] gap-4 p-4 bg-muted border-b-2 border-border font-bold text-sm text-muted-foreground">
                       <div className="text-center">Platz</div>
                       <div>Spieler</div>
                       <div className="text-center">Legs W</div>
                       <div className="text-center">Legs L</div>
                     </div>
                     {/* Table Rows */}
-                    <div className="divide-y-2 divide-gray-200">
+                    <div className="divide-y-2 divide-border">
                       {tournament.rankings.map((ranking, rankIndex) => (
                         <div
                           key={rankIndex}
-                          className="grid grid-cols-[80px_1fr_100px_100px] gap-4 p-4 items-center hover:bg-gray-50 transition-colors"
+                          className="grid grid-cols-[80px_1fr_100px_100px] gap-4 p-4 items-center hover:bg-muted transition-colors"
                         >
                           <div className="flex justify-center">
                             <div
@@ -235,7 +235,7 @@ export default function DKOResultsSection() {
                               {getPlacementIcon(ranking.placement) || ranking.placement}
                             </div>
                           </div>
-                          <div className="font-medium text-gray-900">{ranking.player_name}</div>
+                          <div className="font-medium text-foreground">{ranking.player_name}</div>
                           <div className="text-center text-green-600 font-bold text-lg">{ranking.legs_won}</div>
                           <div className="text-center text-red-600 font-bold text-lg">{ranking.legs_lost}</div>
                         </div>

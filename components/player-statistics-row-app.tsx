@@ -164,27 +164,27 @@ export function PlayerStatisticsRowApp({ player, index, allStats }: PlayerStatis
               <div className="p-4 bg-muted/30 space-y-3">
                 <div className="text-xs text-muted-foreground mb-2">Weitere Würfe (15er-20er)</div>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-sm">
-                  <div className="flex justify-between bg-white p-2 rounded">
+                  <div className="flex justify-between bg-card p-2 rounded">
                     <span className="text-muted-foreground">15er:</span>
                     <span className="font-semibold">{player.throws_15 || 0}</span>
                   </div>
-                  <div className="flex justify-between bg-white p-2 rounded">
+                  <div className="flex justify-between bg-card p-2 rounded">
                     <span className="text-muted-foreground">16er:</span>
                     <span className="font-semibold">{player.throws_16 || 0}</span>
                   </div>
-                  <div className="flex justify-between bg-white p-2 rounded">
+                  <div className="flex justify-between bg-card p-2 rounded">
                     <span className="text-muted-foreground">17er:</span>
                     <span className="font-semibold">{player.throws_17 || 0}</span>
                   </div>
-                  <div className="flex justify-between bg-white p-2 rounded">
+                  <div className="flex justify-between bg-card p-2 rounded">
                     <span className="text-muted-foreground">18er:</span>
                     <span className="font-semibold">{player.throws_18 || 0}</span>
                   </div>
-                  <div className="flex justify-between bg-white p-2 rounded">
+                  <div className="flex justify-between bg-card p-2 rounded">
                     <span className="text-muted-foreground">19er:</span>
                     <span className="font-semibold">{player.throws_19 || 0}</span>
                   </div>
-                  <div className="flex justify-between bg-white p-2 rounded">
+                  <div className="flex justify-between bg-card p-2 rounded">
                     <span className="text-muted-foreground">20er:</span>
                     <span className="font-semibold">{player.throws_20}</span>
                   </div>

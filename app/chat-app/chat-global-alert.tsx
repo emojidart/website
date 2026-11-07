@@ -345,8 +345,8 @@ export default function ChatGlobalAlert({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-      <div className="relative w-full max-w-md overflow-hidden rounded-[30px] border-2 border-red-300/40 bg-gradient-to-b from-red-600 via-red-700 to-[#260507] p-1 shadow-[0_0_80px_rgba(239,68,68,.65)]">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4 ">
+      <div className="text-foreground relative w-full max-w-md overflow-hidden rounded-[30px] border-2 border-red-300/40 bg-card    p-1 shadow-[0_0_80px_rgba(239,68,68,.65)]">
         <div className="absolute inset-0 animate-pulse bg-red-400/10" />
 
         <div className="relative rounded-[26px] border border-white/15 bg-black/20 px-5 py-7 text-center">
@@ -354,11 +354,11 @@ export default function ChatGlobalAlert({
             <BellRing className="h-10 w-10 animate-pulse text-white" />
           </div>
 
-          <div className="mt-5 text-[11px] font-black uppercase tracking-[0.34em] text-red-100/75">
+          <div className="mt-5 text-xs font-semibold uppercase tracking-[0.34em] text-red-100/75">
             EMD NOTFALL-ALARM
           </div>
 
-          <div className="mt-2 text-3xl font-black tracking-tight text-white">
+          <div className="mt-2 text-3xl font-semibold tracking-tight text-white">
             {alert.title || "🚨 EMD ALERT"}
           </div>
 
@@ -370,7 +370,7 @@ export default function ChatGlobalAlert({
             <Button
               type="button"
               onClick={acknowledge}
-              className="h-14 rounded-2xl bg-white text-base font-black text-red-700 hover:bg-red-50"
+              className="h-14 rounded-2xl bg-card text-base font-semibold text-red-700 hover:bg-red-50"
             >
               <CheckCircle2 className="mr-2 h-5 w-5" />
               ALARM BESTÄTIGEN
@@ -380,14 +380,14 @@ export default function ChatGlobalAlert({
               type="button"
               variant="outline"
               onClick={openTarget}
-              className="h-12 rounded-2xl border-white/25 bg-white/5 font-black text-white hover:bg-white/10 hover:text-white"
+              className="h-12 rounded-2xl border-white/25 bg-white/5 font-semibold text-white hover:bg-white/10 hover:text-white"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               Jetzt zur Aufstellung
             </Button>
           </div>
 
-          <div className="mt-4 text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">
+          <div className="mt-4 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
             Bleibt aktiv bis die Aufstellung bestätigt wurde
           </div>
         </div>

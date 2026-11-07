@@ -203,7 +203,7 @@ function HitOverlay({
         ? "bg-red-600"
         : variant === "undo"
           ? "bg-blue-600"
-          : "bg-gray-900"
+          : "bg-background"
 
   return (
     <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-3">
@@ -220,9 +220,9 @@ function PlayerSwitchOverlay({ open, name }: { open: boolean; name: string }) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-      <div className="bg-white rounded-3xl px-8 sm:px-12 py-8 sm:py-10 shadow-2xl text-center animate-in fade-in zoom-in duration-200">
-        <div className="text-2xl sm:text-3xl font-bold text-gray-900">{name}</div>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-card  px-4">
+      <div className="bg-card rounded-3xl px-8 sm:px-12 py-8 sm:py-10 shadow-2xl text-center animate-in fade-in zoom-in duration-200">
+        <div className="text-2xl sm:text-3xl font-bold text-foreground">{name}</div>
       </div>
     </div>
   )
@@ -597,24 +597,24 @@ export default function DartStatsClassicPage({
   }
 
   // UI guards
-  
+
   if (!matchId) return <div className="text-red-600 text-sm">matchId fehlt: Route muss /live-statistics/[matchId] sein.</div>
 
   // ✅ NEW: if no confirmed lineup -> show CTA
   if (!effectiveLoadingPlayers && incoming.length === 0) {
     return (
       <div className="flex min-h-[55vh] w-full items-center justify-center px-3 py-8 text-center sm:px-6">
-        <div className="w-full max-w-md rounded-[26px] border border-white/[0.08] bg-black/35 p-6 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+        <div className="w-full max-w-md rounded-[26px] border border-white/[0.08] bg-card p-6 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
           <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-3xl border border-orange-300/20 bg-orange-500 text-white shadow-[0_0_28px_rgba(249,115,22,.14)]">
             <Target className="h-7 w-7 text-white" />
           </div>
-          <div className="text-xl font-black text-red-300">Bitte Aufstellung bestätigen !!!!</div>
-          <div className="mt-2 text-sm font-medium leading-6 text-white/50">
+          <div className="text-xl font-semibold text-red-300">Bitte Aufstellung bestätigen !!!!</div>
+          <div className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
             Bitte beachten: Die Aufstellung muss zuerst bestätigt werden, da eine Live-Eingabe ansonsten nicht möglich ist.
           </div>
 
           <div className="mt-5">
-            <Button asChild className="w-full bg-orange-500 font-black text-white shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white">
+            <Button asChild className="w-full bg-orange-500 font-semibold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white">
               <Link href="/member-availability">Zur Aufstellung / Bestätigen</Link>
             </Button>
           </div>
@@ -627,7 +627,7 @@ export default function DartStatsClassicPage({
     <div className="w-full min-w-0 bg-transparent text-white">
       <main className="w-full max-w-none px-0 pb-24 pt-0">
         {/* TOP BAR */}
-        <Card className="mb-4 overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl sm:mb-5">
+        <Card className="mb-4 overflow-hidden rounded-[26px] border border-white/[0.08] bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  sm:mb-5">
           <CardContent className="p-3 sm:p-4 lg:p-5">
             {/* Spieler: wirklich deutlich hervorgehoben + KEIN hover */}
             <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
@@ -638,9 +638,9 @@ export default function DartStatsClassicPage({
                     key={p.id}
                     variant="outline"
                     onClick={() => switchPlayer(p.id)}
-                    className={`min-h-11 w-full min-w-0 whitespace-normal break-words rounded-xl border px-2.5 py-2 text-center text-xs font-black leading-tight transition-colors sm:text-sm ${
+                    className={`min-h-11 w-full min-w-0 whitespace-normal break-words rounded-xl border px-2.5 py-2 text-center text-xs font-semibold leading-tight transition-colors sm:text-sm ${
                       isActive
-                        ? "!border-orange-400/40 !bg-orange-500 !text-white !shadow-[0_0_24px_rgba(249,115,22,.14)] hover:!bg-orange-500/90 hover:!text-white"
+                        ? "!border-orange-400/40 !bg-orange-500 !text-primary-foreground !shadow-[0_0_24px_rgba(249,115,22,.14)] hover:!bg-orange-500/90 hover:!text-primary-foreground"
                         : "!border-white/[0.10] !bg-white/[0.04] !text-white/75 hover:!border-orange-300/20 hover:!bg-white/[0.07] hover:!text-white"
                     }`}
                   >
@@ -657,14 +657,14 @@ export default function DartStatsClassicPage({
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-white">
                 <div className="flex justify-between mb-2 items-center">
                   <div className="font-bold text-sm sm:text-base">Legs W</div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-black/45 text-sm font-black text-white">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-black/45 text-sm font-semibold text-white">
                     {activePlayer?.legsWon ?? 0}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={() => void applyLegs("won", +1)}
-                    className="bg-orange-500 font-black text-white hover:bg-orange-500/90 hover:text-white"
+                    className="bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-500/90 hover:text-white"
                     disabled={!activePlayer}
                   >
                     +1
@@ -673,7 +673,7 @@ export default function DartStatsClassicPage({
                     onClick={() => void applyLegs("won", -1)}
                     disabled={!activePlayer || (activePlayer?.legsWon ?? 0) === 0}
                     variant="outline"
-                    className="border-white/[0.10] bg-white/[0.04] font-black text-white/80 hover:bg-white/[0.07] hover:text-white"
+                    className="border-white/[0.10] bg-white/[0.04] font-semibold text-white/80 hover:bg-white/[0.07] hover:text-white"
                   >
                     -1
                   </Button>
@@ -684,14 +684,14 @@ export default function DartStatsClassicPage({
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-white">
                 <div className="flex justify-between mb-2 items-center">
                   <div className="font-bold text-sm sm:text-base">Legs L</div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-black/45 text-sm font-black text-white">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-black/45 text-sm font-semibold text-white">
                     {activePlayer?.legsLost ?? 0}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={() => void applyLegs("lost", +1)}
-                    className="bg-orange-500 font-black text-white hover:bg-orange-500/90 hover:text-white"
+                    className="bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-500/90 hover:text-white"
                     disabled={!activePlayer}
                   >
                     +1
@@ -700,7 +700,7 @@ export default function DartStatsClassicPage({
                     onClick={() => void applyLegs("lost", -1)}
                     disabled={!activePlayer || (activePlayer?.legsLost ?? 0) === 0}
                     variant="outline"
-                    className="border-white/[0.10] bg-white/[0.04] font-black text-white/80 hover:bg-white/[0.07] hover:text-white"
+                    className="border-white/[0.10] bg-white/[0.04] font-semibold text-white/80 hover:bg-white/[0.07] hover:text-white"
                   >
                     -1
                   </Button>
@@ -711,7 +711,7 @@ export default function DartStatsClassicPage({
         </Card>
 
         {/* Felder */}
-        <Card className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+        <Card className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
           <CardContent className="grid grid-cols-2 gap-2.5 p-3 sm:grid-cols-3 sm:gap-3 sm:p-4 lg:grid-cols-4 xl:grid-cols-7 2xl:grid-cols-7">
             {FIELDS.map((f) => {
               const val = activePlayer?.stats[f.key] ?? 0
@@ -720,7 +720,7 @@ export default function DartStatsClassicPage({
                 <div key={f.key} className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-white">
                   <div className="flex justify-between mb-2 items-center">
                     <div className="font-bold text-base sm:text-lg">{f.label}</div>
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-black/45 text-sm font-black text-white">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-black/45 text-sm font-semibold text-white">
                       {val}
                     </div>
                   </div>
@@ -728,7 +728,7 @@ export default function DartStatsClassicPage({
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       onClick={() => void applyStat(f.key, +1)}
-                      className="bg-orange-500 font-black text-white hover:bg-orange-500/90 hover:text-white"
+                      className="bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-500/90 hover:text-white"
                       disabled={!activePlayer}
                     >
                       +1
@@ -737,7 +737,7 @@ export default function DartStatsClassicPage({
                       onClick={() => void applyStat(f.key, -1)}
                       disabled={!activePlayer || val === 0}
                       variant="outline"
-                      className="border-white/[0.10] bg-white/[0.04] font-black text-white/80 hover:bg-white/[0.07] hover:text-white"
+                      className="border-white/[0.10] bg-white/[0.04] font-semibold text-white/80 hover:bg-white/[0.07] hover:text-white"
                     >
                       -1
                     </Button>
@@ -749,12 +749,12 @@ export default function DartStatsClassicPage({
         </Card>
 
         {/* Letzte Eingaben */}
-        <Card className="mt-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-black/30 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+        <Card className="mt-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
           <CardContent className="p-4 sm:p-5">
             <div className="font-bold mb-3">Letzte Eingaben ({history.length})</div>
 
             {history.length === 0 ? (
-              <div className="text-sm text-white/40">Noch keine Eingaben vorhanden.</div>
+              <div className="text-sm text-muted-foreground">Noch keine Eingaben vorhanden.</div>
             ) : (
               <div className="space-y-2 max-h-80 overflow-auto">
                 {history.map((h) => {

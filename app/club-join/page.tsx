@@ -176,12 +176,12 @@ function SignaturePad({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
-        <Label className="font-black text-gray-900">{label}</Label>
+        <Label className="font-semibold text-foreground">{label}</Label>
         <Button type="button" variant="ghost" size="sm" onClick={clear} disabled={!hasSignature}>
           <RotateCcw className="mr-1 h-4 w-4" /> Neu
         </Button>
       </div>
-      <div className="overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 bg-white">
+      <div className="overflow-hidden rounded-2xl border-2 border-dashed border-border bg-card">
         <canvas
           ref={canvasRef}
           className="block h-[190px] w-full touch-none cursor-crosshair"
@@ -192,7 +192,7 @@ function SignaturePad({
           onPointerLeave={finish}
         />
       </div>
-      <p className="text-xs font-semibold text-gray-500">Mit Maus, Touchpad, Finger oder Stift unterschreiben.</p>
+      <p className="text-xs font-semibold text-muted-foreground">Mit Maus, Touchpad, Finger oder Stift unterschreiben.</p>
     </div>
   )
 }
@@ -534,7 +534,7 @@ export default function ClubJoinPage() {
           {existing?.status === "pending" ? (
             <div className="space-y-4 rounded-2xl border border-orange-200 bg-orange-50 p-5">
               <div>
-                <div className="font-black text-orange-900">Beitrittsanfrage wird geprüft</div>
+                <div className="font-semibold text-orange-900">Beitrittsanfrage wird geprüft</div>
                 <p className="mt-1 text-sm font-semibold text-orange-800">
                   Deine Unterlagen wurden übermittelt. Die Vereinsleitung prüft jetzt deine Anfrage.
                 </p>
@@ -544,19 +544,19 @@ export default function ClubJoinPage() {
                 variant="outline"
                 disabled={archiveLoading === "submitted"}
                 onClick={() => void downloadArchive("submitted")}
-                className="w-full rounded-xl border-orange-300 bg-white font-black text-orange-800 hover:bg-orange-100"
+                className="w-full rounded-xl border-orange-300 bg-card font-semibold text-orange-800 hover:bg-orange-100"
               >
                 {archiveLoading === "submitted" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                 Kopie meiner Beitrittsanfrage (PDF)
               </Button>
-              <Button asChild variant="outline" className="w-full rounded-xl border-orange-300 bg-white font-black text-orange-800 hover:bg-orange-100">
+              <Button asChild variant="outline" className="w-full rounded-xl border-orange-300 bg-card font-semibold text-orange-800 hover:bg-orange-100">
                 <Link href="/guest-profile-app">Zurück zum Gastprofil</Link>
               </Button>
             </div>
           ) : existing?.status === "approved" ? (
             <div className="space-y-4 rounded-2xl border border-green-200 bg-green-50 p-5">
               <div>
-                <div className="flex items-center gap-2 font-black text-green-900">
+                <div className="flex items-center gap-2 font-semibold text-green-900">
                   <CheckCircle2 className="h-5 w-5" /> Beitritt bestätigt
                 </div>
                 <p className="mt-1 text-sm font-semibold text-green-800">Du wurdest als Vereinsmitglied aufgenommen.</p>
@@ -567,7 +567,7 @@ export default function ClubJoinPage() {
                   variant="outline"
                   disabled={archiveLoading === "submitted"}
                   onClick={() => void downloadArchive("submitted")}
-                  className="rounded-xl border-green-300 bg-white font-black text-green-800 hover:bg-green-100"
+                  className="rounded-xl border-green-300 bg-card font-semibold text-green-800 hover:bg-green-100"
                 >
                   {archiveLoading === "submitted" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                   Eingereichten Antrag
@@ -577,41 +577,41 @@ export default function ClubJoinPage() {
                   variant="outline"
                   disabled={archiveLoading === "approved"}
                   onClick={() => void downloadArchive("approved")}
-                  className="rounded-xl border-green-300 bg-white font-black text-green-800 hover:bg-green-100"
+                  className="rounded-xl border-green-300 bg-card font-semibold text-green-800 hover:bg-green-100"
                 >
                   {archiveLoading === "approved" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                   Aufnahmebestätigung
                 </Button>
               </div>
-              <Button asChild className="w-full rounded-xl bg-green-700 font-black text-white hover:bg-green-800">
+              <Button asChild className="w-full rounded-xl bg-green-700 font-semibold text-white hover:bg-green-800">
                 <Link href="/member-profile-app">EMD VereinsApp öffnen</Link>
               </Button>
             </div>
           ) : (
             <>
-              <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+              <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
                 <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 font-black text-orange-700">1</div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 font-semibold text-orange-700">1</div>
                   <div>
-                    <h2 className="font-black text-gray-900">Persönliche Daten</h2>
-                    <p className="text-xs font-semibold text-gray-500">Bitte kontrolliere deine Angaben.</p>
+                    <h2 className="font-semibold text-foreground">Persönliche Daten</h2>
+                    <p className="text-xs font-semibold text-muted-foreground">Bitte kontrolliere deine Angaben.</p>
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Vorname</Label>
-                    <Input value={firstName} readOnly className="bg-gray-100 text-gray-700" />
-                    <p className="text-[11px] font-semibold text-gray-500">Aus deinem Gastkonto übernommen.</p>
+                    <Input value={firstName} readOnly className="bg-muted text-muted-foreground" />
+                    <p className="text-xs font-semibold text-muted-foreground">Aus deinem Gastkonto übernommen.</p>
                   </div>
                   <div className="space-y-2">
                     <Label>Nachname</Label>
-                    <Input value={lastName} readOnly className="bg-gray-100 text-gray-700" />
-                    <p className="text-[11px] font-semibold text-gray-500">Aus deinem Gastkonto übernommen.</p>
+                    <Input value={lastName} readOnly className="bg-muted text-muted-foreground" />
+                    <p className="text-xs font-semibold text-muted-foreground">Aus deinem Gastkonto übernommen.</p>
                   </div>
                   <div className="space-y-2">
                     <Label>E-Mail</Label>
-                    <Input type="email" value={form.email} readOnly className="bg-gray-100 text-gray-700" />
+                    <Input type="email" value={form.email} readOnly className="bg-muted text-muted-foreground" />
                   </div>
                   <div className="space-y-2">
                     <Label>Geburtsdatum *</Label>
@@ -637,12 +637,12 @@ export default function ClubJoinPage() {
 
               {documentsEnabled ? (
                 <>
-              <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+              <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
                 <div className="mb-4 flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-black text-orange-700">2</div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-semibold text-orange-700">2</div>
                   <div className="min-w-0">
-                    <h2 className="font-black text-gray-900">Vereinsdokumente lesen & bestätigen</h2>
-                    <p className="text-xs font-semibold text-gray-500">
+                    <h2 className="font-semibold text-foreground">Vereinsdokumente lesen & bestätigen</h2>
+                    <p className="text-xs font-semibold text-muted-foreground">
                       Öffne die angezeigten Dokumente, lies sie vollständig und bestätige sie anschließend.
                     </p>
                   </div>
@@ -657,21 +657,21 @@ export default function ClubJoinPage() {
                     {visibleDocuments.map((doc, index) => {
                       const isAccepted = !!accepted[doc.id]
                       return (
-                        <div key={doc.id} className={isAccepted ? "rounded-2xl border border-green-200 bg-green-50 p-4" : "rounded-2xl border border-gray-200 bg-gray-50 p-4"}>
+                        <div key={doc.id} className={isAccepted ? "rounded-2xl border border-green-200 bg-green-50 p-4" : "rounded-2xl border border-border bg-muted p-4"}>
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
                                 <FileText className="h-5 w-5 shrink-0 text-orange-600" />
-                                <span className="font-black text-gray-900">{index + 1}. {doc.title}</span>
+                                <span className="font-semibold text-foreground">{index + 1}. {doc.title}</span>
                               </div>
-                              <div className="mt-1 text-xs font-semibold text-gray-500">{CATEGORY_LABELS[doc.category]}</div>
+                              <div className="mt-1 text-xs font-semibold text-muted-foreground">{CATEGORY_LABELS[doc.category]}</div>
                             </div>
                             <Button type="button" variant={isAccepted ? "outline" : "default"} onClick={() => void openDocument(doc)} disabled={viewerLoading} className="w-full sm:w-auto">
                               {isAccepted ? <Check className="mr-2 h-4 w-4 text-green-700" /> : <ExternalLink className="mr-2 h-4 w-4" />}
                               {isAccepted ? "Erneut ansehen" : "Dokument öffnen"}
                             </Button>
                           </div>
-                          <div className={isAccepted ? "mt-3 flex items-center gap-2 text-sm font-black text-green-800" : "mt-3 text-sm font-semibold text-gray-500"}>
+                          <div className={isAccepted ? "mt-3 flex items-center gap-2 text-sm font-semibold text-green-800" : "mt-3 text-sm font-semibold text-muted-foreground"}>
                             {isAccepted ? <><FileCheck2 className="h-4 w-4" /> Gelesen und akzeptiert</> : opened[doc.id] ? "Geöffnet – Bestätigung noch ausständig" : "Noch nicht geöffnet"}
                           </div>
                         </div>
@@ -680,17 +680,17 @@ export default function ClubJoinPage() {
                   </div>
                 )}
 
-                <div className="mt-4 rounded-xl bg-gray-900 px-4 py-3 text-sm font-bold text-white">
+                <div className="mt-4 rounded-xl bg-background px-4 py-3 text-sm font-bold text-white">
                   Pflichtdokumente: {acceptedRequiredCount}/{requiredDocuments.length} bestätigt
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+              <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
                 <div className="mb-4 flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-black text-orange-700">3</div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-semibold text-orange-700">3</div>
                   <div>
-                    <h2 className="font-black text-gray-900">Digitale Unterschrift</h2>
-                    <p className="text-xs font-semibold text-gray-500">Bestätigt deine Angaben und die akzeptierten Dokumente.</p>
+                    <h2 className="font-semibold text-foreground">Digitale Unterschrift</h2>
+                    <p className="text-xs font-semibold text-muted-foreground">Bestätigt deine Angaben und die akzeptierten Dokumente.</p>
                   </div>
                 </div>
 
@@ -704,7 +704,7 @@ export default function ClubJoinPage() {
 
                 {isMinor ? (
                   <div className="mt-5 space-y-4 rounded-2xl border border-purple-200 bg-purple-50 p-4">
-                    <div className="flex items-center gap-2 font-black text-purple-900"><ShieldCheck className="h-5 w-5" /> Zustimmung gesetzliche Vertretung</div>
+                    <div className="flex items-center gap-2 font-semibold text-purple-900"><ShieldCheck className="h-5 w-5" /> Zustimmung gesetzliche Vertretung</div>
                     <div className="space-y-2">
                       <Label>Vor- und Nachname der gesetzlichen Vertretung *</Label>
                       <Input value={guardianName} onChange={(e) => setGuardianName(e.target.value)} placeholder="Vor- und Nachname" />
@@ -716,12 +716,12 @@ export default function ClubJoinPage() {
 
                 </>
               ) : (
-                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                <section className="rounded-2xl border border-border bg-muted p-4 sm:p-5">
                   <div className="flex items-start gap-3">
-                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
                     <div>
-                      <h2 className="font-black text-slate-900">Vereinsunterlagen</h2>
-                      <p className="mt-1 text-sm font-semibold text-slate-600">
+                      <h2 className="font-semibold text-foreground">Vereinsunterlagen</h2>
+                      <p className="mt-1 text-sm font-semibold text-muted-foreground">
                         Der digitale Dokumentenprozess ist derzeit noch nicht freigeschaltet. Deine Beitrittsanfrage kann trotzdem geprüft werden.
                       </p>
                     </div>
@@ -729,33 +729,33 @@ export default function ClubJoinPage() {
                 </section>
               )}
 
-              <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+              <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
                 <div className="mb-4 flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-black text-orange-700">{documentsEnabled ? 4 : 2}</div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-100 font-semibold text-orange-700">{documentsEnabled ? 4 : 2}</div>
                   <div>
-                    <h2 className="font-black text-gray-900">Kostenlose Testphase</h2>
-                    <p className="text-xs font-semibold text-gray-500">Eine Testphase wird erst nach Genehmigung deiner Beitrittsanfrage aktiviert.</p>
+                    <h2 className="font-semibold text-foreground">Kostenlose Testphase</h2>
+                    <p className="text-xs font-semibold text-muted-foreground">Eine Testphase wird erst nach Genehmigung deiner Beitrittsanfrage aktiviert.</p>
                   </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <button type="button" onClick={() => setTrialRequested(true)} className={trialRequested === true ? "rounded-2xl border-2 border-orange-600 bg-orange-50 p-4 text-left" : "rounded-2xl border-2 border-gray-200 bg-white p-4 text-left hover:border-orange-300"}>
-                    <div className="flex items-center gap-2 font-black text-gray-900"><Sparkles className="h-5 w-5 text-orange-600" /> Ja, Testphase nutzen</div>
-                    <div className="mt-1 text-xs font-semibold text-gray-500">Wird bei erfolgreicher Aufnahme automatisch freigeschaltet.</div>
+                  <button type="button" onClick={() => setTrialRequested(true)} className={trialRequested === true ? "rounded-2xl border-2 border-orange-600 bg-orange-50 p-4 text-left" : "rounded-2xl border-2 border-border bg-card p-4 text-left hover:border-orange-300"}>
+                    <div className="flex items-center gap-2 font-semibold text-foreground"><Sparkles className="h-5 w-5 text-orange-600" /> Ja, Testphase nutzen</div>
+                    <div className="mt-1 text-xs font-semibold text-muted-foreground">Wird bei erfolgreicher Aufnahme automatisch freigeschaltet.</div>
                   </button>
-                  <button type="button" onClick={() => setTrialRequested(false)} className={trialRequested === false ? "rounded-2xl border-2 border-gray-900 bg-gray-50 p-4 text-left" : "rounded-2xl border-2 border-gray-200 bg-white p-4 text-left hover:border-gray-400"}>
-                    <div className="font-black text-gray-900">Nein, keine Testphase</div>
-                    <div className="mt-1 text-xs font-semibold text-gray-500">Nach Aufnahme kannst du deine Mitgliedschaft regulär auswählen.</div>
+                  <button type="button" onClick={() => setTrialRequested(false)} className={trialRequested === false ? "rounded-2xl border-2 border-border bg-muted p-4 text-left" : "rounded-2xl border-2 border-border bg-card p-4 text-left hover:border-border"}>
+                    <div className="font-semibold text-foreground">Nein, keine Testphase</div>
+                    <div className="mt-1 text-xs font-semibold text-muted-foreground">Nach Aufnahme kannst du deine Mitgliedschaft regulär auswählen.</div>
                   </button>
                 </div>
               </section>
 
-              <div className="sticky bottom-3 z-10 rounded-2xl border border-gray-200 bg-white/95 p-3 shadow-xl backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
-                <Button type="button" onClick={() => void submit()} disabled={saving || !readyToSend} className="h-12 w-full rounded-xl bg-orange-600 text-base font-black text-white hover:bg-orange-700 disabled:opacity-50">
+              <div className="sticky bottom-3 z-10 rounded-2xl border border-border bg-card p-3 shadow-xl  sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+                <Button type="button" onClick={() => void submit()} disabled={saving || !readyToSend} className="h-12 w-full rounded-xl bg-orange-600 text-base font-semibold text-white hover:bg-orange-700 disabled:opacity-50">
                   {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
                   Beitrittsanfrage verbindlich senden
                 </Button>
-                {!readyToSend ? <div className="mt-2 text-center text-xs font-semibold text-gray-500">{documentsEnabled ? "Alle Pflichtfelder, Dokumente, Unterschriften und die Testphasen-Auswahl müssen vollständig sein." : "Bitte fülle die Pflichtfelder aus und wähle aus, ob du die Testphase nutzen möchtest."}</div> : null}
+                {!readyToSend ? <div className="mt-2 text-center text-xs font-semibold text-muted-foreground">{documentsEnabled ? "Alle Pflichtfelder, Dokumente, Unterschriften und die Testphasen-Auswahl müssen vollständig sein." : "Bitte fülle die Pflichtfelder aus und wähle aus, ob du die Testphase nutzen möchtest."}</div> : null}
               </div>
             </>
           )}
@@ -770,24 +770,24 @@ export default function ClubJoinPage() {
 
       {viewer ? (
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4">
-          <div className="flex h-[96dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:h-[92vh] sm:rounded-2xl">
+          <div className="flex h-[96dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl bg-card shadow-2xl sm:h-[92vh] sm:rounded-2xl">
             <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
               <div className="min-w-0">
-                <div className="truncate font-black text-gray-900">{viewer.doc.title}</div>
-                <div className="text-xs font-semibold text-gray-500">{CATEGORY_LABELS[viewer.doc.category]}</div>
+                <div className="truncate font-semibold text-foreground">{viewer.doc.title}</div>
+                <div className="text-xs font-semibold text-muted-foreground">{CATEGORY_LABELS[viewer.doc.category]}</div>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={() => { setViewer(null); setViewerReadyAt(null) }}>Schließen</Button>
             </div>
 
-            <div className="min-h-0 flex-1 bg-gray-100 p-2 sm:p-3">
-              <iframe src={`${viewer.url}#view=FitH`} title={viewer.doc.title} className="h-full w-full rounded-xl border bg-white" />
+            <div className="min-h-0 flex-1 bg-muted p-2 sm:p-3">
+              <iframe src={`${viewer.url}#view=FitH`} title={viewer.doc.title} className="h-full w-full rounded-xl border bg-card" />
             </div>
 
-            <div className="border-t bg-white p-3 sm:p-4">
-              <div className="mb-3 text-xs font-semibold text-gray-600">
+            <div className="border-t bg-card p-3 sm:p-4">
+              <div className="mb-3 text-xs font-semibold text-muted-foreground">
                 Bitte lies das Dokument vollständig. Anschließend kannst du bestätigen, dass du es gelesen und akzeptiert hast.
               </div>
-              <Button type="button" onClick={acceptViewer} disabled={!canConfirmViewer} className="h-12 w-full rounded-xl bg-green-600 font-black text-white hover:bg-green-700 disabled:bg-gray-300">
+              <Button type="button" onClick={acceptViewer} disabled={!canConfirmViewer} className="h-12 w-full rounded-xl bg-green-600 font-semibold text-white hover:bg-green-700 disabled:bg-secondary">
                 {canConfirmViewer ? <CheckCircle2 className="mr-2 h-5 w-5" /> : <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                 {canConfirmViewer ? "Vollständig gelesen & akzeptiert" : `Lesen… (${Math.max(0, 8 - Math.floor((Date.now() - (viewerReadyAt || Date.now())) / 1000))} s)`}
               </Button>

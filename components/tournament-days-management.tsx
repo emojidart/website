@@ -137,7 +137,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
       case "Turnier":
         return <Trophy className="h-4 w-4 text-purple-600" />
       case "Spielfrei":
-        return <Coffee className="h-4 w-4 text-gray-600" />
+        return <Coffee className="h-4 w-4 text-muted-foreground" />
       default:
         return <Trophy className="h-4 w-4 text-purple-600" />
     }
@@ -146,7 +146,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
   const getEventTypeBadge = (type: string) => {
     const colors = {
       Turnier: "bg-purple-100 text-purple-800",
-      Spielfrei: "bg-gray-100 text-gray-800",
+      Spielfrei: "bg-muted text-foreground",
     }
     return <Badge className={colors[type as keyof typeof colors] || colors.Turnier}>{type}</Badge>
   }
@@ -156,7 +156,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
       <div className="flex items-center justify-center py-8">
         <div className="text-center">
           <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-gray-600">Lade Turniertage...</p>
+          <p className="text-sm text-muted-foreground">Lade Turniertage...</p>
         </div>
       </div>
     )
@@ -166,10 +166,10 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Cup Turniertage Verwaltung</h2>
-          <p className="text-gray-600">Verwalten Sie Cup-Spieltage und spielfreie Tage</p>
+          <h2 className="text-2xl font-bold text-foreground">Cup Turniertage Verwaltung</h2>
+          <p className="text-muted-foreground">Verwalten Sie Cup-Spieltage und spielfreie Tage</p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} className="bg-red-600 hover:bg-red-700">
+        <Button onClick={() => setIsDialogOpen(true)} className="bg-red-600 hover:bg-red-700 text-white">
           <Plus className="h-4 w-4 mr-2" />
           Neuer Cup-Tag
         </Button>
@@ -179,9 +179,9 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
         {tournamentDays.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Keine Turniertage vorhanden</h3>
-              <p className="text-gray-600 mb-4">Erstellen Sie Ihren ersten Turniertag</p>
+              <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">Keine Turniertage vorhanden</h3>
+              <p className="text-muted-foreground mb-4">Erstellen Sie Ihren ersten Turniertag</p>
               <Button onClick={() => setIsDialogOpen(true)} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Turniertag hinzufügen
@@ -196,11 +196,11 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       {getEventTypeIcon(day.event_type)}
-                      <h3 className="text-lg font-semibold text-gray-900">{day.name}</h3>
+                      <h3 className="text-lg font-semibold text-foreground">{day.name}</h3>
                       {getEventTypeBadge(day.event_type)}
                     </div>
 
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       <Calendar className="h-4 w-4" />
                       {new Date(day.event_date).toLocaleDateString("de-DE", {
                         weekday: "long",
@@ -211,7 +211,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
                       {day.event_time && <span className="ml-2 text-blue-600 font-medium">um {day.event_time}</span>}
                     </div>
 
-                    {day.description && <p className="text-gray-600 text-sm">{day.description}</p>}
+                    {day.description && <p className="text-muted-foreground text-sm">{day.description}</p>}
                   </div>
 
                   <div className="flex gap-2 ml-4">
@@ -270,7 +270,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
                   </SelectItem>
                   <SelectItem value="Spielfrei">
                     <div className="flex items-center gap-2">
-                      <Coffee className="h-4 w-4 text-gray-600" />
+                      <Coffee className="h-4 w-4 text-muted-foreground" />
                       Spielfrei
                     </div>
                   </SelectItem>
@@ -312,7 +312,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700">
+              <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700 text-white">
                 <Save className="h-4 w-4 mr-2" />
                 {editingDay ? "Aktualisieren" : "Erstellen"}
               </Button>

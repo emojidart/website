@@ -1,0 +1,44 @@
+/* EMD shared visual system. Functional TV, terminal and chat dimensions remain
+   owned by their respective layouts. Portals consume the same :root tokens. */
+html { scroll-padding-top: 5rem; }
+body { line-height: 1.55; background: var(--background); color: var(--foreground); }
+::selection { background: #f59b5040; color: #fff; }
+.emd-app-theme-shell { min-height: 100dvh; background: var(--background); color: var(--foreground); }
+.emd-app-theme-shell :where(main, section, article, .flex > *, .grid > *) { min-width: 0; }
+.emd-app-theme-shell :where(h1,h2,h3) { text-wrap: balance; letter-spacing: -.025em; }
+.emd-app-theme-shell :where(p) { text-wrap: pretty; }
+.emd-app-theme-shell :where(input,textarea,select) { font-size: max(1rem, 16px); }
+.emd-app-theme-shell :where(button,a,[role=button]) { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+:where(button,a,input,textarea,select,[role=button],[role=tab]):focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+.emd-app-theme-shell :where(button:not([role=checkbox]):not([role=switch]):not([role=radio]),input:not([type=checkbox]):not([type=radio]):not([type=range]),select) { min-height: 44px; }
+.emd-app-theme-shell :where(table) { font-variant-numeric: tabular-nums; }
+.emd-app-theme-shell :where(th) { text-align: start; font-weight: 600; color: var(--muted-foreground); }
+.emd-app-theme-shell :where(td,th) { border-color: var(--border); }
+.emd-app-theme-shell :where(.overflow-x-auto) { overscroll-behavior-inline: contain; scrollbar-color: var(--border) transparent; scrollbar-width: thin; }
+.emd-home-page { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+.emd-home-page > section, .emd-home-page > div { position: relative; }
+.emd-home-page section { scroll-margin-top: 5rem; }
+.emd-home-page :where(h2) { font-size: clamp(1.2rem, 2vw, 1.6rem); }
+.emd-main-header, .emd-bottom-nav, .emd-main-footer { background: #101722; }
+.emd-app-theme-shell :where(.rounded-3xl) { border-radius: 1.25rem; }
+.emd-app-theme-shell :where(.shadow-2xl,.shadow-xl) { box-shadow: 0 10px 24px -14px #0008; }
+.emd-app-theme-shell :where(.pointer-events-none[class*="blur-"]) { display: none; }
+/* Keep existing light semantic alerts readable after the neutral migration. */
+.emd-app-theme-shell :where(.bg-orange-50,.bg-orange-100,.bg-amber-50,.bg-amber-100) { background-color: #f59b5018; color: #ffd0a6; }
+.emd-app-theme-shell :where(.bg-red-50,.bg-red-100,.bg-rose-50,.bg-rose-100) { background-color: #ed6c7818; color: #ffb5bd; }
+.emd-app-theme-shell :where(.bg-green-50,.bg-green-100,.bg-emerald-50,.bg-emerald-100) { background-color: #63d6af18; color: #9be7cb; }
+.emd-app-theme-shell :where(.bg-blue-50,.bg-blue-100,.bg-sky-50,.bg-sky-100) { background-color: #80b9f818; color: #b6d8ff; }
+.emd-app-theme-shell :where(.text-orange-600,.text-orange-700,.text-orange-800,.text-orange-900,.text-amber-600,.text-amber-700,.text-amber-800,.text-amber-900) { color: #f8b577; }
+.emd-app-theme-shell :where(.text-red-600,.text-red-700,.text-red-800,.text-red-900,.text-rose-600,.text-rose-700,.text-rose-800,.text-rose-900) { color: #ff9ba8; }
+.emd-app-theme-shell :where(.text-green-600,.text-green-700,.text-green-800,.text-green-900,.text-emerald-600,.text-emerald-700,.text-emerald-800,.text-emerald-900) { color: #8ce3c3; }
+.emd-app-theme-shell :where(.text-blue-600,.text-blue-700,.text-blue-800,.text-blue-900,.text-sky-600,.text-sky-700,.text-sky-800,.text-sky-900) { color: #a8cefa; }
+@media (min-width: 1024px) {
+  .emd-app-theme-shell :where(main.max-w-7xl,main.max-w-6xl) { max-width: var(--emd-content-max); }
+}
+@media (max-width: 639px) {
+  [role=dialog] { scroll-padding-block: 1rem; }
+  .emd-app-theme-shell :where(textarea) { min-height: 7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

@@ -10,7 +10,7 @@ export function SectionCard({ title, icon, children }: SectionCardProps) {
       <CardHeader className="mb-0 border-b border-white/[0.07] bg-white/[0.02] px-5 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-orange-300/20 bg-orange-500/[0.08] text-orange-300">{icon}</span>
-          <h2 className="text-lg font-black tracking-tight text-white sm:text-xl">{title}</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">{title}</h2>
         </div>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">{children}</CardContent>

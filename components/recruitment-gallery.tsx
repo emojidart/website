@@ -29,8 +29,8 @@ export function RecruitmentGallery({ recruitmentNeeds }: RecruitmentGalleryProps
       <div className="mx-auto w-full max-w-2xl px-4 pb-24 pt-6">
         <Card className="border-0 shadow-md ring-1 ring-black/5">
           <CardContent className="p-6 text-center">
-            <p className="text-gray-700 font-semibold">Aktuell keine offenen Positionen verfügbar.</p>
-            <p className="text-sm text-gray-500 mt-1">Schau später nochmal rein 🙂</p>
+            <p className="text-muted-foreground font-semibold">Aktuell keine offenen Positionen verfügbar.</p>
+            <p className="text-sm text-muted-foreground mt-1">Schau später nochmal rein 🙂</p>
           </CardContent>
         </Card>
       </div>
@@ -41,10 +41,10 @@ export function RecruitmentGallery({ recruitmentNeeds }: RecruitmentGalleryProps
     <div className="mx-auto w-full max-w-2xl px-4 pb-24 pt-6">
       {/* Header */}
       <div className="mb-4">
-        <div className="rounded-2xl border border-gray-200/70 bg-white shadow-md ring-1 ring-black/5">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-md ring-1 ring-black/5">
           <div className="p-4 sm:p-5">
-            <h2 className="text-xl sm:text-2xl font-black text-gray-900">Offene Positionen</h2>
-            <p className="text-sm text-gray-500 mt-1">Wir suchen motivierte Spieler für folgende Teams</p>
+            <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Offene Positionen</h2>
+            <p className="text-sm text-muted-foreground mt-1">Wir suchen motivierte Spieler für folgende Teams</p>
           </div>
         </div>
       </div>
@@ -57,12 +57,12 @@ export function RecruitmentGallery({ recruitmentNeeds }: RecruitmentGalleryProps
             className="border-0 shadow-md ring-1 ring-black/5 overflow-hidden"
           >
             {/* left accent */}
-            <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 to-orange-600" />
+            <div className="text-foreground h-1.5 w-full bg-card  " />
 
             <CardHeader className="space-y-2 pb-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <CardTitle className="text-lg sm:text-xl font-black leading-tight text-gray-900 truncate">
+                  <CardTitle className="text-lg sm:text-xl font-semibold leading-tight text-foreground truncate">
                     {need.team_name}
                   </CardTitle>
 
@@ -93,14 +93,14 @@ export function RecruitmentGallery({ recruitmentNeeds }: RecruitmentGalleryProps
 
             <CardContent className="pt-0 space-y-4">
               {need.description ? (
-                <div className="rounded-xl border border-gray-200/70 bg-gray-50 p-4">
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{need.description}</p>
+                <div className="rounded-xl border border-border/70 bg-muted p-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{need.description}</p>
                 </div>
               ) : null}
 
               <Dialog open={openDialogId === need.id} onOpenChange={(open) => setOpenDialogId(open ? need.id : null)}>
                 <DialogTrigger asChild>
-                  <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-lg">
+                  <Button className="w-full rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold shadow-lg">
                     <Send className="h-4 w-4 mr-2" />
                     Jetzt bewerben
                   </Button>

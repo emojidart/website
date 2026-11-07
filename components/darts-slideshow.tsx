@@ -33,7 +33,7 @@ export function DartsSlideshow() {
   }
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl shadow-xl bg-gray-900">
+    <div className="relative w-full overflow-hidden rounded-2xl shadow-xl bg-background">
       {/* Slideshow Container */}
       <div className="relative aspect-video w-full">
         {/* Images */}
@@ -57,14 +57,14 @@ export function DartsSlideshow() {
         {/* Navigation Arrows */}
         <button
           onClick={goToPrevious}
-          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+          className="absolute left-2 top-1/2 -translate-y-1/2 bg-card hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 hover:scale-110 "
           aria-label="Previous slide"
         >
           <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
         <button
           onClick={goToNext}
-          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+          className="absolute right-2 top-1/2 -translate-y-1/2 bg-card hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 hover:scale-110 "
           aria-label="Next slide"
         >
           <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -77,7 +77,7 @@ export function DartsSlideshow() {
               key={index}
               onClick={() => goToSlide(index)}
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex ? "bg-orange-500 w-6" : "bg-white/50 hover:bg-white/80"
+                index === currentIndex ? "bg-orange-500 w-6 text-primary-foreground" : "bg-card hover:bg-card"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
@@ -86,7 +86,7 @@ export function DartsSlideshow() {
       </div>
 
       {/* Optional Caption */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
+      <div className="absolute bottom-0 left-0 right-0 bg-card   p-4 text-white">
         <p className="text-sm sm:text-base font-semibold text-center">Darts Action beim Emoji's Dartverein</p>
       </div>
     </div>

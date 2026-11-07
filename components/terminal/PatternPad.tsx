@@ -63,8 +63,8 @@ export default function PatternPad({
       <div
         className={`grid touch-none select-none grid-cols-3 gap-5 rounded-[30px] border p-5 ${
           isDark
-            ? "border-white/10 bg-black/25"
-            : "border-slate-200 bg-slate-50"
+            ? "border-white/10 bg-card"
+            : "border-border bg-muted"
         }`}
         onPointerDown={start}
         onPointerMove={move}
@@ -85,7 +85,7 @@ export default function PatternPad({
                       : "border-orange-500 bg-orange-50"
                     : isDark
                       ? "border-white/15 bg-white/[0.04]"
-                      : "border-slate-300 bg-white"
+                      : "border-border bg-card"
                 }`}
               >
                 <span
@@ -94,12 +94,12 @@ export default function PatternPad({
                       ? "bg-orange-400"
                       : isDark
                         ? "bg-white/25"
-                        : "bg-slate-400"
+                        : "bg-accent"
                   }`}
                 />
                 {selected ? (
                   <span
-                    className={`absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black ${
+                    className={`absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
                       isDark
                         ? "bg-orange-500 text-white"
                         : "bg-orange-500 text-white"
@@ -116,7 +116,7 @@ export default function PatternPad({
 
       <div
         className={`mt-3 text-center text-xs font-semibold ${
-          isDark ? "text-white/35" : "text-slate-500"
+          isDark ? "text-muted-foreground" : "text-muted-foreground"
         }`}
       >
         Mindestens 4 Punkte in einem Zug verbinden.

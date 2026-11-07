@@ -106,7 +106,7 @@ export function MembershipAccessGate({
   if (loading || documentsLoading) {
     return (
       <div className="flex min-h-[320px] items-center justify-center bg-transparent px-4">
-        <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-black/35 px-5 py-4 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+        <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card px-5 py-4 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
           <div className="pointer-events-none absolute -left-8 -top-10 h-24 w-24 rounded-full bg-orange-500/15 blur-[34px]" />
           <div className="pointer-events-none absolute -bottom-10 -right-8 h-24 w-24 rounded-full bg-sky-500/10 blur-[34px]" />
           <div className="relative flex items-center gap-3 text-sm font-semibold text-white/60">
@@ -120,12 +120,12 @@ export function MembershipAccessGate({
 
   if (error) {
     return (
-      <Card className="mx-auto mt-8 max-w-xl rounded-2xl border border-red-300/15 bg-black/35 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+      <Card className="mx-auto mt-8 max-w-xl rounded-2xl border border-red-300/15 bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
         <CardContent className="p-6 text-center">
-          <div className="font-black text-red-300">
+          <div className="font-semibold text-red-300">
             Mitgliedschaft konnte nicht geprüft werden
           </div>
-          <div className="mt-2 text-sm font-semibold text-white/50">{error}</div>
+          <div className="mt-2 text-sm font-semibold text-muted-foreground">{error}</div>
         </CardContent>
       </Card>
     )
@@ -133,16 +133,16 @@ export function MembershipAccessGate({
 
   if (documentsBlocked) {
     return (
-      <Card className="mx-auto mt-8 max-w-xl overflow-hidden rounded-[24px] border border-amber-300/15 bg-black/35 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+      <Card className="mx-auto mt-8 max-w-xl overflow-hidden rounded-[24px] border border-amber-300/15 bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
         <CardContent className="p-6 text-center sm:p-8">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-300/15 bg-amber-500/[0.08] shadow-[0_0_24px_rgba(245,158,11,.08)]">
             <FileCheck2 className="h-7 w-7 text-amber-300" />
           </div>
-          <h2 className="mt-4 text-xl font-black text-white">Vereinsunterlagen bestätigen</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-white/50">
+          <h2 className="mt-4 text-xl font-semibold text-white">Vereinsunterlagen bestätigen</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-muted-foreground">
             Die Vereinsleitung hat neue bzw. nachzuholende Pflichtunterlagen freigeschaltet. Bitte lies und unterschreibe sie zuerst.
           </p>
-          <Button asChild className="mt-5 rounded-xl bg-orange-500 font-black text-white shadow-[0_0_28px_rgba(249,115,22,.14)] hover:bg-orange-400 active:scale-[0.99]">
+          <Button asChild className="mt-5 rounded-xl bg-orange-500 font-semibold text-primary-foreground shadow-[0_0_28px_rgba(249,115,22,.14)] hover:bg-orange-400 active:scale-[0.99]">
             <Link href="/member-profile-app#vereinsunterlagen">Unterlagen jetzt bestätigen</Link>
           </Button>
         </CardContent>
@@ -162,15 +162,15 @@ export function MembershipAccessGate({
   }
 
   return (
-    <Card className="mx-auto mt-8 max-w-xl overflow-hidden rounded-[24px] border border-orange-300/15 bg-black/35 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-2xl">
+    <Card className="mx-auto mt-8 max-w-xl overflow-hidden rounded-[24px] border border-orange-300/15 bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
       <CardContent className="p-6 text-center sm:p-8">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/15 bg-orange-500/[0.08] shadow-[0_0_24px_rgba(249,115,22,.08)]">
           <LockKeyhole className="h-7 w-7 text-orange-300" />
         </div>
 
-        <h2 className="mt-4 text-xl font-black text-white">{title}</h2>
+        <h2 className="mt-4 text-xl font-semibold text-white">{title}</h2>
 
-        <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-white/50">
+        <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-muted-foreground">
           {!hasMembership
             ? "Für dein Konto ist derzeit keine aktive Mitgliedschaft hinterlegt."
             : description}
@@ -178,7 +178,7 @@ export function MembershipAccessGate({
 
         <Button
           asChild
-          className="mt-5 rounded-xl bg-orange-500 font-black text-white shadow-[0_0_28px_rgba(249,115,22,.14)] hover:bg-orange-400 active:scale-[0.99]"
+          className="mt-5 rounded-xl bg-orange-500 font-semibold text-primary-foreground shadow-[0_0_28px_rgba(249,115,22,.14)] hover:bg-orange-400 active:scale-[0.99]"
         >
           <Link href="/member-membership">
             Mitgliedschaft ansehen

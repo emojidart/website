@@ -262,10 +262,10 @@ export default function MemberBonusPage() {
       setLegStatsLoading(false)
     }
   }
-  
-  
-  
-  
+
+
+
+
 
   const fetchAllTeamStatistics = async (teamIdsToLoad: string[]) => {
   setLegStatsLoading(true)
@@ -363,7 +363,7 @@ export default function MemberBonusPage() {
 
   if (authLoading || membershipLoading) {
     return (
-      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans flex flex-col pb-20">
+      <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-foreground font-sans flex flex-col pb-20">
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
         </main>
@@ -374,7 +374,7 @@ export default function MemberBonusPage() {
 
   if (!canSeeEDart && !canSeeSteeldart) {
     return (
-      <main className="min-h-screen flex flex-col bg-slate-50 text-slate-950 pb-20">
+      <main className="min-h-screen flex flex-col bg-muted text-foreground pb-20">
         <Header
           variant="app"
           title="Bonusgeld"
@@ -383,24 +383,24 @@ export default function MemberBonusPage() {
         />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <Card className="w-full max-w-xl overflow-hidden rounded-3xl border border-orange-200 bg-white shadow-xl">
+          <Card className="w-full max-w-xl overflow-hidden rounded-3xl border border-orange-200 bg-card shadow-xl">
             <CardContent className="p-6 text-center sm:p-8">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[20px] bg-orange-50">
                 <ShieldCheck className="h-7 w-7 text-orange-600" />
               </div>
 
-              <h1 className="mt-4 text-xl font-black text-slate-950">
+              <h1 className="mt-4 text-xl font-semibold text-foreground">
                 Kein Liga-Paket gebucht
               </h1>
 
-              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-slate-600">
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-muted-foreground">
                 Für Bonusgeld aus Liga-Spielen benötigst du mindestens das E-Dart- oder Steeldart-Liga-Paket.
               </p>
 
               <Button
                 type="button"
                 onClick={() => router.push("/member-membership")}
-                className="mt-5 rounded-xl bg-orange-600 font-black text-white hover:bg-orange-700"
+                className="mt-5 rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
               >
                 Paket buchen
               </Button>
@@ -414,7 +414,7 @@ export default function MemberBonusPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-slate-950 font-sans flex flex-col pb-20">
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-foreground font-sans flex flex-col pb-20">
       <Header
         variant="app"
         title="Bonusgeld"
@@ -424,28 +424,28 @@ export default function MemberBonusPage() {
 
       <main className="w-full pt-14 sm:pt-16">
         <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
-          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-slate-800/10 bg-slate-950 shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
+          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
             <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
                 <div className="min-w-0">
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/60">
                     <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
                     Bonusgeld
                   </div>
-                  <h1 className="text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Bonusgeld</h1>
-                  <p className="mt-2 text-sm font-medium text-white/55 sm:text-base">Ihre Bonuspunkte und Belohnungen</p>
+                  <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">Bonusgeld</h1>
+                  <p className="mt-2 text-sm font-medium text-muted-foreground sm:text-base">Ihre Bonuspunkte und Belohnungen</p>
                 </div>
 
                   <div className="flex flex-wrap gap-2">
                     {canSeeEDart ? (
-                      <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-black text-orange-700">
+                      <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
                         E-Dart freigeschaltet
                       </span>
                     ) : null}
 
                     {canSeeSteeldart ? (
-                      <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
+                      <span className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
                         Steeldart freigeschaltet
                       </span>
                     ) : null}
@@ -453,13 +453,13 @@ export default function MemberBonusPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex items-center gap-2">
-                      <label htmlFor="season-filter" className="text-sm font-medium whitespace-nowrap text-gray-700">
+                      <label htmlFor="season-filter" className="text-sm font-medium whitespace-nowrap text-muted-foreground">
                         Saison:
                       </label>
                       <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
                         <SelectTrigger
                           id="season-filter"
-                          className="w-full rounded-xl border-slate-200 bg-white shadow-sm"
+                          className="w-full rounded-xl border-border bg-card shadow-sm"
                         >
                           <SelectValue placeholder="Saison auswählen" />
                         </SelectTrigger>
@@ -476,13 +476,13 @@ export default function MemberBonusPage() {
 
                     {teamMemberships.length > 1 ? (
                       <div className="flex items-center gap-2">
-                        <label htmlFor="team-filter" className="text-sm font-medium whitespace-nowrap text-gray-700">
+                        <label htmlFor="team-filter" className="text-sm font-medium whitespace-nowrap text-muted-foreground">
                           Team:
                         </label>
                         <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
                           <SelectTrigger
                             id="team-filter"
-                            className="w-full rounded-xl border-slate-200 bg-white shadow-sm"
+                            className="w-full rounded-xl border-border bg-card shadow-sm"
                           >
                             <SelectValue placeholder="Team auswählen" />
                           </SelectTrigger>

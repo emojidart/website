@@ -322,9 +322,9 @@ export function SpeechAnnouncerSettings({
         id="speech-enabled"
         checked={enabled}
         onChange={(e) => onToggle(e.target.checked)}
-        className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2"
+        className="w-4 h-4 text-orange-600 bg-muted border-border rounded focus:ring-orange-500 focus:ring-2"
       />
-      <label htmlFor="speech-enabled" className="text-sm font-medium text-gray-700 cursor-pointer select-none">
+      <label htmlFor="speech-enabled" className="text-sm font-medium text-muted-foreground cursor-pointer select-none">
         Ansagen aktivieren
       </label>
     </div>

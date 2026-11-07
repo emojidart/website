@@ -532,7 +532,7 @@ export default function MemberProfilePage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -543,11 +543,11 @@ export default function MemberProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">{error || "Profil nicht gefunden"}</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-4">{error || "Profil nicht gefunden"}</h1>
             <Button onClick={() => router.push("/member-login")}>Zur Anmeldung</Button>
           </div>
         </main>
@@ -559,29 +559,29 @@ export default function MemberProfilePage() {
   const hasMultipleTeams = teamMemberships.length > 1
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8 max-w-6xl">
         {showInstallButton && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-l-blue-500">
+          <Card className="text-foreground mb-6 sm:mb-8 border-0 shadow-xl bg-card   border-l-4 border-l-blue-500">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl shadow-lg">
+                  <div className="text-foreground inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-card   rounded-xl shadow-lg">
                     <Download className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
                 </div>
                 <div className="flex-grow w-full">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">
                     App auf deinem Gerät installieren
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                  <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
                     Installiere die EMD-App auf deinem Handy oder PC für schnellen Zugriff und ein besseres Erlebnis!
                   </p>
                   <Button
                     onClick={handleInstallClick}
-                    className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg text-sm sm:text-base"
+                    className="w-full sm:w-auto bg-card     text-white shadow-lg text-sm sm:text-base"
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Jetzt installieren
@@ -593,11 +593,11 @@ export default function MemberProfilePage() {
         )}
 
         {notifications.length > 0 && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500">
+          <Card className="text-foreground mb-6 sm:mb-8 border-0 shadow-xl bg-card   border-l-4 border-l-red-500">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl shadow-lg">
+                  <div className="text-foreground inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-card   rounded-xl shadow-lg">
                     <Bell className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
                 </div>
@@ -605,11 +605,11 @@ export default function MemberProfilePage() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Admin-Benachrichtigungen</h3>
+                      <h3 className="text-base sm:text-lg font-bold text-foreground">Admin-Benachrichtigungen</h3>
                     </div>
                     <Badge className="bg-red-500 text-white w-fit">{notifications.length}</Badge>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                  <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
                     Du hast {notifications.length} neue{" "}
                     {notifications.length === 1 ? "Benachrichtigung" : "Benachrichtigungen"} vom Admin bezüglich
                     fehlerhafter Statistik-Einträge.
@@ -618,13 +618,13 @@ export default function MemberProfilePage() {
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className="flex flex-col bg-white/70 rounded-lg p-3 border border-red-200 gap-2"
+                        className="flex flex-col bg-card rounded-lg p-3 border border-red-200 gap-2"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 mb-1">{notification.message}</p>
+                            <p className="text-sm font-medium text-foreground mb-1">{notification.message}</p>
                             {notification.match && (
-                              <div className="text-xs text-gray-700 font-medium mb-1">
+                              <div className="text-xs text-muted-foreground font-medium mb-1">
                                 {notification.match.home_team_type === "own" && notification.match.home_team?.name
                                   ? notification.match.home_team.name
                                   : notification.match.home_opponent_team?.name || "Unbekannt"}{" "}
@@ -637,18 +637,18 @@ export default function MemberProfilePage() {
                               </div>
                             )}
                             {notification.player && (
-                              <div className="text-xs text-gray-600 mb-1">
+                              <div className="text-xs text-muted-foreground mb-1">
                                 Spieler: <span className="font-medium">{notification.player.name}</span>
                               </div>
                             )}
                             {notification.leg_statistics && (
-                              <div className="text-xs text-gray-600">
+                              <div className="text-xs text-muted-foreground">
                                 Leg {notification.leg_statistics.leg_number} - Ergebnis:{" "}
                                 {notification.leg_statistics.player_legs_won}:
                                 {notification.leg_statistics.opponent_legs_won}
                               </div>
                             )}
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs text-muted-foreground mt-1">
                               Gemeldet am: {formatMatchDate(notification.created_at)}
                             </div>
                           </div>
@@ -672,11 +672,11 @@ export default function MemberProfilePage() {
         )}
 
         {pendingMatches.length > 0 && isLeadershipRole() && (
-          <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-l-yellow-500">
+          <Card className="text-foreground mb-6 sm:mb-8 border-0 shadow-xl bg-card   border-l-4 border-l-yellow-500">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                 <div className="flex-shrink-0">
-                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl shadow-lg">
+                  <div className="text-foreground inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-card   rounded-xl shadow-lg">
                     <Inbox className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
                 </div>
@@ -684,11 +684,11 @@ export default function MemberProfilePage() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
-                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Offene Spielergebnisse</h3>
+                      <h3 className="text-base sm:text-lg font-bold text-foreground">Offene Spielergebnisse</h3>
                     </div>
                     <Badge className="bg-yellow-500 text-white w-fit">{pendingMatches.length}</Badge>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
+                  <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
                     Du hast {pendingMatches.length} vergangene {pendingMatches.length === 1 ? "Spiel" : "Spiele"}, für{" "}
                     {pendingMatches.length === 1 ? "das" : "die"} noch kein Ergebnis eingetragen wurde.
                   </p>
@@ -696,7 +696,7 @@ export default function MemberProfilePage() {
                     {pendingMatches.slice(0, 3).map((match) => (
                       <div
                         key={match.id}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white/70 rounded-lg p-3 border border-yellow-200 gap-2"
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-card rounded-lg p-3 border border-yellow-200 gap-2"
                       >
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                           <Calendar className="h-4 w-4 text-yellow-600 flex-shrink-0" />
@@ -710,14 +710,14 @@ export default function MemberProfilePage() {
                       </div>
                     ))}
                     {pendingMatches.length > 3 && (
-                      <div className="text-xs sm:text-sm text-gray-600 text-center py-2">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-center py-2">
                         ... und {pendingMatches.length - 3} weitere
                       </div>
                     )}
                   </div>
                   <Button
                     onClick={() => router.push("/member-dashboard")}
-                    className="w-full sm:w-auto bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg text-sm sm:text-base"
+                    className="w-full sm:w-auto bg-card     text-white shadow-lg text-sm sm:text-base"
                   >
                     <ArrowRight className="h-4 w-4 mr-2" />
                     Ergebnisse eintragen
@@ -729,16 +729,16 @@ export default function MemberProfilePage() {
         )}
 
         <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl mb-4 sm:mb-6 shadow-xl">
+          <div className="text-foreground inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-card   rounded-3xl mb-4 sm:mb-6 shadow-xl">
             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Willkommen zurück!</h1>
-          <p className="text-lg sm:text-xl text-gray-600 px-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2">Willkommen zurück!</h1>
+          <p className="text-lg sm:text-xl text-muted-foreground px-4">
             Schön dich zu sehen, {profile.club_players?.name || "Vereinsmitglied"}
           </p>
         </div>
 
-        <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+        <Card className="mb-6 sm:mb-8 border-0 shadow-xl bg-card ">
           <CardContent className="p-4 sm:p-6 lg:p-8">
             <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
               <div className="relative">
@@ -749,7 +749,7 @@ export default function MemberProfilePage() {
                     }
                     alt={profile.club_players?.name || "Spieler"}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xl sm:text-2xl font-bold">
+                  <AvatarFallback className="bg-card   text-white text-xl sm:text-2xl font-bold">
                     {(profile.club_players?.name || "U")
                       .split(" ")
                       .map((n) => n[0])
@@ -760,7 +760,7 @@ export default function MemberProfilePage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="absolute -bottom-2 -right-2 rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 bg-white shadow-lg"
+                  className="absolute -bottom-2 -right-2 rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 bg-card shadow-lg"
                   onClick={() => setIsPhotoDialogOpen(true)}
                 >
                   <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -768,7 +768,7 @@ export default function MemberProfilePage() {
               </div>
 
               <div className="flex-grow text-center md:text-left">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
                   {profile.club_players?.name || "Vereinsmitglied"}
                 </h2>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 sm:mb-4">
@@ -790,7 +790,7 @@ export default function MemberProfilePage() {
                 </div>
                 {hasMultipleTeams && (
                   <div className="mb-2">
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1">Alle Teams:</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-1">Alle Teams:</p>
                     <div className="flex flex-wrap gap-1 sm:gap-2">
                       {teamMemberships.map((membership) => (
                         <Badge key={membership.id} variant="outline" className="text-xs">
@@ -801,10 +801,10 @@ export default function MemberProfilePage() {
                   </div>
                 )}
                 {profile.club_players?.origin && (
-                  <p className="text-sm sm:text-base text-gray-600 mb-2">Herkunft: {profile.club_players.origin}</p>
+                  <p className="text-sm sm:text-base text-muted-foreground mb-2">Herkunft: {profile.club_players.origin}</p>
                 )}
                 {profile.club_players?.throwing_hand && (
-                  <p className="text-sm sm:text-base text-gray-600">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Wurfhand: {profile.club_players.throwing_hand === "right" ? "Rechts" : "Links"}
                   </p>
                 )}
@@ -816,7 +816,7 @@ export default function MemberProfilePage() {
                     variant="outline"
                     size="sm"
                     onClick={handleInstallClick}
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 border-0 text-xs sm:text-sm"
+                    className="flex items-center gap-2 bg-card   text-white   border-0 text-xs sm:text-sm"
                   >
                     <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                     App auf PC oder Handy installieren
@@ -848,17 +848,17 @@ export default function MemberProfilePage() {
           {navigationItems.map((item, index) => (
             <Card
               key={index}
-              className="border-0 shadow-xl bg-white/95 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+              className="border-0 shadow-xl bg-card  hover:shadow-2xl transition-all duration-300 cursor-pointer group"
               onClick={() => router.push(item.href)}
             >
               <CardContent className="p-4 sm:p-6">
                 <div
-                  className={`inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${item.color} rounded-2xl mb-3 sm:mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                  className={`text-foreground inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-card ${item.color} rounded-2xl mb-3 sm:mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}
                 >
                   <item.icon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">{item.description}</p>
+                <h3 className="text-lg sm:text-xl font-bold text-foreground mb-2">{item.title}</h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">{item.description}</p>
                 <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700 transition-colors text-sm sm:text-base">
                   <span>Öffnen</span>
                   <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -869,35 +869,35 @@ export default function MemberProfilePage() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-card ">
             <CardContent className="p-3 sm:p-4 text-center">
               <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalWins}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Siege</div>
+              <div className="text-xl sm:text-2xl font-bold text-foreground">{statistics.totalWins}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Siege</div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-card ">
             <CardContent className="p-3 sm:p-4 text-center">
               <Target className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.winPercentage}%</div>
-              <div className="text-xs sm:text-sm text-gray-600">Siegquote</div>
+              <div className="text-xl sm:text-2xl font-bold text-foreground">{statistics.winPercentage}%</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Siegquote</div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-card ">
             <CardContent className="p-3 sm:p-4 text-center">
               <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalLegs}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Legs gespielt</div>
+              <div className="text-xl sm:text-2xl font-bold text-foreground">{statistics.totalLegs}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Legs gespielt</div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/95 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-card ">
             <CardContent className="p-3 sm:p-4 text-center">
               <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mx-auto mb-2" />
-              <div className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalEvents}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Events</div>
+              <div className="text-xl sm:text-2xl font-bold text-foreground">{statistics.totalEvents}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Events</div>
             </CardContent>
           </Card>
         </div>
@@ -905,7 +905,7 @@ export default function MemberProfilePage() {
 
       {isPhotoDialogOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+          <div className="bg-card rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Profilfoto hochladen</h3>
 
             <div className="space-y-4">
@@ -949,7 +949,7 @@ export default function MemberProfilePage() {
                 <Button
                   onClick={handlePhotoUpload}
                   disabled={!photoFile || photoUploading}
-                  className="bg-orange-600 hover:bg-orange-700"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {photoUploading ? (
                     <>

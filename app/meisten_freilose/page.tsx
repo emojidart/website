@@ -1,4 +1,4 @@
-"use client" 
+"use client"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
@@ -94,11 +94,11 @@ export default function FreilosePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
+      <div className="min-h-screen bg-muted text-foreground font-sans">
         <Header />
         <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-4xl">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 sm:p-6">
+          <div className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
+            <div className="text-foreground bg-card   p-4 sm:p-6">
               <div className="flex items-center gap-3">
                 <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 <h2 className="text-lg sm:text-2xl font-bold text-white">Freilos-Statistik</h2>
@@ -106,7 +106,7 @@ export default function FreilosePage() {
             </div>
             <div className="p-6 sm:p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-red-600 mx-auto"></div>
-              <p className="mt-4 text-sm sm:text-base text-gray-600">Lade Daten...</p>
+              <p className="mt-4 text-sm sm:text-base text-muted-foreground">Lade Daten...</p>
             </div>
           </div>
         </main>
@@ -119,53 +119,53 @@ export default function FreilosePage() {
   const totalTournaments = freilosStats.reduce((sum, stat) => sum + stat.tournaments_played, 0)
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
+    <div className="min-h-screen bg-muted text-foreground font-sans">
       <Header />
 
       <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-4xl space-y-6 pb-24">
-        <div className="bg-gradient-to-br from-pink-50 via-red-50 to-pink-50 rounded-2xl shadow-2xl border-2 border-red-200 overflow-hidden">
+        <div className="text-foreground bg-card    rounded-2xl shadow-2xl border-2 border-red-200 overflow-hidden">
           <div className="text-center pt-6 pb-4 px-4">
             <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-4 shadow-xl">
+              <div className="text-foreground bg-card   rounded-2xl p-4 shadow-xl">
                 <Gift className="h-10 w-10 text-white" />
               </div>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-3">
-              <span className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold mb-3">
+              <span className="text-primary      ">
                 FREILOS-STATISTIK
               </span>
             </h1>
 
-            <p className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Lion Cup</p>
-            <p className="text-sm sm:text-base text-gray-500">Wer bekommt die meisten Freilose?</p>
+            <p className="text-xl sm:text-2xl font-semibold text-muted-foreground mb-2">Lion Cup</p>
+            <p className="text-sm sm:text-base text-muted-foreground">Wer bekommt die meisten Freilose?</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="bg-card rounded-xl shadow-lg border border-border p-4 sm:p-6">
             <div className="flex flex-col">
-              <h2 className="text-sm sm:text-base font-semibold text-gray-600 mb-2">Gesamt Freilose</h2>
+              <h2 className="text-sm sm:text-base font-semibold text-muted-foreground mb-2">Gesamt Freilose</h2>
               <div className="flex items-center gap-2">
                 <Gift className="h-6 w-6 text-red-600" />
-                <span className="text-3xl sm:text-4xl font-black text-red-600">{totalFreilose}</span>
+                <span className="text-3xl sm:text-4xl font-semibold text-red-600">{totalFreilose}</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="bg-card rounded-xl shadow-lg border border-border p-4 sm:p-6">
             <div className="flex flex-col">
-              <h2 className="text-sm sm:text-base font-semibold text-gray-600 mb-2">Gesamt Antritte</h2>
+              <h2 className="text-sm sm:text-base font-semibold text-muted-foreground mb-2">Gesamt Antritte</h2>
               <div className="flex items-center gap-2">
                 <Trophy className="h-6 w-6 text-purple-600" />
-                <span className="text-3xl sm:text-4xl font-black text-purple-600">{totalTournaments}</span>
+                <span className="text-3xl sm:text-4xl font-semibold text-purple-600">{totalTournaments}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-red-600 to-red-700 p-4 sm:p-6">
+        <div className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
+          <div className="text-foreground bg-card   p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               <h2 className="text-lg sm:text-2xl font-bold text-white">Freilos-Rangliste</h2>
@@ -183,14 +183,14 @@ export default function FreilosePage() {
               freilosStats.map((stat, index) => (
                 <div
                   key={stat.player_name}
-                  className={`bg-white rounded-lg shadow-md border-2 p-4 transition-all duration-300 hover:shadow-lg ${
+                  className={`bg-card rounded-lg shadow-md border-2 p-4 transition-all duration-300 hover:shadow-lg ${
                     index === 0
-                      ? "border-yellow-400 bg-gradient-to-r from-yellow-50 to-white"
+                      ? "text-foreground border-yellow-400 bg-card  "
                       : index === 1
-                      ? "border-gray-400 bg-gradient-to-r from-gray-50 to-white"
+                      ? "text-foreground border-border bg-card  "
                       : index === 2
-                      ? "border-amber-400 bg-gradient-to-r from-amber-50 to-white"
-                      : "border-gray-200"
+                      ? "text-foreground border-amber-400 bg-card  "
+                      : "border-border"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -198,12 +198,12 @@ export default function FreilosePage() {
                       <div
                         className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold text-lg flex-shrink-0 ${
                           index === 0
-                            ? "bg-gradient-to-r from-yellow-400 to-yellow-600 text-white"
+                            ? "bg-card   text-white"
                             : index === 1
-                            ? "bg-gradient-to-r from-gray-300 to-gray-500 text-white"
+                            ? "bg-card   text-white"
                             : index === 2
-                            ? "bg-gradient-to-r from-amber-400 to-amber-600 text-white"
-                            : "bg-gray-100 text-gray-700 border-2 border-gray-300"
+                            ? "bg-card   text-white"
+                            : "bg-muted text-muted-foreground border-2 border-border"
                         }`}
                       >
                         {index + 1}
@@ -211,12 +211,12 @@ export default function FreilosePage() {
 
                       <div className="flex flex-col min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <User className="h-5 w-5 text-gray-600 flex-shrink-0" />
-                          <span className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                          <User className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <span className="text-base sm:text-lg font-bold text-foreground truncate">
                             {stat.player_name}
                           </span>
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-500 ml-7">
+                        <div className="text-xs sm:text-sm text-muted-foreground ml-7">
                           {stat.tournaments_played} {stat.tournaments_played === 1 ? 'Antritt' : 'Antritte'}
                         </div>
                       </div>
@@ -225,11 +225,11 @@ export default function FreilosePage() {
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
                       <div className="flex items-center gap-2">
                         <Gift className="h-5 w-5 text-red-600" />
-                        <span className="text-2xl sm:text-3xl font-black text-red-600">
+                        <span className="text-2xl sm:text-3xl font-semibold text-red-600">
                           {stat.freilos_count}
                         </span>
                       </div>
-                      <div className="text-xs sm:text-sm font-semibold text-gray-600">
+                      <div className="text-xs sm:text-sm font-semibold text-muted-foreground">
                         Ø {(stat.freilos_count / stat.tournaments_played).toFixed(2)} pro Antritt
                       </div>
                     </div>
@@ -237,22 +237,22 @@ export default function FreilosePage() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-12 text-gray-600">
-                <Gift className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              <div className="text-center py-12 text-muted-foreground">
+                <Gift className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                 <p>Keine Freilose gefunden</p>
               </div>
             )}
           </div>
 
-          <div className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
-            <div className="text-xs sm:text-sm text-gray-600 text-center">
+          <div className="bg-muted px-4 sm:px-6 py-3 sm:py-4 border-t border-border">
+            <div className="text-xs sm:text-sm text-muted-foreground text-center">
               Gesamt: {freilosStats.length} Spieler mit Freilosen
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="py-4 sm:py-6 bg-gray-200 text-gray-600 text-xs sm:text-sm text-center mt-8 border-t border-gray-300 px-4">
+      <footer className="py-4 sm:py-6 bg-secondary text-muted-foreground text-xs sm:text-sm text-center mt-8 border-t border-border px-4">
         <p>&copy; 2025 Emoj!'s Dartverein e.V. Alle Rechte vorbehalten.</p>
       </footer>
 

@@ -142,7 +142,7 @@ export default function PlayerProfilePage() {
         achieved: stats.throws_180 >= 25,
         progress: stats.throws_180,
         target: 25,
-        color: "bg-gray-400",
+        color: "bg-accent",
       },
       {
         id: "ton_80_gold",
@@ -222,7 +222,7 @@ export default function PlayerProfilePage() {
         achieved: stats.throws_95_plus >= 50,
         progress: stats.throws_95_plus,
         target: 50,
-        color: "bg-gray-400",
+        color: "bg-accent",
       },
       {
         id: "high_finish_gold",
@@ -250,7 +250,7 @@ export default function PlayerProfilePage() {
         description: "70% Siegquote erreicht",
         icon: <Star className="h-6 w-6" />,
         achieved: stats.win_percentage >= 70,
-        color: "bg-gray-400",
+        color: "bg-accent",
       },
       {
         id: "winner_gold",
@@ -278,7 +278,7 @@ export default function PlayerProfilePage() {
         achieved: stats.total_legs >= 10,
         progress: stats.total_legs,
         target: 10,
-        color: "bg-slate-500",
+        color: "bg-accent",
       },
       {
         id: "veteran",
@@ -357,7 +357,7 @@ export default function PlayerProfilePage() {
         icon: <Crown className="h-6 w-6" />,
         achieved:
           stats.throws_180 >= 1 && stats.throws_tonne >= 1 && stats.throws_shanghai >= 1 && stats.throws_bull >= 1,
-        color: "bg-gradient-to-r from-purple-500 to-pink-500",
+        color: "text-foreground bg-card  ",
       },
       {
         id: "perfectionist",
@@ -366,7 +366,7 @@ export default function PlayerProfilePage() {
         icon: <Crown className="h-6 w-6" />,
         achieved:
           stats.throws_180 >= 10 && stats.throws_tonne >= 10 && stats.throws_shanghai >= 10 && stats.throws_bull >= 10,
-        color: "bg-gradient-to-r from-blue-500 to-purple-500",
+        color: "text-foreground bg-card  ",
       },
 
       // Milestone Achievements
@@ -378,7 +378,7 @@ export default function PlayerProfilePage() {
         achieved: stats.throws_180 >= 100,
         progress: stats.throws_180,
         target: 100,
-        color: "bg-gradient-to-r from-red-500 to-orange-500",
+        color: "text-foreground bg-card  ",
       },
       {
         id: "win_streak_master",
@@ -388,7 +388,7 @@ export default function PlayerProfilePage() {
         achieved: stats.total_wins >= 100,
         progress: stats.total_wins,
         target: 100,
-        color: "bg-gradient-to-r from-green-500 to-emerald-500",
+        color: "text-foreground bg-card  ",
       },
     ]
 
@@ -407,7 +407,7 @@ export default function PlayerProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted">
         <Header showBackButton title="Spieler Profil" />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">Lade Spielerdaten...</div>
@@ -418,7 +418,7 @@ export default function PlayerProfilePage() {
 
   if (!player) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted">
         <Header showBackButton title="Spieler Profil" />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">Spieler nicht gefunden</div>
@@ -428,7 +428,7 @@ export default function PlayerProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <Header showBackButton title="Spieler Profil" />
 
       <div className="container mx-auto px-4 py-8">
@@ -439,10 +439,10 @@ export default function PlayerProfilePage() {
         </Button>
 
         {/* Player Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div className="bg-card rounded-lg shadow-sm p-6 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-muted flex-shrink-0">
                 {player.photo_url ? (
                   <img
                     src={player.photo_url || "/placeholder.svg"}
@@ -455,13 +455,13 @@ export default function PlayerProfilePage() {
                   />
                 ) : null}
                 <div
-                  className={`w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center ${player.photo_url ? "hidden" : "flex"}`}
+                  className={`text-foreground w-full h-full bg-card   flex items-center justify-center ${player.photo_url ? "hidden" : "flex"}`}
                 >
                   <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                 </div>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{player.name}</h1>
+                <h1 className="text-3xl font-bold text-foreground mb-2">{player.name}</h1>
                 <div className="flex gap-4">
                   <Badge className="bg-green-100 text-green-800 text-lg px-3 py-1">{player.total_wins} Siege</Badge>
                   <Badge variant="outline" className="text-lg px-3 py-1">
@@ -471,8 +471,8 @@ export default function PlayerProfilePage() {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-gray-900">{player.total_legs}</div>
-              <div className="text-sm text-gray-600">Legs gespielt</div>
+              <div className="text-2xl font-bold text-foreground">{player.total_legs}</div>
+              <div className="text-sm text-muted-foreground">Legs gespielt</div>
             </div>
           </div>
         </div>
@@ -491,14 +491,14 @@ export default function PlayerProfilePage() {
                 <div
                   key={achievement.id}
                   className={`p-4 rounded-lg border-2 transition-all ${
-                    achievement.achieved ? "border-green-200 bg-green-50" : "border-gray-200 bg-gray-50 opacity-60"
+                    achievement.achieved ? "border-green-200 bg-green-50" : "border-border bg-muted opacity-60"
                   }`}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <div className={`p-2 rounded-full text-white ${achievement.color}`}>{achievement.icon}</div>
                     <div>
                       <h3 className="font-semibold">{achievement.title}</h3>
-                      <p className="text-sm text-gray-600">{achievement.description}</p>
+                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
                     </div>
                   </div>
                   {achievement.progress !== undefined && achievement.target && (
@@ -509,7 +509,7 @@ export default function PlayerProfilePage() {
                           {achievement.progress}/{achievement.target}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-secondary rounded-full h-2">
                         <div
                           className={`h-2 rounded-full ${achievement.color}`}
                           style={{
@@ -586,27 +586,27 @@ export default function PlayerProfilePage() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-2xl font-bold text-yellow-600">{player.throws_20}</div>
-                  <div className="text-sm text-gray-600">20er</div>
+                  <div className="text-sm text-muted-foreground">20er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-2xl font-bold text-yellow-600">{player.throws_19}</div>
-                  <div className="text-sm text-gray-600">19er</div>
+                  <div className="text-sm text-muted-foreground">19er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-2xl font-bold text-yellow-600">{player.throws_18}</div>
-                  <div className="text-sm text-gray-600">18er</div>
+                  <div className="text-sm text-muted-foreground">18er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-2xl font-bold text-yellow-600">{player.throws_17}</div>
-                  <div className="text-sm text-gray-600">17er</div>
+                  <div className="text-sm text-muted-foreground">17er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-2xl font-bold text-yellow-600">{player.throws_16}</div>
-                  <div className="text-sm text-gray-600">16er</div>
+                  <div className="text-sm text-muted-foreground">16er</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="text-2xl font-bold text-yellow-600">{player.throws_15}</div>
-                  <div className="text-sm text-gray-600">15er</div>
+                  <div className="text-sm text-muted-foreground">15er</div>
                 </div>
               </div>
             </CardContent>

@@ -76,15 +76,15 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
 
   return (
     <div className="w-full">
-      <Card className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <CardHeader className="border-b border-gray-100 px-4 py-4 sm:px-5">
+      <Card className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <CardHeader className="border-b border-border px-4 py-4 sm:px-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
-              <Search className="h-4 w-4 text-gray-700" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+              <Search className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
-              <CardTitle className="text-base font-black text-gray-900 sm:text-lg">Spieler suchen / Verstärkung</CardTitle>
-              <p className="mt-0.5 text-xs font-semibold text-gray-500 sm:text-sm">Neue Suche eingeben</p>
+              <CardTitle className="text-base font-semibold text-foreground sm:text-lg">Spieler suchen / Verstärkung</CardTitle>
+              <p className="mt-0.5 text-xs font-semibold text-muted-foreground sm:text-sm">Neue Suche eingeben</p>
             </div>
           </div>
         </CardHeader>
@@ -93,7 +93,7 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Team Name */}
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-wide text-gray-500" htmlFor="teamName">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="teamName">
                 Verein / Mannschaft
               </label>
               <Input
@@ -102,14 +102,14 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
                 placeholder="Name des Vereins oder der Mannschaft"
-                className="h-10 rounded-xl border-gray-200 bg-white text-sm focus:border-gray-400 focus:ring-gray-200"
+                className="h-10 rounded-xl border-border bg-card text-sm focus:border-border focus:ring-border"
                 required
               />
             </div>
 
             {/* League */}
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-wide text-gray-500" htmlFor="league">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="league">
                 Liga
               </label>
               <Input
@@ -118,14 +118,14 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
                 value={league}
                 onChange={(e) => setLeague(e.target.value)}
                 placeholder="Z.B. Landesliga, Regionalliga"
-                className="h-10 rounded-xl border-gray-200 bg-white text-sm focus:border-gray-400 focus:ring-gray-200"
+                className="h-10 rounded-xl border-border bg-card text-sm focus:border-border focus:ring-border"
                 required
               />
             </div>
 
             {/* Start Date */}
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-wide text-gray-500" htmlFor="startDate">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="startDate">
                 Ab wann (Datum)
               </label>
               <Input
@@ -133,14 +133,14 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="h-10 rounded-xl border-gray-200 bg-white text-sm focus:border-gray-400 focus:ring-gray-200"
+                className="h-10 rounded-xl border-border bg-card text-sm focus:border-border focus:ring-border"
                 required
               />
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-wide text-gray-500" htmlFor="description">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="description">
                 Kurzer Text / Beschreibung
               </label>
               <Textarea
@@ -149,7 +149,7 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Beschreiben Sie, welche Art von Spieler gesucht wird oder weitere Details."
                 rows={4}
-                className="min-h-[92px] rounded-xl border-gray-200 bg-white text-sm focus:border-gray-400 focus:ring-gray-200"
+                className="min-h-[92px] rounded-xl border-border bg-card text-sm focus:border-border focus:ring-border"
                 required
               />
             </div>
@@ -158,7 +158,7 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
             <Button
               type="submit"
               disabled={loading}
-              className="h-10 w-full rounded-xl bg-gray-950 text-sm font-black text-white hover:bg-gray-800"
+              className="h-10 w-full rounded-xl bg-background text-sm font-semibold text-white hover:bg-background"
             >
               {loading ? (
                 <div className="flex items-center space-x-2">
@@ -181,7 +181,7 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
                     ? "border-red-200 bg-red-50 text-red-700"
                     : formMessageType === "success"
                       ? "border-green-200 bg-green-50 text-green-700"
-                      : "border-gray-200 bg-gray-50 text-gray-700"
+                      : "border-border bg-muted text-muted-foreground"
                 }`}
               >
                 <div className="flex items-center space-x-2">
@@ -190,7 +190,7 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
                   ) : formMessageType === "success" ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
                   )}
                   <span>{formMessage}</span>
                 </div>

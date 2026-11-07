@@ -155,10 +155,10 @@ function RescheduleBadge({
           dot: "bg-orange-600",
         }
       : {
-          chip: "bg-slate-800 text-white border-slate-700/30",
-          ring: "ring-slate-200",
-          label: "text-slate-700",
-          dot: "bg-slate-800",
+          chip: "bg-background text-white border-border/30",
+          ring: "ring-border",
+          label: "text-muted-foreground",
+          dot: "bg-background",
         }
 
   return (
@@ -166,7 +166,7 @@ function RescheduleBadge({
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={[
-            "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold shadow-sm",
+            "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm",
             "ring-2",
             accentClasses.chip,
             accentClasses.ring,
@@ -176,13 +176,13 @@ function RescheduleBadge({
           Neuer Termin: {newDate} • {newTime}
         </span>
 
-        <span className={`inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide ${accentClasses.label}`}>
+        <span className={`inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${accentClasses.label}`}>
           <span className={`h-2 w-2 rounded-full ${accentClasses.dot}`} />
           Verschoben
         </span>
       </div>
 
-      <div className="text-[11px] text-gray-600">
+      <div className="text-xs text-muted-foreground">
         <span className="opacity-70">Original:</span>{" "}
         <span className="line-through decoration-2 decoration-gray-400">
           {oldDate} • {oldTime}
@@ -438,14 +438,14 @@ export default function UpcomingTournamentsAppPage() {
   const handleImageClick = (url: string) => setSelectedImage(url)
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+    <div className="min-h-screen bg-muted text-foreground font-sans">
       <Header />
 
       <main className="pt-6 pb-24">
         <motion.div className="container mx-auto px-4" variants={containerVariants} initial="hidden" animate="visible">
           {/* ===== Lion Cup Header ===== */}
           <motion.div variants={itemVariants} className="text-center mb-8">
-            <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl shadow-lg p-6 text-white">
+            <div className="bg-card   rounded-xl shadow-lg p-6 text-white">
               <div className="bg-white/10 rounded-full p-3 w-16 h-16 mx-auto mb-4">
                 <Crown className="h-10 w-10 text-white mx-auto" />
               </div>
@@ -477,8 +477,8 @@ export default function UpcomingTournamentsAppPage() {
 
           {/* ===== Lion Cup Schedule (DB) ===== */}
           <motion.div variants={itemVariants} className="space-y-6 mb-8">
-            <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-orange-600 to-orange-700 p-4">
+            <motion.div variants={cardVariants} className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
+              <div className="text-foreground bg-card   p-4">
                 <div className="flex items-center gap-2">
                   <Crown className="h-5 w-5 text-white" />
                   <h2 className="text-lg font-bold text-white uppercase">EMD - Lion Cup Spieltage</h2>
@@ -487,14 +487,14 @@ export default function UpcomingTournamentsAppPage() {
 
               <div className="p-4">
                 {dkoLoading ? (
-                  <div className="flex items-center justify-center gap-2 text-gray-700 py-4">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground py-4">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span>Lade Termine…</span>
                   </div>
                 ) : dkoError ? (
                   <div className="p-3 rounded-lg border bg-red-50 text-red-700 text-sm">Fehler beim Laden: {dkoError}</div>
                 ) : lionSeries && lionEvents.length === 0 ? (
-                  <div className="text-sm text-gray-600">Noch keine Termine in der DB.</div>
+                  <div className="text-sm text-muted-foreground">Noch keine Termine in der DB.</div>
                 ) : (
                   <div className="space-y-2">
                     {(showAllLionCup ? lionEvents : lionEvents.slice(0, 3)).map((ev, index) => {
@@ -532,17 +532,17 @@ export default function UpcomingTournamentsAppPage() {
                             spielfrei
                               ? "bg-yellow-50 border-yellow-200"
                               : past
-                                ? "bg-gray-100 border-gray-200 opacity-60"
+                                ? "bg-muted border-border opacity-60"
                                 : today
                                   ? "bg-orange-50 border-orange-200"
-                                  : "bg-gray-50 border-gray-100",
-                            ev.isRescheduled ? "shadow-md border-orange-200 bg-gradient-to-r from-orange-50 to-white" : "",
+                                  : "bg-muted border-border",
+                            ev.isRescheduled ? "text-foreground shadow-md border-orange-200 bg-card  " : "",
                           ].join(" ")}
                         >
                           <div className="flex-1">
                             <span
                               className={`font-bold text-sm block ${
-                                spielfrei ? "text-yellow-700" : past ? "text-gray-500" : "text-gray-900"
+                                spielfrei ? "text-yellow-700" : past ? "text-muted-foreground" : "text-foreground"
                               }`}
                             >
                               {ev.dateLabel} {today && !spielfrei ? <span className="text-orange-700">• Heute</span> : null}
@@ -550,7 +550,7 @@ export default function UpcomingTournamentsAppPage() {
 
                             <div
                               className={`flex items-center gap-1 mt-1 ${
-                                spielfrei ? "text-yellow-600" : past ? "text-gray-400" : "text-orange-600"
+                                spielfrei ? "text-yellow-600" : past ? "text-muted-foreground" : "text-orange-600"
                               }`}
                             >
                               <Clock className="h-3 w-3" />
@@ -560,14 +560,14 @@ export default function UpcomingTournamentsAppPage() {
                             <RescheduleBadge isRescheduled={ev.isRescheduled} effectiveDT={ev.effectiveDT} originalDT={ev.originalDT} accent="orange" />
 
                             {countdownLine && (
-                              <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-800">
+                              <div className="flex items-center gap-2 mt-2 text-xs text-foreground">
                                 <Timer className="h-3 w-3 text-orange-600" />
                                 <span className="font-semibold">{countdownLine}</span>
                               </div>
                             )}
 
                             {today && !spielfrei && cutoffDT && (
-                              <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600">
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                                 <Info className="h-3 w-3" />
                                 <span>
                                   Cutoff: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
@@ -579,7 +579,7 @@ export default function UpcomingTournamentsAppPage() {
                           {spielfrei ? (
                             <div className="bg-yellow-200 text-yellow-800 font-bold px-3 py-1 rounded-lg text-xs">Spielfrei</div>
                           ) : past ? (
-                            <Button size="sm" disabled className="text-xs px-3 py-1 bg-gray-400 text-gray-600">
+                            <Button size="sm" disabled className="text-xs px-3 py-1 bg-accent text-muted-foreground">
                               Vorbei
                             </Button>
                           ) : (
@@ -597,9 +597,9 @@ export default function UpcomingTournamentsAppPage() {
                               className={`text-xs px-3 py-1 ${
                                 canClick
                                   ? alreadyRegistered
-                                    ? "bg-gray-700 hover:bg-gray-800 text-white"
+                                    ? "bg-accent hover:bg-background text-white"
                                     : "bg-orange-600 hover:bg-orange-700 text-white"
-                                  : "bg-gray-300 text-gray-700"
+                                  : "bg-secondary text-muted-foreground"
                               }`}
                             >
                               {regLoading ? (
@@ -654,7 +654,7 @@ export default function UpcomingTournamentsAppPage() {
                 )}
               </div>
 
-              <div className="bg-gray-50 px-4 py-3 border-t border-gray-100">
+              <div className="bg-muted px-4 py-3 border-t border-border">
                 <Link href="/regelwerk-app">
                   <Button size="sm" variant="outline" className="w-full border-orange-200 text-orange-700 hover:bg-orange-50 text-xs bg-transparent">
                     <BookOpen className="h-3 w-3 mr-2" />
@@ -667,8 +667,8 @@ export default function UpcomingTournamentsAppPage() {
 
           {/* ===== Buffalo Steel Cup (DB) ===== */}
           <motion.div variants={itemVariants} className="space-y-6 mb-8">
-            <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-4">
+            <motion.div variants={cardVariants} className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
+              <div className="text-foreground bg-card   p-4">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-white" />
                   <h2 className="text-lg font-bold text-white uppercase">Buffalo Steel Cup</h2>
@@ -676,22 +676,22 @@ export default function UpcomingTournamentsAppPage() {
               </div>
 
               <div className="p-4">
-                <div className="text-xs text-gray-700 bg-slate-50 border border-slate-100 rounded-lg p-3 mb-4">
+                <div className="text-xs text-muted-foreground bg-muted border border-border rounded-lg p-3 mb-4">
                   <div className="flex items-center gap-2 font-semibold">
-                    <ShieldAlert className="h-4 w-4 text-slate-700" />
+                    <ShieldAlert className="h-4 w-4 text-muted-foreground" />
                     <span>Anmeldung nur am Turniertag – bis spätestens 10 Minuten vor Beginn.</span>
                   </div>
                 </div>
 
                 {dkoLoading ? (
-                  <div className="flex items-center justify-center gap-2 text-gray-700 py-4">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground py-4">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span>Lade Termine…</span>
                   </div>
                 ) : dkoError ? (
                   <div className="p-3 rounded-lg border bg-red-50 text-red-700 text-sm">Fehler beim Laden: {dkoError}</div>
                 ) : buffaloSeries && buffaloEvents.length === 0 ? (
-                  <div className="text-sm text-gray-600">Noch keine Termine in der DB.</div>
+                  <div className="text-sm text-muted-foreground">Noch keine Termine in der DB.</div>
                 ) : (
                   <div className="space-y-2">
                     {(showAllBuffalo ? buffaloEvents : buffaloEvents.slice(0, 4)).map((ev) => {
@@ -718,16 +718,16 @@ export default function UpcomingTournamentsAppPage() {
                           key={ev.id}
                           className={[
                             "flex justify-between items-center py-3 px-3 rounded-lg border transition-all",
-                            past ? "bg-gray-100 border-gray-200 opacity-60" : today ? "bg-slate-50 border-slate-200" : "bg-gray-50 border-gray-100",
-                            ev.isRescheduled ? "shadow-md border-slate-200 bg-gradient-to-r from-slate-50 to-white" : "",
+                            past ? "bg-muted border-border opacity-60" : today ? "bg-muted border-border" : "bg-muted border-border",
+                            ev.isRescheduled ? "text-foreground shadow-md border-border bg-card  " : "",
                           ].join(" ")}
                         >
                           <div className="flex-1">
-                            <div className="font-bold text-sm text-gray-900">
-                              {ev.dateLabel} {today ? <span className="text-slate-700">• Heute</span> : null}
+                            <div className="font-bold text-sm text-foreground">
+                              {ev.dateLabel} {today ? <span className="text-muted-foreground">• Heute</span> : null}
                             </div>
 
-                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-700 font-semibold">
+                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground font-semibold">
                               <Clock className="h-3 w-3" />
                               <span>{ev.timeLabel}</span>
                             </div>
@@ -735,14 +735,14 @@ export default function UpcomingTournamentsAppPage() {
                             <RescheduleBadge isRescheduled={ev.isRescheduled} effectiveDT={ev.effectiveDT} originalDT={ev.originalDT} accent="slate" />
 
                             {countdownLine && (
-                              <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-800">
-                                <Timer className="h-3 w-3 text-slate-700" />
+                              <div className="flex items-center gap-2 mt-2 text-xs text-foreground">
+                                <Timer className="h-3 w-3 text-muted-foreground" />
                                 <span className="font-semibold">{countdownLine}</span>
                               </div>
                             )}
 
                             {today && cutoffDT && (
-                              <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600">
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                                 <Info className="h-3 w-3" />
                                 <span>
                                   Cutoff: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
@@ -752,7 +752,7 @@ export default function UpcomingTournamentsAppPage() {
                           </div>
 
                           {past ? (
-                            <Button size="sm" disabled className="text-xs px-3 py-1 bg-gray-400 text-gray-600">
+                            <Button size="sm" disabled className="text-xs px-3 py-1 bg-accent text-muted-foreground">
                               Vorbei
                             </Button>
                           ) : (
@@ -768,7 +768,7 @@ export default function UpcomingTournamentsAppPage() {
                                     : undefined
                               }
                               className={`text-xs px-3 py-1 ${
-                                canClick ? (alreadyRegistered ? "bg-gray-700 hover:bg-gray-800 text-white" : "bg-slate-800 hover:bg-slate-900 text-white") : "bg-gray-300 text-gray-700"
+                                canClick ? (alreadyRegistered ? "bg-accent hover:bg-background text-white" : "bg-background hover:bg-background text-white") : "bg-secondary text-muted-foreground"
                               }`}
                             >
                               {regLoading ? (
@@ -806,14 +806,14 @@ export default function UpcomingTournamentsAppPage() {
                   <>
                     {!showAllBuffalo ? (
                       <div className="mt-4 text-center">
-                        <Button onClick={() => setShowAllBuffalo(true)} variant="outline" size="sm" className="text-xs border-slate-200 text-slate-800 hover:bg-slate-50">
+                        <Button onClick={() => setShowAllBuffalo(true)} variant="outline" size="sm" className="text-xs border-border text-foreground hover:bg-muted">
                           <ChevronDown className="h-3 w-3 mr-1" />
                           Alle Termine anzeigen
                         </Button>
                       </div>
                     ) : (
                       <div className="mt-4 text-center">
-                        <Button onClick={() => setShowAllBuffalo(false)} variant="outline" size="sm" className="text-xs border-slate-200 text-slate-800 hover:bg-slate-50">
+                        <Button onClick={() => setShowAllBuffalo(false)} variant="outline" size="sm" className="text-xs border-border text-foreground hover:bg-muted">
                           <ChevronUp className="h-3 w-3 mr-1" />
                           Weniger anzeigen
                         </Button>
@@ -827,7 +827,7 @@ export default function UpcomingTournamentsAppPage() {
 
           {/* ===== Lion Cup Finale ===== */}
           <motion.div variants={itemVariants} className="mb-8">
-            <motion.div variants={cardVariants} className="bg-gradient-to-r from-orange-600 to-orange-800 rounded-xl shadow-lg p-6 text-center text-white">
+            <motion.div variants={cardVariants} className="bg-card   rounded-xl shadow-lg p-6 text-center text-white">
               <Crown className="h-10 w-10 mx-auto mb-3" />
               <h2 className="text-xl font-extrabold uppercase mb-2">EMD - LION CUP FINALE</h2>
               <div className="text-lg font-bold">01. JUNI 2026</div>
@@ -836,7 +836,7 @@ export default function UpcomingTournamentsAppPage() {
 
           {/* ===== Weitere Turniere (tournaments table) — uses SAME self-register modal ===== */}
           <motion.div variants={itemVariants} className="mb-8">
-            <h2 className="text-2xl font-extrabold uppercase text-center mb-6 text-gray-900">Weitere Turniere</h2>
+            <h2 className="text-2xl font-extrabold uppercase text-center mb-6 text-foreground">Weitere Turniere</h2>
 
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -848,7 +848,7 @@ export default function UpcomingTournamentsAppPage() {
                 <p className="text-sm">{error}</p>
               </div>
             ) : tournaments.length === 0 ? (
-              <div className="text-center py-8 text-gray-600">
+              <div className="text-center py-8 text-muted-foreground">
                 <Info className="h-10 w-10 mx-auto mb-3" />
                 <p className="text-sm">Derzeit keine weiteren Turniere geplant.</p>
               </div>
@@ -886,17 +886,17 @@ export default function UpcomingTournamentsAppPage() {
                       : null
 
                   return (
-                    <motion.div key={tournament.id} variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <motion.div key={tournament.id} variants={cardVariants} className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
                       {tournament.photo_url && (
-                        <div className="relative w-full h-40 bg-gray-100 cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setSelectedImage(tournament.photo_url!)}>
+                        <div className="relative w-full h-40 bg-muted cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setSelectedImage(tournament.photo_url!)}>
                           <Image src={tournament.photo_url || "/placeholder.svg"} alt={tournament.name} fill style={{ objectFit: "cover" }} sizes="100vw" />
                         </div>
                       )}
 
                       <div className="p-4">
-                        <h3 className="text-lg font-bold text-gray-900 mb-3">{tournament.name}</h3>
+                        <h3 className="text-lg font-bold text-foreground mb-3">{tournament.name}</h3>
 
-                        <div className="space-y-2 text-xs text-gray-700 mb-4">
+                        <div className="space-y-2 text-xs text-muted-foreground mb-4">
                           <div className="flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-red-600" />
                             <span>{new Date(tournament.date).toLocaleDateString("de-DE")}</span>
@@ -915,14 +915,14 @@ export default function UpcomingTournamentsAppPage() {
                           </div>
 
                           {countdownLine && (
-                            <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-800">
+                            <div className="flex items-center gap-2 mt-2 text-xs text-foreground">
                               <Timer className="h-3 w-3 text-red-600" />
                               <span className="font-semibold">{countdownLine}</span>
                             </div>
                           )}
 
                           {today && cutoffDT && (
-                            <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-600">
+                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                               <Info className="h-3 w-3" />
                               <span>
                                 Cutoff: {cutoffDT.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })} Uhr
@@ -931,8 +931,8 @@ export default function UpcomingTournamentsAppPage() {
                           )}
 
                           {!today && !past && (
-                            <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-600">
-                              <ShieldAlert className="h-3 w-3 text-gray-700" />
+                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                              <ShieldAlert className="h-3 w-3 text-muted-foreground" />
                               <span>Anmeldung nur am Turniertag (bis 10 Minuten vor Beginn).</span>
                             </div>
                           )}
@@ -954,7 +954,7 @@ export default function UpcomingTournamentsAppPage() {
                                   ? "Anmeldung ist 10 Minuten vor Beginn geschlossen."
                                   : undefined
                           }
-                          className={`w-full text-xs ${canOpen ? "bg-red-600 hover:bg-red-700 text-white" : "bg-gray-300 text-gray-700"}`}
+                          className={`w-full text-xs ${canOpen ? "bg-red-600 hover:bg-red-700 text-white" : "bg-secondary text-muted-foreground"}`}
                         >
                           <span className="flex items-center justify-center gap-2">
                             {past || !today || closed ? <Lock className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
@@ -971,12 +971,12 @@ export default function UpcomingTournamentsAppPage() {
 
           {/* ===== Location ===== */}
           <motion.div variants={itemVariants}>
-            <motion.div variants={cardVariants} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 text-center">
+            <motion.div variants={cardVariants} className="bg-card rounded-xl shadow-lg border border-border p-6 text-center">
               <MapPin className="h-8 w-8 text-red-600 mx-auto mb-3" />
-              <h2 className="text-xl font-extrabold uppercase mb-4 text-gray-900">VERANSTALTUNGSORT</h2>
+              <h2 className="text-xl font-extrabold uppercase mb-4 text-foreground">VERANSTALTUNGSORT</h2>
               <div className="bg-red-50 border border-red-100 rounded-lg p-4">
                 <div className="font-bold text-red-700 mb-2">Pfeil-OK e.V.</div>
-                <div className="text-sm text-gray-700">Linzer Bundesstrasse 16, 5020 Salzburg</div>
+                <div className="text-sm text-muted-foreground">Linzer Bundesstrasse 16, 5020 Salzburg</div>
               </div>
             </motion.div>
           </motion.div>
@@ -988,7 +988,7 @@ export default function UpcomingTournamentsAppPage() {
       {/* Fullscreen Image */}
       {selectedImage && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setSelectedImage(null)}>
-          <button onClick={() => setSelectedImage(null)} className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors">
+          <button onClick={() => setSelectedImage(null)} className="absolute top-4 right-4 text-white hover:text-muted-foreground transition-colors">
             <X className="h-8 w-8" />
           </button>
           <div className="relative w-full h-full max-w-4xl max-h-[90vh]">

@@ -381,21 +381,17 @@ export default function MemberBonusAppPage() {
 
   if (loading || authLoading) {
     return (
-      <main className="bonus-premium relative min-h-screen overflow-x-hidden bg-[#050608] text-white flex flex-col">
+      <main className="bonus-premium relative min-h-screen overflow-x-hidden bg-background text-white flex flex-col">
         <Header variant="app" title="Meine Bonuspunkte" subtitle="Mein EMD" backHref="/member-profile-app" />
 
-        <div className="pointer-events-none fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.17),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(14,165,233,.10),transparent_27%)]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
         <div className="flex-grow flex items-center justify-center px-4 pb-24 pt-20">
-          <div className="flex flex-col items-center gap-4 rounded-[28px] border border-white/[0.08] bg-black/25 px-8 py-8 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)]">
+          <div className="flex flex-col items-center gap-4 rounded-[28px] border border-white/[0.08] bg-card px-8 py-8 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)]">
             <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
             <div className="text-center">
-              <p className="font-black leading-snug text-white">Bonusprogramm wird geladen</p>
-              <p className="mt-1 text-sm text-white/35">Bitte kurz warten…</p>
+              <p className="font-semibold leading-snug text-white">Bonusprogramm wird geladen</p>
+              <p className="mt-1 text-sm text-muted-foreground">Bitte kurz warten…</p>
             </div>
           </div>
         </div>
@@ -406,30 +402,26 @@ export default function MemberBonusAppPage() {
 
   if (error) {
     return (
-      <div className="bonus-premium relative min-h-screen overflow-x-hidden bg-[#050608] text-white flex flex-col">
+      <div className="bonus-premium relative min-h-screen overflow-x-hidden bg-background text-white flex flex-col">
         <Header variant="app" title="Meine Bonuspunkte" subtitle="Mein EMD" backHref="/member-profile-app" />
 
-        <div className="pointer-events-none fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.17),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(14,165,233,.10),transparent_27%)]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
         <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] flex-grow px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
           <div className="w-full max-w-md">
-            <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/25 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)]">
+            <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)]">
               <CardContent className="p-6 text-center">
                 <div className="mx-auto w-16 h-16 rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.16] flex items-center justify-center">
                   <Gift className="h-7 w-7 text-orange-600" />
                 </div>
-                <h1 className="mt-4 text-2xl font-black text-white">Bonusprogramm</h1>
-                <p className="mt-2 text-sm font-semibold text-white/50">{error}</p>
+                <h1 className="mt-4 text-2xl font-semibold text-white">Bonusprogramm</h1>
+                <p className="mt-2 text-sm font-semibold text-muted-foreground">{error}</p>
                 <div className="mt-6 flex justify-center gap-3">
                   <Button variant="outline" onClick={() => router.push("/member-profile-app")}>
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Zurück
                   </Button>
-                  <Button onClick={loadData} className="bg-orange-600 hover:bg-orange-700">
+                  <Button onClick={loadData} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Neu laden
                   </Button>
@@ -444,14 +436,10 @@ export default function MemberBonusAppPage() {
   }
 
   return (
-    <div className="bonus-premium relative min-h-screen overflow-x-hidden bg-[#050608] text-white flex flex-col">
+    <div className="bonus-premium relative min-h-screen overflow-x-hidden bg-background text-white flex flex-col">
       <Header variant="app" title="Meine Bonuspunkte" subtitle="Mein EMD" backHref="/member-profile-app" />
 
-        <div className="pointer-events-none fixed inset-0 z-0">
-          <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.69),rgba(3,5,9,.94)_45%,rgba(2,4,7,.985))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(249,115,22,.17),transparent_25%),radial-gradient(circle_at_90%_25%,rgba(14,165,233,.10),transparent_27%)]" />
-        </div>
+        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
 
       <main className="flex-grow flex items-center justify-center px-4 pb-24 pt-20">
@@ -464,7 +452,7 @@ export default function MemberBonusAppPage() {
 
           <motion.div
             variants={itemVariants}
-            className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/30 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl"
+            className="overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] "
           >
             <div className="relative overflow-hidden bg-black/20 p-4 text-white sm:p-6 lg:p-8 xl:p-9">
               <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -473,34 +461,34 @@ export default function MemberBonusAppPage() {
                     {photoUrl ? (
                       <img src={photoUrl} alt={playerName} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-3xl font-black text-white">{getInitials(playerName)}</span>
+                      <span className="text-3xl font-semibold text-white">{getInitials(playerName)}</span>
                     )}
                   </div>
 
                   <div className="min-w-0">
-                    <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-orange-300/[0.12] bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white/70">
+                    <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-orange-300/[0.12] bg-white/[0.04] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white/70">
                       <Gift className="w-3.5 h-3.5" />
                       EMD Bonusprogramm
                     </div>
-                    <h1 className="break-words text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">{playerName}</h1>
-                    <p className="mt-2 text-sm font-medium leading-6 text-white/55 sm:text-base">Deine Bonuspunkte, dein Rang und dein Fortschritt</p>
+                    <h1 className="break-words text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">{playerName}</h1>
+                    <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground sm:text-base">Deine Bonuspunkte, dein Rang und dein Fortschritt</p>
                   </div>
                 </div>
 
-                <div className="w-full rounded-[22px] border border-orange-300/[0.12] bg-white/[0.04] p-4 backdrop-blur-sm sm:p-5 xl:w-auto xl:min-w-[290px]">
+                <div className="w-full rounded-[22px] border border-orange-300/[0.12] bg-white/[0.04] p-4  sm:p-5 xl:w-auto xl:min-w-[290px]">
                   <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-950/20">
                       <RankIcon className="w-7 h-7" />
                     </div>
                     <div>
-                      <div className="text-xs font-black uppercase tracking-[0.12em] text-white/45">Aktueller Rang</div>
-                      <div className="text-2xl font-black tracking-tight">{currentRank.title}</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Aktueller Rang</div>
+                      <div className="text-2xl font-semibold tracking-tight">{currentRank.title}</div>
                     </div>
                   </div>
 
                   <div className="mt-4 flex items-end gap-2">
-                    <div className="text-4xl font-black leading-none sm:text-5xl">{totalPoints}</div>
-                    <div className="text-sm font-black text-white/85 pb-1">Punkte</div>
+                    <div className="text-4xl font-semibold leading-none sm:text-5xl">{totalPoints}</div>
+                    <div className="text-sm font-semibold text-white/85 pb-1">Punkte</div>
                   </div>
                 </div>
               </div>
@@ -509,14 +497,14 @@ export default function MemberBonusAppPage() {
             <div className="p-4 sm:p-6 lg:p-7">
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4">
                 <div className={cn("rounded-2xl border p-4", currentRank.bg, currentRank.border)}>
-                  <div className={cn("text-sm font-black", currentRank.text)}>{currentRank.label}</div>
+                  <div className={cn("text-sm font-semibold", currentRank.text)}>{currentRank.label}</div>
                   <div className="text-sm text-white/60 mt-1">{currentRank.description}</div>
                 </div>
 
                 <div className="lg:col-span-2 rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="font-black text-white">
+                      <div className="font-semibold text-white">
                         {nextRank ? `Fortschritt zu ${nextRank.title}` : "Maximalrang erreicht"}
                       </div>
                       <div className="text-sm font-semibold text-white/60 mt-1">
@@ -529,7 +517,7 @@ export default function MemberBonusAppPage() {
                   </div>
 
                   <div className="mt-4">
-                    <Progress value={progress} className="h-4 bg-black/25" />
+                    <Progress value={progress} className="h-4 bg-card" />
                   </div>
                 </div>
               </div>
@@ -544,14 +532,14 @@ export default function MemberBonusAppPage() {
                 <div
                   key={rank.key}
                   className={cn(
-                    "rounded-[20px] border p-4 bg-black/25 shadow-none backdrop-blur-xl",
+                    "rounded-[20px] border p-4 bg-card shadow-none ",
                     reached ? `${rank.border} ${rank.bg}` : "border-white/[0.08] opacity-75",
                   )}
                 >
                   <div className="flex items-center justify-between">
                     <div className={cn(
                       "w-11 h-11 rounded-2xl flex items-center justify-center",
-                      reached ? `bg-gradient-to-br ${rank.gradient} text-white` : "bg-white/[0.05] text-white/25",
+                      reached ? `text-foreground bg-card ${rank.gradient} text-white` : "bg-white/[0.05] text-white/25",
                     )}>
                       <Icon className="w-5 h-5" />
                     </div>
@@ -561,74 +549,74 @@ export default function MemberBonusAppPage() {
                       <Badge variant="outline" className="rounded-full">Offen</Badge>
                     )}
                   </div>
-                  <div className="mt-3 font-black text-white">{rank.title}</div>
-                  <div className="text-sm font-semibold text-white/50">ab {rank.min} Punkten</div>
+                  <div className="mt-3 font-semibold text-white">{rank.title}</div>
+                  <div className="text-sm font-semibold text-muted-foreground">ab {rank.min} Punkten</div>
                 </div>
               )
             })}
           </motion.div>
 
           <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Card className="rounded-[20px] border border-white/[0.08] bg-black/25 shadow-none backdrop-blur-xl">
+            <Card className="rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-white/35">Bonuspunkte</div>
+                  <div className="text-xs font-bold text-muted-foreground">Bonuspunkte</div>
                   <Trophy className="w-5 h-5 text-orange-600" />
                 </div>
-                <div className="mt-2 text-3xl font-black">{totalPoints}</div>
-                <div className="text-xs font-semibold text-white/35">gesamt</div>
+                <div className="mt-2 text-3xl font-semibold">{totalPoints}</div>
+                <div className="text-xs font-semibold text-muted-foreground">gesamt</div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-[20px] border border-white/[0.08] bg-black/25 shadow-none backdrop-blur-xl">
+            <Card className="rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-white/35">Vergaben</div>
+                  <div className="text-xs font-bold text-muted-foreground">Vergaben</div>
                   <Sparkles className="w-5 h-5 text-violet-200" />
                 </div>
-                <div className="mt-2 text-3xl font-black">{transactions.length}</div>
-                <div className="text-xs font-semibold text-white/35">Einträge</div>
+                <div className="mt-2 text-3xl font-semibold">{transactions.length}</div>
+                <div className="text-xs font-semibold text-muted-foreground">Einträge</div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-[20px] border border-white/[0.08] bg-black/25 shadow-none backdrop-blur-xl">
+            <Card className="rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-white/35">Höchster Bonus</div>
+                  <div className="text-xs font-bold text-muted-foreground">Höchster Bonus</div>
                   <Zap className="w-5 h-5 text-yellow-200" />
                 </div>
-                <div className="mt-2 text-3xl font-black">+{highestBonus?.points ?? 0}</div>
-                <div className="text-xs font-semibold text-white/35 truncate">{highestBonus?.rule_title || "—"}</div>
+                <div className="mt-2 text-3xl font-semibold">+{highestBonus?.points ?? 0}</div>
+                <div className="text-xs font-semibold text-muted-foreground truncate">{highestBonus?.rule_title || "—"}</div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-[20px] border border-white/[0.08] bg-black/25 shadow-none backdrop-blur-xl">
+            <Card className="rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-white/35">Letzter Bonus</div>
+                  <div className="text-xs font-bold text-muted-foreground">Letzter Bonus</div>
                   <Calendar className="w-5 h-5 text-emerald-200" />
                 </div>
-                <div className="mt-2 text-3xl font-black">+{lastBonus?.points ?? 0}</div>
-                <div className="text-xs font-semibold text-white/35">{lastBonus ? formatDate(lastBonus.created_at) : "—"}</div>
+                <div className="mt-2 text-3xl font-semibold">+{lastBonus?.points ?? 0}</div>
+                <div className="text-xs font-semibold text-muted-foreground">{lastBonus ? formatDate(lastBonus.created_at) : "—"}</div>
               </CardContent>
             </Card>
           </motion.div>
 
           <motion.div
             variants={itemVariants}
-            className="relative overflow-hidden rounded-[24px] border border-orange-500/20 bg-[linear-gradient(135deg,rgba(249,115,22,.90),rgba(194,65,12,.90),rgba(88,28,20,.94))] p-4 text-white shadow-[0_24px_70px_-42px_rgba(249,115,22,.28)] sm:rounded-[28px] sm:p-6"
+            className="relative overflow-hidden rounded-[24px] border border-orange-500/20 bg-card p-4 text-white shadow-[0_24px_70px_-42px_rgba(249,115,22,.28)] sm:rounded-[28px] sm:p-6"
           >
             <div className="relative grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-lg backdrop-blur-sm">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/15 shadow-lg ">
                   <Gift className="h-7 w-7 text-white" />
                 </div>
                 <div className="min-w-0">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/90">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/90">
                     <Sparkles className="h-3.5 w-3.5" />
                     Prämien verfügbar
                   </div>
-                  <h2 className="mt-3 text-2xl font-black leading-tight sm:text-3xl">
+                  <h2 className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">
                     Punkte sammeln und Sachprämien sichern
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/85">
@@ -637,33 +625,33 @@ export default function MemberBonusAppPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/20 bg-white/15 p-4 backdrop-blur-sm">
+              <div className="rounded-3xl border border-white/20 bg-white/15 p-4 ">
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="rounded-2xl bg-white/15 p-3">
-                    <div className="text-lg font-black">1000</div>
-                    <div className="text-[10px] font-black uppercase text-white/75">Bronze</div>
+                    <div className="text-lg font-semibold">1000</div>
+                    <div className="text-xs font-semibold uppercase text-white/75">Bronze</div>
                   </div>
                   <div className="rounded-2xl bg-white/15 p-3">
-                    <div className="text-lg font-black">1500</div>
-                    <div className="text-[10px] font-black uppercase text-white/75">Silber</div>
+                    <div className="text-lg font-semibold">1500</div>
+                    <div className="text-xs font-semibold uppercase text-white/75">Silber</div>
                   </div>
                   <div className="rounded-2xl bg-white/15 p-3">
-                    <div className="text-lg font-black">2000</div>
-                    <div className="text-[10px] font-black uppercase text-white/75">Gold</div>
+                    <div className="text-lg font-semibold">2000</div>
+                    <div className="text-xs font-semibold uppercase text-white/75">Gold</div>
                   </div>
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Link
                     href="/praemien"
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-black/25 px-5 py-3 text-sm font-black uppercase tracking-wide text-orange-200 shadow-lg transition hover:-translate-y-0.5 hover:bg-orange-500/[0.10]0/[0.08]"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-card px-5 py-3 text-sm font-semibold uppercase tracking-wide text-orange-200 shadow-lg transition hover:-translate-y-0.5 hover:bg-orange-500/[0.10]0/[0.08]"
                   >
                     <Gift className="h-4 w-4" />
                     Zu den Prämien
                   </Link>
                   <Link
                     href="/praemien-rangliste"
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/30 bg-white/15 px-5 py-3 text-sm font-black uppercase tracking-wide text-white backdrop-blur-sm transition hover:bg-white/25"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/30 bg-white/15 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white  transition hover:bg-white/25"
                   >
                     <Trophy className="h-4 w-4" />
                     Rangliste
@@ -675,19 +663,19 @@ export default function MemberBonusAppPage() {
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(300px,0.8fr)_minmax(0,2.2fr)] xl:gap-5">
             <motion.div variants={itemVariants} className="">
-              <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-none backdrop-blur-xl sm:rounded-[28px]">
+              <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-card shadow-none  sm:rounded-[28px]">
                 <CardContent className="p-0">
                   <div className="border-b border-white/[0.07] p-4 sm:p-5">
-                    <h2 className="font-black text-white flex items-center gap-2">
+                    <h2 className="font-semibold text-white flex items-center gap-2">
                       <Target className="w-5 h-5 text-orange-600" />
                       Punkte nach Quelle
                     </h2>
-                    <p className="text-sm font-semibold text-white/35 mt-1">Woher deine Bonuspunkte kommen.</p>
+                    <p className="text-sm font-semibold text-muted-foreground mt-1">Woher deine Bonuspunkte kommen.</p>
                   </div>
 
                   <div className="space-y-3 p-3 sm:p-4">
                     {sourceStats.length === 0 ? (
-                      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 text-sm font-semibold text-white/35">
+                      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 text-sm font-semibold text-muted-foreground">
                         Noch keine Bonuspunkte vorhanden.
                       </div>
                     ) : (
@@ -696,13 +684,13 @@ export default function MemberBonusAppPage() {
                         return (
                           <div key={item.label} className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3">
                             <div className="flex items-center justify-between gap-3">
-                              <div className="font-black text-white truncate">{item.label}</div>
-                              <div className="h-10 rounded-xl px-2 font-black text-orange-200 hover:bg-orange-500/[0.10]0/[0.08] hover:text-orange-100">+{item.points}</div>
+                              <div className="font-semibold text-white truncate">{item.label}</div>
+                              <div className="h-10 rounded-xl px-2 font-semibold text-orange-200 hover:bg-orange-500/[0.10]0/[0.08] hover:text-orange-100">+{item.points}</div>
                             </div>
-                            <div className="mt-2 h-2 rounded-full bg-black/25 border border-white/[0.08] overflow-hidden">
+                            <div className="mt-2 h-2 rounded-full bg-card border border-white/[0.08] overflow-hidden">
                               <div className="h-full bg-orange-500 rounded-full" style={{ width: `${value}%` }} />
                             </div>
-                            <div className="mt-1 text-xs font-bold text-white/35">{value}% deiner Punkte</div>
+                            <div className="mt-1 text-xs font-bold text-muted-foreground">{value}% deiner Punkte</div>
                           </div>
                         )
                       })
@@ -713,7 +701,7 @@ export default function MemberBonusAppPage() {
             </motion.div>
 
             <motion.div variants={itemVariants} className="">
-              <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/25 shadow-none backdrop-blur-xl sm:rounded-[28px]">
+              <Card className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-card shadow-none  sm:rounded-[28px]">
                 <CardContent className="p-0">
                   <button
                     type="button"
@@ -721,11 +709,11 @@ export default function MemberBonusAppPage() {
                     className="flex w-full items-center justify-between gap-3 border-b border-white/[0.07] p-4 text-left transition hover:bg-white/[0.035] sm:p-5"
                   >
                     <div>
-                      <h2 className="font-black text-white flex items-center gap-2">
+                      <h2 className="font-semibold text-white flex items-center gap-2">
                         <Gift className="w-5 h-5 text-orange-600" />
                         Bonus-Historie
                       </h2>
-                      <p className="text-sm font-semibold text-white/35 mt-1">
+                      <p className="text-sm font-semibold text-muted-foreground mt-1">
                         Alle gespeicherten Bonuspunkte transparent aufgelistet.
                       </p>
                     </div>
@@ -739,18 +727,18 @@ export default function MemberBonusAppPage() {
                           <div className="mx-auto w-14 h-14 rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.16] flex items-center justify-center">
                             <Gift className="w-7 h-7 text-orange-600" />
                           </div>
-                          <h3 className="mt-4 font-black text-white">Noch keine Bonuspunkte</h3>
-                          <p className="text-sm font-semibold text-white/35 mt-1">
+                          <h3 className="mt-4 font-semibold text-white">Noch keine Bonuspunkte</h3>
+                          <p className="text-sm font-semibold text-muted-foreground mt-1">
                             Sobald dir Bonuspunkte gutgeschrieben werden, erscheinen sie hier.
                           </p>
                         </div>
                       ) : (
                         transactions.map((row) => (
-                          <div key={row.id} className="rounded-[20px] border border-white/[0.08] bg-white/[0.035]/40 p-3.5 transition-colors hover:bg-black/25 sm:p-4">
+                          <div key={row.id} className="rounded-[20px] border border-white/[0.08] bg-white/[0.035]/40 p-3.5 transition-colors hover:bg-card sm:p-4">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <div className="font-black text-white">{row.rule_title}</div>
+                                  <div className="font-semibold text-white">{row.rule_title}</div>
                                   {row.category_name ? (
                                     <Badge variant="outline" className="rounded-full bg-orange-500/[0.08] border-orange-300/[0.16] text-orange-200">
                                       {row.category_name}
@@ -758,20 +746,20 @@ export default function MemberBonusAppPage() {
                                   ) : null}
                                 </div>
 
-                                <div className="mt-2 text-sm font-semibold text-white/50">
+                                <div className="mt-2 text-sm font-semibold text-muted-foreground">
                                   {row.source_name || SOURCE_LABELS[row.source_type] || row.source_type} · {formatDate(row.created_at)}
                                 </div>
 
                                 {row.note ? (
-                                  <div className="mt-2 rounded-xl bg-white/[0.035] border border-white/[0.08] px-3 py-2 text-xs font-semibold text-white/50">
+                                  <div className="mt-2 rounded-xl bg-white/[0.035] border border-white/[0.08] px-3 py-2 text-xs font-semibold text-muted-foreground">
                                     {row.note}
                                   </div>
                                 ) : null}
                               </div>
 
                               <div className="flex w-full items-center justify-between rounded-2xl border border-orange-300/[0.16] bg-orange-500/[0.08] px-4 py-3 sm:w-auto sm:block sm:shrink-0 sm:text-right">
-                                <div className="text-2xl font-black text-orange-200">+{row.points}</div>
-                                <div className="text-[10px] font-bold text-white/35">Punkte</div>
+                                <div className="text-2xl font-semibold text-orange-200">+{row.points}</div>
+                                <div className="text-xs font-bold text-muted-foreground">Punkte</div>
                               </div>
                             </div>
                           </div>
@@ -784,9 +772,9 @@ export default function MemberBonusAppPage() {
             </motion.div>
           </div>
 
-          <motion.div variants={itemVariants} className="rounded-[20px] border border-white/[0.08] bg-white/[0.035]/40 p-3.5 transition-colors hover:bg-black/25 sm:p-4">
-            <div className="font-black text-white">Ränge im Bonusprogramm</div>
-            <div className="text-sm font-semibold text-white/35">
+          <motion.div variants={itemVariants} className="rounded-[20px] border border-white/[0.08] bg-white/[0.035]/40 p-3.5 transition-colors hover:bg-card sm:p-4">
+            <div className="font-semibold text-white">Ränge im Bonusprogramm</div>
+            <div className="text-sm font-semibold text-muted-foreground">
               Bronze ab 1000 · Silber ab 1500 · Gold ab 2000 Punkten
             </div>
           </motion.div>

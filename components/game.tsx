@@ -109,7 +109,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       challenge?.status !== "completed" &&
       challenge?.status !== "cancelled"
     ) {
-      
+
 
       pollInterval = setInterval(async () => {
         if (!gameState) return
@@ -121,7 +121,7 @@ export function Game({ challengeId }: { challengeId: string }) {
           .single()
 
         if (currentChallenge?.status === "cancelled") {
-          
+
           const cancelledBy =
             currentChallenge.cancelled_by === challenge?.challenger_id
               ? challengerInfo?.username
@@ -149,7 +149,7 @@ export function Game({ challengeId }: { challengeId: string }) {
             currentMatch.status !== gameState.status
 
           if (hasChanged) {
-            
+
             loadGame()
           }
         }
@@ -157,7 +157,7 @@ export function Game({ challengeId }: { challengeId: string }) {
     }
 
     return () => {
-      
+
       if (pollInterval) {
         clearInterval(pollInterval)
       }
@@ -174,7 +174,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       .eq("id", challengeId)
       .single()
 
-   
+
 
     if (challengeData) {
       setChallenge(challengeData)
@@ -191,7 +191,7 @@ export function Game({ challengeId }: { challengeId: string }) {
         .eq("user_id", challengeData.opponent_id)
         .single()
 
-     
+
 
       const challengerName = challengerProfile?.club_players?.name || "Spieler 1"
       const opponentName = opponentProfile?.club_players?.name || "Spieler 2"
@@ -206,7 +206,7 @@ export function Game({ challengeId }: { challengeId: string }) {
         username: opponentName,
       }
 
-      
+
 
       setChallengerInfo(challengerData)
       setOpponentInfo(opponentData)
@@ -229,12 +229,12 @@ export function Game({ challengeId }: { challengeId: string }) {
         .order("created_at", { ascending: true })
         .limit(1)
 
-    
+
 
       const gameData = existingMatches && existingMatches.length > 0 ? existingMatches[0] : null
 
       if (!gameData && !matchesError) {
-     
+
         const { data: newGame, error: insertError } = await supabase
           .from("live_matches")
           .insert([
@@ -253,15 +253,15 @@ export function Game({ challengeId }: { challengeId: string }) {
           .single()
 
         if (newGame) {
-          
+
           setGameState(newGame)
           await loadTurns(newGame.id)
           await calculateThrowCounts(newGame.id, challengeData.challenger_id, challengeData.opponent_id)
         } else if (insertError) {
-          
+
 
           if (insertError.code === "23505") {
-           
+
             const { data: existingMatch } = await supabase
               .from("live_matches")
               .select("*")
@@ -269,7 +269,7 @@ export function Game({ challengeId }: { challengeId: string }) {
               .single()
 
             if (existingMatch) {
-              
+
               setGameState(existingMatch)
               await loadTurns(existingMatch.id)
               await calculateThrowCounts(existingMatch.id, challengeData.challenger_id, challengeData.opponent_id)
@@ -339,7 +339,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       const nextPlayerId =
         gameState.current_player_id === challenge.challenger_id ? challenge.opponent_id : challenge.challenger_id
 
-      
+
 
       await supabase
         .from("live_matches")
@@ -359,7 +359,7 @@ export function Game({ challengeId }: { challengeId: string }) {
 
     const throwNumber = isPlayer1 ? player1ThrowCount + 1 : player2ThrowCount + 1
 
-    
+
 
     const { error: throwError } = await supabase.from("match_throws").insert([
       {
@@ -382,7 +382,7 @@ export function Game({ challengeId }: { challengeId: string }) {
     }
 
     if (newRemaining === 0) {
-      
+
 
       await supabase
         .from("live_matches")
@@ -416,7 +416,7 @@ export function Game({ challengeId }: { challengeId: string }) {
     const nextPlayerId =
       gameState.current_player_id === challenge.challenger_id ? challenge.opponent_id : challenge.challenger_id
 
-    
+
 
     const { error: updateError } = await supabase
       .from("live_matches")
@@ -432,7 +432,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       return
     }
 
-    
+
 
     setGameState({
       ...gameState,
@@ -503,7 +503,7 @@ export function Game({ challengeId }: { challengeId: string }) {
       return
     }
 
-    
+
     router.push("/lobby")
   }
 
@@ -528,13 +528,13 @@ export function Game({ challengeId }: { challengeId: string }) {
       .single()
 
     if (error) {
-      
+
       alert(`Fehler beim Erstellen der Revanche: ${error.message}`)
       setIsRequestingRevenge(false)
       return
     }
 
-   
+
     router.push(`/game/${newChallenge.id}`)
   }
 
@@ -714,7 +714,7 @@ export function Game({ challengeId }: { challengeId: string }) {
 
   if (isLoading || !challenge || !gameState || !challengerInfo || !opponentInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-orange-50 to-gray-50">
+      <div className="text-foreground min-h-screen flex items-center justify-center bg-card   ">
         <div className="text-center">
           <Target className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">Loading game...</p>
@@ -725,7 +725,7 @@ export function Game({ challengeId }: { challengeId: string }) {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-orange-50 to-gray-50">
+      <div className="text-foreground min-h-screen flex items-center justify-center bg-card   ">
         <p className="text-muted-foreground">Please log in to play</p>
       </div>
     )
@@ -743,7 +743,7 @@ export function Game({ challengeId }: { challengeId: string }) {
   const checkoutSuggestions = myScore <= 170 && myScore > 1 ? getCheckoutSuggestions(myScore) : []
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
         <DialogContent className="sm:max-w-md">
   <VisuallyHidden>
@@ -801,15 +801,15 @@ export function Game({ challengeId }: { challengeId: string }) {
       <div className="flex justify-center mb-4">
         {isWinner ? (
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center animate-pulse">
+            <div className="text-foreground w-24 h-24 rounded-full bg-card   flex items-center justify-center animate-pulse">
               <Trophy className="w-12 h-12 text-white" />
             </div>
             <Sparkles className="w-8 h-8 text-yellow-400 absolute -top-2 -right-2 animate-bounce" />
             <Sparkles className="w-6 h-6 text-yellow-400 absolute -bottom-1 -left-1 animate-bounce delay-100" />
           </div>
         ) : (
-          <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
-            <Target className="w-12 h-12 text-gray-500" />
+          <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center">
+            <Target className="w-12 h-12 text-muted-foreground" />
           </div>
         )}
       </div>
@@ -833,11 +833,11 @@ export function Game({ challengeId }: { challengeId: string }) {
             <>
               <span className="font-bold text-primary">{winnerName}</span> hat das Spiel gewonnen.
 
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-700">
+              <div className="mt-4 p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
                   <strong>Dein Average:</strong> {isPlayer1 ? player1Average : player2Average}
                 </p>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-muted-foreground">
                   <strong>Würfe:</strong> {isPlayer1 ? player1ThrowCount : player2ThrowCount}
                 </p>
               </div>
@@ -912,7 +912,7 @@ export function Game({ challengeId }: { challengeId: string }) {
           <div className="grid grid-cols-2 gap-6 py-4">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <Avatar className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600">
+                <Avatar className="text-foreground w-12 h-12 bg-card  ">
                   <AvatarFallback className="bg-transparent">
                     <User className="w-6 h-6 text-white" />
                   </AvatarFallback>
@@ -943,7 +943,7 @@ export function Game({ challengeId }: { challengeId: string }) {
             </div>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <Avatar className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-600">
+                <Avatar className="text-foreground w-12 h-12 bg-card  ">
                   <AvatarFallback className="bg-transparent">
                     <User className="w-6 h-6 text-white" />
                   </AvatarFallback>
@@ -983,7 +983,7 @@ export function Game({ challengeId }: { challengeId: string }) {
   </VisuallyHidden>
           <DialogHeader>
             <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+              <div className="text-foreground w-16 h-16 rounded-full bg-card   flex items-center justify-center">
                 <Lightbulb className="w-8 h-8 text-white" />
               </div>
             </div>
@@ -997,7 +997,7 @@ export function Game({ challengeId }: { challengeId: string }) {
               checkoutSuggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className="p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200"
+                  className="text-foreground p-3 bg-card   rounded-lg border border-green-200"
                 >
                   <p className="text-center font-mono font-semibold text-lg">{suggestion}</p>
                 </div>
@@ -1009,14 +1009,14 @@ export function Game({ challengeId }: { challengeId: string }) {
         </DialogContent>
       </Dialog>
 
-      <header className="border-b border-border bg-white shadow-sm">
+      <header className="border-b border-border bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowCancelModal(true)}
-              className="gap-2 hover:bg-gray-100"
+              className="gap-2 hover:bg-muted"
             >
               <ArrowLeft className="w-4 h-4" />
               Zurück zur Lobby
@@ -1035,11 +1035,11 @@ export function Game({ challengeId }: { challengeId: string }) {
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <Card className={`${isPlayer1 && isMyTurn ? "ring-2 ring-orange-500 shadow-xl" : "shadow-md"} bg-white`}>
+          <Card className={`${isPlayer1 && isMyTurn ? "ring-2 ring-orange-500 shadow-xl" : "shadow-md"} bg-card`}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Avatar className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600">
+                  <Avatar className="text-foreground w-12 h-12 bg-card  ">
                     <AvatarFallback className="bg-transparent">
                       <User className="w-6 h-6 text-white" />
                     </AvatarFallback>
@@ -1049,7 +1049,7 @@ export function Game({ challengeId }: { challengeId: string }) {
                   </div>
                 </div>
                 {isPlayer1 && isMyTurn && (
-                  <Badge variant="default" className="bg-gradient-to-r from-orange-500 to-red-600">
+                  <Badge variant="default" className="text-foreground bg-card  ">
                     Dein Zug
                   </Badge>
                 )}
@@ -1064,11 +1064,11 @@ export function Game({ challengeId }: { challengeId: string }) {
             </CardContent>
           </Card>
 
-          <Card className={`${!isPlayer1 && isMyTurn ? "ring-2 ring-orange-500 shadow-xl" : "shadow-md"} bg-white`}>
+          <Card className={`${!isPlayer1 && isMyTurn ? "ring-2 ring-orange-500 shadow-xl" : "shadow-md"} bg-card`}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Avatar className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-600">
+                  <Avatar className="text-foreground w-12 h-12 bg-card  ">
                     <AvatarFallback className="bg-transparent">
                       <User className="w-6 h-6 text-white" />
                     </AvatarFallback>
@@ -1078,7 +1078,7 @@ export function Game({ challengeId }: { challengeId: string }) {
                   </div>
                 </div>
                 {!isPlayer1 && isMyTurn && (
-                  <Badge variant="default" className="bg-gradient-to-r from-orange-500 to-red-600">
+                  <Badge variant="default" className="text-foreground bg-card  ">
                     Dein Zug
                   </Badge>
                 )}
@@ -1095,12 +1095,12 @@ export function Game({ challengeId }: { challengeId: string }) {
         </div>
 
         {isMyTurn && checkoutSuggestions.length > 0 && (
-          <Card className="mb-4 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+          <Card className="text-foreground mb-4 bg-card   border-green-200">
             <CardContent className="py-4">
               <Button
                 onClick={() => setShowCheckoutModal(true)}
                 variant="outline"
-                className="w-full gap-2 bg-white hover:bg-green-50"
+                className="w-full gap-2 bg-card hover:bg-green-50"
               >
                 <Lightbulb className="w-4 h-4" />
                 Checkout-Vorschläge anzeigen ({myScore} Punkte)
@@ -1110,7 +1110,7 @@ export function Game({ challengeId }: { challengeId: string }) {
         )}
 
         {isMyTurn && (
-          <Card className="mb-6 bg-white shadow-lg">
+          <Card className="mb-6 bg-card shadow-lg">
             <CardHeader>
               <CardTitle>Gib deinen Score ein</CardTitle>
             </CardHeader>
@@ -1142,7 +1142,7 @@ export function Game({ challengeId }: { challengeId: string }) {
                     }}
                     className={`h-12 transition-all ${
                       lastClickedScore === score
-                        ? "bg-orange-500 text-white border-orange-600 hover:bg-orange-600"
+                        ? "bg-orange-500 text-primary-foreground border-orange-600 hover:bg-orange-600"
                         : "hover:bg-orange-50 hover:border-orange-300"
                     }`}
                   >
@@ -1155,7 +1155,7 @@ export function Game({ challengeId }: { challengeId: string }) {
         )}
 
         {!isMyTurn && (
-          <Card className="mb-6 bg-white shadow-md">
+          <Card className="mb-6 bg-card shadow-md">
             <CardContent className="py-8 text-center">
               <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
               <p className="text-lg font-medium">Warte auf Gegner...</p>
@@ -1169,7 +1169,7 @@ export function Game({ challengeId }: { challengeId: string }) {
           </Card>
         )}
 
-        <Card className="bg-white shadow-md">
+        <Card className="bg-card shadow-md">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Letzte Würfe</CardTitle>
@@ -1178,7 +1178,7 @@ export function Game({ challengeId }: { challengeId: string }) {
                   variant="outline"
                   size="sm"
                   onClick={undoLastTurn}
-                  className="gap-2 bg-transparent hover:bg-gray-100"
+                  className="gap-2 bg-transparent hover:bg-muted"
                 >
                   <Undo2 className="w-4 h-4" />
                   Rückgängig
@@ -1198,11 +1198,11 @@ export function Game({ challengeId }: { challengeId: string }) {
                   return (
                     <div
                       key={turn.id}
-                      className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:shadow-md transition-shadow"
+                      className="text-foreground flex items-center justify-between p-3 bg-card   rounded-lg hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-center gap-3">
                         <Avatar
-                          className={`w-8 h-8 ${isChallenger ? "bg-gradient-to-br from-blue-500 to-purple-600" : "bg-gradient-to-br from-green-500 to-teal-600"}`}
+                          className={`w-8 h-8 ${isChallenger ? "text-foreground bg-card  " : "text-foreground bg-card  "}`}
                         >
                           <AvatarFallback className="bg-transparent">
                             <User className="w-4 h-4 text-white" />

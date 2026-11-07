@@ -2179,15 +2179,15 @@ export default function TeamChatPage() {
   // Modernes Chat-App Design (Orange Theme) – nur Styling, keine Logikänderung
   const WA = {
     appBg:
-      "bg-[#040609] text-white bg-[radial-gradient(circle_at_10%_6%,rgba(249,115,22,.10),transparent_27%),radial-gradient(circle_at_90%_12%,rgba(14,165,233,.06),transparent_24%),linear-gradient(180deg,#05070b,#030507)]",
+      "bg-[#040609] text-white bg-card",
     card:
-      "border border-white/[0.075] bg-[#080b10]/95 text-white shadow-[0_30px_100px_-52px_rgba(0,0,0,.99)] backdrop-blur-2xl",
+      "border border-white/[0.075] bg-[#080b10]/95 text-white shadow-[0_30px_100px_-52px_rgba(0,0,0,.99)] ",
     header:
-      "border-b border-white/[0.07] bg-[#0a0e14]/96 backdrop-blur-2xl",
+      "border-b border-white/[0.07] bg-[#0a0e14]/96 ",
     sidebarItemBase:
       "w-full justify-start h-auto px-3 py-3 text-left rounded-[18px] transition-colors duration-150 border border-transparent focus-visible:ring-2 focus-visible:ring-orange-400/20 overflow-hidden",
     sidebarItemSelected:
-      "border-orange-300/15 bg-gradient-to-r from-orange-500/[0.14] to-white/[0.025] text-white shadow-[0_14px_34px_-26px_rgba(249,115,22,.30)] hover:from-orange-500/[0.17] hover:to-white/[0.035]",
+      "border-orange-300/15 bg-card   text-white shadow-[0_14px_34px_-26px_rgba(249,115,22,.30)]  ",
     sidebarItemUnselected:
       "text-white/74 hover:border-white/[0.08] hover:bg-white/[0.03] hover:text-white",
     iconBadge:
@@ -2195,17 +2195,17 @@ export default function TeamChatPage() {
     iconInSelected: "text-orange-300",
     iconInUnselected: "text-orange-300",
     unreadBadge:
-      "ml-2 inline-flex h-[23px] min-w-[23px] shrink-0 items-center justify-center rounded-full bg-orange-500 px-2 py-1 text-[11px] font-black text-white shadow-[0_0_18px_rgba(249,115,22,.20)] ring-2 ring-[#080b10]",
+      "ml-2 inline-flex h-[23px] min-w-[23px] shrink-0 items-center justify-center rounded-full bg-orange-500 px-2 py-1 text-xs font-semibold text-white shadow-[0_0_18px_rgba(249,115,22,.20)] ring-2 ring-[#080b10]",
     chatBg:
-      "bg-[radial-gradient(circle_at_72%_0%,rgba(14,165,233,.035),transparent_28%),radial-gradient(circle_at_12%_82%,rgba(249,115,22,.028),transparent_23%),linear-gradient(180deg,#10141b,#0b0f15)]",
+      "text-foreground bg-card",
     bubbleOwn:
-      "rounded-[22px] rounded-br-[7px] border border-orange-300/15 bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 text-white shadow-[0_14px_34px_-18px_rgba(249,115,22,.40)]",
+      "rounded-[22px] rounded-br-[7px] border border-orange-300/15 bg-card    text-white shadow-[0_14px_34px_-18px_rgba(249,115,22,.40)]",
     bubbleOther:
       "rounded-[22px] rounded-bl-[7px] border border-white/[0.08] bg-[#171c24]/96 text-white/92 shadow-[0_14px_34px_-24px_rgba(0,0,0,.92)]",
     composer:
-      "border-t border-white/[0.075] bg-[#090d13]/97 shadow-[0_-18px_48px_-34px_rgba(0,0,0,.95)] backdrop-blur-2xl",
+      "border-t border-white/[0.075] bg-[#090d13]/97 shadow-[0_-18px_48px_-34px_rgba(0,0,0,.95)] ",
     input:
-      "h-12 rounded-[18px] border border-white/[0.10] bg-white/[0.045] px-4 text-white shadow-inner shadow-black/10 placeholder:text-white/30 focus-visible:border-orange-300/20 focus-visible:ring-orange-400/15",
+      "h-12 rounded-[18px] border border-white/[0.10] bg-white/[0.045] px-4 text-white shadow-inner shadow-black/10 placeholder:text-muted-foreground focus-visible:border-orange-300/20 focus-visible:ring-orange-400/15",
     sendBtn:
       "rounded-[18px] bg-orange-500 text-white shadow-[0_10px_28px_-16px_rgba(249,115,22,.48)] hover:bg-orange-500/90",
   };
@@ -2357,10 +2357,10 @@ export default function TeamChatPage() {
                       <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-orange-500/15 blur-3xl" />
                       <div className="relative flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-300">
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-300">
                             EMD Vereinsapp
                           </p>
-                          <CardTitle className="mt-0.5 text-[28px] font-black leading-tight tracking-[-0.04em] text-white sm:text-3xl">
+                          <CardTitle className="mt-0.5 text-[28px] font-semibold leading-tight tracking-[-0.04em] text-white sm:text-3xl">
                             Chats
                           </CardTitle>
                         </div>
@@ -2397,27 +2397,27 @@ export default function TeamChatPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="text-sm font-black text-white truncate">
+                                <p className="text-sm font-semibold text-white truncate">
                                   Vereinschat
                                 </p>
-                                <p className="mt-0.5 text-[11px] text-white/55 leading-relaxed">
+                                <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
                                   Alle wichtigen Räume und Team-Chats auf einen Blick.
                                 </p>
                               </div>
                               {totalUnread > 0 ? (
-                                <span className="shrink-0 rounded-full bg-orange-600 px-2.5 py-1 text-xs font-black text-white shadow-sm">
+                                <span className="shrink-0 rounded-full bg-orange-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
                                   {totalUnread > 99 ? "99+" : totalUnread}
                                 </span>
                               ) : null}
                             </div>
 
                             <div className="mt-3 flex flex-wrap items-center gap-2">
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-[11px] font-extrabold text-white/65">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-xs font-extrabold text-white/65">
                                 <Hash className="h-3 w-3 text-orange-600" />
                                 <span className="text-white">{visibleRoomCount}</span>
                                 Räume
                               </span>
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-[11px] font-extrabold text-white/65">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-xs font-extrabold text-white/65">
                                 <MessageCircle className="h-3 w-3 text-orange-600" />
                                 <span className="text-white">{totalUnread}</span>
                                 ungelesen
@@ -2432,15 +2432,15 @@ export default function TeamChatPage() {
                       <ScrollArea className="h-full">
                         <div className="space-y-1 border-b border-white/[0.07] px-3 py-3.5">
                           <div className="px-2 pb-2 flex items-center justify-between">
-                            <span className="text-[11px] font-black uppercase tracking-[0.16em] text-white/30">
+                            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                               Allgemein
                             </span>
                             {totalUnread > 0 ? (
-                              <span className="text-[11px] font-bold text-orange-600">
+                              <span className="text-xs font-bold text-orange-600">
                                 {totalUnread > 99 ? "99+" : totalUnread} neu
                               </span>
                             ) : (
-                              <span className="text-[11px] font-bold text-white/30">
+                              <span className="text-xs font-bold text-muted-foreground">
                                 alles gelesen
                               </span>
                             )}
@@ -2650,7 +2650,7 @@ export default function TeamChatPage() {
                                   <p
                                     className={`text-xs mt-1 truncate ${
                                       selectedScope === "captains"
-                                        ? "text-white/55"
+                                        ? "text-muted-foreground"
                                         : "text-white/42"
                                     }`}
                                   >
@@ -2714,7 +2714,7 @@ export default function TeamChatPage() {
                                   <p
                                     className={`text-xs mt-1 truncate ${
                                       selectedScope === "vorstand"
-                                        ? "text-white/55"
+                                        ? "text-muted-foreground"
                                         : "text-white/42"
                                     }`}
                                   >
@@ -2763,10 +2763,10 @@ export default function TeamChatPage() {
                         ) : (
                           <div className="space-y-1 px-3 py-3.5">
                             <div className="px-2 pb-2 flex items-center justify-between">
-                              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-white/30">
+                              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                                 Team-Chats
                               </span>
-                              <span className="text-[11px] font-bold text-white/30">
+                              <span className="text-xs font-bold text-muted-foreground">
                                 {chatRooms.length} {chatRooms.length === 1 ? "Team" : "Teams"}
                               </span>
                             </div>
@@ -2837,7 +2837,7 @@ export default function TeamChatPage() {
                                           </div>
                                           {room.role ? (
                                             <span
-                                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${"bg-white/[0.05] text-white/55"}`}
+                                              className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${"bg-white/[0.05] text-muted-foreground"}`}
                                             >
                                               {room.role}
                                             </span>
@@ -2933,10 +2933,10 @@ export default function TeamChatPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <div className="min-w-0">
-                              <CardTitle className="truncate text-base font-black tracking-tight text-white sm:text-lg">
+                              <CardTitle className="truncate text-base font-semibold tracking-tight text-white sm:text-lg">
                                 {selectedRoomName}
                               </CardTitle>
-                              <p className="mt-0.5 truncate text-[11px] font-medium text-white/32">
+                              <p className="mt-0.5 truncate text-xs font-medium text-white/32">
                                 {messages.length} {messages.length === 1 ? "Nachricht" : "Nachrichten"}
                               </p>
                             </div>
@@ -3036,7 +3036,7 @@ export default function TeamChatPage() {
                                         key={`date-${item.key}`}
                                         className="py-3 flex items-center justify-center"
                                       >
-                                        <div className="rounded-full border border-white/[0.08] bg-[#0a0e14]/94 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white/30 shadow-sm">
+                                        <div className="rounded-full border border-white/[0.08] bg-[#0a0e14]/94 px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground shadow-sm">
                                           {item.label}
                                         </div>
                                       </div>
@@ -3069,7 +3069,7 @@ export default function TeamChatPage() {
                                           src={photoUrl || "/placeholder.svg"}
                                           alt={name}
                                         />
-                                        <AvatarFallback className="bg-orange-500/[0.10] text-orange-300 text-[10px]">
+                                        <AvatarFallback className="bg-orange-500/[0.10] text-orange-300 text-xs">
                                           {initials(name)}
                                         </AvatarFallback>
                                       </Avatar>
@@ -3090,13 +3090,13 @@ export default function TeamChatPage() {
                                                 </span>
 
                                                 {isSenderVorstand && (
-                                                  <span className="inline-flex items-center rounded-full border border-orange-300/15 bg-orange-500/[0.07] px-2 py-0.5 text-[10px] font-semibold text-orange-200 shrink-0">
+                                                  <span className="inline-flex items-center rounded-full border border-orange-300/15 bg-orange-500/[0.07] px-2 py-0.5 text-xs font-semibold text-orange-200 shrink-0">
                                                     🛡️ Vorstand
                                                   </span>
                                                 )}
                                               </div>
 
-                                              <span className="text-[11px] text-white/42 flex items-center gap-1 whitespace-nowrap sm:justify-self-end">
+                                              <span className="text-xs text-white/42 flex items-center gap-1 whitespace-nowrap sm:justify-self-end">
                                                 <Clock className="h-3 w-3" />
                                                 {time}
                                               </span>
@@ -3324,7 +3324,7 @@ export default function TeamChatPage() {
 
                                               return (
                                                 <div
-                                                  className={`text-[10px] min-w-0 flex items-center gap-1 flex-wrap ${
+                                                  className={`text-xs min-w-0 flex items-center gap-1 flex-wrap ${
                                                     isOwnMessage
                                                       ? "text-white/80"
                                                       : "text-white/42"
@@ -3498,7 +3498,7 @@ export default function TeamChatPage() {
         open={!!openReadsFor}
         onOpenChange={(o) => setOpenReadsFor(o ? openReadsFor : null)}
       >
-        <DialogContent className="max-w-md rounded-[26px] border border-white/[0.10] bg-[#090d13]/98 text-white shadow-[0_34px_120px_-50px_rgba(0,0,0,.99)] backdrop-blur-2xl">
+        <DialogContent className="max-w-md rounded-[26px] border border-white/[0.10] bg-[#090d13]/98 text-white shadow-[0_34px_120px_-50px_rgba(0,0,0,.99)] ">
           <DialogHeader>
             <DialogTitle>Gelesen von</DialogTitle>
           </DialogHeader>
@@ -3529,7 +3529,7 @@ export default function TeamChatPage() {
           }
         }}
       >
-        <DialogContent className="w-[95vw] max-w-5xl rounded-[26px] border border-white/[0.10] bg-[#090d13]/98 p-2 text-white shadow-[0_34px_120px_-50px_rgba(0,0,0,.99)] backdrop-blur-2xl sm:p-4">
+        <DialogContent className="w-[95vw] max-w-5xl rounded-[26px] border border-white/[0.10] bg-[#090d13]/98 p-2 text-white shadow-[0_34px_120px_-50px_rgba(0,0,0,.99)]  sm:p-4">
           <DialogHeader>
             <DialogTitle className="truncate">
               {openImageName || "Bild"}
@@ -3557,7 +3557,7 @@ export default function TeamChatPage() {
           }
         }}
       >
-        <DialogContent className="max-w-md rounded-[26px] border border-white/[0.10] bg-[#090d13]/98 text-white shadow-[0_34px_120px_-50px_rgba(0,0,0,.99)] backdrop-blur-2xl">
+        <DialogContent className="max-w-md rounded-[26px] border border-white/[0.10] bg-[#090d13]/98 text-white shadow-[0_34px_120px_-50px_rgba(0,0,0,.99)] ">
           <DialogHeader>
             <DialogTitle className="truncate">
               Stimmen für: {openPollVotesOptionLabel || "Option"}
@@ -3590,7 +3590,7 @@ export default function TeamChatPage() {
           if (!o) resetPollForm();
         }}
       >
-        <DialogContent className="max-w-lg rounded-[26px] border border-white/[0.10] bg-[#090d13]/98 text-white shadow-[0_34px_120px_-50px_rgba(0,0,0,.99)] backdrop-blur-2xl">
+        <DialogContent className="max-w-lg rounded-[26px] border border-white/[0.10] bg-[#090d13]/98 text-white shadow-[0_34px_120px_-50px_rgba(0,0,0,.99)] ">
           <DialogHeader>
             <DialogTitle>Abstimmung erstellen</DialogTitle>
           </DialogHeader>
@@ -3602,7 +3602,7 @@ export default function TeamChatPage() {
                 value={pollQuestion}
                 onChange={(e) => setPollQuestion(e.target.value)}
                 placeholder="z. B. Wann trainieren wir?"
-                className="border-white/[0.10] bg-white/[0.04] text-white placeholder:text-white/30"
+                className="border-white/[0.10] bg-white/[0.04] text-white placeholder:text-muted-foreground"
               />
             </div>
 

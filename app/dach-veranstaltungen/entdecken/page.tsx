@@ -185,10 +185,10 @@ function Chip({
         ? "border-sky-300/[0.16] bg-sky-500/[0.08] text-sky-200"
         : tone === "green"
           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-white/[0.08] bg-[#080c12]/95 text-white/50"
+          : "border-white/[0.08] bg-[#080c12]/95 text-muted-foreground"
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold ${style}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${style}`}>
       {children}
     </span>
   )
@@ -334,29 +334,22 @@ export default function VeranstaltungenPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] pb-24 text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-white">
       <Header variant="app" title="Turniere entdecken" subtitle="DACH Turniere" backHref="/dach-veranstaltungen" />
 
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.32]"
-          style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.70),rgba(3,5,9,.94)_46%,rgba(2,4,7,.985))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_18%,rgba(14,165,233,.13),transparent_26%),radial-gradient(circle_at_88%_28%,rgba(249,115,22,.12),transparent_28%)]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
-        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-black/35 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
+        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.28),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_35%)]" />
           <div className="relative px-5 py-7 sm:px-7 sm:py-9 lg:px-8">
             <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-300/[0.14] bg-orange-500/[0.08] px-3 py-1.5 text-xs font-bold text-orange-100 backdrop-blur">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-300/[0.14] bg-orange-500/[0.08] px-3 py-1.5 text-xs font-bold text-orange-100 ">
                   <Trophy className="h-3.5 w-3.5" />
                   Die Turnierübersicht für den DACH-Raum
                 </div>
-                <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
+                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
                   Finde dein nächstes
                   <span className="block text-orange-400">Dart-Turnier.</span>
                 </h1>
@@ -370,7 +363,7 @@ export default function VeranstaltungenPage() {
                   <Button
                     asChild
                     variant="outline"
-                    className="h-12 rounded-2xl border-white/[0.10] bg-white/[0.04] px-5 font-bold text-white shadow-none backdrop-blur transition hover:border-sky-300/[0.20] hover:bg-sky-500/[0.08] hover:text-white"
+                    className="h-12 rounded-2xl border-white/[0.10] bg-white/[0.04] px-5 font-bold text-white shadow-none  transition hover:border-sky-300/[0.20] hover:bg-sky-500/[0.08] hover:text-white"
                   >
                     <Link href="/dach-veranstaltungen/meine">
                       <List className="mr-2 h-4 w-4" />
@@ -381,7 +374,7 @@ export default function VeranstaltungenPage() {
 
                 <Button
                   asChild
-                  className="h-12 rounded-2xl bg-orange-500 px-5 font-bold text-white shadow-[0_18px_46px_-26px_rgba(249,115,22,.55)] transition hover:bg-orange-400"
+                  className="h-12 rounded-2xl bg-orange-500 px-5 font-bold text-primary-foreground shadow-[0_18px_46px_-26px_rgba(249,115,22,.55)] transition hover:bg-orange-400"
                 >
                   <Link href="/dach-veranstaltungen/neu">
                     <Plus className="mr-2 h-4 w-4" />
@@ -394,7 +387,7 @@ export default function VeranstaltungenPage() {
         </section>
 
         <div className="relative z-20 mt-4 w-full">
-          <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-black/40 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] backdrop-blur-xl">
+          <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                 <div className="relative flex-1">
@@ -410,7 +403,7 @@ export default function VeranstaltungenPage() {
                       type="button"
                       onClick={() => setQuery("")}
                       aria-label="Suche löschen"
-                      className="absolute right-4 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/[0.06] text-white/45 transition hover:bg-white/[0.10] hover:text-white"
+                      className="absolute right-4 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/[0.06] text-muted-foreground transition hover:bg-white/[0.10] hover:text-white"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -446,8 +439,8 @@ export default function VeranstaltungenPage() {
                     onClick={() => setQuickFilter(option.value as QuickFilter)}
                     className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${
                       quickFilter === option.value
-                        ? "border border-orange-300/20 bg-orange-500 text-white shadow-[0_10px_28px_-20px_rgba(249,115,22,.7)]"
-                        : "border border-white/[0.08] bg-white/[0.04] text-white/50 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white/75"
+                        ? "border border-orange-300/20 bg-orange-500 text-primary-foreground shadow-[0_10px_28px_-20px_rgba(249,115,22,.7)]"
+                        : "border border-white/[0.08] bg-white/[0.04] text-muted-foreground hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white/75"
                     }`}
                   >
                     {option.label}
@@ -464,7 +457,7 @@ export default function VeranstaltungenPage() {
                     className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
                       timeFilter === option.value
                         ? "border border-sky-300/[0.18] bg-sky-500/[0.10] text-sky-100"
-                        : "border border-white/[0.08] bg-white/[0.035] text-white/40 hover:bg-white/[0.06] hover:text-white/70"
+                        : "border border-white/[0.08] bg-white/[0.035] text-muted-foreground hover:bg-white/[0.06] hover:text-white/70"
                     }`}
                   >
                     {option.label}
@@ -534,7 +527,7 @@ export default function VeranstaltungenPage() {
               ) : null}
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] pt-3 text-sm">
-                <span className="font-semibold text-white/35">
+                <span className="font-semibold text-muted-foreground">
                   {loading ? "Veranstaltungen werden geladen …" : `${filtered.length} Treffer gefunden`}
                 </span>
                 {(activeFilterCount > 0 || query) ? (
@@ -551,10 +544,10 @@ export default function VeranstaltungenPage() {
           {!loading && !error && filtered.length > 0 ? (
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-black tracking-tight sm:text-2xl">
+                <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
                   {timeFilter === "past" ? "Vergangene Veranstaltungen" : timeFilter === "all" ? "Alle Veranstaltungen" : "Kommende Veranstaltungen"}
                 </h2>
-                <p className="mt-1 text-sm text-white/35">Entdecke Turniere und öffne die Detailansicht für weitere Informationen.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Entdecke Turniere und öffne die Detailansicht für weitere Informationen.</p>
               </div>
             </div>
           ) : null}
@@ -562,7 +555,7 @@ export default function VeranstaltungenPage() {
           {loading ? (
             <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-3">
               {[0, 1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex gap-4 rounded-[24px] border border-white/[0.08] bg-black/25 p-4">
+                <div key={item} className="flex gap-4 rounded-[24px] border border-white/[0.08] bg-card p-4">
                   <div className="h-24 w-20 animate-pulse rounded-2xl bg-white/[0.07]" />
                   <div className="flex-1 space-y-3 py-1">
                     <div className="h-5 w-2/3 animate-pulse rounded bg-white/[0.07]" />
@@ -577,13 +570,13 @@ export default function VeranstaltungenPage() {
               <CardContent className="py-14 text-center text-red-200">{error}</CardContent>
             </Card>
           ) : filtered.length === 0 ? (
-            <Card className="rounded-[28px] border-0 bg-black/25 shadow-none">
+            <Card className="rounded-[28px] border-0 bg-card shadow-none">
               <CardContent className="py-16 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.045]">
-                  <Filter className="h-6 w-6 text-white/35" />
+                  <Filter className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <p className="mt-4 text-lg font-black">Keine passenden Veranstaltungen gefunden</p>
-                <p className="mx-auto mt-2 max-w-md text-sm text-white/35">
+                <p className="mt-4 text-lg font-semibold">Keine passenden Veranstaltungen gefunden</p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                   Passe den Suchbegriff oder die Filter an, um weitere Turniere zu entdecken.
                 </p>
                 <Button type="button" variant="outline" onClick={resetFilters} className="mt-5 rounded-xl">
@@ -612,7 +605,7 @@ export default function VeranstaltungenPage() {
                     className="group block"
                   >
                     <article
-                      className={`relative h-full overflow-hidden rounded-[24px] border bg-black/35 shadow-[0_22px_60px_-46px_rgba(0,0,0,.95)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:bg-black/42 hover:shadow-[0_26px_72px_-44px_rgba(0,0,0,.98)] ${
+                      className={`relative h-full overflow-hidden rounded-[24px] border bg-card shadow-[0_22px_60px_-46px_rgba(0,0,0,.95)]  transition duration-300 hover:-translate-y-0.5 hover:bg-black/42 hover:shadow-[0_26px_72px_-44px_rgba(0,0,0,.98)] ${
                         isCancelled
                           ? "border-red-300/[0.22] ring-1 ring-red-300/[0.08]"
                           : "border-white/[0.08] hover:border-orange-300/[0.22]"
@@ -623,13 +616,13 @@ export default function VeranstaltungenPage() {
                           className={`flex w-24 shrink-0 flex-col items-center justify-center px-3 text-center sm:w-28 ${
                             isCancelled
                               ? "bg-red-600 text-white"
-                              : "bg-[linear-gradient(180deg,rgba(15,20,28,.96),rgba(5,8,12,.98))] text-white"
+                              : "bg-card text-white"
                           }`}
                         >
-                          <div className="text-3xl font-black leading-none sm:text-4xl">
+                          <div className="text-3xl font-semibold leading-none sm:text-4xl">
                             {dayNumber(startDate)}
                           </div>
-                          <div className={`mt-1 text-sm font-black tracking-widest ${
+                          <div className={`mt-1 text-sm font-semibold tracking-widest ${
                             isCancelled ? "text-red-100" : "text-orange-400"
                           }`}>
                             {shortMonth(startDate)}
@@ -643,30 +636,30 @@ export default function VeranstaltungenPage() {
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap gap-2">
-                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/[0.08] px-2.5 py-1 text-[11px] font-black text-orange-200">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/[0.08] px-2.5 py-1 text-xs font-semibold text-orange-200">
                                   <DartIcon value={discipline} />
                                   {dartLabel(discipline)}
                                 </span>
 
                                 {event.country_code ? (
-                                  <span className="rounded-full border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-[11px] font-black text-white/45">
+                                  <span className="rounded-full border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-muted-foreground">
                                     {event.country_code} · {country}
                                   </span>
                                 ) : null}
 
                                 {isCancelled ? (
-                                  <span className="rounded-full bg-red-600 px-2.5 py-1 text-[11px] font-black text-white">
+                                  <span className="rounded-full bg-red-600 px-2.5 py-1 text-xs font-semibold text-white">
                                     ABGESAGT
                                   </span>
                                 ) : isPast ? (
-                                  <span className="rounded-full border border-white/[0.07] bg-white/[0.035] px-2.5 py-1 text-[11px] font-black text-white/35">
+                                  <span className="rounded-full border border-white/[0.07] bg-white/[0.035] px-2.5 py-1 text-xs font-semibold text-muted-foreground">
                                     VERGANGEN
                                   </span>
                                 ) : null}
                               </div>
 
                               <h3
-                                className={`mt-3 line-clamp-2 text-lg font-black leading-snug sm:text-xl ${
+                                className={`mt-3 line-clamp-2 text-lg font-semibold leading-snug sm:text-xl ${
                                   isCancelled
                                     ? "text-red-700 line-through decoration-2"
                                     : "text-white group-hover:text-orange-200"
@@ -675,7 +668,7 @@ export default function VeranstaltungenPage() {
                                 {event.name}
                               </h3>
 
-                              <div className="mt-2 flex items-start gap-2 text-sm font-semibold text-white/50">
+                              <div className="mt-2 flex items-start gap-2 text-sm font-semibold text-muted-foreground">
                                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-orange-200" />
                                 <span className="line-clamp-1">
                                   {location}
@@ -684,13 +677,13 @@ export default function VeranstaltungenPage() {
                               </div>
 
                               {event.details ? (
-                                <p className="mt-3 line-clamp-2 text-sm leading-6 text-white/35">
+                                <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
                                   {event.details}
                                 </p>
                               ) : null}
 
                               {event.startgeld_details ? (
-                                <div className="mt-3 inline-flex rounded-xl bg-orange-500/[0.08] px-3 py-1.5 text-xs font-black text-orange-200">
+                                <div className="mt-3 inline-flex rounded-xl bg-orange-500/[0.08] px-3 py-1.5 text-xs font-semibold text-orange-200">
                                   Startgeld: {event.startgeld_details}
                                 </div>
                               ) : null}
@@ -700,7 +693,7 @@ export default function VeranstaltungenPage() {
                               className={`mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${
                                 isCancelled
                                   ? "border border-red-300/[0.14] bg-red-500/[0.08] text-red-200 group-hover:bg-red-500 group-hover:text-white"
-                                  : "border border-white/[0.08] bg-white/[0.04] text-white/55 group-hover:border-orange-300/25 group-hover:bg-orange-500 group-hover:text-white"
+                                  : "border border-white/[0.08] bg-white/[0.04] text-muted-foreground group-hover:border-orange-300/25 group-hover:bg-orange-500 group-hover:text-white"
                               }`}
                             >
                               <ChevronRight className="h-5 w-5" />

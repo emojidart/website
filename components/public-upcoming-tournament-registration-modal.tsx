@@ -372,24 +372,24 @@ export function PublicUpcomingTournamentRegistrationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px] p-6 bg-white rounded-lg shadow-xl">
-        <DialogHeader className="pb-4 border-b border-gray-100">
-          <DialogTitle className="text-2xl font-bold text-gray-900">Turnier Anmeldung</DialogTitle>
-          <DialogDescription className="text-gray-600">
+      <DialogContent className="sm:max-w-[425px] p-6 bg-card rounded-lg shadow-xl">
+        <DialogHeader className="pb-4 border-b border-border">
+          <DialogTitle className="text-2xl font-bold text-foreground">Turnier Anmeldung</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             {tournamentName ? `Turnier "${tournamentName}"` : "Turnier"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4 space-y-4">
           {tournamentName && (
-            <div className="flex items-center gap-2 text-gray-700">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4 text-red-500" />
               <span className="font-semibold">{tournamentName}</span>
             </div>
           )}
 
           {tournamentDate && tournamentTime && (
-            <div className="flex items-center gap-2 text-gray-700">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4 text-blue-500" />
               <span>
                 {tournamentDate} um {tournamentTime}
@@ -398,34 +398,34 @@ export function PublicUpcomingTournamentRegistrationModal({
           )}
 
           {tournamentLocation && (
-            <div className="flex items-center gap-2 text-gray-700">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4 text-green-500" />
               <span>{tournamentLocation}</span>
             </div>
           )}
 
           {modeLabel && (
-            <div className="flex items-center gap-2 text-gray-700">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Swords className="h-4 w-4 text-purple-500" />
               <span>Modus: {modeLabel}</span>
             </div>
           )}
 
           {tournamentEntryFee !== null && (
-            <div className="flex items-center gap-2 text-gray-700">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Euro className="h-4 w-4 text-yellow-500" />
               <span>Startgeld: {tournamentEntryFee.toFixed(2)} €</span>
             </div>
           )}
 
           {authLoading ? (
-            <div className="text-sm text-gray-600">Lade Benutzerstatus…</div>
+            <div className="text-sm text-muted-foreground">Lade Benutzerstatus…</div>
           ) : !session ? (
             <div className="p-3 rounded-md text-sm bg-yellow-50 text-yellow-800 border border-yellow-100">
               Bitte melde dich an, um dich für dieses Turnier zu registrieren.
             </div>
           ) : (
-            <div className="p-3 rounded-md text-sm bg-gray-50 text-gray-700 border border-gray-100">
+            <div className="p-3 rounded-md text-sm bg-muted text-muted-foreground border border-border">
               <div className="font-semibold">Du bist eingeloggt als:</div>
               <div className="mt-1">
                 <div>
@@ -437,7 +437,7 @@ export function PublicUpcomingTournamentRegistrationModal({
               </div>
 
               {checkingRegistration && (
-                <div className="mt-2 text-xs text-gray-500 flex items-center gap-2">
+                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
                   <Loader2 className="h-3 w-3 animate-spin" /> Prüfe Anmeldung…
                 </div>
               )}
@@ -470,7 +470,7 @@ export function PublicUpcomingTournamentRegistrationModal({
             <Button
               type="button"
               onClick={() => router.push("/member-login")}
-              className="w-full bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+              className="w-full bg-card     text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
             >
               <div className="flex items-center gap-2">
                 <LogIn className="h-4 w-4" />
@@ -483,7 +483,7 @@ export function PublicUpcomingTournamentRegistrationModal({
               onClick={handleUnregister}
               disabled={!canDoAction}
               title={disabledReason ?? undefined}
-              className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-card     text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -503,7 +503,7 @@ export function PublicUpcomingTournamentRegistrationModal({
               onClick={handleRegister}
               disabled={!canDoAction}
               title={disabledReason ?? undefined}
-              className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-card     text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="flex items-center gap-2">

@@ -225,15 +225,11 @@ export default function NeuesInseratPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#050608] text-white pb-32"><Header />
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.28]" style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }} />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78),rgba(3,5,9,.95)_48%,rgba(2,4,7,.99))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_16%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_90%_28%,rgba(14,165,233,.10),transparent_26%)]" />
-      </div>
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white pb-32"><Header />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-24 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
         <Button variant="outline" onClick={() => router.push("/dartboerse")} className="mb-4 h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white/65 hover:bg-white/[0.09] hover:text-white"><ArrowLeft className="mr-2 h-4 w-4" />Zur Dartbörse</Button>
-        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/92 p-4 text-white shadow-[0_28px_90px_-50px_rgba(0,0,0,.98)] backdrop-blur-xl sm:p-6 lg:p-7 xl:p-9"><div className="text-sm font-black uppercase tracking-[0.18em] text-orange-300">Neues Angebot</div><h1 className="mt-2 text-3xl font-black sm:text-4xl">Dartartikel verkaufen</h1><p className="mt-2 text-white/42">Mit guten Bildern und einer ehrlichen Beschreibung findest du schneller einen Käufer.</p></section>
+        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-[#0b0f15]/92 p-4 text-white shadow-[0_28px_90px_-50px_rgba(0,0,0,.98)]  sm:p-6 lg:p-7 xl:p-9"><div className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-300">Neues Angebot</div><h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Dartartikel verkaufen</h1><p className="mt-2 text-white/42">Mit guten Bildern und einer ehrlichen Beschreibung findest du schneller einen Käufer.</p></section>
 
         <form onSubmit={submit} className="mt-4 grid items-start gap-4 xl:grid-cols-2 xl:gap-5">
           <Section title="Artikel" icon={<Package className="h-5 w-5" />}>
@@ -249,12 +245,12 @@ export default function NeuesInseratPage() {
                 <p className="text-sm font-semibold text-white/48">
                   Bis zu fünf Bilder, jeweils maximal 8 MB. Das erste Bild wird als Titelbild verwendet.
                 </p>
-                <p className="mt-1 text-xs text-white/35">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Erlaubt sind JPG, PNG und WebP.
                 </p>
               </div>
 
-              <span className="w-fit rounded-full bg-white/[0.05] px-3 py-1 text-xs font-black text-white/60">
+              <span className="w-fit rounded-full bg-white/[0.05] px-3 py-1 text-xs font-semibold text-white/60">
                 {images.length}/5 Bilder
               </span>
             </div>
@@ -274,7 +270,7 @@ export default function NeuesInseratPage() {
                       />
 
                       {imageIndex === 0 ? (
-                        <span className="absolute left-2 top-2 rounded-full bg-orange-500/[0.08]0 px-2.5 py-1 text-[10px] font-black text-white shadow">
+                        <span className="absolute left-2 top-2 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
                           TITELBILD
                         </span>
                       ) : null}
@@ -301,7 +297,7 @@ export default function NeuesInseratPage() {
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
 
-                      <span className="text-xs font-black text-white/35">
+                      <span className="text-xs font-semibold text-muted-foreground">
                         {imageIndex + 1}
                       </span>
 
@@ -324,7 +320,7 @@ export default function NeuesInseratPage() {
             {images.length < 5 ? (
               <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-orange-300 bg-orange-500/[0.08] px-4 py-8 text-center transition hover:bg-orange-500/[0.12]">
                 <ImagePlus className="h-9 w-9 text-orange-300" />
-                <span className="mt-3 font-black text-orange-100">
+                <span className="mt-3 font-semibold text-orange-100">
                   {images.length
                     ? "Weitere Bilder hinzufügen"
                     : "Bilder auswählen"}
@@ -379,11 +375,11 @@ export default function NeuesInseratPage() {
           </Section>
 
           {message ? <div className={`rounded-2xl border p-4 text-sm font-bold ${success ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-200" : "border-rose-300/20 bg-rose-500/[0.08] text-rose-300"}`}>{success ? <CheckCircle2 className="mr-2 inline h-5 w-5" /> : <ShieldAlert className="mr-2 inline h-5 w-5" />}{message}</div> : null}
-          <Button disabled={saving} className="h-13 w-full rounded-2xl border border-orange-300/20 bg-orange-500 font-black text-white/[0.08]0 text-base font-black hover:bg-orange-600">{saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}{saving ? "Wird eingereicht …" : "Inserat zur Freigabe einreichen"}</Button>
+          <Button disabled={saving} className="h-13 w-full rounded-2xl border border-orange-300/20 bg-orange-500 font-semibold text-white/80 text-base font-semibold hover:bg-orange-600 text-primary-foreground">{saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}{saving ? "Wird eingereicht …" : "Inserat zur Freigabe einreichen"}</Button>
         </form>
       </main><MobileBottomNav /></div>
   )
 }
 
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) { return <Card className="rounded-[24px] border-white/[0.08] shadow-sm"><CardContent className="space-y-4 p-5 sm:p-6"><div className="flex items-center gap-2 text-lg font-black"><span className="text-orange-300">{icon}</span>{title}</div>{children}</CardContent></Card> }
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-xs font-black uppercase tracking-wide text-white/48">{label}</span>{children}</label> }
+function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) { return <Card className="rounded-[24px] border-white/[0.08] shadow-sm"><CardContent className="space-y-4 p-5 sm:p-6"><div className="flex items-center gap-2 text-lg font-semibold"><span className="text-orange-300">{icon}</span>{title}</div>{children}</CardContent></Card> }
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/48">{label}</span>{children}</label> }
