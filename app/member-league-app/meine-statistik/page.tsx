@@ -1,6 +1,6 @@
 "use client"
 
-import { InlineLoader, LoadingIndicator } from "@/components/loading/loading"
+import { LoadingIndicator } from "@/components/loading/loading"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -367,12 +367,29 @@ export default function MemberStatisticsPage() {
       <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       {authLoading || membershipLoading ? (
-        <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24">
-          <div className="w-full max-w-sm rounded-[28px] border border-white/[0.08] bg-card p-8 text-center ">
-            
-            <InlineLoader label="Statistiken werden geladen" />
-            <p className="mt-1 text-sm font-semibold text-muted-foreground">Einen Moment bitte…</p>
-          </div>
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Persönliche Statistiken werden geladen">
+          <section className="rounded-[30px] border border-white/[0.08] bg-card p-5 sm:p-7">
+            <div className="flex items-start gap-4">
+              <div className="h-14 w-14 shrink-0 animate-pulse rounded-[20px] bg-white/10" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                <div className="h-8 w-52 max-w-full animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+              </div>
+            </div>
+          </section>
+          <section className="rounded-[24px] border border-white/[0.08] bg-card p-4 sm:p-5">
+            <div className="mb-4 h-3 w-24 animate-pulse rounded bg-white/10" />
+            <div className="h-11 w-full max-w-sm animate-pulse rounded-xl bg-white/10" />
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {Array.from({ length: 3 }, (_, index) => (
+                <div key={index} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+                  <div className="mt-4 h-8 w-16 animate-pulse rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+          </section>
         </main>
       ) : (
         <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
