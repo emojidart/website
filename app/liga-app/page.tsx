@@ -3,6 +3,7 @@
 import { SectionSkeleton } from "@/components/loading/loading"
 
 import { useState, useEffect, useMemo } from "react"
+import type { LeagueTeam, LeagueMatch, LeaguePlayer, LeagueLegStat, LeagueStanding } from "@/lib/league-display-types"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -113,11 +114,11 @@ const isMissingResult = (match: any) => {
 }
 
 export default function DartLeaguePage() {
-  const [matches, setMatches] = useState([])
-  const [teams, setTeams] = useState([])
-  const [opponentTeams, setOpponentTeams] = useState([])
-  const [players, setPlayers] = useState([])
-  const [legStatistics, setLegStatistics] = useState([])
+  const [matches, setMatches] = useState<LeagueMatch[]>([])
+  const [teams, setTeams] = useState<LeagueTeam[]>([])
+  const [opponentTeams, setOpponentTeams] = useState<LeagueTeam[]>([])
+  const [players, setPlayers] = useState<LeaguePlayer[]>([])
+  const [legStatistics, setLegStatistics] = useState<LeagueLegStat[]>([])
   const [loading, setLoading] = useState(true)
   const [dartTypeFilter, setDartTypeFilter] = useState<"gesamt" | "edart" | "steeldart">("gesamt")
   const [playersPerPage, setPlayersPerPage] = useState(10)
@@ -313,7 +314,7 @@ if (playersError) {
   }, [seasons, selectedSeasonId])
 
   const calculateStandings = () => {
-    const standings = {}
+    const standings: Record<string, LeagueStanding> = {}
 
     teams.forEach((team) => {
       standings[team.id] = {
