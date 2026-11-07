@@ -42,3 +42,18 @@ body { line-height: 1.55; background: var(--background); color: var(--foreground
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Sofortiges Navigationsfeedback, ohne Inhalte auszublenden. */
+.emd-route-progress-bar {
+  width: 78%;
+  transform-origin: left center;
+  animation: emd-route-progress 2.3s cubic-bezier(.2,.7,.2,1) both;
+  box-shadow: 0 0 12px rgba(255,152,89,.45);
+}
+@keyframes emd-route-progress {
+  from { transform: scaleX(.06); opacity: .8; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .emd-route-progress-bar { animation: none; }
+}
