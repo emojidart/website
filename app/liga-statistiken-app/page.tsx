@@ -478,7 +478,7 @@ if (playersError) {
               throws_18: (acc.throws_18 || 0) + (stat.throws_18 || 0),
               throws_19: (acc.throws_19 || 0) + (stat.throws_19 || 0),
             }
-          }, { throws_15: 0, throws_16: 0, throws_17: 0, throws_18: 0, throws_19: 0 }))
+          }, { throws_15: 0, throws_16: 0, throws_17: 0, throws_18: 0, throws_19: 0 })
 
         const totalPoints = calculatePlayerPoints(player, detailedStats)
 
