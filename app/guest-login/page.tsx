@@ -1,6 +1,7 @@
 "use client"
 
-import { ButtonLoader, PageLoader, SectionSkeleton } from "@/components/loading/loading"
+import { ButtonLoader } from "@/components/loading/loading"
+import { AuthLoginSkeleton } from "@/components/auth/auth-login-skeleton"
 
 export const dynamic = "force-dynamic"
 
@@ -22,15 +23,13 @@ import { Mail, Lock, Users, Eye, EyeOff, KeyRound, ShieldCheck, ArrowRight } fro
 
 export default function GuestLoginPage() {
   return (
-    <Suspense fallback={<SectionSkeleton kind="cards" label="Bereich wird geladen…" />}>
+    <Suspense fallback={<AuthLoginSkeleton />}>
       <GuestLoginClient />
     </Suspense>
   )
 }
 
-function LoginSkeleton() {
-  return <PageLoader label="Zugang wird vorbereitet…" fullPage />
-}
+
 
 function GuestLoginClient() {
   const [email, setEmail] = useState("")
@@ -300,7 +299,7 @@ function GuestLoginClient() {
     }
   }
 
-  if (authLoading && !loading) return <LoginSkeleton />
+  if (authLoading && !loading) return <AuthLoginSkeleton />
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
