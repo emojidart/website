@@ -141,8 +141,8 @@ function fmtDate(iso:string|null|undefined){
   if(!iso)return "—"
   return new Date(`${iso}T12:00:00`).toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"})
 }
-function fmtDateRange(start:string|null|undefined,end:string|null|undefined){
-  if(!start)return "—"
+function fmtDateRange(start:string|null|undefined,end:string|null|undefined,dateOpen=false){
+  if(dateOpen || !start)return "Termin offen"
   const effectiveEnd=end||start
   if(start===effectiveEnd)return fmtDate(start)
   return `${fmtDate(start)} – ${fmtDate(effectiveEnd)}`
