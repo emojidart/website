@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+import { LoadingIndicator } from "@/components/loading/loading"
 import { TournamentManagerSkeleton } from "@/components/tournaments/tournament-manager-skeleton"
 
 import { useEffect, useMemo, useState } from "react";
@@ -438,7 +438,22 @@ export default function MeineDachVeranstaltungenPage() {
         ) : null}
 
         {loading ? (
-          <SectionSkeleton kind="tournament" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" role="status" aria-busy="true" aria-label="Eigene Veranstaltungen werden geladen">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="space-y-4 rounded-[20px] border border-white/10 bg-card p-5" aria-hidden="true">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="h-6 w-2/3 animate-pulse rounded bg-white/10" />
+                  <div className="h-6 w-24 animate-pulse rounded-full bg-white/10" />
+                </div>
+                <div className="h-4 w-4/5 animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-3/5 animate-pulse rounded bg-white/10" />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="h-11 animate-pulse rounded-xl bg-white/10" />
+                  <div className="h-11 animate-pulse rounded-xl bg-white/10" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <Card className="overflow-hidden rounded-[20px] border-white/10 shadow-lg shadow-none">
             <CardContent className="p-10 text-center sm:p-14">
