@@ -68,11 +68,27 @@ export function RouteProgress() {
       if (!isStandalone(window.location.pathname)) show()
     }
 
+    const onProgrammaticNavigation = (event: Event) => {
+      const href = (event as CustomEvent<{ href?: string }>).detail?.href
+      if (!href) return
+      let url: URL
+      try {
+        url = new URL(href, window.location.href)
+      } catch {
+        return
+      }
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return
+      if (isStandalone(window.location.pathname) || isStandalone(url.pathname)) return
+      show()
+    }
+
     document.addEventListener("click", onClick)
+    window.addEventListener("emd:route-start", onProgrammaticNavigation)
     window.addEventListener("popstate", onPopState)
     window.addEventListener("pageshow", clear)
     return () => {
       document.removeEventListener("click", onClick)
+      window.removeEventListener("emd:route-start", onProgrammaticNavigation)
       window.removeEventListener("popstate", onPopState)
       window.removeEventListener("pageshow", clear)
       if (resetTimer.current) clearTimeout(resetTimer.current)
