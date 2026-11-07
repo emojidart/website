@@ -1,7 +1,5 @@
 "use client"
 
-import { SectionSkeleton } from "@/components/loading/loading"
-
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { createBrowserClient } from "@supabase/ssr"
