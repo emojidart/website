@@ -1652,9 +1652,33 @@ const postponeMatch = async (
 
 if (authLoading || loading || membershipLoading) {
   return (
-    <div className="emd-loading-surface min-h-screen bg-background text-foreground">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
       <Header variant="app" title="Liga" subtitle="Spielplan & Ergebnisse" backHref="/member-profile-app" />
-      <main className="flex min-h-[70dvh] flex-col items-center justify-center gap-4 px-5 pt-20" role="status" aria-live="polite"><SectionSkeleton kind="cards" /></main>
+      <main className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Liga-Dashboard wird geladen">
+        <section className="rounded-[28px] border border-white/[0.08] bg-card p-5 sm:p-7">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 shrink-0 animate-pulse rounded-2xl bg-white/10" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="h-3.5 w-32 animate-pulse rounded bg-white/10" />
+              <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
+            </div>
+          </div>
+          <div className="mt-5 h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+        </section>
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={index} className="rounded-2xl border border-white/[0.08] bg-card p-4">
+              <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+              <div className="mt-4 h-8 w-16 animate-pulse rounded bg-white/10" />
+            </div>
+          ))}
+        </section>
+        <section className="rounded-[24px] border border-white/[0.08] bg-card p-4 sm:p-6">
+          <div className="mb-5 h-6 w-44 animate-pulse rounded bg-white/10" />
+          <SectionSkeleton kind="cards" label="Spiele und Ergebnisse werden geladen…" />
+        </section>
+      </main>
+      <MobileBottomNav />
     </div>
   )
 }
