@@ -148,6 +148,7 @@ function NavButton({ item, className }: { item: NavItem; className?: string }) {
 
   return (
     <button
+      type="button"
       onClick={item.onClick}
       className={cn(
         "group flex w-full items-center gap-3 rounded-2xl border p-3 font-semibold transition-all",
@@ -186,6 +187,11 @@ export function MobileBottomNav() {
   const [profileChecked, setProfileChecked] = useState(false)
 
   const closeMore = useCallback(() => setIsMoreOpen(false), [])
+
+  // Ein offenes Mobilmenü darf nicht auf der nächsten Seite hängen bleiben.
+  useEffect(() => {
+    setIsMoreOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     let mounted = true
