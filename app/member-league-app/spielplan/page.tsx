@@ -2402,7 +2402,49 @@ const postponeMatch = async (
 
 
 if (authLoading || loading || membershipLoading) {
-  return <div className="min-h-[1px]" aria-hidden="true" />
+  return (
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
+      <Header variant="app" title="Spielplan" subtitle="Ligazentrale" backHref="/member-league-app" />
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-4 px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Spielplan wird geladen">
+        <section className="rounded-[26px] border border-white/[0.09] bg-card p-4 sm:p-6 lg:p-8">
+          <div className="mb-5 h-6 w-20 animate-pulse rounded-full bg-white/10" />
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 shrink-0 animate-pulse rounded-2xl bg-white/10" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="h-3 w-48 max-w-full animate-pulse rounded bg-white/10" />
+              <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
+            </div>
+          </div>
+          <div className="mt-5 h-4 w-full max-w-xl animate-pulse rounded bg-white/10" />
+          <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="rounded-2xl border border-white/10 bg-white/[0.05] p-3 sm:p-4">
+                <div className="h-3 w-full max-w-24 animate-pulse rounded bg-white/10" />
+                <div className="mt-3 h-8 w-16 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="rounded-[24px] border border-white/[0.09] bg-card p-4 sm:p-6">
+          <div className="mb-5 flex flex-wrap gap-2">
+            {Array.from({ length: 3 }, (_, index) => <div key={index} className="h-11 w-28 flex-1 animate-pulse rounded-xl bg-white/10" />)}
+          </div>
+          <div className="space-y-3">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="flex items-center gap-3 rounded-xl border border-white/[0.07] p-3">
+                <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-white/10" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="h-4 w-3/4 animate-pulse rounded bg-white/10" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-white/10" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+      <MobileBottomNav />
+    </div>
+  )
 }
 
 
