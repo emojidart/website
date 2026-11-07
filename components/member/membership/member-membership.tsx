@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { MembershipPaymentNotice } from "@/components/member/membership-payment-notice"
 
 import { useEffect, useMemo, useState } from "react"
@@ -12,24 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import {
-  AlertCircle,
-  CheckCircle2,
-  CreditCard,
-  Euro,
-  Loader2,
-  RefreshCw,
-  Send,
-  ShieldCheck,
-  WalletCards,
-  CalendarX,
-  Copy,
-  Landmark,
-  Banknote,
-  Gift,
-  ArrowLeft,
-  UserRound,
-} from "lucide-react"
+import { AlertCircle, CheckCircle2, CreditCard, Euro, RefreshCw, Send, ShieldCheck, WalletCards, CalendarX, Copy, Landmark, Banknote, Gift, ArrowLeft, UserRound } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type BillingCycle = "monthly" | "semiannual" | "annual"
@@ -870,7 +855,7 @@ export function MemberMembership() {
 
   return (
     <div className="w-full min-w-0 space-y-4 overflow-x-hidden px-3 py-3 pb-24 sm:space-y-5 sm:px-6 sm:py-6 sm:pb-10 lg:px-8 xl:px-10 2xl:px-12">
-      <section className="relative min-w-0 overflow-hidden rounded-[24px] border border-border bg-background shadow-[0_24px_80px_-36px_rgba(15,23,42,0.7)] sm:rounded-[30px]">
+      <section className="relative min-w-0 overflow-hidden rounded-[24px] border border-border bg-background shadow-sm sm:rounded-[20px]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(249,115,22,0.20),transparent_28%),radial-gradient(circle_at_85%_0%,rgba(255,255,255,0.08),transparent_28%)]" />
         <div className="relative px-4 py-5 sm:px-7 sm:py-7 lg:px-8 lg:py-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -916,7 +901,7 @@ export function MemberMembership() {
                 className="h-11 w-11 rounded-xl border-white/10 bg-white/10 p-0 text-white shadow-none  hover:bg-white/15 hover:text-white"
                 title="Neu laden"
               >
-                <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                {loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={cn("h-4 w-4", loading && "")} />}
                 <span className="sr-only">Neu laden</span>
               </Button>
             </div>
@@ -961,7 +946,7 @@ export function MemberMembership() {
       ) : null}
 
       {!showPackageEditor && membership && !showCancelForm ? (
-        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-sm sm:rounded-[20px]">
           <CardHeader className="border-b border-border px-4 py-5 sm:px-7 sm:py-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -1081,7 +1066,7 @@ export function MemberMembership() {
       ) : null}
 
       {showPackageEditor && !isPendingCancellation ? (
-        <div className="rounded-[24px] border border-border bg-card p-4 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.5)] sm:rounded-[28px] sm:p-6">
+        <div className="rounded-[24px] border border-border bg-card p-4 shadow-sm sm:rounded-[20px] sm:p-6">
           <div className="grid grid-cols-3 gap-2">
             {[
               { step: 1 as const, label: "Zahlung" },
@@ -1096,7 +1081,7 @@ export function MemberMembership() {
                   <div
                     className={cn(
                       "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold",
-                      active && "border-orange-600 bg-orange-600 text-white",
+                      active && "border-orange-600 bg-primary text-primary-foreground",
                       done && "border-green-600 bg-green-600 text-white",
                       !active && !done && "border-border bg-muted text-muted-foreground",
                     )}
@@ -1153,7 +1138,7 @@ export function MemberMembership() {
                 </CardDescription>
               </div>
 
-              <Badge className="w-fit bg-orange-600">
+              <Badge className="w-fit bg-primary">
                 {pendingRequest.request_type === "cancel"
                   ? requestStatusLabel(pendingRequest.requested_status)
                   : pendingRequest.payment_method === "stripe" &&
@@ -1251,20 +1236,17 @@ export function MemberMembership() {
               onClick={cancelPendingRequest}
               disabled={cancelling}
               className="rounded-xl border-orange-300 bg-card"
-            >
-              {cancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {pendingRequest.request_type === "cancel"
+             loading={Boolean(cancelling)}>{null}{pendingRequest.request_type === "cancel"
                 ? "Kündigungsanfrage stornieren"
                 : pendingRequest.payment_method === "stripe"
                   ? "Paketänderung abbrechen"
-                  : "Anfrage stornieren"}
-            </Button>
+                  : "Anfrage stornieren"}</Button>
           </CardContent>
         </Card>
       ) : null}
 
       {activeTrials.length > 0 ? (
-        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-sm sm:rounded-[20px]">
           <CardHeader className="border-b border-border px-4 py-5 sm:px-7 sm:py-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -1315,7 +1297,7 @@ export function MemberMembership() {
       ) : null}
 
       {showPackageEditor && !isPendingCancellation && wizardStep === 1 ? (
-        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-sm sm:rounded-[20px]">
           <CardHeader>
             <CardTitle>1. Abrechnung & Zahlungsart</CardTitle>
             <CardDescription>
@@ -1382,7 +1364,7 @@ export function MemberMembership() {
       ) : null}
 
       {showPackageEditor && !isPendingCancellation && wizardStep === 2 ? (
-        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-sm sm:rounded-[20px]">
           <CardHeader>
             <CardTitle>2. Dein Paket</CardTitle>
             <CardDescription>
@@ -1423,7 +1405,7 @@ export function MemberMembership() {
                         {module.code === "premium_app" ? (
                           <Badge
                             variant="outline"
-                            className="rounded-full border-purple-200 bg-purple-50 text-purple-700"
+                            className="rounded-full border-orange-200 bg-orange-50 text-orange-700"
                           >
                             Premium
                           </Badge>
@@ -1785,20 +1767,15 @@ export function MemberMembership() {
                     onClick={() => void startStripeCheckout(pendingRequest.id)}
                     disabled={checkoutLoading}
                     className="mt-4 h-11 rounded-xl bg-blue-600 px-5 font-semibold text-white hover:bg-blue-700"
-                  >
-                    {checkoutLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
+                   loading={Boolean(checkoutLoading)}>{(
                       <CreditCard className="mr-2 h-4 w-4" />
-                    )}
-                    {checkoutLoading
+                    )}{checkoutLoading
                       ? membership
                         ? "Stripe-Abo wird angepasst..."
                         : "Stripe wird geöffnet..."
                       : membership
                         ? "Paketänderung mit Stripe abschließen"
-                        : "Mitgliedschaft mit Stripe abschließen"}
-                  </Button>
+                        : "Mitgliedschaft mit Stripe abschließen"}</Button>
                 ) : (
                   <div className="mt-3 rounded-xl border border-blue-200 bg-card px-3 py-2 text-sm font-bold text-blue-800">
                     {membership
@@ -1865,13 +1842,9 @@ export function MemberMembership() {
                   onClick={submitCancellation}
                   disabled={submitting || !cancelEndOn}
                   className="rounded-xl bg-red-600 font-semibold text-white hover:bg-red-700"
-                >
-                  {submitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
+                 loading={Boolean(submitting)}>{(
                     <CalendarX className="mr-2 h-4 w-4" />
-                  )}
-                  Kündigung anfragen
+                  )}Kündigung anfragen
                 </Button>
               </div>
             </div>
@@ -1880,7 +1853,7 @@ export function MemberMembership() {
       ) : null}
 
       {showPackageEditor && !isPendingCancellation && wizardStep === 1 ? (
-        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-sm sm:rounded-[20px]">
           <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="font-semibold text-foreground">Zahlungsweise</div>
@@ -1907,7 +1880,7 @@ export function MemberMembership() {
               <Button
                 type="button"
                 onClick={() => setWizardStep(2)}
-                className="h-11 rounded-xl bg-orange-600 px-6 font-semibold text-white hover:bg-orange-700"
+                className="h-11 rounded-xl bg-primary px-6 font-semibold text-primary-foreground hover:bg-orange-700"
               >
                 Weiter zum Paket
               </Button>
@@ -1917,7 +1890,7 @@ export function MemberMembership() {
       ) : null}
 
       {showPackageEditor && !isPendingCancellation && wizardStep === 2 ? (
-        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-40px_rgba(15,23,42,0.45)] sm:rounded-[28px]">
+        <Card className="min-w-0 overflow-hidden rounded-[24px] border border-border bg-card shadow-sm sm:rounded-[20px]">
           <CardContent className="p-5 sm:p-6">
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
@@ -1948,7 +1921,7 @@ export function MemberMembership() {
                 <Button
                   type="button"
                   onClick={() => setWizardStep(3)}
-                  className="h-11 rounded-xl bg-orange-600 px-6 font-semibold text-white hover:bg-orange-700"
+                  className="h-11 rounded-xl bg-primary px-6 font-semibold text-primary-foreground hover:bg-orange-700"
                 >
                   Weiter zur Zusammenfassung
                 </Button>
@@ -2028,14 +2001,8 @@ export function MemberMembership() {
                     type="button"
                     onClick={submitRequest}
                     disabled={submitting || !hasChanges}
-                    className="h-12 rounded-xl bg-orange-600 px-6 font-semibold text-white hover:bg-orange-700"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Wird verarbeitet...
-                      </>
-                    ) : paymentMethod === "stripe" ? (
+                    className="h-12 rounded-xl bg-primary px-6 font-semibold text-primary-foreground hover:bg-orange-700"
+                   loading={Boolean(submitting)} loadingLabel="Wird verarbeitet...">{paymentMethod === "stripe" ? (
                       <>
                         <CreditCard className="mr-2 h-4 w-4" />
                         {membership
@@ -2047,8 +2014,7 @@ export function MemberMembership() {
                         <Send className="mr-2 h-4 w-4" />
                         Paket verbindlich anfragen
                       </>
-                    )}
-                  </Button>
+                    )}</Button>
                 ) : (
                   <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-800">
                     {paymentMethod === "stripe"

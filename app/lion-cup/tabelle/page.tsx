@@ -1,11 +1,13 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState} from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import Image from "@/components/image"
-import { Loader2 } from "lucide-react"
+
 import {
   Trophy,
   Users,
@@ -154,7 +156,7 @@ function getPositionBadge(position: number) {
     case 3:
       return `${baseClasses} bg-card   text-white shadow-none`
     default:
-      return `${baseClasses} bg-white/[0.05] text-white/60 border border-white/[0.09]`
+      return `${baseClasses} bg-white/[0.05] text-muted-foreground border border-white/[0.09]`
   }
 }
 
@@ -163,7 +165,7 @@ function getPositionIcon(position: number) {
     case 1:
       return <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-amber-300" />
     case 2:
-      return <Medal className="h-4 w-4 sm:h-5 sm:w-5 text-white/25" />
+      return <Medal className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
     case 3:
       return <Award className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
     default:
@@ -175,7 +177,7 @@ function getPlacementColor(placement: number) {
   if (placement === 1) return "bg-amber-400 text-white"
   if (placement === 2) return "bg-secondary text-white"
   if (placement === 3) return "bg-amber-400 text-white"
-  return "bg-white/[0.05] text-white/60"
+  return "bg-white/[0.05] text-muted-foreground"
 }
 
 function getPlacementIcon(placement: number) {
@@ -296,7 +298,7 @@ function MobilePlayerCard({
 
           <div className="min-w-0 flex-1 overflow-hidden">
             <div
-              className={`text-sm sm:text-base font-bold ${isTopThree ? "text-white" : "text-white/60"} truncate max-w-full block`}
+              className={`text-sm sm:text-base font-bold ${isTopThree ? "text-white" : "text-muted-foreground"} truncate max-w-full block`}
               title={player.player_name}
             >
               {player.player_name}
@@ -315,7 +317,7 @@ function MobilePlayerCard({
           <div className="flex items-center gap-1">
             {hasHalving ? (
               <div className="flex flex-col items-end">
-                <span className="text-xs text-white/25 line-through">{originalTotalPoints}</span>
+                <span className="text-xs text-muted-foreground line-through">{originalTotalPoints}</span>
                 <span className="text-xl sm:text-2xl font-bold text-amber-200">{calculatedTotalPoints}</span>
               </div>
             ) : (
@@ -329,15 +331,15 @@ function MobilePlayerCard({
       {/* ✅ Punkte / Legs /  */}
       {!minimalView && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-          <div className="bg-sky-500/[0.08] rounded-lg p-2 text-center">
-            <div className="text-xs text-sky-200 font-medium">Punkte</div>
+          <div className="bg-orange-500/[0.08] rounded-lg p-2 text-center">
+            <div className="text-xs text-orange-200 font-medium">Punkte</div>
             {hasHalving && player.original_placement_points !== player.placement_points ? (
               <div className="flex items-center justify-center gap-1">
-                <span className="text-xs text-white/25 line-through">{player.original_placement_points}</span>
-                <span className="text-sm font-bold text-sky-100">{player.placement_points}</span>
+                <span className="text-xs text-muted-foreground line-through">{player.original_placement_points}</span>
+                <span className="text-sm font-bold text-orange-100">{player.placement_points}</span>
               </div>
             ) : (
-              <div className="text-sm font-bold text-sky-100">{player.placement_points}</div>
+              <div className="text-sm font-bold text-orange-100">{player.placement_points}</div>
             )}
           </div>
 
@@ -345,7 +347,7 @@ function MobilePlayerCard({
             <div className="text-xs text-emerald-200 font-medium">Legs W</div>
             {hasHalving && player.original_legs_won !== player.legs_won ? (
               <div className="flex items-center justify-center gap-1">
-                <span className="text-xs text-white/25 line-through">{player.original_legs_won}</span>
+                <span className="text-xs text-muted-foreground line-through">{player.original_legs_won}</span>
                 <span className="text-sm font-bold text-emerald-100">{player.legs_won}</span>
               </div>
             ) : (
@@ -357,7 +359,7 @@ function MobilePlayerCard({
             <div className="text-xs text-red-200 font-medium">Legs L</div>
             {hasHalving && player.original_legs_lost !== player.legs_lost ? (
               <div className="flex items-center justify-center gap-1">
-                <span className="text-xs text-white/25 line-through">{player.original_legs_lost}</span>
+                <span className="text-xs text-muted-foreground line-through">{player.original_legs_lost}</span>
                 <span className="text-sm font-bold text-red-100">{player.legs_lost}</span>
               </div>
             ) : (
@@ -369,7 +371,7 @@ function MobilePlayerCard({
             <div className="text-xs text-amber-200 font-medium">Bonus</div>
             {hasHalving && player.original_bonus_points !== player.bonus_points ? (
               <div className="flex items-center justify-center gap-1">
-                <span className="text-xs text-white/25 line-through">{player.original_bonus_points}</span>
+                <span className="text-xs text-muted-foreground line-through">{player.original_bonus_points}</span>
                 <span className="text-sm font-bold text-amber-100">{player.bonus_points}</span>
               </div>
             ) : (
@@ -382,9 +384,9 @@ function MobilePlayerCard({
       {/* ✅ Matches / Siege / Siegrate / Leg-Diff */}
       {!minimalView && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-          <div className="bg-violet-500/[0.08] rounded-lg p-2 text-center">
-            <div className="text-xs text-violet-200 font-medium">Matches</div>
-            <div className="text-sm font-bold text-violet-100">{player.total_matches_played}</div>
+          <div className="bg-orange-500/[0.08] rounded-lg p-2 text-center">
+            <div className="text-xs text-orange-200 font-medium">Matches</div>
+            <div className="text-sm font-bold text-orange-100">{player.total_matches_played}</div>
           </div>
           <div className="bg-teal-500/[0.08] rounded-lg p-2 text-center">
             <div className="text-xs text-teal-200 font-medium">Siege</div>
@@ -423,13 +425,13 @@ function MobilePlayerCard({
       )}
 
       <div className="bg-white/[0.035] rounded-lg p-2 text-center mb-3">
-        <div className="text-xs text-white/48 font-medium">Antritte</div>
+        <div className="text-xs text-muted-foreground font-medium">Antritte</div>
         <div className="text-sm font-bold text-white/75">{player.tournaments_played}</div>
       </div>
 
       <div className="space-y-2">
         <div>
-          <div className="text-xs text-white/48 mb-1">Fortschritt zur Serienwertung</div>
+          <div className="text-xs text-muted-foreground mb-1">Fortschritt zur Serienwertung</div>
           <QualificationProgress current={player.tournaments_played} required={qualificationRequired} />
         </div>
         <div className="pt-2 border-t border-white/[0.07]">
@@ -457,7 +459,7 @@ function MobileTournamentRankingCard({ ranking }: { ranking: any }) {
     <div className="relative rounded-xl border border-orange-300/[0.16] bg-card p-2.5 shadow-sm">
       {/* kleiner Gesamt-Kreis */}
       <div className="absolute right-2 top-2">
-        <div className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center font-semibold text-sm">
+        <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
           {totalPoints}
         </div>
       </div>
@@ -1125,7 +1127,7 @@ if (selectedPlayer) {
 
           {/* ✅ PLAYER HEADER CARD  */}
           <motion.div variants={itemVariants}>
-            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+            <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
               <div className="text-foreground h-2 bg-card  " />
 
               <div className="p-4 sm:p-5">
@@ -1149,7 +1151,7 @@ if (selectedPlayer) {
                         <Trophy className="w-3.5 h-3.5" />
                         {hasHalving ? (
                           <span className="inline-flex items-center gap-2">
-                            <span className="text-white/25 line-through">{originalTotalPoints}</span>
+                            <span className="text-muted-foreground line-through">{originalTotalPoints}</span>
                             <span className="text-orange-200">{calculatedTotalPoints}</span>
                           </span>
                         ) : (
@@ -1158,22 +1160,22 @@ if (selectedPlayer) {
                       </span>
                     </div>
 
-                    <p className="text-xs sm:text-sm text-white/48 mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Detailansicht Spielerwertung & Statistiken
                     </p>
 
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-muted-foreground">
                         <Users className="w-3.5 h-3.5" />
                         Matches: {player.total_matches_played}
                       </span>
 
-                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-muted-foreground">
                         <Calendar className="w-3.5 h-3.5" />
                         Antritte: {player.tournaments_played}
                       </span>
 
-                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-muted-foreground">
                         <CheckCircle className="w-3.5 h-3.5 text-emerald-200" />
                         Siege: {player.total_matches_won}
                       </span>
@@ -1184,17 +1186,17 @@ if (selectedPlayer) {
                 {/* ✅ 4er Stats  */}
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3 text-center">
-                    <p className="text-xs font-semibold text-white/60">Antritte</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Antritte</p>
                     <p className="text-lg font-semibold text-white">{player.tournaments_played}</p>
                   </div>
 
                   <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3 text-center">
-                    <p className="text-xs font-semibold text-white/60">Siegrate</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Siegrate</p>
                     <p className="text-lg font-semibold text-green-700">{winRate}%</p>
                   </div>
 
                   <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3 text-center">
-                    <p className="text-xs font-semibold text-white/60">Leg-Diff</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Leg-Diff</p>
                     <p className={`text-lg font-semibold ${legDifference >= 0 ? "text-green-700" : "text-red-700"}`}>
                       {legDifference >= 0 ? "+" : ""}
                       {legDifference}
@@ -1202,14 +1204,14 @@ if (selectedPlayer) {
                   </div>
 
                   <div className="rounded-xl border border-white/[0.08] bg-card shadow-sm p-3 text-center">
-                    <p className="text-xs font-semibold text-white/60">Ø Punkte</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Ø Punkte</p>
                     <p className="text-lg font-semibold text-indigo-100">{avgPlacementPoints}</p>
                   </div>
                 </div>
 
                 {/* ✅ Quali Bar */}
                 <div className="mt-4">
-                  <div className="text-xs text-white/48 mb-1">Fortschritt zur Serienwertung</div>
+                  <div className="text-xs text-muted-foreground mb-1">Fortschritt zur Serienwertung</div>
                   <QualificationProgress current={player.tournaments_played} required={qualificationRequirement} />
                   <div className="mt-2">
                     <QualificationStatus tournamentsPlayed={player.tournaments_played} required={qualificationRequirement} />
@@ -1221,7 +1223,7 @@ if (selectedPlayer) {
 
           {/* ✅ 3er Stats  */}
           <motion.div variants={itemVariants}>
-            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+            <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
               <div className="text-foreground h-2 bg-card  " />
 
               <div className="p-4 sm:p-5 border-b border-white/[0.08]">
@@ -1231,10 +1233,10 @@ if (selectedPlayer) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 className="text-base sm:text-lg font-semibold text-white">Punkte-Aufteilung</h2>
-                    <p className="text-xs sm:text-sm text-white/48 mt-1">Platzierung, Legs & Bonus</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Platzierung, Legs & Bonus</p>
                   </div>
 
-                  <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-white/60">
+                  <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-muted-foreground">
                     {hasHalving ? calculatedTotalPoints : player.total_points}
                   </div>
                 </div>
@@ -1243,8 +1245,8 @@ if (selectedPlayer) {
               <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-sky-200" />
-                    <p className="text-xs font-semibold text-white/60">Platzierungspunkte</p>
+                    <Target className="h-4 w-4 text-orange-200" />
+                    <p className="text-xs font-semibold text-muted-foreground">Platzierungspunkte</p>
                   </div>
                   <p className="text-2xl font-semibold text-blue-700 mt-2">{player.placement_points}</p>
                 </div>
@@ -1252,7 +1254,7 @@ if (selectedPlayer) {
                 <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Activity className="h-4 w-4 text-emerald-200" />
-                    <p className="text-xs font-semibold text-white/60">Legs gewonnen</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Legs gewonnen</p>
                   </div>
                   <p className="text-2xl font-semibold text-green-700 mt-2">{player.legs_won}</p>
                 </div>
@@ -1260,7 +1262,7 @@ if (selectedPlayer) {
                 <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Award className="h-4 w-4 text-amber-200" />
-                    <p className="text-xs font-semibold text-white/60">Bonuspunkte</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Bonuspunkte</p>
                   </div>
                   <p className="text-2xl font-semibold text-yellow-700 mt-2">{player.bonus_points}</p>
                 </div>
@@ -1271,7 +1273,7 @@ if (selectedPlayer) {
           {/* ✅ Freilos */}
           {playerFreilos && (
             <motion.div variants={itemVariants}>
-              <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
                 <div className="text-foreground h-2 bg-card  " />
 
                 <div className="p-4 sm:p-5 border-b border-white/[0.08]">
@@ -1281,24 +1283,24 @@ if (selectedPlayer) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <h2 className="text-base sm:text-lg font-semibold text-white">Freilos-Statistik</h2>
-                      <p className="text-xs sm:text-sm text-white/48 mt-1">Auswertung aus Match-Daten</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Auswertung aus Match-Daten</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="rounded-2xl border border-white/[0.08] bg-card p-4 text-center">
-                    <p className="text-xs font-semibold text-white/60">Antritte</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Antritte</p>
                     <p className="text-2xl font-semibold text-indigo-100 mt-2">{player.tournaments_played}</p>
                   </div>
 
                   <div className="rounded-2xl border border-white/[0.08] bg-card p-4 text-center">
-                    <p className="text-xs font-semibold text-white/60">Freilose</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Freilose</p>
                     <p className="text-2xl font-semibold text-red-700 mt-2">{playerFreilos.freilos_count}</p>
                   </div>
 
                   <div className="rounded-2xl border border-white/[0.08] bg-card p-4 text-center">
-                    <p className="text-xs font-semibold text-white/60">Ø pro Antritt</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Ø pro Antritt</p>
                     <p className="text-2xl font-semibold text-green-700 mt-2">{playerFreilos.average.toFixed(2)}</p>
                   </div>
                 </div>
@@ -1308,7 +1310,7 @@ if (selectedPlayer) {
 
           {/* ✅ Letzte 20 Spiele */}
           <motion.div variants={itemVariants}>
-            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+            <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
               <div className="text-foreground h-2 bg-card  " />
 
               <div className="p-4 sm:p-5 border-b border-white/[0.08]">
@@ -1318,7 +1320,7 @@ if (selectedPlayer) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 className="text-base sm:text-lg font-semibold text-white">Letzte 20 Spiele</h2>
-                    <p className="text-xs sm:text-sm text-white/48 mt-1">Nur abgeschlossene Matches</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Nur abgeschlossene Matches</p>
                   </div>
                 </div>
               </div>
@@ -1352,7 +1354,7 @@ if (selectedPlayer) {
                             </div>
 
                             <div className="min-w-0">
-                              <div className="text-xs font-semibold text-white/60">{match.tournament_type}</div>
+                              <div className="text-xs font-semibold text-muted-foreground">{match.tournament_type}</div>
                               <div className="text-xs text-muted-foreground">
                                 {new Date(match.updated_at).toLocaleDateString("de-DE")}
                               </div>
@@ -1373,8 +1375,8 @@ if (selectedPlayer) {
                     )
                   })
                 ) : (
-                  <div className="text-center py-10 text-white/48">
-                    <Activity className="h-10 w-10 mx-auto mb-3 text-white/25" />
+                  <div className="text-center py-10 text-muted-foreground">
+                    <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
                     <p>Keine Spiele gefunden</p>
                   </div>
                 )}
@@ -1384,7 +1386,7 @@ if (selectedPlayer) {
 
           {/* ✅ Turnier Historie (für den Spieler) */}
           <motion.div variants={itemVariants}>
-            <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+            <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
               <div className="text-foreground h-2 bg-card  " />
 
               <div className="p-4 sm:p-5 border-b border-white/[0.08]">
@@ -1394,10 +1396,10 @@ if (selectedPlayer) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 className="text-base sm:text-lg font-semibold text-white">Turnier Historie</h2>
-                    <p className="text-xs sm:text-sm text-white/48 mt-1">Alle Teilnahmen & Ergebnisse</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Alle Teilnahmen & Ergebnisse</p>
                   </div>
 
-                  <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-white/60">
+                  <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-muted-foreground">
                     {playerTournaments.length}
                   </div>
                 </div>
@@ -1423,26 +1425,26 @@ if (selectedPlayer) {
                           </div>
 
                           <div className="text-right flex-shrink-0">
-                            <div className="text-xs text-white/48">Platz</div>
+                            <div className="text-xs text-muted-foreground">Platz</div>
                             <div className="text-2xl font-semibold text-orange-200">{entry.placement}</div>
                           </div>
                         </div>
 
                         <div className="mt-3 grid grid-cols-4 gap-2">
                           <div className="rounded-xl border border-white/[0.08] bg-card p-2 text-center">
-                            <div className="text-xs font-bold text-white/48">Pl. Punkte</div>
+                            <div className="text-xs font-bold text-muted-foreground">Pl. Punkte</div>
                             <div className="text-sm font-semibold text-blue-700">{entry.placement_points}</div>
                           </div>
                           <div className="rounded-xl border border-white/[0.08] bg-card p-2 text-center">
-                            <div className="text-xs font-bold text-white/48">Legs W</div>
+                            <div className="text-xs font-bold text-muted-foreground">Legs W</div>
                             <div className="text-sm font-semibold text-green-700">{entry.legs_won}</div>
                           </div>
                           <div className="rounded-xl border border-white/[0.08] bg-card p-2 text-center">
-                            <div className="text-xs font-bold text-white/48">Legs L</div>
+                            <div className="text-xs font-bold text-muted-foreground">Legs L</div>
                             <div className="text-sm font-semibold text-red-700">{entry.legs_lost}</div>
                           </div>
                           <div className="rounded-xl border border-white/[0.08] bg-card p-2 text-center">
-                            <div className="text-xs font-bold text-white/48">Gesamt</div>
+                            <div className="text-xs font-bold text-muted-foreground">Gesamt</div>
                             <div className="text-sm font-semibold text-orange-200">{total}</div>
                           </div>
                         </div>
@@ -1457,7 +1459,7 @@ if (selectedPlayer) {
 
                         {entry.form && (
                           <div className="mt-3 flex items-center gap-2 flex-wrap">
-                            <span className="text-xs text-white/48">Form:</span>
+                            <span className="text-xs text-muted-foreground">Form:</span>
                             <div className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-card px-2.5 py-1">
                               {entry.form.split(",").map((result: string, idx: number) => (
                                 <span
@@ -1476,8 +1478,8 @@ if (selectedPlayer) {
                     )
                   })
                 ) : (
-                  <div className="text-center py-10 text-white/48">
-                    <Calendar className="h-10 w-10 mx-auto mb-3 text-white/25" />
+                  <div className="text-center py-10 text-muted-foreground">
+                    <Calendar className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
                     <p>Keine Turnier-Teilnahmen gefunden</p>
                   </div>
                 )}
@@ -1509,27 +1511,13 @@ if (selectedPlayer) {
   // ✅ LOADING VIEW
   if (loading) {
   return (
-    <main className="min-h-screen flex flex-col bg-white/[0.035] text-white pb-24 overflow-x-hidden">
+    <main className="emd-loading-surface min-h-screen flex flex-col bg-white/[0.035] text-white pb-24 overflow-x-hidden">
       <Header variant="app" title="Lion Cup Tabelle" subtitle="Lion Cup · Öffentlich" backHref="/lion-cup" />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
+      <SectionSkeleton kind="cards" />
 
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
-        <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-2xl px-10 py-10 border border-white/[0.08]">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-200" />
-            </div>
-
-            <div className="text-center">
-              <p className="text-lg font-bold text-white">Lion Cup wird geladen</p>
-              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       <MobileBottomNav />
     </main>
@@ -1553,7 +1541,7 @@ return (
       >
         {/* LION CUP HEADER – wie aktuelle Startseite, bewusst kompakt */}
         <motion.div variants={itemVariants}>
-          <div className="overflow-hidden rounded-[30px] border border-amber-300/[0.12] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
+          <div className="overflow-hidden rounded-[20px] border border-amber-300/[0.12] bg-card shadow-sm ">
             <div className="relative bg-card text-white">
               <div className="relative p-4 sm:p-5 lg:p-6">
                 <div className="flex flex-col items-center text-center">
@@ -1581,7 +1569,7 @@ return (
 
                   {seriesList.length > 1 && (
                     <div className="mt-4 w-full max-w-sm">
-                      <label className="text-xs font-semibold uppercase tracking-wider text-white/60">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                         Saison / Archiv
                       </label>
                       <select
@@ -1618,29 +1606,29 @@ return (
                     <div className="text-3xl font-semibold text-white sm:text-4xl lg:text-5xl">
                       €{totalPrizePool.toFixed(2)}
                     </div>
-                    <div className="mt-1 text-xs font-semibold text-white/48 sm:text-sm">
+                    <div className="mt-1 text-xs font-semibold text-muted-foreground sm:text-sm">
                       Aktueller Finalpreisfonds
                     </div>
                   </div>
 
                   <div className="mt-4 border-t border-orange-300/[0.12] pt-4">
-                    <p className="text-center text-sm font-bold text-white/60">
+                    <p className="text-center text-sm font-bold text-muted-foreground">
                       Seriengebühr: <span className="font-semibold text-orange-200">€ 10,00</span> einmalig pro Spieler
                     </p>
-                    <p className="mt-1 text-center text-sm font-bold text-white/60">
+                    <p className="mt-1 text-center text-sm font-bold text-muted-foreground">
                       Startgeld: <span className="font-semibold text-orange-200">€ 5,00</span> pro Spieler und Turniertag
                     </p>
 
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div className="rounded-xl border border-orange-300/[0.16] bg-orange-500/[0.08] p-3 text-center">
                         <div className="text-xl font-semibold text-orange-200 sm:text-2xl">€ 10,00</div>
-                        <div className="mt-1 text-xs font-bold text-white/48 sm:text-xs">
+                        <div className="mt-1 text-xs font-bold text-muted-foreground sm:text-xs">
                           einmalige Seriengebühr pro Spieler
                         </div>
                       </div>
                       <div className="rounded-xl border border-orange-300/[0.16] bg-orange-500/[0.08] p-3 text-center">
                         <div className="text-xl font-semibold text-orange-200 sm:text-2xl">€ 5,00</div>
-                        <div className="mt-1 text-xs font-bold text-white/48 sm:text-xs">
+                        <div className="mt-1 text-xs font-bold text-muted-foreground sm:text-xs">
                           pro Turnier und Spieler
                         </div>
                       </div>
@@ -1654,7 +1642,7 @@ return (
 
         {/* ✅ PREISGELD PREDICTION  */}
         <motion.div variants={itemVariants}>
-          <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+          <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
             <div className="text-foreground h-2 bg-card  " />
 
             <div className="p-4 sm:p-5">
@@ -1665,18 +1653,18 @@ return (
 
                 <div className="min-w-0 flex-1">
                   <h2 className="text-base sm:text-lg font-semibold text-white">PREISGELD PREDICTION</h2>
-                  <p className="text-sm text-white/48 mt-1">Hochrechnung basierend auf aktuellen Teilnehmern</p>
+                  <p className="text-sm text-muted-foreground mt-1">Hochrechnung basierend auf aktuellen Teilnehmern</p>
                 </div>
               </div>
 
               <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-500/[0.08] p-4 text-center">
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-2xl sm:text-3xl text-white/48 font-bold">€</span>
+                  <span className="text-2xl sm:text-3xl text-muted-foreground font-bold">€</span>
                   <span className="text-4xl sm:text-5xl font-semibold text-indigo-100">
                     {predictedTotalPrizePool.toFixed(2)}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-white/48 mt-2 font-bold">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-2 font-bold">
                   Geschätzter Endstand nach {totalTournamentDays} Turniertagen + Finale
                 </p>
               </div>
@@ -1686,7 +1674,7 @@ return (
                 <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-indigo-200" />
-                    <p className="text-xs font-semibold text-white/60">Turniertage</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Turniertage</p>
                   </div>
                   <p className="text-lg font-semibold text-indigo-100 mt-1">
                     {completedTournaments} / {totalTournamentDays}
@@ -1697,7 +1685,7 @@ return (
                 <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-emerald-200" />
-                    <p className="text-xs font-semibold text-white/60">Ø Antritte/Turnier</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Ø Antritte/Turnier</p>
                   </div>
                   <p className="text-lg font-semibold text-green-700 mt-1">{avgParticipationsPerTournament.toFixed(1)}</p>
                   <p className="text-xs text-muted-foreground mt-1">Aktuell: {totalAppearances} gesamt</p>
@@ -1705,17 +1693,17 @@ return (
 
                 <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-violet-200" />
-                    <p className="text-xs font-semibold text-white/60">Prognostiziert</p>
+                    <TrendingUp className="h-4 w-4 text-orange-200" />
+                    <p className="text-xs font-semibold text-muted-foreground">Prognostiziert</p>
                   </div>
-                  <p className="text-lg font-semibold text-purple-700 mt-1">{predictedTotalAppearances}</p>
+                  <p className="text-lg font-semibold text-orange-700 mt-1">{predictedTotalAppearances}</p>
                   <p className="text-xs text-muted-foreground mt-1">Antritte bis Saisonende</p>
                 </div>
 
                 <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                   <div className="flex items-center gap-2">
                     <Award className="h-4 w-4 text-amber-200" />
-                    <p className="text-xs font-semibold text-white/60">Bonus</p>
+                    <p className="text-xs font-semibold text-muted-foreground">Bonus</p>
                   </div>
                   <p className="text-lg font-semibold text-yellow-700 mt-1">€ {predictedHostSponsoring.toFixed(2)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -1784,7 +1772,7 @@ return (
           <Users className="w-5 h-5 text-orange-200" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-white/60">Teilnehmer</p>
+          <p className="text-xs font-semibold text-muted-foreground">Teilnehmer</p>
           <p className="text-lg font-bold text-white">{standings.length}</p>
         </div>
       </div>
@@ -1797,7 +1785,7 @@ return (
           <Trophy className="w-5 h-5 text-orange-200" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-white/60">Führender</p>
+          <p className="text-xs font-semibold text-muted-foreground">Führender</p>
           <p className="text-sm font-semibold text-white truncate">
             {standings[0]?.player_name || "-"}
           </p>
@@ -1812,7 +1800,7 @@ return (
           <TrendingUp className="w-5 h-5 text-orange-200" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-white/60">Höchste Punktzahl</p>
+          <p className="text-xs font-semibold text-muted-foreground">Höchste Punktzahl</p>
           <p className="text-lg font-bold text-white">
             {standings[0]
               ? standings[0].placement_points + standings[0].legs_won + standings[0].bonus_points
@@ -1829,7 +1817,7 @@ return (
           <CheckCircle className="w-5 h-5 text-orange-200" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-white/60">Qualifiziert</p>
+          <p className="text-xs font-semibold text-muted-foreground">Qualifiziert</p>
           <p className="text-lg font-bold text-white">{qualifiedPlayers.length}</p>
         </div>
       </div>
@@ -1847,7 +1835,7 @@ return (
 
          {/* ✅ TAB NAV  */}
 <motion.div variants={itemVariants}>
-  <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none ">
+  <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none ">
     {/* orange bar  */}
     <div className="text-foreground h-2 bg-card  " />
 
@@ -1858,8 +1846,8 @@ return (
           onClick={() => setActiveTab("alle")}
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
             activeTab === "alle"
-              ? "bg-orange-600 hover:bg-orange-700 text-white shadow-none shadow-orange-200"
-              : "bg-card text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
+              ? "bg-primary hover:bg-orange-700 text-primary-foreground shadow-none shadow-orange-200"
+              : "bg-card text-muted-foreground hover:bg-white/[0.035] border border-white/[0.08]"
           }`}
           type="button"
         >
@@ -1880,8 +1868,8 @@ return (
           onClick={() => setActiveTab("qualifiziert")}
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
             activeTab === "qualifiziert"
-              ? "bg-orange-600 hover:bg-orange-700 text-white shadow-none shadow-orange-200"
-              : "bg-card text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
+              ? "bg-primary hover:bg-orange-700 text-primary-foreground shadow-none shadow-orange-200"
+              : "bg-card text-muted-foreground hover:bg-white/[0.035] border border-white/[0.08]"
           }`}
           type="button"
         >
@@ -1906,8 +1894,8 @@ return (
           onClick={() => setActiveTab("nicht-qualifiziert")}
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
             activeTab === "nicht-qualifiziert"
-              ? "bg-orange-600 hover:bg-orange-700 text-white shadow-none shadow-orange-200"
-              : "bg-card text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
+              ? "bg-primary hover:bg-orange-700 text-primary-foreground shadow-none shadow-orange-200"
+              : "bg-card text-muted-foreground hover:bg-white/[0.035] border border-white/[0.08]"
           }`}
           type="button"
         >
@@ -1932,8 +1920,8 @@ return (
           onClick={() => setActiveTab("turnier-historie")}
           className={`h-9 rounded-xl font-semibold transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 px-3 ${
             activeTab === "turnier-historie"
-              ? "bg-orange-600 hover:bg-orange-700 text-white shadow-none shadow-orange-200"
-              : "bg-card text-white/60 hover:bg-white/[0.035] border border-white/[0.08]"
+              ? "bg-primary hover:bg-orange-700 text-primary-foreground shadow-none shadow-orange-200"
+              : "bg-card text-muted-foreground hover:bg-white/[0.035] border border-white/[0.08]"
           }`}
           type="button"
         >
@@ -1967,7 +1955,7 @@ return (
 <motion.div variants={itemVariants}>
   <a
     href="/lion_cup_results"
-    className="block overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none  hover:shadow-md transition-all duration-300 group"
+    className="block overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none  hover:shadow-md transition-all duration-300 group"
   >
     {/* Orange Balken oben */}
     <div className="text-foreground h-2 bg-card  " />
@@ -1982,13 +1970,13 @@ return (
           <h3 className="text-base sm:text-lg font-semibold text-white">
             Alle Turnier-Ergebnisse
           </h3>
-          <p className="text-xs sm:text-sm text-white/48 mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Detaillierte Match-Übersicht
           </p>
         </div>
       </div>
 
-      <ChevronDown className="h-5 w-5 text-white/25 rotate-[-90deg] group-hover:translate-x-1 transition-transform flex-shrink-0" />
+      <ChevronDown className="h-5 w-5 text-muted-foreground rotate-[-90deg] group-hover:translate-x-1 transition-transform flex-shrink-0" />
     </div>
   </a>
 </motion.div>
@@ -2001,7 +1989,7 @@ return (
 
 		  {activeTab === "turnier-historie" ? (
   <motion.div variants={itemVariants}>
-    <div className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card shadow-none  hover:shadow-md transition-shadow duration-300">
+    <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none  hover:shadow-md transition-shadow duration-300">
       <div className="text-foreground h-2 bg-card  " />
 
       <div className="p-4 sm:p-5 border-b border-white/[0.08]">
@@ -2013,7 +2001,7 @@ return (
 
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-semibold text-white">Turnier Historie</h2>
-              <p className="text-xs sm:text-sm text-white/48 mt-1">Alle Turniere mit Platzierungen</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Alle Turniere mit Platzierungen</p>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-2 rounded-full bg-orange-500/[0.08] border border-orange-300/[0.16] px-3 py-1 text-xs font-semibold text-orange-200">
@@ -2021,12 +2009,12 @@ return (
                   {tournaments.length} Turniere
                 </span>
 
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-muted-foreground">
                   <Users className="w-3.5 h-3.5" />
                   Gesamt Spieler: {tournaments.reduce((sum, t) => sum + (t.rankings?.length || 0), 0)}
                 </span>
 
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-white/60">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.035] border border-white/[0.08] px-3 py-1 text-xs font-semibold text-muted-foreground">
                   <Calendar className="w-3.5 h-3.5" />
                   zuletzt:{" "}
                   {tournaments.length > 0 ? new Date(tournaments[0].tournament_date).toLocaleDateString("de-DE") : "-"}
@@ -2035,7 +2023,7 @@ return (
             </div>
           </div>
 
-          <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-white/60">
+          <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-muted-foreground">
             {tournaments.length}
           </div>
         </div>
@@ -2057,14 +2045,14 @@ return (
                 className="w-full p-4 flex items-center justify-between hover:bg-white/[0.035] transition-colors"
               >
                 <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                  <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 bg-orange-600 text-white rounded-2xl font-semibold text-sm sm:text-base flex-shrink-0 shadow-sm">
+                  <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 bg-primary text-primary-foreground rounded-2xl font-semibold text-sm sm:text-base flex-shrink-0 shadow-sm">
                     {tournaments.length - index}
                   </div>
 
                   <div className="text-left min-w-0 flex-1">
                     <h3 className="text-sm sm:text-lg font-semibold text-white truncate">{tournament.tournament_name}</h3>
 
-                    <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-white/48">
+                    <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <Medal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span className="truncate">{getTournamentTypeLabel(tournament.tournament_type)}</span>
@@ -2084,9 +2072,9 @@ return (
                 </div>
 
                 {expandedTournament === tournament.tournament_id ? (
-                  <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 text-white/25 flex-shrink-0" />
+                  <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-white/25 flex-shrink-0" />
+                  <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground flex-shrink-0" />
                 )}
               </button>
 
@@ -2095,7 +2083,7 @@ return (
                   <h4 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Platzierungen</h4>
 
                   <div className="hidden lg:block bg-card border border-white/[0.09] rounded-2xl overflow-hidden">
-                    <div className="grid grid-cols-[80px_1fr_auto_100px_80px_100px_100px_120px] gap-4 p-4 bg-white/[0.05] border-b-2 border-white/[0.08] font-semibold text-sm text-white/60">
+                    <div className="grid grid-cols-[80px_1fr_auto_100px_80px_100px_100px_120px] gap-4 p-4 bg-white/[0.05] border-b-2 border-white/[0.08] font-semibold text-sm text-muted-foreground">
                       <div className="text-center">Platz</div>
                       <div>Spieler</div>
                       <div className="text-center">Form</div>
@@ -2139,7 +2127,7 @@ return (
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-white/25 font-bold">-</span>
+                              <span className="text-muted-foreground font-bold">-</span>
                             )}
                           </div>
 
@@ -2151,7 +2139,7 @@ return (
                                 +{ranking.bonus_points}
                               </span>
                             ) : (
-                              <span className="text-white/25 font-bold">-</span>
+                              <span className="text-muted-foreground font-bold">-</span>
                             )}
                           </div>
 
@@ -2178,15 +2166,15 @@ return (
             </motion.div>
           ))
         ) : (
-          <div className="text-center py-12 text-white/48">
-            <Calendar className="h-12 w-12 mx-auto mb-3 text-white/25" />
+          <div className="text-center py-12 text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
             <p>Noch keine Turniere in der Serie</p>
           </div>
         )}
       </div>
 
       <div className="bg-white/[0.035] px-4 sm:px-6 py-3 sm:py-4 border-t border-white/[0.08]">
-        <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-white/48 space-y-1 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-muted-foreground space-y-1 sm:space-y-0">
           <span>Gesamt: {tournaments.length} Turniere</span>
           <span>
             Zuletzt hinzugefügt:{" "}
@@ -2230,8 +2218,8 @@ return (
                   </div>
                 </div>
 
-                <div className="bg-sky-500/[0.08] border-b border-blue-100 p-3 sm:p-4">
-                  <div className="flex items-center space-x-2 text-sky-100">
+                <div className="bg-orange-500/[0.08] border-b border-blue-100 p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 text-orange-100">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs sm:text-sm font-medium">
                       Für die Serien-Gesamtwertung sind mindestens {qualificationRequirement} Antritte erforderlich. Der Finaltag ist für alle Spieler offen – unabhängig von der Anzahl der bisherigen Antritte.
@@ -2244,7 +2232,7 @@ return (
                     <div className="flex items-center space-x-2 text-orange-100">
                       <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-orange-200" />
                       <span className="text-xs sm:text-sm font-medium">
-                        Punkteteilung aktiv! <span className="text-white/25 line-through">Durchgestrichen</span> = Originalpunkte,{" "}
+                        Punkteteilung aktiv! <span className="text-muted-foreground line-through">Durchgestrichen</span> = Originalpunkte,{" "}
                         <span className="font-bold">Fett</span> = Aktuelle Punkte nach Halbierung.
                       </span>
                     </div>
@@ -2267,12 +2255,12 @@ return (
                         />
                       ))
                   ) : (
-                    <div className="text-center py-12 text-white/48">Keine Spieler in Tabelle A</div>
+                    <div className="text-center py-12 text-muted-foreground">Keine Spieler in Tabelle A</div>
                   )}
                 </div>
 
                 <div className="bg-white/[0.035] px-4 sm:px-6 py-3 sm:py-4 border-t border-white/[0.08]">
-                  <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-white/48 space-y-1 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-muted-foreground space-y-1 sm:space-y-0">
                     <span>Gesamt: {filteredPlayers.filter((p) => p.division === "A").length} Spieler</span>
                     <span>Meisterrunde</span>
                   </div>
@@ -2306,8 +2294,8 @@ return (
                   </div>
                 </div>
 
-                <div className="bg-sky-500/[0.08] border-b border-blue-100 p-3 sm:p-4">
-                  <div className="flex items-center space-x-2 text-sky-100">
+                <div className="bg-orange-500/[0.08] border-b border-blue-100 p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 text-orange-100">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs sm:text-sm font-medium">
                       Für die Serien-Gesamtwertung sind mindestens {qualificationRequirement} Antritte erforderlich. Der Finaltag ist für alle Spieler offen – unabhängig von der Anzahl der bisherigen Antritte.
@@ -2320,7 +2308,7 @@ return (
                     <div className="flex items-center space-x-2 text-orange-100">
                       <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-orange-200" />
                       <span className="text-xs sm:text-sm font-medium">
-                        Punkteteilung aktiv! <span className="text-white/25 line-through">Durchgestrichen</span> = Originalpunkte,{" "}
+                        Punkteteilung aktiv! <span className="text-muted-foreground line-through">Durchgestrichen</span> = Originalpunkte,{" "}
                         <span className="font-bold">Fett</span> = Aktuelle Punkte nach Halbierung.
                       </span>
                     </div>
@@ -2343,12 +2331,12 @@ return (
                         />
                       ))
                   ) : (
-                    <div className="text-center py-12 text-white/48">Keine Spieler in Tabelle B</div>
+                    <div className="text-center py-12 text-muted-foreground">Keine Spieler in Tabelle B</div>
                   )}
                 </div>
 
                 <div className="bg-white/[0.035] px-4 sm:px-6 py-3 sm:py-4 border-t border-white/[0.08]">
-                  <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-white/48 space-y-1 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-muted-foreground space-y-1 sm:space-y-0">
                     <span>Gesamt: {filteredPlayers.filter((p) => p.division === "B").length} Spieler</span>
                     <span>Platzierungsrunde</span>
                   </div>
@@ -2383,12 +2371,12 @@ return (
               ? "In der Wertung"
               : "Noch nicht in der Wertung"}
         </h2>
-        <p className="text-xs sm:text-sm text-white/48 mt-0.5">Turnierserie Gesamtwertung</p>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Turnierserie Gesamtwertung</p>
       </div>
     </div>
 
     {/* Counter rechts wie bei Historie */}
-    <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-white/60">
+    <div className="flex-shrink-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs font-semibold text-muted-foreground">
       {filteredPlayers.length}
     </div>
   </div>
@@ -2403,8 +2391,8 @@ return (
                   </div>
                 </div>
 
-                <div className="bg-sky-500/[0.08] border-b border-blue-100 p-3 sm:p-4">
-                  <div className="flex items-center space-x-2 text-sky-100">
+                <div className="bg-orange-500/[0.08] border-b border-blue-100 p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 text-orange-100">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs sm:text-sm font-medium">
                       Für die Serien-Gesamtwertung sind mindestens {qualificationRequirement} Antritte erforderlich. Der Finaltag ist für alle Spieler offen – unabhängig von der Anzahl der bisherigen Antritte.
@@ -2417,7 +2405,7 @@ return (
                     <div className="flex items-center space-x-2 text-orange-100">
                       <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-orange-200" />
                       <span className="text-xs sm:text-sm font-medium">
-                        Punkteteilung aktiv! <span className="text-white/25 line-through">Durchgestrichen</span> = Originalpunkte,{" "}
+                        Punkteteilung aktiv! <span className="text-muted-foreground line-through">Durchgestrichen</span> = Originalpunkte,{" "}
                         <span className="font-bold">Fett</span> = Aktuelle Punkte nach Halbierung.
                       </span>
                     </div>
@@ -2439,12 +2427,12 @@ return (
       />
     ))
   ) : (
-    <div className="text-center py-12 text-white/48">Keine Spieler in dieser Kategorie</div>
+    <div className="text-center py-12 text-muted-foreground">Keine Spieler in dieser Kategorie</div>
   )}
 </div>
 
                 <div className="bg-white/[0.035] px-4 sm:px-6 py-3 sm:py-4 border-t border-white/[0.08]">
-                  <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-white/48 space-y-1 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-muted-foreground space-y-1 sm:space-y-0">
                     <span>Gesamt: {filteredPlayers.length} Spieler</span>
                     <span>
                       Qualifiziert: {qualifiedPlayers.length} von {standings.length}

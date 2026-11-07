@@ -462,7 +462,7 @@ export default function TournamentPage() {
                             className={`font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md ${
                               isPast
                                 ? "bg-accent text-muted-foreground cursor-not-allowed"
-                                : "bg-orange-600 hover:bg-orange-700 text-white hover:scale-105"
+                                : "bg-primary hover:bg-orange-700 text-primary-foreground hover:scale-105"
                             }`}
                           >
                             <UserPlus className="h-4 w-4 mr-2" />

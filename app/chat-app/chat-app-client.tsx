@@ -1,5 +1,7 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -3617,9 +3619,7 @@ export default function TeamChatPage() {
                     onClick={activateMessenger}
                     disabled={activationLoading || activationCode.length !== 6}
                     className="mt-4 h-12 w-full rounded-2xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-500/90 disabled:bg-white/10 disabled:text-white/25"
-                  >
-                    {activationLoading ? "Wird aktiviert…" : "Messenger aktivieren"}
-                  </Button>
+                   loading={Boolean(activationLoading)} loadingLabel="Wird aktiviert…">{"Messenger aktivieren"}</Button>
                 </div>
 
                 <p className="mt-5 text-xs leading-5 text-muted-foreground">
@@ -3743,9 +3743,7 @@ export default function TeamChatPage() {
                     <ScrollArea className="flex-1 min-h-0">
                       <div className="pb-[max(12px,env(safe-area-inset-bottom))]">
                         {roomsLoading ? (
-                          <div className="px-4 py-5 text-center text-xs text-muted-foreground">
-                            Chats werden geladen…
-                          </div>
+                          <SectionSkeleton kind="cards" />
                         ) : visibleChatListItems.length > 0 ? (
                           visibleChatListItems.map((item) =>
                             renderChatRow({
@@ -4585,13 +4583,9 @@ export default function TeamChatPage() {
                                       className={`${WA.sendBtn} bg-[#25303a] text-orange-200 hover:bg-[#2d3944]`}
                                       aria-label="Sprachnachricht aufnehmen"
                                       title="Sprachnachricht"
-                                    >
-                                      {voiceSending ? (
-                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-b-white" />
-                                      ) : (
+                                     loading={Boolean(voiceSending)}>{(
                                         <Mic className="h-[19px] w-[19px]" />
-                                      )}
-                                    </Button>
+                                      )}</Button>
                                   ) : null}
 
                                 <Button
@@ -4611,13 +4605,9 @@ export default function TeamChatPage() {
                                       ? "hidden"
                                       : ""
                                   }`}
-                                >
-                                  {sending ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                                  ) : (
+                                 loading={Boolean(sending)}>{(
                                     <Send className="h-[18px] w-[18px]" />
-                                  )}
-                                </Button>
+                                  )}</Button>
                               </div>
                             </div>
                           </div>
@@ -4834,9 +4824,7 @@ export default function TeamChatPage() {
               onClick={sendPoll}
               disabled={pollSending}
               className="w-full bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-500/90"
-            >
-              {pollSending ? "Erstelle..." : "Abstimmung senden"}
-            </Button>
+             loading={Boolean(pollSending)} loadingLabel="Erstelle...">{"Abstimmung senden"}</Button>
           </div>
         </DialogContent>
       </Dialog>

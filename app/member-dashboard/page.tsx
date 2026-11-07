@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { Header } from "@/components/header"
@@ -12,30 +14,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import {
-  Crown,
-  ShieldCheck,
-  Users,
-  Calendar,
-  Target,
-  MapPin,
-  Loader2,
-  AlertCircle,
-  Edit,
-  Camera,
-  XCircle,
-  Upload,
-  Eye,
-  ArrowRight,
-  ImageIcon,
-  CalendarX,
-  AlertTriangle,
-  Check,
-  Info,
-  X,
-  RotateCcw,
-  ArrowLeft,
-} from "lucide-react"
+import { Crown, ShieldCheck, Users, Calendar, Target, MapPin, AlertCircle, Edit, Camera, XCircle, Upload, Eye, ArrowRight, ImageIcon, CalendarX, AlertTriangle, Check, Info, X, RotateCcw, ArrowLeft } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -1458,14 +1437,9 @@ export default function DashboardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-            <span className="text-lg font-medium">Lade Dashboard...</span>
-          </div>
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }
@@ -1523,7 +1497,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="text-foreground min-h-screen bg-card  ">
+    <div className="text-foreground min-h-screen bg-background  ">
       <Header />
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
         {/* Changed DashboardTutorial prop name */}
@@ -1551,7 +1525,7 @@ export default function DashboardPage() {
                       <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
                       <h3 className="text-base sm:text-lg font-bold text-foreground">Verschobene Spiele</h3>
                     </div>
-                    <Badge className="bg-orange-500 text-white w-fit">{getPostponedMatches().length}</Badge>
+                    <Badge className="bg-primary text-primary-foreground w-fit">{getPostponedMatches().length}</Badge>
                   </div>
                   <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
                     {getPostponedMatches().length === 1
@@ -1825,7 +1799,7 @@ export default function DashboardPage() {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 w-full h-8"
+                                      className="bg-primary hover:bg-orange-700 text-primary-foreground border-orange-600 w-full h-8"
                                       onClick={() => {
                                         setSelectedMatchForPostpone(match.id)
                                         setPostponeData({
@@ -2002,7 +1976,7 @@ export default function DashboardPage() {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 w-full h-8"
+                                      className="bg-primary hover:bg-orange-700 text-primary-foreground border-orange-600 w-full h-8"
                                       onClick={() => {
                                         setSelectedMatchForPostpone(match.id)
                                         setPostponeData({
@@ -2510,10 +2484,7 @@ export default function DashboardPage() {
                     onClick={handleTeamPhotoUpload}
                     disabled={teamPhotoUploading || !teamPhotoFile}
                     className="w-full bg-green-700 hover:bg-green-700 text-xs sm:text-sm h-8 text-white"
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    {teamPhotoUploading ? "Wird hochgeladen..." : hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}
-                  </Button>
+                   loading={Boolean(teamPhotoUploading)} loadingLabel="Wird hochgeladen..."><Upload className="h-3 w-3 mr-1" />{hasExistingPhoto ? "Foto ersetzen" : "Hochladen"}</Button>
                 </>
               )
             })()}

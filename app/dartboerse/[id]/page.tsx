@@ -1,28 +1,14 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import {
-  ArrowLeft,
-  Box,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Mail,
-  MapPin,
-  MessageCircle,
-  PackageCheck,
-  Phone,
-  ShieldCheck,
-  Tag,
-  Truck,
-  X,
-  ZoomIn,
-} from "lucide-react";
+import { ArrowLeft, Box, ChevronLeft, ChevronRight, Mail, MapPin, MessageCircle, PackageCheck, Phone, ShieldCheck, Tag, Truck, X, ZoomIn } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -205,9 +191,7 @@ export default function DartboerseDetailPage() {
           </Link>
         </Button>
         {loading ? (
-          <div className="py-24 text-center text-muted-foreground">
-            Angebot wird geladen …
-          </div>
+          <SectionSkeleton kind="cards" />
         ) : error ? (
           <div className="py-24 text-center text-rose-300">{error}</div>
         ) : !item ? (
@@ -397,13 +381,9 @@ export default function DartboerseDetailPage() {
                           onClick={() => void startConversation(true)}
                           disabled={startingChat || item.status === "sold"}
                           className="rounded-xl bg-orange-500 hover:bg-orange-600 text-primary-foreground"
-                        >
-                          {startingChat ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
+                         loading={Boolean(startingChat)}>{(
                             <Tag className="mr-2 h-4 w-4" />
-                          )}
-                          Preis anbieten
+                          )}Preis anbieten
                         </Button>
                         <Button
                           type="button"

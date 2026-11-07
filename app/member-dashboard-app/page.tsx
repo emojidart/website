@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { Header } from "@/components/header"
@@ -13,31 +15,7 @@ import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import {
-  Crown,
-  ShieldCheck,
-  Users,
-  Calendar,
-  Target,
-  MapPin,
-  Loader2,
-  AlertCircle,
-  Edit,
-  Camera,
-  XCircle,
-  Upload,
-  Eye,
-  ArrowRight,
-  ImageIcon,
-  CalendarX,
-  AlertTriangle,
-  Check,
-  Info,
-  X,
-  RotateCcw,
-  ArrowLeft,
-  Phone,
-} from "lucide-react"
+import { Crown, ShieldCheck, Users, Calendar, Target, MapPin, AlertCircle, Edit, Camera, XCircle, Upload, Eye, ArrowRight, ImageIcon, CalendarX, AlertTriangle, Check, Info, X, RotateCcw, ArrowLeft, Phone } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -874,7 +852,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
             <MapPin className="h-4 w-4 text-orange-200" />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Auswärtsspiel
             </div>
             <div className="text-sm font-semibold leading-tight text-white sm:truncate">
@@ -901,7 +879,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
       <div className="grid gap-2.5 p-3.5 sm:grid-cols-2 sm:p-4">
         {hasVenueName ? (
           <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Lokal</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Lokal</div>
             <div className="mt-1 break-words text-sm font-semibold leading-snug text-white">
               {opp.venue_name}
             </div>
@@ -910,7 +888,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
 
         {hasVenue ? (
           <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Adresse</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Adresse</div>
             <div className="mt-1 break-words text-sm font-semibold leading-snug text-white/65">
               {opp.venue}
             </div>
@@ -919,7 +897,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
 
         {hasCaptain ? (
           <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3">
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               <ShieldCheck className="h-3.5 w-3.5 text-orange-500" />
               Kapitän
             </div>
@@ -931,7 +909,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
 
         {tel ? (
           <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3.5 py-3">
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               <Phone className="h-3.5 w-3.5 text-orange-500" />
               Telefon
             </div>
@@ -950,7 +928,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
           <Button
             asChild
             size="sm"
-            className="h-10 w-full rounded-xl bg-orange-500 font-semibold text-white shadow-none hover:bg-orange-600 sm:w-auto"
+            className="h-10 w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-none hover:bg-orange-600 sm:w-auto"
           >
             <a href={wa} target="_blank" rel="noreferrer">
               WhatsApp öffnen
@@ -1674,12 +1652,33 @@ const postponeMatch = async (
 
 if (authLoading || loading || membershipLoading) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
       <Header variant="app" title="Liga" subtitle="Spielplan & Ergebnisse" backHref="/member-profile-app" />
-      <main className="flex min-h-[70dvh] flex-col items-center justify-center gap-4 px-5 pt-20" role="status" aria-live="polite">
-        <Loader2 className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
-        <p className="text-sm text-muted-foreground">Dein Liga-Bereich wird geladen…</p>
+      <main className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Liga-Dashboard wird geladen">
+        <section className="rounded-[28px] border border-white/[0.08] bg-card p-5 sm:p-7">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 shrink-0 animate-pulse rounded-2xl bg-white/10" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="h-3.5 w-32 animate-pulse rounded bg-white/10" />
+              <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
+            </div>
+          </div>
+          <div className="mt-5 h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+        </section>
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={index} className="rounded-2xl border border-white/[0.08] bg-card p-4">
+              <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+              <div className="mt-4 h-8 w-16 animate-pulse rounded bg-white/10" />
+            </div>
+          ))}
+        </section>
+        <section className="rounded-[24px] border border-white/[0.08] bg-card p-4 sm:p-6">
+          <div className="mb-5 h-6 w-44 animate-pulse rounded bg-white/10" />
+          <SectionSkeleton kind="cards" label="Spiele und Ergebnisse werden geladen…" />
+        </section>
       </main>
+      <MobileBottomNav />
     </div>
   )
 }
@@ -1739,7 +1738,7 @@ if (authLoading || loading || membershipLoading) {
               <Button
                 type="button"
                 onClick={() => router.push("/member-membership")}
-                className="mt-5 rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
+                className="mt-5 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-orange-700"
               >
                 Paket buchen
               </Button>
@@ -1812,15 +1811,15 @@ const modalAwayName = modalMatch
    <main className="relative mx-auto w-full max-w-[var(--emd-content-max)] bg-transparent px-4 pb-24 pt-20 text-white sm:px-6 lg:pb-12 xl:px-8">
       <DashboardTutorial role={getUserRole()} />
 
-      <section className="relative mt-2 overflow-hidden rounded-2xl border border-white/[0.09] bg-card shadow-sm  sm:mt-4 sm:rounded-[30px] xl:rounded-[32px]">
+      <section className="relative mt-2 overflow-hidden rounded-2xl border border-white/[0.09] bg-card shadow-sm  sm:mt-4 sm:rounded-[20px] xl:rounded-[20px]">
 
 
 
         <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="min-w-0">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60 hover:text-white focus-visible:text-white">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground hover:text-white focus-visible:text-white">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                 Liga
               </div>
 
@@ -1844,21 +1843,21 @@ const modalAwayName = modalMatch
 
             <div className="grid grid-cols-3 gap-2 sm:gap-3 xl:min-w-[430px]">
               <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-sm  sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Kommende</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Kommende</div>
                 <div className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
                   {getUpcomingMatches().length}
                 </div>
               </div>
 
               <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-sm  sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Verschoben</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Verschoben</div>
                 <div className="mt-2 text-2xl font-semibold tracking-tight text-orange-300 sm:text-3xl">
                   {getPostponedMatches().length}
                 </div>
               </div>
 
               <div className="relative overflow-hidden rounded-2xl border border-orange-300/[0.10] bg-white/[0.05] p-3 shadow-sm  sm:border-white/10 sm:bg-white/[0.055] sm:shadow-none sm:p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Beendet</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">Beendet</div>
                 <div className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
                   {getCompletedMatches().length}
                 </div>
@@ -1885,7 +1884,7 @@ const modalAwayName = modalMatch
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <div className="text-white text-sm font-semibold">Verschobene Spiele</div>
-            <span className="inline-flex items-center justify-center rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-white hover:text-white focus-visible:text-white">
+            <span className="inline-flex items-center justify-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white hover:text-white focus-visible:text-white">
               {getPostponedMatches().length}
             </span>
           </div>
@@ -1940,7 +1939,7 @@ const modalAwayName = modalMatch
                     </div>
 
                     {match.postponement_reason ? (
-                      <div className="mt-2 rounded-xl border border-orange-400/25 bg-card px-3 py-2 text-[11px] text-white/65">
+                      <div className="mt-2 rounded-xl border border-orange-400/25 bg-card px-3 py-2 text-xs text-white/65">
                         <span className="font-semibold text-orange-200">Grund:</span>{" "}
                         {match.postponement_reason}
                       </div>
@@ -1968,7 +1967,7 @@ const modalAwayName = modalMatch
             {/* Main Content */}
             <div className="min-w-0 space-y-5 sm:space-y-6">
               {/* Spielplan Section with Tabs */}
-              <Card className="overflow-hidden rounded-2xl border border-white/[0.08] bg-card text-white shadow-sm  sm:rounded-[30px] hover:text-white focus-visible:text-white">
+              <Card className="overflow-hidden rounded-2xl border border-white/[0.08] bg-card text-white shadow-sm  sm:rounded-[20px] hover:text-white focus-visible:text-white">
                 <CardHeader className="border-b border-white/[0.07] px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-3">
@@ -1976,7 +1975,7 @@ const modalAwayName = modalMatch
                         <Calendar className="h-5 w-5 text-orange-200" />
                       </div>
                       <div>
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">
+                        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">
                           Saison
                         </div>
                         <CardTitle className="mt-0.5 text-xl font-semibold tracking-tight text-white sm:text-2xl">
@@ -2033,34 +2032,34 @@ const modalAwayName = modalMatch
                    <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1.5 shadow-none ">
   <TabsTrigger
     value="upcoming"
-    className="h-11 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold text-muted-foreground shadow-none sm:px-3 sm:text-xs
+    className="h-11 min-w-0 rounded-xl px-1.5 text-xs font-semibold text-muted-foreground shadow-none sm:px-3 sm:text-xs
       data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shadow-sm"
   >
     Kommende
-    <span className="ml-1 text-[10px] opacity-70">
+    <span className="ml-1 text-xs opacity-70">
       ({getUpcomingMatches().length})
     </span>
   </TabsTrigger>
 
   <TabsTrigger
     value="postponed"
-    className="h-11 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold text-muted-foreground shadow-none sm:px-3 sm:text-xs
+    className="h-11 min-w-0 rounded-xl px-1.5 text-xs font-semibold text-muted-foreground shadow-none sm:px-3 sm:text-xs
       data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shadow-sm"
   >
     Verschoben
-    <span className="ml-1 text-[10px] opacity-70">
+    <span className="ml-1 text-xs opacity-70">
       ({getPostponedMatches().length})
     </span>
   </TabsTrigger>
 
   <TabsTrigger
     value="completed"
-    className="h-11 min-w-0 rounded-xl px-1.5 text-[11px] font-semibold text-muted-foreground shadow-none sm:px-3 sm:text-xs
+    className="h-11 min-w-0 rounded-xl px-1.5 text-xs font-semibold text-muted-foreground shadow-none sm:px-3 sm:text-xs
       data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shadow-sm"
   >
     <span className="sm:hidden">Abgeschl.</span>
     <span className="hidden sm:inline">Abgeschlossen</span>
-    <span className="ml-1 text-[10px] opacity-70">
+    <span className="ml-1 text-xs opacity-70">
       ({getCompletedMatches().length})
     </span>
   </TabsTrigger>
@@ -2104,7 +2103,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
     // status
     let statusLabel = "Anstehend"
     let statusClasses = "border-orange-400/25 bg-orange-500/10 text-orange-200"
-    let barClass = "bg-orange-500"
+    let barClass = "bg-primary"
 
     if (isPostponed) {
       statusLabel = "Verschoben"
@@ -2159,7 +2158,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                     {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
                   </Badge>
 
-                  <Badge className={["text-[11px] border px-2 py-0.5 font-semibold", statusClasses].join(" ")}>
+                  <Badge className={["text-xs border px-2 py-0.5 font-semibold", statusClasses].join(" ")}>
                     {statusLabel}
                   </Badge>
                 </div>
@@ -2169,7 +2168,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   <span className="font-semibold text-white/75">{dateText}</span>
                   {timeText ? <span className="text-muted-foreground">· {timeText} Uhr</span> : null}
                   {match.original_date ? (
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       Urspr.: <span className="line-through">{formatMatchDate(match.original_date)}</span>
                     </span>
                   ) : null}
@@ -2180,7 +2179,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-center">
                 {/* home */}
                 <div className="min-w-0 text-center sm:text-right">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Heim</div>
+                  <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Heim</div>
                   <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">
                     {homeName}
                   </div>
@@ -2199,7 +2198,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
                 {/* away */}
                 <div className="min-w-0 text-center sm:text-left">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Gast</div>
+                  <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Gast</div>
                   <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">
                     {awayName}
                   </div>
@@ -2212,7 +2211,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   {dateText}{timeText ? ` · ${timeText} Uhr` : ""}
                 </div>
                 {match.original_date ? (
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     Urspr.: <span className="line-through">{formatMatchDate(match.original_date)}</span>
                   </div>
                 ) : null}
@@ -2230,7 +2229,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
               {/* postponed info */}
               {isPostponed && match.original_date ? (
                 <div className="rounded-2xl border border-amber-400/25 bg-amber-500/10 p-3">
-                  <div className="text-[11px] font-semibold text-amber-200">
+                  <div className="text-xs font-semibold text-amber-200">
                     Verschoben: ursprünglich am {formatMatchDate(match.original_date)}
                     {match.postponement_reason ? ` · Grund: ${match.postponement_reason}` : ""}
                   </div>
@@ -2384,7 +2383,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
           >
             <div className="flex gap-3">
               {/* left status bar */}
-              <div className="w-1.5 rounded-full flex-shrink-0 bg-orange-500 shadow-sm" />
+              <div className="w-1.5 rounded-full flex-shrink-0 bg-primary shadow-sm" />
 
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col gap-3">
@@ -2411,7 +2410,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                         {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
                       </Badge>
 
-                      <Badge className="text-[11px] border px-2 py-0.5 font-semibold border-orange-400/25 bg-orange-500/10 text-orange-200">
+                      <Badge className="text-xs border px-2 py-0.5 font-semibold border-orange-400/25 bg-orange-500/10 text-orange-200">
                         Verschoben
                       </Badge>
                     </div>
@@ -2426,7 +2425,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 sm:gap-4 items-center">
                     {/* home */}
                     <div className="min-w-0 text-center sm:text-right">
-                      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Heim</div>
+                      <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Heim</div>
                       <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">
                         {homeName}
                       </div>
@@ -2445,7 +2444,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
                     {/* away */}
                     <div className="min-w-0 text-center sm:text-left">
-                      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Gast</div>
+                      <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Gast</div>
                       <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">
                         {awayName}
                       </div>
@@ -2458,7 +2457,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                       {dateText}{timeText ? ` · ${timeText} Uhr` : ""}
                     </div>
                     {match.original_date ? (
-                      <div className="text-[10px] text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         Urspr.: <span className="line-through">{formatMatchDate(match.original_date)}</span>
                       </div>
                     ) : null}
@@ -2469,7 +2468,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                     <div className="rounded-2xl border border-orange-400/25 bg-orange-500/10 p-3">
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 text-orange-200 mt-0.5 flex-shrink-0" />
-                        <div className="text-[11px] leading-snug text-orange-200">
+                        <div className="text-xs leading-snug text-orange-200">
                           <div className="font-semibold">
                             Ursprünglich: <span className="line-through">{formatMatchDate(match.original_date)}</span>
                             <span className="mx-1 text-orange-400">→</span>
@@ -2644,7 +2643,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
           badgeClass = "border-yellow-200 bg-yellow-50 text-yellow-700"
         } else if (result === "pending") {
           resultLabel = "Offen"
-          barClass = "bg-orange-500"
+          barClass = "bg-primary"
           badgeClass = "border-orange-400/25 bg-orange-500/10 text-orange-200"
         }
 
@@ -2690,7 +2689,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                         {match.dart_type === "edart" ? "E-Dart" : "Steeldart"}
                       </Badge>
 
-                      <Badge className={["text-[11px] border px-2 py-0.5 font-semibold", badgeClass].join(" ")}>
+                      <Badge className={["text-xs border px-2 py-0.5 font-semibold", badgeClass].join(" ")}>
                         {resultLabel}
                       </Badge>
                     </div>
@@ -2706,9 +2705,9 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                   <div className="grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr] sm:gap-4">
                     {/* home */}
                     <div className="min-w-0 text-center sm:text-right">
-                      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Heim</div>
+                      <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Heim</div>
                       <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">{homeName}</div>
-                      <div className="mt-1 text-[11px] text-muted-foreground">
+                      <div className="mt-1 text-xs text-muted-foreground">
                         {match.home_team_type === "own" ? "Heim" : "Heim (Gegner)"}
                       </div>
                     </div>
@@ -2726,9 +2725,9 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
                     {/* away */}
                     <div className="min-w-0 text-center sm:text-left">
-                      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Gast</div>
+                      <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Gast</div>
                       <div className="mt-1 break-words text-[15px] font-semibold leading-snug text-white sm:text-base">{awayName}</div>
-                      <div className="mt-1 text-[11px] text-muted-foreground">
+                      <div className="mt-1 text-xs text-muted-foreground">
                         {match.away_team_type === "own" ? "Auswärts" : "Auswärts (Gegner)"}
                       </div>
                     </div>
@@ -2885,7 +2884,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
         {/* Heim */}
         <div className="text-center space-y-2">
-          <div className="text-[11px] font-semibold text-muted-foreground truncate">
+          <div className="text-xs font-semibold text-muted-foreground truncate">
   {modalHomeName}
 </div>
 
@@ -2928,7 +2927,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
         {/* Auswärts */}
         <div className="text-center space-y-2">
-         <div className="text-[11px] font-semibold text-muted-foreground truncate">
+         <div className="text-xs font-semibold text-muted-foreground truncate">
   {modalAwayName}
 </div>
 
@@ -2983,7 +2982,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
       </Button>
 
       <Button
-        className="h-10 rounded-xl bg-orange-500 font-semibold text-white shadow-sm hover:bg-orange-500/90 active:scale-[0.99]"
+        className="h-10 rounded-xl bg-primary font-semibold text-primary-foreground shadow-sm hover:bg-orange-500/90 active:scale-[0.99]"
         onClick={async () => {
           if (!selectedMatchForResults) return
 
@@ -3142,10 +3141,8 @@ const awayName = getTeamName(match, false) || "Unbekannt"
           <Button
             onClick={handleTeamPhotoUpload}
             disabled={teamPhotoUploading || !teamPhotoFile}
-            className="h-10 rounded-xl bg-orange-500 font-semibold text-white shadow-sm hover:bg-orange-500/90 active:scale-[0.99]"
-          >
-            {teamPhotoUploading ? "Upload..." : "Speichern"}
-          </Button>
+            className="h-10 rounded-xl bg-primary font-semibold text-primary-foreground shadow-sm hover:bg-orange-500/90 active:scale-[0.99]"
+           loading={Boolean(teamPhotoUploading)} loadingLabel="Upload...">{"Speichern"}</Button>
 
         </div>
       </>

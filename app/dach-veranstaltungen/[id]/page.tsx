@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -97,11 +99,7 @@ export default function DachVeranstaltungDetailPage() {
       <main className="relative z-10 mx-auto max-w-5xl px-3 pb-24 pt-20 sm:px-5 sm:pt-24">
 
         {loading ? (
-          <div className="flex min-h-[320px] items-center justify-center">
-            <div className="rounded-[24px] border border-white/[0.08] bg-card px-6 py-5 text-center text-sm font-bold text-muted-foreground ">
-              Veranstaltung wird geladen…
-            </div>
-          </div>
+          <SectionSkeleton kind="cards" />
         ) : null}
         {error ? <div className="py-20 text-center font-semibold text-red-200">{error}</div> : null}
         {!loading && !error && !event ? <div className="py-20 text-center text-muted-foreground">Veranstaltung nicht gefunden.</div> : null}

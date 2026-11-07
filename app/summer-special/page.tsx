@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import Image from "@/components/image"
@@ -7,23 +9,7 @@ import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { supabase } from "@/lib/supabase"
 import Link from "next/link"
-import {
-  Activity,
-  Award,
-  Calendar,
-  CheckCircle,
-  ChevronDown,
-  Crown,
-  Gift,
-  Loader2,
-  Medal,
-  Sparkles,
-  Star,
-  Target,
-  Trophy,
-  TrendingUp,
-  Users,
-} from "lucide-react"
+import { Activity, Award, Calendar, CheckCircle, ChevronDown, Crown, Gift, Medal, Sparkles, Star, Target, Trophy, TrendingUp, Users } from "lucide-react"
 
 interface SummerStanding {
   player_name: string
@@ -451,17 +437,9 @@ const totalPrizePool = oneTimeFees + tournamentFees
 
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-muted text-foreground pb-24 overflow-x-hidden">
+      <main className="emd-loading-surface min-h-screen flex flex-col bg-muted text-foreground pb-24 overflow-x-hidden">
         <Header />
-        <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12">
-          <div className="flex flex-col items-center gap-5 rounded-3xl bg-card shadow-2xl px-10 py-10 border border-border">
-            <Loader2 className="h-12 w-12 animate-spin text-orange-600" />
-            <div className="text-center">
-              <p className="text-lg font-bold text-foreground">Summer Special wird geladen</p>
-              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-            </div>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
         <MobileBottomNav />
       </main>
     )

@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingBlock } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
@@ -207,7 +209,7 @@ export default function TerminalEventDetailPage() {
         {loading && (
           <div className="mt-8 rounded-[32px] border border-white/[0.08] bg-black/28 p-12 text-center backdrop-blur-2xl">
             <div className="mx-auto h-1.5 w-52 overflow-hidden rounded-full bg-white/[0.08]">
-              <div className="h-full w-1/2 animate-pulse rounded-full bg-cyan-300" />
+              <LoadingBlock className="h-full w-1/2  rounded-full bg-cyan-300" />
             </div>
             <div className="mt-4 text-sm font-black uppercase tracking-[0.24em] text-white/35">
               Veranstaltung wird geladen

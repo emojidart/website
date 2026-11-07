@@ -1,8 +1,10 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AlertTriangle, ArrowLeft, Loader2 } from "lucide-react"
+import { AlertTriangle, ArrowLeft } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -153,15 +155,15 @@ export default function SurvivalCentralStart() {
   }, [user, isAdmin, authLoading, adminLoading, centralEventId, router, machineCount, roundsPerStage])
 
   return (
-    <main className="min-h-screen bg-[#080b10] p-5 pt-24 text-white">
-      <div className="mx-auto max-w-xl rounded-3xl border border-white/10 bg-[#111820] p-6 shadow-xl">
+    <main className="min-h-screen bg-card p-5 pt-24 text-white">
+      <div className="mx-auto max-w-xl rounded-3xl border border-white/10 bg-card p-6 shadow-xl">
         <div className="text-xs font-black uppercase tracking-widest text-orange-400">Survival Roulette</div>
         <h1 className="mt-2 text-2xl font-black">Turnierstart</h1>
         {error ? (
           <div className="mt-6 flex items-start gap-3 rounded-2xl border border-orange-500/30 bg-orange-500/10 p-4 text-orange-100">
             <AlertTriangle className="mt-1 h-5 w-5 shrink-0" /> <p className="text-sm leading-6">{error}</p>
           </div>
-        ) : <div className="mt-6 flex items-center gap-3 text-sm text-white/70"><Loader2 className="h-5 w-5 animate-spin text-orange-400" />{status}</div>}
+        ) : <div className="mt-6 flex items-center gap-3 text-sm text-white/70"><LoadingIndicator className="h-5 w-5" />{status}</div>}
         <button onClick={() => router.push("/admin/tournament-center")}
           className="mt-6 flex items-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-sm font-bold hover:bg-white/10">
           <ArrowLeft className="h-4 w-4" /> Zur Turnier-Zentrale

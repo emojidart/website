@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState, type ReactNode } from "react"
 import { useParams } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
@@ -20,6 +22,7 @@ import {
   Users,
 } from "lucide-react"
 
+import { SeriesNavigation } from "@/components/tournaments/series-navigation"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
@@ -199,21 +202,22 @@ export default function DynamicSeriesRulesPage() {
       <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
+        <SeriesNavigation />
         {loading ? (
-          <div className="min-h-[420px] animate-pulse rounded-[30px] border border-white/10 bg-white/[0.04]" />
+          <SectionSkeleton kind="tournament" />
         ) : !series ? (
-          <div className="rounded-[28px] border border-white/10 bg-card p-8 text-center font-bold text-white/60">Turnierserie nicht gefunden.</div>
+          <div className="rounded-[20px] border border-white/10 bg-card p-8 text-center font-bold text-muted-foreground">Turnierserie nicht gefunden.</div>
         ) : (
           <div className="space-y-5 sm:space-y-6">
-            <section className="relative overflow-hidden rounded-[30px] border border-sky-300/[0.13] bg-card p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-7">
-              <div className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full bg-sky-500/[0.09] blur-[75px]" />
+            <section className="relative overflow-hidden rounded-[20px] border border-orange-300/[0.13] bg-card p-5 shadow-sm  sm:p-7">
+              <div className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full bg-orange-500/[0.09] blur-[75px]" />
               <div className="relative">
-                <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/15 bg-sky-500/[0.07] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-sky-100/75">
+                <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/15 bg-orange-500/[0.07] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-100/75">
                   <BookOpenCheck className="h-3.5 w-3.5" />
                   {SERIES_TYPE_LABEL[series.series_type || ""] || "Turnierserie"}
                 </div>
                 <h1 className="mt-3 text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">Regelwerk · {series.name}</h1>
-                {series.description ? <p className="mt-3 max-w-3xl text-sm font-semibold leading-7 text-white/48 sm:text-base">{series.description}</p> : null}
+                {series.description ? <p className="mt-3 max-w-3xl text-sm font-semibold leading-7 text-muted-foreground sm:text-base">{series.description}</p> : null}
 
                 <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <QuickFact icon={<Target className="h-4 w-4" />} label="Modus" value={`${FORMAT_LABEL[series.tournament_format] || series.tournament_format} · ${TEAM_LABEL[series.team_mode] || series.team_mode}`} />
@@ -333,11 +337,11 @@ function RuleSection({ icon, title, tone, children }: { icon: ReactNode; title: 
     orange: "text-orange-200 border-orange-300/[0.10]",
     emerald: "text-emerald-200 border-emerald-300/[0.10]",
     amber: "text-amber-200 border-amber-300/[0.10]",
-    sky: "text-sky-200 border-sky-300/[0.10]",
-    violet: "text-violet-200 border-violet-300/[0.10]",
+    sky: "text-orange-200 border-orange-300/[0.10]",
+    violet: "text-orange-200 border-orange-300/[0.10]",
   }[tone]
   return (
-    <section className={`rounded-[26px] border bg-card p-4 shadow-[0_22px_60px_-42px_rgba(0,0,0,.95)]  sm:p-5 ${toneClass}`}>
+    <section className={`rounded-[20px] border bg-card p-4 shadow-[0_22px_60px_-42px_rgba(0,0,0,.95)]  sm:p-5 ${toneClass}`}>
       <div className="flex items-center gap-2.5"><div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035]">{icon}</div><h2 className="text-lg font-semibold sm:text-xl">{title}</h2></div>
       <div className="mt-4 space-y-2">{children}</div>
     </section>
@@ -345,16 +349,16 @@ function RuleSection({ icon, title, tone, children }: { icon: ReactNode; title: 
 }
 
 function QuickFact({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3"><div className="flex items-center gap-1.5 text-white/28">{icon}<span className="text-xs font-semibold uppercase tracking-[0.13em]">{label}</span></div><div className="mt-1.5 truncate text-sm font-semibold text-white/82">{value}</div></div>
+  return <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3"><div className="flex items-center gap-1.5 text-muted-foreground">{icon}<span className="text-xs font-semibold uppercase tracking-[0.13em]">{label}</span></div><div className="mt-1.5 break-words text-sm font-semibold text-white/82">{value}</div></div>
 }
 function Info({ label, value, strong = false }: { label: string; value: string | number; strong?: boolean }) {
-  return <div className="flex items-start justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3"><span className="text-xs font-bold leading-5 text-white/38">{label}</span><span className={`max-w-[62%] text-right text-sm leading-5 ${strong ? "font-semibold text-white" : "font-bold text-white/72"}`}>{value}</span></div>
+  return <div className="flex items-start justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3"><span className="text-xs font-bold leading-5 text-muted-foreground">{label}</span><span className={`max-w-[62%] text-right text-sm leading-5 ${strong ? "font-semibold text-white" : "font-bold text-white/72"}`}>{value}</span></div>
 }
 function ScoreBox({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return <div className={`rounded-2xl border p-3.5 ${accent ? "border-orange-300/12 bg-orange-500/[0.05]" : "border-white/[0.07] bg-white/[0.025]"}`}><div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</div><div className={`mt-1 text-lg font-semibold ${accent ? "text-orange-100" : "text-white/85"}`}>{value}</div></div>
 }
 function RewardRow({ label, value, cash = false }: { label: string; value: string; cash?: boolean }) {
-  return <div className={`flex items-center justify-between gap-4 rounded-2xl border px-3.5 py-3 ${cash ? "border-emerald-300/12 bg-emerald-500/[0.05]" : "border-white/[0.07] bg-white/[0.025]"}`}><span className="text-sm font-bold text-white/58">{label}</span><strong className={cash ? "text-emerald-100" : "text-white/85"}>{value}</strong></div>
+  return <div className={`flex items-center justify-between gap-4 rounded-2xl border px-3.5 py-3 ${cash ? "border-emerald-300/12 bg-emerald-500/[0.05]" : "border-white/[0.07] bg-white/[0.025]"}`}><span className="text-sm font-bold text-muted-foreground">{label}</span><strong className={cash ? "text-emerald-100" : "text-white/85"}>{value}</strong></div>
 }
 function EmptyText({ children }: { children: ReactNode }) {
   return <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm font-semibold text-muted-foreground">{children}</div>

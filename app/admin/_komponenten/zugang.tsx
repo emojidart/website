@@ -1,5 +1,7 @@
 "use client"
 
+
+
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -109,19 +111,12 @@ export function AuthSection({ isVisible, onLoginSuccess, authMessage, setAuthMes
                 type="submit"
                 disabled={loading}
                 className="w-full h-14 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-lg rounded-xl transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 uppercase tracking-wide"
-              >
-                {loading ? (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Anmeldung läuft...</span>
-                  </div>
-                ) : (
+               loading={Boolean(loading)} loadingLabel="Anmeldung läuft...">{(
                   <div className="flex items-center space-x-3">
                     <span>Anmelden</span>
                     <ArrowRight className="h-5 w-5" />
                   </div>
-                )}
-              </Button>
+                )}</Button>
 
               {authMessage && (
                 <div

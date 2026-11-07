@@ -1,4 +1,7 @@
 "use client"
+
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Suspense } from "react"
 import SurvivalTvBoard from "@/components/survival/survival-tv-board"
-export default function Page(){return <Suspense fallback={<div className="grid h-screen place-items-center bg-[#090b0e] text-white">Beamer wird geladen …</div>}><SurvivalTvBoard mode="double" /></Suspense>}
+export default function Page(){return <Suspense fallback={<SectionSkeleton kind="tournament" label="Bereich wird geladen…" />}><SurvivalTvBoard mode="double" /></Suspense>}

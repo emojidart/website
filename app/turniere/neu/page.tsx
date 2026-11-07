@@ -1,23 +1,13 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+import { TournamentManagerSkeleton } from "@/components/tournaments/tournament-manager-skeleton"
+
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import {
-  ArrowLeft,
-  CalendarDays,
-  ChevronRight,
-  Info,
-  CheckCircle2,
-  FileImage,
-  Loader2,
-  MapPin,
-  Send,
-  ShieldAlert,
-  Trophy,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronRight, Info, CheckCircle2, FileImage, MapPin, Send, ShieldAlert, Trophy, UserRound } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -172,6 +162,7 @@ export default function NeueVeranstaltungPage() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [flyer, setFlyer] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const submittingRef = useRef(false);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
 
@@ -233,7 +224,22 @@ export default function NeueVeranstaltungPage() {
   async function uploadFlyer(userId: string) {
     if (!flyer) return null;
 
-    const extension = flyer.name.split(".").pop()?.toLowerCase() || "jpg";
+    const allowedTypes: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "application/pdf": "pdf",
+    };
+    const extension = allowedTypes[flyer.type];
+    if (!extension) {
+      throw new Error("Bitte lade einen Flyer als JPG, PNG, WEBP oder PDF hoch.");
+    }
+    if (flyer.size > 8 * 1024 * 1024) {
+      throw new Error("Der Flyer ist zu groß. Maximal 8 MB sind erlaubt.");
+    }
+    if (flyer.size === 0) {
+      throw new Error("Die ausgewählte Datei ist leer.");
+    }
     const path = `${userId}/${crypto.randomUUID()}.${extension}`;
     const { error } = await supabase.storage
       .from("dach-event-flyers")
@@ -244,15 +250,19 @@ export default function NeueVeranstaltungPage() {
       });
 
     if (error) throw error;
-    return supabase.storage.from("dach-event-flyers").getPublicUrl(path).data
-      .publicUrl;
+    const url = supabase.storage.from("dach-event-flyers").getPublicUrl(path).data.publicUrl;
+    return { path, url };
   }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    // Schützt auch vor Doppelklicks, bevor React den disabled-Status rendert.
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setSaving(true);
     setMessage("");
     setSuccess(false);
+    let uploadedFlyerPath: string | null = null;
 
     try {
       const { data } = await supabase.auth.getUser();
@@ -265,6 +275,26 @@ export default function NeueVeranstaltungPage() {
 
       if (form.endDate && form.endDate < form.startDate) {
         throw new Error("Das Enddatum darf nicht vor dem Startdatum liegen.");
+      }
+
+      const entryFee = form.entryFee.trim()
+        ? Number(form.entryFee.replace(",", "."))
+        : null;
+      const maxParticipants = form.maxParticipants.trim()
+        ? Number(form.maxParticipants)
+        : null;
+      if (entryFee !== null && (!Number.isFinite(entryFee) || entryFee < 0)) {
+        throw new Error("Bitte gib ein gültiges Startgeld ein (mindestens 0 €).");
+      }
+      if (maxParticipants !== null && (!Number.isInteger(maxParticipants) || maxParticipants < 1)) {
+        throw new Error("Die maximale Teilnehmerzahl muss eine positive ganze Zahl sein.");
+      }
+      if (form.registrationDeadline && form.registrationDeadline.slice(0, 10) > form.startDate) {
+        throw new Error("Der Anmeldeschluss darf nicht nach dem Veranstaltungsbeginn liegen.");
+      }
+
+      if (flyer && (flyer.size > 8 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(flyer.type))) {
+        throw new Error("Flyer: Bitte JPG, PNG, WEBP oder PDF mit maximal 8 MB auswählen.");
       }
 
       if (!form.postalCode.trim()) {
@@ -281,7 +311,9 @@ export default function NeueVeranstaltungPage() {
         throw new Error("Bitte wähle ein Bundesland bzw. einen Kanton aus.");
       }
 
-      const photoUrl = await uploadFlyer(user.id);
+      const uploadedFlyer = await uploadFlyer(user.id);
+      uploadedFlyerPath = uploadedFlyer?.path ?? null;
+      const photoUrl = uploadedFlyer?.url ?? null;
       const location = [
         form.street.trim(),
         `${form.postalCode.trim()} ${form.city.trim()}`.trim(),
@@ -337,13 +369,9 @@ export default function NeueVeranstaltungPage() {
         mode: form.discipline,
         discipline: form.discipline,
         format: form.format,
-        entry_fee: form.entryFee
-          ? Number(form.entryFee.replace(",", "."))
-          : null,
+        entry_fee: entryFee,
         startgeld_details: form.startgeldDetails.trim() || null,
-        max_participants: form.maxParticipants
-          ? Number(form.maxParticipants)
-          : null,
+        max_participants: maxParticipants,
         organizer_name: form.organizerName.trim(),
         organizer_email: form.organizerEmail.trim() || null,
         organizer_phone: form.organizerPhone.trim() || null,
@@ -372,21 +400,27 @@ export default function NeueVeranstaltungPage() {
       }));
       setFlyer(null);
     } catch (error: any) {
+      // Fehlgeschlagene DB-Einreichungen dürfen keine ungenutzten Flyer hinterlassen.
+      if (uploadedFlyerPath) {
+        const { error: cleanupError } = await supabase.storage
+          .from("dach-event-flyers")
+          .remove([uploadedFlyerPath]);
+        if (cleanupError) console.error("[DachVeranstaltungNeu] Flyer-Bereinigung:", cleanupError);
+      }
       setMessage(
         error?.message || "Die Veranstaltung konnte nicht gespeichert werden.",
       );
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   }
 
   if (access === "loading") {
     return (
-      <div className="min-h-screen flex flex-col bg-background text-white">
+      <div className="emd-loading-surface min-h-screen flex flex-col bg-background text-white">
         <Header variant="app" title="Veranstaltung einreichen" subtitle="Öffentliche Turniere" backHref="/turniere" />
-        <main className="flex-grow flex items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-orange-200" />
-        </main>
+        <TournamentManagerSkeleton mode="form" />
         <MobileBottomNav />
       </div>
     );
@@ -426,7 +460,7 @@ export default function NeueVeranstaltungPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f6f7f9] pb-24 text-white">
+    <div className="min-h-screen overflow-x-hidden bg-card pb-24 text-white">
       <Header variant="app" title="Veranstaltung einreichen" subtitle="Öffentliche Turniere" backHref="/turniere" />
 
       <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
@@ -435,7 +469,7 @@ export default function NeueVeranstaltungPage() {
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] pt-14 sm:pt-16">
         <section className="relative overflow-hidden bg-background">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.30),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_36%)]" />
-          <div className="relative w-full max-w-none px-3 pb-20 pt-8 sm:px-4 sm:pb-24 sm:pt-12 lg:px-5 xl:px-6 2xl:px-8">
+          <div className="relative mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-20 pt-8 sm:px-5 sm:pb-24 sm:pt-12 lg:px-7 xl:px-8">
             <button
               type="button"
               onClick={() => router.push("/turniere")}
@@ -446,7 +480,7 @@ export default function NeueVeranstaltungPage() {
             </button>
 
             <div className="max-w-3xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/25 bg-orange-500/100/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-orange-300">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/25 bg-orange-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-orange-300">
                 <CalendarDays className="h-4 w-4" />
                 DACH Veranstaltungskalender
               </div>
@@ -460,7 +494,7 @@ export default function NeueVeranstaltungPage() {
           </div>
         </section>
 
-        <div className="relative z-10 -mt-10 w-full max-w-none px-2 pb-10 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
+        <div className="relative z-10 -mt-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 sm:px-5 lg:px-7 xl:px-8">
           <div className="mb-4 grid gap-2 sm:grid-cols-3 xl:gap-3">
             {["Daten eintragen", "Prüfung durch den Verein", "Veröffentlichung im Kalender"].map((label, index) => (
               <div key={label} className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-card px-4 py-3.5 shadow-[0_12px_34px_-30px_rgba(15,23,42,0.35)]">
@@ -734,7 +768,7 @@ export default function NeueVeranstaltungPage() {
                   value={form.details}
                   onChange={(e) => setField("details", e.target.value)}
                   rows={7}
-                  className="w-full resize-y rounded-xl border border-white/10 bg-card px-4 py-3 text-sm outline-none transition placeholder:text-white/25 focus:border-orange-400 focus:bg-card focus:ring-4 focus:ring-orange-100"
+                  className="w-full resize-y rounded-xl border border-white/10 bg-card px-4 py-3 text-sm outline-none transition placeholder:text-muted-foreground focus:border-orange-400 focus:bg-card focus:ring-4 focus:ring-orange-100"
                   placeholder="Modus, Preisgeld, Einlass, Anmeldung und weitere Hinweise …"
                 />
               </Field>
@@ -749,7 +783,9 @@ export default function NeueVeranstaltungPage() {
 
             {message ? (
               <div
-                className={`xl:col-span-2 rounded-2xl border p-4 text-sm font-semibold shadow-none ${success ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-300/[0.16] bg-red-500/10 text-red-700"}`}
+                role="status"
+                aria-live="polite"
+                className={`xl:col-span-2 rounded-2xl border p-4 text-sm font-semibold shadow-none ${success ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200" : "border-red-400/20 bg-red-500/10 text-red-200"}`}
               >
                 <div className="flex gap-2 items-start">
                   {success ? (
@@ -767,15 +803,9 @@ export default function NeueVeranstaltungPage() {
                 type="submit"
                 disabled={saving}
                 className="h-14 w-full rounded-xl bg-orange-500/100 text-base font-semibold text-white shadow-none hover:bg-orange-400"
-              >
-              {saving ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
+               loading={Boolean(saving)}>{(
                 <Send className="w-5 h-5 mr-2" />
-              )}
-                {saving ? "Wird eingereicht …" : "Zur Freigabe einreichen"}
-                {!saving ? <ChevronRight className="ml-2 h-5 w-5" /> : null}
-              </Button>
+              )}{saving ? "Wird eingereicht …" : "Zur Freigabe einreichen"}{!saving ? <ChevronRight className="ml-2 h-5 w-5" /> : null}</Button>
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 Die Veröffentlichung erfolgt erst nach der Freigabe.
               </p>
@@ -798,7 +828,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="h-full overflow-hidden rounded-[24px] border border-white/10 bg-card shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)] sm:rounded-[26px]">
+    <Card className="h-full overflow-hidden rounded-[24px] border border-white/10 bg-card shadow-[0_16px_50px_-40px_rgba(15,23,42,0.5)] sm:rounded-[20px]">
       <CardContent className="p-0">
         <div className="flex items-center gap-3 border-b border-white/10 bg-card px-4 py-4 sm:px-5 lg:px-6">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/10 text-orange-200">

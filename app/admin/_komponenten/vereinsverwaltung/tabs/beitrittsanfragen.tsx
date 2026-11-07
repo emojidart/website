@@ -1,30 +1,10 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
-import {
-  CheckCircle2,
-  Clock3,
-  Download,
-  FileCheck2,
-  PenLine,
-  Sparkles,
-  Loader2,
-  RefreshCw,
-  Search,
-  UserCheck,
-  UserPlus,
-  XCircle,
-  ChevronDown,
-  ChevronUp,
-  Mail,
-  Phone,
-  MapPin,
-  Shirt,
-  CalendarDays,
-  Settings2,
-  FileText,
-} from "lucide-react"
+import { CheckCircle2, Clock3, Download, FileCheck2, PenLine, Sparkles, RefreshCw, Search, UserCheck, UserPlus, XCircle, ChevronDown, ChevronUp, Mail, Phone, MapPin, Shirt, CalendarDays, Settings2, FileText } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
@@ -622,9 +602,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
               onClick={() => void saveTrialSettings()}
               disabled={savingSettings}
               className={cn(vv.buttonPrimary, "self-end")}
-            >
-              {savingSettings ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Speichern
+             loading={Boolean(savingSettings)}>{null}Speichern
             </Button>
           </div>
         </div>
@@ -670,17 +648,14 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
           </div>
 
           <Button type="button" onClick={() => void load()} disabled={loading} className={cn(vv.buttonSecondary, "self-end")}>
-            <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+            {loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={cn("mr-2 h-4 w-4", loading && "")} />}
             Neu laden
           </Button>
         </div>
       </section>
 
       {loading ? (
-        <div className={cn(vv.surface, "flex items-center justify-center px-4 py-10 text-sm font-semibold text-white/40")}>
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          Beitrittsanfragen werden geladen…
-        </div>
+        <SectionSkeleton kind="cards" />
       ) : visibleRows.length === 0 ? (
         <div className={cn(vv.surface, "px-4 py-10 text-center")}>
           <UserPlus className="mx-auto h-6 w-6 text-white/18" />
@@ -831,9 +806,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
                               disabled={archiveLoading === `${row.id}:submitted`}
                               onClick={() => void downloadArchive(row, "submitted")}
                               className={cn(vv.buttonSecondary, "h-9 text-xs")}
-                            >
-                              {archiveLoading === `${row.id}:submitted` ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                              Eingereichten Antrag (PDF)
+                             loading={Boolean(archiveLoading === `${row.id}:submitted`)}><Download className="mr-2 h-4 w-4" />Eingereichten Antrag (PDF)
                             </Button>
                             {row.status === "approved" ? (
                               <Button
@@ -843,9 +816,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
                                 disabled={archiveLoading === `${row.id}:approved`}
                                 onClick={() => void downloadArchive(row, "approved")}
                                 className={cn(vv.buttonSecondary, "h-9 text-xs text-emerald-200")}
-                              >
-                                {archiveLoading === `${row.id}:approved` ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                                Aufnahmebestätigung (PDF)
+                               loading={Boolean(archiveLoading === `${row.id}:approved`)}><Download className="mr-2 h-4 w-4" />Aufnahmebestätigung (PDF)
                               </Button>
                             ) : null}
                           </div>
@@ -898,9 +869,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
                           disabled={saving}
                           onClick={() => void reject(row)}
                           className={cn(vv.buttonDanger, "w-full sm:w-auto")}
-                        >
-                          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-                          Ablehnen
+                         loading={Boolean(saving)}><XCircle className="mr-2 h-4 w-4" />Ablehnen
                         </Button>
 
                         <Button
@@ -909,9 +878,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
                           onClick={() => void approve(row)}
                           className={cn(vv.buttonPrimary, "w-full sm:w-auto")}
                           title={documentsEnabled && (!row.signature_data_url || !row.documents_accepted_at) ? "Digitale Unterlagen sind noch nicht vollständig." : undefined}
-                        >
-                          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                          Mitglied aufnehmen
+                         loading={Boolean(saving)}><CheckCircle2 className="mr-2 h-4 w-4" />Mitglied aufnehmen
                         </Button>
                       </div>
                     </div>

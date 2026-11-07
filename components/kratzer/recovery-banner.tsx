@@ -17,7 +17,7 @@ export function RecoveryBanner({
   if (!recoveryTournamentData) return null
 
   return (
-    <div className="mb-5 flex flex-col items-center gap-4 rounded-[24px] border border-orange-300/20 bg-orange-500/[0.08] p-5 shadow-[0_18px_55px_-42px_rgba(0,0,0,.9)] md:flex-row">
+    <div className="mb-5 flex flex-col items-center gap-4 rounded-[24px] border border-orange-300/20 bg-orange-500/[0.08] p-5 shadow-sm md:flex-row">
       <div className="shrink-0 rounded-2xl border border-orange-300/20 bg-orange-500/[0.14] p-3 text-orange-200">
         <RefreshCcw className="h-6 w-6" />
       </div>
@@ -31,7 +31,7 @@ export function RecoveryBanner({
       </div>
 
       <div className="flex gap-3 mt-3 md:mt-0">
-        <Button onClick={onRestore} className="h-11 rounded-xl bg-orange-500 px-5 font-semibold text-primary-foreground hover:bg-orange-400">
+        <Button onClick={onRestore} className="h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground hover:bg-orange-400">
           <Play className="h-4 w-4 mr-2" />
           Wiederherstellen
         </Button>

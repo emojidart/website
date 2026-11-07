@@ -56,7 +56,7 @@ function SectionCard({
     >
       <div className="p-4 sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">{icon}</div>
+          <div className="shrink-0 rounded-2xl bg-primary text-primary-foreground p-3 shadow-sm">{icon}</div>
           <div className="min-w-0 flex-1">
             <h2 className="text-lg sm:text-xl font-semibold text-white">{title}</h2>
           </div>
@@ -78,7 +78,7 @@ function SubCard({
 }) {
   const toneCls =
     tone === "info"
-      ? "bg-sky-500/10 border-sky-400/20"
+      ? "bg-orange-500/10 border-orange-400/20"
       : tone === "warn"
         ? "bg-amber-500/10 border-amber-400/20"
         : tone === "success"
@@ -89,7 +89,7 @@ function SubCard({
 
   const titleCls =
     tone === "info"
-      ? "text-sky-200"
+      ? "text-orange-200"
       : tone === "warn"
         ? "text-amber-200"
         : tone === "success"
@@ -139,7 +139,7 @@ export default function MembersChampionCupRegelwerkPage() {
 
   {/* KOMPAKTER HEADER – orientiert an aktueller Startseite */}
 <motion.div variants={membersCupItemVariants} className="mb-5">
-  <div className="overflow-hidden rounded-[26px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
+  <div className="overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-[0_22px_65px_-48px_rgba(15,23,42,0.65)]">
     <div className="relative bg-card    p-4 text-white sm:p-5 lg:p-6">
       <div className="flex flex-col items-center text-center sm:flex-row sm:text-left sm:gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
@@ -292,7 +292,7 @@ export default function MembersChampionCupRegelwerkPage() {
                     <div className="text-xs text-white/70 mt-1">Einsteiger / Aufbauklasse</div>
                   </div>
 
-                  <div className="rounded-xl border border-sky-400/20 bg-sky-500/10 p-4 text-center">
+                  <div className="rounded-xl border border-orange-400/20 bg-orange-500/10 p-4 text-center">
                     <div className="font-semibold text-blue-900">Fortgeschrittene</div>
                     <div className="text-xs text-white/70 mt-1">solide Turniererfahrung</div>
                   </div>

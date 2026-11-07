@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
@@ -21,22 +23,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-import {
-  Calendar,
-  MapPin,
-  Users,
-  Loader2,
-  Crown,
-  ShieldCheck,
-  CheckCircle2,
-  HelpCircle,
-  XCircle,
-  ClipboardList,
-  Eye,
-  MessageCircle,
-  Send,
-  Clock,
-} from "lucide-react"
+import { Calendar, MapPin, Users, Crown, ShieldCheck, CheckCircle2, HelpCircle, XCircle, ClipboardList, Eye, MessageCircle, Send, Clock } from "lucide-react"
 
 type AvailabilityStatus = "yes" | "maybe" | "no"
 
@@ -203,7 +190,7 @@ function isMatchLocked(match: Match) {
 
 function InfoCallout() {
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-card shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  sm:rounded-[28px]">
+    <div className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-card shadow-sm  sm:rounded-[20px]">
       <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08] shadow-[0_0_18px_rgba(249,115,22,.07)]">
@@ -1165,7 +1152,41 @@ function MemberAvailabilityInner() {
   }, [displayPlayers, availabilityByPlayer])
 
   if (authLoading || loading) {
-    return <div className="min-h-[1px]" aria-hidden="true" />
+    return (
+      <div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-white">
+        <Header variant="app" title="Zusagen & Aufstellung" subtitle="Ligazentrale" backHref="/member-league-app" />
+        <main className="relative z-10 w-full pt-14 sm:pt-16" aria-busy="true" aria-label="Zusagen und Aufstellung werden geladen">
+          <div className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-4 overflow-x-hidden px-3 pb-24 pt-4 sm:px-5 sm:pt-5 lg:px-7 xl:px-8">
+            <section className="rounded-[20px] border border-white/[0.08] bg-card p-4 sm:p-6 lg:p-8">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 shrink-0 animate-pulse rounded-2xl bg-white/10" />
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div className="h-3.5 w-48 max-w-full animate-pulse rounded bg-white/10" />
+                  <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
+                </div>
+              </div>
+            </section>
+            <section className="rounded-[20px] border border-white/[0.08] bg-card p-4">
+              <div className="h-4 w-48 animate-pulse rounded bg-white/10" />
+              <div className="mt-3 h-3.5 w-4/5 animate-pulse rounded bg-white/10" />
+            </section>
+            <section className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card">
+              <div className="border-b border-white/[0.07] p-5">
+                <div className="h-6 w-28 animate-pulse rounded bg-white/10" />
+              </div>
+              <div className="space-y-4 p-4 sm:p-6">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="h-10 animate-pulse rounded-xl bg-white/10" />
+                  <div className="h-10 animate-pulse rounded-xl bg-white/10" />
+                </div>
+                <SectionSkeleton kind="lineup" label="Ligaspiele und Aufstellungen werden geladen…" />
+              </div>
+            </section>
+          </div>
+        </main>
+        <MobileBottomNav />
+      </div>
+    )
   }
 
   return (
@@ -1182,7 +1203,7 @@ function MemberAvailabilityInner() {
           description="Für diesen Bereich brauchst du ein aktives E-Dart- oder Steeldart-Ligapaket bzw. eine gültige Testfreischaltung."
         >
           <div className="mx-auto w-full max-w-[var(--emd-content-max)] overflow-x-hidden px-3 py-4 pb-24 sm:px-5 sm:py-5 sm:pb-10 lg:px-7 xl:px-8">
-            <section className="relative mb-4 overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_32px_110px_-52px_rgba(0,0,0,.98)]  sm:mb-5">
+            <section className="relative mb-4 overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-[0_32px_110px_-52px_rgba(0,0,0,.98)]  sm:mb-5">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(249,115,22,.18),transparent_30%),radial-gradient(circle_at_90%_0%,rgba(14,165,233,.10),transparent_28%)]" />
               <div className="pointer-events-none absolute inset-x-[8%] bottom-0 h-px bg-gradient-to-r from-transparent via-orange-300/30 to-transparent" />
               <div className="relative p-4 sm:p-6 lg:p-8">
@@ -1206,7 +1227,7 @@ function MemberAvailabilityInner() {
               <InfoCallout />
             </div>
 
-            <Card className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-card text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
+            <Card className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card text-white shadow-sm ">
               <CardHeader className="border-b border-white/[0.07] px-4 py-5">
                 <CardTitle className="flex items-center gap-2 text-xl font-semibold text-white">
                   <Calendar className="h-5 w-5 text-orange-300" />
@@ -1217,10 +1238,10 @@ function MemberAvailabilityInner() {
               <CardContent className="px-3 py-4 sm:px-6 sm:py-6">
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
                   <TabsList className="mb-5 grid h-auto w-full grid-cols-2 gap-1 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1.5 ">
-                    <TabsTrigger value="upcoming" className="h-10 rounded-xl font-semibold text-muted-foreground data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_22px_rgba(249,115,22,.14)]">
+                    <TabsTrigger value="upcoming" className="h-10 rounded-xl font-semibold text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_0_22px_rgba(249,115,22,.14)]">
                       Kommende ({upcomingMatches.length})
                     </TabsTrigger>
-                    <TabsTrigger value="completed" className="h-10 rounded-xl font-semibold text-muted-foreground data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-[0_0_22px_rgba(249,115,22,.14)]">
+                    <TabsTrigger value="completed" className="h-10 rounded-xl font-semibold text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_0_22px_rgba(249,115,22,.14)]">
                       Abgeschlossen ({completedMatches.length})
                     </TabsTrigger>
                   </TabsList>
@@ -1250,7 +1271,7 @@ function MemberAvailabilityInner() {
                                     ) : null}
                                   </div>
 
-                                  <Button size="sm" onClick={() => openMatchDialog(m)} className="h-11 rounded-xl border border-orange-300/20 bg-orange-500 font-semibold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-400 active:scale-[0.985]">
+                                  <Button size="sm" onClick={() => openMatchDialog(m)} className="h-11 rounded-xl border border-orange-300/20 bg-primary font-semibold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-400 active:scale-[0.985]">
                                     <Eye className="h-4 w-4 mr-2" />
                                     Öffnen
                                   </Button>
@@ -1292,15 +1313,15 @@ function MemberAvailabilityInner() {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogContent className="h-[100dvh] w-screen max-w-none overflow-hidden rounded-none border-0 bg-[#070a0f] p-0 text-white shadow-none sm:h-[min(720px,calc(100dvh-120px))] sm:w-[min(820px,calc(100vw-64px))] sm:max-w-[820px] sm:rounded-[24px] sm:border sm:border-white/[0.10] sm:shadow-[0_28px_100px_-40px_rgba(0,0,0,.98)]">
+              <DialogContent className="h-[100dvh] w-screen max-w-none overflow-hidden rounded-none border-0 bg-card p-0 text-white shadow-none sm:h-[min(720px,calc(100dvh-120px))] sm:w-[min(820px,calc(100vw-64px))] sm:max-w-[820px] sm:rounded-[24px] sm:border sm:border-white/[0.10] sm:shadow-sm">
                 {dialogMatch ? (
                   <div className="flex h-full min-h-0 flex-col">
-                    <DialogHeader className="relative shrink-0 border-b border-white/[0.08] bg-[#080b11] px-4 py-3 pr-12 text-left sm:px-5 sm:py-3.5">
+                    <DialogHeader className="relative shrink-0 border-b border-white/[0.08] bg-card px-4 py-3 pr-12 text-left sm:px-5 sm:py-3.5">
                       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(249,115,22,.12),transparent_34%),radial-gradient(circle_at_92%_0%,rgba(14,165,233,.06),transparent_28%)]" />
                       <div className="relative min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge className="border border-orange-300/15 bg-orange-500/10 text-orange-200 hover:bg-orange-500/10">Spieltag {dialogMatch.week_number}</Badge>
-                          <Badge variant="outline" className="border-white/10 bg-white/[0.035] text-white/60">
+                          <Badge variant="outline" className="border-white/10 bg-white/[0.035] text-muted-foreground">
                             {selectedLineupDartType === "edart" ? "E-Dart" : selectedLineupDartType === "steeldart" ? "Steeldart" : dialogMatch.dart_type}
                           </Badge>
                           {dialogIsLocked ? (
@@ -1315,7 +1336,7 @@ function MemberAvailabilityInner() {
                         </div>
 
                         <DialogTitle className="mt-2 truncate text-lg font-semibold tracking-tight text-white sm:text-xl">
-                          {getTeamDisplayName(dialogMatch, true)} <span className="text-white/25">vs.</span> {getTeamDisplayName(dialogMatch, false)}
+                          {getTeamDisplayName(dialogMatch, true)} <span className="text-muted-foreground">vs.</span> {getTeamDisplayName(dialogMatch, false)}
                         </DialogTitle>
 
                         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-muted-foreground sm:text-sm">
@@ -1346,13 +1367,13 @@ function MemberAvailabilityInner() {
                     </DialogHeader>
 
                     <Tabs value={modalTab} onValueChange={(v) => setModalTab(v as "availability" | "lineup" | "chat")} className="flex min-h-0 flex-1 flex-col">
-                      <div className="shrink-0 border-b border-white/[0.07] bg-[#070a0f] px-3 py-2 sm:px-4">
-                        <TabsList className="grid h-11 w-full grid-cols-3 gap-1 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1">
-                          <TabsTrigger value="availability" className="rounded-xl text-xs font-semibold text-muted-foreground data-[state=active]:bg-orange-500 data-[state=active]:text-white sm:text-sm">Zusage</TabsTrigger>
-                          <TabsTrigger value="lineup" className="rounded-xl text-xs font-semibold text-muted-foreground data-[state=active]:bg-orange-500 data-[state=active]:text-white sm:text-sm">
+                      <div className="shrink-0 border-b border-white/[0.07] bg-card px-3 py-2 sm:px-4">
+                        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1">
+                          <TabsTrigger value="availability" className="rounded-xl text-xs font-semibold text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground sm:text-sm">Zusage</TabsTrigger>
+                          <TabsTrigger value="lineup" className="rounded-xl text-xs font-semibold text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground sm:text-sm">
                             Aufstellung <span className="ml-1 opacity-70">{startersCount}/{requiredStartersForDialog}</span>
                           </TabsTrigger>
-                          <TabsTrigger value="chat" className="rounded-xl text-xs font-semibold text-muted-foreground data-[state=active]:bg-orange-500 data-[state=active]:text-white sm:text-sm">Chat</TabsTrigger>
+                          <TabsTrigger value="chat" className="rounded-xl text-xs font-semibold text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground sm:text-sm">Chat</TabsTrigger>
                         </TabsList>
                       </div>
 
@@ -1385,7 +1406,7 @@ function MemberAvailabilityInner() {
                                 </div>
 
                                 <div className="flex gap-2">
-                                  <Textarea value={myNote} onChange={(e) => setMyNote(e.target.value)} placeholder="Notiz, z.B. komme 5 Min. später" disabled={dialogIsLocked} className="min-h-[44px] resize-none rounded-xl border-white/10 bg-black/20 text-white placeholder:text-white/25" />
+                                  <Textarea value={myNote} onChange={(e) => setMyNote(e.target.value)} placeholder="Notiz, z.B. komme 5 Min. später" disabled={dialogIsLocked} className="min-h-[44px] resize-none rounded-xl border-white/10 bg-black/20 text-white placeholder:text-muted-foreground" />
                                   <Button variant="outline" onClick={saveNote} disabled={dialogIsLocked} className="h-auto min-w-[84px] rounded-xl border-white/10 bg-white/[0.035] text-xs font-semibold text-white/65">Speichern</Button>
                                 </div>
                               </CardContent>
@@ -1401,8 +1422,7 @@ function MemberAvailabilityInner() {
                             {isCaptainOrCoForTeam && !dialogIsLocked ? (
                               <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3">
                                 <div><div className="text-sm font-semibold text-white">Offene Rückmeldungen</div><div className="text-xs text-muted-foreground">{noAnswerPlayerIds.length} Spieler ohne Antwort</div></div>
-                                <Button size="sm" variant="outline" onClick={sendAvailabilityReminderToAll} disabled={remindAllSending || noAnswerPlayerIds.length === 0} className="rounded-xl border-white/10 bg-white/[0.035] text-xs font-semibold text-white/65">
-                                  {remindAllSending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}Alle erinnern
+                                <Button size="sm" variant="outline" onClick={sendAvailabilityReminderToAll} disabled={remindAllSending || noAnswerPlayerIds.length === 0} className="rounded-xl border-white/10 bg-white/[0.035] text-xs font-semibold text-white/65" loading={Boolean(remindAllSending)}>{null}Alle erinnern
                                 </Button>
                               </div>
                             ) : null}
@@ -1416,7 +1436,7 @@ function MemberAvailabilityInner() {
                                   return (
                                     <div key={p.id} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-black/20 p-3">
                                       <div className="min-w-0"><div className="truncate text-sm font-semibold text-white">{p.name}</div>{a?.note ? <div className="mt-0.5 truncate text-xs text-muted-foreground">{a.note}</div> : null}</div>
-                                      <div className="flex shrink-0 items-center gap-2">{statusBadge(s as any)}{isCaptainOrCoForTeam && !dialogIsLocked && s === "none" && p.id !== profile?.player_id ? <Button size="sm" variant="ghost" disabled={!!remindSending[p.id]} onClick={() => sendAvailabilityReminder(p.id)} className="h-8 rounded-lg px-2 text-xs font-semibold text-orange-300 hover:bg-orange-500/10">{remindSending[p.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Erinnern"}</Button> : null}</div>
+                                      <div className="flex shrink-0 items-center gap-2">{statusBadge(s as any)}{isCaptainOrCoForTeam && !dialogIsLocked && s === "none" && p.id !== profile?.player_id ? <Button size="sm" variant="ghost" disabled={!!remindSending[p.id]} onClick={() => sendAvailabilityReminder(p.id)} className="h-8 rounded-lg px-2 text-xs font-semibold text-orange-300 hover:bg-orange-500/10" loading={Boolean(remindSending[p.id])}>{"Erinnern"}</Button> : null}</div>
                                     </div>
                                   )
                                 })}
@@ -1428,7 +1448,7 @@ function MemberAvailabilityInner() {
                             <div className={`rounded-[22px] border p-4 ${lineupHasEnoughStarters ? "border-emerald-300/15 bg-emerald-500/[0.05]" : "border-amber-300/15 bg-amber-500/[0.05]"}`}>
                               <div className="flex items-center justify-between gap-4">
                                 <div><div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Starter</div><div className="mt-1 text-sm font-bold text-white/65">{selectedLineupDartType === "edart" ? "E-Dart benötigt 4" : selectedLineupDartType === "steeldart" ? "Steeldart benötigt 3" : "Aufstellung"}</div></div>
-                                <div className={`text-3xl font-semibold ${lineupHasEnoughStarters ? "text-emerald-300" : "text-amber-300"}`}>{startersCount}<span className="text-lg text-white/25">/{requiredStartersForDialog}</span></div>
+                                <div className={`text-3xl font-semibold ${lineupHasEnoughStarters ? "text-emerald-300" : "text-amber-300"}`}>{startersCount}<span className="text-lg text-muted-foreground">/{requiredStartersForDialog}</span></div>
                               </div>
                               {!lineupHasEnoughStarters ? <div className="mt-2 text-xs font-semibold text-amber-200/80">Es fehlen noch {Math.max(0, requiredStartersForDialog - startersCount)} Starter.</div> : null}
                             </div>
@@ -1443,7 +1463,7 @@ function MemberAvailabilityInner() {
                                     const disabled = savingLineup || dialogIsLocked || ((lineupIsConfirmed || lineupIsStale) && !lineupEditMode)
                                     return (
                                       <div key={p.id} className={`rounded-2xl border p-3 ${inLineup ? "border-orange-300/15 bg-orange-500/[0.05]" : "border-white/[0.07] bg-black/20"}`}>
-                                        <div className="mb-2 flex items-center justify-between gap-2"><div className="min-w-0 truncate text-sm font-semibold text-white">{p.name}</div>{entry ? <Badge className={entry.is_substitute ? "bg-sky-500/10 text-sky-200" : "bg-orange-500/10 text-orange-200"}>{entry.is_substitute ? "Ersatz" : "Starter"}</Badge> : null}</div>
+                                        <div className="mb-2 flex items-center justify-between gap-2"><div className="min-w-0 truncate text-sm font-semibold text-white">{p.name}</div>{entry ? <Badge className={entry.is_substitute ? "bg-orange-500/10 text-orange-200" : "bg-orange-500/10 text-orange-200"}>{entry.is_substitute ? "Ersatz" : "Starter"}</Badge> : null}</div>
                                         {!inLineup ? (
                                           <div className="grid grid-cols-2 gap-2"><Button size="sm" variant="outline" disabled={disabled} onClick={() => setLineupPlayer(p.id, "starter")} className="rounded-xl border-white/10 bg-white/[0.03] text-xs font-semibold text-white/65">Starter</Button><Button size="sm" variant="outline" disabled={disabled} onClick={() => setLineupPlayer(p.id, "substitute")} className="rounded-xl border-white/10 bg-white/[0.03] text-xs font-semibold text-white/65">Ersatz</Button></div>
                                         ) : (
@@ -1462,7 +1482,7 @@ function MemberAvailabilityInner() {
                             </div>
 
                             {isCaptainOrCoForTeam && !dialogIsLocked ? (
-                              <div className="space-y-2 rounded-2xl border border-sky-300/10 bg-sky-500/[0.035] p-3">
+                              <div className="space-y-2 rounded-2xl border border-orange-300/10 bg-orange-500/[0.035] p-3">
                                 <div>
                                   <div className="text-sm font-semibold text-white">Team-Chat</div>
                                   <div className="mt-1 text-xs font-medium leading-5 text-muted-foreground">
@@ -1474,10 +1494,8 @@ function MemberAvailabilityInner() {
                                   variant="outline"
                                   onClick={manuallyPublishMatchCard}
                                   disabled={publishingChatCard}
-                                  className="h-11 w-full rounded-xl border-sky-300/15 bg-sky-500/[0.07] font-semibold text-sky-100 hover:bg-sky-500/[0.12]"
-                                >
-                                  {publishingChatCard ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />}
-                                  Im Team-Chat veröffentlichen
+                                  className="h-11 w-full rounded-xl border-orange-300/15 bg-orange-500/[0.07] font-semibold text-orange-100 hover:bg-orange-500/[0.12]"
+                                 loading={Boolean(publishingChatCard)}><MessageCircle className="mr-2 h-4 w-4" />Im Team-Chat veröffentlichen
                                 </Button>
                                 {chatCardResult ? (
                                   <div className="text-center text-xs font-semibold text-muted-foreground">{chatCardResult}</div>
@@ -1489,27 +1507,23 @@ function MemberAvailabilityInner() {
 
                             {isCaptainOrCoForTeam && !dialogIsLocked && lineupEditMode ? (
                               <div className="space-y-2 rounded-2xl border border-orange-300/10 bg-orange-500/[0.035] p-3">
-                                <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={() => { setDraftLineup(lineupPlayers); setDraftDirty(false); setLineupError(null); setLineupEditMode(false) }} className="rounded-xl border-white/10 bg-white/[0.03] text-white/60">Abbrechen</Button><Button variant="outline" onClick={() => { setDraftLineup(lineupPlayers); setDraftDirty(false); setLineupError(null) }} className="rounded-xl border-white/10 bg-white/[0.03] text-white/60">Verwerfen</Button></div>
+                                <div className="grid grid-cols-2 gap-2"><Button variant="outline" onClick={() => { setDraftLineup(lineupPlayers); setDraftDirty(false); setLineupError(null); setLineupEditMode(false) }} className="rounded-xl border-white/10 bg-white/[0.03] text-muted-foreground">Abbrechen</Button><Button variant="outline" onClick={() => { setDraftLineup(lineupPlayers); setDraftDirty(false); setLineupError(null) }} className="rounded-xl border-white/10 bg-white/[0.03] text-muted-foreground">Verwerfen</Button></div>
                                 <Button
                                   onClick={confirmLineup}
                                   disabled={confirmingLineup || dialogIsLocked || !lineupHasEnoughStarters}
                                   className={`h-12 w-full rounded-xl border font-semibold transition-all duration-200 ${
                                     lineupHasEnoughStarters && !dialogIsLocked && !confirmingLineup
-                                      ? "border-orange-200/70 bg-orange-500 text-primary-foreground ring-2 ring-orange-400/35 shadow-[0_0_18px_rgba(249,115,22,.55),0_0_38px_rgba(249,115,22,.32),0_10px_28px_-12px_rgba(249,115,22,.95)] hover:bg-orange-400 hover:ring-orange-300/50 hover:shadow-[0_0_24px_rgba(249,115,22,.70),0_0_48px_rgba(249,115,22,.40),0_12px_30px_-12px_rgba(249,115,22,1)] active:scale-[0.985]"
-                                      : "border-white/[0.06] bg-white/[0.045] text-white/25 shadow-none"
+                                      ? "border-orange-200/70 bg-primary text-primary-foreground ring-2 ring-orange-400/35 shadow-[0_0_18px_rgba(249,115,22,.55),0_0_38px_rgba(249,115,22,.32),0_10px_28px_-12px_rgba(249,115,22,.95)] hover:bg-orange-400 hover:ring-orange-300/50 hover:shadow-[0_0_24px_rgba(249,115,22,.70),0_0_48px_rgba(249,115,22,.40),0_12px_30px_-12px_rgba(249,115,22,1)] active:scale-[0.985]"
+                                      : "border-white/[0.06] bg-white/[0.045] text-muted-foreground shadow-none"
                                   }`}
-                                >
-                                  {confirmingLineup ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  ) : (
+                                 loading={Boolean(confirmingLineup)}>{(
                                     <CheckCircle2 className={`mr-2 h-4 w-4 ${lineupHasEnoughStarters ? "drop-shadow-[0_0_7px_rgba(255,255,255,.55)]" : ""}`} />
-                                  )}
-                                  Änderungen bestätigen
+                                  )}Änderungen bestätigen
                                 </Button>
                               </div>
                             ) : null}
 
-                            {!lineupEditMode && !lineupIsConfirmed && isCaptainOrCoForTeam && !dialogIsLocked ? <Button onClick={confirmLineup} disabled={confirmingLineup || !lineupHasEnoughStarters} className="h-12 w-full rounded-xl border border-orange-300/30 bg-orange-500 font-semibold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.28),0_8px_24px_-12px_rgba(249,115,22,.9)] transition hover:bg-orange-400 hover:shadow-[0_0_30px_rgba(249,115,22,.38),0_10px_28px_-12px_rgba(249,115,22,1)] active:scale-[0.99] disabled:border-white/5 disabled:bg-white/[0.06] disabled:text-white/25 disabled:shadow-none">{confirmingLineup ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}Aufstellung bestätigen</Button> : null}
+                            {!lineupEditMode && !lineupIsConfirmed && isCaptainOrCoForTeam && !dialogIsLocked ? <Button onClick={confirmLineup} disabled={confirmingLineup || !lineupHasEnoughStarters} className="h-12 w-full rounded-xl border border-orange-300/30 bg-primary font-semibold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.28),0_8px_24px_-12px_rgba(249,115,22,.9)] transition hover:bg-orange-400 hover:shadow-[0_0_30px_rgba(249,115,22,.38),0_10px_28px_-12px_rgba(249,115,22,1)] active:scale-[0.99] disabled:border-white/5 disabled:bg-white/[0.06] disabled:text-muted-foreground disabled:shadow-none" loading={Boolean(confirmingLineup)}><CheckCircle2 className="mr-2 h-4 w-4" />Aufstellung bestätigen</Button> : null}
                           </TabsContent>
 
                           <TabsContent value="chat" className="m-0">
@@ -1519,9 +1533,9 @@ function MemberAvailabilityInner() {
                                 {!activeRoomId ? <div className="text-sm text-muted-foreground">Kein Chat verfügbar.</div> : (
                                   <div className="space-y-3">
                                     <div className="max-h-[calc(100dvh-300px)] min-h-[280px] overflow-y-auto rounded-2xl border border-white/[0.07] bg-black/20 p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:max-h-[46vh]">
-                                      {chatLoading ? <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin text-orange-400" />Lade Chat…</div> : chatMessages.length === 0 ? <div className="flex min-h-[260px] items-center justify-center text-center text-sm text-muted-foreground">Noch keine Nachrichten.</div> : <div className="space-y-3">{chatMessages.map((m) => { const isMine = m.user_id === profile?.id; const name = m.sender?.name ?? `User ${m.user_id.slice(0, 8)}`; const photo = m.sender?.photo_url ?? null; return <div key={m.id} className={`flex gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}><Avatar className="h-8 w-8 shrink-0 border border-white/10"><AvatarImage src={photo || "/placeholder.svg"} alt={name} /><AvatarFallback className="bg-white/[0.05] text-xs text-white/60">{name.charAt(0).toUpperCase()}</AvatarFallback></Avatar><div className="max-w-[82%]"><div className={`mb-1 text-xs font-bold text-muted-foreground ${isMine ? "text-right" : "text-left"}`}>{isMine ? "Du" : name}</div><div className={`break-words rounded-2xl px-3 py-2 text-sm ${isMine ? "rounded-tr-md bg-orange-500 text-white" : "rounded-tl-md border border-white/[0.06] bg-white/[0.045] text-white/80"}`}>{m.message}</div></div></div> })}<div ref={chatEndRef} /></div>}
+                                      {chatLoading ? <SectionSkeleton kind="lineup" /> : chatMessages.length === 0 ? <div className="flex min-h-[260px] items-center justify-center text-center text-sm text-muted-foreground">Noch keine Nachrichten.</div> : <div className="space-y-3">{chatMessages.map((m) => { const isMine = m.user_id === profile?.id; const name = m.sender?.name ?? `User ${m.user_id.slice(0, 8)}`; const photo = m.sender?.photo_url ?? null; return <div key={m.id} className={`flex gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}><Avatar className="h-8 w-8 shrink-0 border border-white/10"><AvatarImage src={photo || "/placeholder.svg"} alt={name} /><AvatarFallback className="bg-white/[0.05] text-xs text-muted-foreground">{name.charAt(0).toUpperCase()}</AvatarFallback></Avatar><div className="max-w-[82%]"><div className={`mb-1 text-xs font-bold text-muted-foreground ${isMine ? "text-right" : "text-left"}`}>{isMine ? "Du" : name}</div><div className={`break-words rounded-2xl px-3 py-2 text-sm ${isMine ? "rounded-tr-md bg-primary text-primary-foreground" : "rounded-tl-md border border-white/[0.06] bg-white/[0.045] text-white/80"}`}>{m.message}</div></div></div> })}<div ref={chatEndRef} /></div>}
                                     </div>
-                                    <div className="flex gap-2"><Input value={chatText} onChange={(e) => setChatText(e.target.value)} placeholder="Nachricht ans Team…" onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendChatMessage() } }} disabled={chatSending} className="h-11 rounded-xl border-white/10 bg-card text-white placeholder:text-white/25" /><Button onClick={sendChatMessage} disabled={!chatText.trim() || chatSending} className="h-11 w-11 shrink-0 rounded-xl bg-orange-500 p-0 text-primary-foreground hover:bg-orange-400">{chatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button></div>
+                                    <div className="flex gap-2"><Input value={chatText} onChange={(e) => setChatText(e.target.value)} placeholder="Nachricht ans Team…" onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendChatMessage() } }} disabled={chatSending} className="h-11 rounded-xl border-white/10 bg-card text-white placeholder:text-muted-foreground" /><Button onClick={sendChatMessage} disabled={!chatText.trim() || chatSending} className="h-11 w-11 shrink-0 rounded-xl bg-primary p-0 text-primary-foreground hover:bg-orange-400" loading={Boolean(chatSending)}><Send className="h-4 w-4" /></Button></div>
                                   </div>
                                 )}
                               </CardContent>
@@ -1531,7 +1545,7 @@ function MemberAvailabilityInner() {
                       </div>
                     </Tabs>
 
-                    <DialogFooter className="shrink-0 border-t border-white/[0.08] bg-[#080b11] px-3 py-2.5 sm:px-5">
+                    <DialogFooter className="shrink-0 border-t border-white/[0.08] bg-card px-3 py-2.5 sm:px-5">
                       <div className="flex w-full items-center justify-between gap-3">
                         <div className="hidden text-xs font-semibold text-muted-foreground sm:block">{lineupIsConfirmed && lineupHasEnoughStarters ? "Aufstellung bestätigt." : isCaptainOrCoForTeam ? "Aufstellung vor Spielbeginn bestätigen." : "Zusage bis Spielbeginn änderbar."}</div>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="ml-auto h-9 rounded-xl border-white/10 bg-white/[0.035] px-5 font-semibold text-white/65">Schließen</Button>
@@ -1572,7 +1586,7 @@ function MemberAvailabilityInner() {
 
 export default function MemberAvailabilityPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<SectionSkeleton kind="lineup" label="Bereich wird geladen…" />}>
       <MemberAvailabilityInner />
     </Suspense>
   )

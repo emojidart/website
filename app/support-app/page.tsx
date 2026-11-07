@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
@@ -13,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, CheckCircle, Clock, Plus, Ticket, MessageCircle, Send, ArrowLeft, Loader2 } from "lucide-react"
+import { AlertCircle, CheckCircle, Clock, Plus, Ticket, MessageCircle, Send, ArrowLeft } from "lucide-react"
 
 interface SupportTicket {
   id: string
@@ -179,27 +181,14 @@ export default function SupportPage() {
 
   if (loading) {
     return (
-      <div className="support-premium relative min-h-screen overflow-x-hidden bg-background pb-24 text-white flex flex-col">
+      <div className="emd-loading-surface support-premium relative min-h-screen overflow-x-hidden bg-background pb-24 text-white flex flex-col">
         <Header variant="app" title="Support" subtitle="Tickets & Nachrichten" backHref="/member-profile-app" />
 
-        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
+        <SectionSkeleton kind="cards" />
 
 
 
-        <PageMain>
-          <div className="w-full flex items-center justify-center py-10">
-            <div className="rounded-[28px] border border-white/[0.08] bg-card px-10 py-10 shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)]  flex flex-col items-center gap-6">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/25 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-200" />
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-semibold text-white">Support wird geladen</p>
-                <p className="text-sm text-muted-foreground mt-1 font-semibold">Bitte kurz warten…</p>
-              </div>
-            </div>
-          </div>
-        </PageMain>
+        
 
         <MobileBottomNav />
       </div>
@@ -301,9 +290,7 @@ export default function SupportPage() {
                             disabled={!newMessage.trim() || sendingMessage}
                             size="sm"
                             className="h-10 px-4 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground"
-                          >
-                            {sendingMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                          </Button>
+                           loading={Boolean(sendingMessage)}><Send className="w-4 h-4" /></Button>
                         </div>
 
                         <p className="mt-2 text-xs text-muted-foreground font-semibold">
@@ -452,16 +439,9 @@ export default function SupportPage() {
                     </div>
 
                     <div className="flex gap-2 flex-wrap">
-                      <Button type="submit" disabled={submitting} className="h-10 px-5 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground">
-                        {submitting ? (
-                          <span className="inline-flex items-center gap-2 font-semibold">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Wird erstellt…
-                          </span>
-                        ) : (
+                      <Button type="submit" disabled={submitting} className="h-10 px-5 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground" loading={Boolean(submitting)} loadingLabel="Wird erstellt…">{(
                           <span className="font-semibold">Ticket erstellen</span>
-                        )}
-                      </Button>
+                        )}</Button>
                       <Button
                         type="button"
                         variant="outline"

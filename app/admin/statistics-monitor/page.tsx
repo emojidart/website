@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader, LoadingIndicator } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -410,12 +412,12 @@ export default function AdminStatisticsMonitorPage() {
 
   if (adminLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="emd-loading-surface min-h-screen bg-gray-50">
         <Header />
         <main className="max-w-7xl mx-auto p-4 md:p-8">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <LoadingIndicator className="w-8 h-8 mx-auto mb-4" />
               <p className="text-gray-600">Berechtigungen werden geprüft...</p>
             </div>
           </div>
@@ -595,8 +597,8 @@ export default function AdminStatisticsMonitorPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Statistiken werden geladen...</p>
+              
+              <InlineLoader label="Statistiken werden geladen..." />
             </div>
           </div>
         ) : (
@@ -957,19 +959,12 @@ export default function AdminStatisticsMonitorPage() {
               onClick={sendNotificationToCaptains}
               disabled={!notificationMessage.trim() || sendingNotification}
               className="bg-orange-600 hover:bg-orange-700"
-            >
-              {sendingNotification ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Wird gesendet...
-                </>
-              ) : (
+             loading={Boolean(sendingNotification)} loadingLabel="Wird gesendet...">{(
                 <>
                   <Send className="h-4 w-4 mr-2" />
                   Senden
                 </>
-              )}
-            </Button>
+              )}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

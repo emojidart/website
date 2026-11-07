@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingBlock } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
@@ -7,27 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import {
-  RefreshCw,
-  Search,
-  ShieldAlert,
-  Loader2,
-  Users,
-  UserCheck,
-  Clock3,
-  CalendarDays,
-  Crown,
-  Smartphone,
-  User,
-  Building2,
-  SlidersHorizontal,
-  BarChart3,
-  Flame,
-  Eye,
-  LineChart,
-  Calendar,
-  CalendarRange,
-} from "lucide-react"
+import { RefreshCw, Search, ShieldAlert, Users, UserCheck, Clock3, CalendarDays, Crown, Smartphone, User, Building2, SlidersHorizontal, BarChart3, Flame, Eye, LineChart, Calendar, CalendarRange } from "lucide-react"
 
 type ClubPlayer = { id: string; name: string }
 type Team = { id: string; name: string }
@@ -173,12 +155,12 @@ function SkeletonRow() {
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
       <div className="flex items-center gap-3">
-        <div className="h-11 w-11 animate-pulse rounded-2xl bg-zinc-100" />
+        <LoadingBlock className="h-11 w-11  rounded-2xl " />
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-48 animate-pulse rounded bg-zinc-100" />
+          <LoadingBlock className="h-4 w-48  rounded " />
           <div className="h-3 w-72 animate-pulse rounded bg-zinc-100" />
         </div>
-        <div className="h-9 w-24 animate-pulse rounded-xl bg-zinc-100" />
+        <LoadingBlock className="h-9 w-24  rounded-xl " />
       </div>
     </div>
   )
@@ -649,13 +631,9 @@ if (appFilter === "NO_APP" && r.hasApp) return false
                   variant="outline"
                   className="gap-2 rounded-xl border-zinc-200 bg-white"
                   disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
+                 loading={Boolean(loading)}>{(
                     <RefreshCw className="h-4 w-4" />
-                  )}
-                  Aktualisieren
+                  )}Aktualisieren
                 </Button>
               </div>
             </div>
@@ -743,13 +721,9 @@ if (appFilter === "NO_APP" && r.hasApp) return false
                   variant="outline"
                   className="gap-2 rounded-xl border-zinc-200 bg-white"
                   disabled={pvLoading}
-                >
-                  {pvLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
+                 loading={Boolean(pvLoading)}>{(
                     <RefreshCw className="h-4 w-4" />
-                  )}
-                  Aktualisieren
+                  )}Aktualisieren
                 </Button>
               </div>
 
@@ -768,10 +742,7 @@ if (appFilter === "NO_APP" && r.hasApp) return false
                   <div className="text-xs text-zinc-500">Top-Seiten</div>
 
                   {pvLoading ? (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-zinc-600">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Lade …
-                    </div>
+                    <SectionSkeleton kind="cards" />
                   ) : pvTop.length ? (
                     <div className="mt-3 space-y-2">
                       {pvTop.map((p, idx) => (
@@ -810,10 +781,7 @@ if (appFilter === "NO_APP" && r.hasApp) return false
                   </div>
 
                   {pvLoading ? (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-zinc-600">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Lade …
-                    </div>
+                    <SectionSkeleton kind="cards" />
                   ) : (
                     <div className="mt-3 space-y-2">
                       {(() => {

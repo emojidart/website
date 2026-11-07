@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -20,14 +22,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
 
 import { motion } from "framer-motion"
-import {
-  Trash2,
-  AlertTriangle,
-  Loader2,
-  ArrowLeft,
-  CheckCircle2,
-  ShieldAlert,
-} from "lucide-react"
+import { Trash2, AlertTriangle, ArrowLeft, CheckCircle2, ShieldAlert } from "lucide-react"
 
 type UserProfileLite = {
   id: string
@@ -147,22 +142,13 @@ export default function KontoLoeschenPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
+      <div className="emd-loading-surface relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
         <Header />
 
         {/* Stabiler Hintergrund wie im Member-Profil – ohne Fade/Flackern */}
         <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8">
-          <div className="w-full">
-            <div className="flex items-center justify-center min-h-[60vh] gap-3">
-              <Loader2 className="h-7 w-7 animate-spin text-orange-300" />
-              <span className="text-base font-medium text-muted-foreground">
-                Lade…
-              </span>
-            </div>
-          </div>
-        </main>
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8"><SectionSkeleton kind="cards" /></main>
 
         <MobileBottomNav />
       </div>
@@ -185,7 +171,7 @@ export default function KontoLoeschenPage() {
         >
           {/* Header Card */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px]">
+            <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-sm  sm:rounded-[20px]">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(239,68,68,.06)_78%,transparent)]" />
               <div className="relative flex items-start gap-4 p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-red-400/20 bg-red-400/10">
@@ -200,7 +186,7 @@ export default function KontoLoeschenPage() {
             </div>
           </motion.div>
 
-          <Card className="rounded-[24px] border border-white/10 bg-card shadow-[0_24px_80px_-54px_rgba(0,0,0,.95)] ">
+          <Card className="rounded-[24px] border border-white/10 bg-card shadow-sm ">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-semibold">
                 <AlertTriangle className="w-5 h-5 text-orange-300" />
@@ -271,12 +257,8 @@ export default function KontoLoeschenPage() {
                 <Button
                   onClick={submitRequest}
                   disabled={disabled}
-                  className="h-11 rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-600"
-                >
-                  {submitting && (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  )}
-                  Löschanfrage senden
+                  className="h-11 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-orange-600"
+                 loading={Boolean(submitting)}>Löschanfrage senden
                 </Button>
 
                 <Button

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -248,9 +250,7 @@ export function ChatRoom({ roomId, roomName }: ChatRoomProps) {
 
   if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-muted-foreground">Lade Chat...</div>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 

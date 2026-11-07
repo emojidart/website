@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import React, { useEffect, useMemo, useState } from "react"
 import {
   Dialog,
@@ -11,19 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Euro,
-  Swords,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-  LogIn,
-  UserPlus,
-  LogOut,
-} from "lucide-react"
+import { Calendar, Clock, MapPin, Euro, Swords, CheckCircle, AlertCircle, LogIn, UserPlus, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 
@@ -406,7 +396,7 @@ export function PublicUpcomingTournamentRegistrationModal({
 
           {modeLabel && (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Swords className="h-4 w-4 text-purple-500" />
+              <Swords className="h-4 w-4 text-orange-500" />
               <span>Modus: {modeLabel}</span>
             </div>
           )}
@@ -419,7 +409,7 @@ export function PublicUpcomingTournamentRegistrationModal({
           )}
 
           {authLoading ? (
-            <div className="text-sm text-muted-foreground">Lade Benutzerstatus…</div>
+            <SectionSkeleton kind="tournament" />
           ) : !session ? (
             <div className="p-3 rounded-md text-sm bg-yellow-50 text-yellow-800 border border-yellow-100">
               Bitte melde dich an, um dich für dieses Turnier zu registrieren.
@@ -438,7 +428,7 @@ export function PublicUpcomingTournamentRegistrationModal({
 
               {checkingRegistration && (
                 <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Prüfe Anmeldung…
+                  <LoadingIndicator className="h-3 w-3" /> Prüfe Anmeldung…
                 </div>
               )}
 
@@ -484,19 +474,12 @@ export function PublicUpcomingTournamentRegistrationModal({
               disabled={!canDoAction}
               title={disabledReason ?? undefined}
               className="w-full bg-card     text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Abmelden…</span>
-                </div>
-              ) : (
+             loading={Boolean(loading)} loadingLabel="Abmelden…">{(
                 <div className="flex items-center gap-2">
                   <LogOut className="h-4 w-4" />
                   <span>Abmelden</span>
                 </div>
-              )}
-            </Button>
+              )}</Button>
           ) : (
             <Button
               type="button"
@@ -504,19 +487,12 @@ export function PublicUpcomingTournamentRegistrationModal({
               disabled={!canDoAction}
               title={disabledReason ?? undefined}
               className="w-full bg-card     text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Anmelden…</span>
-                </div>
-              ) : (
+             loading={Boolean(loading)} loadingLabel="Anmelden…">{(
                 <div className="flex items-center gap-2">
                   <UserPlus className="h-4 w-4" />
                   <span>Jetzt anmelden</span>
                 </div>
-              )}
-            </Button>
+              )}</Button>
           )}
         </DialogFooter>
       </DialogContent>

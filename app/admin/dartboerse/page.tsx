@@ -1,24 +1,12 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Clock3,
-  ExternalLink,
-  Eye,
-  Loader2,
-  MapPin,
-  PackageSearch,
-  RefreshCw,
-  Search,
-  ShieldAlert,
-  Trash2,
-  XCircle,
-} from "lucide-react"
+import { ArrowLeft, CheckCircle2, Clock3, ExternalLink, Eye, MapPin, PackageSearch, RefreshCw, Search, ShieldAlert, Trash2, XCircle } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -339,7 +327,7 @@ export default function AdminDartboersePage() {
         {message ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{message}</div> : null}
 
         {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="h-10 w-10 animate-spin text-orange-600" /></div>
+          <SectionSkeleton kind="cards" />
         ) : filtered.length === 0 ? (
           <Card className="rounded-3xl"><CardContent className="p-12 text-center"><PackageSearch className="mx-auto h-11 w-11 text-gray-300" /><h2 className="mt-4 text-xl font-black">Keine passenden Inserate</h2><p className="mt-1 text-sm text-gray-500">Ändere den Statusfilter oder den Suchbegriff.</p></CardContent></Card>
         ) : (
@@ -385,8 +373,7 @@ export default function AdminDartboersePage() {
                       </Button>
 
                       {listing.status !== "approved" ? (
-                        <Button size="sm" disabled={busy} className="rounded-xl bg-green-600 hover:bg-green-700" onClick={() => void updateStatus(listing.id, "approved", null)}>
-                          {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1.5 h-4 w-4" />} Freigeben
+                        <Button size="sm" disabled={busy} className="rounded-xl bg-green-600 hover:bg-green-700" onClick={() => void updateStatus(listing.id, "approved", null)} loading={Boolean(busy)}><CheckCircle2 className="mr-1.5 h-4 w-4" />Freigeben
                         </Button>
                       ) : null}
 
@@ -428,7 +415,7 @@ export default function AdminDartboersePage() {
                 if (rejectListing && rejectionReason.trim()) void updateStatus(rejectListing.id, "rejected", rejectionReason.trim())
               }}
             >
-              {savingId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />} Inserat ablehnen
+              {savingId ? <LoadingIndicator className="mr-2 h-4 w-4" /> : <XCircle className="mr-2 h-4 w-4" />} Inserat ablehnen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -445,7 +432,7 @@ export default function AdminDartboersePage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={Boolean(savingId)} className="rounded-xl">Abbrechen</AlertDialogCancel>
             <AlertDialogAction disabled={Boolean(savingId)} className="rounded-xl bg-red-600 hover:bg-red-700" onClick={(event) => { event.preventDefault(); void removeListing() }}>
-              {savingId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} Dauerhaft löschen
+              {savingId ? <LoadingIndicator className="mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />} Dauerhaft löschen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

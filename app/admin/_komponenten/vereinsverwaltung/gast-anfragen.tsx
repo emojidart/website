@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
@@ -9,26 +11,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { vv } from "./vereinsverwaltung-styles"
 
-import {
-  Loader2,
-  RefreshCw,
-  Users,
-  Mail,
-  Phone,
-  CheckCircle,
-  XCircle,
-  Search,
-  LinkIcon,
-  ShieldAlert,
-  Lock,
-  UserRoundCheck,
-  UserRoundX,
-  Link2Off,
-  Clock3,
-  Database,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react"
+import { RefreshCw, Users, Mail, Phone, CheckCircle, XCircle, Search, LinkIcon, ShieldAlert, Lock, UserRoundCheck, UserRoundX, Link2Off, Clock3, Database, ChevronDown, ChevronUp } from "lucide-react"
 
 type GuestRequest = {
   id: string
@@ -655,18 +638,13 @@ export function GuestRequestsManagement() {
             onClick={() => void loadAll()}
             disabled={loading}
             className={cn(vv.buttonSecondary, "w-full sm:w-auto")}
-          >
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Neu laden
+           loading={Boolean(loading)}><RefreshCw className="mr-2 h-4 w-4" />Neu laden
           </Button>
         </div>
       </section>
 
       {loading ? (
-        <div className={cn(vv.surface, "flex items-center justify-center px-4 py-10 text-sm font-semibold text-white/40")}>
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          Gastkonten werden geladen…
-        </div>
+        <SectionSkeleton kind="cards" />
       ) : requests.length === 0 ? (
         <div className={cn(vv.surface, "px-4 py-10 text-center")}>
           <Users className="mx-auto h-6 w-6 text-white/18" />
@@ -855,9 +833,7 @@ export function GuestRequestsManagement() {
                         disabled={isSaving}
                         onClick={() => void handleUnlink(request)}
                         className={cn(vv.buttonDanger, "w-full sm:w-auto")}
-                      >
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2Off className="mr-2 h-4 w-4" />}
-                        Verknüpfung aufheben
+                       loading={Boolean(isSaving)}><Link2Off className="mr-2 h-4 w-4" />Verknüpfung aufheben
                       </Button>
                     </div>
                   ) : null}
@@ -988,9 +964,7 @@ export function GuestRequestsManagement() {
                           onClick={() => void handleReject(request)}
                           disabled={isSaving}
                           className={cn(vv.buttonDanger, "w-full sm:w-auto")}
-                        >
-                          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserRoundX className="mr-2 h-4 w-4" />}
-                          Ablehnen
+                         loading={Boolean(isSaving)}><UserRoundX className="mr-2 h-4 w-4" />Ablehnen
                         </Button>
 
                         <Button
@@ -998,10 +972,7 @@ export function GuestRequestsManagement() {
                           onClick={() => void handleApprove(request)}
                           disabled={isSaving || Boolean(selectedPlayerId && selectedLockInfo.locked)}
                           className={cn(vv.buttonPrimary, "w-full sm:w-auto")}
-                        >
-                          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserRoundCheck className="mr-2 h-4 w-4" />}
-                          {selectedPlayerId ? "Verknüpfen & freischalten" : "Ohne Spieler freischalten"}
-                        </Button>
+                         loading={Boolean(isSaving)}><UserRoundCheck className="mr-2 h-4 w-4" />{selectedPlayerId ? "Verknüpfen & freischalten" : "Ohne Spieler freischalten"}</Button>
                       </>
                     ) : canLinkPlayer ? (
                       <>
@@ -1033,10 +1004,7 @@ export function GuestRequestsManagement() {
                           onClick={() => void handleLinkLater(request)}
                           disabled={isSaving || !selectedPlayerId || selectedLockInfo.locked}
                           className={cn(vv.buttonPrimary, "w-full sm:w-auto")}
-                        >
-                          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
-                          {linkedPlayer ? "Neue Zuordnung speichern" : "Spieler zuordnen"}
-                        </Button>
+                         loading={Boolean(isSaving)}><LinkIcon className="mr-2 h-4 w-4" />{linkedPlayer ? "Neue Zuordnung speichern" : "Spieler zuordnen"}</Button>
                       </>
                     ) : (
                       <div className="flex items-center gap-2 text-xs font-semibold text-white/28">

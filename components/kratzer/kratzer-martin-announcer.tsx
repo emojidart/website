@@ -134,7 +134,7 @@ export function useKratzerMartin() {
 export function KratzerMartinStatus({ display }: { display: Display }) {
   if (display.phase === "idle") return null
   return (
-    <div role="status" aria-live="polite" className="fixed bottom-4 right-4 z-[80] w-[min(390px,calc(100vw-32px))] sm:bottom-6 sm:right-6 rounded-[20px] border border-orange-400/25 bg-[#0b0f16] p-4 text-white shadow-2xl">
+    <div role="status" aria-live="polite" className="fixed bottom-4 right-4 z-[80] w-[min(390px,calc(100vw-32px))] sm:bottom-6 sm:right-6 rounded-[20px] border border-orange-400/25 bg-card p-4 text-white shadow-2xl">
       <div className="flex items-center gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400 text-xl">🎤</div>
         <div className="min-w-0 flex-1">

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { supabase } from "@/lib/supabase"
@@ -263,9 +265,9 @@ function MobilePlayerCard({
 
       {/* Additional Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-        <div className="bg-purple-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-purple-600 font-medium">Matches</div>
-          <div className="text-sm font-bold text-purple-800">{player.total_matches_played}</div>
+        <div className="bg-orange-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-orange-600 font-medium">Matches</div>
+          <div className="text-sm font-bold text-orange-800">{player.total_matches_played}</div>
         </div>
         <div className="bg-teal-50 rounded-lg p-2 text-center">
           <div className="text-xs text-teal-600 font-medium">Siege</div>
@@ -659,22 +661,9 @@ export default function TournamentSeriesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans">
         <Header />
-        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl">
-          <div className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
-            <div className="text-foreground bg-card   p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                <h2 className="text-lg sm:text-2xl font-bold text-white">EMD - LION CUP PART II</h2>
-              </div>
-            </div>
-            <div className="p-6 sm:p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-red-600 mx-auto"></div>
-              <p className="mt-4 text-sm sm:text-base text-muted-foreground">Lade Tabelle...</p>
-            </div>
-          </div>
-        </main>
+        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl"><SectionSkeleton kind="tournament" /></main>
       </div>
     )
   }
@@ -816,12 +805,12 @@ export default function TournamentSeriesPage() {
                 <p className="text-xs text-muted-foreground mt-1">Aktuell: {totalAppearances} gesamt</p>
               </div>
 
-              <div className="bg-card rounded-lg p-3 shadow-md border border-purple-200">
+              <div className="bg-card rounded-lg p-3 shadow-md border border-orange-200">
                 <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4 text-purple-600" />
+                  <TrendingUp className="h-4 w-4 text-orange-600" />
                   <p className="text-xs font-semibold text-muted-foreground">Prognostiziert</p>
                 </div>
-                <p className="text-lg sm:text-xl font-bold text-purple-700">{predictedTotalAppearances}</p>
+                <p className="text-lg sm:text-xl font-bold text-orange-700">{predictedTotalAppearances}</p>
                 <p className="text-xs text-muted-foreground mt-1">Antritte bis Saisonende</p>
               </div>
 
@@ -986,7 +975,7 @@ export default function TournamentSeriesPage() {
 
           <motion.div variants={cardVariants} className="bg-card rounded-xl shadow-lg border border-border p-4">
             <div className="flex items-center gap-3">
-              <Award className="w-8 h-8 text-purple-600 flex-shrink-0" />
+              <Award className="w-8 h-8 text-orange-600 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-muted-foreground text-xs sm:text-sm">Qualifiziert</p>
                 <p className="text-xl sm:text-2xl font-bold text-foreground">{qualifiedPlayers.length}</p>

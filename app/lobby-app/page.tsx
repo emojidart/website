@@ -1,12 +1,14 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Lobby } from "@/components/lobby"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { Users, Loader2 } from "lucide-react"
+import { Users } from "lucide-react"
 
 export default function LobbyPage() {
   const router = useRouter()
@@ -20,7 +22,7 @@ export default function LobbyPage() {
 
   if (authLoading) {
     return (
-      <main className="text-foreground min-h-screen flex flex-col bg-card   ">
+      <main className="emd-loading-surface text-foreground min-h-screen flex flex-col bg-card   ">
         <Header
           variant="app"
           title="Challenge Lobby"
@@ -28,21 +30,7 @@ export default function LobbyPage() {
           backHref="/member-profile-app"
         />
 
-        <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-2xl px-10 py-10">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
-              </div>
-
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">Lobby wird geladen</p>
-                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
 
         <MobileBottomNav />
       </main>

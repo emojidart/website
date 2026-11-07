@@ -1,18 +1,11 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
-import {
-  ArrowRight,
-  CheckCircle2,
-  Gift,
-  Loader2,
-  Lock,
-  Sparkles,
-  Target,
-  Trophy,
-} from "lucide-react"
+import { ArrowRight, CheckCircle2, Gift, Lock, Sparkles, Target, Trophy } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -282,10 +275,7 @@ export default function PraemienPage() {
 
           <div className="mt-8 rounded-[22px] border border-white/10 bg-white/[0.07] p-4 text-white  sm:p-5 lg:p-6">
             {loading ? (
-              <div className="flex items-center gap-3">
-                <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
-                <p className="font-bold text-white/70">Punkte werden geladen...</p>
-              </div>
+              <SectionSkeleton kind="cards" />
             ) : (
               <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr_1fr] lg:items-center">
                 <div className="flex items-center gap-4">

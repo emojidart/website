@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
@@ -924,12 +926,7 @@ export default function DkoBeamerPage() {
 
   if (loading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-950 text-white">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-white/15 border-t-emerald-400" />
-          <div className="mt-4 text-sm font-bold text-slate-400">Beamer wird verbunden…</div>
-        </div>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 

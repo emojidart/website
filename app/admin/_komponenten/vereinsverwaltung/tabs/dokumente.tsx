@@ -1,33 +1,14 @@
 "use client"
 
+import { InlineLoader, LoadingIndicator } from "@/components/loading/loading"
+
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { vv } from "../vereinsverwaltung-styles"
-import {
-  ArrowLeft,
-  Folder,
-  FileText,
-  Upload,
-  Plus,
-  Trash2,
-  Pencil,
-  Download,
-  RefreshCcw,
-  LayoutGrid,
-  List,
-  MoreVertical,
-  Search,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Eye,
-  Copy,
-  MoveRight,
-  X,
-} from "lucide-react"
+import { ArrowLeft, Folder, FileText, Upload, Plus, Trash2, Pencil, Download, RefreshCcw, LayoutGrid, List, MoreVertical, Search, CheckCircle2, XCircle, Eye, Copy, MoveRight, X } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -676,7 +657,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
                         {j.status === "queued" && <div className="text-xs text-white/30">wartet…</div>}
                         {j.status === "uploading" && (
                           <>
-                            <Loader2 className="h-4 w-4 animate-spin text-orange-300" />
+                            <LoadingIndicator className="h-4 w-4" />
                             <div className="text-xs text-white/40">upload…</div>
                           </>
                         )}
@@ -706,7 +687,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
           {!user && (
             <div className="px-4 py-10 text-center text-sm font-semibold text-white/40 break-words">Bitte einloggen, um Dokumente zu verwalten.</div>
           )}
-          {user && docs.loading && <div className="px-4 py-10 text-center text-sm font-semibold text-white/40">Lade…</div>}
+          {user && docs.loading && <InlineLoader label="Inhalte werden geladen…" />}
           {user && !docs.loading && filteredSorted.length === 0 && (
             <div className="px-4 py-10 text-center text-sm font-semibold text-white/40">Keine Einträge in diesem Ordner.</div>
           )}
@@ -821,19 +802,12 @@ export function DocumentsTab({ user }: { user: User | null }) {
                 onClick={runCreateFolder}
                 disabled={createFolderBusy || !createFolderName.trim()}
                 className={vv.buttonPrimary}
-              >
-                {createFolderBusy ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Erstelle…
-                  </>
-                ) : (
+               loading={Boolean(createFolderBusy)} loadingLabel="Erstelle…">{(
                   <>
                     <Plus className="h-4 w-4 mr-2" />
                     Erstellen
                   </>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </div>
         }
@@ -881,7 +855,7 @@ export function DocumentsTab({ user }: { user: User | null }) {
       >
         {previewLoading && (
           <div className="flex items-center gap-2 text-sm text-white/40">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <LoadingIndicator className="h-4 w-4" />
             Lade Vorschau…
           </div>
         )}
@@ -922,19 +896,12 @@ export function DocumentsTab({ user }: { user: User | null }) {
               <Button variant="outline" onClick={closeAction} disabled={actionBusy} className={vv.buttonSecondary}>
                 Abbrechen
               </Button>
-              <Button onClick={runAction} disabled={actionBusy || !actionItem} className={vv.buttonPrimary}>
-                {actionBusy ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Bitte warten…
-                  </>
-                ) : (
+              <Button onClick={runAction} disabled={actionBusy || !actionItem} className={vv.buttonPrimary} loading={Boolean(actionBusy)} loadingLabel="Bitte warten…">{(
                   <>
                     {actionMode === "move" ? <MoveRight className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
                     {actionMode === "move" ? "Verschieben" : "Kopieren"}
                   </>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </div>
         }
@@ -993,19 +960,12 @@ export function DocumentsTab({ user }: { user: User | null }) {
               <Button variant="outline" onClick={closeDelete} disabled={deleteBusy} className={vv.buttonSecondary}>
                 Abbrechen
               </Button>
-              <Button variant="outline" onClick={runDelete} disabled={deleteBusy || !deleteItem} className={vv.buttonDanger}>
-                {deleteBusy ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Lösche…
-                  </>
-                ) : (
+              <Button variant="outline" onClick={runDelete} disabled={deleteBusy || !deleteItem} className={vv.buttonDanger} loading={Boolean(deleteBusy)} loadingLabel="Lösche…">{(
                   <>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Wirklich löschen
                   </>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </div>
         }

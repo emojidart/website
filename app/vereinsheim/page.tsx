@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Header } from "@/components/header"
@@ -10,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/lib/supabase"
-import { CalendarDays, CheckCircle2, Clock3, DoorOpen, Loader2, LockKeyhole, Save, XCircle } from "lucide-react"
+import { CalendarDays, CheckCircle2, Clock3, DoorOpen, LockKeyhole, Save, XCircle } from "lucide-react"
 
 type Opening = {
   id: string
@@ -193,10 +195,7 @@ export default function ClubhousePage() {
 
               <div className="mt-6 rounded-[24px] border border-white/10 bg-card p-4  sm:p-6 lg:p-7">
                 {loading ? (
-                  <div className="flex items-center gap-3 text-white/65">
-                    <Loader2 className="h-5 w-5 animate-spin text-orange-300" />
-                    Status wird geladen…
-                  </div>
+                  <SectionSkeleton kind="cards" />
                 ) : todayRow?.status === "open" ? (
                   <div>
                     <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-300">
@@ -336,13 +335,9 @@ export default function ClubhousePage() {
                   disabled={saving || !planDate}
                   onClick={() => void saveDay("planned", { date: planDate })}
                   className="mt-4 min-h-12 w-full whitespace-normal rounded-xl border border-orange-300/15 bg-orange-500/15 px-4 py-3 font-semibold leading-tight text-white hover:bg-orange-500/20"
-                >
-                  {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
+                 loading={Boolean(saving)}>{(
                     <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Öffnung planen / speichern
+                  )}Öffnung planen / speichern
                 </Button>
 
                 {message ? (

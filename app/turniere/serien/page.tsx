@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react"
 
+import { TournamentPageTitle, TournamentStatus, TournamentFact, TournamentEmpty } from "@/components/tournaments/tournament-ui"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
@@ -169,167 +170,47 @@ export default function TurnierserienPage() {
   }, [events])
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-white">
-      <Header
-        variant="app"
-        title="Turnierserien"
-        subtitle="Serien & Spieltage"
-        backHref="/turniere"
-      />
-
-      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
-
-      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
-        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-card p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-7 lg:p-8">
-          <div className="pointer-events-none absolute -left-16 bottom-[-70px] h-48 w-48 rounded-full bg-violet-500/15 blur-[70px]" />
-          <div className="pointer-events-none absolute right-[12%] top-[-80px] h-52 w-52 rounded-full bg-orange-500/12 blur-[75px]" />
-
-          <div className="relative max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-violet-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-violet-100/70">
-              <Trophy className="h-3.5 w-3.5" />
-              Turnierserien
+    <div>
+      <Header variant="app" title="Turnierserien" subtitle="Serien & Spieltage" backHref="/turniere" />
+      <main className="et-shell">
+        <TournamentPageTitle title="Eine Saison. Viele Chancen." eyebrow="EMD · Turnierserien" description="Finde deine Serie. Alle Termine, Startgelder und Wertungen übersichtlich an einem Ort." />
+        <div className="et-section-heading"><h2>Aktuelle Turnierserien</h2><TournamentStatus>{loading ? "Wird geladen…" : series.length + " Serien"}</TournamentStatus></div>
+        {loading ? <div className="et-series-grid" role="status" aria-busy="true" aria-label="Turnierserien werden geladen">
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="et-series-card overflow-hidden" aria-hidden="true">
+              <div className="et-series-art animate-pulse bg-white/[0.075]" />
+              <div className="et-series-body space-y-4">
+                <div className="space-y-3">
+                  <div className="h-6 w-3/4 animate-pulse rounded bg-white/10" />
+                  <div className="h-3.5 w-full animate-pulse rounded bg-white/10" />
+                  <div className="h-3.5 w-2/3 animate-pulse rounded bg-white/10" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="h-12 animate-pulse rounded-xl bg-white/10" />
+                  <div className="h-12 animate-pulse rounded-xl bg-white/10" />
+                </div>
+                <div className="h-12 animate-pulse rounded-xl bg-white/10" />
+              </div>
             </div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl lg:text-5xl">
-              Serien, Spieltage & Wertungen
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/48 sm:text-base">
-              Alle aktuellen Serien mit Terminen, Gebühren, Wertung und Teilnahmebedingungen.
-            </p>
-          </div>
-        </section>
-
-        <section className="mt-5">
-          {loading ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {[0, 1, 2].map((item) => (
-                <div
-                  key={item}
-                  className="h-[340px] animate-pulse rounded-[28px] border border-white/10 bg-white/[0.04]"
-                />
-              ))}
+          ))}
+        </div>
+        : series.length === 0 ? <TournamentEmpty title="Aktuell keine Turnierserie verfügbar" description="Neue Serien erscheinen hier automatisch. Interne Serien sind für Vereinsmitglieder sichtbar." />
+        : <div className="et-series-grid">{series.map(item=>{
+          const nextEvent=nextBySeries.get(item.id)
+          const nextIso=nextEvent ? effectiveDate(nextEvent) : null
+          const internal=item.access_type === "club_internal"
+          return <Link key={item.id} href={`/turniere/serien/${item.slug}`} className="et-series-card">
+            <div className="et-series-art" style={{backgroundImage:`url('${imageUrl(item.image_path)}')`}}><TournamentStatus tone={internal ? "accent" : "success"}>{internal && <LockKeyhole size={12}/>} {internal ? "Vereinsintern" : "Öffentlich"}</TournamentStatus></div>
+            <div className="et-series-body">
+              <div><h2>{item.name}</h2>{item.description && <p className="line-clamp-2">{item.description}</p>}</div>
+              <div className="et-facts"><TournamentFact label="Startgeld" icon={Coins}>{money(item.startgeld)}</TournamentFact><TournamentFact label="Mindestantritte" icon={Users}>{item.qualification_requirement || "Keine"}</TournamentFact></div>
+              <div className="et-series-next"><TournamentFact label="Nächster Spieltag" icon={CalendarDays}>{nextIso ? new Date(nextIso).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "Noch kein Termin"}</TournamentFact></div>
+              {item.result_counting_mode === "best_n" && item.best_n_results ? <p>Beste {item.best_n_results} Ergebnisse zählen</p> : null}
+              <span className="et-card-link">Serie ansehen <ArrowRight size={16}/></span>
             </div>
-          ) : series.length === 0 ? (
-            <div className="rounded-[28px] border border-white/10 bg-card px-5 py-14 text-center ">
-              <Trophy className="mx-auto h-8 w-8 text-white/25" />
-              <div className="mt-3 text-lg font-semibold">Aktuell keine Turnierserie verfügbar</div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Neue Serien erscheinen hier automatisch.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {series.map((item) => {
-                const nextEvent = nextBySeries.get(item.id)
-                const nextIso = nextEvent ? effectiveDate(nextEvent) : null
-                const internal = item.access_type === "club_internal"
-
-                return (
-                  <Link
-                    key={item.id}
-                    href={`/turniere/serien/${item.slug}`}
-                    className="group block"
-                  >
-                    <article className="relative min-h-[360px] overflow-hidden rounded-[30px] border border-white/10 bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  transition duration-300 hover:-translate-y-1 hover:border-violet-300/25">
-                      <div
-                        className="absolute inset-0 bg-cover bg-center opacity-[0.66] transition duration-700 group-hover:scale-[1.035]"
-                        style={{ backgroundImage: `url('${imageUrl(item.image_path)}')` }}
-                      />
-                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.20),rgba(3,5,8,.68)_43%,rgba(3,5,8,.97))]" />
-
-                      <div className="relative flex min-h-[360px] flex-col justify-between p-5 sm:p-6">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex flex-wrap gap-2">
-                            <span className="rounded-full border border-violet-300/20 bg-violet-500/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-violet-100">
-                              Serie
-                            </span>
-                            {internal ? (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-orange-300/20 bg-orange-500/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-orange-100">
-                                <LockKeyhole className="h-3 w-3" />
-                                Intern
-                              </span>
-                            ) : (
-                              <span className="rounded-full border border-emerald-300/20 bg-emerald-500/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-100">
-                                Öffentlich
-                              </span>
-                            )}
-                          </div>
-
-                          <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white/65 transition group-hover:border-violet-300/30 group-hover:bg-violet-500 group-hover:text-white">
-                            <ArrowRight className="h-5 w-5" />
-                          </span>
-                        </div>
-
-                        <div>
-                          <h2 className="text-2xl font-semibold tracking-[-0.035em] text-white">
-                            {item.name}
-                          </h2>
-
-                          {item.description ? (
-                            <p className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-muted-foreground">
-                              {item.description}
-                            </p>
-                          ) : null}
-
-                          <div className="mt-4 grid grid-cols-2 gap-2">
-                            <div className="rounded-2xl border border-white/10 bg-card p-3">
-                              <Coins className="h-4 w-4 text-orange-200" />
-                              <div className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                Startgeld
-                              </div>
-                              <div className="mt-0.5 font-semibold text-white/85">
-                                {money(item.startgeld)}
-                              </div>
-                            </div>
-
-                            <div className="rounded-2xl border border-white/10 bg-card p-3">
-                              <Users className="h-4 w-4 text-sky-200" />
-                              <div className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                Mindestantritte
-                              </div>
-                              <div className="mt-0.5 font-semibold text-white/85">
-                                {item.qualification_requirement || "Keine"}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="mt-3 rounded-2xl border border-white/10 bg-card p-3">
-                            <div className="flex items-center gap-2 text-white/75">
-                              <CalendarDays className="h-4 w-4 text-violet-200" />
-                              <span className="text-xs font-semibold uppercase tracking-[0.10em] text-muted-foreground">
-                                Nächster Spieltag
-                              </span>
-                            </div>
-                            <div className="mt-1.5 font-semibold text-white/90">
-                              {nextIso
-                                ? new Date(nextIso).toLocaleString("de-AT", {
-                                    day: "2-digit",
-                                    month: "2-digit",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
-                                : "Noch kein Termin"}
-                            </div>
-                          </div>
-
-                          {item.result_counting_mode === "best_n" && item.best_n_results ? (
-                            <div className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                              <Medal className="h-4 w-4 text-amber-200" />
-                              Beste {item.best_n_results} Ergebnisse zählen
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </article>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </section>
-      </main>
-
-      <MobileBottomNav />
+          </Link>
+        })}</div>}
+      </main><MobileBottomNav />
     </div>
   )
 }

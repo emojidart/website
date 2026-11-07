@@ -1,4 +1,7 @@
 "use client"
+
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { BonusSection } from "@/components/bonus-section"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -323,10 +326,8 @@ export default function MemberBonusPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20">
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans flex flex-col pb-20">
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     )

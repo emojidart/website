@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -11,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Camera, FileImage, Loader2, ScanLine, RotateCcw, AlertTriangle } from "lucide-react"
+import { Camera, FileImage, ScanLine, RotateCcw, AlertTriangle } from "lucide-react"
 import jsQR from "jsqr"
 
 const HEADERS = [
@@ -713,7 +715,7 @@ export default function TeamScanSheetTestPage() {
   }
 
   if (authLoading || loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>
+    return <SectionSkeleton kind="cards" />
   }
 
   return (
@@ -765,10 +767,7 @@ export default function TeamScanSheetTestPage() {
                   <div className="flex min-h-44 items-center justify-center rounded-2xl border border-dashed bg-slate-50 text-sm font-semibold text-slate-400"><FileImage className="mr-2 h-5 w-5" />Noch kein Bild</div>
                 )}
 
-                <Button disabled={!file || analyzing || !selectedTeamId} onClick={() => void runScan()} className="h-12 w-full rounded-2xl bg-orange-500 font-black hover:bg-orange-600">
-                  {analyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                  {analyzing ? "Wird gescannt…" : "Blatt scannen"}
-                </Button>
+                <Button disabled={!file || analyzing || !selectedTeamId} onClick={() => void runScan()} className="h-12 w-full rounded-2xl bg-orange-500 font-black hover:bg-orange-600" loading={Boolean(analyzing)}><ScanLine className="mr-2 h-4 w-4" />{analyzing ? "Wird gescannt…" : "Blatt scannen"}</Button>
 
                 <div className="rounded-2xl bg-amber-50 p-3 text-xs font-semibold leading-relaxed text-amber-800">
                   <AlertTriangle className="mr-1 inline h-4 w-4" /> Tipp: Fotografiere das Blatt vollständig, gut beleuchtet und ohne starke Schatten. Die vier Eckmarken sollten sichtbar sein.

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useEffect, useState } from "react"
@@ -407,11 +409,9 @@ export default function PlayerProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted">
+      <div className="emd-loading-surface min-h-screen bg-muted">
         <Header showBackButton title="Spieler Profil" />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">Lade Spielerdaten...</div>
-        </div>
+        <SectionSkeleton kind="table" />
       </div>
     )
   }

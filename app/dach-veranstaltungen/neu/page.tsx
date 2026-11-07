@@ -1,23 +1,12 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import {
-  ArrowLeft,
-  CalendarDays,
-  ChevronRight,
-  Info,
-  CheckCircle2,
-  FileImage,
-  Loader2,
-  MapPin,
-  Send,
-  ShieldAlert,
-  Trophy,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronRight, Info, CheckCircle2, FileImage, MapPin, Send, ShieldAlert, Trophy, UserRound } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -382,11 +371,9 @@ export default function NeueVeranstaltungPage() {
 
   if (access === "loading") {
     return (
-      <div className="min-h-screen flex flex-col bg-background text-white">
+      <div className="emd-loading-surface min-h-screen flex flex-col bg-background text-white">
         <Header variant="app" title="Veranstaltung einreichen" subtitle="DACH Turniere" backHref="/dach-veranstaltungen" />
-        <main className="flex-grow flex items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-orange-200" />
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     );
@@ -767,15 +754,9 @@ export default function NeueVeranstaltungPage() {
                 type="submit"
                 disabled={saving}
                 className="h-14 w-full rounded-xl bg-orange-500 text-base font-semibold text-primary-foreground shadow-none hover:bg-orange-400"
-              >
-              {saving ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
+               loading={Boolean(saving)}>{(
                 <Send className="w-5 h-5 mr-2" />
-              )}
-                {saving ? "Wird eingereicht …" : "Zur Freigabe einreichen"}
-                {!saving ? <ChevronRight className="ml-2 h-5 w-5" /> : null}
-              </Button>
+              )}{saving ? "Wird eingereicht …" : "Zur Freigabe einreichen"}{!saving ? <ChevronRight className="ml-2 h-5 w-5" /> : null}</Button>
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 Die Veröffentlichung erfolgt erst nach der Freigabe.
               </p>

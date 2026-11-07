@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -726,18 +728,9 @@ export default function DartLeaguePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-card text-foreground font-sans">
+      <div className="emd-loading-surface min-h-screen bg-card text-foreground font-sans">
         <Header />
-        <main className="pt-8 pb-24 relative">
-          <div className="container mx-auto px-4 md:px-6 py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6 ">
-                <Trophy className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <p className="mt-4 text-muted-foreground">Lade Liga-Daten...</p>
-            </div>
-          </div>
-        </main>
+        <main className="pt-8 pb-24 relative"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     )

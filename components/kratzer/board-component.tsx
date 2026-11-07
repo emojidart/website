@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import type { Board } from "@/types/tournament"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -80,7 +82,7 @@ export function BoardComponent({
   if (!board) return null
 
   return (
-    <Card data-board-id={board.id} className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#090b0f] text-white shadow-[0_18px_45px_-36px_rgba(0,0,0,.85)]">
+    <Card data-board-id={board.id} className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-card text-white shadow-sm">
       <CardHeader className="border-b border-white/[0.07] bg-white/[0.025] px-4 py-4">
         <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-lg font-semibold">
           <span>Board {board.id}</span>
@@ -131,7 +133,7 @@ export function BoardComponent({
         {boardStartTime && isGameActive && (
           <div className="mb-4">
             <p className="text-sm font-medium text-muted-foreground">
-              Spiel gestartet: <span className="board-timer font-semibold">Lädt...</span>
+              Spiel gestartet: <InlineLoader label="Lädt..." />
             </p>
           </div>
         )}
@@ -167,10 +169,10 @@ export function BoardComponent({
 
         <div className="flex justify-between gap-3">
           {!isGameActive ? (
-            <Button onClick={handleStartGame} className="w-1/2 rounded-xl border border-white/[0.10] bg-[#11161e] font-semibold text-white hover:border-orange-300/15 hover:bg-[#171d26]">Start</Button>
+            <Button onClick={handleStartGame} className="w-1/2 rounded-xl border border-white/[0.10] bg-card font-semibold text-white hover:border-orange-300/15 hover:bg-card">Start</Button>
           ) : (
             <>
-              <Button onClick={handleFinishGame} className="w-1/2 rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400">Beenden</Button>
+              <Button onClick={handleFinishGame} className="w-1/2 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-orange-400">Beenden</Button>
               <Button
                 onClick={handleCancelGame}
                 variant="outline"

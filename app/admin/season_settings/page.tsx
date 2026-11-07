@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
@@ -7,18 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import {
-  Calendar,
-  AlertTriangle,
-  CheckCircle2,
-  Info,
-  Split,
-  Trophy,
-  Users,
-  ArrowUp,
-  ArrowDown,
-  Loader2,
-} from "lucide-react"
+import { Calendar, AlertTriangle, CheckCircle2, Info, Split, Trophy, Users, ArrowUp, ArrowDown } from "lucide-react"
 import { toast } from "sonner"
 
 interface SeasonSettings {
@@ -420,12 +411,7 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-none">
-        <div className="flex items-center justify-center gap-2 py-12">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Lädt...</span>
-        </div>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 
@@ -546,9 +532,7 @@ export default function AdminPage() {
 
                 {/* Aktionen */}
                 <div className="space-y-2">
-                  <Button onClick={autoAssignDivisions} disabled={assigningDivisions || players.length === 0} className="w-full">
-                    {assigningDivisions ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Split className="h-4 w-4 mr-2" />}
-                    Automatisch nach Punkten aufteilen
+                  <Button onClick={autoAssignDivisions} disabled={assigningDivisions || players.length === 0} className="w-full" loading={Boolean(assigningDivisions)}><Split className="h-4 w-4 mr-2" />Automatisch nach Punkten aufteilen
                   </Button>
                   <Button onClick={clearAllDivisions} disabled={assigningDivisions} variant="outline" className="w-full bg-transparent">
                     Alle Divisionen zurücksetzen

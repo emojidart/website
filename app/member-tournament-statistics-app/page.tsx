@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import { useEffect, useMemo, useState, type ReactNode } from "react"
@@ -14,21 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 
-import {
-  Activity,
-  AlertTriangle,
-  ArrowRight,
-  CalendarDays,
-  Crown,
-  Gift,
-  Loader2,
-  Medal,
-  Swords,
-  Target,
-  Trophy,
-  TrendingUp,
-  UserRound,
-} from "lucide-react"
+import { Activity, AlertTriangle, ArrowRight, CalendarDays, Crown, Gift, Medal, Swords, Target, Trophy, TrendingUp, UserRound } from "lucide-react"
 
 type MemberProfile = {
   id: string
@@ -155,7 +143,7 @@ function getPlacementBadgeClass(placement?: number | null) {
   if (placement === 1) return "border border-amber-300/[0.18] bg-amber-500/[0.10] text-amber-200"
   if (placement === 2) return "border border-white/[0.10] bg-white/[0.05] text-white/70"
   if (placement === 3) return "border border-orange-300/[0.16] bg-orange-500/[0.09] text-orange-200"
-  return "border border-white/[0.08] bg-white/[0.035] text-white/60"
+  return "border border-white/[0.08] bg-white/[0.035] text-muted-foreground"
 }
 
 function getTypeLabel(type?: string | null) {
@@ -466,18 +454,10 @@ export default function MemberTournamentStatisticsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-background text-white flex flex-col">
+      <div className="emd-loading-surface relative min-h-screen overflow-x-hidden bg-background text-white flex flex-col">
         <Header variant="app" title="Turnierstatistiken" subtitle="Turnierbereich" backHref="/member-tournament-app" />
 
-        <main className="flex-grow flex items-center justify-center px-4 pb-24 pt-20">
-          <div className="flex flex-col items-center gap-4 rounded-[28px] border border-white/[0.08] bg-card px-8 py-8 shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)] ">
-            <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
-            <div className="text-center">
-              <div className="break-words font-semibold leading-snug text-white">Turnierstatistiken werden geladen</div>
-              <div className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</div>
-            </div>
-          </div>
-        </main>
+        <main className="flex-grow flex items-center justify-center px-4 pb-24 pt-20"><SectionSkeleton kind="tournament" /></main>
 
         <MobileBottomNav />
       </div>
@@ -490,7 +470,7 @@ export default function MemberTournamentStatisticsPage() {
         <Header variant="app" title="Turnierstatistiken" subtitle="Turnierbereich" backHref="/member-tournament-app" />
 
         <main className="flex-grow flex items-center justify-center px-4 pb-24 pt-20">
-          <Card className="w-full max-w-md overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)] ">
+          <Card className="w-full max-w-md overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-sm ">
             <CardContent className="p-6 text-center">
               <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-red-500/[0.08] flex items-center justify-center">
                 <AlertTriangle className="w-7 h-7 text-red-200" />
@@ -524,9 +504,9 @@ export default function MemberTournamentStatisticsPage() {
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] flex-grow px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
         <div className="w-full space-y-4 sm:space-y-5">
-          <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
+          <section className="relative overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-sm ">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/[0.14] blur-3xl" />
-            <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-sky-500/[0.07] blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-orange-500/[0.07] blur-3xl" />
 
             <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -580,7 +560,7 @@ export default function MemberTournamentStatisticsPage() {
           </section>
 
           {summerStanding && (
-            <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
+            <Card className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
 
 
               <CardContent className="p-4 sm:p-6">
@@ -636,7 +616,7 @@ export default function MemberTournamentStatisticsPage() {
           )}
 
           {summerEntries.length > 0 && (
-            <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
+            <Card className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
               <CardContent className="p-4 sm:p-6">
                 <div className="mb-5 flex items-center gap-3 border-b border-white/[0.07] pb-4">
                   <Medal className="w-5 h-5 text-orange-200" />
@@ -703,7 +683,7 @@ export default function MemberTournamentStatisticsPage() {
           )}
 
           {dkoRankings.length > 0 && (
-            <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
+            <Card className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
               <CardContent className="p-4 sm:p-6">
                 <div className="mb-5 flex items-center gap-3 border-b border-white/[0.07] pb-4">
                   <Swords className="w-5 h-5 text-orange-200" />
@@ -761,7 +741,7 @@ export default function MemberTournamentStatisticsPage() {
           )}
 
           {kratzerResults.length > 0 && (
-            <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
+            <Card className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
               <CardContent className="p-4 sm:p-6">
                 <div className="mb-5 flex items-center gap-3 border-b border-white/[0.07] pb-4">
                   <Target className="w-5 h-5 text-orange-200" />
@@ -822,7 +802,7 @@ export default function MemberTournamentStatisticsPage() {
             summerEntries.length === 0 &&
             dkoRankings.length === 0 &&
             kratzerResults.length === 0 && (
-              <Card className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
+              <Card className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-none  transition duration-300 hover:border-orange-300/[0.14]">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <Trophy className="w-6 h-6 text-orange-200 mt-0.5 flex-shrink-0" />

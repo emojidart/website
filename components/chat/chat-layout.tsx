@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -92,9 +94,7 @@ export function ChatLayout() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[600px]">
-        <div className="text-muted-foreground">Lade Chat-Räume...</div>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 

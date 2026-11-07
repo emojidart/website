@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Header } from "@/components/header"
@@ -10,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/lib/supabase"
-import { CalendarDays, CheckCircle2, Clock3, DoorOpen, Loader2, LockKeyhole, Save, XCircle } from "lucide-react"
+import { CalendarDays, CheckCircle2, Clock3, DoorOpen, LockKeyhole, Save, XCircle } from "lucide-react"
 
 type Opening = {
   id: string
@@ -187,7 +189,7 @@ export default function ClubhousePage() {
 
             <div className="mt-5 rounded-[22px] border border-white/10 bg-white/[0.06] p-4 sm:mt-6 sm:rounded-3xl sm:p-6 lg:p-7">
               {loading ? (
-                <div className="flex items-center gap-3 text-white/70"><Loader2 className="h-5 w-5 animate-spin" /> Status wird geladen…</div>
+                <SectionSkeleton kind="cards" />
               ) : todayRow?.status === "open" ? (
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1.5 text-sm font-semibold text-emerald-300">
@@ -264,8 +266,7 @@ export default function ClubhousePage() {
                   <div><Label>Bis ca.</Label><Input type="time" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} className="mt-1.5 h-11" /></div>
                 </div>
                 <div className="mt-4"><Label>Hinweis (optional)</Label><Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="z. B. Heute spontaner Spielabend – jeder ist willkommen 🎯" className="mt-1.5 min-h-20" /></div>
-                <Button disabled={saving || !planDate} onClick={() => void saveDay("planned", { date: planDate })} className="mt-4 min-h-12 w-full whitespace-normal rounded-xl bg-background px-4 py-3 font-semibold leading-tight hover:bg-background text-foreground">
-                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Öffnung planen / speichern
+                <Button disabled={saving || !planDate} onClick={() => void saveDay("planned", { date: planDate })} className="mt-4 min-h-12 w-full whitespace-normal rounded-xl bg-background px-4 py-3 font-semibold leading-tight hover:bg-background text-foreground" loading={Boolean(saving)}><Save className="mr-2 h-4 w-4" />Öffnung planen / speichern
                 </Button>
                 {message ? <div className="mt-3 rounded-xl bg-muted px-4 py-3 text-sm font-bold text-muted-foreground">{message}</div> : null}
               </CardContent>

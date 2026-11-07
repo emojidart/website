@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
@@ -7,21 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-  AlertTriangle,
-  Banknote,
-  CalendarX,
-  CheckCircle2,
-  Clock3,
-  CreditCard,
-  Gift,
-  Loader2,
-  RefreshCw,
-  Search,
-  ShieldCheck,
-  Users,
-  WalletCards,
-} from "lucide-react"
+import { AlertTriangle, Banknote, CalendarX, CheckCircle2, Clock3, CreditCard, Gift, RefreshCw, Search, ShieldCheck, Users, WalletCards } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type BillingCycle = "monthly" | "semiannual" | "annual"
@@ -406,10 +394,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
 
   if (loading) {
     return (
-      <div className="flex min-h-[420px] items-center justify-center">
-        <Loader2 className="mr-3 h-5 w-5 animate-spin text-orange-600" />
-        <span className="font-semibold text-slate-600">Mitgliedschaften werden geladen…</span>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 
@@ -506,9 +491,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         <Button variant="outline" disabled={working} onClick={() => void rejectRequest(request)} className="rounded-xl">Ablehnen</Button>
-                        <Button disabled={working} onClick={() => void approveManualPayment(request)} className="rounded-xl bg-emerald-600 font-black text-white hover:bg-emerald-700">
-                          {working ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                          Zahlung erhalten & freischalten
+                        <Button disabled={working} onClick={() => void approveManualPayment(request)} className="rounded-xl bg-emerald-600 font-black text-white hover:bg-emerald-700" loading={Boolean(working)}><CheckCircle2 className="mr-2 h-4 w-4" />Zahlung erhalten & freischalten
                         </Button>
                       </div>
                     )}
@@ -564,7 +547,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                 <div key={playerId} className="rounded-2xl border border-purple-200 bg-purple-50/40 p-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div><div className="font-black text-slate-950">{player?.name || "Unbekannt"}</div><div className="mt-1 text-sm font-semibold text-slate-500">bis {new Date(`${playerTrials[0].ends_on}T00:00:00`).toLocaleDateString("de-AT")}</div><div className="mt-2 flex flex-wrap gap-1.5">{playerTrials.map((trial) => <Badge key={trial.id} variant="outline" className="rounded-full border-purple-200 bg-white text-purple-700">{modules.find((m) => m.code === trial.module_code)?.name || trial.module_code}</Badge>)}</div></div>
-                    <Button variant="outline" disabled={working} onClick={() => void endTrialsForPlayer(playerId)} className="rounded-xl border-purple-200 bg-white">{working ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Testphase beenden</Button>
+                    <Button variant="outline" disabled={working} onClick={() => void endTrialsForPlayer(playerId)} className="rounded-xl border-purple-200 bg-white" loading={Boolean(working)}>{null}Testphase beenden</Button>
                   </div>
                 </div>
               )
@@ -584,7 +567,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                 <div key={request.id} className="rounded-2xl border border-red-200 bg-red-50/40 p-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div><div className="font-black text-slate-950">{player?.name || "Unbekannt"}</div><div className="mt-1 text-sm font-semibold text-red-700">Gewünschtes Ende: {request.requested_end_on ? new Date(`${request.requested_end_on}T00:00:00`).toLocaleDateString("de-AT") : "—"}</div>{request.note ? <div className="mt-1 text-sm text-slate-600">{request.note}</div> : null}</div>
-                    <Button disabled={working} onClick={() => void approveCancellation(request)} className="rounded-xl bg-red-600 font-black text-white hover:bg-red-700">{working ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarX className="mr-2 h-4 w-4" />}Kündigung bestätigen</Button>
+                    <Button disabled={working} onClick={() => void approveCancellation(request)} className="rounded-xl bg-red-600 font-black text-white hover:bg-red-700" loading={Boolean(working)}><CalendarX className="mr-2 h-4 w-4" />Kündigung bestätigen</Button>
                   </div>
                 </div>
               )

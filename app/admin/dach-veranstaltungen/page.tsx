@@ -1,29 +1,11 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { createBrowserClient } from "@supabase/ssr"
-import {
-  Calendar,
-  Check,
-  Clock,
-  Coins,
-  ExternalLink,
-  FileText,
-  Gamepad2,
-  Globe2,
-  Link as LinkIcon,
-  Loader2,
-  Mail,
-  MapPin,
-  Phone,
-  RefreshCw,
-  ShieldAlert,
-  Trophy,
-  UserRound,
-  Users,
-  X,
-} from "lucide-react"
+import { Calendar, Check, Clock, Coins, ExternalLink, FileText, Gamepad2, Globe2, Link as LinkIcon, Mail, MapPin, Phone, RefreshCw, ShieldAlert, Trophy, UserRound, Users, X } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -436,17 +418,15 @@ export default function AdminVeranstaltungenPage() {
               disabled={loading}
               className="rounded-xl"
             >
-              <RefreshCw
-                className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
-              />
+              {loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw
+                className={`w-4 h-4 mr-2 ${loading ? "" : ""}`}
+              />}
               Aktualisieren
             </Button>
           </div>
 
           {loading || allowed === null ? (
-            <div className="py-20 flex justify-center">
-              <Loader2 className="w-10 h-10 animate-spin text-orange-600" />
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : !allowed ? (
             <Card className="mt-5 rounded-3xl">
               <CardContent className="py-14 text-center">
@@ -762,13 +742,9 @@ export default function AdminVeranstaltungenPage() {
                                 onClick={() => void approveEvent(event.id)}
                                 disabled={savingId === event.id}
                                 className="bg-green-600 hover:bg-green-700 rounded-xl"
-                              >
-                                {savingId === event.id ? (
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                ) : (
+                               loading={Boolean(savingId === event.id)}>{(
                                   <Check className="w-4 h-4 mr-2" />
-                                )}
-                                Veranstaltung freigeben
+                                )}Veranstaltung freigeben
                               </Button>
 
                               <Button
@@ -776,13 +752,9 @@ export default function AdminVeranstaltungenPage() {
                                 onClick={() => void rejectEvent(event.id)}
                                 disabled={savingId === event.id}
                                 className="rounded-xl"
-                              >
-                                {savingId === event.id ? (
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                ) : (
+                               loading={Boolean(savingId === event.id)}>{(
                                   <X className="w-4 h-4 mr-2" />
-                                )}
-                                Mit Begründung ablehnen
+                                )}Mit Begründung ablehnen
                               </Button>
                             </div>
                           </CardContent>

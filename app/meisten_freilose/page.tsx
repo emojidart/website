@@ -1,4 +1,7 @@
 "use client"
+
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
@@ -94,22 +97,9 @@ export default function FreilosePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans">
         <Header />
-        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-4xl">
-          <div className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
-            <div className="text-foreground bg-card   p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                <h2 className="text-lg sm:text-2xl font-bold text-white">Freilos-Statistik</h2>
-              </div>
-            </div>
-            <div className="p-6 sm:p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-red-600 mx-auto"></div>
-              <p className="mt-4 text-sm sm:text-base text-muted-foreground">Lade Daten...</p>
-            </div>
-          </div>
-        </main>
+        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-4xl"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useState, useEffect } from "react"
@@ -135,30 +137,25 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
   const getEventTypeIcon = (type: string) => {
     switch (type) {
       case "Turnier":
-        return <Trophy className="h-4 w-4 text-purple-600" />
+        return <Trophy className="h-4 w-4 text-orange-600" />
       case "Spielfrei":
         return <Coffee className="h-4 w-4 text-gray-600" />
       default:
-        return <Trophy className="h-4 w-4 text-purple-600" />
+        return <Trophy className="h-4 w-4 text-orange-600" />
     }
   }
 
   const getEventTypeBadge = (type: string) => {
     const colors = {
-      Turnier: "bg-purple-100 text-purple-800",
-      Spielfrei: "bg-gray-100 text-gray-800",
+      Turnier: "bg-orange-100 text-orange-800",
+      Spielfrei: "bg-card text-gray-800",
     }
     return <Badge className={colors[type as keyof typeof colors] || colors.Turnier}>{type}</Badge>
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-center">
-          <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-gray-600">Lade Turniertage...</p>
-        </div>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 
@@ -180,8 +177,8 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
           <Card>
             <CardContent className="p-8 text-center">
               <Trophy className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Keine Turniertage vorhanden</h3>
-              <p className="text-gray-600 mb-4">Erstellen Sie Ihren ersten Turniertag</p>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Keine Turniertage vorhanden</h3>
+              <p className="text-muted-foreground mb-4">Erstellen Sie Ihren ersten Turniertag</p>
               <Button onClick={() => setIsDialogOpen(true)} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Turniertag hinzufügen
@@ -200,7 +197,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
                       {getEventTypeBadge(day.event_type)}
                     </div>
 
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       <Calendar className="h-4 w-4" />
                       {new Date(day.event_date).toLocaleDateString("de-DE", {
                         weekday: "long",
@@ -211,7 +208,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
                       {day.event_time && <span className="ml-2 text-blue-600 font-medium">um {day.event_time}</span>}
                     </div>
 
-                    {day.description && <p className="text-gray-600 text-sm">{day.description}</p>}
+                    {day.description && <p className="text-muted-foreground text-sm">{day.description}</p>}
                   </div>
 
                   <div className="flex gap-2 ml-4">
@@ -264,7 +261,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
                 <SelectContent>
                   <SelectItem value="Turnier">
                     <div className="flex items-center gap-2">
-                      <Trophy className="h-4 w-4 text-purple-600" />
+                      <Trophy className="h-4 w-4 text-orange-600" />
                       Cup Turnier
                     </div>
                   </SelectItem>

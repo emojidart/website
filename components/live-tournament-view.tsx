@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -215,18 +217,9 @@ export default function LiveTournamentView() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-card text-foreground font-sans">
+      <div className="emd-loading-surface min-h-screen bg-card text-foreground font-sans">
         <Header />
-        <main className="pt-8 pb-20">
-          <div className="container mx-auto px-4 md:px-6 py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6">
-                <Trophy className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <p className="mt-4 text-muted-foreground">Lade Turnier-Daten...</p>
-            </div>
-          </div>
-        </main>
+        <main className="pt-8 pb-20"><SectionSkeleton kind="tournament" /></main>
       </div>
     )
   }
@@ -350,7 +343,7 @@ export default function LiveTournamentView() {
                         className="border-2 border-orange-500 bg-orange-50 rounded-xl p-4 sm:p-6 shadow-sm"
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <Badge className="bg-orange-600 text-white">Match {match.id}</Badge>
+                          <Badge className="bg-primary text-primary-foreground">Match {match.id}</Badge>
                           <Badge variant="outline" className="border-orange-600 text-orange-600">
                             Automat {match.machineNumber}
                           </Badge>
@@ -565,7 +558,7 @@ function BracketMatchCard({ match }: { match: Match }) {
             Match {match.id}
           </Badge>
           {isActive && (
-            <Badge className="text-xs bg-orange-600">
+            <Badge className="text-xs bg-primary">
               <Zap className="h-3 w-3 mr-1" />
               Live
             </Badge>

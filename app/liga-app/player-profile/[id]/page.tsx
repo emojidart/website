@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useEffect, useState } from "react"
@@ -391,19 +393,9 @@ export default function PlayerProfilePage() {
 
   if (loading) {
     return (
-      <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden text-white">
+      <div className="emd-loading-surface emd-app-theme-shell relative min-h-screen overflow-x-hidden text-white">
         <Header />
-        <main className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
-          <div className="flex min-h-[55vh] items-center justify-center">
-            <div className="w-full max-w-md rounded-[28px] border border-white/[0.08] bg-card p-8 text-center shadow-[0_30px_90px_-55px_rgba(0,0,0,.95)] ">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[20px] border border-orange-300/[0.14] bg-orange-500/[0.08]">
-                <Target className="h-7 w-7 animate-pulse text-orange-300" />
-              </div>
-              <div className="mt-5 text-lg font-semibold text-white">Spielerdaten werden geladen</div>
-              <div className="mt-1 text-sm font-semibold text-muted-foreground">Einen Moment bitte …</div>
-            </div>
-          </div>
-        </main>
+        <main className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8"><SectionSkeleton kind="profile" /></main>
         <MobileBottomNav />
       </div>
     )

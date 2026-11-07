@@ -1,11 +1,13 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, Calendar, Users, Loader2 } from "lucide-react"
+import { Trophy, Target, Calendar, Users } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
@@ -568,26 +570,42 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   // ✅ LOADING VIEW
   if (loading) {
   return (
-    <main className="emd-app-theme-shell relative min-h-screen flex flex-col overflow-x-hidden bg-background pb-24 text-white">
+    <main className="emd-loading-surface emd-app-theme-shell relative min-h-screen flex flex-col overflow-x-hidden bg-background pb-24 text-white">
       <Header variant="app" title="Liga & Statistiken" subtitle="Tabelle · Ergebnisse · Termine · Teams · Stats" backHref="/" />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
-
-      <div className="relative z-10 flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
-        <div>
-          <div className="flex flex-col items-center gap-6 rounded-[28px] border border-white/10 bg-card px-10 py-10 shadow-[0_28px_80px_-52px_rgba(0,0,0,.95)] ">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-300" />
-            </div>
-
-            <div className="text-center">
-              <p className="text-lg font-bold text-white">Statistiken werden geladen</p>
-              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
+      <div className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8" role="status" aria-label="Liga und Statistiken werden geladen" aria-busy="true">
+        <div className="rounded-[28px] border border-white/10 bg-card p-5 sm:p-7">
+          <div className="mb-5 h-7 w-44 animate-pulse rounded-full bg-white/10" />
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 shrink-0 animate-pulse rounded-[20px] bg-white/10" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+              <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
             </div>
           </div>
+          <div className="mt-5 h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="rounded-[20px] border border-white/10 bg-white/[0.045] p-4">
+                <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+                <div className="mt-4 h-8 w-16 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-4 rounded-[24px] border border-white/10 bg-card p-4 sm:p-5">
+          <div className="h-4 w-40 animate-pulse rounded bg-white/10" />
+          <div className="h-11 w-full animate-pulse rounded-2xl bg-white/10" />
+          <div className="grid grid-cols-3 gap-2">
+            {Array.from({ length: 3 }, (_, index) => <div key={index} className="h-11 animate-pulse rounded-2xl bg-white/10" />)}
+          </div>
+        </div>
+        <div className="rounded-[24px] border border-white/10 bg-card p-3 sm:p-4">
+          <SectionSkeleton kind="table" />
         </div>
       </div>
+
+      
 
       <MobileBottomNav />
     </main>

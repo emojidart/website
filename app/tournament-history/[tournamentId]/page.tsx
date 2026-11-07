@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -149,7 +151,7 @@ function Chip({
     tone === "orange"
       ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
       : tone === "blue"
-        ? "bg-sky-400/10 text-sky-200 border-sky-400/25"
+        ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
         : tone === "emerald"
           ? "bg-emerald-400/10 text-emerald-900 border-emerald-400/25"
           : tone === "amber"
@@ -469,10 +471,10 @@ const params = useParams()
 
           {/* App-Header Card (Kontakt look) */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px]">
+            <section className="relative overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-sm  sm:rounded-[34px]">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
               <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-400/15 blur-[110px]" />
-              <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
+              <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-orange-500/12 blur-[120px]" />
               <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex items-start gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
@@ -481,7 +483,7 @@ const params = useParams()
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-muted-foreground">{typeLabel(tournamentType)}</p>
                     <h1 className="mt-1 line-clamp-2 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">{tournamentName}</h1>
-                    <p className="mt-3 text-sm font-medium text-white/60 sm:text-base">
+                    <p className="mt-3 text-sm font-medium text-muted-foreground sm:text-base">
                       Sieger: <span className="font-semibold text-white">{winner ?? "—"}</span>
                       {isKratzer && kratzerTotalRounds != null ? (
                         <>
@@ -508,9 +510,7 @@ const params = useParams()
           </motion.div>
 
           {loading ? (
-            <motion.div variants={itemVariants} className="flex items-center justify-center py-16">
-              <div className="w-10 h-10 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-            </motion.div>
+            <SectionSkeleton kind="tournament" />
           ) : error ? (
             <motion.div variants={itemVariants}>
               <Card className="rounded-2xl border border-white/10 shadow-sm bg-white/5">
@@ -520,7 +520,7 @@ const params = useParams()
           ) : (
             <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,.85fr)_minmax(0,1.65fr)] xl:gap-5">
               {/* Resultate/Rangliste */}
-              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] ">
+              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-sm ">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm sm:text-base font-semibold">
                     {isKratzer ? "Resultate" : "Rangliste"}
@@ -529,7 +529,7 @@ const params = useParams()
 
                 <CardContent className="pt-0 pb-5">
                   {rankings.length === 0 ? (
-                    <div className="text-sm text-white/58">Keine Daten.</div>
+                    <div className="text-sm text-muted-foreground">Keine Daten.</div>
                   ) : (
                     <div className="space-y-2">
                       {rankings
@@ -538,7 +538,7 @@ const params = useParams()
                         .map((r) => (
                           <div
                             key={`${r.player_name}-${r.placement}`}
-                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 shadow-[0_18px_50px_-38px_rgba(0,0,0,.9)] "
+                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 shadow-sm "
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -571,7 +571,7 @@ const params = useParams()
                                 ) : null}
                               </div>
 
-                              <span className="inline-flex items-center rounded-full bg-orange-600 px-2.5 py-1 text-xs font-semibold text-white">
+                              <span className="inline-flex items-center rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
                                 #{r.placement}
                               </span>
                             </div>
@@ -583,7 +583,7 @@ const params = useParams()
               </Card>
 
               {/* Matches / Info */}
-              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] ">
+              <Card className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 shadow-sm ">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm sm:text-base font-semibold">{isKratzer ? "Info" : "Matches"}</CardTitle>
                 </CardHeader>
@@ -646,7 +646,7 @@ const params = useParams()
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="min-w-0">
                                     <div className="font-semibold text-white truncate">{winner}</div>
-                                    <div className="mt-1 text-xs text-white/58">Turnier gewonnen</div>
+                                    <div className="mt-1 text-xs text-muted-foreground">Turnier gewonnen</div>
                                   </div>
                                   <Chip tone="orange">
                                     <Trophy className="w-3.5 h-3.5" />
@@ -675,7 +675,7 @@ const params = useParams()
                         return (
                           <div
                             key={m.match_id}
-                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 sm:p-4 shadow-[0_18px_50px_-38px_rgba(0,0,0,.9)] "
+                            className="rounded-[18px] border border-white/10 bg-white/5 p-3 sm:p-4 shadow-sm "
                           >
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <div className="min-w-0">
@@ -686,7 +686,7 @@ const params = useParams()
 
                                   {m.machine_number ? (
                                     <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-white/70">
-                                      <Tv className="h-3.5 w-3.5 text-white/58" />
+                                      <Tv className="h-3.5 w-3.5 text-muted-foreground" />
                                       Board {m.machine_number}
                                     </span>
                                   ) : null}
@@ -714,7 +714,7 @@ const params = useParams()
 
                                 {m.winner ? (
                                   <span
-                                    className="inline-flex items-center rounded-full bg-orange-600 px-2.5 py-1 text-xs font-semibold text-white max-w-[220px] truncate"
+                                    className="inline-flex items-center rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground max-w-[220px] truncate"
                                     title={m.winner}
                                   >
                                     Sieger: {m.winner}

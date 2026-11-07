@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import {
@@ -18,32 +20,7 @@ import { useRouter } from "next/navigation"
 import { useEffect,
   useState } from "react"
 import { supabase } from "@/lib/supabase"
-import {
-  Crown,
-  ShieldCheck,
-  Users,
-  Calendar,
-  Target,
-  MapPin,
-  Loader2,
-  AlertCircle,
-  Edit,
-  Camera,
-  XCircle,
-  Upload,
-  Eye,
-  ArrowRight,
-  ImageIcon,
-  CalendarX,
-  AlertTriangle,
-  Check,
-  Info,
-  X,
-  RotateCcw,
-  Phone,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react"
+import { Crown, ShieldCheck, Users, Calendar, Target, MapPin, AlertCircle, Edit, Camera, XCircle, Upload, Eye, ArrowRight, ImageIcon, CalendarX, AlertTriangle, Check, Info, X, RotateCcw, Phone, ChevronDown, ChevronRight } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -2425,7 +2402,49 @@ const postponeMatch = async (
 
 
 if (authLoading || loading || membershipLoading) {
-  return <div className="min-h-[1px]" aria-hidden="true" />
+  return (
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
+      <Header variant="app" title="Spielplan" subtitle="Ligazentrale" backHref="/member-league-app" />
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-4 px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Spielplan wird geladen">
+        <section className="rounded-[26px] border border-white/[0.09] bg-card p-4 sm:p-6 lg:p-8">
+          <div className="mb-5 h-6 w-20 animate-pulse rounded-full bg-white/10" />
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 shrink-0 animate-pulse rounded-2xl bg-white/10" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="h-3 w-48 max-w-full animate-pulse rounded bg-white/10" />
+              <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
+            </div>
+          </div>
+          <div className="mt-5 h-4 w-full max-w-xl animate-pulse rounded bg-white/10" />
+          <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="rounded-2xl border border-white/10 bg-white/[0.05] p-3 sm:p-4">
+                <div className="h-3 w-full max-w-24 animate-pulse rounded bg-white/10" />
+                <div className="mt-3 h-8 w-16 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="rounded-[24px] border border-white/[0.09] bg-card p-4 sm:p-6">
+          <div className="mb-5 flex flex-wrap gap-2">
+            {Array.from({ length: 3 }, (_, index) => <div key={index} className="h-11 w-28 flex-1 animate-pulse rounded-xl bg-white/10" />)}
+          </div>
+          <div className="space-y-3">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="flex items-center gap-3 rounded-xl border border-white/[0.07] p-3">
+                <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-white/10" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="h-4 w-3/4 animate-pulse rounded bg-white/10" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-white/10" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+      <MobileBottomNav />
+    </div>
+  )
 }
 
 
@@ -3737,10 +3756,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
             ) : null}
 
             {extraStatsEditLoading ? (
-              <div className="flex min-h-[180px] flex-col items-center justify-center gap-3 text-center">
-                <Loader2 className="h-7 w-7 animate-spin text-orange-300" />
-                <div className="text-sm font-bold text-white/65">Gespeicherte Zusatzstatistiken werden geladen…</div>
-              </div>
+              <SectionSkeleton kind="cards" />
             ) : extraStatsEditError ? (
               <div className="rounded-2xl border border-red-400/25 bg-red-500/[0.08] p-4 text-sm font-semibold text-red-100">
                 {extraStatsEditError}
@@ -3830,9 +3846,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
               onClick={() => void saveExtraStatsEdits()}
               disabled={extraStatsEditSaving || extraStatsEditLoading || extraStatsEditRows.length === 0}
               className="rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-600 disabled:opacity-50"
-            >
-              {extraStatsEditSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-              Zusatzstatistik speichern
+             loading={Boolean(extraStatsEditSaving)}><Check className="mr-2 h-4 w-4" />Zusatzstatistik speichern
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3873,10 +3887,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
 
           <div className="space-y-4 p-4 sm:p-5">
             {sportdartsSyncLoading ? (
-              <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center">
-                <Loader2 className="h-7 w-7 animate-spin text-orange-300" />
-                <div className="text-sm font-bold text-white/70">Sportdarts und Aufstellung werden geprüft…</div>
-              </div>
+              <SectionSkeleton kind="cards" />
             ) : sportdartsSyncCandidates.length > 0 && !sportdartsSyncPreview ? (
               <div className="space-y-3">
                 <div className="rounded-2xl border border-amber-300/20 bg-amber-500/[0.08] p-4">
@@ -4272,13 +4283,9 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                         disabled={sportdartsSyncActionLoading}
                         onClick={() => void submitSportdartsSync("review")}
                         className="h-11 w-full rounded-xl border-amber-300/30 bg-amber-500/[0.10] font-semibold text-amber-100 hover:border-amber-300/50 hover:bg-amber-500/[0.16] hover:text-white disabled:opacity-50"
-                      >
-                        {sportdartsSyncActionLoading ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
+                       loading={Boolean(sportdartsSyncActionLoading)}>{(
                           <AlertTriangle className="mr-2 h-4 w-4" />
-                        )}
-                        Zur Admin-Prüfung senden
+                        )}Zur Admin-Prüfung senden
                       </Button>
                       <div className="text-center text-xs font-semibold leading-4 text-muted-foreground">
                         Der Fall wird gespeichert. Die Admin-Oberfläche für Freigabe oder Korrektur bauen wir als nächsten Schritt.
@@ -4291,13 +4298,9 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                     disabled={sportdartsSyncActionLoading}
                     onClick={() => void submitSportdartsSync("apply")}
                     className="h-12 w-full rounded-xl bg-emerald-500 font-semibold text-[#03120b] shadow-[0_0_24px_rgba(16,185,129,.16)] transition hover:bg-emerald-400 disabled:opacity-50"
-                  >
-                    {sportdartsSyncActionLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
+                   loading={Boolean(sportdartsSyncActionLoading)}>{(
                       <ArrowRight className="mr-2 h-4 w-4" />
-                    )}
-                    Offizielle Sportdarts-Daten übernehmen
+                    )}Offizielle Sportdarts-Daten übernehmen
                   </Button>
                 )}
               </>
@@ -4445,9 +4448,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
             onClick={handleTeamPhotoUpload}
             disabled={teamPhotoUploading || !teamPhotoFile}
             className="h-10 rounded-xl bg-orange-500 font-bold text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 active:scale-[0.99]"
-          >
-            {teamPhotoUploading ? "Upload..." : "Speichern"}
-          </Button>
+           loading={Boolean(teamPhotoUploading)} loadingLabel="Upload...">{"Speichern"}</Button>
 
         </div>
       </>

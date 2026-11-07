@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import {
@@ -1389,7 +1391,7 @@ export default function TerminalTournamentRegistrationPage() {
               disabled={refreshing}
               className="flex h-12 items-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-4 text-sm font-black text-white/55 backdrop-blur-xl disabled:opacity-35"
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={`h-4 w-4 ${refreshing ? "" : ""}`} />}
               Aktualisieren
             </button>
           </div>

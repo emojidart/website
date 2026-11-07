@@ -1,5 +1,7 @@
 "use client"
 
+
+
 import type React from "react"
 
 import { useRef, useState } from "react"
@@ -10,14 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Loader2,
-  Plus,
-  Save,
-  Upload,
-  X,
-  ImageIcon,
-} from "lucide-react"
+import { Plus, Save, Upload, X, ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type SpielerdatenbankEntry = {
@@ -376,18 +371,13 @@ export function SpieldatenbankForm({ onSaveSuccess, compact = false }: Props) {
         ) : null}
 
         <div className="flex flex-wrap gap-3 pt-2">
-          <Button type="button" onClick={handleSave} disabled={saving || uploadingImage || !firstName.trim() || !lastName.trim()} className="rounded-xl">
-            {saving || uploadingImage ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
+          <Button type="button" onClick={handleSave} disabled={saving || uploadingImage || !firstName.trim() || !lastName.trim()} className="rounded-xl" loading={Boolean(saving || uploadingImage)}>{(
               <Plus className="w-4 h-4 mr-2" />
-            )}
-            {saving || uploadingImage
+            )}{saving || uploadingImage
               ? uploadingImage
                 ? "Bild wird hochgeladen..."
                 : "Speichern..."
-              : "Spieler anlegen"}
-          </Button>
+              : "Spieler anlegen"}</Button>
 
           <Button type="button" variant="outline" onClick={resetForm} className="rounded-xl">
             <X className="w-4 h-4 mr-2" />

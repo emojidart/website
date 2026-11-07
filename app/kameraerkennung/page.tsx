@@ -1,5 +1,7 @@
 "use client"
 
+
+
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -331,38 +333,24 @@ export default function DartTrackingPage() {
                             onClick={() => setAutoDetectEnabled(!autoDetectEnabled)}
                             size="lg"
                             className={`${autoDetectEnabled ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"} text-white shadow-lg`}
-                          >
-                            {autoDetectEnabled ? (
-                              <>
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                Auto-Erkennung läuft
-                              </>
-                            ) : (
+                           loading={Boolean(autoDetectEnabled)} loadingLabel="Auto-Erkennung läuft">{(
                               <>
                                 <Sparkles className="h-5 w-5 mr-2" />
                                 Auto-Erkennung starten
                               </>
-                            )}
-                          </Button>
+                            )}</Button>
                           {!autoDetectEnabled && (
                             <Button
                               onClick={captureAndAnalyze}
                               disabled={isProcessing}
                               size="lg"
                               className="bg-orange-600 hover:bg-orange-700 text-white shadow-lg"
-                            >
-                              {isProcessing ? (
-                                <>
-                                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                  Analysiert...
-                                </>
-                              ) : (
+                             loading={Boolean(isProcessing)} loadingLabel="Analysiert...">{(
                                 <>
                                   <Camera className="h-5 w-5 mr-2" />
                                   Manuell erkennen
                                 </>
-                              )}
-                            </Button>
+                              )}</Button>
                           )}
                           <Button onClick={stopCamera} size="lg" variant="destructive" className="shadow-lg">
                             <Square className="h-5 w-5 mr-2" />

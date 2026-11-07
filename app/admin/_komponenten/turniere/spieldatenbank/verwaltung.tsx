@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -23,25 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Search,
-  Database,
-  Loader2,
-  Plus,
-  Pencil,
-  Save,
-  X,
-  RefreshCw,
-  Trash2,
-  AlertTriangle,
-  Upload,
-  Users,
-  Building2,
-  Check,
-  Shield,
-  UserRound,
-  ImageIcon,
-} from "lucide-react"
+import { Search, Database, Plus, Pencil, Save, X, RefreshCw, Trash2, AlertTriangle, Upload, Users, Building2, Check, Shield, UserRound, ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type SpielerdatenbankEntry = {
@@ -830,24 +814,24 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
         <div className="mb-4 pt-2 sm:pt-3">
           <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-200/45">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-orange-200/45">
                 Admin · Datenbank
               </div>
               <h1 className="mt-1 text-2xl font-black tracking-[-0.025em] text-white sm:text-[30px]">
                 Spielerdatenbank
               </h1>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-white/38">
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
                 Spieler verwalten, Daten pflegen und neue Einträge anlegen.
               </p>
             </div>
 
             <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
               <div className="emd-admin-stat text-right">
-                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/25">Spieler</div>
+                <div className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Spieler</div>
                 <div className="mt-0.5 text-sm font-black text-white">{totalPlayers}</div>
               </div>
               <div className="emd-admin-stat text-right">
-                <div className="text-[9px] font-black uppercase tracking-[0.14em] text-white/25">Vereine</div>
+                <div className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Vereine</div>
                 <div className="mt-0.5 text-sm font-black text-white">{uniqueVereine.length}</div>
               </div>
               <Button
@@ -856,13 +840,9 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                 onClick={() => void requestSportdartsSync("preview")}
                 disabled={sportdartsSyncLoading || sportdartsSyncApplying}
                 className="emd-admin-button-secondary col-span-2 w-full sm:col-span-1 sm:w-auto"
-              >
-                {sportdartsSyncLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
+               loading={Boolean(sportdartsSyncLoading)}>{(
                   <RefreshCw className="mr-2 h-4 w-4" />
-                )}
-                SportDarts Sync
+                )}SportDarts Sync
               </Button>
 
               <Button
@@ -871,9 +851,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                 onClick={() => void loadData()}
                 disabled={loading}
                 className="emd-admin-button-secondary col-span-2 w-full sm:col-span-1 sm:w-auto"
-              >
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                Neu laden
+               loading={Boolean(loading)}><RefreshCw className="mr-2 h-4 w-4" />Neu laden
               </Button>
             </div>
           </div>
@@ -891,7 +869,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
             >
               <Users className="h-4 w-4" />
               <span className="whitespace-nowrap">Spieler</span>
-              <span className="ml-1 rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] font-black text-white/55">
+              <span className="ml-1 rounded-full bg-white/[0.05] px-2 py-0.5 text-xs font-black text-muted-foreground">
                 {filteredPlayers.length}
               </span>
             </button>
@@ -915,7 +893,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/35">Spieler gesamt</div>
+                  <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Spieler gesamt</div>
                   <div className="mt-1 text-2xl font-black text-white">{totalPlayers}</div>
                 </div>
                 <Users className="h-5 w-5 text-orange-300/70" />
@@ -927,7 +905,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/35">Mit Verein</div>
+                  <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Mit Verein</div>
                   <div className="mt-1 text-2xl font-black text-white">{withClub}</div>
                 </div>
                 <Building2 className="h-5 w-5 text-cyan-300/70" />
@@ -939,7 +917,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/35">Mit Bild</div>
+                  <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Mit Bild</div>
                   <div className="mt-1 text-2xl font-black text-white">{withPhoto}</div>
                 </div>
                 <ImageIcon className="h-5 w-5 text-emerald-300/70" />
@@ -951,10 +929,10 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/35">Mit Ligastatus</div>
+                  <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Mit Ligastatus</div>
                   <div className="mt-1 text-2xl font-black text-white">{withLiga}</div>
                 </div>
-                <Shield className="h-5 w-5 text-violet-300/70" />
+                <Shield className="h-5 w-5 text-orange-300/70" />
               </div>
             </CardContent>
           </Card>
@@ -966,7 +944,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                       <Card className="emd-admin-surface w-full min-w-0 max-w-full overflow-hidden">
                         <CardHeader className="space-y-1.5 border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
                           <CardTitle className="text-lg font-black text-white">{isEditing ? "Spieler bearbeiten" : "Neuer Spieler"}</CardTitle>
-                          <CardDescription className="text-white/42">
+                          <CardDescription className="text-muted-foreground">
                             {isEditing
                               ? "Änderungen werden erst gespeichert, wenn du auf „Änderungen speichern“ klickst."
                               : "Hier legst du einen neuen Spieler an."}
@@ -1000,14 +978,14 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                 </div>
                               ) : (
                                 <div className="flex h-24 w-24 items-center justify-center rounded-[24px] border border-white/[0.08] bg-transparent">
-                                  <ImageIcon className="h-9 w-9 text-white/25" />
+                                  <ImageIcon className="h-9 w-9 text-muted-foreground" />
                                 </div>
                               )}
                             </div>
 
                             <div className="min-w-0 flex-1">
                               <div className="text-sm font-black text-white">Profilbild</div>
-                              <p className="mt-1 text-xs leading-5 text-white/35">Optional · JPG, PNG oder GIF · maximal 5 MB</p>
+                              <p className="mt-1 text-xs leading-5 text-muted-foreground">Optional · JPG, PNG oder GIF · maximal 5 MB</p>
 
                               <input
                                 ref={fileInputRef}
@@ -1075,12 +1053,10 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                               />
                               <Button type="button" variant="outline" className="emd-admin-button-secondary"
                                 disabled={testingPronunciation || !buildStoredName(firstName,lastName)}
-                                onClick={testMartinPronunciation}>
-                                {testingPronunciation ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                Mit NERO testen
+                                onClick={testMartinPronunciation} loading={Boolean(testingPronunciation)}>{null}Mit NERO testen
                               </Button>
                             </div>
-                            <p className="mt-2 text-xs text-white/40">Der offizielle Spielername bleibt unverändert. Die Testansage verwendet Automat 1 und einen Testgegner. Ohne Eintrag verwendet NERO den offiziellen Namen.</p>
+                            <p className="mt-2 text-xs text-muted-foreground">Der offizielle Spielername bleibt unverändert. Die Testansage verwendet Automat 1 und einen Testgegner. Ohne Eintrag verwendet NERO den offiziellen Namen.</p>
                           </div>
 
                           <div className="space-y-2 lg:col-span-2">
@@ -1097,7 +1073,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                           <div className="rounded-[18px] border border-white/[0.07] bg-white/[0.02] p-4 lg:col-span-2">
                             <div className="mb-3">
                               <div className="text-sm font-black text-white">SportDarts-Zuordnung</div>
-                              <div className="mt-1 text-xs leading-5 text-white/35">
+                              <div className="mt-1 text-xs leading-5 text-muted-foreground">
                                 Spielernummer und Alias kommen aus SportDarts. Bei neuen Spielern werden Verein und Ligastatus im Formular vorbefüllt; das Geschlecht muss vor dem Speichern ausgewählt werden.
                               </div>
                             </div>
@@ -1175,17 +1151,17 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                           </div>
 
                           {exactDuplicate ? (
-                            <div className="rounded-2xl border border-rose-300/20 bg-rose-500/[0.06] p-4">
+                            <div className="rounded-2xl border border-red-300/20 bg-red-500/[0.06] p-4">
                               <div className="flex items-start gap-3">
-                                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-300" />
+                                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-300" />
                                 <div className="min-w-0">
-                                  <div className="font-black text-rose-100">Spieler bereits vorhanden</div>
-                                  <div className="mt-1 text-sm text-rose-100/65">
+                                  <div className="font-black text-red-100">Spieler bereits vorhanden</div>
+                                  <div className="mt-1 text-sm text-red-100/65">
                                     {exactDuplicate.name}
                                     {exactDuplicate.verein ? ` · ${exactDuplicate.verein}` : ""}
                                     {exactDuplicate.ligastatus ? ` · Liga ${exactDuplicate.ligastatus}` : ""}
                                   </div>
-                                  <div className="mt-2 text-xs font-semibold text-rose-100/45">
+                                  <div className="mt-2 text-xs font-semibold text-red-100/45">
                                     Ein exakt gleicher Name kann nicht erneut angelegt werden.
                                   </div>
                                 </div>
@@ -1210,7 +1186,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                       >
                                         <div className="min-w-0">
                                           <div className="truncate text-sm font-black text-white">{player.name}</div>
-                                          <div className="truncate text-xs text-white/38">
+                                          <div className="truncate text-xs text-muted-foreground">
                                             {player.verein || "Ohne Verein"}
                                             {player.ligastatus ? ` · Liga ${player.ligastatus}` : ""}
                                           </div>
@@ -1229,8 +1205,8 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                               className={cn(
                                 "rounded-xl px-4 py-3 text-sm font-medium border",
                                 message.type === "success" && "bg-emerald-500/[0.08] border-emerald-300/20 text-emerald-100",
-                                message.type === "error" && "bg-rose-500/[0.06] border-rose-300/20 text-rose-100",
-                                message.type === "info" && "bg-sky-500/[0.08] border-sky-300/20 text-sky-100",
+                                message.type === "error" && "bg-red-500/[0.06] border-red-300/20 text-red-100",
+                                message.type === "info" && "bg-orange-500/[0.08] border-orange-300/20 text-orange-100",
                               )}
                             >
                               {message.text}
@@ -1243,23 +1219,17 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                               onClick={handleSave}
                               disabled={saving || uploadingImage || !!exactDuplicate || !firstName.trim() || !lastName.trim()}
                               className="emd-admin-button-primary w-full"
-                            >
-                              {saving || uploadingImage ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : isEditing ? (
+                             loading={Boolean(saving || uploadingImage)}>{isEditing ? (
                                 <Save className="mr-2 h-4 w-4" />
                               ) : (
                                 <Plus className="mr-2 h-4 w-4" />
-                              )}
-
-                              {saving || uploadingImage
+                              )}{saving || uploadingImage
                                 ? uploadingImage
                                   ? "Bild wird hochgeladen..."
                                   : "Speichern..."
                                 : isEditing
                                   ? "Änderungen speichern"
-                                  : "Spieler anlegen"}
-                            </Button>
+                                  : "Spieler anlegen"}</Button>
 
                             {isEditing ? (
                               <Button
@@ -1290,7 +1260,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                   type="button"
                                   variant="ghost"
                                   onClick={startCreate}
-                                  className="rounded-xl text-white/55 hover:bg-white/[0.06] hover:text-white"
+                                  className="rounded-xl text-muted-foreground hover:bg-white/[0.06] hover:text-white"
                                 >
                                   <Plus className="mr-2 h-4 w-4" />
                                   Neue Eingabe
@@ -1306,7 +1276,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                       <Card className="emd-admin-surface overflow-hidden">
                         <CardHeader className="space-y-1.5 border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
                           <CardTitle className="text-lg font-black text-white">Vorhandene Spieler</CardTitle>
-                          <CardDescription className="text-white/42">Suche, filtere und bearbeite bestehende Einträge.</CardDescription>
+                          <CardDescription className="text-muted-foreground">Suche, filtere und bearbeite bestehende Einträge.</CardDescription>
                         </CardHeader>
 
                         <CardContent className="min-w-0 space-y-5 px-4 py-4 sm:px-6 sm:py-6">
@@ -1367,7 +1337,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
 
                             <div className="emd-admin-inset flex w-full min-w-0 max-w-full flex-col items-stretch gap-3 overflow-hidden px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-4">
                               <div className="flex items-center gap-3">
-                                <span className="text-white/45">Gefundene Einträge</span>
+                                <span className="text-muted-foreground">Gefundene Einträge</span>
                                 <span className="font-black text-white">{filteredPlayers.length}</span>
                               </div>
                               {filtersActive ? (
@@ -1389,12 +1359,9 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                             <ScrollArea className="h-[620px] 2xl:h-[680px]">
                               <div className="w-full min-w-0 max-w-full space-y-3 p-2 sm:p-4">
                                 {loading ? (
-                                  <div className="flex items-center gap-2 text-sm text-white/42">
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Spieler werden geladen...
-                                  </div>
+                                  <SectionSkeleton kind="tournament" />
                                 ) : filteredPlayers.length === 0 ? (
-                                  <div className="text-sm text-white/42">Keine Spieler gefunden.</div>
+                                  <div className="text-sm text-muted-foreground">Keine Spieler gefunden.</div>
                                 ) : (
                                   filteredPlayers.map((player) => (
                                     <div
@@ -1412,7 +1379,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                               className="w-full h-full object-cover"
                                             />
                                           ) : (
-                                            <Users className="h-6 w-6 text-white/25" />
+                                            <Users className="h-6 w-6 text-muted-foreground" />
                                           )}
                                         </div>
 
@@ -1447,7 +1414,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                             {player.sportdarts_name ? (
                                               <Badge
                                                 variant="outline"
-                                                className="max-w-full rounded-lg border-white/[0.08] text-white/45"
+                                                className="max-w-full rounded-lg border-white/[0.08] text-muted-foreground"
                                                 title={player.sportdarts_name}
                                               >
                                                 {player.sportdarts_name}
@@ -1469,13 +1436,9 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                           onClick={() => openDeleteModal(player)}
                                           disabled={deletingId === player.id}
                                           className="emd-admin-button-danger w-full min-w-0 lg:w-auto"
-                                        >
-                                          {deletingId === player.id ? (
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                          ) : (
+                                         loading={Boolean(deletingId === player.id)}>{(
                                             <Trash2 className="w-4 h-4 mr-2" />
-                                          )}
-                                          Löschen
+                                          )}Löschen
                                         </Button>
                                       </div>
                                     </div>
@@ -1491,7 +1454,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
         </div>
 
               <Dialog open={newPlayerGateOpen} onOpenChange={setNewPlayerGateOpen}>
-                <DialogContent className="emd-admin-modal max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y rounded-[22px] sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-[28px]">
+                <DialogContent className="emd-admin-modal max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y rounded-[22px] sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-[20px]">
                   <DialogHeader>
                     <DialogTitle>Neuen Spieler anlegen</DialogTitle>
                     <DialogDescription>
@@ -1500,10 +1463,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                   </DialogHeader>
 
                   {sportdartsSyncLoading ? (
-                    <div className="flex items-center justify-center py-10 text-white/55">
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      SportDarts wird zuerst geprüft …
-                    </div>
+                    <SectionSkeleton kind="tournament" />
                   ) : sportdartsSyncError ? (
                     <div className="rounded-2xl border border-red-400/20 bg-red-500/[0.07] p-4 text-sm text-red-100">
                       {sportdartsSyncError}
@@ -1514,7 +1474,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                         SportDarts geprüft: {sportdartsSyncResult.summary?.divisionsRead ?? 0} Divisionen · {sportdartsSyncResult.summary?.remotePlayers ?? 0} Spieler · {sportdartsSyncResult.summary?.possibleExisting ?? 0} mögliche Dubletten.
                       </div>
 
-                      <div className="sticky top-0 z-20 -mx-1 bg-[#070a0f]/95 px-1 py-2 backdrop-blur-xl">
+                      <div className="sticky top-0 z-20 -mx-1 bg-card px-1 py-2 backdrop-blur-xl">
                         <Input
                           autoFocus
                           value={newPlayerSearch}
@@ -1565,7 +1525,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                   className="rounded-xl border border-amber-300/15 bg-amber-500/[0.035] p-3"
                                 >
                                   <div className="font-black text-white">{candidate.name}</div>
-                                  <div className="mt-1 text-xs text-white/45">
+                                  <div className="mt-1 text-xs text-muted-foreground">
                                     SportDarts #{candidate.number}
                                     {candidate.teams?.length ? ` · ${candidate.teams.join(" / ")}` : ""}
                                   </div>
@@ -1577,9 +1537,9 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                         className="flex flex-col gap-2 rounded-lg border border-white/[0.06] bg-black/10 p-3 sm:flex-row sm:items-center sm:justify-between"
                                       >
                                         <div className="min-w-0">
-                                          <div className="text-xs text-white/35">Bereits vorhanden:</div>
+                                          <div className="text-xs text-muted-foreground">Bereits vorhanden:</div>
                                           <div className="font-bold text-white/80">{local.name}</div>
-                                          <div className="mt-0.5 text-xs text-white/35">
+                                          <div className="mt-0.5 text-xs text-muted-foreground">
                                             {[local.verein, local.ligastatus].filter(Boolean).join(" · ") || "Keine weiteren Angaben"}
                                           </div>
                                         </div>
@@ -1596,13 +1556,9 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                           }
                                           disabled={!!sportdartsConfirmingKey}
                                           className="emd-admin-button-secondary shrink-0"
-                                        >
-                                          {sportdartsConfirmingKey === `${local.id}:${candidate.number}` ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                          ) : (
+                                         loading={Boolean(sportdartsConfirmingKey === `${local.id}:${candidate.number}`)}>{(
                                             <Check className="mr-2 h-4 w-4" />
-                                          )}
-                                          Mit vorhandenem Spieler verknüpfen
+                                          )}Mit vorhandenem Spieler verknüpfen
                                         </Button>
                                       </div>
                                     ))}
@@ -1644,7 +1600,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                               >
                                 <div className="min-w-0">
                                   <div className="font-black text-white">{candidate.name}</div>
-                                  <div className="mt-1 text-xs text-white/45">
+                                  <div className="mt-1 text-xs text-muted-foreground">
                                     #{candidate.number}
                                     {candidate.teams?.length ? ` · ${candidate.teams.join(" / ")}` : ""}
                                   </div>
@@ -1664,7 +1620,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs leading-5 text-white/45">
+                      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs leading-5 text-muted-foreground">
                         Nicht gefunden? Dann kannst du manuell anlegen. Die SportDarts-Prüfung ist damit bereits erledigt.
                       </div>
                     </div>
@@ -1692,7 +1648,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
               </Dialog>
 
               <Dialog open={sportdartsSyncOpen} onOpenChange={setSportdartsSyncOpen}>
-                <DialogContent className="emd-admin-modal max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-[22px] sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-[28px]">
+                <DialogContent className="emd-admin-modal max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-[22px] sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-[20px]">
                   <DialogHeader>
                     <DialogTitle>SportDarts synchronisieren</DialogTitle>
                     <DialogDescription>
@@ -1701,10 +1657,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                   </DialogHeader>
 
                   {sportdartsSyncLoading ? (
-                    <div className="flex items-center justify-center py-10 text-white/55">
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      SportDarts wird geprüft …
-                    </div>
+                    <SectionSkeleton kind="tournament" />
                   ) : sportdartsSyncError ? (
                     <div className="rounded-2xl border border-red-400/20 bg-red-500/[0.07] p-4 text-sm text-red-100">
                       {sportdartsSyncError}
@@ -1713,26 +1666,26 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                     <div className="min-h-0 space-y-4">
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         <div className="emd-admin-stat">
-                          <div className="text-[9px] font-black uppercase tracking-[0.12em] text-white/30">Änderungen</div>
+                          <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Änderungen</div>
                           <div className="mt-1 text-xl font-black text-white">{sportdartsSyncResult.summary?.willUpdate ?? 0}</div>
                         </div>
                         <div className="emd-admin-stat">
-                          <div className="text-[9px] font-black uppercase tracking-[0.12em] text-white/30">Exakte Treffer</div>
+                          <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Exakte Treffer</div>
                           <div className="mt-1 text-xl font-black text-white">{sportdartsSyncResult.summary?.matchedByExactName ?? 0}</div>
                         </div>
                         <div className="emd-admin-stat">
-                          <div className="text-[9px] font-black uppercase tracking-[0.12em] text-white/30">Über Nummer</div>
+                          <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Über Nummer</div>
                           <div className="mt-1 text-xl font-black text-white">
                             {(sportdartsSyncResult.summary?.matchedByNumber ?? 0) + (sportdartsSyncResult.summary?.matchedByClubPlayerNumber ?? 0)}
                           </div>
                         </div>
                         <div className="emd-admin-stat">
-                          <div className="text-[9px] font-black uppercase tracking-[0.12em] text-white/30">Neu bei SportDarts</div>
+                          <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Neu bei SportDarts</div>
                           <div className="mt-1 text-xl font-black text-white">{sportdartsSyncResult.summary?.remoteOnly ?? 0}</div>
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs leading-5 text-white/45">
+                      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs leading-5 text-muted-foreground">
                         Geprüft: {sportdartsSyncResult.summary?.divisionsRead ?? 0} / {sportdartsSyncResult.summary?.divisionsTotal ?? 0} SportDarts-Divisionen ·
                         {" "}{sportdartsSyncResult.summary?.remotePlayers ?? 0} SportDarts-Spieler ·
                         {" "}{sportdartsSyncResult.summary?.totalLocalPlayers ?? 0} lokale Spieler
@@ -1748,10 +1701,10 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                             {(sportdartsSyncResult.changes || []).map((change: any) => (
                               <div key={change.id} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3">
                                 <div className="font-black text-white">{change.internalName}</div>
-                                <div className="mt-1 text-xs text-white/45">
+                                <div className="mt-1 text-xs text-muted-foreground">
                                   SportDarts #{change.playerNumber} · {change.sportdartsName}
                                 </div>
-                                <div className="mt-1 text-[11px] text-white/30">
+                                <div className="mt-1 text-[11px] text-muted-foreground">
                                   {change.matchMethod === "number"
                                     ? "Treffer über gespeicherte SportDarts-Spielernummer"
                                     : change.matchMethod === "club_player_number"
@@ -1765,7 +1718,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                     </Badge>
                                   ) : null}
                                   {change.aliasChanged ? (
-                                    <Badge variant="outline" className="border-white/[0.08] text-white/50">
+                                    <Badge variant="outline" className="border-white/[0.08] text-muted-foreground">
                                       SportDarts-Alias: {change.sportdartsName}
                                     </Badge>
                                   ) : null}
@@ -1775,7 +1728,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                           </div>
                         </div>
                       ) : (
-                        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 text-sm text-white/50">
+                        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 text-sm text-muted-foreground">
                           Keine Änderungen erforderlich.
                         </div>
                       )}
@@ -1818,7 +1771,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                 >
                                   <div className="min-w-0">
                                     <div className="font-black text-white">{candidate.name}</div>
-                                    <div className="mt-1 text-xs text-white/45">
+                                    <div className="mt-1 text-xs text-muted-foreground">
                                       #{candidate.number}
                                       {candidate.teams?.length ? ` · ${candidate.teams.join(" / ")}` : ""}
                                       {candidate.divisions?.length ? ` · ${candidate.divisions.join(" / ")}` : ""}
@@ -1860,7 +1813,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                           key={`${candidate.number}-${candidate.name}-${candidate.divisionName}`}
                                           className="rounded-lg border border-white/[0.06] p-3"
                                         >
-                                          <div className="text-xs text-white/55">
+                                          <div className="text-xs text-muted-foreground">
                                             <span className="font-bold text-white/80">{candidate.name}</span>
                                             {" "}· #{candidate.number} · {candidate.team} · {candidate.divisionName}
                                           </div>
@@ -1877,13 +1830,9 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                                             }
                                             disabled={!!sportdartsConfirmingKey}
                                             className="emd-admin-button-secondary mt-2 w-full sm:w-auto"
-                                          >
-                                            {isConfirming ? (
-                                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            ) : (
+                                           loading={Boolean(isConfirming)}>{(
                                               <Check className="mr-2 h-4 w-4" />
-                                            )}
-                                            Diese Zuordnung bestätigen
+                                            )}Diese Zuordnung bestätigen
                                           </Button>
                                         </div>
                                       )
@@ -1907,7 +1856,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                     </div>
                   ) : null}
 
-                  <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-2 gap-2 border-t border-white/[0.07] bg-[#070a0f]/95 px-6 py-4 backdrop-blur-xl sm:gap-2">
+                  <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-2 gap-2 border-t border-white/[0.07] bg-card px-6 py-4 backdrop-blur-xl sm:gap-2">
                     <Button
                       type="button"
                       variant="outline"
@@ -1929,13 +1878,9 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                           (sportdartsSyncResult.summary?.willUpdate ?? 0) === 0
                         }
                         className="emd-admin-button-primary"
-                      >
-                        {sportdartsSyncApplying ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
+                       loading={Boolean(sportdartsSyncApplying)}>{(
                           <Save className="mr-2 h-4 w-4" />
-                        )}
-                        Änderungen übernehmen
+                        )}Änderungen übernehmen
                       </Button>
                     ) : null}
                   </DialogFooter>
@@ -1943,16 +1888,16 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
               </Dialog>
 
               <Dialog open={deleteModalOpen} onOpenChange={(open) => (!deletingId ? (open ? setDeleteModalOpen(true) : closeDeleteModal()) : null)}>
-                <DialogContent className="emd-admin-modal w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-hidden rounded-[22px] p-0 sm:max-w-lg sm:rounded-[26px]">
+                <DialogContent className="emd-admin-modal w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] overflow-hidden rounded-[22px] p-0 sm:max-w-lg sm:rounded-[20px]">
                   <div className="border-b border-white/[0.07] px-5 py-5 sm:px-6">
                     <DialogHeader>
                       <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-rose-300/20 bg-rose-500/10">
-                          <AlertTriangle className="h-5 w-5 text-rose-300" />
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-red-300/20 bg-red-500/10">
+                          <AlertTriangle className="h-5 w-5 text-red-300" />
                         </div>
                         <div className="min-w-0">
                           <DialogTitle className="text-left text-lg font-black text-white">Spieler löschen</DialogTitle>
-                          <DialogDescription className="mt-1 text-left text-sm leading-5 text-white/42">
+                          <DialogDescription className="mt-1 text-left text-sm leading-5 text-muted-foreground">
                             Vor dem Löschen werden Liga, Turniere, Serien, Cups und weitere Verknüpfungen geprüft.
                           </DialogDescription>
                         </div>
@@ -1962,18 +1907,18 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
 
                   <div className="space-y-4 px-5 py-5 sm:px-6">
                     <div className="emd-admin-inset p-4">
-                      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/30">Ausgewählter Spieler</div>
+                      <div className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Ausgewählter Spieler</div>
                       <div className="mt-1 text-base font-black text-white">{playerToDelete?.name || "—"}</div>
 
                       <div className="mt-3 flex flex-wrap gap-2">
                         {playerToDelete?.verein ? (
-                          <Badge variant="outline" className="rounded-lg border-white/[0.08] text-white/60">
+                          <Badge variant="outline" className="rounded-lg border-white/[0.08] text-muted-foreground">
                             <Building2 className="mr-1 h-3.5 w-3.5" />
                             {playerToDelete.verein}
                           </Badge>
                         ) : null}
                         {playerToDelete?.ligastatus ? (
-                          <Badge variant="outline" className="rounded-lg border-white/[0.08] text-white/60">
+                          <Badge variant="outline" className="rounded-lg border-white/[0.08] text-muted-foreground">
                             <Shield className="mr-1 h-3.5 w-3.5" />
                             {playerToDelete.ligastatus}
                           </Badge>
@@ -1982,14 +1927,11 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                     </div>
 
                     {deleteCheckLoading ? (
-                      <div className="flex items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-7 text-sm text-white/50">
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Verknüpfungen werden geprüft …
-                      </div>
+                      <SectionSkeleton kind="tournament" />
                     ) : deleteCheckError ? (
-                      <div className="rounded-2xl border border-rose-300/20 bg-rose-500/[0.07] p-4">
-                        <div className="font-black text-rose-100">Löschen derzeit nicht möglich</div>
-                        <div className="mt-1 text-sm leading-5 text-rose-100/65">{deleteCheckError}</div>
+                      <div className="rounded-2xl border border-red-300/20 bg-red-500/[0.07] p-4">
+                        <div className="font-black text-red-100">Löschen derzeit nicht möglich</div>
+                        <div className="mt-1 text-sm leading-5 text-red-100/65">{deleteCheckError}</div>
                       </div>
                     ) : deleteGuard && !deleteGuard.can_delete ? (
                       <div className="space-y-3">
@@ -2014,7 +1956,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                               >
                                 <div className="min-w-0">
                                   <div className="truncate text-sm font-bold text-white/75">{dep.label}</div>
-                                  <div className="truncate text-[11px] text-white/30">{dep.source}</div>
+                                  <div className="truncate text-[11px] text-muted-foreground">{dep.source}</div>
                                 </div>
                                 <Badge variant="outline" className="shrink-0 rounded-lg border-amber-300/15 text-amber-100/70">
                                   {dep.count}
@@ -2038,7 +1980,7 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                       </div>
                     ) : null}
 
-                    <div className="text-xs leading-5 text-white/30">
+                    <div className="text-xs leading-5 text-muted-foreground">
                       Es werden niemals Liga-, Turnier-, Cup- oder Historiedaten mitgelöscht. Bei einer Verknüpfung wird nur das Löschen dieses Eintrags blockiert.
                     </div>
                   </div>
@@ -2060,13 +2002,9 @@ export function AdminSpieldatenbankManagement({ user }: AdminSpieldatenbankManag
                         onClick={handleDelete}
                         disabled={!!deletingId || deleteCheckLoading || !!deleteCheckError || !deleteGuard?.can_delete}
                         className="emd-admin-button-danger w-full disabled:cursor-not-allowed disabled:opacity-35"
-                      >
-                        {deletingId ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
+                       loading={Boolean(deletingId)}>{(
                           <Trash2 className="mr-2 h-4 w-4" />
-                        )}
-                        Endgültig löschen
+                        )}Endgültig löschen
                       </Button>
                     </div>
                   </DialogFooter>

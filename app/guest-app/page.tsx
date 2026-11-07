@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, InlineLoader } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import { useEffect, useMemo, useState, type ReactNode } from "react"
@@ -16,33 +18,7 @@ import { MarketplaceUnreadBadge } from "@/components/dartboerse/marketplace-unre
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 
-import {
-  Loader2,
-  LogOut,
-  UserRound,
-  Mail,
-  ShieldCheck,
-  AlertTriangle,
-  Trophy,
-  Medal,
-  Target,
-  Activity,
-  CalendarDays,
-  Star,
-  Gift,
-  Swords,
-  TrendingUp,
-  PlusCircle,
-  ListChecks,
-  Globe2,
-  ArrowRight,
-  MessageCircle,
-  ShoppingBag,
-  Store,
-  UserPlus,
-  Clock3,
-  KeyRound,
-} from "lucide-react"
+import { LogOut, UserRound, Mail, ShieldCheck, AlertTriangle, Trophy, Medal, Target, Activity, CalendarDays, Star, Gift, Swords, TrendingUp, PlusCircle, ListChecks, Globe2, ArrowRight, MessageCircle, ShoppingBag, Store, UserPlus, Clock3, KeyRound } from "lucide-react"
 
 type GuestRequest = {
   id: string
@@ -570,17 +546,10 @@ export default function GuestProfileAppPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background text-white flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-background text-white flex flex-col">
         <Header />
 
-        <main className="flex-grow flex items-center justify-center p-4 pb-24">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-orange-300" />
-            <p className="text-sm font-semibold text-muted-foreground">
-              Gastprofil wird geladen...
-            </p>
-          </div>
-        </main>
+        <main className="flex-grow flex items-center justify-center p-4 pb-24"><SectionSkeleton kind="cards" /></main>
 
         <MobileBottomNav />
       </div>
@@ -859,14 +828,9 @@ export default function GuestProfileAppPage() {
                 onClick={() => void saveTerminalPin()}
                 disabled={terminalPinSaving}
                 className="mt-4 h-11 rounded-2xl bg-cyan-500 px-5 font-semibold text-white hover:bg-cyan-400"
-              >
-                <KeyRound className="mr-2 h-4 w-4" />
-                {terminalPinSaving
-                  ? "Wird gespeichert…"
-                  : hasTerminalPin
+               loading={Boolean(terminalPinSaving)} loadingLabel="Wird gespeichert…"><KeyRound className="mr-2 h-4 w-4" />{hasTerminalPin
                     ? "Terminal-PIN ändern"
-                    : "Terminal-PIN festlegen"}
-              </Button>
+                    : "Terminal-PIN festlegen"}</Button>
             </CardContent>
           </Card>
 
@@ -1002,10 +966,7 @@ export default function GuestProfileAppPage() {
                 </div>
 
                 {statsLoading ? (
-                  <Badge variant="outline" className="w-fit">
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Lade Statistiken
-                  </Badge>
+                  <SectionSkeleton kind="cards" />
                 ) : (
                   <Badge className="w-fit bg-orange-600 text-white">
                     <Activity className="w-3 h-3 mr-1" />
@@ -1033,10 +994,8 @@ export default function GuestProfileAppPage() {
               ) : statsLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-9 h-9 animate-spin text-orange-300" />
-                    <p className="text-sm font-semibold text-muted-foreground">
-                      Statistiken werden geladen...
-                    </p>
+                    
+                    <InlineLoader label="Statistiken werden geladen..." />
                   </div>
                 </div>
               ) : statsMessage ? (

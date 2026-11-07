@@ -12,9 +12,11 @@ import { AppRouteGuard } from "@/components/auth/app-route-guard"
 import AppThemeShell from "@/components/AppThemeShell"
 import EmdLineupAlert from "@/components/emd-lineup-alert"
 import EmdSystemNotice from "./EmdSystemNotice"
+import { RouteProgress } from "@/components/navigation/route-progress"
 import "./globals.css"
 import "./premium.css"
 import "./specialty-premium.css"
+import "./emd-navigation-2026.css"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -60,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PushInit />
           <EmdLineupAlert />
           <EmdSystemNotice />
+          <RouteProgress />
 
           <AppRouteGuard><AppThemeShell>{children}</AppThemeShell></AppRouteGuard>
         </div>

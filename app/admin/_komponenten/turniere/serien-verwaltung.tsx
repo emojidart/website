@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
@@ -956,14 +958,14 @@ export function AdminTournamentSeriesManagement() {
           <div className="emd-series-hero-line" />
           <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-600">
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-card px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-600">
                 <Trophy className="h-3.5 w-3.5" />
                 Turnierzentrale
               </div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+              <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
                 Turnierserien & Spieltage
               </h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
                 Serien, Wertung, Gebühren, Anmeldung und Spieltage zentral verwalten.
               </p>
             </div>
@@ -1098,7 +1100,7 @@ export function AdminTournamentSeriesManagement() {
 
             <CardContent className="space-y-2 p-4">
               {loading ? (
-                <div className="p-4 text-sm text-slate-600">Lade Serien…</div>
+                <SectionSkeleton kind="tournament" />
               ) : series.length === 0 ? (
                 <div className="p-4 text-sm text-slate-600">Keine Serien vorhanden.</div>
               ) : (
@@ -1106,7 +1108,7 @@ export function AdminTournamentSeriesManagement() {
                   <div
                     key={s.id}
                     className={`emd-series-list-item group rounded-2xl border p-3.5 transition ${
-                      s.id === activeSeriesId ? "border-slate-400 bg-slate-50" : "border-slate-200 bg-white hover:bg-slate-50/50"
+                      s.id === activeSeriesId ? "border-slate-400 bg-slate-50" : "border-slate-200 bg-card hover:bg-slate-50/50"
                     }`}
                   >
                     <button
@@ -1120,7 +1122,7 @@ export function AdminTournamentSeriesManagement() {
                           {s.is_active ? "Aktiv" : "Inaktiv"}
                         </span>
                         <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-700">{accessLabel(s.access_type)}</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-600">{money(s.startgeld)}</span>
+                        <span className="rounded-full bg-card px-2 py-1 text-slate-600">{money(s.startgeld)}</span>
                       </div>
                     </button>
 
@@ -1155,9 +1157,9 @@ export function AdminTournamentSeriesManagement() {
                 <CardHeader className="emd-series-config-header p-5 text-white sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-white/50">Serienkonfiguration</div>
+                      <div className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Serienkonfiguration</div>
                       <CardTitle className="mt-1 text-2xl font-black text-white">{editSeries.name}</CardTitle>
-                      <p className="mt-1 text-sm text-white/60">Alle Einstellungen dieser Turnierserie auf einen Blick.</p>
+                      <p className="mt-1 text-sm text-muted-foreground">Alle Einstellungen dieser Turnierserie auf einen Blick.</p>
                     </div>
                     <Button
                       variant="outline"
@@ -1172,7 +1174,7 @@ export function AdminTournamentSeriesManagement() {
 
                 <CardContent className="space-y-6 p-4 sm:p-6">
                   {rulesLoading ? (
-                    <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500">Serienregeln werden geladen…</div>
+                    <SectionSkeleton kind="tournament" />
                   ) : (
                     <>
                       <section className="emd-series-config-section emd-series-config-neutral p-4 sm:p-5">
@@ -1227,7 +1229,7 @@ export function AdminTournamentSeriesManagement() {
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <div className="flex h-full items-center justify-center text-white/20">
+                                  <div className="flex h-full items-center justify-center text-muted-foreground">
                                     <ImagePlus className="h-9 w-9" />
                                   </div>
                                 )}
@@ -1272,7 +1274,7 @@ export function AdminTournamentSeriesManagement() {
                               value={editSeries.description || ""}
                               onChange={(e) => setEditSeries({ ...editSeries, description: e.target.value })}
                               rows={3}
-                              className="min-h-[90px] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                              className="min-h-[90px] rounded-2xl border border-slate-200 bg-card px-4 py-3 text-sm outline-none"
                               placeholder="Kurze Beschreibung für spätere öffentliche Turnierseite…"
                             />
                           </div>
@@ -1343,7 +1345,7 @@ export function AdminTournamentSeriesManagement() {
                                   placement_scoring_mode: e.target.value as DkoSeries["placement_scoring_mode"],
                                 })
                               }
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                             >
                               <option value="fixed">Eigener Punkteschlüssel</option>
                               <option value="dynamic">Dynamisch vom letzten Platz aufsteigend</option>
@@ -1360,7 +1362,7 @@ export function AdminTournamentSeriesManagement() {
                                   result_counting_mode: e.target.value as DkoSeries["result_counting_mode"],
                                 })
                               }
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                             >
                               <option value="all">Alle Ergebnisse zählen</option>
                               <option value="best_n">Nur die besten X Ergebnisse</option>
@@ -1405,7 +1407,7 @@ export function AdminTournamentSeriesManagement() {
                         </div>
 
                         {editSeries.placement_scoring_mode === "dynamic" ? (
-                          <div className="mt-5 rounded-2xl border border-blue-200 bg-white p-4">
+                          <div className="mt-5 rounded-2xl border border-blue-200 bg-card p-4">
                             <div className="font-black text-slate-900">Dynamische Platzierungspunkte</div>
                             <div className="mt-3 grid gap-4 sm:grid-cols-2">
                               <div className="grid gap-2">
@@ -1431,7 +1433,7 @@ export function AdminTournamentSeriesManagement() {
                             </div>
                           </div>
                         ) : (
-                          <div className="mt-5 rounded-2xl border border-blue-200 bg-white p-4">
+                          <div className="mt-5 rounded-2xl border border-blue-200 bg-card p-4">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                               <div>
                                 <div className="font-black text-slate-900">Punkteschlüssel</div>
@@ -1445,7 +1447,7 @@ export function AdminTournamentSeriesManagement() {
 
                             <div className="mt-4 space-y-2">
                               {pointRules.length === 0 ? (
-                                <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">Noch kein Punkteschlüssel hinterlegt.</div>
+                                <div className="rounded-xl bg-card p-3 text-sm text-slate-500">Noch kein Punkteschlüssel hinterlegt.</div>
                               ) : (
                                 pointRules.map((rule, index) => (
                                   <div key={rule.id || index} className="grid grid-cols-[1fr_1fr_1fr_42px] gap-2">
@@ -1544,7 +1546,7 @@ export function AdminTournamentSeriesManagement() {
 
                       <section className="emd-series-config-section emd-series-config-violet p-4 sm:p-5">
                         <div className="flex items-center gap-2">
-                          <Layers3 className="h-5 w-5 text-violet-300" />
+                          <Layers3 className="h-5 w-5 text-orange-300" />
                           <h2 className="text-lg font-black text-slate-950">Turniermodus</h2>
                         </div>
 
@@ -1559,7 +1561,7 @@ export function AdminTournamentSeriesManagement() {
                                   tournament_format: e.target.value as DkoSeries["tournament_format"],
                                 })
                               }
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                             >
                               {TOURNAMENT_FORMAT_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -1581,7 +1583,7 @@ export function AdminTournamentSeriesManagement() {
                                   draw_method: next === "single" ? "none" : editSeries.draw_method,
                                 })
                               }}
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                             >
                               {TEAM_MODE_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -1602,7 +1604,7 @@ export function AdminTournamentSeriesManagement() {
                                   draw_method: e.target.value as DkoSeries["draw_method"],
                                 })
                               }
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm disabled:opacity-50"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm disabled:opacity-50"
                             >
                               {DRAW_METHOD_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -1614,7 +1616,7 @@ export function AdminTournamentSeriesManagement() {
                         </div>
 
                         <div className="mt-4 rounded-2xl border border-white/[0.08] bg-black/20 p-4">
-                          <div className="text-xs font-black uppercase tracking-[0.12em] text-white/35">
+                          <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">
                             Standard für die Serie
                           </div>
                           <div className="mt-1 font-black text-white/85">
@@ -1624,7 +1626,7 @@ export function AdminTournamentSeriesManagement() {
                               editSeries.draw_method || "none",
                             )}
                           </div>
-                          <div className="mt-1 text-sm text-white/45">
+                          <div className="mt-1 text-sm text-muted-foreground">
                             Bei einzelnen Spieltagen kann davon abgewichen werden.
                           </div>
                         </div>
@@ -1655,7 +1657,7 @@ export function AdminTournamentSeriesManagement() {
                                   registration_open_mode: e.target.value as DkoSeries["registration_open_mode"],
                                 })
                               }
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                             >
                               <option value="event_day">Am Turniertag</option>
                               <option value="always">Sofort / dauerhaft geöffnet</option>
@@ -1685,7 +1687,7 @@ export function AdminTournamentSeriesManagement() {
                                   registration_close_mode: e.target.value as DkoSeries["registration_close_mode"],
                                 })
                               }
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                             >
                               <option value="minutes_before_start">Minuten vor Turnierstart</option>
                               <option value="fixed_time">Fixe Uhrzeit am Turniertag</option>
@@ -1704,7 +1706,7 @@ export function AdminTournamentSeriesManagement() {
                               />
                             </div>
                           ) : (
-                            <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4 text-sm text-white/55">
+                            <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4 text-sm text-muted-foreground">
                               Die Minuten vor dem Start werden beim jeweiligen Spieltag festgelegt.
                             </div>
                           )}
@@ -1719,7 +1721,7 @@ export function AdminTournamentSeriesManagement() {
                                   unregister_close_mode: e.target.value as DkoSeries["unregister_close_mode"],
                                 })
                               }
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                             >
                               <option value="same_as_registration">Gleich wie Anmeldung</option>
                               <option value="fixed_time">Fixe Uhrzeit am Turniertag</option>
@@ -1739,7 +1741,7 @@ export function AdminTournamentSeriesManagement() {
                               />
                             </div>
                           ) : editSeries.unregister_close_mode === "minutes_before_start" ? (
-                            <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4 text-sm text-white/55">
+                            <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4 text-sm text-muted-foreground">
                               Es gilt der beim Spieltag eingetragene Zeitraum vor Turnierstart.
                             </div>
                           ) : null}
@@ -1804,7 +1806,7 @@ export function AdminTournamentSeriesManagement() {
                                     odd_participant_policy: e.target.value as DkoSeries["odd_participant_policy"],
                                   })
                                 }
-                                className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                                className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                               >
                                 <option value="last_waitlist">Zuletzt angemeldeter Spieler wartet</option>
                                 <option value="allow">Trotzdem alle berücksichtigen</option>
@@ -1822,7 +1824,7 @@ export function AdminTournamentSeriesManagement() {
                                   no_show_penalty_mode: e.target.value as DkoSeries["no_show_penalty_mode"],
                                 })
                               }
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                             >
                               <option value="none">Keine automatische Folge</option>
                               <option value="delete_worst_result">Schlechtestes Ergebnis einmalig streichen</option>
@@ -1848,7 +1850,7 @@ export function AdminTournamentSeriesManagement() {
                                   participation_bonus_mode: e.target.value as DkoSeries["participation_bonus_mode"],
                                 })
                               }
-                              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                              className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                             >
                               <option value="highest_only">Nur höchste erreichte Stufe</option>
                               <option value="cumulative">Alle erreichten Stufen zusammenzählen</option>
@@ -1922,7 +1924,7 @@ export function AdminTournamentSeriesManagement() {
 
                       <section className="emd-series-config-section emd-series-config-violet p-4 sm:p-5">
                         <div className="flex items-center gap-2">
-                          <Gift className="h-5 w-5 text-violet-700" />
+                          <Gift className="h-5 w-5 text-orange-700" />
                           <h2 className="text-lg font-black text-slate-950">Geldprämien nach Antritten</h2>
                         </div>
 
@@ -2041,7 +2043,7 @@ export function AdminTournamentSeriesManagement() {
                                       ),
                                     )
                                   }
-                                  className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                                  className="h-10 rounded-md border border-input bg-card px-3 py-2 text-sm"
                                 >
                                   {TIEBREAK_OPTIONS.map((option) => (
                                     <option
@@ -2084,7 +2086,7 @@ export function AdminTournamentSeriesManagement() {
                           value={editSeries.rules_text || ""}
                           onChange={(e) => setEditSeries({ ...editSeries, rules_text: e.target.value })}
                           rows={9}
-                          className="mt-4 min-h-[180px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                          className="mt-4 min-h-[180px] w-full rounded-2xl border border-slate-200 bg-card px-4 py-3 text-sm outline-none"
                           placeholder="Spielmodus, Sonderregeln, Finaltag, Teilnahmebedingungen…"
                         />
                       </section>
@@ -2108,18 +2110,13 @@ export function AdminTournamentSeriesManagement() {
                           onClick={() => void updateSeries()}
                           disabled={savingSeries}
                           className="emd-admin-button-primary"
-                        >
-                          {seriesSaveState === "saved" && !savingSeries ? (
+                         loading={Boolean(savingSeries)} loadingLabel="Speichert…">{seriesSaveState === "saved" && !savingSeries ? (
                             <CheckCircle2 className="mr-2 h-4 w-4" />
                           ) : (
                             <Save className="mr-2 h-4 w-4" />
-                          )}
-                          {savingSeries
-                            ? "Speichert…"
-                            : seriesSaveState === "saved"
+                          )}{seriesSaveState === "saved"
                               ? "Gespeichert"
-                              : "Serienkonfiguration speichern"}
-                        </Button>
+                              : "Serienkonfiguration speichern"}</Button>
                       </div>
                     </>
                   )}
@@ -2173,12 +2170,9 @@ export function AdminTournamentSeriesManagement() {
                 {!activeSeriesId ? (
                   <div className="text-sm text-slate-600">Wähle links eine Serie.</div>
                 ) : eventsLoading ? (
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Lade Termine…
-                  </div>
+                  <SectionSkeleton kind="tournament" />
                 ) : events.length === 0 ? (
-                  <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-600">Noch keine Termine.</div>
+                  <div className="rounded-2xl bg-card p-5 text-sm text-slate-600">Noch keine Termine.</div>
                 ) : (
                   <div className="overflow-x-auto rounded-2xl border border-slate-200">
                     <Table>
@@ -2203,13 +2197,13 @@ export function AdminTournamentSeriesManagement() {
                               <TableCell className="font-semibold">
                                 <div>{effective.toLocaleDateString("de-AT")}</div>
                                 {ev.is_rescheduled && ev.rescheduled_at ? (
-                                  <div className="text-xs text-slate-400 line-through">{original.toLocaleDateString("de-AT")}</div>
+                                  <div className="text-xs text-muted-foreground line-through">{original.toLocaleDateString("de-AT")}</div>
                                 ) : null}
                               </TableCell>
                               <TableCell>
                                 <div>{effective.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}</div>
                                 {ev.is_rescheduled && ev.rescheduled_at ? (
-                                  <div className="text-xs text-slate-400 line-through">
+                                  <div className="text-xs text-muted-foreground line-through">
                                     {original.toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}
                                   </div>
                                 ) : null}
@@ -2221,7 +2215,7 @@ export function AdminTournamentSeriesManagement() {
                                     {ev.is_matchday ? "Spieltag" : "Spielfrei"}
                                   </span>
                                   {ev.is_rescheduled && ev.rescheduled_at ? (
-                                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">Verschoben</span>
+                                    <span className="rounded-full bg-card px-2.5 py-1 text-xs font-bold text-slate-700">Verschoben</span>
                                   ) : null}
                                 </div>
                               </TableCell>
@@ -2264,7 +2258,7 @@ export function AdminTournamentSeriesManagement() {
                 <div className="font-black text-white">
                   {seriesDeleteTarget?.name}
                 </div>
-                <p className="mt-1 text-sm leading-6 text-white/55">
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
                   Die Serie und alle zugehörigen Termine werden gelöscht.
                 </p>
               </div>
@@ -2293,12 +2287,12 @@ export function AdminTournamentSeriesManagement() {
         </Dialog>
 
         <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
-          <DialogContent className="emd-admin-modal !w-[calc(100vw-1.5rem)] !max-w-2xl !max-h-[90dvh] !overflow-y-auto !overflow-x-hidden rounded-2xl !border !border-white/15 !bg-[#130e1d] !p-4 !text-white shadow-2xl sm:!p-6">
+          <DialogContent className="emd-admin-modal !w-[calc(100vw-1.5rem)] !max-w-2xl !max-h-[90dvh] !overflow-y-auto !overflow-x-hidden rounded-2xl !border !border-white/15 !bg-card !p-4 !text-white shadow-2xl sm:!p-6">
             <DialogHeader>
               <DialogTitle className="!text-white text-xl font-bold">{editEvent ? "Termin bearbeiten" : "Neuer Termin"}</DialogTitle>
             </DialogHeader>
 
-            <div className="grid min-w-0 gap-5 py-2 [&_label]:!text-slate-100 [&_input]:!min-w-0 [&_input]:!border-white/15 [&_input]:!bg-[#0b0e14] [&_input]:!text-white [&_input]:placeholder:!text-slate-400 [&_input]:focus-visible:!ring-orange-500">
+            <div className="grid min-w-0 gap-5 py-2 [&_label]:!text-slate-100 [&_input]:!min-w-0 [&_input]:!border-white/15 [&_input]:!bg-card [&_input]:!text-white [&_input]:placeholder:!text-muted-foreground [&_input]:focus-visible:!ring-orange-500">
               <div className="grid min-w-0 gap-2">
                 <Label>Titel (optional)</Label>
                 <Input value={eventTitle} onChange={(e) => setEventTitle(e.target.value)} placeholder="z. B. Spieltag 4" />
@@ -2387,7 +2381,7 @@ export function AdminTournamentSeriesManagement() {
                     <select
                       value={eventTournamentFormatOverride}
                       onChange={(e) => setEventTournamentFormatOverride(e.target.value)}
-                      className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-[#0b0e14] px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 [&_option]:!bg-[#0b0e14] [&_option]:!text-white"
+                      className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-card px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 [&_option]:!bg-card [&_option]:!text-white"
                     >
                       <option value="">Serienstandard</option>
                       {TOURNAMENT_FORMAT_OPTIONS.map((option) => (
@@ -2405,7 +2399,7 @@ export function AdminTournamentSeriesManagement() {
                         setEventTeamModeOverride(next)
                         if (next === "single") setEventDrawMethodOverride("none")
                       }}
-                      className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-[#0b0e14] px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 [&_option]:!bg-[#0b0e14] [&_option]:!text-white"
+                      className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-card px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 [&_option]:!bg-card [&_option]:!text-white"
                     >
                       <option value="">Serienstandard</option>
                       {TEAM_MODE_OPTIONS.map((option) => (
@@ -2420,7 +2414,7 @@ export function AdminTournamentSeriesManagement() {
                       value={eventDrawMethodOverride}
                       disabled={eventTeamModeOverride === "single"}
                       onChange={(e) => setEventDrawMethodOverride(e.target.value)}
-                      className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-[#0b0e14] px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 disabled:opacity-50 [&_option]:!bg-[#0b0e14] [&_option]:!text-white"
+                      className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-card px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 disabled:opacity-50 [&_option]:!bg-card [&_option]:!text-white"
                     >
                       <option value="">Serienstandard</option>
                       {DRAW_METHOD_OPTIONS.map((option) => (
@@ -2437,7 +2431,7 @@ export function AdminTournamentSeriesManagement() {
                   <select
                     value={eventNoShowPenaltyOverride}
                     onChange={(e) => setEventNoShowPenaltyOverride(e.target.value)}
-                    className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-[#0b0e14] px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 [&_option]:!bg-[#0b0e14] [&_option]:!text-white"
+                    className="!h-11 !w-full min-w-0 rounded-lg !border !border-white/20 !bg-card px-3 py-2 !text-sm !text-white outline-none focus:!border-orange-500 focus:!ring-2 focus:!ring-orange-500/30 [&_option]:!bg-card [&_option]:!text-white"
                   >
                     <option value="">Serienstandard</option>
                     <option value="none">Keine No-Show-Strafe</option>

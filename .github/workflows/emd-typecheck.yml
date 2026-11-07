@@ -1,0 +1,32 @@
+name: EMD TypeScript Safety Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: emd-premium-typecheck-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: Check TypeScript (strict)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      # Existing package-lock.json is out of sync with package.json.
+      # Install without rewriting the repository to expose TS errors separately.
+      - name: Install dependencies for diagnostic typecheck
+        run: npm install --no-save --package-lock=false --legacy-peer-deps --no-audit --no-fund
+      - name: Check types independently of Netlify build
+        run: npx tsc --noEmit --incremental false

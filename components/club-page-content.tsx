@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, InlineLoader } from "@/components/loading/loading"
+
 import { motion, AnimatePresence } from "framer-motion"
 import { Users, Hand, Calendar, MapPin, Heart, Target, TrendingUp, Trophy, DotIcon as Darts, ArrowLeft, ArrowRight, Crown, ShieldCheck, X, Search, ClipboardList, Clock, FileText, Mail, CheckCircle } from 'lucide-react'
 import { CardTitle, CardDescription } from "@/components/ui/card"
@@ -10,7 +12,7 @@ import Image from "next/image"
 import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
-import { Loader2, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -297,10 +299,7 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
             </p>
 
             {recruitmentLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
-                <p className="ml-3 text-white">Lade offene Positionen...</p>
-              </div>
+              <SectionSkeleton kind="cards" />
             ) : recruitmentError ? (
               <div className="flex items-center justify-center py-8 text-red-300">
                 <AlertCircle className="h-8 w-8 mr-2" />
@@ -653,8 +652,8 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
 
           {movementsLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-              <p className="ml-3 text-muted-foreground">Lade Spielerbewegungen...</p>
+              
+              <InlineLoader label="Lade Spielerbewegungen..." />
             </div>
           ) : movementsError ? (
             <div className="flex items-center justify-center py-8 text-red-600">

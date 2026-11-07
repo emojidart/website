@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { createBrowserClient } from "@supabase/ssr"
@@ -111,7 +113,7 @@ export default function FaceLab() {
   return <main className="min-h-screen bg-[#070b12] px-4 py-7 text-white"><div className="mx-auto max-w-xl space-y-5">
     <Link href="/terminal/mein-emd" className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-4 py-3 font-bold"><ArrowLeft size={19}/> Zurück zu Mein EMD</Link>
     <header><h1 className="text-3xl font-black">Meine Face ID</h1><p className="mt-2 text-slate-300">Melde dich künftig einfach mit deinem Gesicht an.</p></header>
-    {loadingProfile?<p>Dein Profil wird geladen …</p>:!identity?<div className="rounded-2xl border border-orange-500/30 bg-[#121a26] p-5"><p>{message||"Bitte öffne diese Seite über Mein EMD."}</p><Link href="/terminal/mein-emd" className="mt-4 inline-block font-bold text-orange-400">Zu Mein EMD</Link></div>:<>
+    {loadingProfile?<SectionSkeleton kind="cards" />:!identity?<div className="rounded-2xl border border-orange-500/30 bg-[#121a26] p-5"><p>{message||"Bitte öffne diese Seite über Mein EMD."}</p><Link href="/terminal/mein-emd" className="mt-4 inline-block font-bold text-orange-400">Zu Mein EMD</Link></div>:<>
       <section className="rounded-2xl border border-orange-500/30 bg-[#121a26] p-5 space-y-4">
         <div><p className="text-sm text-slate-400">Dein Spielerprofil</p><h2 className="text-2xl font-black">{identity.name}</h2></div>
         <div className="flex items-center gap-2 text-sm">{registered?<><CheckCircle2 className="text-green-400"/> Face ID eingerichtet</>:<><Camera className="text-orange-400"/> Noch nicht eingerichtet</>}</div>

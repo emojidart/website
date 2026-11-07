@@ -1,26 +1,11 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  UserPlus,
-  Info,
-  Loader2,
-  Crown,
-  BookOpen,
-  ChevronDown,
-  ChevronUp,
-  X,
-  LogOut,
-  Lock,
-  ShieldAlert,
-  Timer,
-  RefreshCw,
-} from "lucide-react"
+import { Calendar, Clock, MapPin, UserPlus, Info, Crown, BookOpen, ChevronDown, ChevronUp, X, LogOut, Lock, ShieldAlert, Timer, RefreshCw } from "lucide-react"
 import { motion } from "framer-motion"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -136,13 +121,13 @@ function RescheduleBadge({
   return (
     <div className="mt-2 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ring-2 bg-orange-600 text-white border-orange-500/30 ring-orange-200">
+        <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ring-2 bg-primary text-primary-foreground border-orange-500/30 ring-orange-200">
           <RefreshCw className="h-3 w-3 opacity-90" />
           Neuer Termin: {newDate} • {newTime}
         </span>
 
         <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-orange-700">
-          <span className="h-2 w-2 rounded-full bg-orange-600" />
+          <span className="h-2 w-2 rounded-full bg-primary" />
           Verschoben
         </span>
       </div>
@@ -396,7 +381,7 @@ export default function UpcomingTournamentsAppPage() {
             <div className="rounded-3xl border border-border/70 bg-card shadow-md ring-1 ring-black/5 overflow-hidden">
               <div className="p-5 sm:p-7">
                 <div className="flex items-start gap-4">
-                  <div className="shrink-0 rounded-2xl bg-orange-600 text-white p-3 shadow-sm">
+                  <div className="shrink-0 rounded-2xl bg-primary text-primary-foreground p-3 shadow-sm">
                     <Crown className="h-6 w-6" />
                   </div>
 
@@ -452,10 +437,7 @@ export default function UpcomingTournamentsAppPage() {
 
               <div className="p-3 sm:p-4">
                 {dkoLoading ? (
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground py-8">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Lade Termine…</span>
-                  </div>
+                  <SectionSkeleton kind="tournament" />
                 ) : dkoError ? (
                   <div className="p-3 rounded-xl border bg-red-50 text-red-700 text-sm">Fehler beim Laden: {dkoError}</div>
                 ) : lionSeries && lionEvents.length === 0 ? (
@@ -526,7 +508,7 @@ export default function UpcomingTournamentsAppPage() {
                                     Vorbei
                                   </span>
                                 ) : today ? (
-                                  <span className="inline-flex items-center rounded-full bg-orange-600 text-white px-2.5 py-1 text-xs font-semibold">
+                                  <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-2.5 py-1 text-xs font-semibold">
                                     Heute
                                   </span>
                                 ) : (
@@ -599,16 +581,10 @@ export default function UpcomingTournamentsAppPage() {
                                     canClick
                                       ? alreadyRegistered
                                         ? "bg-background hover:bg-background text-white"
-                                        : "bg-orange-600 hover:bg-orange-700 text-white"
+                                        : "bg-primary hover:bg-orange-700 text-primary-foreground"
                                       : "bg-secondary text-muted-foreground",
                                   ].join(" ")}
-                                >
-                                  {regLoading ? (
-                                    <span className="flex items-center gap-2">
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                      ...
-                                    </span>
-                                  ) : today ? (
+                                 loading={Boolean(regLoading)} loadingLabel="...">{today ? (
                                     alreadyRegistered ? (
                                       <span className="flex items-center gap-2">
                                         <LogOut className="h-4 w-4" />
@@ -625,8 +601,7 @@ export default function UpcomingTournamentsAppPage() {
                                       <Lock className="h-4 w-4" />
                                       Am Turniertag
                                     </span>
-                                  )}
-                                </Button>
+                                  )}</Button>
                               )}
                             </div>
                           </div>

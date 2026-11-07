@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
@@ -24,7 +26,6 @@ import {
   AlertTriangle,
   Info,
 } from "lucide-react"
-
 
 type DartTypeFilter = "gesamt" | "edart" | "steeldart"
 type SortKey = "winpct" | "wins" | "legs" | "180" | "name"
@@ -675,18 +676,9 @@ export default function AdminTeamPlayerStatisticsSeasonCorrectPage() {
 
   if (authLoading || adminLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-100">
+      <div className="emd-loading-surface min-h-screen flex flex-col bg-gray-100">
         <Header />
-        <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
-          <Card className="w-full max-w-md">
-            <CardContent className="p-6 text-center">
-              <div className="inline-flex items-center gap-2 justify-center">
-                <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
-                <p className="text-gray-700 font-semibold">Lade…</p>
-              </div>
-            </CardContent>
-          </Card>
-        </main>
+        <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow"><SectionSkeleton kind="table" /></main>
       </div>
     )
   }
@@ -743,7 +735,7 @@ export default function AdminTeamPlayerStatisticsSeasonCorrectPage() {
           </div>
 
           <Button variant="outline" size="sm" onClick={fetchAll} className="flex items-center gap-2" title="Neu laden">
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={`h-4 w-4 ${loading ? "" : ""}`} />}
             Refresh
           </Button>
         </div>
@@ -793,7 +785,7 @@ export default function AdminTeamPlayerStatisticsSeasonCorrectPage() {
 
             {loading && (
               <div className="mt-3 text-xs text-gray-600 font-semibold flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
+                <LoadingIndicator className="w-4 h-4" />
                 Lade leg_statistics… Seiten: {legPagesLoaded} • Rows: {legRowsLoaded}
               </div>
             )}
@@ -802,14 +794,7 @@ export default function AdminTeamPlayerStatisticsSeasonCorrectPage() {
 
         {/* States */}
         {loading ? (
-          <Card className="border-0 shadow-sm bg-white">
-            <CardContent className="p-6 text-center text-gray-700 font-semibold">
-              <div className="inline-flex items-center gap-2">
-                <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
-                Lade komplette Übersicht…
-              </div>
-            </CardContent>
-          </Card>
+          <SectionSkeleton kind="table" />
         ) : errMsg ? (
           <Card className="border-0 shadow-sm bg-white">
             <CardContent className="p-6 text-center">

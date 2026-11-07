@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader, SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Header } from '@/components/header'
@@ -177,22 +179,9 @@ export default function BuffaloTournamentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans">
         <Header />
-        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl">
-          <div className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
-            <div className="text-foreground bg-card   p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                <h2 className="text-lg sm:text-2xl font-bold text-white">Buffalo Steel Cup Turniere</h2>
-              </div>
-            </div>
-            <div className="p-6 sm:p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-sm sm:text-base text-muted-foreground">Lade Turniere...</p>
-            </div>
-          </div>
-        </main>
+        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }
@@ -268,7 +257,7 @@ export default function BuffaloTournamentsPage() {
 
           <div className="bg-card rounded-xl shadow-lg border border-border p-4 col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3">
-              <Calendar className="w-8 h-8 text-purple-600 flex-shrink-0" />
+              <Calendar className="w-8 h-8 text-orange-600 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-muted-foreground text-xs sm:text-sm">Letztes Turnier</p>
                 <p className="text-base sm:text-lg font-bold text-foreground">
@@ -355,8 +344,8 @@ export default function BuffaloTournamentsPage() {
 
                           {isLoadingMatches ? (
                             <div className="text-center py-8">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                              <p className="mt-3 text-sm text-muted-foreground">Lade Spielergebnisse...</p>
+                              
+                              <InlineLoader label="Lade Spielergebnisse..." />
                             </div>
                           ) : tournamentMatches.length > 0 ? (
                             <div className="space-y-3">
@@ -378,8 +367,8 @@ export default function BuffaloTournamentsPage() {
                                           </span>
                                         </div>
                                         {match.round && (
-                                          <div className="bg-purple-100 rounded-lg px-2 py-1">
-                                            <span className="text-xs font-bold text-purple-700">
+                                          <div className="bg-orange-100 rounded-lg px-2 py-1">
+                                            <span className="text-xs font-bold text-orange-700">
                                               Runde {match.round}
                                             </span>
                                           </div>

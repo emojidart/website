@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { BonusSection } from "@/components/bonus-section"
 import { Header } from "@/components/header"
 import { useRouter } from "next/navigation"
@@ -487,9 +489,25 @@ export default function MemberBonusPage() {
 
   if (authLoading || membershipLoading) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans flex flex-col pb-20">
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-300 border-t-transparent rounded-full animate-spin" />
+      <div className="relative min-h-screen overflow-x-hidden bg-background pb-20 font-sans text-white">
+        <Header variant="app" title="Liga-Bonuswertung" subtitle="Ligazentrale" backHref="/member-league-app" />
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Liga-Bonuswertung wird geladen">
+          <section className="rounded-[30px] border border-white/[0.08] bg-card p-5 sm:p-7">
+            <div className="mb-5 h-6 w-40 animate-pulse rounded-full bg-white/10" />
+            <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
+            <div className="mt-4 h-4 w-full max-w-md animate-pulse rounded bg-white/10" />
+          </section>
+          <section className="rounded-[24px] border border-white/[0.08] bg-card p-4 sm:p-6">
+            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {Array.from({ length: 3 }, (_, index) => (
+                <div key={index} className="space-y-3 rounded-xl border border-white/10 p-4">
+                  <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+                  <div className="h-8 w-16 animate-pulse rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+            <SectionSkeleton kind="table" label="Bonuswerte werden geladen…" />
+          </section>
         </main>
         <MobileBottomNav />
       </div>

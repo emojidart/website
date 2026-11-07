@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -381,10 +383,7 @@ export function BonusSection({
             </div>
           </div>
           {legStatsLoading ? (
-            <div className="py-10 text-center">
-              <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
-              <p className="mt-3 text-sm text-muted-foreground">Lade Bonusgeld...</p>
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : getPenaltyStatistics().length === 0 ? (
             <div className="py-10 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">

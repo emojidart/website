@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useState, useEffect } from "react"
@@ -153,12 +155,7 @@ export function TournamentDaysManagement({ user, onDataSaved }: TournamentDaysMa
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-center">
-          <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Lade Turniertage...</p>
-        </div>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 

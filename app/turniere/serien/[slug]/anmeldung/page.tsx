@@ -1,10 +1,13 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
 import { UserPlus } from "lucide-react"
 
+import { SeriesNavigation } from "@/components/tournaments/series-navigation"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { SeriesRegistration } from "../../_komponenten/serien-anmeldung"
@@ -57,19 +60,20 @@ export default function DynamicSeriesRegistrationPage() {
       <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
+        <SeriesNavigation />
         {loading ? (
-          <div className="min-h-[320px] animate-pulse rounded-[30px] border border-white/10 bg-white/[0.04]" />
+          <SectionSkeleton kind="tournament" />
         ) : !series ? (
-          <div className="rounded-[28px] border border-white/10 bg-card p-8 text-center">Turnierserie nicht gefunden.</div>
+          <div className="rounded-[20px] border border-white/10 bg-card p-8 text-center">Turnierserie nicht gefunden.</div>
         ) : series.registration_enabled === false ? (
-          <div className="relative overflow-hidden rounded-[30px] border border-white/[0.09] bg-card p-8 text-center shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-10">
+          <div className="relative overflow-hidden rounded-[20px] border border-white/[0.09] bg-card p-8 text-center shadow-sm  sm:p-10">
             <div className="pointer-events-none absolute left-1/2 top-[-90px] h-48 w-48 -translate-x-1/2 rounded-full bg-orange-500/[0.08] blur-[70px]" />
             <div className="relative">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03]">
-                <UserPlus className="h-6 w-6 text-white/28" />
+                <UserPlus className="h-6 w-6 text-muted-foreground" />
               </div>
               <h1 className="mt-4 text-2xl font-semibold tracking-[-0.03em]">Anmeldung derzeit geschlossen</h1>
-              <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-white/42">Sobald die Anmeldung freigeschaltet wird, kannst du dich hier direkt für den nächsten Spieltag anmelden.</p>
+              <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-muted-foreground">Sobald die Anmeldung freigeschaltet wird, kannst du dich hier direkt für den nächsten Spieltag anmelden.</p>
             </div>
           </div>
         ) : (

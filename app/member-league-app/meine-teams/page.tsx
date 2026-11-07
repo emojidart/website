@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Button } from "@/components/ui/button"
@@ -10,7 +12,7 @@ import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Crown, ShieldCheck, Users, Target, Trash2, Loader2 } from "lucide-react"
+import { Crown, ShieldCheck, Users, Target, Trash2 } from "lucide-react"
 import { CaptainPlayerManagement } from "@/components/captain-player-management"
 
 import {
@@ -297,17 +299,41 @@ export default function MeineTeamsAppPage() {
 
   if (authLoading || membershipLoading || loading) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-background text-white">
+      <div className="emd-loading-surface relative min-h-screen overflow-hidden bg-background text-white">
         <Header variant="app" title="Meine Teams" subtitle="Ligazentrale" backHref="/member-league-app" />
 
         <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
-        <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24">
-          <div className="w-full max-w-sm rounded-[28px] border border-white/[0.08] bg-card p-8 text-center shadow-[0_30px_90px_-45px_rgba(0,0,0,.95)] ">
-            <Loader2 className="mx-auto h-9 w-9 animate-spin text-orange-300" />
-            <p className="mt-5 text-lg font-semibold text-white">Teams werden geladen</p>
-            <p className="mt-1 text-sm font-semibold text-muted-foreground">Einen Moment bitte…</p>
-          </div>
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Meine Teams werden geladen">
+          <section className="rounded-[30px] border border-white/[0.08] bg-card p-5 sm:p-7">
+            <div className="flex items-start gap-4">
+              <div className="h-14 w-14 shrink-0 animate-pulse rounded-[20px] bg-white/10" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                <div className="h-8 w-48 animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+              </div>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-sm">
+              <div className="h-16 animate-pulse rounded-2xl bg-white/[0.07]" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/[0.07]" />
+            </div>
+          </section>
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="rounded-[24px] border border-white/[0.08] bg-card p-5">
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="h-12 w-12 animate-pulse rounded-2xl bg-white/10" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-5 w-3/4 animate-pulse rounded bg-white/10" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-white/10" />
+                  </div>
+                </div>
+                <div className="h-4 w-full animate-pulse rounded bg-white/10" />
+                <div className="mt-3 h-4 w-2/3 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </section>
         </main>
 
         <MobileBottomNav />
@@ -754,7 +780,7 @@ export default function MeineTeamsAppPage() {
               >
                 {removingMemberId ? (
                   <span className="inline-flex items-center gap-2">
-                    <span className="h-4 w-4 rounded-full border-2 border-white/80 border-t-transparent animate-spin" />
+                    <LoadingIndicator className="h-4 w-4" />
                     Entferne...
                   </span>
                 ) : (

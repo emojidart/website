@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -150,12 +152,12 @@ export default function AdminSupportTicketsPage() {
 
   if (adminLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="emd-loading-surface min-h-screen bg-gray-50">
         <Header />
         <main className="max-w-7xl mx-auto p-4 md:p-8">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <LoadingIndicator className="w-8 h-8 mx-auto mb-4" />
               <p className="text-gray-600">Berechtigungen werden geprüft...</p>
             </div>
           </div>
@@ -250,12 +252,7 @@ export default function AdminSupportTicketsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Tickets werden geladen...</p>
-            </div>
-          </div>
+          <SectionSkeleton kind="cards" />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tickets List */}
@@ -381,9 +378,7 @@ export default function AdminSupportTicketsPage() {
                           onClick={saveAdminResponse}
                           disabled={!adminResponse.trim() || isSaving}
                           className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          {isSaving ? "Speichern..." : "Antwort Senden"}
-                        </Button>
+                         loading={Boolean(isSaving)} loadingLabel="Speichern...">{"Antwort Senden"}</Button>
 
                         <Button
                           onClick={() =>
@@ -393,9 +388,7 @@ export default function AdminSupportTicketsPage() {
                           }
                           className="bg-yellow-600 hover:bg-yellow-700"
                           disabled={isSaving}
-                        >
-                          {isSaving ? "Speichern..." : "In Bearbeitung"}
-                        </Button>
+                         loading={Boolean(isSaving)} loadingLabel="Speichern...">{"In Bearbeitung"}</Button>
                         <Button
                           onClick={() =>
                             updateTicket(selectedTicket.id, {
@@ -405,9 +398,7 @@ export default function AdminSupportTicketsPage() {
                           }
                           className="bg-green-600 hover:bg-green-700"
                           disabled={isSaving}
-                        >
-                          {isSaving ? "Speichern..." : "Schließen"}
-                        </Button>
+                         loading={Boolean(isSaving)} loadingLabel="Speichern...">{"Schließen"}</Button>
                       </div>
                     </div>
                   </CardContent>

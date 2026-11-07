@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, InlineLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -286,12 +288,7 @@ export default function MatchTodayPage() {
                 {/* MAIN */}
                 <div className="relative">
                   {loading ? (
-                    <Card className="border-0 bg-white/10 text-white shadow-xl">
-                      <CardContent className="p-10 text-center">
-                        <div className="mx-auto mb-4 h-10 w-10 rounded-full border-2 border-white/30 border-b-transparent animate-spin" />
-                        <p className="text-white/85 font-semibold">Lade Spiele für heute…</p>
-                      </CardContent>
-                    </Card>
+                    <SectionSkeleton kind="cards" />
                   ) : matchesToday.length === 0 ? (
                     <Card className="border-0 bg-white/10 text-white shadow-xl">
                       <CardContent className="p-10 text-center">
@@ -450,7 +447,7 @@ export default function MatchTodayPage() {
 
                         <div className="mt-4">
                           {loading ? (
-                            <div className="text-sm text-white/85">Lade…</div>
+                            <InlineLoader label="Inhalte werden geladen…" />
                           ) : !next ? (
                             <div className="text-sm text-white/85">
                               {matchesToday.length === 1 ? "Nur 1 Spiel heute." : "Keine Preview verfügbar."}
@@ -509,7 +506,7 @@ export default function MatchTodayPage() {
 
                       <div className="mt-3 space-y-2">
                         {loading ? (
-                          <div className="text-sm text-muted-foreground">Lade…</div>
+                          <InlineLoader label="Inhalte werden geladen…" />
                         ) : matchesToday.length === 0 ? (
                           <div className="text-sm text-muted-foreground">Keine Spiele geplant.</div>
                         ) : (

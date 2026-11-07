@@ -1,3 +1,5 @@
+import { SectionSkeleton } from "@/components/loading/loading"
+
 export default function Loading() {
-  return null
+  return <div className="emd-route-loading"><SectionSkeleton kind="table" label="Inhalte werden geladen…" /></div>
 }

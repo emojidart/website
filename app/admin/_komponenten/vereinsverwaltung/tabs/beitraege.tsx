@@ -1,22 +1,14 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import {
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  CreditCard,
-  ListChecks,
-  Search,
-  CircleCheck,
-  CircleDashed,
-  CircleX,
-} from "lucide-react"
+import { AlertCircle, CheckCircle, CreditCard, ListChecks, Search, CircleCheck, CircleDashed, CircleX } from "lucide-react"
 import type { DuesCadence } from "@/components/vereinsverwaltung/types"
 import type { DuesPeriod, PlayerDuesSummaryRow } from "@/hooks/vereinsverwaltung/useDues"
 
@@ -328,7 +320,7 @@ export function DuesTab({
                   : "bg-gray-50 text-gray-700 border border-gray-100",
             )}
           >
-            {messageType === "error" ? <AlertCircle className="h-4 w-4" /> : messageType === "success" ? <CheckCircle className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
+            {messageType === "error" ? <AlertCircle className="h-4 w-4" /> : messageType === "success" ? <CheckCircle className="h-4 w-4" /> : <LoadingIndicator className="h-4 w-4" />}
             <span>{message}</span>
           </div>
         )}
@@ -463,16 +455,9 @@ export function DuesTab({
                   disabled={!canSave || loading}
                   className="h-10 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-md"
                   onClick={save}
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Speichern...</span>
-                    </div>
-                  ) : (
+                 loading={Boolean(loading)} loadingLabel="Speichern...">{(
                     "Beitrag speichern"
-                  )}
-                </Button>
+                  )}</Button>
 
                 <Button
                   type="button"

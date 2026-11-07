@@ -1,7 +1,9 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
-import { Calendar, MapPin, Sparkles, Star, Target, Trophy, Euro, Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { Calendar, MapPin, Sparkles, Star, Target, Trophy, Euro, AlertCircle, RefreshCw } from "lucide-react"
 import { motion } from "framer-motion"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { useEffect, useMemo, useState } from "react"
@@ -357,10 +359,7 @@ export default function BuffaloSteelCupPage() {
               </div>
 
               {dkoLoading ? (
-                <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Lade Termine…</span>
-                </div>
+                <SectionSkeleton kind="cards" />
               ) : dkoError ? (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
                   <AlertCircle className="h-5 w-5" />

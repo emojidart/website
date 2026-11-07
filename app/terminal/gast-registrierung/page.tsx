@@ -290,10 +290,7 @@ export default function TerminalGastRegistrierungPage() {
                       type="submit"
                       disabled={loading}
                       className="h-14 w-full rounded-2xl bg-orange-500 text-base font-black text-white shadow-[0_0_35px_rgba(249,115,22,.16)] hover:bg-orange-600 disabled:opacity-55"
-                    >
-                      <Send className="mr-2 h-5 w-5" />
-                      {loading ? "Registrierung wird verarbeitet…" : "Gastkonto registrieren"}
-                    </Button>
+                     loading={Boolean(loading)} loadingLabel="Registrierung wird verarbeitet…"><Send className="mr-2 h-5 w-5" />{"Gastkonto registrieren"}</Button>
                   </div>
                 </form>
               </>

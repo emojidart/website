@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { useState } from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -125,7 +127,7 @@ export default function LigaTabellenPage() {
                       disabled={isLoading}
                       className="border-orange-200 hover:bg-orange-50 bg-transparent"
                     >
-                      <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+                      {isLoading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "" : ""}`} />}
                       Aktualisieren
                     </Button>
                     <Button
@@ -158,7 +160,7 @@ export default function LigaTabellenPage() {
                   {isLoading && (
                     <div className="absolute inset-0 bg-card flex items-center justify-center rounded-b-lg">
                       <div className="flex items-center gap-3 text-orange-600">
-                        <RefreshCw className="h-6 w-6 animate-spin" />
+                        <LoadingIndicator className="h-6 w-6" />
                         <span className="font-medium">Wird aktualisiert...</span>
                       </div>
                     </div>

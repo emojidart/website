@@ -1,23 +1,11 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import type React from "react"
 import Link from "next/link"
-import {
-  Check,
-  CheckCircle2,
-  Download,
-  ExternalLink,
-  FileCheck2,
-  FileText,
-  Loader2,
-  PenLine,
-  RotateCcw,
-  Send,
-  ShieldCheck,
-  Sparkles,
-  UserPlus,
-} from "lucide-react"
+import { Check, CheckCircle2, Download, ExternalLink, FileCheck2, FileText, PenLine, RotateCcw, Send, ShieldCheck, Sparkles, UserPlus } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
@@ -513,7 +501,7 @@ export default function ClubJoinPage() {
   }
 
   if (loading) {
-    return <div className="flex min-h-[420px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-orange-600" /></div>
+    return <SectionSkeleton kind="cards" />
   }
 
   return (
@@ -545,9 +533,7 @@ export default function ClubJoinPage() {
                 disabled={archiveLoading === "submitted"}
                 onClick={() => void downloadArchive("submitted")}
                 className="w-full rounded-xl border-orange-300 bg-card font-semibold text-orange-800 hover:bg-orange-100"
-              >
-                {archiveLoading === "submitted" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                Kopie meiner Beitrittsanfrage (PDF)
+               loading={Boolean(archiveLoading === "submitted")}><Download className="mr-2 h-4 w-4" />Kopie meiner Beitrittsanfrage (PDF)
               </Button>
               <Button asChild variant="outline" className="w-full rounded-xl border-orange-300 bg-card font-semibold text-orange-800 hover:bg-orange-100">
                 <Link href="/guest-profile-app">Zurück zum Gastprofil</Link>
@@ -568,9 +554,7 @@ export default function ClubJoinPage() {
                   disabled={archiveLoading === "submitted"}
                   onClick={() => void downloadArchive("submitted")}
                   className="rounded-xl border-green-300 bg-card font-semibold text-green-800 hover:bg-green-100"
-                >
-                  {archiveLoading === "submitted" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                  Eingereichten Antrag
+                 loading={Boolean(archiveLoading === "submitted")}><Download className="mr-2 h-4 w-4" />Eingereichten Antrag
                 </Button>
                 <Button
                   type="button"
@@ -578,9 +562,7 @@ export default function ClubJoinPage() {
                   disabled={archiveLoading === "approved"}
                   onClick={() => void downloadArchive("approved")}
                   className="rounded-xl border-green-300 bg-card font-semibold text-green-800 hover:bg-green-100"
-                >
-                  {archiveLoading === "approved" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                  Aufnahmebestätigung
+                 loading={Boolean(archiveLoading === "approved")}><Download className="mr-2 h-4 w-4" />Aufnahmebestätigung
                 </Button>
               </div>
               <Button asChild className="w-full rounded-xl bg-green-700 font-semibold text-white hover:bg-green-800">
@@ -751,9 +733,7 @@ export default function ClubJoinPage() {
               </section>
 
               <div className="sticky bottom-3 z-10 rounded-2xl border border-border bg-card p-3 shadow-xl  sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
-                <Button type="button" onClick={() => void submit()} disabled={saving || !readyToSend} className="h-12 w-full rounded-xl bg-orange-600 text-base font-semibold text-white hover:bg-orange-700 disabled:opacity-50">
-                  {saving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
-                  Beitrittsanfrage verbindlich senden
+                <Button type="button" onClick={() => void submit()} disabled={saving || !readyToSend} className="h-12 w-full rounded-xl bg-orange-600 text-base font-semibold text-white hover:bg-orange-700 disabled:opacity-50" loading={Boolean(saving)}><Send className="mr-2 h-5 w-5" />Beitrittsanfrage verbindlich senden
                 </Button>
                 {!readyToSend ? <div className="mt-2 text-center text-xs font-semibold text-muted-foreground">{documentsEnabled ? "Alle Pflichtfelder, Dokumente, Unterschriften und die Testphasen-Auswahl müssen vollständig sein." : "Bitte fülle die Pflichtfelder aus und wähle aus, ob du die Testphase nutzen möchtest."}</div> : null}
               </div>
@@ -788,7 +768,7 @@ export default function ClubJoinPage() {
                 Bitte lies das Dokument vollständig. Anschließend kannst du bestätigen, dass du es gelesen und akzeptiert hast.
               </div>
               <Button type="button" onClick={acceptViewer} disabled={!canConfirmViewer} className="h-12 w-full rounded-xl bg-green-600 font-semibold text-white hover:bg-green-700 disabled:bg-secondary">
-                {canConfirmViewer ? <CheckCircle2 className="mr-2 h-5 w-5" /> : <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                {canConfirmViewer ? <CheckCircle2 className="mr-2 h-5 w-5" /> : <LoadingIndicator className="mr-2 h-5 w-5" />}
                 {canConfirmViewer ? "Vollständig gelesen & akzeptiert" : `Lesen… (${Math.max(0, 8 - Math.floor((Date.now() - (viewerReadyAt || Date.now())) / 1000))} s)`}
               </Button>
             </div>

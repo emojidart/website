@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Button } from "@/components/ui/button"
 import { Check, Search, UserPlus, Users, Euro, X } from "lucide-react"
 import {
@@ -149,57 +151,57 @@ export function EinzelturnierSpieler({
     )
     return (
       <section className="grid gap-5 xl:grid-cols-2 text-white">
-        <div className="rounded-[26px] border border-white/10 bg-[#0b1018] p-5 sm:p-6">
+        <div className="rounded-[20px] border border-white/10 bg-card p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="text-xs font-black uppercase tracking-[0.15em] text-orange-300/75">Anmeldung</div>
               <h2 className="mt-1 text-xl font-black">Teilnehmer &amp; Check-in</h2>
-              <p className="mt-1 text-sm text-white/45">{registeredPlayers.length} angemeldet · {paidCount} bezahlt</p>
+              <p className="mt-1 text-sm text-muted-foreground">{registeredPlayers.length} angemeldet · {paidCount} bezahlt</p>
             </div>
             <Button type="button" onClick={onMarkAllPaid} disabled={markingAllPaid || registeredPlayers.length === 0 || allPlayersPaid} className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20">
               <Check className="mr-2 h-4 w-4" />Alle als bezahlt markieren
             </Button>
           </div>
           <div className="space-y-2">
-            {registeredPlayers.length === 0 ? <p className="py-8 text-center text-sm text-white/40">Noch keine Anmeldungen für diesen Spieltag.</p> : registeredPlayers.map((player) => (
+            {registeredPlayers.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Noch keine Anmeldungen für diesen Spieltag.</p> : registeredPlayers.map((player) => (
               <div key={player.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.09] bg-white/[0.025] p-3">
                 <div className="min-w-0">
                   <p className="font-bold">{player.player_name}</p>
-                  <p className="text-xs text-white/45">{isPreRegistered(player) ? "Voranmeldung" : "Angemeldet"}</p>
+                  <p className="text-xs text-muted-foreground">{isPreRegistered(player) ? "Voranmeldung" : "Angemeldet"}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => onTogglePaymentStatus(player.id, player.paid)} disabled={player.deducted_from_credit === true || player.deducted_from_credit === "true"} className={`rounded-xl border px-3 py-2 text-xs font-bold ${player.paid ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200" : "border-amber-500/25 bg-amber-500/10 text-amber-200"}`}>
                     <Euro className="mr-1 inline h-3.5 w-3.5" />{player.paid ? "Bezahlt" : "Zahlung offen"}
                   </button>
-                  <button type="button" onClick={() => onUnregisterPlayer(player.id)} title="Abmelden" aria-label={`${player.player_name} abmelden`} className="rounded-xl border border-rose-500/20 px-3 py-2 text-rose-200 hover:bg-rose-500/10"><X className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => onUnregisterPlayer(player.id)} title="Abmelden" aria-label={`${player.player_name} abmelden`} className="rounded-xl border border-red-500/20 px-3 py-2 text-red-200 hover:bg-red-500/10"><X className="h-4 w-4" /></button>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="rounded-[26px] border border-white/10 bg-[#0b1018] p-5 sm:p-6">
+        <div className="rounded-[20px] border border-white/10 bg-card p-5 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-black">Spieler hinzufügen</h2>
-              <p className="mt-1 text-sm text-white/45">Auf Plus klicken – Spieler direkt anmelden</p>
+              <p className="mt-1 text-sm text-muted-foreground">Auf Plus klicken – Spieler direkt anmelden</p>
             </div>
             <button type="button" onClick={onOpenAddPlayer} aria-label="Neuen Spieler anlegen" title="Neuen Spieler anlegen" className="rounded-xl border border-orange-500/25 bg-orange-500/10 p-3 text-orange-300 hover:bg-orange-500/20"><UserPlus className="h-5 w-5" /></button>
           </div>
           <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input type="search" placeholder="Name suchen ..." value={searchTerm} onChange={(event) => onSearchTermChange(event.target.value)} className="w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-10 pr-3 text-white outline-none focus:border-orange-400/50" />
           </div>
           <div className="max-h-[400px] space-y-2 overflow-y-auto">
-            {loading ? <p className="py-8 text-center text-sm text-white/45">Spieler werden geladen …</p> : visible.length === 0 ? <p className="py-8 text-center text-sm text-white/45">Keine passenden Spieler gefunden</p> : visible.map((player) => {
+            {loading ? <SectionSkeleton kind="tournament" /> : visible.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Keine passenden Spieler gefunden</p> : visible.map((player) => {
               const selected = sharedSelectedIds.has(player.id)
               const eligible = player.eligible !== false
               return <button key={player.id} type="button" disabled={!eligible || isRegisteringPlayers} onClick={() => onQuickAddPlayer ? onQuickAddPlayer(player.id) : onPlayerSelect(Number(player.id))} aria-pressed={selected} className={`flex w-full items-center justify-between gap-3 rounded-2xl border p-3 text-left transition ${selected ? "border-orange-400 bg-orange-500/20" : "border-white/10 bg-white/[0.025] hover:border-orange-400/30"} ${eligible ? "" : "cursor-not-allowed opacity-40"}`}>
-                <div className="min-w-0"><p className="font-bold">{player.name}</p><p className="mt-1 text-xs text-white/45">{eligible ? player.featuredMeta || "Spieler" : player.eligibilityReason || "Nicht berechtigt"}</p></div>
-                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${selected ? "border-orange-400 bg-orange-500 text-white" : "border-orange-500/40 text-orange-400"}`}>{selected ? <Check className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}</span>
+                <div className="min-w-0"><p className="font-bold">{player.name}</p><p className="mt-1 text-xs text-muted-foreground">{eligible ? player.featuredMeta || "Spieler" : player.eligibilityReason || "Nicht berechtigt"}</p></div>
+                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${selected ? "border-orange-400 bg-primary text-primary-foreground" : "border-orange-500/40 text-orange-400"}`}>{selected ? <Check className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}</span>
               </button>
             })}
           </div>
-          {!onQuickAddPlayer && <Button type="button" onClick={onRegisterPlayers} disabled={!tournamentFormCompleted || isRegisteringPlayers || selectedPlayers.size === 0 || eligibilityLoading} className="mt-4 w-full rounded-xl bg-orange-500 py-6 text-base font-black text-white hover:bg-orange-400 disabled:opacity-50">
+          {!onQuickAddPlayer && <Button type="button" onClick={onRegisterPlayers} disabled={!tournamentFormCompleted || isRegisteringPlayers || selectedPlayers.size === 0 || eligibilityLoading} className="mt-4 w-full rounded-xl bg-primary py-6 text-base font-black text-primary-foreground hover:bg-orange-400 disabled:opacity-50">
             {isRegisteringPlayers ? `Registrierung läuft ${registrationProgress?.done ?? 0}/${registrationProgress?.total ?? 0}` : `Spieler registrieren (${selectedPlayers.size})`}
           </Button>}
         </div>
@@ -216,7 +218,7 @@ export function EinzelturnierSpieler({
         onToggleSelected={(id) => onPlayerSelect(Number(id))}
         searchTerm={searchTerm}
         onSearchTermChange={onSearchTermChange}
-        loading={loading}
+        loading={Boolean(loading)}
         eligibilityLoading={eligibilityLoading}
         canRegister={tournamentFormCompleted}
         disabledNotice={
@@ -245,18 +247,18 @@ export function EinzelturnierSpieler({
     <section className="grid gap-6 xl:grid-cols-2">
       <section className="emd-admin-surface p-5 text-white sm:p-6">
         <div className="mb-5">
-          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-300/60">Doppelturnier</div>
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-orange-300/60">Doppelturnier</div>
           <h2 className="mt-1 text-2xl font-black text-white">Doppelteam registrieren</h2>
-          <p className="mt-1 text-sm font-semibold text-white/40">Zwei berechtigte Spieler auswählen und als Team anmelden.</p>
+          <p className="mt-1 text-sm font-semibold text-muted-foreground">Zwei berechtigte Spieler auswählen und als Team anmelden.</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm font-semibold text-white/60">Spieler 1</label>
+            <label className="mb-2 block text-sm font-semibold text-muted-foreground">Spieler 1</label>
             <select
               value={doublePlayer1Id}
               onChange={(e) => onDoublePlayer1Change(e.target.value)}
-              className="h-12 w-full rounded-2xl border border-white/10 bg-[#101318] px-4 font-semibold text-white outline-none transition focus:border-orange-400/45 focus:ring-4 focus:ring-orange-500/10"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-card px-4 font-semibold text-white outline-none transition focus:border-orange-400/45 focus:ring-4 focus:ring-orange-500/10"
             >
               <option value="">Bitte wählen</option>
               {availablePlayers.map((player) => {
@@ -271,11 +273,11 @@ export function EinzelturnierSpieler({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-white/60">Spieler 2</label>
+            <label className="mb-2 block text-sm font-semibold text-muted-foreground">Spieler 2</label>
             <select
               value={doublePlayer2Id}
               onChange={(e) => onDoublePlayer2Change(e.target.value)}
-              className="h-12 w-full rounded-2xl border border-white/10 bg-[#101318] px-4 font-semibold text-white outline-none transition focus:border-orange-400/45 focus:ring-4 focus:ring-orange-500/10"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-card px-4 font-semibold text-white outline-none transition focus:border-orange-400/45 focus:ring-4 focus:ring-orange-500/10"
             >
               <option value="">Bitte wählen</option>
               {availablePlayers
@@ -311,8 +313,8 @@ export function EinzelturnierSpieler({
           disabled={!doublePlayer1Id || !doublePlayer2Id || !tournamentFormCompleted || eligibilityLoading || isRegisteringPlayers}
           className={`mt-4 w-full rounded-xl px-6 py-3 font-bold transition-all ${
             doublePlayer1Id && doublePlayer2Id && tournamentFormCompleted && !eligibilityLoading && !isRegisteringPlayers
-              ? "border border-orange-300/25 bg-orange-500 text-white hover:bg-orange-400"
-              : "cursor-not-allowed border border-white/[0.06] bg-white/[0.04] text-white/25"
+              ? "border border-orange-300/25 bg-primary text-primary-foreground hover:bg-orange-400"
+              : "cursor-not-allowed border border-white/[0.06] bg-white/[0.04] text-muted-foreground"
           }`}
         >
           {isRegisteringPlayers ? "Registrierung läuft…" : "Doppelteam registrieren"}

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Activity, Radio, Trophy, Clock3 } from "lucide-react"
@@ -310,5 +312,5 @@ function RoundRobinTv() {
 }
 
 export default function RoundRobinBeamerPage() {
-  return <Suspense fallback={<main className="h-dvh bg-[#070c13]" />}><RoundRobinTv /></Suspense>
+  return <Suspense fallback={<SectionSkeleton kind="tournament" label="Bereich wird geladen…" />}><RoundRobinTv /></Suspense>
 }

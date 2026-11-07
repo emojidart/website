@@ -1,5 +1,7 @@
 "use client"
 
+import { ButtonLoader } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
@@ -163,7 +165,7 @@ export default function EmdLiveRegieControl({ eventId, title }: { eventId: strin
       <input type="checkbox" checked={autoSpeak} onChange={e => setAutoSpeak(e.target.checked)} className="h-4 w-4 accent-orange-500" />
       NERO beim Hinzufügen automatisch einmal sprechen lassen (am Vereins-PC)
     </label>
-    <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => void publish()} disabled={busy || (kind === "custom" && !message.trim())} className="rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-500 disabled:opacity-40">{busy ? "Bitte warten ..." : "Ankündigung hinzufügen"}</button></div>
+    <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => void publish()} disabled={busy || (kind === "custom" && !message.trim())} className="rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-500 disabled:opacity-40" aria-busy={Boolean(busy) || undefined}><ButtonLoader loading={Boolean(busy)} label="Bitte warten ...">{"Ankündigung hinzufügen"}</ButtonLoader></button></div>
     <div className="mt-5 border-t border-white/10 pt-4"><div className="mb-3 flex items-center justify-between"><h4 className="text-sm font-bold">Aktive Ankündigungen</h4><span className="text-xs text-muted-foreground">{active.length} aktiv</span></div>
       {active.length === 0 ? <p className="text-sm text-muted-foreground">Noch keine aktive Ankündigung.</p> : <div className="space-y-2">{active.map(a => <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1c2532] px-3 py-3"><div className="min-w-0"><p className="text-sm font-semibold">{kindName(a.kind)}{a.scope !== "all" ? ` · ${a.scope === "herren" ? "Herren" : "Damen"}` : ""}</p>{<p className="mt-1 text-xs text-orange-300/80">{a.display_mode === "permanent" ? "Dauerhaft" : a.display_mode === "once" ? `Einmalig · ${a.display_seconds} Sek.` : `Alle ${a.repeat_seconds} Sek. · ${a.display_seconds} Sek.`}</p>}{a.message && <p className="mt-1 max-w-md break-words text-xs text-white/60">{a.message}</p>}<p className="mt-1 text-xs text-emerald-300">Bis {new Date(a.ends_at).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}</p></div><div className="flex items-center gap-2"><button type="button" disabled={martinBusy} onClick={() => void speak(a)} className="rounded-lg border border-orange-400/40 px-3 py-2 text-xs font-bold text-orange-200 hover:bg-orange-400/10 disabled:opacity-40">🎙 NERO sprechen</button><button type="button" disabled={busy} onClick={() => void stop(a.id)} className="rounded-lg border border-rose-400/30 px-3 py-2 text-xs font-bold text-rose-200 hover:bg-rose-400/10 disabled:opacity-40">Beenden</button></div></div>)}</div>}
     </div>

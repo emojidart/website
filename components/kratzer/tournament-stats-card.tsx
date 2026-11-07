@@ -27,7 +27,7 @@ function Metric({
     slate: "bg-white/[0.05] text-muted-foreground",
     orange: "bg-orange-500/[0.10] text-orange-300",
     green: "bg-emerald-500/[0.10] text-emerald-300",
-    red: "bg-rose-500/[0.10] text-rose-300",
+    red: "bg-red-500/[0.10] text-red-300",
     amber: "bg-amber-500/[0.10] text-amber-300",
   }[tone]
 
@@ -51,7 +51,7 @@ export function TournamentStatsCard({ players, currentRound, tournamentFinished,
   const out = players.filter((p) => p.isEliminated).length
 
   return (
-    <Card className="mb-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#090b0f] text-white shadow-[0_18px_55px_-42px_rgba(0,0,0,.85)]">
+    <Card className="mb-5 overflow-hidden rounded-[20px] border border-white/[0.08] bg-card text-white shadow-sm">
       <CardHeader className="border-b border-white/[0.07] bg-white/[0.02] px-5 py-4 sm:px-6">
         <CardTitle className="flex items-center gap-3 text-lg font-semibold text-white">
           <span className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-orange-300/20 bg-orange-500/[0.08] text-orange-300">

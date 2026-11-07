@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, InlineLoader } from "@/components/loading/loading"
+
 import type React from "react"
 import { supabase } from "@/lib/supabase"
 import { useState, useEffect } from "react"
@@ -192,14 +194,14 @@ export default function SupportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted">
+      <div className="emd-loading-surface min-h-screen bg-muted">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
-            <div className="text-lg">Lade...</div>
+            <InlineLoader label="Inhalte werden geladen…" />
           </div>
         </div>
-      </div>
+      <SectionSkeleton kind="cards" /></div>
     )
   }
 
@@ -383,9 +385,7 @@ export default function SupportPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white">
-                    {submitting ? "Wird erstellt..." : "Ticket erstellen"}
-                  </Button>
+                  <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white" loading={Boolean(submitting)} loadingLabel="Wird erstellt...">{"Ticket erstellen"}</Button>
                   <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                     Abbrechen
                   </Button>

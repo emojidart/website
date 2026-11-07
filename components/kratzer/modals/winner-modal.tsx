@@ -22,7 +22,7 @@ export function WinnerModal({
 }: WinnerModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[620px] rounded-[30px] shadow-2xl text-center">
+      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[620px] rounded-[20px] shadow-2xl text-center">
         <div className="bg-card    px-6 pt-7 text-white"><DialogHeader>
           <DialogTitle className="text-2xl font-semibold text-white">🏆 Turnier beendet!</DialogTitle>
         </DialogHeader></div>

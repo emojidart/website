@@ -1,14 +1,15 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowRight, CalendarDays, Loader2, MapPin, Trophy } from "lucide-react"
+import { ArrowRight, CalendarDays, MapPin, Trophy } from "lucide-react"
 import { Header } from "@/components/header"
 import { InternalEventsBackground } from "@/app/internal-events/_komponenten/internal-events-design"
 import { MembershipAccessGate } from "@/components/member/membership/membership-access-gate"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent } from "@/components/ui/card"
-
 
 function internalEventImageUrl(path:string|null|undefined,legacyUrl?:string|null){
   if(path)return supabase.storage.from("internal-events").getPublicUrl(path).data.publicUrl
@@ -40,12 +41,7 @@ function Content(){
     void run()
   },[])
   if(loading)return (
-    <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
-      <InternalEventsBackground />
-      <div className="relative z-10 flex min-h-[420px] items-center justify-center gap-2 text-white/65">
-        <Loader2 className="h-5 w-5 animate-spin text-orange-300"/> Wird geladen…
-      </div>
-    </div>
+    <SectionSkeleton kind="cards" />
   )
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-white">

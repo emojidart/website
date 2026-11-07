@@ -1,7 +1,9 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
-import { AlertTriangle, CalendarClock, Check, Clipboard, ExternalLink, Loader2, MessageCircle, Play, Square, Video } from "lucide-react"
+import { AlertTriangle, CalendarClock, Check, Clipboard, ExternalLink, MessageCircle, Play, Square, Video } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
@@ -230,11 +232,7 @@ export function AdminClubMeeting() {
 
   if (loading) {
     return (
-      <Card className="border-0 shadow-md">
-        <CardContent className="flex items-center justify-center py-16">
-          <Loader2 className="h-7 w-7 animate-spin text-red-600" />
-        </CardContent>
-      </Card>
+      <SectionSkeleton kind="cards" />
     )
   }
 
@@ -301,14 +299,9 @@ export function AdminClubMeeting() {
 
           {!isLive ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              <Button variant="outline" className="h-12 rounded-xl" disabled={saving} onClick={() => void savePrepared()}>
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                Vorbereiten / speichern
+              <Button variant="outline" className="h-12 rounded-xl" disabled={saving} onClick={() => void savePrepared()} loading={Boolean(saving)}><Check className="mr-2 h-4 w-4" />Vorbereiten / speichern
               </Button>
-              <Button className="h-12 rounded-xl bg-red-600 hover:bg-red-700" disabled={saving} onClick={() => void startMeeting()}>
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-                {meeting ? `${meeting.title} starten` : "Sitzung jetzt starten"}
-              </Button>
+              <Button className="h-12 rounded-xl bg-red-600 hover:bg-red-700" disabled={saving} onClick={() => void startMeeting()} loading={Boolean(saving)}><Play className="mr-2 h-4 w-4" />{meeting ? `${meeting.title} starten` : "Sitzung jetzt starten"}</Button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -408,7 +401,7 @@ export function AdminClubMeeting() {
                   }}
                   className="h-11 rounded-xl bg-red-600 font-black text-white hover:bg-red-700"
                 >
-                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Square className="mr-2 h-4 w-4" />}
+                  {saving ? <LoadingIndicator className="mr-2 h-4 w-4" /> : <Square className="mr-2 h-4 w-4" />}
                   Sitzung beenden
                 </AlertDialogAction>
               </AlertDialogFooter>

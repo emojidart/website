@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -346,8 +348,8 @@ const todaysRegistrations = useMemo(() => {
   }, [filteredEvents])
 
   return (
-    <div className="relative min-h-[720px] w-full min-w-0 overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#050608] text-white">
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[#050608]">
+    <div className="relative min-h-[720px] w-full min-w-0 overflow-hidden rounded-[20px] border border-white/[0.08] bg-card text-white">
+      <div className="pointer-events-none absolute inset-0 z-0 bg-card">
         <div
           className="absolute inset-0 bg-cover bg-[64%_50%] bg-no-repeat opacity-[0.24]"
           style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
@@ -357,7 +359,7 @@ const todaysRegistrations = useMemo(() => {
       </div>
 
       <main className="relative z-10 w-full min-w-0 px-3 py-4 sm:px-5 sm:py-5 lg:px-6">
-        <section className="relative mb-6 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(18,21,27,.94),rgba(8,10,14,.90))] p-5 text-white shadow-[0_30px_100px_-60px_rgba(0,0,0,.98)] backdrop-blur-2xl sm:p-6">
+        <section className="relative mb-6 overflow-hidden rounded-[20px] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(18,21,27,.94),rgba(8,10,14,.90))] p-5 text-white shadow-sm backdrop-blur-2xl sm:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             {onBack ? (
               <Button
@@ -388,40 +390,40 @@ const todaysRegistrations = useMemo(() => {
               Turnierbetrieb
             </div>
             <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">Turniertage starten</h1>
-            <p className="mt-2 text-sm leading-6 text-white/50">Heute starten, kommende Termine planen und vergangene Spieltage sauber getrennt ansehen.</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Heute starten, kommende Termine planen und vergangene Spieltage sauber getrennt ansehen.</p>
             </div>
           </div>
         </section>
 
         <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="rounded-2xl border border-white/[0.08] bg-[linear-gradient(145deg,rgba(15,18,23,.88),rgba(8,10,14,.82))] p-4 shadow-[0_18px_50px_-36px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16]">
-            <div className="text-xs font-black uppercase tracking-[0.12em] text-white/40">Serien</div>
+          <div className="rounded-2xl border border-white/[0.08] bg-[linear-gradient(145deg,rgba(15,18,23,.88),rgba(8,10,14,.82))] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16]">
+            <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Serien</div>
             <div className="mt-1 text-2xl font-black text-white">{seriesList.length}</div>
-            <div className="mt-0.5 text-xs text-white/40">{activeSeriesCount} aktiv</div>
+            <div className="mt-0.5 text-xs text-muted-foreground">{activeSeriesCount} aktiv</div>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[linear-gradient(145deg,rgba(15,18,23,.88),rgba(8,10,14,.82))] p-4 shadow-[0_18px_50px_-36px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16]">
-            <div className="text-xs font-black uppercase tracking-[0.12em] text-white/40">Spieltage</div>
+          <div className="rounded-2xl border border-white/[0.08] bg-[linear-gradient(145deg,rgba(15,18,23,.88),rgba(8,10,14,.82))] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16]">
+            <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Spieltage</div>
             <div className="mt-1 text-2xl font-black text-white">{filteredEvents.filter((e) => e.is_matchday).length}</div>
-            <div className="mt-0.5 text-xs text-white/40">
+            <div className="mt-0.5 text-xs text-muted-foreground">
               {activeSeriesId === "ALL" ? "Alle Serien" : "Aktuelle Auswahl"}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[linear-gradient(145deg,rgba(15,18,23,.88),rgba(8,10,14,.82))] p-4 shadow-[0_18px_50px_-36px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16]">
-            <div className="text-xs font-black uppercase tracking-[0.12em] text-white/40">Heute</div>
+          <div className="rounded-2xl border border-white/[0.08] bg-[linear-gradient(145deg,rgba(15,18,23,.88),rgba(8,10,14,.82))] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16]">
+            <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Heute</div>
             <div className="mt-1 text-2xl font-black text-white">{todayMatchdays.length}</div>
-            <div className="mt-0.5 text-xs text-white/40">
+            <div className="mt-0.5 text-xs text-muted-foreground">
               {todayMatchdays.length === 1 ? "Turniertag" : "Turniertage"}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[linear-gradient(145deg,rgba(15,18,23,.88),rgba(8,10,14,.82))] p-4 shadow-[0_18px_50px_-36px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16]">
-            <div className="text-xs font-black uppercase tracking-[0.12em] text-white/40">Nächster Termin</div>
+          <div className="rounded-2xl border border-white/[0.08] bg-[linear-gradient(145deg,rgba(15,18,23,.88),rgba(8,10,14,.82))] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16]">
+            <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Nächster Termin</div>
             <div className="mt-1 truncate text-sm font-black text-white">
               {nextUpcomingEvent ? new Date(nextUpcomingEvent.effectiveIso).toLocaleDateString("de-DE") : "—"}
             </div>
-            <div className="mt-0.5 text-xs text-white/40">
+            <div className="mt-0.5 text-xs text-muted-foreground">
               {nextUpcomingEvent
                 ? `${new Date(nextUpcomingEvent.effectiveIso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr`
                 : "Kein weiterer Termin"}
@@ -429,7 +431,7 @@ const todaysRegistrations = useMemo(() => {
           </div>
         </div>
 
-        <div className="mb-6 rounded-[24px] border border-white/[0.08] bg-[#090b0f]/90 p-2 shadow-[0_18px_60px_-44px_rgba(0,0,0,.96)]">
+        <div className="mb-6 rounded-[24px] border border-white/[0.08] bg-card p-2 shadow-sm">
           <div className="grid grid-cols-3 gap-2">
             {[
               { id: "today", label: "Heute" },
@@ -445,7 +447,7 @@ const todaysRegistrations = useMemo(() => {
                   className={`rounded-2xl border px-3 py-3 text-sm font-black transition ${
                     active
                       ? "border-orange-300/25 bg-orange-500/[0.12] text-orange-100"
-                      : "border-transparent bg-white/[0.025] text-white/45 hover:border-white/[0.08] hover:text-white/75"
+                      : "border-transparent bg-white/[0.025] text-muted-foreground hover:border-white/[0.08] hover:text-white/75"
                   }`}
                 >
                   {item.label}
@@ -458,16 +460,16 @@ const todaysRegistrations = useMemo(() => {
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-black text-white">Serien filtern</div>
-            <div className="text-xs text-white/40">Wähle eine Serie oder zeige alle Spieltage.</div>
+            <div className="text-xs text-muted-foreground">Wähle eine Serie oder zeige alle Spieltage.</div>
           </div>
         </div>
 
-        <div className="mb-6 rounded-[28px] border border-emerald-300/[0.14] bg-[linear-gradient(135deg,rgba(16,185,129,.08),rgba(8,10,14,.90)_38%,rgba(7,9,13,.88))] p-4 text-white shadow-[0_28px_90px_-58px_rgba(0,0,0,.98)] backdrop-blur-xl sm:p-5">
+        <div className="mb-6 rounded-[20px] border border-emerald-300/[0.14] bg-[linear-gradient(135deg,rgba(16,185,129,.08),rgba(8,10,14,.90)_38%,rgba(7,9,13,.88))] p-4 text-white shadow-sm backdrop-blur-xl sm:p-5">
           <div className="mb-4 flex items-center gap-3">
             <Trophy className="h-6 w-6 text-orange-300" />
             <div>
               <div className="text-base font-black text-white">Turnierserien</div>
-              <div className="text-sm font-semibold text-white/55">
+              <div className="text-sm font-semibold text-muted-foreground">
                 „Turniertag starten“ ist nur aktiv, wenn heute ein Turniertag ist.
               </div>
               {registrationsError && <div className="text-xs text-red-700 font-bold mt-1">{registrationsError}</div>}
@@ -481,7 +483,7 @@ const todaysRegistrations = useMemo(() => {
               className={`rounded-xl border px-3 py-2 text-sm font-bold transition-all ${
                 activeSeriesId === "ALL"
                   ? "border-orange-300/30 bg-orange-500/[0.12] text-orange-100 shadow-[0_12px_30px_-22px_rgba(249,115,22,.45)]"
-                  : "border-white/[0.08] bg-white/[0.035] text-white/55 hover:border-orange-300/20 hover:bg-orange-500/[0.07] hover:text-white"
+                  : "border-white/[0.08] bg-white/[0.035] text-muted-foreground hover:border-orange-300/20 hover:bg-orange-500/[0.07] hover:text-white"
               }`}
             >
               Alle
@@ -495,19 +497,19 @@ const todaysRegistrations = useMemo(() => {
                 className={`rounded-xl border px-3 py-2 text-sm font-bold transition-all ${
                   activeSeriesId === s.id
                     ? "border-orange-300/30 bg-orange-500/[0.12] text-orange-100 shadow-[0_12px_30px_-22px_rgba(249,115,22,.45)]"
-                    : "border-white/[0.08] bg-white/[0.035] text-white/55 hover:border-orange-300/20 hover:bg-orange-500/[0.07] hover:text-white"
+                    : "border-white/[0.08] bg-white/[0.035] text-muted-foreground hover:border-orange-300/20 hover:bg-orange-500/[0.07] hover:text-white"
                 }`}
               >
                 {s.name}
-                {!s.is_active && <span className="ml-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-black text-white/35">INAKTIV</span>}
+                {!s.is_active && <span className="ml-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-xs font-black text-muted-foreground">INAKTIV</span>}
               </button>
             ))}
           </div>
 
           {errorMsg && (
-            <div className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-500/[0.07] p-4 text-rose-100">
+            <div className="mt-4 rounded-2xl border border-red-300/20 bg-red-500/[0.07] p-4 text-red-100">
               <div className="font-black mb-1">Hinweis</div>
-              <div className="text-sm text-white/60">{errorMsg}</div>
+              <div className="text-sm text-muted-foreground">{errorMsg}</div>
             </div>
           )}
         </div>
@@ -516,7 +518,7 @@ const todaysRegistrations = useMemo(() => {
 
 {/* INFOBOX: Heute ist Turniertag (spieltag-basierte Voranmeldungen) */}
 {timeTab === "today" && todayMatchdays.length > 0 && (
-  <div className="mb-6 rounded-[28px] border border-emerald-300/[0.14] bg-[linear-gradient(135deg,rgba(16,185,129,.08),rgba(8,10,14,.90)_38%,rgba(7,9,13,.88))] p-4 text-white shadow-[0_28px_90px_-58px_rgba(0,0,0,.98)] backdrop-blur-xl sm:p-5">
+  <div className="mb-6 rounded-[20px] border border-emerald-300/[0.14] bg-[linear-gradient(135deg,rgba(16,185,129,.08),rgba(8,10,14,.90)_38%,rgba(7,9,13,.88))] p-4 text-white shadow-sm backdrop-blur-xl sm:p-5">
     <div className="flex items-start gap-4">
       <div className="flex items-start gap-3">
         <div className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-500/[0.10]">
@@ -536,11 +538,11 @@ const todaysRegistrations = useMemo(() => {
             )}
           </div>
 
-          <div className="mt-1 text-sm font-semibold text-white/60">
+          <div className="mt-1 text-sm font-semibold text-muted-foreground">
             {todayMatchdays.length === 1
               ? "Es ist heute ein Turniertag eingetragen."
               : `Es sind heute ${todayMatchdays.length} Turniertage eingetragen.`}
-            <span className="mt-1 block text-xs text-white/40">
+            <span className="mt-1 block text-xs text-muted-foreground">
               
             </span>
           </div>
@@ -570,7 +572,7 @@ const todaysRegistrations = useMemo(() => {
               </div>
             ))}
             {todayMatchdays.length > 3 && (
-              <div className="text-xs font-bold text-white/40">+ {todayMatchdays.length - 3} weitere…</div>
+              <div className="text-xs font-bold text-muted-foreground">+ {todayMatchdays.length - 3} weitere…</div>
             )}
           </div>
         </div>
@@ -582,12 +584,10 @@ const todaysRegistrations = useMemo(() => {
 )}
 
         {loading ? (
-          <Card className="rounded-[28px] border border-white/[0.08] bg-[linear-gradient(145deg,rgba(14,17,22,.90),rgba(7,9,13,.86))] text-white shadow-[0_28px_90px_-58px_rgba(0,0,0,.98)]">
-            <CardContent className="p-6 text-center font-semibold text-white/55">Lade Spieltage…</CardContent>
-          </Card>
+          <SectionSkeleton kind="tournament" />
         ) : grouped.length === 0 ? (
-          <Card className="rounded-[28px] border border-white/[0.08] bg-[linear-gradient(145deg,rgba(14,17,22,.90),rgba(7,9,13,.86))] text-white shadow-[0_28px_90px_-58px_rgba(0,0,0,.98)]">
-            <CardContent className="p-6 text-center font-semibold text-white/55">
+          <Card className="rounded-[20px] border border-white/[0.08] bg-[linear-gradient(145deg,rgba(14,17,22,.90),rgba(7,9,13,.86))] text-white shadow-sm">
+            <CardContent className="p-6 text-center font-semibold text-muted-foreground">
             {timeTab === "today"
               ? "Heute ist kein Turniertag."
               : timeTab === "planned"
@@ -605,7 +605,7 @@ const todaysRegistrations = useMemo(() => {
                   <div className="mb-3 flex items-center justify-between gap-4">
                     <div>
                       <div className="text-xl font-black text-white sm:text-2xl">{seriesName}</div>
-                      <div className="mt-0.5 text-xs font-medium text-white/40">{items.length} Termin{items.length === 1 ? "" : "e"}</div>
+                      <div className="mt-0.5 text-xs font-medium text-muted-foreground">{items.length} Termin{items.length === 1 ? "" : "e"}</div>
                     </div>
                   </div>
 
@@ -639,8 +639,8 @@ const todaysRegistrations = useMemo(() => {
                       return (
                         <div
                           key={ev.id}
-                          className={`w-full overflow-hidden rounded-[30px] border bg-[linear-gradient(145deg,rgba(14,17,22,.96),rgba(7,9,13,.92))] text-white shadow-[0_28px_80px_-50px_rgba(0,0,0,.98)] transition-all hover:-translate-y-0.5 ${
-                            canOpenOrStart ? "border-orange-300/30 ring-1 ring-orange-400/10 shadow-[0_24px_70px_-46px_rgba(249,115,22,.34)]" : "border-white/[0.08]"
+                          className={`w-full overflow-hidden rounded-[20px] border bg-[linear-gradient(145deg,rgba(14,17,22,.96),rgba(7,9,13,.92))] text-white shadow-sm transition-all hover:-translate-y-0.5 ${
+                            canOpenOrStart ? "border-orange-300/30 ring-1 ring-orange-400/10 shadow-sm" : "border-white/[0.08]"
                           }`}
                         >
                           <div
@@ -672,13 +672,13 @@ const todaysRegistrations = useMemo(() => {
                               </span>
                             </div>
 
-                            <div className={`mt-3 flex items-center gap-2 text-sm font-semibold ${canStart ? "text-white/85" : "text-white/55"}`}>
+                            <div className={`mt-3 flex items-center gap-2 text-sm font-semibold ${canStart ? "text-white/85" : "text-muted-foreground"}`}>
                               <Clock className="w-4 h-4" />
                               {fmtTime(effectiveIso)} Uhr
                             </div>
 
                             {ev.location && (
-                              <div className={`mt-2 flex items-center gap-2 text-sm font-semibold ${canStart ? "text-white/85" : "text-white/55"}`}>
+                              <div className={`mt-2 flex items-center gap-2 text-sm font-semibold ${canStart ? "text-white/85" : "text-muted-foreground"}`}>
                                 <MapPin className="w-4 h-4" />
                                 <span className="truncate">{ev.location}</span>
                               </div>
@@ -692,13 +692,13 @@ const todaysRegistrations = useMemo(() => {
                                   <Users className="h-4 w-4 text-orange-300/70" />
                                   Voranmeldungen (Spieltag)
                                 </div>
-                                <div className="text-xs font-black text-white/55">
+                                <div className="text-xs font-black text-muted-foreground">
                                   {regs.length} gesamt{regs.length ? ` • ${paidCount} bezahlt` : ""}
                                 </div>
                               </div>
 
                               {regs.length === 0 ? (
-                                <div className="mt-2 text-sm text-white/40">Keine Voranmeldungen für diesen Spieltag gefunden.</div>
+                                <div className="mt-2 text-sm text-muted-foreground">Keine Voranmeldungen für diesen Spieltag gefunden.</div>
                               ) : (
                                 <div className="mt-3 space-y-2">
                                   {regs.slice(0, 6).map((r) => (
@@ -709,13 +709,13 @@ const todaysRegistrations = useMemo(() => {
                                           <CheckCircle2 className="w-4 h-4" /> bezahlt
                                         </span>
                                       ) : (
-                                        <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.035] px-2 py-1 text-xs font-black text-white/45">
+                                        <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.035] px-2 py-1 text-xs font-black text-muted-foreground">
                                           <XCircle className="w-4 h-4" /> offen
                                         </span>
                                       )}
                                     </div>
                                   ))}
-                                  {regs.length > 6 && <div className="mt-1 text-xs text-white/35">+ {regs.length - 6} weitere…</div>}
+                                  {regs.length > 6 && <div className="mt-1 text-xs text-muted-foreground">+ {regs.length - 6} weitere…</div>}
                                 </div>
                               )}
                             </div>
@@ -767,8 +767,8 @@ const todaysRegistrations = useMemo(() => {
                                 disabled={!canOpenOrStart}
                                 className={`flex min-h-[72px] w-full items-center justify-center gap-2 rounded-2xl py-5 text-base font-black transition-all ${
                                   canOpenOrStart
-                                    ? "border border-orange-300/25 bg-orange-500 text-white shadow-[0_14px_32px_-20px_rgba(249,115,22,.55)] hover:bg-orange-400 hover:-translate-y-0.5"
-                                    : "cursor-not-allowed border border-white/[0.07] bg-white/[0.035] text-white/25"
+                                    ? "border border-orange-300/25 bg-primary text-primary-foreground shadow-[0_14px_32px_-20px_rgba(249,115,22,.55)] hover:bg-orange-400 hover:-translate-y-0.5"
+                                    : "cursor-not-allowed border border-white/[0.07] bg-white/[0.035] text-muted-foreground"
                                 }`}
                                 title={
                                   hasActiveRun
