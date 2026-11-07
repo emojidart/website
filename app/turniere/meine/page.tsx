@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+import { TournamentManagerSkeleton } from "@/components/tournaments/tournament-manager-skeleton"
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -239,7 +240,7 @@ export default function MeineDachVeranstaltungenPage() {
       <div className="emd-loading-surface min-h-screen flex flex-col bg-background text-white">
         <Header variant="app" title="Meine Veranstaltungen" subtitle="Öffentliche Turniere" backHref="/turniere" />
         <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
-        <main className="relative z-10 flex flex-grow items-center justify-center px-4"><SectionSkeleton kind="tournament" /></main>
+        <TournamentManagerSkeleton mode="list" />
         <MobileBottomNav />
       </div>
     );
