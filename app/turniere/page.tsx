@@ -16,7 +16,13 @@ const tiles = [
 
 export default function DachTurniereHubPage() {
   const [backHref,setBackHref]=useState("/")
-  useEffect(()=>{const stored=window.sessionStorage.getItem("emd:public-area-origin");if(stored&&stored.startsWith("/"))setBackHref(stored)},[])
+  useEffect(() => {
+    const stored = window.sessionStorage.getItem("emd:public-area-origin")
+    // Nur interne Pfade übernehmen; keine protokollrelativen oder fehlerhaften URLs.
+    if (stored?.startsWith("/") && !stored.startsWith("//") && !stored.includes("\\")) {
+      setBackHref(stored)
+    }
+  }, [])
   return <div>
     <Header variant="app" title="Turniere & Serien" subtitle="Turnierbereich" backHref={backHref} />
     <main className="et-shell">
