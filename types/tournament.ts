@@ -34,7 +34,7 @@ export interface Board {
   id: number
   players: KratzerPlayer[]
   startTime: number | null // Timestamp
-  status?: "running" | "not_started" | "completed" | "cancelled"
+  status?: "running" | "not_started" | "completed" | "cancelled" | "finished"
   endTime?: number | null
   timer: NodeJS.Timeout | null // Reference to setInterval timer
   gameMode?: GameMode | null // Gewürfelter Modus dieser Runde
