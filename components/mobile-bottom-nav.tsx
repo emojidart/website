@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -181,6 +181,8 @@ export function MobileBottomNav() {
   const isLoggedIn = !!user
 
   const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const moreDialogRef = useRef<HTMLDivElement>(null)
+  const moreTriggerRef = useRef<HTMLButtonElement>(null)
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["Schnellzugriff"])
   const toggleGroup = (title: string) => setExpandedGroups((groups) => groups.includes(title) ? groups.filter((g) => g !== title) : [...groups, title])
   const [isGuest, setIsGuest] = useState(false)
@@ -248,10 +250,44 @@ export function MobileBottomNav() {
   useEffect(() => {
     if (!isMoreOpen) return
 
-    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && closeMore()
+    const dialog = moreDialogRef.current
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    // Fokus bleibt im Mobilmenü, auch wenn mit Tastatur bedient wird.
+    const focusable = () => Array.from(
+      dialog?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ) ?? []
+    ).filter(element => element.getClientRects().length > 0)
+
+    const first = focusable()[0]
+    first?.focus()
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        closeMore()
+      } else if (event.key === "Tab") {
+        const elements = focusable()
+        if (!elements.length) return
+        const firstItem = elements[0]
+        const lastItem = elements[elements.length - 1]
+        if (event.shiftKey && (document.activeElement === firstItem || !dialog?.contains(document.activeElement))) {
+          event.preventDefault()
+          lastItem.focus()
+        } else if (!event.shiftKey && (document.activeElement === lastItem || !dialog?.contains(document.activeElement))) {
+          event.preventDefault()
+          firstItem.focus()
+        }
+      }
+    }
 
     window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
+    return () => {
+      window.removeEventListener("keydown", onKeyDown)
+      document.body.style.overflow = previousOverflow
+      moreTriggerRef.current?.focus()
+    }
   }, [isMoreOpen, closeMore])
 
   const sections: Section[] = useMemo(() => {
@@ -352,7 +388,7 @@ export function MobileBottomNav() {
 
           {/* Sheet sitzt über Nav + Offset */}
           <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: SPACER_H }}>
-            <div className="emd-mobile-sheet mx-3 overflow-hidden rounded-t-[28px] border border-white/10 bg-[#172235] shadow-2xl" role="dialog" aria-modal="true" aria-label="EMD Menü">
+            <div ref={moreDialogRef} className="emd-mobile-sheet mx-3 overflow-hidden rounded-t-[28px] border border-white/10 bg-[#172235] shadow-2xl" role="dialog" aria-modal="true" aria-label="EMD Menü">
               <div className="emd-mobile-sheet-heading relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[#233248] p-4 text-white">
                 <h3 className="text-lg font-semibold text-white">
                   Mehr Optionen
@@ -441,6 +477,7 @@ export function MobileBottomNav() {
 
             <button
               type="button"
+              ref={moreTriggerRef}
               onClick={() => setIsMoreOpen(true)}
               className="group relative z-[2] flex min-h-[58px] min-w-0 touch-manipulation select-none items-center justify-center px-0.5"
               aria-label="Mehr Optionen"
