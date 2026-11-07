@@ -1570,18 +1570,42 @@ const fetchProfile = async () => {
     return teamMemberships.some((m: any) => m.role === "Captain" || m.role === "Co-Captain")
   }
 
-   // ✅ LOADING VIEW
+  // Profil-Skeleton verwendet dieselben Seitenabstände wie das fertige Profil.
   if (loading) {
-  return (
-    <main className="emd-loading-surface min-h-screen flex flex-col bg-background text-foreground pb-24 overflow-x-hidden">
-      <Header />
-
-      <SectionSkeleton kind="profile" />
-
-      <MobileBottomNav />
-    </main>
-  )
-}
+    return (
+      <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
+        <Header />
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8" aria-busy="true" aria-label="Mitgliederprofil wird geladen">
+          <section className="rounded-[28px] border border-white/10 bg-card p-5 sm:p-7">
+            <div className="mb-5 h-4 w-36 animate-pulse rounded bg-white/10" />
+            <div className="flex items-center gap-4">
+              <div className="h-[76px] w-[76px] shrink-0 animate-pulse rounded-[22px] bg-white/10 sm:h-24 sm:w-24" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                <div className="h-9 w-full max-w-xs animate-pulse rounded bg-white/10" />
+                <div className="h-5 w-36 animate-pulse rounded-full bg-white/10" />
+              </div>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {Array.from({ length: 3 }, (_, index) => (
+                <div key={index} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+                  <div className="mt-3 h-8 w-16 animate-pulse rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="rounded-[24px] border border-white/10 bg-card p-4 sm:p-5">
+            <div className="mb-5 flex gap-2">
+              {Array.from({ length: 3 }, (_, index) => <div key={index} className="h-11 min-w-0 flex-1 animate-pulse rounded-xl bg-white/10" />)}
+            </div>
+            <SectionSkeleton kind="profile" label="Profildaten werden geladen…" />
+          </section>
+        </main>
+        <MobileBottomNav />
+      </div>
+    )
+  }
 if (isBlocked) {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
