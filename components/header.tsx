@@ -206,35 +206,42 @@ export function Header({
     }
   }, [areaSwitcherOpen])
 
+  const navigateTo = (href: string) => {
+    if (href.split("?")[0] !== pathname && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("emd:route-start", { detail: { href } }))
+    }
+    router.push(href)
+  }
+
   const handleAuthClick = () => {
     if (user && isGuest) {
-      router.push("/guest-profile-app")
+      navigateTo("/guest-profile-app")
       return
     }
 
     if (user) {
-      router.push("/member-profile-app")
+      navigateTo("/member-profile-app")
       return
     }
 
-    router.push("/login")
+    navigateTo("/login")
   }
 
   const handleJoinClick = () => {
-    router.push("/verein-beitreten")
+    navigateTo("/verein-beitreten")
   }
 
   const handleAdminClick = () => {
-    router.push("/admin")
+    navigateTo("/admin")
   }
 
   const handleChatClick = () => {
-    router.push(isGuest ? "/chat-app?scope=community" : "/chat-app")
+    navigateTo(isGuest ? "/chat-app?scope=community" : "/chat-app")
   }
 
   const openArea = (href: string) => {
     setAreaSwitcherOpen(false)
-    router.push(href)
+    navigateTo(href)
   }
 
   const isActive = (href: string) => {
@@ -560,7 +567,7 @@ export function Header({
   if (variant === "app") {
     const handleBack = () => {
       if (onBackClick) return onBackClick()
-      if (backHref) return router.push(backHref)
+      if (backHref) return navigateTo(backHref)
       router.back()
     }
 
