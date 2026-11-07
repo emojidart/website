@@ -23,9 +23,16 @@ export function MemberWorkspace({ children }: { children: ReactNode }) {
     window.addEventListener("hashchange", navigate)
     return () => window.removeEventListener("hashchange", navigate)
   }, [])
+  const selectTab = (tabId: (typeof tabs)[number]["id"]) => {
+    setActive(tabId)
+    const hash = tabId === "documents" ? "#vereinsunterlagen" : `#profil-${tabId}`
+    if (window.location.hash !== hash) {
+      window.history.replaceState(window.history.state, "", hash)
+    }
+  }
   const panels = Children.toArray(children)
   return <div className="mp-workspace">
-    <div className="mp-tabs" role="tablist" aria-label="Mein Profil">{tabs.map((tab,index) => <button key={tab.id} id={`${id}-tab-${tab.id}`} type="button" role="tab" aria-selected={active === tab.id} aria-controls={`${id}-panel-${tab.id}`} tabIndex={active === tab.id ? 0 : -1} onClick={() => setActive(tab.id)} onKeyDown={event => {
+    <div className="mp-tabs" role="tablist" aria-label="Mein Profil">{tabs.map((tab,index) => <button key={tab.id} id={`${id}-tab-${tab.id}`} type="button" role="tab" aria-selected={active === tab.id} aria-controls={`${id}-panel-${tab.id}`} tabIndex={active === tab.id ? 0 : -1} onClick={() => selectTab(tab.id)} onKeyDown={event => {
       let next = index
       if (event.key === "ArrowRight") next = (index + 1) % tabs.length
       else if (event.key === "ArrowLeft") next = (index + tabs.length - 1) % tabs.length
@@ -33,7 +40,7 @@ export function MemberWorkspace({ children }: { children: ReactNode }) {
       else if (event.key === "End") next = tabs.length - 1
       else return
       event.preventDefault()
-      setActive(tabs[next].id)
+      selectTab(tabs[next].id)
       document.getElementById(`${id}-tab-${tabs[next].id}`)?.focus()
     }}><tab.icon size={18}/>{tab.label}</button>)}</div>
     {tabs.map((tab,index) => <div className="mp-panel" key={tab.id} id={`${id}-panel-${tab.id}`} role="tabpanel" aria-labelledby={`${id}-tab-${tab.id}`} tabIndex={0} hidden={active !== tab.id}>{panels[index]}</div>)}
