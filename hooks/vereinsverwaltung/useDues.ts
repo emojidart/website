@@ -46,6 +46,8 @@ function cadenceMonths(cadence: DuesCadence) {
       return 6
     case "annual":
       return 12
+    default:
+      throw new Error(`Ungültiger Beitragsrhythmus: ${String(cadence)}`)
   }
 }
 
