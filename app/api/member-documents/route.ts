@@ -146,11 +146,18 @@ async function buildPdf(args: {
   const orange = rgb(0.95, 0.31, 0.03)
   const navy = rgb(0.06, 0.09, 0.16)
   const gray = rgb(0.38, 0.42, 0.48)
-  let page: PDFPage
+  // Initialise the first page eagerly; TypeScript and the renderer both
+  // require a real page before any drawing helper accesses it.
+  let page: PDFPage = pdf.addPage([W, H])
+  let firstPagePending = true
   let y = 0
 
   const newPage = () => {
-    page = pdf.addPage([W, H])
+    if (firstPagePending) {
+      firstPagePending = false
+    } else {
+      page = pdf.addPage([W, H])
+    }
     y = H - 44
     page.drawRectangle({ x: 0, y: H - 9, width: W, height: 9, color: orange })
     page.drawText("EMD VereinsApp", { x: margin, y, size: 10, font: bold, color: orange })
