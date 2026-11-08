@@ -68,26 +68,26 @@ export function speakText(text: string, speechEnabled: boolean) {
 
   selectedVoice = germanVoices.find(
     (voice) => voice.name.toLowerCase().includes("google") && voice.name.toLowerCase().includes("rewin"),
-  )
+  ) ?? null
 
   if (!selectedVoice) {
     selectedVoice = germanVoices.find(
       (voice) => voice.name.toLowerCase().includes("google") && !voice.name.toLowerCase().includes("hedda"),
-    )
+    ) ?? null
   }
 
   if (!selectedVoice) {
     selectedVoice = germanVoices.find(
       (voice) => voice.name.toLowerCase().includes("microsoft") && !voice.name.toLowerCase().includes("hedda"),
-    )
+    ) ?? null
   }
 
   if (!selectedVoice && germanVoices.length > 0) {
-    selectedVoice = germanVoices.find((voice) => !voice.name.toLowerCase().includes("hedda"))
+    selectedVoice = germanVoices.find((voice) => !voice.name.toLowerCase().includes("hedda")) ?? null
   }
 
   if (!selectedVoice && allVoices.length > 0) {
-    selectedVoice = allVoices.find((voice) => !voice.name.toLowerCase().includes("hedda"))
+    selectedVoice = allVoices.find((voice) => !voice.name.toLowerCase().includes("hedda")) ?? null
   }
 
   if (selectedVoice) {
