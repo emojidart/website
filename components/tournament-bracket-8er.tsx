@@ -1768,8 +1768,8 @@ const confirmMatch = async (matchId: number) => {
 	if (!allMatches[progression.winner.matchId]) {
   allMatches[progression.winner.matchId] = {
     id: progression.winner.matchId,
-    player1: undefined,
-    player2: undefined,
+    player1: "",
+    player2: "",
     winner: undefined,
     loser: undefined,
     score1: 0,
@@ -1807,8 +1807,8 @@ const confirmMatch = async (matchId: number) => {
 	if (!allMatches[progression.loser.matchId]) {
   allMatches[progression.loser.matchId] = {
     id: progression.loser.matchId,
-    player1: undefined,
-    player2: undefined,
+    player1: "",
+    player2: "",
     winner: undefined,
     loser: undefined,
     score1: 0,
