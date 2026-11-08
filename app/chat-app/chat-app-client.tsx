@@ -49,6 +49,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import ChatLineupPanel from "./chat-lineup-panel";
 import ChatUpdatesPanel from "./chat-updates-panel";
 import ChatMatchCard, { MATCH_CARD_PREFIX, parseChatMatchCardMessage } from "./chat-match-card";
@@ -258,7 +259,13 @@ function initials(name: string) {
   return (a + b).toUpperCase();
 }
 
-export default function TeamChatPage() {
+type TeamChatContextProps = {
+  backHref?: string
+  backLabel?: string
+  contextLabel?: string
+}
+
+export default function TeamChatPage({ backHref, backLabel = "Zurück", contextLabel = "Chats" }: TeamChatContextProps = {}) {
   const { session, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -3707,9 +3714,15 @@ export default function TeamChatPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="text-[20px] font-semibold tracking-tight text-white">EMD Chat</div>
-                            <div className="mt-0.5 text-xs font-medium text-white/38">Chats</div>
+                            <div className="mt-0.5 text-xs font-medium text-white/38">{contextLabel}</div>
                           </div>
                         </div>
+                        {backHref ? (
+                          <Link href={backHref} className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border border-white/10 px-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-400" aria-label={backLabel}>
+                            <ArrowLeft className="h-4 w-4" />
+                            <span className="hidden sm:inline">{backLabel}</span>
+                          </Link>
+                        ) : null}
                       </div>
 
                       <div className="relative mt-3">
