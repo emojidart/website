@@ -14,6 +14,10 @@ import { supabase } from "@/lib/supabase"
 import { Crown, ShieldCheck, Users, Target, Hand, ArrowLeft } from "lucide-react"
 import { CaptainPlayerManagement } from "@/components/captain-player-management"
 
+function firstRelated<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}
+
 interface UserProfile {
   id: string
   user_id: string
@@ -93,7 +97,7 @@ export default function MeineTeamsPage() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       // Fetch team memberships
       if (profileData?.player_id) {
@@ -106,7 +110,7 @@ export default function MeineTeamsPage() {
           throw teamError
         }
 
-        setTeamMemberships(teamData || [])
+        setTeamMemberships((teamData || []).map((entry) => ({ ...entry, teams: firstRelated(entry.teams) })))
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((team) => team.team_id)
@@ -121,7 +125,7 @@ export default function MeineTeamsPage() {
             throw membersError
           }
 
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         }
       }
     } catch (err: any) {
