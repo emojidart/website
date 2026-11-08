@@ -51,12 +51,8 @@ interface ClubPageContentProps {
 
 interface PlayerMovement {
   id: string
-  player_id: string
-  team_id: string
-  from_team_id: string | null
   movement_type: "new_addition" | "transfer"
   movement_date: string
-  user_id: string
   club_players: { name: string } | null
   teams: { id: string; name: string } | null
   from_teams: { id: string; name: string } | null
@@ -151,7 +147,12 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
       console.error("Error fetching player movements:", error)
       setMovementsError("Fehler beim Laden der Spielerbewegungen.")
     } else {
-      setMovements(data as PlayerMovement[])
+      setMovements((data ?? []).map((movement) => ({
+          ...movement,
+          club_players: Array.isArray(movement.club_players) ? movement.club_players[0] ?? null : movement.club_players,
+          teams: Array.isArray(movement.teams) ? movement.teams[0] ?? null : movement.teams,
+          from_teams: Array.isArray(movement.from_teams) ? movement.from_teams[0] ?? null : movement.from_teams,
+        })))
     }
     setMovementsLoading(false)
   }
@@ -457,10 +458,10 @@ export function ClubPageContent({ clubPlayers, teamsWithPlayers }: ClubPageConte
                           <h4 className="font-semibold text-foreground text-lg mb-1 flex items-center justify-center gap-1">
                             {player.name}
                             {player.role === "Captain" && (
-                              <Crown className="h-4 w-4 text-yellow-600 ml-1" title="Kapitän" />
+                              <Crown className="h-4 w-4 text-yellow-600 ml-1" aria-label="Kapitän" />
                             )}
                             {player.role === "Co-Captain" && (
-                              <ShieldCheck className="h-4 w-4 text-blue-600 ml-1" title="Co-Kapitän" />
+                              <ShieldCheck className="h-4 w-4 text-blue-600 ml-1" aria-label="Co-Kapitän" />
                             )}
                           </h4>
                           {player.role && (
