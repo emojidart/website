@@ -960,7 +960,7 @@ if (session && !isAdmin) {
     )
   }
 
-  const hasAnyPermission = allowedViews.has("*") || allowedViews.size > 0
+  const hasAnyPermission = Boolean(allowedViews && (allowedViews.has("*") || allowedViews.size > 0))
 
 if (!hasAnyPermission) {
   return (
@@ -1602,14 +1602,7 @@ if (!hasAnyPermission) {
           isOpen={isPlayerListModalOpen}
           onClose={() => setIsPlayerListModalOpen(false)}
           onSelectPlayer={handleSelectPlayer}
-          fetchAllUniquePlayers={async () => {
-            const edart = await fetchPlayers("edart_players")
-            const steel = await fetchPlayers("steel_dart_players")
-            const uniqueNames = new Set<string>()
-            edart.forEach((p) => uniqueNames.add(p.name))
-            steel.forEach((p) => uniqueNames.add(p.name))
-            return Array.from(uniqueNames).sort()
-          }}
+
         />
       </main>
     </div>
