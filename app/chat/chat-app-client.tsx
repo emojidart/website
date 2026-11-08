@@ -1212,7 +1212,7 @@ export default function TeamChatPage() {
               role: "Vorstand",
             } as TeamRoom;
           })
-          .filter(Boolean) || [];
+          .filter((room): room is TeamRoom => room !== null);
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
@@ -1266,7 +1266,7 @@ export default function TeamChatPage() {
       const rooms: TeamRoom[] =
         (memberships || [])
           .map((m: any) => {
-            const t = m.teams;
+            const t = Array.isArray(m.teams) ? m.teams[0] : m.teams;
             if (!t?.id || !t?.chat_room_id) return null;
             return {
               id: t.chat_room_id, // ✅ chat_rooms.id
@@ -1279,7 +1279,7 @@ export default function TeamChatPage() {
               membership_visible_from: m.joined_at ?? m.created_at ?? null,
             } as TeamRoom;
           })
-          .filter(Boolean) || [];
+          .filter((room): room is TeamRoom => room !== null);
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
