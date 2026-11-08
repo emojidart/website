@@ -44,12 +44,12 @@ export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
  * ============================
  */
 export function createServerSupabaseClient(cookies: ReadonlyRequestCookies) {
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient(supabaseUrl!, supabaseAnonKey!, {
     cookies: {
       getAll() {
         return cookies.getAll()
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: { name: string; value: string; options?: Parameters<typeof cookies.set>[2] }[]) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookies.set(name, value, options)
