@@ -38,6 +38,10 @@ import { LeagueGuide } from "@/components/league-guide"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
+function firstRelated<T>(related: T | T[] | null | undefined): T | null {
+  return Array.isArray(related) ? (related[0] ?? null) : (related ?? null)
+}
+
 interface UserProfile {
   id: string
   user_id: string
@@ -490,7 +494,7 @@ export default function DashboardPage() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       // Fetch team memberships
       if (profileData?.player_id) {
@@ -514,7 +518,7 @@ export default function DashboardPage() {
           throw teamError
         }
 
-        setTeamMemberships(teamData || [])
+        setTeamMemberships((teamData || []).map((entry) => ({ ...entry, teams: firstRelated(entry.teams) })))
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((team) => team.team_id)
@@ -542,7 +546,7 @@ export default function DashboardPage() {
             throw membersError
           }
 
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         }
       }
     } catch (err: any) {
@@ -850,7 +854,7 @@ export default function DashboardPage() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       // Fetch team memberships
       if (profileData?.player_id) {
@@ -875,7 +879,7 @@ export default function DashboardPage() {
           throw teamError
         }
 
-        setTeamMemberships(teamData || [])
+        setTeamMemberships((teamData || []).map((entry) => ({ ...entry, teams: firstRelated(entry.teams) })))
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((team) => team.team_id)
@@ -904,7 +908,7 @@ export default function DashboardPage() {
             throw membersError
           }
 
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         }
       }
     } catch (err: any) {
@@ -950,7 +954,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
     return `https://wa.me/${p}`
   })()
 
-  const mapsUrl = hasVenue ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(opp.venue)}` : null
+  const mapsUrl = hasVenue ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(opp.venue ?? "")}` : null
 
   // If there's nothing meaningful to show, render nothing.
   if (!hasVenueName && !hasVenue && !hasCaptain && !tel) return null
@@ -3283,7 +3287,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                               setSelectedMatchForPostpone(match.id)
                               setPostponeData({
                                 newDate: match.match_date,
-                                newTime: match.match_time,
+                                newTime: match.match_time ?? "",
                                 reason: match.postponement_reason || "",
                               })
                               setIsPostponeDialogOpen(true)
