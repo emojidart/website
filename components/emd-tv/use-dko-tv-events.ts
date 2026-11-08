@@ -27,7 +27,7 @@ type Options = {
   tournamentId: string
   tournamentType: string
   onMatchStarted: (event: DkoTvEvent) => void
-  onMatchFinished: (event: DkoTvEvent) => void
+  onMatchFinished?: (event: DkoTvEvent) => void
 }
 
 const POLL_MS = 900
@@ -82,7 +82,7 @@ export function useDkoTvEvents({
       if (event.event_type === "MATCH_STARTED") {
         callbacksRef.current.onMatchStarted(event)
       } else if (event.event_type === "MATCH_FINISHED") {
-        callbacksRef.current.onMatchFinished(event)
+        callbacksRef.current.onMatchFinished?.(event)
       }
 
       // Erst nach erfolgreicher Übergabe als gesehen markieren.
