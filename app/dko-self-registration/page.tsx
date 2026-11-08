@@ -55,7 +55,8 @@ export default function DKOSelfRegistrationPage() {
 
         if (profErr) throw profErr
 
-        const spieldatenbankId = profile?.club_players?.spieldatenbank_id
+        const linkedPlayer = Array.isArray(profile?.club_players) ? profile.club_players[0] : profile?.club_players
+        const spieldatenbankId = linkedPlayer?.spieldatenbank_id
         if (!spieldatenbankId) {
           setPlayerId(null)
           setPlayerName("")
