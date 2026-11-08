@@ -147,7 +147,10 @@ export default function MeineTeamsAppPage() {
         const { data: teamData, error: teamError } = await membershipQuery
         if (teamError) throw teamError
 
-        const visibleTeamData = (teamData || []).filter((membership: any) => {
+        const visibleTeamData = (teamData || []).map((membership) => ({
+          ...membership,
+          teams: firstRelated(membership.teams),
+        })).filter((membership) => {
           const dartType = membership.teams?.dart_type
 
           if (dartType === "edart") return canSeeEDart
@@ -156,7 +159,7 @@ export default function MeineTeamsAppPage() {
           return false
         })
 
-        setTeamMemberships(visibleTeamData.map((entry) => ({ ...entry, teams: firstRelated(entry.teams) })))
+        setTeamMemberships(visibleTeamData)
 
         if (visibleTeamData.length > 0) {
           const teamIds = visibleTeamData.map((team: any) => team.team_id)
