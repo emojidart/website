@@ -102,7 +102,8 @@ export default function ClubMeetingPage() {
 
   useEffect(() => {
     const activeMeeting = meeting
-    if (activeMeeting?.status !== "live" || !activeMeeting.room_name || !meetingHostRef.current) return
+    const roomName = activeMeeting?.room_name
+    if (activeMeeting?.status !== "live" || !roomName || !meetingHostRef.current) return
 
     let cancelled = false
 
@@ -120,7 +121,7 @@ export default function ClubMeetingPage() {
             "Content-Type": "application/json",
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
-          body: JSON.stringify({ roomName: activeMeeting.room_name }),
+          body: JSON.stringify({ roomName: roomName }),
         })
 
         const rawResponse = await response.text()
@@ -146,7 +147,7 @@ export default function ClubMeetingPage() {
         meetingHostRef.current.innerHTML = ""
 
         const options: Record<string, unknown> = {
-          roomName: `${result.appId}/${activeMeeting.room_name}`,
+          roomName: `${result.appId}/${roomName}`,
           parentNode: meetingHostRef.current,
           width: "100%",
           height: "100%",
@@ -155,7 +156,7 @@ export default function ClubMeetingPage() {
             startWithAudioMuted: !result.moderator,
             startWithVideoMuted: !result.moderator,
             disableDeepLinking: true,
-            brandingRoomAlias: activeMeeting.room_name,
+            brandingRoomAlias: roomName,
           },
           interfaceConfigOverwrite: {
             MOBILE_APP_PROMO: false,
