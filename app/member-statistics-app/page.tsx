@@ -14,6 +14,10 @@ import { MembershipAccessGate } from "@/components/member/membership/membership-
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
+function firstRelated<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}
+
 interface UserProfile {
   id: string
   user_id: string
@@ -150,7 +154,7 @@ export default function MemberStatisticsPage() {
         .single()
 
       if (profileError) throw profileError
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       if (profileData?.player_id) {
         const { data: teamData, error: teamError } = await supabase
@@ -161,8 +165,12 @@ export default function MemberStatisticsPage() {
 
         if (teamError) throw teamError
 
-        const allowedTeamData = ((teamData || []) as any[]).filter((membership: any) => {
-          const dartType = String(membership?.teams?.dart_type || "").toLowerCase()
+        const normalizedTeamData = (teamData || []).map((membership) => ({
+          ...membership,
+          teams: firstRelated(membership.teams),
+        }))
+        const allowedTeamData = normalizedTeamData.filter((membership) => {
+          const dartType = String(membership.teams?.dart_type || "").toLowerCase()
 
           if (dartType === "edart") return canSeeEDart
           if (dartType === "steeldart") return canSeeSteeldart
@@ -170,7 +178,7 @@ export default function MemberStatisticsPage() {
           return false
         })
 
-        setTeamMemberships(allowedTeamData as any)
+        setTeamMemberships(allowedTeamData)
 
         if (allowedTeamData.length > 0) {
           const teamIds = allowedTeamData.map((t: any) => t.team_id)
@@ -198,7 +206,7 @@ export default function MemberStatisticsPage() {
             .order("role", { ascending: false })
 
           if (membersError) throw membersError
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((member) => ({ ...member, club_players: firstRelated(member.club_players) })))
         } else {
           setTeamMembers([])
         }
