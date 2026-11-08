@@ -2,7 +2,6 @@
 
 import { LoadingIndicator } from "@/components/loading/loading"
 
-import type React from "react"
 import React, { useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
