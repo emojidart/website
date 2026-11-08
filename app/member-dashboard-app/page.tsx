@@ -856,7 +856,7 @@ const OpponentLokalInfo = ({ match }: { match: Match }) => {
     return `https://wa.me/${p}`
   })()
 
-  const mapsUrl = hasVenue ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(opp.venue)}` : null
+  const mapsUrl = hasVenue ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(opp.venue ?? "")}` : null
 
   // If there's nothing meaningful to show, render nothing.
   if (!hasVenueName && !hasVenue && !hasCaptain && !tel) return null
@@ -1826,7 +1826,7 @@ const modalAwayName = modalMatch
     />
 
    <main className="relative mx-auto w-full max-w-[var(--emd-content-max)] bg-transparent px-4 pb-24 pt-20 text-white sm:px-6 lg:pb-12 xl:px-8">
-      <DashboardTutorial role={getUserRole()} />
+      <DashboardTutorial userRole={getUserRole()} />
 
       <section className="relative mt-2 overflow-hidden rounded-2xl border border-white/[0.09] bg-card shadow-sm  sm:mt-4 sm:rounded-[20px] xl:rounded-[20px]">
 
@@ -2576,7 +2576,7 @@ const awayName = getTeamName(match, false) || "Unbekannt"
                               setSelectedMatchForPostpone(match.id)
                               setPostponeData({
                                 newDate: match.match_date,
-                                newTime: match.match_time,
+                                newTime: match.match_time ?? "",
                                 reason: match.postponement_reason || "",
                               })
                               setIsPostponeDialogOpen(true)
