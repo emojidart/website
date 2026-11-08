@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
     const unpaid: Array<{ id: string; amount: number; url: string | null }> = []
     for await (const invoice of stripe.invoices.list({ subscription: membership.stripe_subscription_id, status: "open", limit: 100 })) {
-      if (Number(invoice.amount_remaining || 0) > 0) unpaid.push({ id: invoice.id, amount: Number(invoice.amount_remaining || 0), url: invoice.hosted_invoice_url })
+      if (invoice.id && Number(invoice.amount_remaining || 0) > 0) unpaid.push({ id: invoice.id, amount: Number(invoice.amount_remaining || 0), url: invoice.hosted_invoice_url ?? null })
     }
     const deadline = membership.payment_grace_until
     const expired = deadline ? Date.parse(deadline) <= Date.now() : false
