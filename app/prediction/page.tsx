@@ -1,5 +1,7 @@
 "use client"
 
+import type { LeagueStanding } from "@/lib/league-display-types"
+
 import { SectionSkeleton } from "@/components/loading/loading"
 
 import { useState, useEffect, useMemo } from "react"
@@ -316,7 +318,7 @@ function calcPrediction(args: {
   }
 }
 
-function confBadgeClass(c: "low" | "medium" | "high") {
+function confBadgeClass(c: string) {
   if (c === "high") return "bg-green-100 text-green-700 border-green-200"
   if (c === "medium") return "bg-yellow-100 text-yellow-700 border-yellow-200"
   return "bg-muted text-muted-foreground border-border"
@@ -487,8 +489,8 @@ export default function DartLeaguePage() {
     return `${name}${year}`
   }, [seasons, selectedSeasonId])
 
-  const calculateStandings = () => {
-    const standings: any = {}
+  const calculateStandings = (): LeagueStanding[] => {
+    const standings: Record<string, LeagueStanding> = {}
 
     teams.forEach((team: any) => {
       standings[team.id] = {
