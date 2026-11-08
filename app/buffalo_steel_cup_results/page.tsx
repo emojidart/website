@@ -5,7 +5,6 @@ import { InlineLoader, SectionSkeleton } from "@/components/loading/loading"
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Header } from '@/components/header'
-import Image from '@/components/Image'
 import { MobileBottomNav } from '@/components/mobile-bottom-nav'
 import {
 Trophy,
@@ -67,7 +66,7 @@ export default function BuffaloTournamentsPage() {
         }
       })
 
-      const tournamentsArray = await Promise.all(
+      const tournamentsArray: Tournament[] = await Promise.all(
         Array.from(uniqueTournamentMap.values()).map(async (tournament) => {
           const { data: matchData } = await supabase
             .from('dko_match_states')
