@@ -36,7 +36,7 @@ export function RegistrationTab({
   isRegisteringPlayers,
   loading,
 }: RegistrationTabProps) {
-  const { showToast } = useToast()
+  const { toast } = useToast()
   const [availablePlayers, setAvailablePlayers] = useState<SpieldatenbankEntry[]>([])
   const [filterText, setFilterText] = useState("")
   const [fetchingAvailablePlayers, setFetchingAvailablePlayers] = useState(true)
@@ -53,12 +53,12 @@ export function RegistrationTab({
       if (error) throw error
       setAvailablePlayers(data || [])
     } catch (err: any) {
-      showToast("error", `Fehler beim Laden der verfügbaren Spieler: ${err.message}`)
+      toast({ variant: "destructive", title: "Spieler konnten nicht geladen werden", description: err instanceof Error ? err.message : "Unbekannter Fehler" })
       console.error("Error fetching available players:", err)
     } finally {
       setFetchingAvailablePlayers(false)
     }
-  }, [showToast])
+  }, [toast])
 
   useEffect(() => {
     fetchAvailablePlayers()
