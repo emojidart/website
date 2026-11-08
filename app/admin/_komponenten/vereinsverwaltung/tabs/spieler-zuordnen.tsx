@@ -622,9 +622,9 @@ export function AssignPlayerTab(props: Props) {
                         <li key={member.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5 text-sm text-white/75">
                           <span className="flex min-w-0 items-center gap-1.5 font-bold">
                             {member.player_name}
-                            {member.role === "Captain" && <Crown className="h-3 w-3 text-amber-300" title="Kapitän" />}
+                            {member.role === "Captain" && <Crown className="h-3 w-3 text-amber-300" aria-label="Kapitän" />}
                             {member.role === "Co-Captain" && (
-                              <ShieldCheck className="h-3 w-3 text-sky-300" title="Co-Kapitän" />
+                              <ShieldCheck className="h-3 w-3 text-sky-300" aria-label="Co-Kapitän" />
                             )}
                             {member.role && member.role !== "Player" && (
                               <span className="text-xs text-white/35">({member.role})</span>
