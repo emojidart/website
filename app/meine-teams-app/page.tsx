@@ -27,6 +27,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+function firstRelated<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}
+
 interface UserProfile {
   id: string
   user_id: string
@@ -128,7 +132,7 @@ export default function MeineTeamsAppPage() {
         .single()
 
       if (profileError) throw profileError
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       if (profileData?.player_id) {
         let membershipQuery = supabase
@@ -152,7 +156,7 @@ export default function MeineTeamsAppPage() {
           return false
         })
 
-        setTeamMemberships(visibleTeamData)
+        setTeamMemberships(visibleTeamData.map((entry) => ({ ...entry, teams: firstRelated(entry.teams) })))
 
         if (visibleTeamData.length > 0) {
           const teamIds = visibleTeamData.map((team: any) => team.team_id)
@@ -171,7 +175,7 @@ export default function MeineTeamsAppPage() {
 
           const { data: membersData, error: membersError } = await membersQuery
           if (membersError) throw membersError
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         } else {
           setTeamMembers([])
         }
