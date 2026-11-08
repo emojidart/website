@@ -109,7 +109,7 @@ export default function TerminalPersonalPage() {
   // Full navigation destroys all in-memory player/credit state; face descriptors stay in IndexedDB.
   useEffect(() => {
     if (!activeMember) return
-    let timer: ReturnType<typeof setTimeout>
+    let timer: ReturnType<typeof window.setTimeout>
     const leave = () => window.location.replace("/terminal")
     const reset = () => { window.clearTimeout(timer); timer = window.setTimeout(leave, 60_000) }
     const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "wheel"]
