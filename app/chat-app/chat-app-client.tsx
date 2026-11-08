@@ -1872,7 +1872,7 @@ export default function TeamChatPage() {
               role: "Vorstand",
             } as TeamRoom;
           })
-          .filter(Boolean) || [];
+          .filter((room): room is TeamRoom => room !== null);
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
@@ -1939,7 +1939,7 @@ export default function TeamChatPage() {
               membership_visible_from: m.joined_at ?? m.created_at ?? null,
             } as TeamRoom;
           })
-          .filter(Boolean) || [];
+          .filter((room): room is TeamRoom => room !== null);
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
