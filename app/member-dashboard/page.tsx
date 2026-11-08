@@ -31,6 +31,10 @@ import { DashboardTutorial } from "@/components/dashboard-tutorial"
 // import { ChatLayout } from "@/components/chat/chat-layout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+function firstRelated<T>(related: T | T[] | null | undefined): T | null {
+  return Array.isArray(related) ? (related[0] ?? null) : (related ?? null)
+}
+
 interface UserProfile {
   id: string
   user_id: string
@@ -362,7 +366,7 @@ export default function DashboardPage() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       // Fetch team memberships
       if (profileData?.player_id) {
@@ -384,7 +388,7 @@ export default function DashboardPage() {
           throw teamError
         }
 
-        setTeamMemberships(teamData || [])
+        setTeamMemberships((teamData || []).map((entry) => ({ ...entry, teams: firstRelated(entry.teams) })))
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((team) => team.team_id)
@@ -412,7 +416,7 @@ export default function DashboardPage() {
             throw membersError
           }
 
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         }
       }
     } catch (err: any) {
@@ -720,7 +724,7 @@ export default function DashboardPage() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       // Fetch team memberships
       if (profileData?.player_id) {
@@ -742,7 +746,7 @@ export default function DashboardPage() {
           throw teamError
         }
 
-        setTeamMemberships(teamData || [])
+        setTeamMemberships((teamData || []).map((entry) => ({ ...entry, teams: firstRelated(entry.teams) })))
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((team) => team.team_id)
@@ -770,7 +774,7 @@ export default function DashboardPage() {
             throw membersError
           }
 
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         }
       }
     } catch (err: any) {
@@ -1501,7 +1505,7 @@ export default function DashboardPage() {
       <Header />
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
         {/* Changed DashboardTutorial prop name */}
-        <DashboardTutorial role={getUserRole()} />
+        <DashboardTutorial userRole={getUserRole()} />
 
         <div className="mb-6">
           <Button variant="outline" onClick={() => router.push("/member-profile")} className="flex items-center gap-2">
@@ -1804,7 +1808,7 @@ export default function DashboardPage() {
                                         setSelectedMatchForPostpone(match.id)
                                         setPostponeData({
                                           newDate: match.match_date,
-                                          newTime: match.match_time,
+                                          newTime: match.match_time ?? "",
                                           reason: "",
                                         })
                                         setIsPostponeDialogOpen(true)
@@ -1981,7 +1985,7 @@ export default function DashboardPage() {
                                         setSelectedMatchForPostpone(match.id)
                                         setPostponeData({
                                           newDate: match.match_date,
-                                          newTime: match.match_time,
+                                          newTime: match.match_time ?? "",
                                           reason: match.postponement_reason || "",
                                         })
                                         setIsPostponeDialogOpen(true)
@@ -2378,7 +2382,7 @@ export default function DashboardPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(currentMatch.team_photo_url, "_blank")}
+                          onClick={() => currentMatch.team_photo_url && window.open(currentMatch.team_photo_url, "_blank", "noopener,noreferrer")}
                           className="text-green-600 border-green-600 hover:bg-green-50 text-sm"
                         >
                           <Eye className="h-4 w-4 mr-2" />
