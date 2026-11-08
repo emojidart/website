@@ -194,7 +194,10 @@ export default function CommunityPage() {
       const profilesMap = new Map()
       if (profilesData) {
         profilesData.forEach((profile) => {
-          profilesMap.set(profile.user_id, profile)
+          profilesMap.set(profile.user_id, {
+            ...profile,
+            club_players: Array.isArray(profile.club_players) ? profile.club_players[0] ?? null : profile.club_players,
+          })
         })
       }
 
@@ -239,7 +242,7 @@ export default function CommunityPage() {
       if (profileError) {
         console.error("Error fetching profile:", profileError)
       } else {
-        setProfile(profileData)
+        setProfile({ ...profileData, club_players: Array.isArray(profileData.club_players) ? profileData.club_players[0] ?? null : profileData.club_players })
       }
     } catch (err) {
       console.error("Error fetching profile:", err)
