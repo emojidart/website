@@ -35,15 +35,21 @@ export default async function ClubPage() {
 
     players: teamMembers
       .filter((m) => m.team_id === team.id && m.club_players && m.left_at === null)
-      .map((m) => ({
-        id: m.club_players.id,
-        name: m.club_players.name,
-        photo_url: m.club_players.photo_url ?? null,
-        throwing_hand: m.club_players.throwing_hand ?? null,
-        birthdate: m.club_players.birthdate ?? null,
-        origin: m.club_players.origin ?? null,
-        role: m.role ?? null,
-      })),
+      .flatMap((m) => {
+        const player = Array.isArray(m.club_players)
+          ? m.club_players[0]
+          : m.club_players
+        if (!player) return []
+        return [{
+          id: player.id,
+          name: player.name,
+          photo_url: player.photo_url ?? null,
+          throwing_hand: player.throwing_hand ?? null,
+          birthdate: player.birthdate ?? null,
+          origin: player.origin ?? null,
+          role: m.role ?? null,
+        }]
+      }),
   }))
 
   return <NewClubClient teamsWithPlayers={teamsWithPlayers} />
