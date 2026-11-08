@@ -184,7 +184,7 @@ export function RolePermissionsManager() {
   const setAll = (value: boolean) => {
     const next: Partial<Record<PageKey, boolean>> = {}
     ADMIN_PERMISSION_PAGES.forEach((page) => {
-      next[page.key] = value
+      if (page.key !== "dashboard") next[page.key as PageKey] = value
     })
     setAllowedMap(next)
   }
@@ -351,7 +351,7 @@ export function RolePermissionsManager() {
             <div className="space-y-4">
               {groupedPages.map((group) => {
                 const groupKeys = group.pages.map((page) => page.key)
-                const allOn = groupKeys.every((key) => Boolean(allowedMap[key]))
+                const allOn = groupKeys.every((key) => Boolean(allowedMap[key as PageKey]))
 
                 return (
                   <section
