@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -88,7 +88,7 @@ async function getFeeAndNet(stripe: Stripe, invoice: any) {
 
 async function upsertStripeInvoice(
   stripe: Stripe,
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   membership: any,
   invoice: any,
 ) {
@@ -150,7 +150,7 @@ async function upsertStripeInvoice(
   return true
 }
 
-async function listPayments(supabase: ReturnType<typeof createClient>) {
+async function listPayments(supabase: SupabaseClient<any>) {
   const { data: payments, error: paymentsError } = await supabase
     .from("membership_payments")
     .select("id,player_id,membership_id,change_request_id,paid_at,amount_cents,currency,interval,period_start,period_end,notes,payment_method,source,status,billing_cycle,fee_cents,net_amount_cents,receipt_no,stripe_invoice_id,stripe_invoice_number,stripe_invoice_pdf_url,stripe_hosted_invoice_url,stripe_payment_intent_id,stripe_customer_id,stripe_subscription_id,line_items,reviewed_at,reviewed_by,review_note")
@@ -175,7 +175,7 @@ async function listPayments(supabase: ReturnType<typeof createClient>) {
 }
 
 
-async function listWalletTopups(supabase: ReturnType<typeof createClient>) {
+async function listWalletTopups(supabase: SupabaseClient<any>) {
   const { data: topups, error: topupsError } = await supabase
     .from("wallet_topups")
     .select("id,player_id,credit_amount,fee_charged,gross_amount,actual_stripe_fee,actual_stripe_net,stripe_checkout_session_id,stripe_payment_intent_id,stripe_event_id,status,created_at,paid_at,updated_at,reviewed_at,reviewed_by,review_note")
