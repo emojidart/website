@@ -72,7 +72,6 @@ interface LegStatistic {
   throws_180: number
   throws_171: number
   throws_high_tonne: number
-  throws_high_tonne: number
   throws_tonne: number
   throws_shanghai: number
   throws_95_plus: number
