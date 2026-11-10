@@ -551,8 +551,9 @@ export function MatchReportsTab() {
             .select("id")
             .single()
           if (md.error) throw md.error
-          matchdayId = md.data.id
-          dayIds.set(currentDate, matchdayId)
+          const createdMatchdayId = md.data.id
+          matchdayId = createdMatchdayId
+          dayIds.set(currentDate, createdMatchdayId)
         }
 
         const f = fixtures[i]
