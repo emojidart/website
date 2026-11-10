@@ -1883,7 +1883,7 @@ const createMatch = useCallback(async () => {
                         </p>
                       </div>
                       {onOpenMailbox ? (
-                        <Button type="button" variant="outline" className={vv.buttonSecondary} onClick={onOpenMailbox}>
+                        <Button type="button" variant="outline" className={vv.buttonSecondary} onClick={() => onOpenMailbox()}>
                           <Inbox className="mr-2 h-4 w-4" />
                           Ligapostfach
                         </Button>
