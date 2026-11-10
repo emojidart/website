@@ -1,5 +1,9 @@
 "use client"
 
+import type { LeagueStanding } from "@/lib/league-display-types"
+
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -314,7 +318,7 @@ function calcPrediction(args: {
   }
 }
 
-function confBadgeClass(c: "low" | "medium" | "high") {
+function confBadgeClass(c: string) {
   if (c === "high") return "bg-green-100 text-green-700 border-green-200"
   if (c === "medium") return "bg-yellow-100 text-yellow-700 border-yellow-200"
   return "bg-muted text-muted-foreground border-border"
@@ -485,8 +489,8 @@ export default function DartLeaguePage() {
     return `${name}${year}`
   }, [seasons, selectedSeasonId])
 
-  const calculateStandings = () => {
-    const standings: any = {}
+  const calculateStandings = (): LeagueStanding[] => {
+    const standings: Record<string, LeagueStanding> = {}
 
     teams.forEach((team: any) => {
       standings[team.id] = {
@@ -726,18 +730,9 @@ export default function DartLeaguePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-card text-foreground font-sans">
+      <div className="emd-loading-surface min-h-screen bg-card text-foreground font-sans">
         <Header />
-        <main className="pt-8 pb-24 relative">
-          <div className="container mx-auto px-4 md:px-6 py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6 ">
-                <Trophy className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <p className="mt-4 text-muted-foreground">Lade Liga-Daten...</p>
-            </div>
-          </div>
-        </main>
+        <main className="pt-8 pb-24 relative"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     )

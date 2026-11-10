@@ -1,18 +1,12 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
-import {
-  CheckCircle2,
-  Loader2,
-  Play,
-  ShieldAlert,
-  UserMinus,
-  Users,
-  UserX,
-} from "lucide-react"
+import { CheckCircle2, Play, ShieldAlert, UserMinus, Users, UserX } from "lucide-react"
 
 type RegistrationRow = {
   id: number
@@ -244,42 +238,37 @@ export function MatchdayAttendance({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white/50">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Anwesenheit wird geladen…
-        </div>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 
   return (
-    <div className="rounded-2xl border border-fuchsia-300/[0.14] bg-[linear-gradient(135deg,rgba(217,70,239,.07),rgba(0,0,0,.20))] p-4">
+    <div className="rounded-2xl border border-orange-300/[0.14] bg-[linear-gradient(135deg,rgba(217,70,239,.07),rgba(0,0,0,.20))] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 font-black text-white">
-            <ShieldAlert className="h-4 w-4 text-fuchsia-200" />
+            <ShieldAlert className="h-4 w-4 text-orange-200" />
             Anwesenheit & Turnierstart
           </div>
-          <div className="mt-1 text-xs font-semibold text-white/40">
+          <div className="mt-1 text-xs font-semibold text-muted-foreground">
             {eventName} · {seriesName}
           </div>
         </div>
 
-        <div className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-black text-white/55">
+        <div className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-black text-muted-foreground">
           {registrations.length} angemeldet
         </div>
       </div>
 
       {noShowPenaltyMode === "delete_worst_result" ? (
-        <div className="mt-3 rounded-xl border border-rose-300/10 bg-rose-500/[0.05] px-3 py-2 text-xs font-semibold text-rose-100/70">
+        <div className="mt-3 rounded-xl border border-red-300/10 bg-red-500/[0.05] px-3 py-2 text-xs font-semibold text-red-100/70">
           Nicht angetretene Spieler erhalten die hinterlegte No-Show-Strafe.
         </div>
       ) : null}
 
       <div className="mt-4 space-y-2">
         {registrations.length === 0 ? (
-          <div className="text-sm text-white/40">Keine Anmeldungen für diesen Spieltag.</div>
+          <div className="text-sm text-muted-foreground">Keine Anmeldungen für diesen Spieltag.</div>
         ) : (
           registrations.map((reg) => {
             const id = String(reg.player_id)
@@ -294,7 +283,7 @@ export function MatchdayAttendance({
                 key={reg.id}
                 className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between ${
                   isNoShow
-                    ? "border-rose-300/15 bg-rose-500/[0.06]"
+                    ? "border-red-300/15 bg-red-500/[0.06]"
                     : isWaiting
                       ? "border-orange-300/15 bg-orange-500/[0.06]"
                       : "border-emerald-300/10 bg-emerald-500/[0.04]"
@@ -304,7 +293,7 @@ export function MatchdayAttendance({
                   <div className="truncate text-sm font-black text-white/90">{reg.player_name}</div>
                   <div className="mt-1 text-xs font-semibold">
                     {isNoShow ? (
-                      <span className="text-rose-200/80">Nicht angetreten · Strafe</span>
+                      <span className="text-red-200/80">Nicht angetreten · Strafe</span>
                     ) : isWaiting ? (
                       <span className="text-orange-200/80">Wartet · keine Strafe</span>
                     ) : (
@@ -320,7 +309,7 @@ export function MatchdayAttendance({
                   className={`h-9 rounded-xl ${
                     isNoShow
                       ? "border-emerald-300/20 bg-emerald-500/[0.06] text-emerald-100 hover:bg-emerald-500/[0.10]"
-                      : "border-rose-300/20 bg-transparent text-rose-100 hover:bg-rose-500/[0.08]"
+                      : "border-red-300/20 bg-transparent text-red-100 hover:bg-red-500/[0.08]"
                   }`}
                 >
                   {isNoShow ? (
@@ -354,7 +343,7 @@ export function MatchdayAttendance({
       ) : null}
 
       {message ? (
-        <div className="mt-3 rounded-xl border border-white/[0.08] bg-black/20 px-3 py-2 text-xs font-semibold text-white/60">
+        <div className="mt-3 rounded-xl border border-white/[0.08] bg-black/20 px-3 py-2 text-xs font-semibold text-muted-foreground">
           {message}
         </div>
       ) : null}
@@ -363,11 +352,8 @@ export function MatchdayAttendance({
         type="button"
         disabled={saving || registrations.length === 0 || tournamentPlayers.length < 2}
         onClick={() => void confirmAndContinue()}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-orange-300/25 bg-orange-500 py-5 font-black text-white shadow-[0_14px_32px_-20px_rgba(249,115,22,.55)] transition hover:-translate-y-0.5 hover:bg-orange-400 disabled:opacity-40"
-      >
-        {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
-        {finalized ? continueLabel : `Anwesenheit bestätigen & ${continueLabel}`}
-      </Button>
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-orange-300/25 bg-primary py-5 font-black text-primary-foreground shadow-[0_14px_32px_-20px_rgba(249,115,22,.55)] transition hover:-translate-y-0.5 hover:bg-orange-400 disabled:opacity-40"
+       loading={Boolean(saving)}><Play className="h-5 w-5" />{finalized ? continueLabel : `Anwesenheit bestätigen & ${continueLabel}`}</Button>
     </div>
   )
 }
@@ -376,7 +362,7 @@ function MiniStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-white/[0.08] bg-black/20 p-2.5 text-center">
       <div className="text-lg font-black text-white">{value}</div>
-      <div className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">{label}</div>
+      <div className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
     </div>
   )
 }

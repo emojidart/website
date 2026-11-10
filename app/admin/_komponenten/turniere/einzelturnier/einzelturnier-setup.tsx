@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
@@ -144,8 +146,8 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
 
   const [showCreditConfirmModal, setShowCreditConfirmModal] = useState<{
     open: boolean
-    players?: Array<{ id: number; name: string; currentBalance: number; newBalance: number; clubPlayerId: string }>
-    playersWithoutCredit?: number[]
+    players?: Array<{ id: number | string; name: string; currentBalance: number; newBalance: number; clubPlayerId: string }>
+    playersWithoutCredit?: Array<number | string>
     entryFee?: number
   }>({ open: false })
 
@@ -379,11 +381,11 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
   if (authLoading || adminLoading) {
     return (
-      <div className={`${styles.theme} min-h-screen flex flex-col bg-[#050608] text-white`}>
+      <div className={`${styles.theme} min-h-screen flex flex-col bg-card text-white`}>
         <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
-          <Card className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0b0d11]/95 p-6 text-white shadow-[0_35px_120px_-58px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+          <Card className="w-full max-w-md rounded-[20px] border border-white/10 bg-card p-6 text-white shadow-sm backdrop-blur-2xl">
             <CardContent className="text-center">
-              <p className="text-gray-700">Lade...</p>
+              <InlineLoader label="Inhalte werden geladen…" />
             </CardContent>
           </Card>
         </main>
@@ -393,9 +395,9 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
   if (!user || !isAdmin) {
     return (
-      <div className={`${styles.theme} min-h-screen flex flex-col bg-[#050608] text-white`}>
+      <div className={`${styles.theme} min-h-screen flex flex-col bg-card text-white`}>
         <main className="container mx-auto p-4 flex flex-col items-center justify-center flex-grow">
-          <Card className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0b0d11]/95 p-6 text-white shadow-[0_35px_120px_-58px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+          <Card className="w-full max-w-md rounded-[20px] border border-white/10 bg-card p-6 text-white shadow-sm backdrop-blur-2xl">
             <CardTitle className="text-2xl font-bold text-center mb-6">Zugriff verweigert</CardTitle>
             <CardContent className="text-center">
               <p className="mb-4 text-gray-700">
@@ -412,8 +414,8 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
   }
 
   return (
-    <div className={`${styles.theme} relative min-h-[720px] w-full min-w-0 overflow-hidden rounded-[30px] border border-white/[0.08] bg-[#050608] text-white`}>
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[#050608]">
+    <div className={`${styles.theme} relative min-h-[720px] w-full min-w-0 overflow-hidden rounded-[20px] border border-white/[0.08] bg-card text-white`}>
+      <div className="pointer-events-none absolute inset-0 z-0 bg-card">
         <div
           className="absolute inset-0 bg-cover bg-[62%_50%] bg-no-repeat opacity-[0.34]"
           style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
@@ -427,13 +429,13 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
       {showAlreadyRegisteredModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0b0d11]/95 p-7 text-white shadow-[0_35px_120px_-58px_rgba(0,0,0,.98)] backdrop-blur-2xl sm:p-8">
+          <div className="w-full max-w-md rounded-[20px] border border-white/10 bg-card p-7 text-white shadow-sm backdrop-blur-2xl sm:p-8">
             <div className="flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-4 mx-auto">
               <UserPlus className="w-7 h-7 text-blue-600" />
             </div>
             <h3 className="mb-2 text-center text-2xl font-black tracking-tight text-white">Bereits registriert</h3>
-            <p className="text-center text-gray-600 font-semibold mb-2">{showAlreadyRegisteredModal.playerName}</p>
-            <p className="text-center text-gray-500 mb-6">Dieser Spieler ist bereits für das Turnier registriert.</p>
+            <p className="text-center text-muted-foreground font-semibold mb-2">{showAlreadyRegisteredModal.playerName}</p>
+            <p className="text-center text-muted-foreground mb-6">Dieser Spieler ist bereits für das Turnier registriert.</p>
             <Button
               onClick={() => setShowAlreadyRegisteredModal({ open: false })}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg"
@@ -446,7 +448,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
       {showSuccessModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_100px_-35px_rgba(15,23,42,.65)]">
+          <div className="w-full max-w-sm overflow-hidden rounded-[24px] border border-slate-200 bg-card shadow-sm">
             <div className="p-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50">
                 <CheckCircle className="h-6 w-6 text-emerald-600" />
@@ -466,7 +468,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
               <Button
                 onClick={() => setShowSuccessModal({ open: false })}
-                className="mt-5 h-11 w-full rounded-xl bg-slate-950 font-bold text-white hover:bg-slate-800"
+                className="mt-5 h-11 w-full rounded-xl bg-card font-bold text-white hover:bg-slate-800"
               >
                 Schließen
               </Button>
@@ -477,17 +479,17 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
       {showErrorModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#0b0d11]/95 p-7 text-white shadow-[0_35px_120px_-58px_rgba(0,0,0,.98)] backdrop-blur-2xl sm:p-8">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-rose-300/20 bg-rose-500/[0.10]">
-              <AlertCircle className="h-7 w-7 text-rose-300" />
+          <div className="w-full max-w-md rounded-[20px] border border-white/10 bg-card p-7 text-white shadow-sm backdrop-blur-2xl sm:p-8">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-red-300/20 bg-red-500/[0.10]">
+              <AlertCircle className="h-7 w-7 text-red-300" />
             </div>
             <h3 className="mb-2 text-center text-2xl font-black tracking-tight text-white">Fehler</h3>
-            <p className="mb-6 text-center text-white/50">
+            <p className="mb-6 text-center text-muted-foreground">
               {showErrorModal.message || "Die Registrierung ist fehlgeschlagen. Bitte versuche es erneut."}
             </p>
             <Button
               onClick={() => setShowErrorModal({ open: false })}
-              className="w-full rounded-xl border border-rose-300/20 bg-rose-500/[0.10] py-3 font-black text-rose-200 hover:bg-rose-500/[0.16]"
+              className="w-full rounded-xl border border-red-300/20 bg-red-500/[0.10] py-3 font-black text-red-200 hover:bg-red-500/[0.16]"
             >
               Verstanden
             </Button>
@@ -498,10 +500,10 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
       
       {showAddPlayerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[28px] border border-white/[0.10] bg-[#080b10] p-4 text-white shadow-[0_30px_100px_-40px_rgba(0,0,0,.98)] sm:p-6">
+          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[20px] border border-white/[0.10] bg-card p-4 text-white shadow-sm sm:p-6">
             <button
               onClick={closeAddPlayerModal}
-              className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-white/55 transition hover:border-orange-300/15 hover:bg-white/[0.05] hover:text-white"
+              className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-muted-foreground transition hover:border-orange-300/15 hover:bg-white/[0.05] hover:text-white"
               aria-label="Schließen"
             >
               <X className="h-5 w-5 text-current" />
@@ -509,7 +511,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
             <div className="mb-4">
               <h3 className="text-2xl font-black tracking-tight text-white">Neuen Spieler anlegen</h3>
-              <p className="text-white/45">Der Spieler wird direkt in der Spieldatenbank gespeichert.</p>
+              <p className="text-muted-foreground">Der Spieler wird direkt in der Spieldatenbank gespeichert.</p>
             </div>
 
             <div key={addPlayerFormKey}>
@@ -537,15 +539,15 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
       {showNameWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-[26px] border border-white/10 bg-[#0b0d11]/95 p-6 text-white shadow-[0_35px_120px_-58px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+          <div className="w-full max-w-md rounded-[20px] border border-white/10 bg-card p-6 text-white shadow-sm backdrop-blur-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-orange-300/20 bg-orange-500/[0.10]">
                 <Trophy className="h-6 w-6 text-orange-300" />
               </div>
               <h3 className="text-xl font-black tracking-tight text-white">Turniername fehlt</h3>
             </div>
-            <p className="mb-6 text-white/50">Bitte gib einen Turniernamen ein, bevor du das Turnier startest.</p>
-            <Button onClick={() => setShowNameWarning(false)} className="w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400">
+            <p className="mb-6 text-muted-foreground">Bitte gib einen Turniernamen ein, bevor du das Turnier startest.</p>
+            <Button onClick={() => setShowNameWarning(false)} className="w-full rounded-xl bg-primary font-black text-primary-foreground hover:bg-orange-400">
               Verstanden
             </Button>
           </div>
@@ -554,28 +556,28 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
 
       {showPaymentWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-[26px] border border-white/10 bg-[#0b0d11]/95 p-6 text-white shadow-[0_35px_120px_-58px_rgba(0,0,0,.98)] backdrop-blur-2xl">
+          <div className="w-full max-w-md rounded-[20px] border border-white/10 bg-card p-6 text-white shadow-sm backdrop-blur-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-orange-300/20 bg-orange-500/[0.10]">
                 <AlertCircle className="h-6 w-6 text-orange-300" />
               </div>
               <h3 className="text-xl font-black tracking-tight text-white">Nicht alle Spieler haben bezahlt</h3>
             </div>
-            <p className="mb-4 text-white/50">
+            <p className="mb-4 text-muted-foreground">
               Das Turnier kann erst gestartet werden, wenn alle Spieler ihre Teilnahmegebühr bezahlt haben.
             </p>
             <div className="mb-6 rounded-2xl border border-orange-300/20 bg-orange-500/[0.08] p-4">
               <p className="mb-2 font-semibold text-white/85">Noch nicht bezahlt:</p>
               <ul className="space-y-1">
                 {unpaidPlayers.map((player) => (
-                  <li key={player.id} className="flex items-center gap-2 text-white/60">
-                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                  <li key={player.id} className="flex items-center gap-2 text-muted-foreground">
+                    <span className="w-2 h-2 bg-primary rounded-full"></span>
                     {player.player_name}
                   </li>
                 ))}
               </ul>
             </div>
-            <Button onClick={() => setShowPaymentWarning(false)} className="w-full rounded-xl bg-orange-500 font-black text-white hover:bg-orange-400">
+            <Button onClick={() => setShowPaymentWarning(false)} className="w-full rounded-xl bg-primary font-black text-primary-foreground hover:bg-orange-400">
               Verstanden
             </Button>
           </div>
@@ -591,7 +593,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
             <div className="mt-1 text-xl font-black sm:text-2xl">Teilnehmer & Turnierstart</div>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold sm:text-sm">
-            <span className="rounded-full border border-white/10 bg-[#11151a] px-3 py-1.5 text-white/85">{registeredPlayers.length} registriert</span>
+            <span className="rounded-full border border-white/10 bg-card px-3 py-1.5 text-white/85">{registeredPlayers.length} registriert</span>
             <span className={`rounded-full border px-3 py-1.5 ${activeTournament || tournamentFormCompleted ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-orange-400/30 bg-orange-400/10 text-orange-200"}`}>
               {activeTournament ? "Turnier läuft" : tournamentFormCompleted ? "Setup bereit" : "Setup offen"}
             </span>
@@ -670,7 +672,7 @@ const availableFrequentPlayers = frequentPlayers.filter((player) => {
           <>
         <EinzelturnierSpieler
           seriesMode={Boolean(seriesId && eventId && !centralEventId)}
-          loading={loading}
+          loading={Boolean(loading)}
           playerViewMode={playerViewMode}
           onPlayerViewModeChange={setPlayerViewMode}
           availableFrequentPlayers={availableFrequentPlayers}

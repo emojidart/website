@@ -1,4 +1,7 @@
 "use client"
+
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { StatisticsSection } from "@/components/statistics-section"
 import { Button } from "@/components/ui/button"
@@ -7,6 +10,10 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+
+function firstRelated<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}
 
 interface UserProfile {
   id: string
@@ -105,7 +112,7 @@ export default function MemberStatisticsPage() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       if (profileData?.player_id) {
         const { data: teamData, error: teamError } = await supabase
@@ -119,7 +126,7 @@ export default function MemberStatisticsPage() {
           throw teamError
         }
 
-        setTeamMemberships(teamData || [])
+        setTeamMemberships((teamData || []).map((entry) => ({ ...entry, teams: firstRelated(entry.teams) })))
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((team) => team.team_id)
@@ -136,7 +143,7 @@ export default function MemberStatisticsPage() {
             throw membersError
           }
 
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         }
       }
     } catch (err: any) {
@@ -337,11 +344,9 @@ export default function MemberStatisticsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="table" /></main>
       </div>
     )
   }

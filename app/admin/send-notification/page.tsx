@@ -111,10 +111,7 @@ export default function SendNotificationPage() {
                 <p className="text-xs text-gray-500">Wohin soll der Benutzer weitergeleitet werden?</p>
               </div>
 
-              <Button onClick={handleSend} disabled={loading || !title || !body} className="w-full" size="lg">
-                <Send className="w-4 h-4 mr-2" />
-                {loading ? "Sende..." : "Benachrichtigung senden"}
-              </Button>
+              <Button onClick={handleSend} disabled={loading || !title || !body} className="w-full" size="lg" loading={Boolean(loading)} loadingLabel="Sende..."><Send className="w-4 h-4 mr-2" />{"Benachrichtigung senden"}</Button>
 
               {result && (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">

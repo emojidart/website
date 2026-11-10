@@ -41,11 +41,11 @@ export default async function PlayerSearchPage() {
   const recruitmentNeeds: RecruitmentNeed[] = recruitmentData || []
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] pb-24 text-foreground font-sans md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-card pb-24 text-foreground font-sans md:pb-0">
       <Header />
 
       <main className="w-full max-w-none px-2 pb-24 pt-14 sm:px-4 sm:pt-16 lg:px-5 xl:px-6 2xl:px-8">
-        <section className="relative overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+        <section className="relative overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-sm sm:rounded-[20px] xl:rounded-[20px]">
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
           <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -76,7 +76,7 @@ export default async function PlayerSearchPage() {
         </section>
 
         <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start xl:gap-5">
-          <div className="rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:rounded-[28px]">
+          <div className="rounded-[24px] border border-border bg-card shadow-sm sm:rounded-[20px]">
             <div className="border-b border-border p-4 sm:p-5">
               <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">Teams auf Spielersuche</h2>
               <p className="mt-1 text-sm text-muted-foreground">Alle aktuell gemeldeten offenen Positionen.</p>
@@ -115,7 +115,7 @@ export default async function PlayerSearchPage() {
             </div>
           </div>
 
-          <aside className="rounded-[24px] border border-border bg-card p-4 shadow-[0_18px_60px_-44px_rgba(15,23,42,0.5)] sm:p-5 xl:sticky xl:top-20">
+          <aside className="rounded-[24px] border border-border bg-card p-4 shadow-sm sm:p-5 xl:sticky xl:top-20">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
               <UserPlus className="h-5 w-5 text-orange-600" />
             </div>
@@ -129,7 +129,7 @@ export default async function PlayerSearchPage() {
                 <p className="text-xs font-medium leading-5 text-muted-foreground">Eine direkte Bewerbung über diese Seite ist nicht erforderlich.</p>
               </div>
             </div>
-            <Button asChild className="mt-4 h-11 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-600">
+            <Button asChild className="mt-4 h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-orange-600">
               <Link href="/gastzugang">
                 Gastzugang erstellen
                 <ArrowRight className="ml-2 h-4 w-4" />

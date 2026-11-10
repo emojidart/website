@@ -101,7 +101,7 @@ export function publishKratzerBeamerSnapshot(state: TournamentState, isTournamen
   postMessage({ kind: "snapshot", payload: snapshot })
 }
 
-export function publishKratzerBeamerEvent(event: Omit<KratzerBeamerEvent, "at"> & { at?: number }) {
+export function publishKratzerBeamerEvent(event: { type: "dice-start"; round: number; at?: number } | { type: "dice-result"; round: number; face: number; mode: GameMode; at?: number } | { type: "pause-start"; minutes: number; until: number; at?: number } | { type: "pause-end"; at?: number }) {
   if (typeof window === "undefined") return
   const payload = { ...event, at: event.at ?? Date.now() } as KratzerBeamerEvent
   try {

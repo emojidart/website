@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
@@ -22,25 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import {
-  PlusCircle,
-  Edit,
-  Trash2,
-  Save,
-  XCircle,
-  Calendar,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-  Info,
-  PartyPopper,
-  Gamepad2,
-  MessageSquare,
-  Trophy,
-  ListChecks,
-  Globe2,
-  Link2,
-} from "lucide-react"
+import { PlusCircle, Edit, Trash2, Save, XCircle, Calendar, CheckCircle, AlertCircle, Info, PartyPopper, Gamepad2, MessageSquare, Trophy, ListChecks, Globe2, Link2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Event {
@@ -1453,10 +1437,7 @@ const eventData = {
                 type="submit"
                 disabled={isBusy}
                 className="emd-admin-button-primary h-11"
-              >
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                {editingEventId ? "Änderungen speichern" : "Veranstaltung anlegen"}
-              </Button>
+               loading={Boolean(isSaving)}><Save className="h-4 w-4 mr-2" />{editingEventId ? "Änderungen speichern" : "Veranstaltung anlegen"}</Button>
 
               {editingEventId ? (
                 <Button
@@ -1521,10 +1502,7 @@ const eventData = {
 		
 		<CardContent className="p-4 text-sm text-white/60 sm:p-5">
   {dayLoading ? (
-    <span className="inline-flex items-center gap-2">
-      <Loader2 className="h-4 w-4 animate-spin" />
-      Lade Spiele/Events…
-    </span>
+    <SectionSkeleton kind="cards" />
   ) : dayError ? (
     <span className="text-orange-700">{dayError}</span>
   ) : (
@@ -1689,19 +1667,14 @@ const eventData = {
               className="emd-admin-button-secondary h-10"
               onClick={() => fetchEvents()}
               disabled={isBusy}
-            >
-              {isFetching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Refresh
+             loading={Boolean(isFetching)}>{null}Refresh
             </Button>
           </div>
         </CardHeader>
 
         <CardContent className="p-4 sm:p-5">
           {isFetching && events.length === 0 ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-white/30" />
-              <span className="ml-3 text-white/42">Veranstaltungen werden geladen...</span>
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : events.length === 0 ? (
             <div className="text-center py-8 text-white/42">
               Noch keine Veranstaltungen angelegt. Lege jetzt deine erste Veranstaltung an!

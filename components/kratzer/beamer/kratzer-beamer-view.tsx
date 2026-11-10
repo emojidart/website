@@ -13,8 +13,6 @@ import {
   type KratzerBeamerSnapshot,
 } from "@/components/kratzer/beamer/beamer-sync"
 
-
-
 type AudienceMoment =
   | { type: "scratch"; playerName: string; beforeLives: number; afterLives: number; id: string }
   | { type: "eliminated"; playerName: string; id: string }

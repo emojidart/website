@@ -231,15 +231,9 @@ export function PushNotificationManager() {
 
         <div className="flex gap-2">
           {!isSubscribed ? (
-            <Button onClick={handleSubscribe} disabled={loading || !user || permission === "denied"} className="flex-1">
-              <Bell className="w-4 h-4 mr-2" />
-              {loading ? "Aktiviere..." : "Benachrichtigungen aktivieren"}
-            </Button>
+            <Button onClick={handleSubscribe} disabled={loading || !user || permission === "denied"} className="flex-1" loading={Boolean(loading)} loadingLabel="Aktiviere..."><Bell className="w-4 h-4 mr-2" />{"Benachrichtigungen aktivieren"}</Button>
           ) : (
-            <Button onClick={handleUnsubscribe} disabled={loading} variant="outline" className="flex-1 bg-transparent">
-              <BellOff className="w-4 h-4 mr-2" />
-              {loading ? "Deaktiviere..." : "Benachrichtigungen deaktivieren"}
-            </Button>
+            <Button onClick={handleUnsubscribe} disabled={loading} variant="outline" className="flex-1 bg-transparent" loading={Boolean(loading)} loadingLabel="Deaktiviere..."><BellOff className="w-4 h-4 mr-2" />{"Benachrichtigungen deaktivieren"}</Button>
           )}
         </div>
 

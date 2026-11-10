@@ -153,11 +153,13 @@ async function buildPdf(row: JoinRequest, stage: Stage, generatedByName: string 
   const light = rgb(0.96, 0.97, 0.98)
   const green = rgb(0.05, 0.50, 0.25)
 
-  let page: PDFPage
-  let y: number
+  let page: PDFPage = pdf.addPage([pageWidth, pageHeight])
+  let y = 0
+  let firstPagePending = true
 
   const newPage = () => {
-    page = pdf.addPage([pageWidth, pageHeight])
+    if (firstPagePending) firstPagePending = false
+    else page = pdf.addPage([pageWidth, pageHeight])
     y = pageHeight - 44
     page.drawRectangle({ x: 0, y: pageHeight - 9, width: pageWidth, height: 9, color: orange })
     page.drawText("EMD VereinsApp", { x: margin, y, size: 10, font: bold, color: orange })

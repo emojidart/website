@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
@@ -767,12 +769,7 @@ team_id: teamMembership?.team_id,
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Benutzerdaten werden geladen...</p>
-        </div>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 
@@ -904,19 +901,12 @@ team_id: teamMembership?.team_id,
                   </div>
                 )}
 
-                <Button onClick={createAccount} disabled={isCreatingAccount} className="w-full bg-green-600 hover:bg-green-700">
-                  {isCreatingAccount ? (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Account wird erstellt...</span>
-                    </div>
-                  ) : (
+                <Button onClick={createAccount} disabled={isCreatingAccount} className="w-full bg-green-600 hover:bg-green-700" loading={Boolean(isCreatingAccount)} loadingLabel="Account wird erstellt...">{(
                     <div className="flex items-center gap-2 flex-wrap">
                       <UserPlus className="h-4 w-4" />
                       <span>Account erstellen</span>
                     </div>
-                  )}
-                </Button>
+                  )}</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -1339,19 +1329,12 @@ team_id: teamMembership?.team_id,
                   </div>
                 )}
 
-                <Button onClick={updateEmail} disabled={isManagingAccount} className="w-full bg-blue-600 hover:bg-blue-700">
-                  {isManagingAccount ? (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>E-Mail wird aktualisiert...</span>
-                    </div>
-                  ) : (
+                <Button onClick={updateEmail} disabled={isManagingAccount} className="w-full bg-blue-600 hover:bg-blue-700" loading={Boolean(isManagingAccount)} loadingLabel="E-Mail wird aktualisiert...">{(
                     <div className="flex items-center gap-2 flex-wrap">
                       <Mail className="h-4 w-4" />
                       <span>E-Mail aktualisieren</span>
                     </div>
-                  )}
-                </Button>
+                  )}</Button>
               </>
             )}
 
@@ -1398,19 +1381,12 @@ team_id: teamMembership?.team_id,
                   </div>
                 )}
 
-                <Button onClick={updatePassword} disabled={isManagingAccount} className="w-full bg-green-600 hover:bg-green-700">
-                  {isManagingAccount ? (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Passwort wird aktualisiert...</span>
-                    </div>
-                  ) : (
+                <Button onClick={updatePassword} disabled={isManagingAccount} className="w-full bg-green-600 hover:bg-green-700" loading={Boolean(isManagingAccount)} loadingLabel="Passwort wird aktualisiert...">{(
                     <div className="flex items-center gap-2 flex-wrap">
                       <Key className="h-4 w-4" />
                       <span>Passwort aktualisieren</span>
                     </div>
-                  )}
-                </Button>
+                  )}</Button>
               </>
             )}
 
@@ -1443,19 +1419,12 @@ team_id: teamMembership?.team_id,
                   <Button onClick={() => setManagementAction(null)} variant="outline" className="flex-1" disabled={isManagingAccount}>
                     Abbrechen
                   </Button>
-                  <Button onClick={deleteAccount} disabled={isManagingAccount} className="flex-1 bg-red-600 hover:bg-red-700">
-                    {isManagingAccount ? (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Wird gelöscht...</span>
-                      </div>
-                    ) : (
+                  <Button onClick={deleteAccount} disabled={isManagingAccount} className="flex-1 bg-red-600 hover:bg-red-700" loading={Boolean(isManagingAccount)} loadingLabel="Wird gelöscht...">{(
                       <div className="flex items-center gap-2 flex-wrap">
                         <Trash2 className="h-4 w-4" />
                         <span>Account löschen</span>
                       </div>
-                    )}
-                  </Button>
+                    )}</Button>
                 </div>
               </>
             )}
@@ -1519,19 +1488,12 @@ team_id: teamMembership?.team_id,
               <Button onClick={() => setLinkingDialogOpen(false)} variant="outline" className="flex-1" disabled={isLinkingAccount}>
                 Abbrechen
               </Button>
-              <Button onClick={linkToSpieldatenbank} disabled={isLinkingAccount || !linkingForm.selectedSpielerId} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                {isLinkingAccount ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Wird verknüpft...</span>
-                  </div>
-                ) : (
+              <Button onClick={linkToSpieldatenbank} disabled={isLinkingAccount || !linkingForm.selectedSpielerId} className="flex-1 bg-blue-600 hover:bg-blue-700" loading={Boolean(isLinkingAccount)} loadingLabel="Wird verknüpft...">{(
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link2 className="h-4 w-4" />
                     <span>Verknüpfen</span>
                   </div>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </div>
         </DialogContent>
@@ -1586,16 +1548,9 @@ team_id: teamMembership?.team_id,
               <Button variant="outline" className="flex-1" onClick={() => setClubRolesDialogOpen(false)} disabled={isSavingClubRoles}>
                 Abbrechen
               </Button>
-              <Button className="flex-1 bg-purple-600 hover:bg-purple-700" onClick={saveClubRoles} disabled={isSavingClubRoles}>
-                {isSavingClubRoles ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Speichern...</span>
-                  </div>
-                ) : (
+              <Button className="flex-1 bg-purple-600 hover:bg-purple-700" onClick={saveClubRoles} disabled={isSavingClubRoles} loading={Boolean(isSavingClubRoles)} loadingLabel="Speichern...">{(
                   <span>Speichern</span>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </div>
         </DialogContent>

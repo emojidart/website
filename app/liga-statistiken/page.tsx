@@ -1,6 +1,9 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useMemo } from "react"
+import type { LeagueTeam, LeagueMatch, LeaguePlayer, LeagueLegStat, LeagueStanding } from "@/lib/league-display-types"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -30,11 +33,11 @@ const itemVariants = {
 }
 
 export default function DartLeaguePage() {
-  const [matches, setMatches] = useState([])
-  const [teams, setTeams] = useState([])
-  const [opponentTeams, setOpponentTeams] = useState([])
-  const [players, setPlayers] = useState([])
-  const [legStatistics, setLegStatistics] = useState([])
+  const [matches, setMatches] = useState<LeagueMatch[]>([])
+  const [teams, setTeams] = useState<LeagueTeam[]>([])
+  const [opponentTeams, setOpponentTeams] = useState<LeagueTeam[]>([])
+  const [players, setPlayers] = useState<LeaguePlayer[]>([])
+  const [legStatistics, setLegStatistics] = useState<LeagueLegStat[]>([])
   const [loading, setLoading] = useState(true)
   const [dartTypeFilter, setDartTypeFilter] = useState<"gesamt" | "edart" | "steeldart">("gesamt")
   const [playersPerPage, setPlayersPerPage] = useState(10)
@@ -180,7 +183,7 @@ export default function DartLeaguePage() {
   }, [dartTypeFilter])
 
   const calculateStandings = () => {
-    const standings = {}
+    const standings: Record<string, LeagueStanding> = {}
 
     teams.forEach((team) => {
       standings[team.id] = {
@@ -333,7 +336,7 @@ export default function DartLeaguePage() {
       .map((player) => {
         const detailedStats = legStatistics
           .filter((stat) => stat.player_id === player.player_id)
-          .reduce((acc, stat) => {
+          .reduce<Record<"throws_15" | "throws_16" | "throws_17" | "throws_18" | "throws_19", number>>((acc, stat) => {
             return {
               throws_15: (acc.throws_15 || 0) + (stat.throws_15 || 0),
               throws_16: (acc.throws_16 || 0) + (stat.throws_16 || 0),
@@ -341,7 +344,7 @@ export default function DartLeaguePage() {
               throws_18: (acc.throws_18 || 0) + (stat.throws_18 || 0),
               throws_19: (acc.throws_19 || 0) + (stat.throws_19 || 0),
             }
-          }, {})
+          }, { throws_15: 0, throws_16: 0, throws_17: 0, throws_18: 0, throws_19: 0 })
 
         const totalPoints = calculatePlayerPoints(player, detailedStats)
 
@@ -362,7 +365,7 @@ export default function DartLeaguePage() {
       })
   }, [legStatistics])
 
-  const getMatchResultColor = (match, teamId) => {
+  const getMatchResultColor = (match: LeagueMatch, teamId: string) => {
     const isHomeTeam = match.home_team?.id === teamId
     const homeScore = match.home_score || 0
     const awayScore = match.away_score || 0
@@ -406,8 +409,8 @@ export default function DartLeaguePage() {
     setCurrentPage(1)
   }
 
-  const groupMatchesByTeam = (matchList) => {
-    const grouped = {}
+  const groupMatchesByTeam = (matchList: LeagueMatch[]) => {
+    const grouped: Record<string, LeagueMatch[]> = {}
 
     matchList.forEach((match) => {
       const homeTeamName = match.home_team?.name || match.home_opponent_team?.name || "Unbekanntes Team"
@@ -428,18 +431,9 @@ export default function DartLeaguePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-card text-foreground font-sans">
+      <div className="emd-loading-surface min-h-screen bg-card text-foreground font-sans">
         <Header />
-        <main className="pt-8 pb-20">
-          <div className="container mx-auto px-4 md:px-6 py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-6 ">
-                <Trophy className="h-12 w-12 text-white mx-auto" />
-              </div>
-              <p className="mt-4 text-muted-foreground">Lade Liga-Daten...</p>
-            </div>
-          </div>
-        </main>
+        <main className="pt-8 pb-20"><SectionSkeleton kind="table" /></main>
       </div>
     )
   }
@@ -808,7 +802,7 @@ export default function DartLeaguePage() {
                     ) : (
                       <div className="space-y-3 sm:space-y-4">
                         {completedMatches
-                          .sort((a, b) => new Date(b.match_date) - new Date(a.match_date))
+                          .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime())
                           .map((match) => {
                             const homeScore = match.home_score || 0
                             const awayScore = match.away_score || 0

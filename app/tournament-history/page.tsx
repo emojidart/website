@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -125,7 +125,7 @@ function Chip({
     tone === "orange"
       ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
       : tone === "blue"
-        ? "bg-sky-400/10 text-sky-200 border-sky-400/25"
+        ? "bg-orange-400/10 text-orange-200 border-orange-400/25"
         : tone === "emerald"
           ? "bg-emerald-400/10 text-emerald-900 border-emerald-400/25"
           : tone === "amber"
@@ -142,7 +142,6 @@ function Chip({
 }
 
 export default function TournamentHistoryPage() {
-  const router = useRouter()
 const [rows, setRows] = useState<TournamentOverviewRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -276,10 +275,6 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
     })
   }, [rows, q, typeFilter])
 
-  const openTournament = (r: TournamentOverviewRow) => {
-    router.push(`/tournament-history/${encodeURIComponent(r.tournament_id)}?type=${encodeURIComponent(r.tournament_type)}`)
-  }
-
   const resetFilters = () => {
     setQ("")
     setTypeFilter("all")
@@ -301,10 +296,10 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
         >
           {/* App-Header Card (Kontakt-Style) */}
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_35px_120px_-55px_rgba(0,0,0,.95)]  sm:rounded-[34px]">
+            <section className="relative overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-sm  sm:rounded-[34px]">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(249,115,22,.08),transparent_34%,rgba(14,165,233,.06)_78%,transparent)]" />
               <div className="pointer-events-none absolute -left-20 top-[-120px] h-80 w-80 rounded-full bg-orange-400/15 blur-[110px]" />
-              <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-sky-500/12 blur-[120px]" />
+              <div className="pointer-events-none absolute -right-24 bottom-[-140px] h-96 w-96 rounded-full bg-orange-500/12 blur-[120px]" />
               <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                   <div className="flex items-center gap-4">
@@ -330,7 +325,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
 
           {/* Filter Card (app look) */}
           <motion.div variants={itemVariants} className="mb-5">
-            <Card className="rounded-[24px] border border-white/10 bg-white/5 shadow-[0_28px_90px_-55px_rgba(0,0,0,.95)] ">
+            <Card className="rounded-[24px] border border-white/10 bg-white/5 shadow-sm ">
               <CardContent className="p-4 sm:p-5">
                 <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
                   <div className="flex-1 flex flex-col sm:flex-row gap-3">
@@ -356,7 +351,7 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
 
                     <div className="flex gap-2 items-center">
                       <div className="w-11 h-11 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center">
-                        <Filter className="h-4 w-4 text-white/58" />
+                        <Filter className="h-4 w-4 text-muted-foreground" />
                       </div>
 
                       <select
@@ -391,9 +386,23 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
 
           {/* Content */}
           {loading ? (
-            <motion.div variants={itemVariants} className="flex justify-center py-16">
-              <div className="w-10 h-10 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-            </motion.div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4" role="status" aria-busy="true" aria-label="Turnierarchiv wird geladen">
+              {Array.from({ length: 8 }, (_, index) => (
+                <div key={index} className="rounded-[20px] border border-white/10 bg-white/[0.045] p-5" aria-hidden="true">
+                  <div className="h-6 w-3/4 animate-pulse rounded bg-white/10" />
+                  <div className="mt-4 flex gap-2">
+                    <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
+                    <div className="h-6 w-24 animate-pulse rounded-full bg-white/10" />
+                  </div>
+                  <div className="mt-6 space-y-3">
+                    {Array.from({ length: 4 }, (_, line) => (
+                      <div key={line} className="h-4 w-4/5 animate-pulse rounded bg-white/10" />
+                    ))}
+                  </div>
+                  <div className="mt-5 h-11 animate-pulse rounded-xl bg-white/10" />
+                </div>
+              ))}
+            </div>
           ) : error ? (
             <motion.div variants={itemVariants} className="text-red-400 font-semibold">
               {error}
@@ -407,11 +416,13 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
           ) : (
             <motion.div variants={itemVariants} className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
               {filtered.map((r) => (
-                <Card
+                <Link
                   key={`${r.tournament_id}_${r.tournament_type}`}
-                  className="cursor-pointer overflow-hidden rounded-[20px] border border-white/10 bg-white/5 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-400/35 hover:shadow-[0_28px_80px_-48px_rgba(249,115,22,.18)]"
-                  onClick={() => openTournament(r)}
+                  href={`/tournament-history/${encodeURIComponent(r.tournament_id)}?type=${encodeURIComponent(r.tournament_type)}`}
+                  className="block rounded-[20px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
+                  aria-label={`Turnier ${r.tournament_name} öffnen`}
                 >
+                  <Card className="h-full overflow-hidden rounded-[20px] border border-white/10 bg-white/5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-400/35 hover:shadow-sm">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold line-clamp-1">{r.tournament_name}</CardTitle>
 
@@ -450,18 +461,12 @@ const [rows, setRows] = useState<TournamentOverviewRow[]>([])
                       </div>
                     </div>
 
-                    <Button
-                      className="mt-4 h-11 w-full rounded-xl bg-primary font-semibold hover:bg-primary/90 text-primary-foreground"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        openTournament(r)
-                      }}
-                      type="button"
-                    >
-                      Öffnen <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
+                    <span className="mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground">
+                      Öffnen <ArrowRight className="ml-2 h-4 w-4" />
+                    </span>
                   </CardContent>
-                </Card>
+                  </Card>
+                </Link>
               ))}
             </motion.div>
           )}

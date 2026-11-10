@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import type React from "react"
 import { CheckCircle, AlertCircle, Save, UserPlus } from "lucide-react"
 import Image from "next/image"
@@ -208,7 +210,7 @@ export function PlayerRegistration({ isVisible, user, onDataSaved }: PlayerRegis
               </div>
               {uploadingImage && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                  <LoadingIndicator className="w-4 h-4" />
                   <span>Bild wird hochgeladen...</span>
                 </div>
               )}
@@ -219,19 +221,12 @@ export function PlayerRegistration({ isVisible, user, onDataSaved }: PlayerRegis
               type="submit"
               disabled={loading || uploadingImage}
               className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              {loading || uploadingImage ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Registrierung läuft...</span>
-                </div>
-              ) : (
+             loading={Boolean(loading || uploadingImage)} loadingLabel="Registrierung läuft...">{(
                 <div className="flex items-center space-x-2">
                   <Save className="h-4 w-4" />
                   <span>Spieler registrieren</span>
                 </div>
-              )}
-            </Button>
+              )}</Button>
 
             {/* Status Message */}
             {formMessage && (
@@ -250,7 +245,7 @@ export function PlayerRegistration({ isVisible, user, onDataSaved }: PlayerRegis
                   ) : formMessageType === "success" ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                    <LoadingIndicator className="w-4 h-4" />
                   )}
                   <span>{formMessage}</span>
                 </div>

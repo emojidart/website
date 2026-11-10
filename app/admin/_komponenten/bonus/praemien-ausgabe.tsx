@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
@@ -9,17 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  CheckCircle,
-  Clock,
-  Gift,
-  Loader2,
-  PackageCheck,
-  RefreshCw,
-  Search,
-  Trophy,
-  XCircle,
-} from "lucide-react"
+import { CheckCircle, Clock, Gift, PackageCheck, RefreshCw, Search, Trophy, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type RedemptionRow = {
@@ -250,9 +242,7 @@ export function AdminPraemienRedemptions({ user }: AdminPraemienRedemptionsProps
             </div>
           </div>
 
-          <Button type="button" variant="outline" onClick={() => void loadRedemptions()} disabled={loading}>
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Neu laden
+          <Button type="button" variant="outline" onClick={() => void loadRedemptions()} disabled={loading} loading={Boolean(loading)}><RefreshCw className="mr-2 h-4 w-4" />Neu laden
           </Button>
         </div>
       </div>
@@ -359,10 +349,7 @@ export function AdminPraemienRedemptions({ user }: AdminPraemienRedemptionsProps
             <ScrollArea className="h-[620px]">
               <div className="space-y-3 p-3">
                 {loading ? (
-                  <div className="flex items-center gap-2 p-4 text-sm font-semibold text-gray-500">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Eingelöste Prämien werden geladen...
-                  </div>
+                  <SectionSkeleton kind="cards" />
                 ) : filteredRedemptions.length === 0 ? (
                   <div className="p-8 text-center">
                     <Gift className="mx-auto h-10 w-10 text-gray-300" />
@@ -439,13 +426,9 @@ export function AdminPraemienRedemptions({ user }: AdminPraemienRedemptionsProps
                               onClick={() => updateStatus(item.id, "abgeschlossen")}
                               disabled={updatingId === item.id || isDone}
                               className="rounded-xl bg-green-600 text-white hover:bg-green-700"
-                            >
-                              {updatingId === item.id ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
+                             loading={Boolean(updatingId === item.id)}>{(
                                 <CheckCircle className="mr-2 h-4 w-4" />
-                              )}
-                              Abschließen
+                              )}Abschließen
                             </Button>
 
                             <Button

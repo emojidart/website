@@ -1,12 +1,14 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton } from "@/components/loading/loading"
+
 import { useMemo, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle, Crown, Loader2, ShieldCheck, Trash2, UserRoundCog, XCircle, Users, Target, UserCheck, ChevronRight, Layers3, CircleDot, Sparkles, ArrowRightLeft, Plus, History, CalendarDays, RefreshCw } from "lucide-react"
+import { AlertCircle, CheckCircle, Crown, ShieldCheck, Trash2, UserRoundCog, XCircle, Users, Target, UserCheck, ChevronRight, Layers3, CircleDot, Sparkles, ArrowRightLeft, Plus, History, CalendarDays, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { vv } from "../vereinsverwaltung-styles"
 import type { ClubPlayer, Team, TeamMember } from "@/components/vereinsverwaltung/types"
@@ -436,20 +438,13 @@ export function AssignPlayerTab(props: Props) {
                 type="submit"
                 disabled={assignmentLoading}
                 className={cn(vv.buttonPrimary, "h-12 w-full")}
-              >
-                {assignmentLoading ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Wird gespeichert…</span>
-                  </div>
-                ) : (
+               loading={Boolean(assignmentLoading)} loadingLabel="Wird gespeichert…">{(
                   <div className="flex items-center gap-2">
                     <UserCheck className="h-4 w-4" />
                     <span>{assignmentMode === "transfer" ? "Mannschaftswechsel speichern" : "Zuordnung speichern"}</span>
                     <ChevronRight className="h-4 w-4" />
                   </div>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </div>
         </form>
@@ -471,7 +466,7 @@ export function AssignPlayerTab(props: Props) {
           ) : assignmentMessageType === "success" ? (
             <CheckCircle className="h-4 w-4" />
           ) : (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <LoadingIndicator className="h-4 w-4" />
           )}
           <span>{assignmentMessage}</span>
         </div>
@@ -496,7 +491,7 @@ export function AssignPlayerTab(props: Props) {
               disabled={assignmentHistoryLoading}
               className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-black text-white/45 transition hover:border-white/[0.14] hover:bg-white/[0.055] hover:text-white disabled:opacity-40"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${assignmentHistoryLoading ? "animate-spin" : ""}`} />
+              {assignmentHistoryLoading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={`h-3.5 w-3.5 ${assignmentHistoryLoading ? "" : ""}`} />}
               Aktualisieren
             </button>
           )}
@@ -510,10 +505,7 @@ export function AssignPlayerTab(props: Props) {
             </p>
           </div>
         ) : assignmentHistoryLoading ? (
-          <div className="flex items-center justify-center gap-2 rounded-2xl border border-white/[0.07] bg-black/20 px-4 py-7 text-sm font-semibold text-white/40">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Historie wird geladen…
-          </div>
+          <SectionSkeleton kind="cards" />
         ) : assignmentHistory.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/[0.09] bg-white/[0.018] px-4 py-7 text-center text-sm font-semibold text-white/35">
             Noch keine Mannschaftshistorie vorhanden.
@@ -630,9 +622,9 @@ export function AssignPlayerTab(props: Props) {
                         <li key={member.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5 text-sm text-white/75">
                           <span className="flex min-w-0 items-center gap-1.5 font-bold">
                             {member.player_name}
-                            {member.role === "Captain" && <Crown className="h-3 w-3 text-amber-300" title="Kapitän" />}
+                            {member.role === "Captain" && <Crown className="h-3 w-3 text-amber-300" aria-label="Kapitän" />}
                             {member.role === "Co-Captain" && (
-                              <ShieldCheck className="h-3 w-3 text-sky-300" title="Co-Kapitän" />
+                              <ShieldCheck className="h-3 w-3 text-sky-300" aria-label="Co-Kapitän" />
                             )}
                             {member.role && member.role !== "Player" && (
                               <span className="text-xs text-white/35">({member.role})</span>
@@ -731,19 +723,12 @@ export function AssignPlayerTab(props: Props) {
                   className="flex-1 h-10"
                   onClick={confirmRemove}
                   disabled={assignmentLoading || !canRemove}
-                >
-                  {assignmentLoading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Wird entfernt...</span>
-                    </div>
-                  ) : (
+                 loading={Boolean(assignmentLoading)} loadingLabel="Wird entfernt...">{(
                     <div className="flex items-center justify-center gap-2">
                       <Trash2 className="h-4 w-4" />
                       <span>Endgültig entfernen</span>
                     </div>
-                  )}
-                </Button>
+                  )}</Button>
               </div>
             </div>
           </div>

@@ -1,9 +1,11 @@
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Suspense } from "react"
 import ChatAppClient from "./chat-app-client"
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#040609] p-6 text-sm font-bold text-muted-foreground">Lade Chat…</div>}>
+    <Suspense fallback={<SectionSkeleton kind="cards" label="Bereich wird geladen…" />}>
       <ChatAppClient />
     </Suspense>
   )

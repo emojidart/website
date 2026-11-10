@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
@@ -7,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
-import { CheckCircle, AlertCircle, Loader2, LogIn, UserPlus, LogOut } from "lucide-react"
+import { CheckCircle, AlertCircle, LogIn, UserPlus, LogOut } from "lucide-react"
 
 export default function DKOSelfRegistrationPage() {
   const router = useRouter()
@@ -53,7 +55,8 @@ export default function DKOSelfRegistrationPage() {
 
         if (profErr) throw profErr
 
-        const spieldatenbankId = profile?.club_players?.spieldatenbank_id
+        const linkedPlayer = Array.isArray(profile?.club_players) ? profile.club_players[0] : profile?.club_players
+        const spieldatenbankId = linkedPlayer?.spieldatenbank_id
         if (!spieldatenbankId) {
           setPlayerId(null)
           setPlayerName("")
@@ -168,8 +171,8 @@ export default function DKOSelfRegistrationPage() {
           <CardContent className="space-y-4">
             {authLoading || loading ? (
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Lade…</span>
+                
+                <InlineLoader label="Inhalte werden geladen…" />
               </div>
             ) : !session ? (
               <>
@@ -223,37 +226,23 @@ export default function DKOSelfRegistrationPage() {
                     onClick={handleUnregister}
                     disabled={!canAct}
                     className="w-full bg-accent hover:bg-background text-white font-semibold disabled:opacity-60"
-                  >
-                    {actionLoading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Abmelden…</span>
-                      </div>
-                    ) : (
+                   loading={Boolean(actionLoading)} loadingLabel="Abmelden…">{(
                       <div className="flex items-center gap-2">
                         <LogOut className="w-4 h-4" />
                         <span>Abmelden</span>
                       </div>
-                    )}
-                  </Button>
+                    )}</Button>
                 ) : (
                   <Button
                     onClick={handleRegister}
                     disabled={!canAct}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold disabled:opacity-60"
-                  >
-                    {actionLoading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Anmelden…</span>
-                      </div>
-                    ) : (
+                    className="w-full bg-primary hover:bg-orange-700 text-primary-foreground font-semibold disabled:opacity-60"
+                   loading={Boolean(actionLoading)} loadingLabel="Anmelden…">{(
                       <div className="flex items-center gap-2">
                         <UserPlus className="w-4 h-4" />
                         <span>Für heute registrieren</span>
                       </div>
-                    )}
-                  </Button>
+                    )}</Button>
                 )}
 
                 <div className="text-xs text-muted-foreground text-center">

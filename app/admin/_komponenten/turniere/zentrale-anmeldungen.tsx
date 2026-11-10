@@ -1,28 +1,10 @@
 "use client"
 
+
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  CalendarDays,
-  Check,
-  CheckCircle2,
-  ChevronRight,
-  Clock3,
-  Euro,
-  LockKeyhole,
-  Loader2,
-  MapPin,
-  Play,
-  RefreshCw,
-  Search,
-  Target,
-  Trash2,
-  Trophy,
-  UserPlus,
-  UsersRound,
-  Users,
-  X,
-} from "lucide-react"
+import { CalendarDays, Check, CheckCircle2, ChevronRight, Clock3, Euro, LockKeyhole, MapPin, Play, RefreshCw, Search, Target, Trash2, Trophy, UserPlus, UsersRound, Users, X } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
 import EmdLiveRegieControl from "@/components/emd-live-regie-control"
@@ -196,7 +178,8 @@ const MODE_LABELS: Record<StartMode, string> = {
   dko: "Doppel-KO",
   round_robin: "Round Robin",
   kratzer: "Kratzer",
-  survival: "Survival Roulette",
+  survival: "Survival Doppel Roulette",
+  survival_single: "Survival Einzel Roulette",
 }
 
 const formatDate = (value: string | null | undefined) => {
@@ -1834,12 +1817,12 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
     <section className="w-full min-w-0 space-y-4">
       {showDisableMultiDkoDialog && selectedEvent && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowDisableMultiDkoDialog(false) }}>
-          <div role="alertdialog" aria-modal="true" aria-labelledby="emd-multi-dko-disable-title" aria-describedby="emd-multi-dko-disable-description" className="w-full max-w-md rounded-[26px] border border-white/10 bg-[#0b0e13] p-5 text-white shadow-[0_35px_120px_-45px_rgba(0,0,0,.98)] sm:p-7">
+          <div role="alertdialog" aria-modal="true" aria-labelledby="emd-multi-dko-disable-title" aria-describedby="emd-multi-dko-disable-description" className="w-full max-w-md rounded-[20px] border border-white/10 bg-card p-5 text-white shadow-sm sm:p-7">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-500/10">
               <UsersRound className="h-6 w-6 text-orange-300" />
             </div>
             <h3 id="emd-multi-dko-disable-title" className="text-xl font-black tracking-tight">Multi-DKO deaktivieren?</h3>
-            <p id="emd-multi-dko-disable-description" className="mt-3 text-sm leading-6 text-white/60">Die bisherigen Herren- und Damen-Zuordnungen bleiben gespeichert. Beim normalen Turnierstart werden wieder alle angemeldeten Teilnehmer gemeinsam berücksichtigt.</p>
+            <p id="emd-multi-dko-disable-description" className="mt-3 text-sm leading-6 text-muted-foreground">Die bisherigen Herren- und Damen-Zuordnungen bleiben gespeichert. Beim normalen Turnierstart werden wieder alle angemeldeten Teilnehmer gemeinsam berücksichtigt.</p>
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button type="button" autoFocus onClick={() => setShowDisableMultiDkoDialog(false)} className="min-h-11 rounded-xl border border-white/10 bg-white/[0.05] px-5 text-sm font-black text-white/85 transition hover:bg-white/10">Abbrechen</button>
               <button type="button" onClick={() => {
@@ -1850,7 +1833,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 setMultiDkoEnabled(false)
                 window.localStorage.setItem(`emd-multi-dko-enabled:${selectedEvent.id}`, "0")
                 setShowDisableMultiDkoDialog(false)
-              }} className="min-h-11 rounded-xl bg-orange-500 px-5 text-sm font-black text-white transition hover:bg-orange-400">Multi-DKO deaktivieren</button>
+              }} className="min-h-11 rounded-xl bg-primary px-5 text-sm font-black text-primary-foreground transition hover:bg-orange-400">Multi-DKO deaktivieren</button>
             </div>
           </div>
         </div>
@@ -1858,13 +1841,13 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
         <div className="emd-admin-hero emd-central-registration-hero">
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-200/45">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-orange-200/45">
                 Turnier-Zentrale
               </div>
               <h1 className="mt-1 text-2xl font-black tracking-[-0.025em] text-white sm:text-[30px]">
                 Turniere
               </h1>
-              <p className="mt-1 max-w-3xl text-sm leading-6 text-white/38">
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
                 Turnier auswählen, Teilnehmer verwalten und starten.
               </p>
             </div>
@@ -1884,9 +1867,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 onClick={() => void load()}
                 disabled={loading}
                 className="emd-admin-button-secondary emd-central-refresh"
-              >
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                Neu laden
+               loading={Boolean(loading)}><RefreshCw className="mr-2 h-4 w-4" />Neu laden
               </Button>
             </div>
           </div>
@@ -1901,7 +1882,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
             >
               <CalendarDays className="h-4 w-4" />
               <span className="whitespace-nowrap">Geplant</span>
-              <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px]">{plannedEventsList.length}</span>
+              <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs">{plannedEventsList.length}</span>
             </button>
 
             <button
@@ -1911,7 +1892,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
             >
               <Clock3 className="h-4 w-4" />
               <span className="whitespace-nowrap">Heute</span>
-              <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px]">{todayEventsList.length}</span>
+              <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs">{todayEventsList.length}</span>
             </button>
 
             <button
@@ -1921,7 +1902,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
             >
               <Trophy className="h-4 w-4" />
               <span className="whitespace-nowrap">Vergangen</span>
-              <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px]">{pastEventsList.length}</span>
+              <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs">{pastEventsList.length}</span>
             </button>
 
           </div>
@@ -1932,7 +1913,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
             className={`pointer-events-none fixed bottom-4 right-4 z-[120] w-[min(420px,calc(100vw-2rem))] rounded-2xl border p-4 text-sm font-semibold shadow-2xl backdrop-blur-xl ${
               message.type === "success"
                 ? "border-emerald-300/20 bg-emerald-950/90 text-emerald-100"
-                : "border-rose-300/25 bg-rose-950/90 text-rose-100"
+                : "border-red-300/25 bg-red-950/90 text-red-100"
             }`}
             role="status"
             aria-live="polite"
@@ -1949,7 +1930,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               </div>
               <div>
                 <div className="font-black text-white">Turnier-Anmeldung noch nicht bereit</div>
-                <p className="mt-1 max-w-2xl text-sm leading-5 text-white/45">
+                <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
                   Die zentrale Anmeldung muss einmal technisch eingerichtet werden. Bestehende Turniere und Ergebnisse bleiben dabei erhalten.
                 </p>
               </div>
@@ -1961,9 +1942,9 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
           <div className="space-y-4">
             {loading ? null : visibleOverviewEvents.length === 0 ? (
               <div className="emd-admin-surface-lg p-8 text-center">
-                <CalendarDays className="mx-auto h-9 w-9 text-white/20" />
+                <CalendarDays className="mx-auto h-9 w-9 text-muted-foreground" />
                 <div className="mt-3 font-black text-white">Noch kein geplantes Turnier</div>
-                <p className="mt-1 text-sm text-white/40">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Lege das Turnier zuerst unter Veranstaltungen an. Es wird danach automatisch hier übernommen.
                 </p>
               </div>
@@ -1989,7 +1970,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                               variant="outline"
                               className={
                                 event.event_date < todayKey || event.status === "completed"
-                                  ? "border-white/[0.08] text-white/45"
+                                  ? "border-white/[0.08] text-muted-foreground"
                                   : "border-orange-300/15 text-orange-100/70"
                               }
                             >
@@ -2002,7 +1983,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                                 {MODE_LABELS[event.selected_mode]}
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="border-white/[0.08] text-white/45">
+                              <Badge variant="outline" className="border-white/[0.08] text-muted-foreground">
                                 Modus offen
                               </Badge>
                             )}
@@ -2010,7 +1991,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                               variant="outline"
                               className={
                                 event.is_spontaneous
-                                  ? "border-violet-300/15 text-violet-100/65"
+                                  ? "border-orange-300/15 text-orange-100/65"
                                   : "border-emerald-300/15 text-emerald-100/65"
                               }
                             >
@@ -2018,7 +1999,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                             </Badge>
                           </div>
 
-                          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-semibold text-white/38">
+                          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-semibold text-muted-foreground">
                             <span className="inline-flex items-center gap-1.5">
                               <CalendarDays className="h-3.5 w-3.5" />
                               {formatDate(event.event_date)}
@@ -2051,7 +2032,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3 text-xs font-black uppercase tracking-[0.1em] text-white/38">
+                      <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3 text-xs font-black uppercase tracking-[0.1em] text-muted-foreground">
                         <span>{ACCESS_LABELS[event.access_type]}</span>
                         <span className="inline-flex items-center gap-1 text-orange-200/70">
                           {event.event_date < todayKey || event.status === "completed" ? "Details" : "Öffnen"}
@@ -2068,7 +2049,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
         {!schemaMissing && activeTab === "event" && selectedEvent ? (
           <div className="space-y-4">
-            <nav aria-label="Turnierbereiche" className="sticky top-2 z-20 grid grid-cols-2 gap-2 rounded-2xl border border-white/[0.09] bg-[#0d121a]/95 p-2 shadow-xl backdrop-blur-xl sm:grid-cols-4">
+            <nav aria-label="Turnierbereiche" className="sticky top-2 z-20 grid grid-cols-2 gap-2 rounded-2xl border border-white/[0.09] bg-card p-2 shadow-xl backdrop-blur-xl sm:grid-cols-4">
               {([
                 { id: "participants", label: "Teilnehmer", icon: UsersRound },
                 { id: "tournament", label: "Turnier", icon: Trophy },
@@ -2077,7 +2058,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               ] as const).map(({ id, label, icon: Icon }) => (
                 <button key={id} type="button" aria-current={eventView === id ? "page" : undefined}
                   onClick={() => setEventView(id)}
-                  className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-400 ${eventView === id ? "border-orange-400/30 bg-orange-500/15 text-orange-100" : "border-transparent bg-white/[0.035] text-white/55 hover:bg-white/[0.075] hover:text-white"}`}>
+                  className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-400 ${eventView === id ? "border-orange-400/30 bg-orange-500/15 text-orange-100" : "border-transparent bg-white/[0.035] text-muted-foreground hover:bg-white/[0.075] hover:text-white"}`}>
                   <Icon className="h-4 w-4 shrink-0" />{label}
                 </button>
               ))}
@@ -2090,14 +2071,14 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                     <Badge variant="outline" className="border-orange-300/15 text-orange-100/70">
                       {STATUS_LABELS[selectedEvent.status]}
                     </Badge>
-                    <Badge variant="outline" className="border-white/[0.08] text-white/50">
+                    <Badge variant="outline" className="border-white/[0.08] text-muted-foreground">
                       {ACCESS_LABELS[selectedEvent.access_type]}
                     </Badge>
                     <Badge
                       variant="outline"
                       className={
                         selectedEvent.is_spontaneous
-                          ? "border-violet-300/15 text-violet-100/65"
+                          ? "border-orange-300/15 text-orange-100/65"
                           : "border-emerald-300/15 text-emerald-100/65"
                       }
                     >
@@ -2105,7 +2086,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                     </Badge>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-white/42">
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />{formatDate(selectedEvent.event_date)}</span>
                     {formatTime(selectedEvent.start_time) ? <span className="inline-flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5" />{formatTime(selectedEvent.start_time)} Uhr</span> : null}
                     {selectedEvent.location ? <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{selectedEvent.location}</span> : null}
@@ -2144,7 +2125,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                       saving ||
                       ["started", "completed", "cancelled"].includes(selectedEvent.status)
                     }
-                    className="h-10 rounded-xl border-rose-300/15 bg-rose-500/[0.05] px-3.5 text-xs font-black text-rose-100/70 hover:bg-rose-500/[0.09] disabled:cursor-not-allowed disabled:opacity-35"
+                    className="h-10 rounded-xl border-red-300/15 bg-red-500/[0.05] px-3.5 text-xs font-black text-red-100/70 hover:bg-red-500/[0.09] disabled:cursor-not-allowed disabled:opacity-35"
                     title={
                       ["started", "completed", "cancelled"].includes(selectedEvent.status)
                         ? "Dieses Turnier kann hier nicht mehr geändert werden."
@@ -2170,19 +2151,19 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
               <div className="flex flex-wrap gap-2 p-4 sm:p-5">
                 <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-2.5">
-                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">Teilnehmer</span>
+                  <span className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Teilnehmer</span>
                   <span className="ml-2 text-sm font-black text-white">{registeredRows.length}</span>
                 </div>
                 <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-2.5">
-                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">Warteliste</span>
+                  <span className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Warteliste</span>
                   <span className="ml-2 text-sm font-black text-white">{waitlistRows.length}</span>
                 </div>
                 <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-2.5">
-                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">Abgemeldet</span>
+                  <span className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Abgemeldet</span>
                   <span className="ml-2 text-sm font-black text-white">{withdrawnRows.length}</span>
                 </div>
                 <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-2.5">
-                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-white/30">Plätze</span>
+                  <span className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Plätze</span>
                   <span className="ml-2 text-sm font-black text-white">{selectedEvent.max_participants || "∞"}</span>
                 </div>
               </div>
@@ -2190,7 +2171,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
             <div className={eventView === "live" ? "" : "hidden"}>
               <div className="emd-admin-surface overflow-hidden p-4 sm:p-6">
-                <div className="mb-4"><h3 className="text-xl font-black text-white">Live-Regie</h3><p className="mt-1 text-sm text-white/50">Countdowns und NERO-Durchsagen für Beamer und EMD TV.</p></div>
+                <div className="mb-4"><h3 className="text-xl font-black text-white">Live-Regie</h3><p className="mt-1 text-sm text-muted-foreground">Countdowns und NERO-Durchsagen für Beamer und EMD TV.</p></div>
                 <EmdLiveRegieControl key={selectedEvent.id} eventId={selectedEvent.id} title={selectedEvent.title} />
               </div>
             </div>
@@ -2216,10 +2197,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                         <option value="survival">Survival Doppel Roulette</option>
                         <option value="survival_single">Survival Einzel Roulette</option>
                       </select>
-                      <span className="mt-1 block text-xs text-white/45">Die Änderung wird erst beim Turnierstart gespeichert. Teilnehmer und Zahlungen bleiben erhalten.</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">Die Änderung wird erst beim Turnierstart gespeichert. Teilnehmer und Zahlungen bleiben erhalten.</span>
                     </label>
                     <div className="mt-1 text-lg font-black text-white">{startBlockers.length ? "Noch nicht startbereit" : "Startbereit"}</div>
-                    <div className="mt-1 text-xs text-white/50">{registeredRows.length} angemeldet · {waitlistRows.length} Warteliste (nicht in der Auslosung) · {withdrawnRows.length} abgemeldet</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{registeredRows.length} angemeldet · {waitlistRows.length} Warteliste (nicht in der Auslosung) · {withdrawnRows.length} abgemeldet</div>
                     {startBlockers.length > 0 ? (
                       <div className="mt-3 space-y-1" role="status">
                         {startBlockers.map((reason) => <p key={reason} className="text-sm font-semibold text-amber-300">• {reason}</p>)}
@@ -2227,10 +2208,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                     ) : <p className="mt-2 text-sm font-semibold text-emerald-300">Alle bekannten Startvoraussetzungen erfüllt.</p>}
                   </div>
                   <Button type="button" className="emd-admin-button-primary shrink-0" disabled={!canStartSelectedEvent}
-                    onClick={() => { if (selectedStartMode) void chooseMode(selectedStartMode) }}>
-                    {startingMode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-                    {startingMode ? "Turnier wird gestartet … bitte nicht erneut klicken" : "Turnier starten"}
-                  </Button>
+                    onClick={() => { if (selectedStartMode) void chooseMode(selectedStartMode) }} loading={Boolean(startingMode)}><Play className="mr-2 h-4 w-4" />{startingMode ? "Turnier wird gestartet … bitte nicht erneut klicken" : "Turnier starten"}</Button>
                 </div>
               </div>
             ) : null}
@@ -2239,9 +2217,9 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               <div className="rounded-3xl border border-emerald-300/15 bg-emerald-500/[0.055] p-5 sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200/60">Turnier läuft</div>
+                    <div className="text-xs font-black uppercase tracking-[0.16em] text-emerald-200/60">Turnier läuft</div>
                     <div className="mt-2 text-xl font-black text-white">{multiDkoActive ? "Multi-DKO · Turniere getrennt steuern" : "Dieses Turnier ist bereits gestartet."}</div>
-                    <div className="mt-1 text-sm font-semibold text-white/45">{multiDkoActive ? "Die Teilnehmer bleiben gesperrt. Im Tab „Turnier“ kannst du Herren öffnen und das vorbereitete Damen-DKO separat starten." : "Teilnehmer, Startgeld, Warteliste und Turniermodus sind während des laufenden Turniers gesperrt."}</div>
+                    <div className="mt-1 text-sm font-semibold text-muted-foreground">{multiDkoActive ? "Die Teilnehmer bleiben gesperrt. Im Tab „Turnier“ kannst du Herren öffnen und das vorbereitete Damen-DKO separat starten." : "Teilnehmer, Startgeld, Warteliste und Turniermodus sind während des laufenden Turniers gesperrt."}</div>
                   </div>
                   {!multiDkoActive ? (
                     <Button
@@ -2266,13 +2244,13 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
             ) : null}
             <div className={selectedEventLocked ? "pointer-events-none select-text opacity-70 [&_button]:cursor-not-allowed [&_input]:cursor-not-allowed [&_select]:cursor-not-allowed" : "contents"}>
             {deleteConfirmOpen ? (
-              <div className="rounded-2xl border border-rose-300/15 bg-rose-500/[0.045] p-4">
+              <div className="rounded-2xl border border-red-300/15 bg-red-500/[0.045] p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="font-black text-rose-100">
+                    <div className="font-black text-red-100">
                       {selectedEvent.is_spontaneous ? "Turnier wirklich löschen?" : "Turnier wirklich absagen?"}
                     </div>
-                    <div className="mt-1 text-xs font-semibold leading-5 text-rose-100/55">
+                    <div className="mt-1 text-xs font-semibold leading-5 text-red-100/55">
                       {selectedEvent.is_spontaneous
                         ? "Das spontane Turnier und seine Anmeldungen werden dauerhaft entfernt."
                         : "Das Turnier wird als „Abgesagt“ markiert und bleibt unter Vergangen erhalten. Die ursprüngliche Veranstaltung und ihre Daten werden nicht gelöscht."}
@@ -2286,29 +2264,26 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                       type="button"
                       onClick={() => void (selectedEvent.is_spontaneous ? deleteSelectedEvent() : cancelSelectedEvent())}
                       disabled={saving}
-                      className="rounded-xl bg-rose-600 px-4 font-black text-white hover:bg-rose-500"
-                    >
-                      {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                      {selectedEvent.is_spontaneous ? "Endgültig löschen" : "Ja, Turnier absagen"}
-                    </Button>
+                      className="rounded-xl bg-red-600 px-4 font-black text-white hover:bg-red-500"
+                     loading={Boolean(saving)}><Trash2 className="mr-2 h-4 w-4" />{selectedEvent.is_spontaneous ? "Endgültig löschen" : "Ja, Turnier absagen"}</Button>
                   </div>
                 </div>
               </div>
             ) : null}
 
             {selectedEventIsPast ? (
-              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 text-sm font-semibold text-white/50">
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 text-sm font-semibold text-muted-foreground">
                 Dieses Turnier ist abgeschlossen. Anmeldungen und Teilnehmer können hier nur noch angesehen, aber nicht mehr verändert werden.
               </div>
             ) : null}
 
             <div className={`grid gap-3 ${(selectedEvent.selected_mode === "survival" || selectedEvent.selected_mode === "survival_single") ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
               <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-white/30">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">
                   <LockKeyhole className="h-3.5 w-3.5" /> Teilnahme
                 </div>
                 <div className="mt-2 font-black text-white">{ACCESS_LABELS[selectedEvent.access_type]}</div>
-                <div className="mt-1 text-xs font-semibold leading-5 text-white/38">
+                <div className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
                   {selectedEvent.access_type === "public"
                     ? "Alle Spieler möglich · kein Turnierpaket erforderlich."
                     : selectedEvent.access_type === "club_internal"
@@ -2329,10 +2304,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                         type="button"
                         disabled={selectedEventIsPast || saving}
                         onClick={() => void updateSelectedAccessType(value)}
-                        className={`rounded-xl border px-2 py-2 text-[10px] font-black transition ${
+                        className={`rounded-xl border px-2 py-2 text-xs font-black transition ${
                           active
                             ? "border-orange-300/30 bg-orange-500/15 text-orange-100"
-                            : "border-white/[0.07] bg-white/[0.02] text-white/40 hover:border-orange-300/15 hover:text-white/70"
+                            : "border-white/[0.07] bg-white/[0.02] text-muted-foreground hover:border-orange-300/15 hover:text-white/70"
                         } disabled:cursor-not-allowed disabled:opacity-40`}
                       >
                         {label}
@@ -2344,9 +2319,9 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
               {(selectedStartMode === "survival" || selectedStartMode === "survival_single") ? (
                 <div className="rounded-2xl border border-orange-400/20 bg-orange-500/[0.055] p-4">
-                  <div className="text-[10px] font-black uppercase tracking-[0.14em] text-orange-300">Survival Roulette · Einstellungen</div>
+                  <div className="text-xs font-black uppercase tracking-[0.14em] text-orange-300">Survival Roulette · Einstellungen</div>
                   <div className="mt-2 font-black text-white">{selectedStartMode === "survival_single" ? "Einzel Roulette – neue Gegner jede Runde" : "Doppel Roulette – neue Teams jede Runde"}</div>
-                  <p className="mt-1 text-xs font-semibold leading-5 text-white/55">Wähle die Survival-Variante vor dem Turnierstart. Bestehende Doppelturniere bleiben unverändert.</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">Wähle die Survival-Variante vor dem Turnierstart. Bestehende Doppelturniere bleiben unverändert.</p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     {([ ["survival_single", "Einzel Roulette"], ["survival", "Doppel Roulette"] ] as const).map(([value,label]) => (
                       <button type="button" key={value}
@@ -2356,7 +2331,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                           setNewEventMode(value)
                           try { window.localStorage.setItem(`emd-survival-variant:${selectedEvent.id}`, value) } catch {}
                         }}
-                        className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${selectedStartMode === value ? "border-orange-400/40 bg-orange-500/20 text-orange-100" : "border-white/10 text-white/60"} disabled:opacity-60`}>
+                        className={`rounded-xl border px-3 py-2 text-left text-xs font-bold ${selectedStartMode === value ? "border-orange-400/40 bg-orange-500/20 text-orange-100" : "border-white/10 text-muted-foreground"} disabled:opacity-60`}>
                         {selectedStartMode === value ? "✓ " : ""}{label}
                       </button>
                     ))}
@@ -2400,14 +2375,14 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/30">Turnierregel</div>
+                    <div className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Turnierregel</div>
                     <div className="mt-2 font-black text-white">Doppelnennung erlauben</div>
                   </div>
-                  <span className={`grid h-7 w-12 place-items-center rounded-full border text-[10px] font-black ${allowDoubleEntry ? "border-orange-300/30 bg-orange-500/20 text-orange-100" : "border-white/10 bg-white/[0.03] text-white/35"}`}>
+                  <span className={`grid h-7 w-12 place-items-center rounded-full border text-xs font-black ${allowDoubleEntry ? "border-orange-300/30 bg-orange-500/20 text-orange-100" : "border-white/10 bg-white/[0.03] text-muted-foreground"}`}>
                     {allowDoubleEntry ? "AN" : "AUS"}
                   </span>
                 </div>
-                <div className="mt-1 text-xs font-semibold leading-5 text-white/38">Nur für Doppel-KO. Bei Round Robin und Survival wird keine Doppelnennung verwendet.</div>
+                <div className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">Nur für Doppel-KO. Bei Round Robin und Survival wird keine Doppelnennung verwendet.</div>
               </button>
               ) : null}
               {(selectedStartMode !== "survival" && selectedStartMode !== "survival_single") ? (
@@ -2415,7 +2390,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 <div className="flex items-center gap-2">
                   <UsersRound className="h-4 w-4 text-cyan-200/70" />
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/30">Teammodus · Doppel-KO</div>
+                    <div className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Teammodus · Doppel-KO</div>
                     <div className="mt-1 font-black text-white">Doppelturnier</div>
                   </div>
                 </div>
@@ -2434,17 +2409,17 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                         setFixedPlayer1RegistrationId("")
                         setFixedPlayer2RegistrationId("")
                       }}
-                      className={`rounded-xl border px-2 py-2 text-[10px] font-black transition ${
+                      className={`rounded-xl border px-2 py-2 text-xs font-black transition ${
                         teamMode === value
                           ? "border-cyan-300/30 bg-cyan-500/15 text-cyan-100"
-                          : "border-white/[0.07] bg-white/[0.02] text-white/40 hover:text-white/70"
+                          : "border-white/[0.07] bg-white/[0.02] text-muted-foreground hover:text-white/70"
                       } disabled:cursor-not-allowed disabled:opacity-40`}
                     >
                       {label}
                     </button>
                   ))}
                 </div>
-                <div className="mt-2 text-xs font-semibold leading-5 text-white/38">
+                <div className="mt-2 text-xs font-semibold leading-5 text-muted-foreground">
                   {teamMode === "fixed"
                     ? "Du stellst die Doppel selbst zusammen."
                     : teamMode === "drawn"
@@ -2460,7 +2435,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
                     <div className="font-black text-white">Fixe Doppel zusammenstellen</div>
-                    <div className="mt-1 text-xs font-semibold text-white/38">Jede Nennung kann genau einem Doppel zugeordnet werden. Mit Doppelnennung kann derselbe Spieler über [2], [3] usw. mehrfach vorkommen.</div>
+                    <div className="mt-1 text-xs font-semibold text-muted-foreground">Jede Nennung kann genau einem Doppel zugeordnet werden. Mit Doppelnennung kann derselbe Spieler über [2], [3] usw. mehrfach vorkommen.</div>
                   </div>
                   <div className="text-xs font-black text-cyan-100/70">{doubleTeams.filter((team) => team.team_mode === "fixed").length} / {Math.floor(registeredRows.length / 2)} Doppel</div>
                 </div>
@@ -2493,10 +2468,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                     {doubleTeams.filter((team) => team.team_mode === "fixed").map((team) => (
                       <div key={team.id} className="flex items-center justify-between gap-3 px-4 py-3">
                         <div className="min-w-0">
-                          <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/25">Doppel {team.position}</div>
+                          <div className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Doppel {team.position}</div>
                           <div className="truncate font-black text-white">{team.team_name}</div>
                         </div>
-                        <button type="button" onClick={() => void removeDoubleTeam(team.id)} className="rounded-xl border border-rose-300/15 bg-rose-500/[0.05] p-2 text-rose-100/70 hover:bg-rose-500/[0.10]">
+                        <button type="button" onClick={() => void removeDoubleTeam(team.id)} className="rounded-xl border border-red-300/15 bg-red-500/[0.05] p-2 text-red-100/70 hover:bg-red-500/[0.10]">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -2510,13 +2485,13 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
             </div>
             {/* Getrennte Turniersteuerung */}
             {teamMode === "single" && (selectedStartMode === "dko" || !selectedStartMode) && (
-              <section id="emd-event-tournament" className={`emd-admin-surface border border-white/[0.10] p-4 shadow-[0_18px_60px_-45px_rgba(0,0,0,.8)] sm:p-6 ${eventView === "tournament" || eventView === "machines" ? "" : "hidden"}`}>
+              <section id="emd-event-tournament" className={`emd-admin-surface border border-white/[0.10] p-4 shadow-sm sm:p-6 ${eventView === "tournament" || eventView === "machines" ? "" : "hidden"}`}>
                 <div className={eventView === "tournament" ? "" : "hidden"}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-orange-200/70">Turniersteuerung</div>
+                    <div className="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-200/70">Turniersteuerung</div>
                     <div className="mt-1 text-lg font-black text-white">Herren- & Damen-DKO</div>
-                    <p className="mt-1 text-xs text-white/45">Teile die Spieler in der Teilnehmerliste den Herren oder Damen zu.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Teile die Spieler in der Teilnehmerliste den Herren oder Damen zu.</p>
                   </div>
                   <button type="button"
                     disabled={multiDkoLoading || !!multiDkoSavingId || selectedEventLocked || selectedEventIsPast || startingMode !== null || Boolean(multiDkoError) || !!multiPrepared.herren || !!multiPrepared.damen}
@@ -2537,9 +2512,9 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                     {multiDkoActive ? "Multi-DKO deaktivieren" : "Multi-DKO aktivieren"}
                   </button>
                 </div>
-                {multiDkoError ? <p role="alert" className="mt-3 text-sm text-rose-300">{multiDkoError}</p> : null}
+                {multiDkoError ? <p role="alert" className="mt-3 text-sm text-red-300">{multiDkoError}</p> : null}
                 {!multiDkoActive && multiDkoHasAssignments && !multiDkoLoading ? (
-                  <p className="mt-3 text-xs text-white/50">Der normale Turniermodus ist aktiv.</p>
+                  <p className="mt-3 text-xs text-muted-foreground">Der normale Turniermodus ist aktiv.</p>
                 ) : null}
                 {multiDkoActive ? (
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-black">
@@ -2554,7 +2529,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                 {multiDkoActive ? (
                   <div className="mt-4 rounded-2xl border border-orange-400/20 bg-orange-500/[0.04] p-4">
                     <div className="font-black text-white">Getrennte DKO vorbereiten</div>
-                    <p className="mt-1 text-xs text-white/55">Bereite zuerst die Teilnehmer vor. Anschließend kannst du Herren und Damen getrennt starten.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Bereite zuerst die Teilnehmer vor. Anschließend kannst du Herren und Damen getrennt starten.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {(["herren", "damen"] as const).map(division => (
                         <button type="button" key={division}
@@ -2572,25 +2547,25 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                         return <button type="button" key={`start-${division}`}
                           disabled={!ready || !!multiStarting || !!multiPreparing || multiDkoLoading || !!multiDkoError || (multiDkoOpenCount > 0 && !active) || (!active && selectedEventIsPast)}
                           onClick={() => void startOrOpenMultiDivision(division)}
-                          className="min-h-14 rounded-xl border border-orange-400/40 bg-orange-500 px-4 py-3 text-sm font-black text-white transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-40">
+                          className="min-h-14 rounded-xl border border-orange-400/40 bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-40">
                           {multiStarting === division ? "Wird geprüft …" : `${division === "herren" ? "Herren" : "Damen"} ${active ? "öffnen" : ready ? "starten" : "zuerst vorbereiten"}`}
                         </button>
                       })}
                     </div>
-                    <p className="mt-2 text-xs text-white/50">Herren und Damen starten unabhängig voneinander. Die Teilnehmer bleiben getrennt.</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Herren und Damen starten unabhängig voneinander. Die Teilnehmer bleiben getrennt.</p>
                   </div>
                 ) : null}
                 </div>
                 <div className={eventView === "machines" ? "" : "hidden"}>
                 {multiDkoActive ? (
-                  <div className="rounded-2xl border border-white/[0.08] bg-[#090d12] p-4">
+                  <div className="rounded-2xl border border-white/[0.08] bg-card p-4">
                     <div className="font-black text-white">Automaten für Herren & Damen</div>
-                    <p className="mt-1 text-xs text-white/45">Lege fest, welche Automaten Herren und Damen verwenden dürfen.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Lege fest, welche Automaten Herren und Damen verwenden dürfen.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {(["shared", "fixed"] as const).map(mode => (
                         <button key={mode} type="button" disabled={selectedEventLocked || selectedEventIsPast || multiMachineSaving || !!multiPrepared.herren || !!multiPrepared.damen}
                           onClick={() => {setMultiMachineMode(mode);saveMultiMachineSettings(mode,multiMachineCount,multiMachineHerren,multiMachineDamen)}}
-                          className={`rounded-xl border px-4 py-2 text-xs font-black transition disabled:opacity-40 ${multiMachineMode === mode ? "border-orange-400/40 bg-orange-500/15 text-orange-100" : "border-white/10 bg-white/[0.025] text-white/55"}`}>
+                          className={`rounded-xl border px-4 py-2 text-xs font-black transition disabled:opacity-40 ${multiMachineMode === mode ? "border-orange-400/40 bg-orange-500/15 text-orange-100" : "border-white/10 bg-white/[0.025] text-muted-foreground"}`}>
                           {mode === "shared" ? "Gemeinsam automatisch" : "Fest zuweisen"}
                         </button>
                       ))}
@@ -2605,38 +2580,38 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                           setMultiMachineCount(count);setMultiMachineHerren(herren);setMultiMachineDamen(damen)
                           saveMultiMachineSettings(multiMachineMode,count,herren,damen)
                         }}
-                        className="rounded-xl border border-white/10 bg-[#111820] px-3 py-2 text-sm font-bold text-white disabled:opacity-40">
+                        className="rounded-xl border border-white/10 bg-card px-3 py-2 text-sm font-bold text-white disabled:opacity-40">
                         {Array.from({length:32},(_,i)=>i+1).map(n=><option key={n} value={n}>{n}</option>)}
                       </select>
                     </div>
                     {multiMachineMode === "shared" ? (
-                      <p className="mt-3 text-xs text-white/55">Beide Turniere verwenden gemeinsam alle {multiMachineCount} verfügbaren Automaten.</p>
+                      <p className="mt-3 text-xs text-muted-foreground">Beide Turniere verwenden gemeinsam alle {multiMachineCount} verfügbaren Automaten.</p>
                     ) : (
                       <div className="mt-4 space-y-4">
                         {(["herren","damen"] as const).map(division => {
                           const own = division === "herren" ? multiMachineHerren : multiMachineDamen
                           const other = division === "herren" ? multiMachineDamen : multiMachineHerren
                           return <div key={division}>
-                            <div className="mb-2 flex items-center justify-between text-xs font-black text-white/80"><span>{division === "herren" ? "Herren-DKO" : "Damen-DKO"}</span><span className="text-white/45">{own.length} zugewiesen</span></div>
+                            <div className="mb-2 flex items-center justify-between text-xs font-black text-white/80"><span>{division === "herren" ? "Herren-DKO" : "Damen-DKO"}</span><span className="text-muted-foreground">{own.length} zugewiesen</span></div>
                             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
                               {Array.from({length:multiMachineCount},(_,i)=>i+1).map(n => <button key={n} type="button"
                                 disabled={other.includes(n) || selectedEventLocked || selectedEventIsPast || multiMachineSaving}
                                 onClick={() => toggleMultiMachine(division,n)}
                                 title={other.includes(n) ? "Beim anderen DKO zugewiesen" : `Automat ${n} ${own.includes(n)?"freigeben":"zuweisen"}`}
                                 aria-pressed={own.includes(n)}
-                                className={`min-h-10 rounded-xl border text-sm font-black transition disabled:cursor-not-allowed ${own.includes(n) ? "border-orange-400/45 bg-orange-500/20 text-orange-100" : other.includes(n) ? "border-white/5 bg-white/[0.015] text-white/20" : "border-white/10 bg-white/[0.035] text-white/70 hover:bg-white/10"}`}>{n}</button>)}
+                                className={`min-h-10 rounded-xl border text-sm font-black transition disabled:cursor-not-allowed ${own.includes(n) ? "border-orange-400/45 bg-orange-500/20 text-orange-100" : other.includes(n) ? "border-white/5 bg-white/[0.015] text-muted-foreground" : "border-white/10 bg-white/[0.035] text-white/70 hover:bg-white/10"}`}>{n}</button>)}
                             </div>
                           </div>
                         })}
                         {((multiDkoCounts.herren > 0 && multiMachineHerren.length===0) || (multiDkoCounts.damen > 0 && multiMachineDamen.length===0)) ? <p className="text-xs font-bold text-amber-200">Einteilung unvollständig: Jede besetzte Gruppe braucht mindestens einen Automaten.</p> : null}
-                        <p className="text-xs text-white/45">Grau gesperrte Automaten gehören bereits zum anderen DKO. Zum Verschieben zuerst dort freigeben.</p>
+                        <p className="text-xs text-muted-foreground">Grau gesperrte Automaten gehören bereits zum anderen DKO. Zum Verschieben zuerst dort freigeben.</p>
                       </div>
                     )}
-                    {multiMachineError ? <p role="alert" className="mt-3 text-xs font-bold text-rose-300">{multiMachineError}</p> : null}
+                    {multiMachineError ? <p role="alert" className="mt-3 text-xs font-bold text-red-300">{multiMachineError}</p> : null}
                     <p className="mt-4 border-t border-white/10 pt-3 text-xs font-semibold text-amber-200/80">Die Automatenzuordnung wird automatisch gespeichert. Ein belegter Automat kann nicht doppelt vergeben werden.</p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 text-sm text-white/60">Die getrennte Automatenzuordnung ist verfügbar, sobald du im Tab „Turnier“ das Herren-/Damen-DKO aktivierst.</div>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 text-sm text-muted-foreground">Die getrennte Automatenzuordnung ist verfügbar, sobald du im Tab „Turnier“ das Herren-/Damen-DKO aktivierst.</div>
                 )}
                 </div>
               </section>
@@ -2645,13 +2620,13 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
             <div className={`${eventView === "participants" ? "" : "hidden"} ${selectedEventLocked ? "pointer-events-none select-text opacity-70 [&_button]:cursor-not-allowed [&_input]:cursor-not-allowed [&_select]:cursor-not-allowed" : ""}`} >
 
             <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,.85fr)]">
-              <div id="emd-event-registration" className="emd-admin-surface min-w-0 scroll-mt-40 border border-white/[0.10] shadow-[0_18px_60px_-45px_rgba(0,0,0,.8)]">
+              <div id="emd-event-registration" className="emd-admin-surface min-w-0 scroll-mt-40 border border-white/[0.10] shadow-sm">
                 <div className="p-4 sm:p-6">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                      <div className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-orange-200/70">Anmeldung</div>
+                      <div className="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-200/70">Anmeldung</div>
                       <div className="mt-1 text-lg font-black text-white">Teilnehmer & Check-in</div>
-                      <div className="mt-1 text-xs text-white/35">Anmeldungen, Zahlungen und Warteliste im Überblick</div>
+                      <div className="mt-1 text-xs text-muted-foreground">Anmeldungen, Zahlungen und Warteliste im Überblick</div>
                     </div>
                     <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
                       {registeredRows.length > 0 && registeredRows.some((row) => !row.paid) && !selectedEventIsPast ? (
@@ -2667,7 +2642,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                         </Button>
                       ) : null}
                       <div className="relative w-full sm:w-72">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/25" />
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           value={registrationSearch}
                           onChange={(event) => setRegistrationSearch(event.target.value)}
@@ -2693,18 +2668,18 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                       className={`inline-flex h-8 items-center gap-1.5 rounded-xl border px-3 text-[11px] font-black transition ${
                         registrationFilter === value
                           ? "border-orange-300/20 bg-orange-500/[0.10] text-orange-100"
-                          : "border-white/[0.07] bg-white/[0.02] text-white/40 hover:text-white/65"
+                          : "border-white/[0.07] bg-white/[0.02] text-muted-foreground hover:text-white/65"
                       }`}
                     >
                       {label}
-                      <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[9px]">{count}</span>
+                      <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-xs">{count}</span>
                     </button>
                   ))}
                 </div>
 
                 <div className="p-3">
                   {filteredRegistrationRows.length === 0 ? (
-                    <div className="py-12 text-center text-sm font-semibold text-white/30">
+                    <div className="py-12 text-center text-sm font-semibold text-muted-foreground">
                       Noch keine Anmeldungen.
                     </div>
                   ) : (
@@ -2728,27 +2703,27 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                                 <div className="truncate font-black text-white">
                                   {player?.name || row.player_name_snapshot}
                                 </div>
-                                <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-white/35">
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                                   {player?.verein ? <span>{player.verein}</span> : null}
                                   {player?.ligastatus ? <span>· {player.ligastatus}</span> : null}
                                   <span>· {row.status === "registered" ? "Angemeldet" : row.status === "waitlist" ? "Warteliste" : "Abgemeldet"}</span>
                                   {row.source === "public" ? (
-                                    <Badge variant="outline" className="h-5 border-cyan-300/15 px-1.5 text-[9px] text-cyan-100/60">
+                                    <Badge variant="outline" className="h-5 border-cyan-300/15 px-1.5 text-xs text-cyan-100/60">
                                       Öffentlich
                                     </Badge>
                                   ) : row.source === "terminal" ? (
-                                    <Badge variant="outline" className="h-5 border-orange-300/20 px-1.5 text-[9px] text-orange-100/75">
+                                    <Badge variant="outline" className="h-5 border-orange-300/20 px-1.5 text-xs text-orange-100/75">
                                       Terminal
                                     </Badge>
                                   ) : null}
                                   {!row.player_id ? (
-                                    <Badge variant="outline" className="h-5 border-amber-300/20 px-1.5 text-[9px] text-amber-100/75">
+                                    <Badge variant="outline" className="h-5 border-amber-300/20 px-1.5 text-xs text-amber-100/75">
                                       Zuordnung fehlt
                                     </Badge>
                                   ) : null}
                                 </div>
                                 {row.source === "public" && (row.contact_email || row.contact_phone) ? (
-                                  <div className="mt-1.5 flex flex-wrap gap-2 text-[10px] text-white/28">
+                                  <div className="mt-1.5 flex flex-wrap gap-2 text-xs text-muted-foreground">
                                     {row.contact_email ? <span>{row.contact_email}</span> : null}
                                     {row.contact_phone ? <span>· {row.contact_phone}</span> : null}
                                   </div>
@@ -2756,10 +2731,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
                                 {!row.player_id && row.status !== "withdrawn" && !selectedEventIsPast ? (
                                   <div className="mt-3 max-w-md rounded-xl border border-amber-300/10 bg-amber-500/[0.035] p-3">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.12em] text-amber-100/55">
+                                    <div className="text-xs font-black uppercase tracking-[0.12em] text-amber-100/55">
                                       Spieler zuordnen
                                     </div>
-                                    <div className="mt-1 text-xs font-semibold leading-5 text-white/45">
+                                    <div className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
                                       Bitte den passenden Spieler auswählen.
                                     </div>
 
@@ -2782,7 +2757,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                                             ))}
                                           </SelectContent>
                                         </Select>
-                                        <div className="mt-1.5 text-[10px] font-semibold text-white/25">
+                                        <div className="mt-1.5 text-xs font-semibold text-muted-foreground">
                                           Ähnliche Spieler zur sicheren Zuordnung.
                                         </div>
                                       </div>
@@ -2804,7 +2779,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                                       value={multiDkoAssignments[row.id] || "offen"}
                                       disabled={selectedEventLocked || selectedEventIsPast || multiDkoLoading || !!multiDkoSavingId}
                                       onChange={event => void changeMultiDkoAssignment(row.id, event.target.value as "herren" | "damen" | "offen")}
-                                      className="h-8 max-w-40 rounded-lg border border-white/15 bg-[#10151c] px-2 text-white"
+                                      className="h-8 max-w-40 rounded-lg border border-white/15 bg-card px-2 text-white"
                                     >
                                       <option value="offen">Bitte zuordnen</option>
                                       <option value="herren">Herren-DKO</option>
@@ -2857,7 +2832,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                                     variant="outline"
                                     onClick={() => void updateRegistration(row, { status: "withdrawn" })}
                                     disabled={saving || selectedEventIsPast}
-                                    className="h-9 rounded-xl border-rose-300/15 bg-rose-500/[0.05] px-3 text-xs font-black text-rose-100/70"
+                                    className="h-9 rounded-xl border-red-300/15 bg-red-500/[0.05] px-3 text-xs font-black text-red-100/70"
                                   >
                                     <X className="mr-1.5 h-3.5 w-3.5" />
                                     Abmelden
@@ -2876,10 +2851,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
               <div className="emd-admin-surface min-w-0">
                 <div className="p-4 sm:p-5">
                   <div className="font-black text-white">Spieler hinzufügen</div>
-                  <div className="mt-1 text-xs text-white/35">Spieler suchen und mit einem Klick aufnehmen</div>
+                  <div className="mt-1 text-xs text-muted-foreground">Spieler suchen und mit einem Klick aufnehmen</div>
 
                   <div className="relative mt-3">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/25" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       value={playerSearch}
                       onChange={(event) => setPlayerSearch(event.target.value)}
@@ -2891,7 +2866,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
 
                 <div className="p-3">
                   {filteredPlayers.length === 0 ? (
-                    <div className="py-12 text-center text-sm font-semibold text-white/30">
+                    <div className="py-12 text-center text-sm font-semibold text-muted-foreground">
                       Keine weiteren Spieler gefunden.
                     </div>
                   ) : (
@@ -2909,10 +2884,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                             >
                               <div className="min-w-0">
                                 <div className="truncate font-black text-white/85">{player.name}</div>
-                                <div className="mt-1 truncate text-xs text-white/32">
+                                <div className="mt-1 truncate text-xs text-muted-foreground">
                                   {[player.verein, player.ligastatus].filter(Boolean).join(" · ") || "Keine weiteren Angaben"}
                                 </div>
-                                <div className={`mt-1.5 text-[10px] font-black ${eligibility.eligible ? "text-emerald-200/65" : "text-amber-200/65"}`}>
+                                <div className={`mt-1.5 text-xs font-black ${eligibility.eligible ? "text-emerald-200/65" : "text-amber-200/65"}`}>
                                   {selectedEvent.access_type === "public"
                                     ? "Öffentlich · keine Paketprüfung"
                                     : eligibilityLoading
@@ -2922,7 +2897,7 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                                         : eligibility.reason}
                                 </div>
                               </div>
-                              <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border ${eligibility.eligible ? "border-orange-300/15 bg-orange-500/[0.07] text-orange-200" : "border-white/[0.06] bg-white/[0.02] text-white/20"}`}>
+                              <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl border ${eligibility.eligible ? "border-orange-300/15 bg-orange-500/[0.07] text-orange-200" : "border-white/[0.06] bg-white/[0.02] text-muted-foreground"}`}>
                                 {eligibility.eligible ? <UserPlus className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />}
                               </div>
                             </button>
@@ -2934,10 +2909,10 @@ export function CentralTournamentRegistrationHub({ initialEventId = null }: Cent
                         <button
                           type="button"
                           onClick={() => setVisiblePlayerCount((current) => current + 18)}
-                          className="mt-3 w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-sm font-black text-white/55 transition hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white"
+                          className="mt-3 w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-sm font-black text-muted-foreground transition hover:border-orange-300/15 hover:bg-white/[0.045] hover:text-white"
                         >
                           Weitere Spieler anzeigen
-                          <span className="ml-2 text-white/25">
+                          <span className="ml-2 text-muted-foreground">
                             ({Math.min(18, filteredPlayers.length - visiblePlayerCount)})
                           </span>
                         </button>

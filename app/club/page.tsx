@@ -70,7 +70,10 @@ export default async function ClubPage() {
 
   const clubPlayers: ClubPlayer[] = playersData || []
   const teams: Team[] = teamsData || []
-  const teamMembers: TeamMember[] = teamMembersData || []
+  const teamMembers: TeamMember[] = (teamMembersData || []).map((member) => ({
+    ...member,
+    club_players: Array.isArray(member.club_players) ? member.club_players[0] ?? null : member.club_players,
+  }))
 
   const teamsWithPlayers = teams.map((team) => {
     const playersForTeam = teamMembers

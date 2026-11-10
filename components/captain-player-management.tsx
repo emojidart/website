@@ -1,5 +1,7 @@
 "use client"
 
+
+
 import type React from "react"
 
 import { useState, useEffect } from "react"
@@ -11,7 +13,7 @@ import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useToast } from "@/hooks/use-toast"
-import { UserRoundPlus, Loader2, Crown, ShieldCheck, Info } from "lucide-react"
+import { UserRoundPlus, Crown, ShieldCheck, Info } from "lucide-react"
 import Image from "next/image"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
@@ -240,7 +242,10 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
 
       if (teamError) throw teamError
 
-      const visibleManagedTeams = ((teamData || []) as TeamMembership[]).filter((membership) => {
+      const visibleManagedTeams: TeamMembership[] = (teamData || []).map((membership) => ({
+        ...membership,
+        teams: membership.teams?.[0] ?? null,
+      })).filter((membership) => {
         if (membership.teams?.dart_type === "edart") return canManageEDart
         if (membership.teams?.dart_type === "steeldart") return canManageSteeldart
         return false
@@ -596,19 +601,12 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
             type="submit"
             disabled={loading || !selectedPlayerId || !selectedTeamId}
             className="h-11 w-full rounded-xl bg-orange-500 font-semibold text-primary-foreground shadow-none hover:bg-orange-400 disabled:opacity-40"
-          >
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Wird hinzugefügt...</span>
-              </div>
-            ) : (
+           loading={Boolean(loading)} loadingLabel="Wird hinzugefügt...">{(
               <div className="flex items-center space-x-2">
                 <UserRoundPlus className="h-4 w-4" />
                 <span>Spieler zum Team hinzufügen</span>
               </div>
-            )}
-          </Button>
+            )}</Button>
         </form>
       </div>
     </div>

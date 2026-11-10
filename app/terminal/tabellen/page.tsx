@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import {
@@ -67,7 +69,7 @@ function TeamLogo({ team, compact = false }: { team: Team | Standing; compact?: 
     <div className={`${size} flex shrink-0 items-center justify-center overflow-hidden border border-white/10 bg-black/40`}>
       {team.logo_url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={team.logo_url} alt={team.team || team.name || "Team"} className="h-full w-full object-contain [transform:scale(1.16)]" />
+        <img src={team.logo_url} alt={"team" in team ? team.team || "Team" : team.name || "Team"} className="h-full w-full object-contain [transform:scale(1.16)]" />
       ) : (
         <Shield className="h-6 w-6 text-orange-300/80" />
       )}
@@ -303,12 +305,7 @@ export default function TerminalStandingsPage() {
 
         <section className="mt-5 overflow-hidden rounded-[32px] border border-white/[0.08] bg-black/28 backdrop-blur-2xl">
           {loading ? (
-            <div className="p-12 text-center">
-              <div className="mx-auto h-1.5 w-52 overflow-hidden rounded-full bg-white/[0.08]">
-                <div className="h-full w-1/2 animate-pulse rounded-full bg-orange-400" />
-              </div>
-              <div className="mt-4 text-sm font-black uppercase tracking-[0.24em] text-white/35">Tabelle wird geladen</div>
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : standings.length === 0 ? (
             <div className="p-12 text-center">
               <Trophy className="mx-auto h-12 w-12 text-white/18" />

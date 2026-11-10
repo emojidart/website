@@ -1,25 +1,12 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import {
-  ArrowLeft,
-  Calendar,
-  ChevronDown,
-  Crown,
-  Gift,
-  Loader2,
-  Medal,
-  RefreshCw,
-  Shield,
-  Sparkles,
-  Star,
-  Target,
-  Trophy,
-  Zap,
-} from "lucide-react"
+import { ArrowLeft, Calendar, ChevronDown, Crown, Gift, Medal, RefreshCw, Shield, Sparkles, Star, Target, Trophy, Zap } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -381,20 +368,12 @@ export default function MemberBonusAppPage() {
 
   if (loading || authLoading) {
     return (
-      <main className="bonus-premium relative min-h-screen overflow-x-hidden bg-background text-white flex flex-col">
+      <main className="emd-loading-surface bonus-premium relative min-h-screen overflow-x-hidden bg-background text-white flex flex-col">
         <Header variant="app" title="Meine Bonuspunkte" subtitle="Mein EMD" backHref="/member-profile-app" />
 
-        <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
+        <SectionSkeleton kind="cards" />
 
-        <div className="flex-grow flex items-center justify-center px-4 pb-24 pt-20">
-          <div className="flex flex-col items-center gap-4 rounded-[28px] border border-white/[0.08] bg-card px-8 py-8 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)]">
-            <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
-            <div className="text-center">
-              <p className="font-semibold leading-snug text-white">Bonusprogramm wird geladen</p>
-              <p className="mt-1 text-sm text-muted-foreground">Bitte kurz warten…</p>
-            </div>
-          </div>
-        </div>
+        
         <MobileBottomNav />
       </main>
     )

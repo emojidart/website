@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -553,18 +555,7 @@ export default function VeranstaltungenPage() {
           ) : null}
 
           {loading ? (
-            <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-3">
-              {[0, 1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex gap-4 rounded-[24px] border border-white/[0.08] bg-card p-4">
-                  <div className="h-24 w-20 animate-pulse rounded-2xl bg-white/[0.07]" />
-                  <div className="flex-1 space-y-3 py-1">
-                    <div className="h-5 w-2/3 animate-pulse rounded bg-white/[0.07]" />
-                    <div className="h-4 w-1/2 animate-pulse rounded bg-white/[0.045]" />
-                    <div className="h-4 w-3/4 animate-pulse rounded bg-white/[0.045]" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : error ? (
             <Card className="rounded-[28px] border-red-300/[0.16] bg-red-500/[0.08]">
               <CardContent className="py-14 text-center text-red-200">{error}</CardContent>

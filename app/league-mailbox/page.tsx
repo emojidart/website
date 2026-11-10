@@ -1,21 +1,10 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  ArrowLeft,
-  CheckCircle2,
-  ChevronRight,
-  Clock3,
-  Inbox,
-  Loader2,
-  Mail,
-  Search,
-  Send,
-  ShieldCheck,
-  Sparkles,
-  UserRound,
-} from "lucide-react"
+import { ArrowLeft, CheckCircle2, ChevronRight, Clock3, Inbox, Mail, Search, Send, ShieldCheck, Sparkles, UserRound } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -247,7 +236,7 @@ export default function LeagueMailboxPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "league_mail_threads" }, () => void loadThreads())
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "league_mail_messages" }, (payload: any) => {
         void loadThreads()
-        if (payload?.new?.thread_id && payload.new.thread_id === selectedId) {
+        if (selectedId && payload?.new?.thread_id && payload.new.thread_id === selectedId) {
           void openThread(selectedId)
         }
       })
@@ -402,10 +391,7 @@ export default function LeagueMailboxPage() {
               </div>
 
               {loading ? (
-                <div className="flex items-center justify-center gap-2 py-20 text-sm font-bold text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin text-orange-300" />
-                  Nachrichten werden geladen …
-                </div>
+                <SectionSkeleton kind="cards" />
               ) : filteredThreads.length === 0 ? (
                 <div className="px-6 py-20 text-center">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.025]">
@@ -554,10 +540,7 @@ export default function LeagueMailboxPage() {
 
                   <div className="flex-1 space-y-3 overflow-y-auto p-4 sm:p-6">
                     {detailLoading ? (
-                      <div className="flex items-center justify-center gap-2 py-16 text-sm font-bold text-muted-foreground">
-                        <Loader2 className="h-5 w-5 animate-spin text-orange-300" />
-                        Verlauf wird geladen …
-                      </div>
+                      <SectionSkeleton kind="cards" />
                     ) : (
                       messages.map((message) => {
                         const mine = message.sender_role === "member"
@@ -614,10 +597,7 @@ export default function LeagueMailboxPage() {
                           onClick={() => void sendReply()}
                           disabled={sending || !reply.trim()}
                           className="h-12 rounded-2xl bg-orange-500 px-5 font-semibold text-primary-foreground hover:bg-orange-400"
-                        >
-                          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                          <span className="ml-2 hidden sm:inline">Senden</span>
-                        </Button>
+                         loading={Boolean(sending)}><Send className="h-4 w-4" /><span className="ml-2 hidden sm:inline">Senden</span></Button>
                       </div>
                     )}
                   </div>

@@ -1,8 +1,5 @@
 "use server"
 
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
-
 export interface DartAnalysisResult {
   success: boolean
   score: number
@@ -44,16 +41,21 @@ export async function analyzeDartImage(imageDataUrl: string): Promise<DartAnalys
       return { ...FALLBACK, message: "Ungültiges Bildformat (DataURL erwartet)" }
     }
 
-    const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
-      messages: [
-        {
+    const apiKey = process.env.OPENAI_API_KEY
+    if (!apiKey) return { ...FALLBACK, message: "Bildanalyse ist derzeit nicht konfiguriert." }
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{
           role: "user",
           content: [
-            { type: "image", image: imageDataUrl },
-            {
-              type: "text",
-              text: `Analysiere dieses Bild einer Dartscheibe und erkenne wo der Pfeil gelandet ist.
+            { type: "text", text: `Analysiere dieses Bild einer Dartscheibe und erkenne wo der Pfeil gelandet ist.
 
 WICHTIG: Antworte NUR mit einem JSON-Objekt in diesem exakten Format:
 {
@@ -73,12 +75,20 @@ Regeln:
 - Bullseye = rotes Zentrum (50 Punkte)
 - Confidence sollte deine Sicherheit widerspiegeln (0.0 - 1.0)
 
-Antworte NUR mit dem JSON, ohne zusätzlichen Text!`,
-            },
+Antworte NUR mit dem JSON, ohne zusätzlichen Text!` },
+            { type: "image_url", image_url: { url: imageDataUrl } },
           ],
-        },
-      ],
+        }],
+        max_tokens: 320,
+      }),
+      cache: "no-store",
     })
+
+    if (!response.ok) throw new Error(`Bildanalyse fehlgeschlagen (HTTP ${response.status})`)
+    const result = await response.json() as {
+      choices?: Array<{ message?: { content?: string | null } }>
+    }
+    const text = result.choices?.[0]?.message?.content ?? ""
 
     const parsed = safeJsonParse(text)
     if (!parsed) return FALLBACK

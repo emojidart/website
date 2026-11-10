@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
@@ -12,20 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Euro,
-  Loader2,
-  RefreshCw,
-  Save,
-  Search,
-  ShieldCheck,
-  WalletCards,
-  XCircle,
-  Gift,
-  CalendarDays,
-} from "lucide-react"
+import { AlertTriangle, CheckCircle2, Euro, RefreshCw, Save, Search, ShieldCheck, WalletCards, XCircle, Gift, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MembershipAccountingPanel } from "./abrechnung"
 
@@ -1326,13 +1315,9 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
             onClick={() => void loadData()}
             disabled={loading}
             className="rounded-xl"
-          >
-            {loading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
+           loading={Boolean(loading)}>{(
               <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            Neu laden
+            )}Neu laden
           </Button>
         </div>
       </div>
@@ -1748,13 +1733,9 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                               request.payment_status !== "paid")
                           }
                           className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-                        >
-                          {isReviewing ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
+                         loading={Boolean(isReviewing)}>{(
                             <XCircle className="mr-2 h-4 w-4" />
-                          )}
-                          Ablehnen
+                          )}Ablehnen
                         </Button>
 
                         <Button
@@ -1771,19 +1752,14 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                               request.payment_status !== "paid")
                           }
                           className="rounded-xl bg-green-600 font-black text-white hover:bg-green-700"
-                        >
-                          {isReviewing ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
+                         loading={Boolean(isReviewing)}>{(
                             <CheckCircle2 className="mr-2 h-4 w-4" />
-                          )}
-                          {request.request_type === "cancel"
+                          )}{request.request_type === "cancel"
                             ? "Kündigung bestätigen"
                             : request.payment_method === "stripe" &&
                                 request.payment_status !== "paid"
                               ? "Wartet auf Stripe"
-                              : "Bestätigen"}
-                        </Button>
+                              : "Bestätigen"}</Button>
                       </div>
                     </div>
                   </div>
@@ -1892,13 +1868,9 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
               onClick={() => void createTrialPackage()}
               disabled={savingTrial || !trialEndsOn}
               className="rounded-xl bg-purple-600 font-black text-white hover:bg-purple-700"
-            >
-              {savingTrial ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
+             loading={Boolean(savingTrial)}>{(
                 <Gift className="mr-2 h-4 w-4" />
-              )}
-              Testpaket freischalten
+              )}Testpaket freischalten
             </Button>
 
             {activeTrialsForPlayer(selectedPlayer.id).length > 0 ? (
@@ -1971,10 +1943,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
               <ScrollArea className="h-[620px]">
                 <div className="space-y-2 p-3">
                   {loading ? (
-                    <div className="flex items-center gap-2 p-3 text-sm font-semibold text-gray-500">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Mitglieder werden geladen...
-                    </div>
+                    <SectionSkeleton kind="cards" />
                   ) : filteredPlayers.length === 0 ? (
                     <div className="p-6 text-center text-sm font-semibold text-gray-500">
                       Keine Mitglieder gefunden.
@@ -2302,13 +2271,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                       ? "bg-green-600 disabled:opacity-100"
                       : "bg-orange-600 hover:bg-orange-700",
                   )}
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Wird gespeichert...
-                    </>
-                  ) : !hasChanges && selectedMembership ? (
+                 loading={Boolean(saving)} loadingLabel="Wird gespeichert...">{!hasChanges && selectedMembership ? (
                     <>
                       <CheckCircle2 className="mr-2 h-4 w-4" />
                       Gespeichert ✓
@@ -2318,8 +2281,7 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                       <Save className="mr-2 h-4 w-4" />
                       Mitgliedschaft speichern
                     </>
-                  )}
-                </Button>
+                  )}</Button>
               </div>
             </CardContent>
           </Card>

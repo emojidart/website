@@ -1,7 +1,9 @@
 "use client"
 
+import { ButtonLoader } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
-import { CreditCard, Loader2, ShieldCheck, Wallet, XCircle, CheckCircle2 } from "lucide-react"
+import { CreditCard, ShieldCheck, Wallet, XCircle, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 
@@ -147,9 +149,7 @@ export function CreditTopupCard({ onTopupComplete }: { onTopupComplete?: () => v
                   ? "border-orange-500 bg-orange-50 text-orange-700 shadow-sm"
                   : "border-border bg-muted text-foreground hover:border-orange-200 hover:bg-primary/10"
               } disabled:cursor-not-allowed disabled:opacity-60`}
-            >
-              {busy === amount ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : `${amount} €`}
-            </button>
+             aria-busy={busy === amount || undefined}><ButtonLoader loading={Boolean(busy === amount)}>{`${amount} €`}</ButtonLoader></button>
           ))}
         </div>
 
@@ -212,9 +212,7 @@ export function CreditTopupCard({ onTopupComplete }: { onTopupComplete?: () => v
                 onClick={() => void pay()}
                 disabled={busy !== null}
                 className="h-12 w-full rounded-xl bg-background font-semibold text-white hover:bg-background"
-              >
-                {busy !== null ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                Mit Stripe bezahlen
+               loading={Boolean(busy !== null)}><CreditCard className="mr-2 h-4 w-4" />Mit Stripe bezahlen
               </Button>
             </div>
           </div>

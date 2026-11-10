@@ -1,5 +1,7 @@
 "use client";
 
+import { SectionSkeleton, InlineLoader } from "@/components/loading/loading"
+
 import type React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1210,7 +1212,7 @@ export default function TeamChatPage() {
               role: "Vorstand",
             } as TeamRoom;
           })
-          .filter(Boolean) || [];
+          .filter((room): room is TeamRoom => room !== null);
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
@@ -1264,7 +1266,7 @@ export default function TeamChatPage() {
       const rooms: TeamRoom[] =
         (memberships || [])
           .map((m: any) => {
-            const t = m.teams;
+            const t = Array.isArray(m.teams) ? m.teams[0] : m.teams;
             if (!t?.id || !t?.chat_room_id) return null;
             return {
               id: t.chat_room_id, // ✅ chat_rooms.id
@@ -1277,7 +1279,7 @@ export default function TeamChatPage() {
               membership_visible_from: m.joined_at ?? m.created_at ?? null,
             } as TeamRoom;
           })
-          .filter(Boolean) || [];
+          .filter((room): room is TeamRoom => room !== null);
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
@@ -2743,10 +2745,8 @@ export default function TeamChatPage() {
                           <>
                         {roomsLoading ? (
                           <div className="p-4 text-center">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto" />
-                            <p className="mt-2 text-sm text-white/42">
-                              Lade Teams...
-                            </p>
+                            
+                            <InlineLoader label="Lade Teams..." />
                           </div>
                         ) : !profile?.player_id ? (
                           <div className="p-4 text-center text-white/42">
@@ -3011,12 +3011,7 @@ export default function TeamChatPage() {
                             className={`flex-1 min-h-0 px-3 py-4 sm:px-5 sm:py-5 lg:px-7 xl:px-8 ${WA.chatBg}`}
                           >
                             {loading ? (
-                              <div className="text-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto" />
-                                <p className="mt-2 text-white/42 text-sm">
-                                  Lade Chat...
-                                </p>
-                              </div>
+                              <SectionSkeleton kind="cards" />
                             ) : messages.length === 0 ? (
                               <div className="text-center py-8 text-white/42">
                                 <MessageCircle className="h-12 w-12 mx-auto mb-4 text-white/42/50" />
@@ -3473,13 +3468,9 @@ export default function TeamChatPage() {
                                   }
                                   size="icon"
                                   className={`h-12 w-12 shrink-0 ${WA.sendBtn}`}
-                                >
-                                  {sending ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                                  ) : (
+                                 loading={Boolean(sending)}>{(
                                     <Send className="h-4 w-4" />
-                                  )}
-                                </Button>
+                                  )}</Button>
                               </div>
                             </div>
                           </div>
@@ -3646,9 +3637,7 @@ export default function TeamChatPage() {
               onClick={sendPoll}
               disabled={pollSending}
               className="w-full"
-            >
-              {pollSending ? "Erstelle..." : "Abstimmung senden"}
-            </Button>
+             loading={Boolean(pollSending)} loadingLabel="Erstelle...">{"Abstimmung senden"}</Button>
           </div>
         </DialogContent>
       </Dialog>

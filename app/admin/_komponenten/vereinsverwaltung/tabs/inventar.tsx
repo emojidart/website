@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import React, { useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
@@ -519,10 +521,7 @@ export function InventoryTab({ user }: { user: User | null }) {
         </section>
 
         {inventory.loading ? (
-          <div className={cn(vv.surface, "flex items-center justify-center px-4 py-10 text-sm font-semibold text-white/40")}>
-            <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
-            Inventar wird geladen …
-          </div>
+          <SectionSkeleton kind="cards" />
         ) : filteredItems.length === 0 ? (
           <div className={cn(vv.surface, "px-4 py-10 text-center")}>
             <Package className="mx-auto h-6 w-6 text-white/18" />

@@ -1,16 +1,22 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { StatisticsSection } from "@/components/statistics-section"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { MembershipAccessGate } from "@/components/member/membership/membership-access-gate"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+
+function firstRelated<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}
 
 interface UserProfile {
   id: string
@@ -150,7 +156,7 @@ export default function MemberStatisticsPage() {
         .single()
 
       if (profileError) throw profileError
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       if (profileData?.player_id) {
         const { data: teamData, error: teamError } = await supabase
@@ -161,8 +167,11 @@ export default function MemberStatisticsPage() {
 
         if (teamError) throw teamError
 
-        const allowedTeamData = ((teamData || []) as any[]).filter((membership: any) => {
-          const dartType = String(membership?.teams?.dart_type || "").toLowerCase()
+        const allowedTeamData = (teamData || []).map((membership) => ({
+          ...membership,
+          teams: firstRelated(membership.teams),
+        })).filter((membership) => {
+          const dartType = String(membership.teams?.dart_type || "").toLowerCase()
 
           if (dartType === "edart") return canSeeEDart
           if (dartType === "steeldart") return canSeeSteeldart
@@ -170,7 +179,7 @@ export default function MemberStatisticsPage() {
           return false
         })
 
-        setTeamMemberships(allowedTeamData as any)
+        setTeamMemberships(allowedTeamData)
 
         if (allowedTeamData.length > 0) {
           const teamIds = allowedTeamData.map((t: any) => t.team_id)
@@ -199,7 +208,7 @@ export default function MemberStatisticsPage() {
             .order("role", { ascending: false })
 
           if (membersError) throw membersError
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         } else {
           setTeamMembers([])
         }
@@ -365,12 +374,29 @@ export default function MemberStatisticsPage() {
       <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       {authLoading || membershipLoading ? (
-        <main className="relative z-10 flex min-h-screen items-center justify-center px-4 pb-24 pt-24">
-          <div className="w-full max-w-sm rounded-[28px] border border-white/[0.08] bg-card p-8 text-center ">
-            <Loader2 className="mx-auto h-9 w-9 animate-spin text-orange-300" />
-            <p className="mt-5 text-lg font-semibold text-white">Statistiken werden geladen</p>
-            <p className="mt-1 text-sm font-semibold text-muted-foreground">Einen Moment bitte…</p>
-          </div>
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8" role="status" aria-busy="true" aria-label="Persönliche Statistiken werden geladen">
+          <section className="rounded-[30px] border border-white/[0.08] bg-card p-5 sm:p-7">
+            <div className="flex items-start gap-4">
+              <div className="h-14 w-14 shrink-0 animate-pulse rounded-[20px] bg-white/10" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                <div className="h-8 w-52 max-w-full animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+              </div>
+            </div>
+          </section>
+          <section className="rounded-[24px] border border-white/[0.08] bg-card p-4 sm:p-5">
+            <div className="mb-4 h-3 w-24 animate-pulse rounded bg-white/10" />
+            <div className="h-11 w-full max-w-sm animate-pulse rounded-xl bg-white/10" />
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {Array.from({ length: 3 }, (_, index) => (
+                <div key={index} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+                  <div className="mt-4 h-8 w-16 animate-pulse rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+          </section>
         </main>
       ) : (
         <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
@@ -383,7 +409,7 @@ export default function MemberStatisticsPage() {
             <section className="mb-5 overflow-hidden rounded-[30px] border border-white/[0.08] bg-card p-5  sm:p-7">
               <div className="flex min-w-0 items-start gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-orange-300/15 bg-orange-500/[0.09] text-orange-200 shadow-[0_0_28px_rgba(249,115,22,.10)]">
-                  <Loader2 className="hidden" />
+                  <LoadingIndicator className="hidden" />
                   <span className="text-2xl font-semibold">Σ</span>
                 </div>
 

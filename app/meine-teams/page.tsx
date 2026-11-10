@@ -1,4 +1,7 @@
 "use client"
+
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,6 +13,10 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Crown, ShieldCheck, Users, Target, Hand, ArrowLeft } from "lucide-react"
 import { CaptainPlayerManagement } from "@/components/captain-player-management"
+
+function firstRelated<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}
 
 interface UserProfile {
   id: string
@@ -90,7 +97,7 @@ export default function MeineTeamsPage() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       // Fetch team memberships
       if (profileData?.player_id) {
@@ -103,7 +110,7 @@ export default function MeineTeamsPage() {
           throw teamError
         }
 
-        setTeamMemberships(teamData || [])
+        setTeamMemberships((teamData || []).map((entry) => ({ ...entry, teams: firstRelated(entry.teams) })))
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((team) => team.team_id)
@@ -118,7 +125,7 @@ export default function MeineTeamsPage() {
             throw membersError
           }
 
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         }
       }
     } catch (err: any) {
@@ -164,11 +171,9 @@ export default function MeineTeamsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }

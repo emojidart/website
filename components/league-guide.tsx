@@ -1,5 +1,7 @@
 "use client"
 
+import { ButtonLoader } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { supabase } from "@/lib/supabase"
@@ -151,7 +153,7 @@ export function LeagueGuide({ role }: { role: GuideRole }) {
               <button type="button" onClick={() => goTo(step - 1)} disabled={step === 0} className="flex min-h-11 items-center justify-center gap-1 rounded-xl border border-white/15 px-2 text-sm font-bold text-white disabled:opacity-35"><ChevronLeft className="h-4 w-4" /> Zurück</button>
               <button type="button" onClick={() => goTo(step + 1)} disabled={step === chapters.length - 1} className="flex min-h-11 items-center justify-center gap-1 rounded-xl bg-white/10 px-2 text-sm font-bold text-white disabled:opacity-35">Weiter <ChevronRight className="h-4 w-4" /></button>
             </div>
-            {!acknowledged && <button type="button" disabled={loading || saving || !userId} onClick={acknowledge} className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-3 text-sm font-extrabold text-primary-foreground hover:bg-orange-600 disabled:opacity-50"><Check className="h-4 w-4" />{saving ? "Wird gespeichert…" : "Gelesen & verstanden"}</button>}
+            {!acknowledged && <button type="button" disabled={loading || saving || !userId} onClick={acknowledge} className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-3 text-sm font-extrabold text-primary-foreground hover:bg-orange-600 disabled:opacity-50" aria-busy={Boolean(saving) || undefined}><ButtonLoader loading={Boolean(saving)} label="Wird gespeichert…"><Check className="h-4 w-4" />{"Gelesen & verstanden"}</ButtonLoader></button>}
           </footer>
         </div>
       </div>, document.body)}

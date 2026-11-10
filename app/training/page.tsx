@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -562,11 +564,9 @@ export default function TrainingPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-card text-foreground font-sans flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-card text-foreground font-sans flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }
@@ -1130,24 +1130,7 @@ export default function TrainingPage() {
                   </CardHeader>
                   <CardContent>
                     {loadingTeamStats ? (
-                      <div className="space-y-4">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="p-6 border-2 rounded-lg bg-muted animate-pulse">
-                            <div className="flex items-center gap-4 mb-4">
-                              <div className="w-10 h-10 rounded-full bg-secondary" />
-                              <div className="flex-1 space-y-2">
-                                <div className="h-5 bg-secondary rounded w-1/3" />
-                                <div className="h-4 bg-secondary rounded w-1/4" />
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                              {[1, 2, 3, 4].map((j) => (
-                                <div key={j} className="p-3 bg-secondary rounded-lg h-20" />
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <SectionSkeleton kind="cards" />
                     ) : teamStats.length === 0 ? (
                       <div className="text-center py-12 text-muted-foreground">
                         <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />

@@ -1,3 +1,5 @@
+import { LoadingIndicator } from "@/components/loading/loading"
+
 //new
 
 "use client"
@@ -14,23 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
-import {
-  Users,
-  UserRoundPlus,
-  Hand,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  Trash2,
-  ClipboardList,
-  UserRoundCog,
-  PlusCircle,
-  ImageIcon as ImageIconLucide,
-  Edit,
-  XCircle,
-  Crown,
-  ShieldCheck,
-} from "lucide-react"
+import { Users, UserRoundPlus, Hand, CheckCircle, AlertCircle, Trash2, ClipboardList, UserRoundCog, PlusCircle, ImageIcon as ImageIconLucide, Edit, XCircle, Crown, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ClubPlayerManagementProps {
@@ -1022,19 +1008,12 @@ if (existingRow) {
                     type="submit"
                     disabled={playerLoading}
                     className="flex-1 h-10 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-md"
-                  >
-                    {playerLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>{editingPlayerId ? "Wird aktualisiert..." : "Wird hinzugefügt..."}</span>
-                      </div>
-                    ) : (
+                   loading={Boolean(playerLoading)}>{(
                       <div className="flex items-center space-x-2">
                         <ImageIconLucide className="h-4 w-4" />
                         <span>{editingPlayerId ? "Änderungen speichern" : "Spieler hinzufügen"}</span>
                       </div>
-                    )}
-                  </Button>
+                    )}</Button>
                   {editingPlayerId && (
                     <Button
                       type="button"
@@ -1066,7 +1045,7 @@ if (existingRow) {
                   ) : playerMessageType === "success" ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <LoadingIndicator className="h-4 w-4" />
                   )}
                   <span>{playerMessage}</span>
                 </div>
@@ -1252,19 +1231,12 @@ if (existingRow) {
                     type="submit"
                     disabled={teamLoading}
                     className="flex-1 h-10 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-md"
-                  >
-                    {teamLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>{editingTeamId ? "Wird aktualisiert..." : "Wird erstellt..."}</span>
-                      </div>
-                    ) : (
+                   loading={Boolean(teamLoading)}>{(
                       <div className="flex items-center space-x-2">
                         {editingTeamId ? <Edit className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />}
                         <span>{editingTeamId ? "Änderungen speichern" : "Mannschaft erstellen"}</span>
                       </div>
-                    )}
-                  </Button>
+                    )}</Button>
                   {editingTeamId && (
                     <Button
                       type="button"
@@ -1295,7 +1267,7 @@ if (existingRow) {
                   ) : teamMessageType === "success" ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <LoadingIndicator className="h-4 w-4" />
                   )}
                   <span>{teamMessage}</span>
                 </div>
@@ -1454,13 +1426,7 @@ if (existingRow) {
                   type="submit"
                   disabled={assignmentLoading}
                   className="w-full h-10 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-md"
-                >
-                  {assignmentLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Wird ausgeführt...</span>
-                    </div>
-                  ) : (
+                 loading={Boolean(assignmentLoading)} loadingLabel="Wird ausgeführt...">{(
                     <div className="flex items-center space-x-2">
                       <UserRoundCog className="h-4 w-4" />
                       <span>
@@ -1471,8 +1437,7 @@ if (existingRow) {
                             : "Spieler zuweisen"}
                       </span>
                     </div>
-                  )}
-                </Button>
+                  )}</Button>
               </form>
               {assignmentMessage && (
                 <div
@@ -1490,7 +1455,7 @@ if (existingRow) {
                   ) : assignmentMessageType === "success" ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <LoadingIndicator className="h-4 w-4" />
                   )}
                   <span>{assignmentMessage}</span>
                 </div>
@@ -1515,9 +1480,9 @@ if (existingRow) {
                                 <li key={member.id} className="flex items-center justify-between text-sm text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     {member.player_name}
-                                    {member.role === "Captain" && <Crown className="h-3 w-3 text-yellow-600" title="Kapitän" />}
+                                    {member.role === "Captain" && <Crown className="h-3 w-3 text-yellow-600" aria-label="Kapitän" />}
                                     {member.role === "Co-Captain" && (
-                                      <ShieldCheck className="h-3 w-3 text-blue-600" title="Co-Kapitän" />
+                                      <ShieldCheck className="h-3 w-3 text-blue-600" aria-label="Co-Kapitän" />
                                     )}
                                     {member.role && member.role !== "Player" && <span className="text-xs text-muted-foreground">({member.role})</span>}
                                   </span>

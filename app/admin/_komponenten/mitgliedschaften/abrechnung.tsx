@@ -1,23 +1,10 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
-import {
-  Banknote,
-  CalendarDays,
-  CreditCard,
-  Coins,
-  ExternalLink,
-  FileText,
-  Loader2,
-  Printer,
-  RefreshCw,
-  ReceiptText,
-  WalletCards,
-  CheckCircle2,
-  CircleAlert,
-  Undo2,
-} from "lucide-react"
+import { Banknote, CalendarDays, CreditCard, Coins, ExternalLink, FileText, Printer, RefreshCw, ReceiptText, WalletCards, CheckCircle2, CircleAlert, Undo2 } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
@@ -414,14 +401,10 @@ export function MembershipAccountingPanel({ user }: { user: User | null }) {
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" onClick={() => void loadPayments()} disabled={loading || syncing} className="rounded-xl">
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                Neu laden
+              <Button type="button" variant="outline" onClick={() => void loadPayments()} disabled={loading || syncing} className="rounded-xl" loading={Boolean(loading)}><RefreshCw className="mr-2 h-4 w-4" />Neu laden
               </Button>
               {section === "memberships" ? (
-                <Button type="button" onClick={() => void syncStripe()} disabled={loading || syncing} className="rounded-xl bg-slate-950 font-black text-white hover:bg-slate-800">
-                  {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                  Stripe synchronisieren
+                <Button type="button" onClick={() => void syncStripe()} disabled={loading || syncing} className="rounded-xl bg-slate-950 font-black text-white hover:bg-slate-800" loading={Boolean(syncing)}><CreditCard className="mr-2 h-4 w-4" />Stripe synchronisieren
                 </Button>
               ) : null}
             </div>
@@ -505,9 +488,7 @@ export function MembershipAccountingPanel({ user }: { user: User | null }) {
       {section === "memberships" ? (
         <>
           {loading ? (
-        <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
-          <Loader2 className="h-7 w-7 animate-spin text-orange-600" />
-        </div>
+        <SectionSkeleton kind="cards" />
       ) : filteredPayments.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-500">
           Für diesen Zeitraum wurden noch keine Zahlungseingänge gefunden.
@@ -571,10 +552,7 @@ export function MembershipAccountingPanel({ user }: { user: User | null }) {
                         disabled={reviewingId === `payment:${payment.id}`}
                         className={payment.reviewed_at ? "rounded-xl border border-slate-200 bg-white font-black text-slate-700 hover:bg-slate-50" : "rounded-xl bg-blue-600 font-black text-white hover:bg-blue-700"}
                         variant={payment.reviewed_at ? "outline" : "default"}
-                      >
-                        {reviewingId === `payment:${payment.id}` ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : payment.reviewed_at ? <Undo2 className="mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                        {payment.reviewed_at ? "Prüfung zurücksetzen" : "Als geprüft markieren"}
-                      </Button>
+                       loading={Boolean(reviewingId === `payment:${payment.id}`)}>{payment.reviewed_at ? <Undo2 className="mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}{payment.reviewed_at ? "Prüfung zurücksetzen" : "Als geprüft markieren"}</Button>
                       <Button type="button" variant="outline" onClick={() => printPaymentReceipt(payment)} className="rounded-xl">
                         <Printer className="mr-2 h-4 w-4" />Beleg drucken
                       </Button>
@@ -607,7 +585,7 @@ export function MembershipAccountingPanel({ user }: { user: User | null }) {
           )}
         </>
       ) : loading ? (
-        <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-slate-200 bg-white"><Loader2 className="h-7 w-7 animate-spin text-orange-600" /></div>
+        <SectionSkeleton kind="cards" />
       ) : filteredTopups.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-500">Für diesen Zeitraum wurden keine Guthaben-Aufladungen gefunden.</div>
       ) : (
@@ -654,10 +632,7 @@ export function MembershipAccountingPanel({ user }: { user: User | null }) {
                           disabled={reviewingId === `topup:${topup.id}`}
                           className={topup.reviewed_at ? "w-full rounded-xl border border-slate-200 bg-white font-black text-slate-700 hover:bg-slate-50" : "w-full rounded-xl bg-blue-600 font-black text-white hover:bg-blue-700"}
                           variant={topup.reviewed_at ? "outline" : "default"}
-                        >
-                          {reviewingId === `topup:${topup.id}` ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : topup.reviewed_at ? <Undo2 className="mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                          {topup.reviewed_at ? "Prüfung zurücksetzen" : "Als geprüft markieren"}
-                        </Button>
+                         loading={Boolean(reviewingId === `topup:${topup.id}`)}>{topup.reviewed_at ? <Undo2 className="mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}{topup.reviewed_at ? "Prüfung zurücksetzen" : "Als geprüft markieren"}</Button>
                       ) : null}
                       <Button type="button" variant="outline" onClick={() => printTopupReceipt(topup)} className="w-full rounded-xl" disabled={!paid}><Printer className="mr-2 h-4 w-4" />Aufladebeleg drucken</Button>
                     </div>

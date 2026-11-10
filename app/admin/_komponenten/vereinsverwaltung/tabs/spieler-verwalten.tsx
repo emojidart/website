@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -10,30 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import {
-  AlertCircle,
-  CheckCircle,
-  Edit,
-  Eye,
-  Link2,
-  Link2Off as LinkOff,
-  Loader2,
-  Settings,
-  Trash2,
-  Users,
-  XCircle,
-  Search,
-  MapPin,
-  Hash,
-  CreditCard,
-  UserCheck,
-  UserX,
-  ChevronRight,
-  Archive,
-  FileText,
-  Download,
-  ShieldCheck,
-} from "lucide-react"
+import { AlertCircle, CheckCircle, Edit, Eye, Link2, Link2Off as LinkOff, Settings, Trash2, Users, XCircle, Search, MapPin, Hash, CreditCard, UserCheck, UserX, ChevronRight, Archive, FileText, Download, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { vv } from "../vereinsverwaltung-styles"
 import type { ClubPlayer, Team, TeamMember } from "@/components/vereinsverwaltung/types"
@@ -863,7 +842,7 @@ export function ManagePlayersTab(props: Props) {
                 <div className="mb-4">{getClubRoleBadges(clubRoles)}</div>
 
                 {clubRolesLoading ? (
-                  <div className="text-sm text-white/35">Vereinsrollen werden geladen...</div>
+                  <SectionSkeleton kind="cards" />
                 ) : (
                   <div className="space-y-2">
                     {CLUB_ROLE_OPTIONS.map((opt) => {
@@ -900,19 +879,12 @@ export function ManagePlayersTab(props: Props) {
                     onClick={saveClubRoles}
                     disabled={clubRolesSaving || clubRolesLoading || !((detailsPlayer as any)?.user_profiles?.user_id)}
                     className="rounded-xl border border-violet-300/15 bg-violet-500/[0.12] text-violet-100 hover:bg-violet-500/[0.18]"
-                  >
-                    {clubRolesSaving ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Speichern...</span>
-                      </div>
-                    ) : (
+                   loading={Boolean(clubRolesSaving)} loadingLabel="Speichern...">{(
                       <div className="flex items-center gap-2">
                         <Settings className="h-4 w-4" />
                         <span>Vereinsrollen speichern</span>
                       </div>
-                    )}
-                  </Button>
+                    )}</Button>
                 </div>
               </div>
 
@@ -1009,10 +981,7 @@ export function ManagePlayersTab(props: Props) {
                       Kein Account
                     </Badge>
                   ) : memberFileLoading ? (
-                    <Badge className="w-fit rounded-full border border-sky-300/15 bg-sky-500/[0.08] text-sky-200">
-                      <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-                      Wird geladen
-                    </Badge>
+                    <SectionSkeleton kind="cards" />
                   ) : memberFileCount > 0 ? (
                     <Badge className="w-fit rounded-full border border-emerald-300/15 bg-emerald-500/[0.08] text-emerald-200">
                       <ShieldCheck className="mr-1 h-3.5 w-3.5" />
@@ -1036,10 +1005,7 @@ export function ManagePlayersTab(props: Props) {
                     Für diesen Spieler ist noch kein Benutzerkonto verknüpft. Deshalb kann keine digitale Mitgliederakte zugeordnet werden.
                   </div>
                 ) : memberFileLoading ? (
-                  <div className="mt-4 flex items-center gap-2 rounded-[16px] border border-[#202731] bg-[#0d1117] p-4 text-sm text-white/38">
-                    <Loader2 className="h-4 w-4 animate-spin text-orange-300" />
-                    Mitgliederakte wird geladen…
-                  </div>
+                  <SectionSkeleton kind="cards" />
                 ) : memberFileCount === 0 ? (
                   <div className="mt-4 rounded-[16px] border border-[#202731] bg-[#0d1117] p-4">
                     <div className="text-sm font-bold text-white/55">Keine archivierten Unterlagen vorhanden.</div>
@@ -1082,13 +1048,9 @@ export function ManagePlayersTab(props: Props) {
                                 disabled={memberFileDownloadId === `join:${row.id}`}
                                 onClick={() => void downloadJoinArchive(row)}
                                 className={cn(vv.buttonSecondary, "h-9 w-full flex-none text-xs sm:w-auto")}
-                              >
-                                {memberFileDownloadId === `join:${row.id}` ? (
-                                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                ) : (
+                               loading={Boolean(memberFileDownloadId === `join:${row.id}`)}>{(
                                   <Download className="mr-2 h-3.5 w-3.5" />
-                                )}
-                                PDF öffnen
+                                )}PDF öffnen
                               </Button>
                             </div>
                           ))}
@@ -1134,13 +1096,9 @@ export function ManagePlayersTab(props: Props) {
                                     disabled={memberFileDownloadId === `member:${row.id}`}
                                     onClick={() => void downloadMemberAcceptance(row)}
                                     className={cn(vv.buttonSecondary, "h-9 w-full flex-none text-xs sm:w-auto")}
-                                  >
-                                    {memberFileDownloadId === `member:${row.id}` ? (
-                                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                    ) : (
+                                   loading={Boolean(memberFileDownloadId === `member:${row.id}`)}>{(
                                       <Download className="mr-2 h-3.5 w-3.5" />
-                                    )}
-                                    PDF öffnen
+                                    )}PDF öffnen
                                   </Button>
                                 </div>
 
@@ -1291,19 +1249,12 @@ export function ManagePlayersTab(props: Props) {
                 onClick={linkToSpieldatenbank}
                 disabled={isLinking || !linkingForm.selectedSpielerId}
                 className={cn(vv.buttonPrimary, "flex-1")}
-              >
-                {isLinking ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Wird verknüpft...</span>
-                  </div>
-                ) : (
+               loading={Boolean(isLinking)} loadingLabel="Wird verknüpft...">{(
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link2 className="h-4 w-4" />
                     <span>Verknüpfen</span>
                   </div>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </div>
         </DialogContent>
@@ -1378,19 +1329,12 @@ export function ManagePlayersTab(props: Props) {
                   className={cn(vv.buttonDanger, "w-full flex-1")}
                   onClick={confirmDelete}
                   disabled={playerLoading || !canDelete}
-                >
-                  {playerLoading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Wird deaktiviert...</span>
-                    </div>
-                  ) : (
+                 loading={Boolean(playerLoading)} loadingLabel="Wird deaktiviert...">{(
                     <div className="flex items-center justify-center gap-2">
                       <Trash2 className="h-4 w-4" />
                       <span>Deaktivieren & sperren</span>
                     </div>
-                  )}
-                </Button>
+                  )}</Button>
               </div>
             </div>
           </div>

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import { Header } from "@/components/header"
@@ -932,16 +934,9 @@ useEffect(() => {
 } as const
   if (authLoading || adminLoading || superAdminLoading || !adminViewRestored) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="emd-loading-surface min-h-screen bg-gray-50">
         <Header />
-        <main className="w-full min-w-0 max-w-full overflow-x-hidden p-4 md:p-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Berechtigungen werden geprüft...</p>
-            </div>
-          </div>
-        </main>
+        <main className="w-full min-w-0 max-w-full overflow-x-hidden p-4 md:p-8"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }
@@ -951,12 +946,12 @@ if (session && !isAdmin) {
   // solange Berechtigungen laden: Spinner
   if (roleLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="emd-loading-surface min-h-screen bg-gray-50">
         <Header />
         <main className="w-full min-w-0 max-w-full overflow-x-hidden px-2 py-4 sm:px-4 md:p-8">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <LoadingIndicator className="w-8 h-8 mx-auto mb-4" />
               <p className="text-gray-600">Berechtigungen werden geprüft...</p>
             </div>
           </div>
@@ -965,7 +960,7 @@ if (session && !isAdmin) {
     )
   }
 
-  const hasAnyPermission = allowedViews.has("*") || allowedViews.size > 0
+  const hasAnyPermission = Boolean(allowedViews && (allowedViews.has("*") || allowedViews.size > 0))
 
 if (!hasAnyPermission) {
   return (
@@ -1607,14 +1602,7 @@ if (!hasAnyPermission) {
           isOpen={isPlayerListModalOpen}
           onClose={() => setIsPlayerListModalOpen(false)}
           onSelectPlayer={handleSelectPlayer}
-          fetchAllUniquePlayers={async () => {
-            const edart = await fetchPlayers("edart_players")
-            const steel = await fetchPlayers("steel_dart_players")
-            const uniqueNames = new Set<string>()
-            edart.forEach((p) => uniqueNames.add(p.name))
-            steel.forEach((p) => uniqueNames.add(p.name))
-            return Array.from(uniqueNames).sort()
-          }}
+
         />
       </main>
     </div>

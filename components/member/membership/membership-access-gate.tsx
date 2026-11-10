@@ -1,9 +1,11 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Loader2, LockKeyhole } from "lucide-react"
+import { LockKeyhole } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -47,12 +49,7 @@ export function MembershipAccessGate({
     if (isMessenger) return <>{children}</>
 
     return (
-      <div className="flex min-h-[320px] items-center justify-center">
-        <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Zugriff wird geprüft...
-        </div>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 
@@ -97,7 +94,7 @@ export function MembershipAccessGate({
 
         <Button
           asChild
-          className="mt-5 rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
+          className="mt-5 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-orange-700"
         >
           <Link href="/member-membership">
             Mitgliedschaft ansehen

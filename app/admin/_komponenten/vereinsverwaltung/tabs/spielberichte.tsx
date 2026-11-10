@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
@@ -13,21 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  CalendarDays,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  ExternalLink,
-  Loader2,
-  Plus,
-  Save,
-  Settings2,
-  Swords,
-  Trash2,
-  Users,
-} from "lucide-react"
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronUp, Copy, ExternalLink, Plus, Save, Settings2, Swords, Trash2, Users } from "lucide-react"
 
 type Team = { id: string; name: string; dart_type?: string | null }
 type TeamMember = {
@@ -563,8 +551,9 @@ export function MatchReportsTab() {
             .select("id")
             .single()
           if (md.error) throw md.error
-          matchdayId = md.data.id
-          dayIds.set(currentDate, matchdayId)
+          const createdMatchdayId = md.data.id
+          matchdayId = createdMatchdayId
+          dayIds.set(currentDate, createdMatchdayId)
         }
 
         const f = fixtures[i]
@@ -747,7 +736,7 @@ export function MatchReportsTab() {
 
 
   if (loading) {
-    return <div className="flex min-h-48 items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-orange-600" /></div>
+    return <SectionSkeleton kind="cards" />
   }
 
   return (
@@ -1125,7 +1114,7 @@ export function MatchReportsTab() {
       <Dialog open={lineupOpen} onOpenChange={setLineupOpen}>
         <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
           <DialogHeader><DialogTitle>Aufstellung – {lineupReport ? `${teamName(lineupReport.home_team_id)} vs. ${teamName(lineupReport.away_team_id)}` : ""}</DialogTitle></DialogHeader>
-          {lineupLoading ? <div className="p-10 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></div> : (
+          {lineupLoading ? <SectionSkeleton kind="cards" /> : (
             <div className="space-y-4">
               {lineupGames.map((g)=>(
                 <div key={g.id} className="rounded-2xl border p-4">

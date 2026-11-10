@@ -19,6 +19,7 @@ import {
   Gift,
   Tv2,
 } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
@@ -42,7 +43,36 @@ export default function MemberLeaguePage() {
     }
   }, [session, authLoading, router])
 
-  if (authLoading) return <div className="min-h-[1px]" aria-hidden="true" />
+  if (authLoading) {
+    return (
+      <div className="relative min-h-screen overflow-x-hidden bg-background font-sans text-white">
+        <Header variant="app" title="Ligazentrale" subtitle="Mein EMD" backHref="/member-profile-app" />
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-6 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8" role="status" aria-busy="true" aria-label="Ligazentrale wird geladen">
+          <section className="rounded-[30px] border border-white/[0.08] bg-card p-5 sm:p-7">
+            <div className="flex items-start gap-4">
+              <div className="h-14 w-14 shrink-0 animate-pulse rounded-[20px] bg-white/10" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+                <div className="h-8 w-52 max-w-full animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-full max-w-xl animate-pulse rounded bg-white/10" />
+              </div>
+            </div>
+          </section>
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div key={index} className="min-h-[185px] space-y-4 rounded-[28px] border border-white/[0.08] bg-card p-5 sm:p-6">
+                <div className="h-12 w-12 animate-pulse rounded-2xl bg-white/10" />
+                <div className="h-5 w-3/4 animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-full animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-2/3 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </section>
+        </main>
+        <MobileBottomNav />
+      </div>
+    )
+  }
   if (!session) return null
 
   const tiles: LeagueTile[] = [
@@ -231,14 +261,13 @@ export default function MemberLeaguePage() {
             )
 
             return tile.ready && tile.href ? (
-              <button
+              <Link
                 key={tile.title}
-                type="button"
-                onClick={() => router.push(tile.href!)}
-                className="text-left"
+                href={tile.href}
+                className="block text-left focus-visible:rounded-[28px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
               >
                 {card}
-              </button>
+              </Link>
             ) : (
               <div key={tile.title}>{card}</div>
             )

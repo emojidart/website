@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -12,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { Users, Printer, Loader2, ScanLine } from "lucide-react"
+import { Users, Printer, ScanLine } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 
 type TeamMembership = {
@@ -67,7 +69,10 @@ export default function TeamPrintSheetPage() {
         .eq("player_id", myPlayerId)
         .is("left_at", null)
 
-      const allMemberships = (mData || []) as TeamMembership[]
+      const allMemberships: TeamMembership[] = (mData || []).map((row) => ({
+        ...row,
+        teams: row.teams?.[0] ?? null,
+      }))
       setMemberships(allMemberships)
 
       const firstManageable = allMemberships.find((x) => x.role === "Captain" || x.role === "Co-Captain")
@@ -80,7 +85,10 @@ export default function TeamPrintSheetPage() {
         .in("team_id", teamIds)
         .is("left_at", null)
 
-      setMembers((memData || []) as TeamMember[])
+      setMembers((memData || []).map((row) => ({
+        ...row,
+        club_players: row.club_players?.[0] ?? null,
+      })))
     } finally {
       setLoading(false)
     }
@@ -126,24 +134,10 @@ export default function TeamPrintSheetPage() {
 
   if (authLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-[#f5f6f8]">
+      <main className="emd-loading-surface min-h-screen flex flex-col bg-[#f5f6f8]">
         <Header variant="app" title="Spielerblatt" subtitle="Drucken" backHref="/member-profile-app" />
 
-        <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-6 rounded-3xl bg-white shadow-2xl px-10 py-10 border border-orange-100">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
-              </div>
-
-              <div className="text-center">
-                <p className="text-lg font-bold text-slate-950">Seite wird geladen</p>
-                <p className="text-sm text-slate-500 mt-1">Bitte kurz warten…</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
 
         <MobileBottomNav />
       </main>

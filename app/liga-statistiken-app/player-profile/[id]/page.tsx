@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useEffect, useState } from "react"
@@ -393,11 +395,9 @@ export default function PlayerProfilePage() {
 
   if (loading) {
     return (
-      <div className="emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-background text-white">
+      <div className="emd-loading-surface emd-app-theme-shell relative min-h-screen overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Spielerprofil" subtitle="Liga & Statistiken" backHref="/liga-statistiken-app" />
-        <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-14 sm:px-5 sm:pt-16 lg:px-7 lg:pb-14 xl:px-8">
-          <div className="rounded-[24px] border border-white/[0.08] bg-card p-8 text-center font-bold text-muted-foreground ">Lade Spielerdaten...</div>
-        </div>
+        <SectionSkeleton kind="profile" />
         <MobileBottomNav />
       </div>
     )

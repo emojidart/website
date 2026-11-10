@@ -1,20 +1,14 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-  CheckCircle2,
-  Download,
-  ImageUp,
-  Loader2,
-  RefreshCcw,
-  UserRoundPen,
-  XCircle,
-} from "lucide-react"
+import { CheckCircle2, Download, ImageUp, RefreshCcw, UserRoundPen, XCircle } from "lucide-react"
 
 type RequestRow = {
   id: string
@@ -254,7 +248,7 @@ export function AdminProfileChangeRequests({
                 {pendingCount} offen
               </Badge>
               <Button variant="outline" onClick={() => void load()} disabled={loading} className="rounded-xl">
-                <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                {loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? "" : ""}`} />}
                 Aktualisieren
               </Button>
             </div>
@@ -293,12 +287,7 @@ export function AdminProfileChangeRequests({
       </Card>
 
       {loading ? (
-        <Card>
-          <CardContent className="flex items-center justify-center gap-3 py-14 text-sm font-bold text-slate-500">
-            <Loader2 className="h-5 w-5 animate-spin text-orange-500" />
-            Profiländerungen werden geladen …
-          </CardContent>
-        </Card>
+        <SectionSkeleton kind="profile" />
       ) : visibleRows.length === 0 ? (
         <Card>
           <CardContent className="py-14 text-center">
@@ -452,9 +441,7 @@ export function AdminProfileChangeRequests({
                           disabled={busy}
                           onClick={() => void reject(row)}
                           className="border-red-200 bg-white text-red-700 hover:bg-red-50"
-                        >
-                          {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-                          Ablehnen
+                         loading={Boolean(busy)}><XCircle className="mr-2 h-4 w-4" />Ablehnen
                         </Button>
 
                         {row.request_type === "name" ? (
@@ -463,9 +450,7 @@ export function AdminProfileChangeRequests({
                             disabled={busy}
                             onClick={() => void approveName(row)}
                             className="bg-emerald-600 font-black text-white hover:bg-emerald-500"
-                          >
-                            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                            Namen übernehmen
+                           loading={Boolean(busy)}><CheckCircle2 className="mr-2 h-4 w-4" />Namen übernehmen
                           </Button>
                         ) : (
                           <Button
@@ -473,9 +458,7 @@ export function AdminProfileChangeRequests({
                             disabled={busy || !processedFiles[row.id]}
                             onClick={() => void completePhoto(row)}
                             className="bg-emerald-600 font-black text-white hover:bg-emerald-500 disabled:opacity-40"
-                          >
-                            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageUp className="mr-2 h-4 w-4" />}
-                            Bearbeitetes Foto übernehmen
+                           loading={Boolean(busy)}><ImageUp className="mr-2 h-4 w-4" />Bearbeitetes Foto übernehmen
                           </Button>
                         )}
                       </div>

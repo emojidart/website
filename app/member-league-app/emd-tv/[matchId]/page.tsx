@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Crown, Pause, Play, RotateCcw, ShieldCheck, Tv2, UserRound, X } from "lucide-react"
@@ -437,11 +439,11 @@ export default function EmdTvMatchPreviewPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#030509] text-white">
+      <div className="emd-loading-surface min-h-screen bg-[#030509] text-white">
         <Header variant="app" title="EMD TV" subtitle="Match Preview" backHref="/member-league-app/emd-tv" />
         <main className="flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <Tv2 className="mx-auto h-10 w-10 animate-pulse text-orange-300" />
+            <LoadingIndicator className="emd-loading-indicator-lg" />
             <div className="mt-4 font-black">TV Preview wird vorbereitet</div>
           </div>
         </main>

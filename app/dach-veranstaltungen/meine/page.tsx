@@ -1,25 +1,12 @@
 "use client";
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import {
-  ArrowLeft,
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Edit3,
-  Eye,
-  Loader2,
-  Plus,
-  RefreshCw,
-  RotateCcw,
-  Search,
-  ShieldAlert,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, Edit3, Eye, Plus, RefreshCw, RotateCcw, Search, ShieldAlert, Trash2, XCircle } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -360,14 +347,7 @@ export default function MeineDachVeranstaltungenPage() {
         ) : null}
 
         {loading ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {[0, 1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="h-56 animate-pulse rounded-[28px] border border-white/[0.08] bg-card shadow-none"
-              />
-            ))}
-          </div>
+          <SectionSkeleton kind="cards" />
         ) : filtered.length === 0 ? (
           <Card className="overflow-hidden rounded-[28px] border-white/[0.08] shadow-lg shadow-none">
             <CardContent className="p-10 text-center sm:p-14">
@@ -497,7 +477,7 @@ export default function MeineDachVeranstaltungenPage() {
 
                       {busy ? (
                         <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/75 ">
-                          <Loader2 className="h-7 w-7 animate-spin text-orange-200" />
+                          <LoadingIndicator className="h-7 w-7" />
                         </div>
                       ) : null}
                     </div>
@@ -643,7 +623,7 @@ export default function MeineDachVeranstaltungenPage() {
                 className="rounded-xl bg-red-600 hover:bg-red-700"
               >
                 {savingId ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoadingIndicator className="mr-2 h-4 w-4" />
                 ) : (
                   <XCircle className="mr-2 h-4 w-4" />
                 )}
@@ -697,7 +677,7 @@ export default function MeineDachVeranstaltungenPage() {
               className="rounded-xl bg-red-600 hover:bg-red-700"
             >
               {savingId ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LoadingIndicator className="mr-2 h-4 w-4" />
               ) : (
                 <Trash2 className="mr-2 h-4 w-4" />
               )}

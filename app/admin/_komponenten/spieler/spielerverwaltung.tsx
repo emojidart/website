@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader, LoadingIndicator } from "@/components/loading/loading"
+
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -281,7 +283,7 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                 ) : messageType === "success" ? (
                   <CheckCircle className="h-4 w-4" />
                 ) : (
-                  <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                  <LoadingIndicator className="w-4 h-4" />
                 )}
                 <span>{message}</span>
               </div>
@@ -292,8 +294,8 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-gray-600">Spieler werden geladen...</p>
+                
+                <InlineLoader label="Spieler werden geladen..." />
               </div>
             </div>
           ) : (
@@ -445,19 +447,12 @@ export function PlayerManagement({ isVisible, user, onDataSaved }: PlayerManagem
                                   onClick={handleUpdatePlayer}
                                   disabled={uploadingImage}
                                   className="bg-blue-600 hover:bg-blue-700"
-                                >
-                                  {uploadingImage ? (
-                                    <>
-                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                      Speichern...
-                                    </>
-                                  ) : (
+                                 loading={Boolean(uploadingImage)} loadingLabel="Speichern...">{(
                                     <>
                                       <Save className="h-4 w-4 mr-2" />
                                       Speichern
                                     </>
-                                  )}
-                                </Button>
+                                  )}</Button>
                               </div>
                             </div>
                           </DialogContent>

@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader, LoadingIndicator } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useState, useEffect, useCallback } from "react"
@@ -16,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertCircle, CheckCircle, Loader2, Edit, Trash2, PlusCircle, Search } from "lucide-react"
+import { AlertCircle, CheckCircle, Edit, Trash2, PlusCircle, Search } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
@@ -168,8 +170,8 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
         <CardContent className="p-4 sm:p-5">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
-              <p className="ml-3 text-gray-600">Lade Spielergesuche...</p>
+              
+              <InlineLoader label="Lade Spielergesuche..." />
             </div>
           ) : error ? (
             <div className="flex items-center justify-center py-8 text-red-600">
@@ -358,15 +360,13 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
                   ) : editFormMessageType === "success" ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <LoadingIndicator className="h-4 w-4" />
                   )}
                   <span>{editFormMessage}</span>
                 </div>
               )}
               <DialogFooter>
-                <Button type="submit" disabled={editLoading} className="h-10 rounded-xl">
-                  {editLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
-                  Speichern
+                <Button type="submit" disabled={editLoading} className="h-10 rounded-xl" loading={Boolean(editLoading)}><Edit className="h-4 w-4 mr-2" />Speichern
                 </Button>
               </DialogFooter>
             </form>
@@ -409,7 +409,7 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
                   ) : editFormMessageType === "success" ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <LoadingIndicator className="h-4 w-4" />
                   )}
                   <span>{editFormMessage}</span>
                 </div>
@@ -420,9 +420,7 @@ export function PlayerRecruitmentList({ onDataSaved }: PlayerRecruitmentListProp
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={editLoading}>
               Abbrechen
             </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={editLoading}>
-              {editLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-              Löschen
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={editLoading} loading={Boolean(editLoading)}><Trash2 className="h-4 w-4 mr-2" />Löschen
             </Button>
           </DialogFooter>
         </DialogContent>

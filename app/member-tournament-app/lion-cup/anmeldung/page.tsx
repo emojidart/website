@@ -1,21 +1,11 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
-import {
-  AlertTriangle,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Loader2,
-  RefreshCw,
-  Sparkles,
-  Trophy,
-  UserPlus,
-  Users,
-  XCircle,
-} from "lucide-react"
+import { AlertTriangle, Calendar, CheckCircle2, Clock, RefreshCw, Sparkles, Trophy, UserPlus, Users, XCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -725,12 +715,7 @@ export default function LionCupRegistrationPage() {
           </motion.div>
 
           {loading ? (
-            <div className="rounded-2xl border border-white/[0.08] bg-card p-6 text-center shadow-sm">
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-amber-200" />
-              <div className="mt-2 text-sm font-semibold text-white/48">
-                Lion Cup wird geladen...
-              </div>
-            </div>
+            <SectionSkeleton kind="tournament" />
           ) : (
             <>
               {error ? (
@@ -812,10 +797,7 @@ export default function LionCupRegistrationPage() {
                       )}
 
                       {accountLoading ? (
-                        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 text-sm font-bold text-white/48 flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-amber-200" />
-                          Anmeldung wird vorbereitet...
-                        </div>
+                        <SectionSkeleton kind="tournament" />
                       ) : null}
 
                       {!accountLoading && accountType === "member" ? (
@@ -929,19 +911,12 @@ export default function LionCupRegistrationPage() {
                                   ? "default"
                                   : "outline"
                               }
-                            >
-                              {savingGuest ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Anmeldung wird gespeichert...
-                                </>
-                              ) : (
+                             loading={Boolean(savingGuest)} loadingLabel="Anmeldung wird gespeichert...">{(
                                 <>
                                   <UserPlus className="h-4 w-4 mr-2" />
                                   Jetzt anmelden
                                 </>
-                              )}
-                            </Button>
+                              )}</Button>
                           ) : (
                             <Button
                               type="button"
@@ -949,19 +924,12 @@ export default function LionCupRegistrationPage() {
                               onClick={handleUnregister}
                               variant="outline"
                               className="mt-4 w-full rounded-xl border-red-300/[0.16] text-red-200 hover:bg-red-500/[0.08]"
-                            >
-                              {removing ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Abmeldung wird gespeichert...
-                                </>
-                              ) : (
+                             loading={Boolean(removing)} loadingLabel="Abmeldung wird gespeichert...">{(
                                 <>
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Abmelden
                                 </>
-                              )}
-                            </Button>
+                              )}</Button>
                           )}
 
                           {guestAlreadyRegistered && !canUnregister ? (

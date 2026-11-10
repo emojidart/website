@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 export const dynamic = "force-dynamic"
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
@@ -21,27 +23,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-import {
-  Calendar,
-  Users,
-  Loader2,
-  Crown,
-  ShieldCheck,
-  CheckCircle2,
-  HelpCircle,
-  XCircle,
-  ClipboardList,
-  Eye,
-  MessageCircle,
-  Send,
-  Clock,
-  Plus,
-  Ban,
-  Pencil,
-  Save,
-  Trophy,
-  Globe,
-} from "lucide-react"
+import { Calendar, Users, Crown, ShieldCheck, CheckCircle2, HelpCircle, XCircle, ClipboardList, Eye, MessageCircle, Send, Clock, Plus, Ban, Pencil, Save, Trophy, Globe } from "lucide-react"
 
 type AvailabilityStatus = "yes" | "maybe" | "no"
 type TrainingType = "training" | "double_training" | "special"
@@ -866,22 +848,9 @@ if (endISO) {
 
   if (authLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-background text-white">
+      <main className="emd-loading-surface min-h-screen flex flex-col overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Trainingstreff" subtitle="Trainingsbereich" backHref="/member-training-app" />
-        <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-white/[0.08] bg-card px-8 py-9 shadow-[0_28px_80px_-46px_rgba(0,0,0,.95)]  sm:px-10">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-emerald-500/[0.08]0/20 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-white">Trainings werden geladen</p>
-                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
       </main>
     )
   }
@@ -1212,9 +1181,7 @@ if (endISO) {
                       ) : null}
 
                       {dialogItem ? (
-                        <Button size="sm" variant="outline" onClick={cancelTraining} disabled={savingItem || dialogItem.status === "canceled"}>
-                          {savingItem ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
-                          Absagen
+                        <Button size="sm" variant="outline" onClick={cancelTraining} disabled={savingItem || dialogItem.status === "canceled"} loading={Boolean(savingItem)}><Ban className="h-4 w-4 mr-2" />Absagen
                         </Button>
                       ) : null}
                     </div>
@@ -1317,9 +1284,7 @@ if (endISO) {
                         onClick={saveTrainingCreateOrUpdate}
                         disabled={savingItem || (!dialogItem && !canCreateCurrentType)}
                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                      >
-                        {savingItem ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                        Speichern
+                       loading={Boolean(savingItem)}><Save className="h-4 w-4 mr-2" />Speichern
                       </Button>
                     </div>
                   </CardContent>
@@ -1430,10 +1395,7 @@ if (endISO) {
                         <div className="rounded-xl border overflow-hidden">
                           <ScrollArea className="h-64 sm:h-72 p-3">
                             {chatLoading ? (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Loader2 className="h-4 w-4 animate-spin text-emerald-200" />
-                                Lade Chat…
-                              </div>
+                              <SectionSkeleton kind="cards" />
                             ) : chatMessages.length === 0 ? (
                               <div className="text-sm text-muted-foreground">Noch keine Nachrichten.</div>
                             ) : (
@@ -1490,9 +1452,7 @@ if (endISO) {
                             onClick={sendChatMessage}
                             disabled={!chatText.trim() || chatSending}
                             className="bg-primary hover:bg-primary/90 px-3 flex-shrink-0 text-primary-foreground"
-                          >
-                            {chatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                          </Button>
+                           loading={Boolean(chatSending)}><Send className="h-4 w-4" /></Button>
                         </div>
                       </>
                     )}
@@ -1517,7 +1477,7 @@ if (endISO) {
 
 export default function MemberTrainingsPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<SectionSkeleton kind="cards" label="Bereich wird geladen…" />}>
       <MemberTrainingsInner />
     </Suspense>
   )

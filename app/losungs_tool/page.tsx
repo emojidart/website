@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -836,9 +838,7 @@ export default function LosungsToolPage() {
 
               <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
                 {loading ? (
-                  <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50 px-4 py-8 text-center text-sm text-muted-foreground">
-                    Spieler werden geladen...
-                  </div>
+                  <InlineLoader label="Spieler werden geladen..." />
                 ) : filteredPlayers.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50 px-4 py-8 text-center text-sm text-muted-foreground">
                     Keine Spieler gefunden.

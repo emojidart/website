@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
@@ -97,17 +99,13 @@ export default function DachVeranstaltungDetailPage() {
       <main className="relative z-10 mx-auto max-w-[var(--emd-content-max)] px-3 pb-24 pt-20 sm:px-5 sm:pt-24">
 
         {loading ? (
-          <div className="flex min-h-[320px] items-center justify-center">
-            <div className="rounded-[24px] border border-white/10 bg-card px-6 py-5 text-center text-sm font-bold text-muted-foreground ">
-              Veranstaltung wird geladen…
-            </div>
-          </div>
+          <SectionSkeleton kind="tournament" />
         ) : null}
         {error ? <div className="py-20 text-center font-semibold text-red-200">{error}</div> : null}
         {!loading && !error && !event ? <div className="py-20 text-center text-muted-foreground">Veranstaltung nicht gefunden.</div> : null}
 
         {event ? (
-          <Card className="overflow-hidden rounded-[30px] border border-white/10 bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
+          <Card className="overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-sm ">
             {event.photo_url && !event.photo_url.toLowerCase().endsWith(".pdf") ? (
               <button
                 type="button"
@@ -134,7 +132,7 @@ export default function DachVeranstaltungDetailPage() {
             ) : null}
             <CardContent className="p-5 sm:p-7 lg:p-8">
               <div className="mb-6">
-                <div className="text-xs font-semibold uppercase tracking-[0.20em] text-sky-200/60">
+                <div className="text-xs font-semibold uppercase tracking-[0.20em] text-orange-200/60">
                   DACH Turnier
                 </div>
                 <h1 className="mt-1.5 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
@@ -145,30 +143,30 @@ export default function DachVeranstaltungDetailPage() {
                 <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
                   <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-orange-200" />
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/28">Datum</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Datum</div>
                     <div className="mt-1 font-bold text-white/80">{dateDE(event.start_date)}{event.end_date !== event.start_date ? ` – ${dateDE(event.end_date)}` : ""}</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-sky-200" />
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-orange-200" />
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/28">Beginn</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Beginn</div>
                     <div className="mt-1 font-bold text-white/80">{event.event_time ? `${event.event_time.slice(0, 5)} Uhr` : "Uhrzeit offen"}</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-200" />
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/28">Ort</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Ort</div>
                     <div className="mt-1 font-bold text-white/80">{location || event.location}</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="mt-0.5 text-violet-200">
+                  <div className="mt-0.5 text-orange-200">
                     {event.discipline === "edart" ? <Target className="h-4 w-4" /> : event.discipline === "steeldart" ? <Swords className="h-4 w-4" /> : <Users className="h-4 w-4" />}
                   </div>
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-white/28">Dartart</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Dartart</div>
                     <div className="mt-1 font-bold text-white/80">{disciplineLabel(event.discipline)}</div>
                   </div>
                 </div>
@@ -184,7 +182,7 @@ export default function DachVeranstaltungDetailPage() {
               {event.details ? <p className="mt-6 whitespace-pre-line text-muted-foreground">{event.details}</p> : null}
 
               <div className="mt-6 flex flex-wrap gap-3">
-                {event.registration_mode !== "public_form" && event.registration_url ? <Button asChild className="rounded-xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-400"><a href={event.registration_url} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" />Zur Anmeldung</a></Button> : null}
+                {event.registration_mode !== "public_form" && event.registration_url ? <Button asChild className="rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-orange-400"><a href={event.registration_url} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" />Zur Anmeldung</a></Button> : null}
                 {event.photo_url ? (
                   <Button
                     type="button"

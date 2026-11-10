@@ -1,11 +1,12 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { Calendar, ChevronDown, ChevronUp, Search, Trophy, Target, Award, Loader2 } from "lucide-react"
-
+import { Calendar, ChevronDown, ChevronUp, Search, Trophy, Target, Award } from "lucide-react"
 
 interface LionCupSeries {
   id: string
@@ -252,7 +253,7 @@ export default function TournamentsPage() {
               Match {match.match_id}
             </span>
             {match.round ? (
-              <span className="rounded-full bg-purple-50 border border-purple-200 px-2 py-1 text-xs font-semibold text-purple-700">
+              <span className="rounded-full bg-orange-50 border border-orange-200 px-2 py-1 text-xs font-semibold text-orange-700">
                 Runde {match.round}
               </span>
             ) : null}
@@ -307,24 +308,10 @@ export default function TournamentsPage() {
 
   if (loading) {
   return (
-    <main className="min-h-screen flex flex-col bg-muted text-foreground pb-24 overflow-x-hidden">
+    <main className="emd-loading-surface min-h-screen flex flex-col bg-muted text-foreground pb-24 overflow-x-hidden">
       <Header />
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
-        <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-2xl px-10 py-10 border border-border">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-600" />
-            </div>
-
-            <div className="text-center">
-              <p className="text-lg font-bold text-foreground">Turniere werden geladen</p>
-              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SectionSkeleton kind="cards" />
 
       <MobileBottomNav />
     </main>
@@ -460,7 +447,7 @@ export default function TournamentsPage() {
                         className="w-full p-4 flex items-center justify-between hover:bg-muted transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="flex items-center justify-center w-11 h-11 bg-orange-600 text-white rounded-2xl font-semibold text-sm flex-shrink-0 shadow-sm">
+                          <div className="flex items-center justify-center w-11 h-11 bg-primary text-primary-foreground rounded-2xl font-semibold text-sm flex-shrink-0 shadow-sm">
                             {filteredTournaments.length - index}
                           </div>
 
@@ -493,10 +480,7 @@ export default function TournamentsPage() {
                       {isExpanded ? (
                         <div className="border-t border-border bg-muted p-3 sm:p-4">
                           {isLoading ? (
-                            <div className="rounded-2xl border border-border bg-card p-6 text-center">
-                              <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                              <div className="mt-3 text-sm font-bold text-muted-foreground">Lade Matches</div>
-                            </div>
+                            <SectionSkeleton kind="cards" />
                           ) : tournamentMatches.length > 0 ? (
                             <div className="space-y-3">
                               {tournamentMatches.map((match) => (

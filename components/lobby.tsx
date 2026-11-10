@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
@@ -9,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Trophy, Users, Send, Loader2, Target, Eye, RotateCw } from "lucide-react"
+import { Trophy, Users, Send, Target, Eye, RotateCw } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 type OnlinePlayer = {
@@ -702,9 +704,7 @@ export function Lobby() {
               </DialogHeader>
 
               {detailsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                </div>
+                <SectionSkeleton kind="cards" />
               ) : gameDetails && selectedGameId === game.id ? (
                 <div className="space-y-4">
                   {/* Player Headers */}
@@ -907,7 +907,7 @@ export function Lobby() {
               className="shrink-0 bg-transparent"
               title="Lobby aktualisieren"
             >
-              <RotateCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? <LoadingIndicator className="h-4 w-4" /> : <RotateCw className={`w-4 h-4 ${isRefreshing ? "" : ""}`} />}
             </Button>
           </div>
         </CardContent>
@@ -1116,12 +1116,7 @@ export function Lobby() {
 
         <TabsContent value="results" className="space-y-6">
           {resultsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
-                <p className="text-muted-foreground">Lade Ergebnisse...</p>
-              </div>
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : (
             <Tabs defaultValue="my-results" className="space-y-6">
               <TabsList className="grid w-full max-w-md grid-cols-2 h-auto sm:h-12">

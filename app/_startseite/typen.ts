@@ -146,6 +146,11 @@ export type InternalSignupEvent = {
   image_url: string | null
   image_path: string | null
   max_participants: number | null
+  draft_enabled?: boolean | null
+  draw_mode?: "online" | "onsite" | null
+  draw_datetime?: string | null
+  draw_location?: string | null
+  draw_attendance_required?: boolean | null
 }
 
 export type HomeLeagueMatch = Match & {

@@ -1,5 +1,9 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
+import { BracketRounds } from "@/components/tournaments/bracket-round-navigation"
+
 import { finishCentralMultiDkoRun, isPreparedMultiDkoRun } from "@/lib/emd-multi-dko-lifecycle"
 import { useMultiDkoMachinePool } from "@/lib/emd-multi-dko-machine-pool"
 import { EmdMultiDkoQuickSwitch } from "@/components/emd-multi-dko-quick-switch"
@@ -2537,19 +2541,14 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-white px-4">
-        <div className="rounded-[22px] border border-border bg-card px-7 py-6 text-center shadow-[0_18px_50px_-38px_rgba(15,23,42,.55)]">
-          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-[3px] border-border border-t-slate-900" />
-          <p className="mt-4 text-sm font-bold text-white/60">Turnier wird geladen…</p>
-        </div>
-      </div>
+      <SectionSkeleton kind="tournament" />
     )
   }
 
   return (
     <div className="min-h-screen bg-background text-white">
       <div className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-6 px-3 pb-10 pt-4 sm:px-5 lg:px-7 xl:px-8">
-        <div className="flex flex-col gap-3 rounded-[26px] border border-white/[0.08] bg-card px-4 py-4 text-white shadow-[0_24px_70px_-48px_rgba(0,0,0,.98)]  sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex flex-col gap-3 rounded-[20px] border border-white/[0.08] bg-card px-4 py-4 text-white shadow-sm  sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               <Trophy className="h-3.5 w-3.5 text-orange-400" />
@@ -2588,14 +2587,12 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
               variant="outline"
               disabled={loadingRankings || !tournamentId}
               className="h-9 rounded-xl border border-white/10 bg-white/[0.045] px-3 text-sm font-semibold text-white/70 transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
-            >
-              {loadingRankings ? "Lädt..." : "Rangliste"}
-            </Button>
+             loading={Boolean(loadingRankings)} loadingLabel="Lädt...">{"Rangliste"}</Button>
 
             <Button
               onClick={handleCancelClick}
               variant="outline"
-              className="h-9 rounded-xl border border-white/10 bg-white/[0.035] px-3 text-sm font-semibold text-muted-foreground transition hover:-translate-y-0.5 hover:border-rose-300/30 hover:bg-rose-500/[0.10] hover:text-rose-200"
+              className="h-9 rounded-xl border border-white/10 bg-white/[0.035] px-3 text-sm font-semibold text-muted-foreground transition hover:-translate-y-0.5 hover:border-red-300/30 hover:bg-red-500/[0.10] hover:text-red-200"
             >
               Abbrechen
             </Button>
@@ -2603,22 +2600,22 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
+          <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
             <div className="text-sm font-bold text-white/70">LIVE Matches</div>
             <div className="mt-1 text-3xl font-semibold text-white">{activeLiveMatches.length}</div>
             <div className="mt-1 text-xs text-muted-foreground">Aktuell gestartete Partien</div>
           </div>
-          <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
+          <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
             <div className="text-sm font-bold text-white/75">Bereit</div>
             <div className="mt-1 text-3xl font-semibold text-white">{readyMatches.length}</div>
             <div className="mt-1 text-xs text-muted-foreground">Sofort startbare Matches</div>
           </div>
-          <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
+          <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
             <div className="text-sm font-bold text-white/70">Frei</div>
             <div className="mt-1 text-3xl font-semibold text-white">{availableMachines.length}</div>
             <div className="mt-1 text-xs text-muted-foreground">Verfügbare Automaten</div>
           </div>
-          <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-[0_18px_46px_-34px_rgba(0,0,0,.96)] transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
+          <div className="text-foreground rounded-2xl border border-white/[0.09] bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300/[0.16] bg-card">
             <div className="flex items-center justify-between gap-3">
               <div className="text-sm font-bold text-white/70">Fortschritt</div>
               <div className="text-xs font-bold text-muted-foreground">{liveCompletion}%</div>
@@ -2640,7 +2637,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-700">
                 {activeLiveMatches.length} live
               </span>
-              <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-white/60">
+              <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-muted-foreground">
                 {readyMatches.length} bereit
               </span>
             </div>
@@ -2682,7 +2679,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
 
             <div className="min-w-0">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-white/60">Bereit zum Start</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">Bereit zum Start</h3>
                 <span className="text-xs font-bold text-muted-foreground">
                   {Math.min(matchCenterReadyMatches.length, 6)} von {readyMatches.length}
                 </span>
@@ -2725,7 +2722,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
           </div>
         </section>
 
-        <div className="space-y-5">
+        <BracketRounds className="space-y-5">
           <div className="space-y-3">
             <h2 className="text-xl font-bold text-orange-600 border-b-2 border-orange-600 pb-2">Runde 1</h2>
             {[...Array(16)].map((_, i) => (
@@ -2953,7 +2950,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
             (matches[62].winner === matches[62].player2 && matches[62].winner)) &&
             !matches[63].winner && (
               <div className="space-y-3">
-                <h2 className="text-xl font-bold text-purple-600 border-b-2 border-purple-600 pb-2">Bracket Reset</h2>
+                <h2 className="text-xl font-bold text-orange-600 border-b-2 border-orange-600 pb-2">Bracket Reset</h2>
                 <p className="text-sm text-muted-foreground">
                   Der Spieler von der Verliererseite hat gewonnen! Beide Spieler haben jetzt je 1 Niederlage.
                 </p>
@@ -2971,7 +2968,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
             )}
 
           {(matches[63].winner || (matches[62].winner === matches[62].player1 && matches[62].player1)) && (
-            <Card className="rounded-[28px] border border-orange-300/20 bg-card p-6 text-white shadow-[0_30px_90px_-52px_rgba(249,115,22,.28)]">
+            <Card className="rounded-[20px] border border-orange-300/20 bg-card p-6 text-white shadow-sm">
               <h3 className="text-2xl font-bold text-center">🏆 Turniersieger</h3>
               <p className="text-3xl font-bold text-center mt-4">{matches[63].winner || matches[62].winner}</p>
 
@@ -3010,10 +3007,10 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
               </div>
             </Card>
           )}
-        </div>
+        </BracketRounds>
       </div>
 <Dialog open={machineDialogOpen} onOpenChange={setMachineDialogOpen}>
-        <DialogContent className="rounded-[26px] border border-white/10 bg-[#0b0e13]/98 text-white shadow-[0_35px_120px_-54px_rgba(0,0,0,.98)] ">
+        <DialogContent className="rounded-[20px] border border-white/10 bg-card text-white shadow-sm ">
           <DialogHeader>
             <DialogTitle>Automat auswählen</DialogTitle>
             <DialogDescription>Grün = frei · Rot = belegt. Nur freie Automaten können ausgewählt werden. Match {selectedMatchId}</DialogDescription>
@@ -3031,13 +3028,13 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
                   title={occupied ? `${occupied.player1 || "Spieler 1"} – ${occupied.player2 || "Spieler 2"}` : `Automat ${num} frei`}
                   className={`min-h-[102px] rounded-2xl border p-3 text-left transition-colors ${free
                     ? "border-emerald-500/40 bg-emerald-500/[0.10] hover:border-emerald-400 hover:bg-emerald-500/20"
-                    : "cursor-not-allowed border-rose-500/30 bg-rose-500/[0.08] opacity-80"}`}
+                    : "cursor-not-allowed border-red-500/30 bg-red-500/[0.08] opacity-80"}`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xl font-semibold text-white">{num}</span>
-                    <span className={`text-xs font-bold ${free ? "text-emerald-300" : "text-rose-300"}`}>{free ? "● Frei" : "● Belegt"}</span>
+                    <span className={`text-xs font-bold ${free ? "text-emerald-300" : "text-red-300"}`}>{free ? "● Frei" : "● Belegt"}</span>
                   </div>
-                  <p className="mt-2 line-clamp-2 text-xs leading-snug text-white/60">
+                  <p className="mt-2 line-clamp-2 text-xs leading-snug text-muted-foreground">
                     {occupied ? `${occupied.player1 || "Spieler 1"} gegen ${occupied.player2 || "Spieler 2"}` : "Jetzt auswählen"}
                   </p>
                 </button>
@@ -3048,7 +3045,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
       </Dialog>
 
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent className="rounded-[26px] border border-white/10 bg-[#0b0e13]/98 text-white shadow-[0_35px_120px_-54px_rgba(0,0,0,.98)] ">
+        <DialogContent className="rounded-[20px] border border-white/10 bg-card text-white shadow-sm ">
           <DialogHeader>
             <DialogTitle>Turnier abbrechen?</DialogTitle>
             <DialogDescription>
@@ -3067,7 +3064,7 @@ const autoResolveFreilosMatch = (allMatches: Record<number, Match>, matchId: num
       </Dialog>
 
       <Dialog open={rankingsDialogOpen} onOpenChange={setRankingsDialogOpen}>
-        <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto rounded-[26px] border border-white/10 bg-[#0b0e13]/98 text-white shadow-[0_35px_120px_-54px_rgba(0,0,0,.98)] ">
+        <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto rounded-[20px] border border-white/10 bg-card text-white shadow-sm ">
           <DialogHeader>
             <DialogTitle>Tabelle</DialogTitle>
             <DialogDescription>Aktuelle Platzierungen im Turnier</DialogDescription>
@@ -3158,8 +3155,8 @@ function MatchCard({
   return (
     <Card
       className={cn(
-        "space-y-3 rounded-[22px] border border-white/[0.08] bg-card p-3.5 text-white shadow-[0_18px_48px_-34px_rgba(0,0,0,.98)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-[0_24px_60px_-38px_rgba(0,0,0,.98)]",
-        isGrandFinal && "border-2 border-orange-300/30 shadow-[0_24px_60px_-36px_rgba(249,115,22,.38)]",
+        "space-y-3 rounded-[22px] border border-white/[0.08] bg-card p-3.5 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.14] hover:shadow-sm",
+        isGrandFinal && "border-2 border-orange-300/30 shadow-sm",
         isLoser && "border-l-4 border-l-rose-400/80",
         isRunning && "border-2 border-emerald-400/45 bg-emerald-500/[0.07] shadow-[0_20px_50px_-30px_rgba(16,185,129,.40)]",
         hasFreilos && !match.winner && "border-l-4 border-l-amber-400/80 bg-amber-500/[0.045]",
@@ -3208,14 +3205,14 @@ function MatchCard({
               size="sm"
               variant="ghost"
               onClick={() => onReset(match.id)}
-              className="h-7 w-7 rounded-lg border border-transparent p-0 text-muted-foreground hover:border-rose-300/20 hover:bg-rose-500/[0.08] hover:text-rose-300"
+              className="h-7 w-7 rounded-lg border border-transparent p-0 text-muted-foreground hover:border-red-300/20 hover:bg-red-500/[0.08] hover:text-red-300"
               title="Match zurücksetzen"
             >
               <RotateCcw className="h-3 w-3" />
             </Button>
           )}
           {!match.machineNumber && !match.winner && match.player1 && match.player2 && (
-            <Button size="sm" onClick={() => onStartMatch(match.id)} className="h-7 rounded-lg bg-orange-500 px-2.5 text-xs font-semibold text-primary-foreground shadow-[0_10px_24px_-18px_rgba(249,115,22,.60)] hover:bg-orange-400">
+            <Button size="sm" onClick={() => onStartMatch(match.id)} className="h-7 rounded-lg bg-primary px-2.5 text-xs font-semibold text-primary-foreground shadow-[0_10px_24px_-18px_rgba(249,115,22,.60)] hover:bg-orange-400">
               {hasFreilos ? "Auto" : "Starten"}
             </Button>
           )}
@@ -3226,7 +3223,7 @@ function MatchCard({
         className={cn(
           "flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.025] p-2.5 transition-all",
           isPlayer1Winner && "border-emerald-300/30 bg-emerald-500/[0.09] ring-1 ring-emerald-300/10",
-          isPlayer1Loser && "border-rose-300/25 bg-rose-500/[0.08]",
+          isPlayer1Loser && "border-red-300/25 bg-red-500/[0.08]",
           !isPlayer1Winner && !isPlayer1Loser && "bg-white/[0.025]",
           isFreilos(match.player1) && "border-amber-300/25 bg-amber-500/[0.08]",
         )}
@@ -3237,7 +3234,7 @@ function MatchCard({
               "text-sm truncate",
               !match.player1 && "text-muted-foreground italic",
               isPlayer1Winner && "font-semibold text-emerald-200",
-              isPlayer1Loser && "text-rose-300",
+              isPlayer1Loser && "text-red-300",
               isFreilos(match.player1) && "text-amber-200 italic font-semibold",
             )}
           >
@@ -3260,7 +3257,7 @@ function MatchCard({
         className={cn(
           "flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.025] p-2.5 transition-all",
           isPlayer2Winner && "border-emerald-300/30 bg-emerald-500/[0.09] ring-1 ring-emerald-300/10",
-          isPlayer2Loser && "border-rose-300/25 bg-rose-500/[0.08]",
+          isPlayer2Loser && "border-red-300/25 bg-red-500/[0.08]",
           !isPlayer2Winner && !isPlayer2Loser && "bg-white/[0.025]",
           isFreilos(match.player2) && "border-amber-300/25 bg-amber-500/[0.08]",
         )}
@@ -3271,7 +3268,7 @@ function MatchCard({
               "text-sm truncate",
               !match.player2 && "text-muted-foreground italic",
               isPlayer2Winner && "font-semibold text-emerald-200",
-              isPlayer2Loser && "text-rose-300",
+              isPlayer2Loser && "text-red-300",
               isFreilos(match.player2) && "text-amber-200 italic font-semibold",
             )}
           >

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -10,6 +10,8 @@ import {
   UserCircle,
   LogIn,
   MoreHorizontal,
+  Menu,
+  ChevronDown,
   HelpCircle,
   LogOut,
   MessageCircle,
@@ -72,7 +74,7 @@ const QUICK_BASE: Omit<NavItem, "key">[] = [
     memberOnly: true,
   },
   {
-    name: "Aufstellung",
+    name: "Line-up",
     href: "/member-availability",
     icon: ClipboardList,
     requiresLogin: true,
@@ -146,6 +148,7 @@ function NavButton({ item, className }: { item: NavItem; className?: string }) {
 
   return (
     <button
+      type="button"
       onClick={item.onClick}
       className={cn(
         "group flex w-full items-center gap-3 rounded-2xl border p-3 font-semibold transition-all",
@@ -178,10 +181,19 @@ export function MobileBottomNav() {
   const isLoggedIn = !!user
 
   const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const moreDialogRef = useRef<HTMLDivElement>(null)
+  const moreTriggerRef = useRef<HTMLButtonElement>(null)
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(["Schnellzugriff"])
+  const toggleGroup = (title: string) => setExpandedGroups((groups) => groups.includes(title) ? groups.filter((g) => g !== title) : [...groups, title])
   const [isGuest, setIsGuest] = useState(false)
   const [profileChecked, setProfileChecked] = useState(false)
 
   const closeMore = useCallback(() => setIsMoreOpen(false), [])
+
+  // Ein offenes Mobilmenü darf nicht auf der nächsten Seite hängen bleiben.
+  useEffect(() => {
+    setIsMoreOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     let mounted = true
@@ -238,10 +250,44 @@ export function MobileBottomNav() {
   useEffect(() => {
     if (!isMoreOpen) return
 
-    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && closeMore()
+    const dialog = moreDialogRef.current
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    // Fokus bleibt im Mobilmenü, auch wenn mit Tastatur bedient wird.
+    const focusable = () => Array.from(
+      dialog?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ) ?? []
+    ).filter(element => element.getClientRects().length > 0)
+
+    const first = focusable()[0]
+    first?.focus()
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        closeMore()
+      } else if (event.key === "Tab") {
+        const elements = focusable()
+        if (!elements.length) return
+        const firstItem = elements[0]
+        const lastItem = elements[elements.length - 1]
+        if (event.shiftKey && (document.activeElement === firstItem || !dialog?.contains(document.activeElement))) {
+          event.preventDefault()
+          lastItem.focus()
+        } else if (!event.shiftKey && (document.activeElement === lastItem || !dialog?.contains(document.activeElement))) {
+          event.preventDefault()
+          firstItem.focus()
+        }
+      }
+    }
 
     window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
+    return () => {
+      window.removeEventListener("keydown", onKeyDown)
+      document.body.style.overflow = previousOverflow
+      moreTriggerRef.current?.focus()
+    }
   }, [isMoreOpen, closeMore])
 
   const sections: Section[] = useMemo(() => {
@@ -302,7 +348,28 @@ export function MobileBottomNav() {
   const SPACER_H = "calc(4.5rem + max(10px, env(safe-area-inset-bottom)))"
 
   if (loading || (isLoggedIn && !profileChecked)) {
-    return <div className="md:hidden" style={{ height: SPACER_H }} />
+    return (
+      <>
+        <div className="md:hidden" style={{ height: SPACER_H }} />
+        <nav
+          aria-label="Hauptnavigation wird vorbereitet"
+          aria-busy="true"
+          className="emd-bottom-nav pointer-events-none fixed inset-x-0 bottom-0 z-[90] md:hidden"
+          style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
+        >
+          <div className="mx-3 overflow-hidden rounded-2xl border border-white/10 bg-[#101722] shadow-lg">
+            <div className="grid h-[68px] grid-cols-5 items-center gap-1 px-2">
+              {Array.from({ length: 5 }, (_, index) => (
+                <div key={index} className="flex flex-col items-center justify-center gap-2" aria-hidden="true">
+                  <span className="h-7 w-7 animate-pulse rounded-lg bg-white/10" />
+                  <span className="h-2 w-9 animate-pulse rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </nav>
+      </>
+    )
   }
 
   return (
@@ -315,14 +382,14 @@ export function MobileBottomNav() {
         <div className="fixed inset-0 z-[100] md:hidden">
           <button
             aria-label="Schließen"
-            className="absolute inset-0 bg-black/75"
+            className="emd-nav-backdrop absolute inset-0"
             onClick={closeMore}
           />
 
           {/* Sheet sitzt über Nav + Offset */}
           <div className="absolute left-0 right-0 bottom-0" style={{ paddingBottom: SPACER_H }}>
-            <div className="mx-3 overflow-hidden rounded-t-[28px] border border-white/10 bg-[#101722] shadow-sm">
-              <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[#151e2b] p-4 text-white">
+            <div ref={moreDialogRef} className="emd-mobile-sheet mx-3 overflow-hidden rounded-t-[28px] border border-white/10 bg-[#172235] shadow-2xl" role="dialog" aria-modal="true" aria-label="EMD Menü">
+              <div className="emd-mobile-sheet-heading relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[#233248] p-4 text-white">
                 <h3 className="text-lg font-semibold text-white">
                   Mehr Optionen
                 </h3>
@@ -337,38 +404,19 @@ export function MobileBottomNav() {
                 </button>
               </div>
 
-              <div className="max-h-[68vh] space-y-5 overflow-y-auto bg-[#101722] p-4 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+              <div className="emd-mobile-sheet-body max-h-[70vh] space-y-2 overflow-y-auto overscroll-contain bg-[#172235] p-3 pb-[calc(env(safe-area-inset-bottom)+20px)]">
                 {sections.map((sec) => {
                   if (sec.items.length === 0) return null
 
                   return (
-                    <section key={sec.title}>
-                      <div className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                        {sec.title}
-                      </div>
-
-                      {sec.variant === "grid" ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          {sec.items.map((item) => (
-                            <NavLink
-                              key={item.key}
-                              item={item}
-                              onAfter={closeMore}
-                              className="min-h-[74px] rounded-2xl"
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {sec.items.map((item) =>
-                            item.onClick ? (
-                              <NavButton key={item.key} item={item} />
-                            ) : (
-                              <NavLink key={item.key} item={item} onAfter={closeMore} />
-                            ),
-                          )}
-                        </div>
-                      )}
+                    <section key={sec.title} className="emd-nav-section">
+                      <button type="button" className="emd-nav-accordion" onClick={() => toggleGroup(sec.title)} aria-expanded={expandedGroups.includes(sec.title)}>
+                        <span className="emd-nav-accord-icon">{sec.title === "Schnellzugriff" ? <Trophy className="h-5 w-5" /> : sec.title === "Konto" ? <UserCircle className="h-5 w-5" /> : <HelpCircle className="h-5 w-5" />}</span>
+                        <span className="flex-1">{sec.title}</span><span className="text-xs font-medium text-[#aebed0]">{sec.items.length}</span><ChevronDown className="emd-nav-chevron h-5 w-5" />
+                      </button>
+                      {expandedGroups.includes(sec.title) && <div className="emd-nav-items">
+                        {sec.items.map((item) => item.onClick ? <NavButton key={item.key} item={item} /> : <NavLink key={item.key} item={item} onAfter={closeMore} />)}
+                      </div>}
                     </section>
                   )
                 })}
@@ -429,6 +477,7 @@ export function MobileBottomNav() {
 
             <button
               type="button"
+              ref={moreTriggerRef}
               onClick={() => setIsMoreOpen(true)}
               className="group relative z-[2] flex min-h-[58px] min-w-0 touch-manipulation select-none items-center justify-center px-0.5"
               aria-label="Mehr Optionen"
@@ -450,13 +499,13 @@ export function MobileBottomNav() {
                       : "border-transparent bg-transparent text-white/65",
                   )}
                 >
-                  <MoreHorizontal className="h-[19px] w-[19px]" />
+                  <Menu className="h-[20px] w-[20px]" />
                 </span>
                 <span className={cn(
                   "text-[11px] font-medium leading-none",
                   isMoreOpen ? "text-orange-100" : "text-white/65",
                 )}>
-                  Mehr
+                  Menü
                 </span>
               </span>
             </button>

@@ -419,8 +419,11 @@ export default function TerminalFixturesPage() {
 
       const { data: matchRows } = await query
 
-      const enriched = ((matchRows || []) as Match[]).map((match) => ({
+      const enriched: Match[] = (matchRows || []).map((match) => ({
         ...match,
+        home_team: match.home_team?.[0] ?? null,
+        away_team: match.away_team?.[0] ?? null,
+        season: match.season?.[0] ?? null,
         home_opponent_team: match.home_opponent_team_id
           ? opponents.find((t) => t.id === match.home_opponent_team_id) || null
           : null,

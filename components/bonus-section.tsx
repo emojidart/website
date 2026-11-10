@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -34,15 +36,15 @@ interface BonusSectionProps {
   tempBonusConfig: BonusConfig
   setTempBonusConfig: (config: BonusConfig | ((prev: BonusConfig) => BonusConfig)) => void
   saveBonusConfig: () => void
-  teamMembers: any[]
-  selectedSeasonId: string
-  playerRates: Record<string, number>
-  lineupAppearances: any[]
-  chargeAbsentByPlayer: Record<string,boolean>
-  completedTeamMatches: any[]
-  ratesError: string
-  ratesSaving: boolean
-  savePlayerRate: (teamId: string, playerId: string, rate: number | null, chargeWhenAbsent?: boolean) => Promise<void>
+  teamMembers?: any[]
+  selectedSeasonId?: string
+  playerRates?: Record<string, number>
+  lineupAppearances?: any[]
+  chargeAbsentByPlayer?: Record<string,boolean>
+  completedTeamMatches?: any[]
+  ratesError?: string
+  ratesSaving?: boolean
+  savePlayerRate?: (teamId: string, playerId: string, rate: number | null, chargeWhenAbsent?: boolean) => Promise<void>
 }
 
 export function BonusSection({
@@ -54,14 +56,14 @@ export function BonusSection({
   tempBonusConfig,
   setTempBonusConfig,
   saveBonusConfig,
-  teamMembers,
-  selectedSeasonId,
-  playerRates,
-  lineupAppearances,
-  chargeAbsentByPlayer,
-  completedTeamMatches,
-  ratesError,
-  ratesSaving,
+  teamMembers = [],
+  selectedSeasonId = "all",
+  playerRates = {},
+  lineupAppearances = [],
+  chargeAbsentByPlayer = {},
+  completedTeamMatches = [],
+  ratesError = "",
+  ratesSaving = false,
   savePlayerRate,
 }: BonusSectionProps) {
   const [editingPlayer, setEditingPlayer] = useState("")
@@ -348,7 +350,7 @@ export function BonusSection({
 
         <CardContent className="p-4 sm:p-6 pt-0">
           {ratesError ? <p className="mb-3 text-sm text-red-600">{ratesError}</p> : null}
-          <div className="mb-5 rounded-2xl border border-orange-200 bg-primary/10 p-4 text-foreground">
+          {savePlayerRate && <div className="mb-5 rounded-2xl border border-orange-200 bg-primary/10 p-4 text-foreground">
             <p className="mb-2 font-bold">Fixbetrag je Spieler und Ligaabend</p>
             <p className="mb-3 text-xs text-muted-foreground">Standardmäßig zählt nur ein tatsächlicher Einsatz, auch als Ersatzspieler. Optional können alle abgeschlossenen Ligaabende der Mannschaft berechnet werden. Nie pro Leg.</p>
             {selectedSeasonId === "all" ? <p className="text-sm text-red-700">Zum Bearbeiten eine Saison auswählen.</p> : null}
@@ -379,12 +381,9 @@ export function BonusSection({
                 </div>
               })}
             </div>
-          </div>
+          </div>}
           {legStatsLoading ? (
-            <div className="py-10 text-center">
-              <div className="mx-auto h-9 w-9 rounded-full border-4 border-orange-600/20 border-t-orange-600 animate-spin" />
-              <p className="mt-3 text-sm text-muted-foreground">Lade Bonusgeld...</p>
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : getPenaltyStatistics().length === 0 ? (
             <div className="py-10 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 border border-orange-200">

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -10,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
-import { CalendarDays, ChevronRight, Loader2, Radio, Swords, Trophy, Users } from "lucide-react"
+import { CalendarDays, ChevronRight, Radio, Swords, Trophy, Users } from "lucide-react"
 
 type Team = { id:string; name:string; logo_url?:string|null }
 type Competition = {
@@ -402,7 +404,7 @@ export default function InternalMatchesPage() {
           </section>
         ):null}
 
-        {loading?<div className="p-12 text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-orange-600"/></div>:null}
+        {loading?<SectionSkeleton kind="cards" />:null}
         {message?<div className="mt-5 rounded-2xl border bg-card p-5 text-sm font-semibold">{message}</div>:null}
 
         {!loading&&!message?(

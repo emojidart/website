@@ -1,5 +1,9 @@
 "use client"
 
+import { SectionSkeleton, ButtonLoader } from "@/components/loading/loading"
+
+import { MemberWorkspace } from "@/components/members/member-workspace"
+import { ProfilePhotoDialog } from "@/components/members/profile-photo-dialog"
 import { MembershipPaymentNotice } from "@/components/member/membership-payment-notice"
 
 import { Header } from "@/components/header"
@@ -8,7 +12,7 @@ import type React from "react"
 import PatternPad from "@/components/terminal/PatternPad"
 
 import { Button } from "@/components/ui/button"
-import { Loader2, Pencil} from "lucide-react"
+import { Pencil } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -1566,32 +1570,42 @@ const fetchProfile = async () => {
     return teamMemberships.some((m: any) => m.role === "Captain" || m.role === "Co-Captain")
   }
 
-   // ✅ LOADING VIEW
+  // Profil-Skeleton verwendet dieselben Seitenabstände wie das fertige Profil.
   if (loading) {
-  return (
-    <main className="min-h-screen flex flex-col bg-background text-foreground pb-24 overflow-x-hidden">
-      <Header />
-
-      <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
-        <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-sm px-10 py-10 border border-border">
-            <div className="relative">
-
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-200" />
+    return (
+      <div className="relative min-h-screen overflow-x-hidden bg-background text-white font-sans">
+        <Header />
+        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8" aria-busy="true" aria-label="Mitgliederprofil wird geladen">
+          <section className="rounded-[28px] border border-white/10 bg-card p-5 sm:p-7">
+            <div className="mb-5 h-4 w-36 animate-pulse rounded bg-white/10" />
+            <div className="flex items-center gap-4">
+              <div className="h-[76px] w-[76px] shrink-0 animate-pulse rounded-[22px] bg-white/10 sm:h-24 sm:w-24" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                <div className="h-9 w-full max-w-xs animate-pulse rounded bg-white/10" />
+                <div className="h-5 w-36 animate-pulse rounded-full bg-white/10" />
+              </div>
             </div>
-
-            <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">Profil wird geladen</p>
-              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {Array.from({ length: 3 }, (_, index) => (
+                <div key={index} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+                  <div className="mt-3 h-8 w-16 animate-pulse rounded bg-white/10" />
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
+          </section>
+          <section className="rounded-[24px] border border-white/10 bg-card p-4 sm:p-5">
+            <div className="mb-5 flex gap-2">
+              {Array.from({ length: 3 }, (_, index) => <div key={index} className="h-11 min-w-0 flex-1 animate-pulse rounded-xl bg-white/10" />)}
+            </div>
+            <SectionSkeleton kind="profile" label="Profildaten werden geladen…" />
+          </section>
+        </main>
+        <MobileBottomNav />
       </div>
-
-      <MobileBottomNav />
-    </main>
-  )
-}
+    )
+  }
 if (isBlocked) {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
@@ -1689,27 +1703,8 @@ if (error || !profile) {
       {/* Persönlicher Mitgliederbereich */}
 
 
-      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8">
-        <MembershipPaymentNotice />
-
-        {/* HERO */}
-        <section className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-card shadow-sm  sm:rounded-[34px]">
-
-
-
-
-          <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
-            <div className="flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
-              <div className="min-w-0">
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground ">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-50" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-400" />
-                  </span>
-                  Mein EMD · Mitgliederbereich
-                </div>
-
-                <div className="flex items-center gap-4 sm:gap-6">
+      <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-16 sm:px-5 sm:pt-20 lg:px-7 lg:pb-14 xl:px-8"><MembershipPaymentNotice />
+<section className="mp-profile-header"><div><span className="et-eyebrow">Mein EMD · Dein Profil</span><div className="mp-identity mt-4">
                   <div className="relative shrink-0">
 
                     <Avatar className="relative h-[76px] w-[76px] border-2 border-[#080b10] shadow-sm sm:h-24 sm:w-24">
@@ -1728,7 +1723,7 @@ if (error || !profile) {
                     <button
                       type="button"
                       onClick={() => setIsPhotoDialogOpen(true)}
-                      className="absolute -bottom-1 -right-1 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#11151c] text-white shadow-sm transition-colors duration-150 motion-reduce:transition-none hover:scale-105 hover:bg-orange-500"
+                      className="absolute -bottom-1 -right-1 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-card text-white shadow-sm transition-colors duration-150 motion-reduce:transition-none hover:scale-105 hover:bg-orange-500"
                       aria-label="Profilfoto-Änderung anfragen"
                     >
                       <Camera className="h-4 w-4" />
@@ -1746,7 +1741,7 @@ if (error || !profile) {
                         teamMemberships.slice(0, 3).map((membership: any) => (
                           <span
                             key={membership.id}
-                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.055] px-2.5 py-1.5 text-[11px] font-semibold text-white/70"
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.055] px-2.5 py-1.5 text-xs font-semibold text-white/70"
                           >
                             <span className="truncate">{membership.teams?.name || "Team"}</span>
                             <span className="text-muted-foreground">·</span>
@@ -1757,62 +1752,18 @@ if (error || !profile) {
                         <span className="text-sm font-semibold text-muted-foreground">Emoj!´s Dartverein</span>
                       )}
                       {teamMemberships.length > 3 ? (
-                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-muted-foreground">
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">
                           +{teamMemberships.length - 3} weitere
                         </span>
                       ) : null}
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:max-w-[620px] xl:justify-end [&>button]:h-auto [&>button]:min-h-11 [&>button]:whitespace-normal [&>button]:px-2 [&>button]:py-2 [&>a]:h-auto [&>a]:min-h-11 [&>a]:whitespace-normal [&>a]:px-2 [&>a]:py-2">
-                <Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
-                  <Link href="/profil-daten-app"><Pencil className="mr-2 h-4 w-4" />Profil</Link>
+                </div></div><div className="mp-actions"><Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
+                  <Link href="/profil-daten-app"><Pencil className="mr-2 h-4 w-4" />Profil bearbeiten</Link>
                 </Button>
-                <Button asChild className="h-11 rounded-2xl border border-orange-400/30 bg-orange-500 px-4 font-semibold text-white shadow-sm hover:bg-orange-400">
+<Button asChild className="h-11 rounded-2xl border border-orange-400/30 bg-primary px-4 font-semibold text-primary-foreground shadow-sm hover:bg-orange-400">
                   <Link href="/member-card"><CreditCard className="mr-2 h-4 w-4" />Mitgliedskarte</Link>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setTerminalPin("")
-                    setTerminalPinConfirm("")
-                    setTerminalPattern([])
-                    setTerminalPatternConfirm([])
-                    setTerminalPinMessage("")
-                    if (savedTerminalAuthMethod) setTerminalAuthMethod(savedTerminalAuthMethod)
-                    setIsTerminalPinDialogOpen(true)
-                  }}
-                  className={`h-11 rounded-2xl px-4 font-semibold ${
-                    savedTerminalAuthMethod
-                      ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-100 hover:bg-emerald-500/[0.13] hover:text-white"
-                      : "border-white/10 bg-white/[0.045] text-white hover:bg-white/[0.09]"
-                  }`}
-                >
-                  <KeyRound className="mr-2 h-4 w-4" />
-                  {terminalAuthStatusLoading
-                    ? "Terminal-Anmeldung"
-                    : savedTerminalAuthMethod === "pattern"
-                      ? "Muster aktiv · ändern"
-                      : savedTerminalAuthMethod === "pin"
-                        ? "PIN aktiv · ändern"
-                        : "Terminal-Anmeldung einrichten"}
-                </Button>
-                <Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
-                  <Link href="/member-membership">Mitgliedschaft</Link>
-                </Button>
-                <Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
-                  <Link href="/chat-app"><MessageCircle className="mr-2 h-4 w-4" />Chat</Link>
-                </Button>
-                <Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
-                  <Link href="/member-availability"><CheckCircle className="mr-2 h-4 w-4" />Aufstellung</Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-3 gap-2.5 sm:mt-8 sm:gap-3">
+                </Button></div><div className="mp-stats">
               {[
                 { label: "Teams", value: teamMemberships.length, icon: Users },
                 { label: "Nächstes Spiel", value: nextMatchSummary ? formatCompactDate((nextMatchSummary.match as any).match_date) : "Offen", icon: Calendar },
@@ -1820,140 +1771,18 @@ if (error || !profile) {
               ].map((item) => {
                 const Icon = item.icon
                 return (
-                  <div key={item.label} className="group relative min-w-0 overflow-hidden rounded-[20px] border border-orange-300/[0.10] bg-white/[0.05] p-3.5 shadow-sm  sm:border-white/[0.08] sm:bg-white/[0.045] sm:shadow-none sm:p-4">
+                  <div key={item.label} className="mp-stat-card">
 
-                    <div className="relative text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-xs">{item.label}</div>
+                    <div className="mp-stat-label">{item.label}</div>
                     <div className="relative mt-2.5 flex items-end justify-between gap-2">
-                      <div className="truncate text-lg font-semibold tracking-tight text-white sm:text-2xl">{item.value}</div>
-                      <Icon className="h-4 w-4 shrink-0 text-orange-400 sm:h-5 sm:w-5" />
+                      <div className="mp-stat-value">{item.value}</div>
+
                     </div>
                   </div>
                 )
               })}
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-4">
-          <div className="group relative overflow-hidden rounded-2xl border border-orange-300/[0.14] bg-card p-4 shadow-sm  sm:p-5">
-
-
-
-            <div className="relative">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-orange-300/20 bg-orange-500/10 text-orange-200 shadow-sm">
-                    <MessageCircle className="h-7 w-7" />
-                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#090b10] bg-orange-500 px-1 text-[11px] font-semibold text-white">EMD</span>
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-300/70">EMD Messenger</div>
-                    <h2 className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">Messenger verbinden</h2>
-                    <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-muted-foreground">
-                      Messenger installieren und anschließend einmalig mit einem 6-stelligen Code mit deinem EMD Konto verbinden.
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={openMessengerInstall}
-                  className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-orange-500 px-5 font-semibold text-white shadow-sm transition hover:bg-orange-400 active:scale-[0.985]"
-                >
-                  <Download className="mr-2 h-4 w-4" /> Messenger installieren
-                </Button>
-              </div>
-
-              <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_.95fr]">
-                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Aktivierung</div>
-                      <div className="mt-1 text-base font-semibold text-white">
-                        {messengerActivationCode ? "Dein einmaliger Code" : "Messenger auf neuem Gerät verbinden"}
-                      </div>
-                    </div>
-                    <KeyRound className="h-5 w-5 shrink-0 text-orange-300" />
-                  </div>
-
-                  {messengerActivationCode ? (
-                    <div className="mt-4">
-                      <div className="rounded-2xl border border-orange-300/20 bg-orange-500/10 px-4 py-4 text-center">
-                        <div className="select-all text-3xl font-semibold tracking-[0.32em] text-orange-100">
-                          {messengerActivationCode}
-                        </div>
-                      </div>
-                      <div className="mt-2 text-xs font-semibold text-muted-foreground">
-                        {messengerActivationMessage || "10 Minuten gültig · einmal verwendbar"}
-                        {messengerActivationExpiresAt ? ` · bis ${new Date(messengerActivationExpiresAt).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}` : ""}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-sm font-semibold leading-5 text-muted-foreground">
-                      Öffne danach den EMD Messenger und gib diesen Code dort ein. Dein Passwort wird im Messenger nicht benötigt.
-                    </p>
-                  )}
-
-                  <Button
-                    type="button"
-                    onClick={() => void createMessengerActivationCode()}
-                    disabled={messengerActivationLoading}
-                    className="mt-4 h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.055] font-semibold text-white hover:bg-white/[0.09]"
-                  >
-                    <KeyRound className="mr-2 h-4 w-4 text-orange-300" />
-                    {messengerActivationLoading
-                      ? "Code wird erstellt…"
-                      : messengerActivationCode
-                        ? "Neuen Code erstellen"
-                        : "Aktivierungscode erstellen"}
-                  </Button>
-
-                  {!messengerActivationCode && messengerActivationMessage ? (
-                    <div className="mt-3 text-xs font-semibold text-red-200">{messengerActivationMessage}</div>
-                  ) : null}
-                </div>
-
-                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Verbundene Geräte</div>
-                      <div className="mt-1 text-base font-semibold text-white">
-                        {messengerDevices.length > 0
-                          ? `${messengerDevices.length} ${messengerDevices.length === 1 ? "Gerät" : "Geräte"} aktiviert`
-                          : "Noch kein Gerät aktiviert"}
-                      </div>
-                    </div>
-                    <ShieldCheck className={`h-5 w-5 shrink-0 ${messengerDevices.length > 0 ? "text-emerald-300" : "text-muted-foreground"}`} />
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    {messengerDevices.length > 0 ? messengerDevices.slice(0, 3).map((device) => (
-                      <div key={device.id} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-black/15 px-3 py-3">
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-white">{device.device_name || "EMD Messenger Gerät"}</div>
-                          <div className="mt-0.5 text-[11px] font-semibold text-muted-foreground">
-                            Aktiviert am {new Date(device.activated_at).toLocaleDateString("de-AT")}
-                            {device.app_version ? ` · App ${device.app_version}` : ""}
-                          </div>
-                        </div>
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-300">
-                          <CheckCircle className="h-4 w-4" />
-                        </div>
-                      </div>
-                    )) : (
-                      <div className="rounded-2xl border border-dashed border-white/[0.08] px-3 py-4 text-sm font-semibold leading-5 text-muted-foreground">
-                        Nach der ersten erfolgreichen Code-Eingabe erscheint dein Messenger-Gerät hier automatisch.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {(photoDecision || nameDecision) ? (
+            </div></section>
+{(photoDecision || nameDecision) ? (
           <section className="mt-4 grid gap-3">
             {nameDecision ? (
               <div className={`overflow-hidden rounded-2xl border p-4  sm:p-5 ${
@@ -1975,7 +1804,7 @@ if (error || !profile) {
                       )}
                     </div>
                     <div>
-                      <div className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                      <div className={`text-xs font-semibold uppercase tracking-[0.18em] ${
                         nameDecision.status === "approved" ? "text-emerald-200/60" : "text-red-200/60"
                       }`}>
                         Namensänderung
@@ -2030,7 +1859,7 @@ if (error || !profile) {
                       )}
                     </div>
                     <div>
-                      <div className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                      <div className={`text-xs font-semibold uppercase tracking-[0.18em] ${
                         photoDecision.status === "approved" ? "text-emerald-200/60" : "text-red-200/60"
                       }`}>
                         Profilbild-Anfrage
@@ -2061,8 +1890,7 @@ if (error || !profile) {
             ) : null}
           </section>
         ) : null}
-        {/* Alerts */}
-        {!membershipAccessLoading && (showNormalMembershipExpiry || expiringTrials.length > 0) ? (
+{!membershipAccessLoading && (showNormalMembershipExpiry || expiringTrials.length > 0) ? (
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {showNormalMembershipExpiry && normalMembershipEndsOn ? (
               <div className="flex flex-col gap-3 rounded-2xl border border-amber-300/15 bg-amber-300/[0.07] px-4 py-4  sm:flex-row sm:items-center sm:justify-between">
@@ -2082,9 +1910,9 @@ if (error || !profile) {
             ) : null}
 
             {expiringTrials.map((trial: any) => (
-              <div key={trial.id} className="flex flex-col gap-3 rounded-2xl border border-violet-300/15 bg-violet-400/[0.07] px-4 py-4  sm:flex-row sm:items-center sm:justify-between">
+              <div key={trial.id} className="flex flex-col gap-3 rounded-2xl border border-orange-300/15 bg-orange-400/[0.07] px-4 py-4  sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-violet-300/20 bg-violet-300/10 text-violet-200">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-300/20 bg-orange-300/10 text-orange-200">
                     <Gift className="h-4.5 w-4.5" />
                   </div>
                   <div>
@@ -2092,82 +1920,51 @@ if (error || !profile) {
                     <div className="mt-0.5 text-sm text-muted-foreground">Kostenlos bis {formatShortDateAT(trial.ends_on)}.</div>
                   </div>
                 </div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-violet-200">Noch {trial.daysLeft} Tage</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-orange-200">Noch {trial.daysLeft} Tage</div>
               </div>
             ))}
           </div>
         ) : null}
-
-        {/* Documents */}
-        <section id="vereinsunterlagen" className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-card shadow-sm ">
-          <div className="flex flex-col gap-3 border-b border-white/[0.07] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <div>
-              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                <FileCheck2 className="h-4 w-4 text-orange-400" /> Vereinsunterlagen
-              </div>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight text-white sm:text-xl">Meine Dokumente & Bestätigungen</h2>
-            </div>
-            {memberDocsEnabled && requiredMemberDocs.length > 0 ? (
-              <Badge className={memberDocsCurrent ? "w-fit border border-emerald-300/20 bg-emerald-500/15 text-emerald-200" : "w-fit border border-amber-300/20 bg-amber-500/15 text-amber-200"}>
-                {memberDocsCurrent ? "Aktuell vollständig" : "Bestätigung offen"}
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="w-fit border-white/10 bg-white/[0.04] text-muted-foreground">Noch nicht freigeschaltet</Badge>
-            )}
-          </div>
-
-          <div className="space-y-4 p-4 sm:p-5">
-            {memberDocsLoading ? (
-              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin text-orange-400" /> Unterlagen werden geladen…</div>
-            ) : !memberDocsEnabled ? (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-5">
-                <div className="font-semibold text-white">Aktuell keine Vereinsunterlagen zur digitalen Bestätigung freigeschaltet.</div>
-                <div className="mt-1 text-sm font-semibold text-muted-foreground">Sobald die Vereinsleitung die finalen Dokumente freigibt, erscheinen sie automatisch hier.</div>
-              </div>
-            ) : visibleMemberDocs.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-5 text-sm font-semibold text-muted-foreground">Aktuell sind keine aktiven Dokumente hinterlegt.</div>
-            ) : (
-              <div className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="font-semibold text-white">{visibleMemberDocs.length} Dokument{visibleMemberDocs.length === 1 ? "" : "e"} freigeschaltet</div>
-                  <div className="mt-1 text-sm font-semibold text-muted-foreground">{memberDocsCurrent ? "Du hast die aktuell erforderlichen Versionen bereits bestätigt." : "Bitte lies und bestätige die aktuell erforderlichen Unterlagen."}</div>
-                </div>
-                <Button type="button" onClick={() => setMemberDocsModalOpen(true)} className="rounded-xl bg-orange-500 font-semibold text-white hover:bg-orange-400">
-                  <FileText className="mr-2 h-4 w-4" /> {memberDocsCurrent ? "Unterlagen ansehen" : "Jetzt bestätigen"}
+<MemberWorkspace><div><section className="mp-quick-actions" aria-label="Profilaktionen"><Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setTerminalPin("")
+                    setTerminalPinConfirm("")
+                    setTerminalPattern([])
+                    setTerminalPatternConfirm([])
+                    setTerminalPinMessage("")
+                    if (savedTerminalAuthMethod) setTerminalAuthMethod(savedTerminalAuthMethod)
+                    setIsTerminalPinDialogOpen(true)
+                  }}
+                  className={`h-11 rounded-2xl px-4 font-semibold ${
+                    savedTerminalAuthMethod
+                      ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-100 hover:bg-emerald-500/[0.13] hover:text-white"
+                      : "border-white/10 bg-white/[0.045] text-white hover:bg-white/[0.09]"
+                  }`}
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  {terminalAuthStatusLoading
+                    ? "Terminal-Anmeldung"
+                    : savedTerminalAuthMethod === "pattern"
+                      ? "Muster aktiv · ändern"
+                      : savedTerminalAuthMethod === "pin"
+                        ? "PIN aktiv · ändern"
+                        : "Terminal-Anmeldung einrichten"}
                 </Button>
-              </div>
-            )}
-
-            {(joinArchives.length > 0 || memberDocAcceptances.some((r) => r.archive_file_name)) ? (
-              <div>
-                <div className="mb-2 text-sm font-semibold text-white/80">Meine PDF-Akten</div>
-                <div className="grid gap-2 md:grid-cols-2">
-                  {joinArchives.map((row) => (
-                    <button key={row.id} type="button" onClick={() => void downloadJoinArchiveForMember(row)} className="group flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-left transition hover:border-orange-400/25 hover:bg-white/[0.065]">
-                      <div className="min-w-0"><div className="truncate text-sm font-semibold text-white">{row.stage === "approved" ? "Aufnahmebestätigung" : "Beitrittsanfrage"}</div><div className="text-xs font-semibold text-muted-foreground">{formatDate(row.generated_at)}</div></div>
-                      {memberArchiveLoading === `join:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin text-orange-400" /> : <Download className="h-4 w-4 text-muted-foreground transition group-hover:text-orange-300" />}
-                    </button>
-                  ))}
-                  {memberDocAcceptances.filter((r) => r.archive_file_name).map((row) => (
-                    <button key={row.id} type="button" onClick={() => void downloadMemberAcceptance(row)} className="group flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-left transition hover:border-orange-400/25 hover:bg-white/[0.065]">
-                      <div className="min-w-0"><div className="truncate text-sm font-semibold text-white">Vereinsunterlagen bestätigt</div><div className="text-xs font-semibold text-muted-foreground">{formatDate(row.created_at)}</div></div>
-                      {memberArchiveLoading === `member:${row.id}` ? <Loader2 className="h-4 w-4 animate-spin text-orange-400" /> : <Download className="h-4 w-4 text-muted-foreground transition group-hover:text-orange-300" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {memberDocsMessage ? <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white/60">{memberDocsMessage}</div> : null}
-          </div>
-        </section>
-
-        {/* Main dashboard */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(310px,0.72fr)]">
+<Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
+                  <Link href="/member-membership">Mitgliedschaft</Link>
+                </Button>
+<Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
+                  <Link href="/chat-app"><MessageCircle className="mr-2 h-4 w-4" />Chat</Link>
+                </Button>
+<Button asChild variant="outline" className="h-11 rounded-2xl border-white/10 bg-white/[0.045] px-4 text-white hover:bg-white/[0.09] hover:text-white">
+                  <Link href="/member-availability"><CheckCircle className="mr-2 h-4 w-4" />Aufstellung</Link>
+                </Button></section><div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(310px,0.72fr)]">
           <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-card shadow-sm ">
             <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-4 sm:px-5">
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Nächstes Spiel</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Nächstes Spiel</div>
                 <h2 className="mt-1 text-lg font-semibold tracking-tight text-white sm:text-xl">
                   {nextMatchSummary ? "Dein nächster Termin" : "Aktuell kein Spiel geplant"}
                 </h2>
@@ -2189,20 +1986,20 @@ if (error || !profile) {
                 </div>
               ) : (
                 <>
-                  <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-[#080b10] px-4 py-5 text-white sm:px-5">
+                  <div className="relative overflow-hidden rounded-2xl border border-white/[0.09] bg-card px-4 py-5 text-white sm:px-5">
 
 
                     <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                       <div className="min-w-0">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Begegnung</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Begegnung</div>
                         <div className="mt-2 text-xl font-semibold tracking-[-0.03em] sm:text-2xl">
                           {getTeamDisplayName(nextMatchSummary.match, true)}
-                          <span className="mx-2 font-medium text-white/20">vs</span>
+                          <span className="mx-2 font-medium text-muted-foreground">vs</span>
                           {getTeamDisplayName(nextMatchSummary.match, false)}
                         </div>
                       </div>
                       <div className="shrink-0 rounded-2xl border border-orange-300/15 bg-orange-500/[0.08] px-3.5 py-2.5">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Start in</div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Start in</div>
                         <div className="mt-0.5 whitespace-nowrap text-sm font-semibold text-orange-300">{countdown || "—"}</div>
                       </div>
                     </div>
@@ -2220,7 +2017,7 @@ if (error || !profile) {
                             <Icon className="h-4 w-4 text-orange-400" />
                           </div>
                           <div className="min-w-0">
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{item.label}</div>
+                            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{item.label}</div>
                             <div className="truncate text-sm font-semibold text-white/75">{item.value}</div>
                           </div>
                         </div>
@@ -2236,7 +2033,7 @@ if (error || !profile) {
                       { label: "Offen", value: nextMatchSummary.counts.none, dot: "bg-white/25" },
                     ].map((item) => (
                       <div key={item.label} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 py-3.5">
-                        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                           <span className={`h-2 w-2 rounded-full ${item.dot}`} />{item.label}
                         </div>
                         <div className="mt-2 text-2xl font-semibold tracking-tight text-white">{item.value}</div>
@@ -2246,7 +2043,7 @@ if (error || !profile) {
 
                   <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Dein Status</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Dein Status</div>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {statusBadge(nextMatchSummary.myStatus)}
                         {nextMatchSummary.myLineup === "starter" ? (
@@ -2270,7 +2067,7 @@ if (error || !profile) {
 
               <div className="relative flex items-center justify-between">
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Performance</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Performance</div>
                   <h2 className="mt-1 text-lg font-semibold text-white">Liga-Statistik</h2>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
@@ -2286,7 +2083,7 @@ if (error || !profile) {
                   { label: "180er", value: statistics.total180s },
                 ].map((stat) => (
                   <div key={stat.label} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 py-3.5">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.13em] text-white/28">{stat.label}</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.13em] text-muted-foreground">{stat.label}</div>
                     <div className="mt-1.5 text-xl font-semibold tracking-tight text-white">{stat.value}</div>
                   </div>
                 ))}
@@ -2302,7 +2099,7 @@ if (error || !profile) {
 
                 <div className="relative flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-300/75">Team-Chat</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/75">Team-Chat</div>
                     <div className="mt-1 text-lg font-semibold text-white">{totalUnread} neue Nachricht{totalUnread === 1 ? '' : 'en'}</div>
                     <div className="mt-1 text-sm text-muted-foreground">Direkt zu deinen Team-Chats</div>
                   </div>
@@ -2317,46 +2114,26 @@ if (error || !profile) {
               <button
                 type="button"
                 onClick={() => router.push('/league-mailbox')}
-                className="group relative w-full overflow-hidden rounded-2xl border border-sky-300/15 bg-sky-500/[0.075] p-4 text-left  transition-colors duration-150 motion-reduce:transition-none hover:border-sky-300/30 hover:bg-sky-500/[0.12] sm:p-5"
+                className="group relative w-full overflow-hidden rounded-2xl border border-orange-300/15 bg-orange-500/[0.075] p-4 text-left  transition-colors duration-150 motion-reduce:transition-none hover:border-orange-300/30 hover:bg-orange-500/[0.12] sm:p-5"
               >
 
                 <div className="relative flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-300/75">Liga-Postfach</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/75">Liga-Postfach</div>
                     <div className="mt-1 text-lg font-semibold text-white">{leagueMailboxUnread} neue Nachricht{leagueMailboxUnread === 1 ? '' : 'en'}</div>
                     <div className="mt-1 text-sm text-muted-foreground">Private Liga-Fälle und Hinweise öffnen</div>
                   </div>
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-sky-300 transition group-hover:scale-105 group-hover:bg-sky-500 group-hover:text-white">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-orange-300 transition group-hover:scale-105 group-hover:bg-orange-500 group-hover:text-white">
                     <Inbox className="h-5 w-5" />
                   </div>
                 </div>
               </button>
             ) : null}
           </aside>
-        </div>
-
-        {hasClubRole ? (
-          <button
-            type="button"
-            onClick={() => router.push('/admin')}
-            className="group relative mt-4 flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-card px-4 py-4 text-left text-white shadow-sm transition-colors duration-150 motion-reduce:transition-none hover:border-orange-400/25 sm:px-5"
-          >
-
-            <div className="relative min-w-0">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/28">Vereinsbereich</div>
-              <div className="mt-1 text-lg font-semibold">Admin & Verwaltung</div>
-              <div className="mt-0.5 text-sm text-white/42">Beiträge, Teams und Organisation</div>
-            </div>
-            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.05] transition group-hover:bg-orange-500">
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-            </div>
-          </button>
-        ) : null}
-
-        {/* Zentrale Bereiche */}
-        <section className="mt-5">
+        </div></div>
+<div><section className="mp-sport-links">
           <div className="mb-3 px-1">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-300">Bereiche</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-orange-300">Bereiche</div>
             <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-white">Deine Bereiche</h2>
             <p className="mt-1 text-sm text-muted-foreground">Liga, Turniere und Training zentral gebündelt.</p>
           </div>
@@ -2409,7 +2186,7 @@ if (error || !profile) {
             <div className="max-w-2xl">
               <div
                 className={[
-                  "text-[10px] font-semibold uppercase tracking-[0.12em]",
+                  "text-xs font-semibold uppercase tracking-[0.12em]",
                   hasLeagueAccess ? "text-orange-300/70" : "text-muted-foreground",
                 ].join(" ")}
               >
@@ -2426,7 +2203,7 @@ if (error || !profile) {
                 </p>
               ) : (
                 <div className="mt-2 max-w-xl">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-card px-3 py-1.5 text-[11px] font-semibold text-muted-foreground">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground">
                     <LockKeyhole className="h-3.5 w-3.5" />
                     Kein Liga-Paket aktiv
                   </div>
@@ -2443,15 +2220,15 @@ if (error || !profile) {
           <button
             type="button"
             onClick={() => router.push("/league-mailbox")}
-            className="group relative mt-3 block w-full overflow-hidden rounded-2xl border border-sky-300/[0.12] bg-sky-500/[0.055] p-4 text-left  transition-colors duration-150 motion-reduce:transition-none hover:border-sky-300/25 hover:bg-sky-500/[0.09] sm:p-5"
+            className="group relative mt-3 block w-full overflow-hidden rounded-2xl border border-orange-300/[0.12] bg-orange-500/[0.055] p-4 text-left  transition-colors duration-150 motion-reduce:transition-none hover:border-orange-300/25 hover:bg-orange-500/[0.09] sm:p-5"
           >
             <div className="flex items-center justify-between gap-4">
               <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-300/[0.14] bg-sky-500/[0.08] text-sky-200">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-orange-500/[0.08] text-orange-200">
                   <Inbox className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-300">Liga-Kommunikation</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300">Liga-Kommunikation</div>
                   <div className="mt-0.5 text-lg font-semibold text-white">Liga-Postfach</div>
                   <div className="mt-0.5 text-sm font-semibold text-muted-foreground">Nachrichten und Rückmeldungen direkt mit der Ligaverwaltung.</div>
                 </div>
@@ -2460,7 +2237,7 @@ if (error || !profile) {
                 {leagueMailboxUnread > 0 ? (
                   <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">{leagueMailboxUnread}</span>
                 ) : null}
-                <ArrowRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-sky-300" />
+                <ArrowRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-orange-300" />
               </div>
             </div>
           </button>
@@ -2489,7 +2266,7 @@ if (error || !profile) {
             </div>
 
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-card px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-card px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
                 Demnächst verfügbar
               </div>
@@ -2506,7 +2283,7 @@ if (error || !profile) {
         <button
           type="button"
           onClick={() => router.push("/member-tournament-app")}
-          className="group relative mt-3 block min-h-[150px] w-full overflow-hidden rounded-2xl border border-sky-300/[0.12] bg-card text-left shadow-sm  transition-colors duration-150 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-sky-300/28 shadow-sm active:scale-[0.995] sm:min-h-[170px]"
+          className="group relative mt-3 block min-h-[150px] w-full overflow-hidden rounded-2xl border border-orange-300/[0.12] bg-card text-left shadow-sm  transition-colors duration-150 motion-reduce:transition-none hover:-translate-y-0.5 hover:border-orange-300/28 shadow-sm active:scale-[0.995] sm:min-h-[170px]"
         >
 
 
@@ -2516,17 +2293,17 @@ if (error || !profile) {
 
           <div className="relative flex min-h-[150px] flex-col justify-between p-5 sm:min-h-[170px] sm:p-7">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-300/[0.16] bg-sky-500/[0.09] text-sky-100 shadow-sm">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-300/[0.16] bg-orange-500/[0.09] text-orange-100 shadow-sm">
                 <Trophy className="h-6 w-6" />
               </div>
 
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-card text-white/70 transition-colors duration-150 motion-reduce:transition-none group-hover:border-sky-300/35 group-hover:bg-sky-500 group-hover:text-white">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/[0.12] bg-card text-white/70 transition-colors duration-150 motion-reduce:transition-none group-hover:border-orange-300/35 group-hover:bg-orange-500 group-hover:text-white">
                 <ArrowRight className="h-5 w-5 transition-colors duration-150 motion-reduce:transition-none group-hover:translate-x-0.5" />
               </div>
             </div>
 
             <div className="max-w-2xl">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-200/65">
+              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-orange-200/65">
                 Turniere
               </div>
               <h2 className="mt-1.5 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">
@@ -2562,7 +2339,7 @@ if (error || !profile) {
             </div>
 
             <div className="max-w-2xl">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200/60">
+              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-200/60">
                 Training
               </div>
               <h2 className="mt-1.5 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">
@@ -2576,9 +2353,209 @@ if (error || !profile) {
         </button>
 
         </section>
+{hasMultipleTeams ? (
+          <section className="mt-8 rounded-2xl border border-white/[0.08] bg-card p-4  sm:p-5">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Deine Teams</div>
+            <div className="mt-1 text-lg font-semibold text-white">{teamMemberships.length} aktive Teams</div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {teamMemberships.map((membership: any) => (
+                <div key={membership.id} className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm">
+                  {getRoleIcon(membership.role)}
+                  <span className="font-semibold text-white/75">{membership.teams?.name || 'Team'}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{getRoleLabel(membership.role)}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}</div>
+<div><section id="vereinsunterlagen" className="mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-card shadow-sm ">
+          <div className="flex flex-col gap-3 border-b border-white/[0.07] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <FileCheck2 className="h-4 w-4 text-orange-400" /> Vereinsunterlagen
+              </div>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-white sm:text-xl">Meine Dokumente & Bestätigungen</h2>
+            </div>
+            {memberDocsEnabled && requiredMemberDocs.length > 0 ? (
+              <Badge className={memberDocsCurrent ? "w-fit border border-emerald-300/20 bg-emerald-500/15 text-emerald-200" : "w-fit border border-amber-300/20 bg-amber-500/15 text-amber-200"}>
+                {memberDocsCurrent ? "Aktuell vollständig" : "Bestätigung offen"}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="w-fit border-white/10 bg-white/[0.04] text-muted-foreground">Noch nicht freigeschaltet</Badge>
+            )}
+          </div>
 
-        {/* Navigation */}
-        <div className="mt-8 space-y-8">
+          <div className="space-y-4 p-4 sm:p-5">
+            {memberDocsLoading ? (
+              <SectionSkeleton kind="profile" />
+            ) : !memberDocsEnabled ? (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-5">
+                <div className="font-semibold text-white">Aktuell keine Vereinsunterlagen zur digitalen Bestätigung freigeschaltet.</div>
+                <div className="mt-1 text-sm font-semibold text-muted-foreground">Sobald die Vereinsleitung die finalen Dokumente freigibt, erscheinen sie automatisch hier.</div>
+              </div>
+            ) : visibleMemberDocs.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.035] p-5 text-sm font-semibold text-muted-foreground">Aktuell sind keine aktiven Dokumente hinterlegt.</div>
+            ) : (
+              <div className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="font-semibold text-white">{visibleMemberDocs.length} Dokument{visibleMemberDocs.length === 1 ? "" : "e"} freigeschaltet</div>
+                  <div className="mt-1 text-sm font-semibold text-muted-foreground">{memberDocsCurrent ? "Du hast die aktuell erforderlichen Versionen bereits bestätigt." : "Bitte lies und bestätige die aktuell erforderlichen Unterlagen."}</div>
+                </div>
+                <Button type="button" onClick={() => setMemberDocsModalOpen(true)} className="rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-orange-400">
+                  <FileText className="mr-2 h-4 w-4" /> {memberDocsCurrent ? "Unterlagen ansehen" : "Jetzt bestätigen"}
+                </Button>
+              </div>
+            )}
+
+            {(joinArchives.length > 0 || memberDocAcceptances.some((r) => r.archive_file_name)) ? (
+              <div>
+                <div className="mb-2 text-sm font-semibold text-white/80">Meine PDF-Akten</div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {joinArchives.map((row) => (
+                    <button key={row.id} type="button" onClick={() => void downloadJoinArchiveForMember(row)} className="group flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-left transition hover:border-orange-400/25 hover:bg-white/[0.065]" aria-busy={memberArchiveLoading === `join:${row.id}` || undefined}><ButtonLoader loading={Boolean(memberArchiveLoading === `join:${row.id}`)}><div className="min-w-0"><div className="truncate text-sm font-semibold text-white">{row.stage === "approved" ? "Aufnahmebestätigung" : "Beitrittsanfrage"}</div><div className="text-xs font-semibold text-muted-foreground">{formatDate(row.generated_at)}</div></div><Download className="h-4 w-4 text-muted-foreground transition group-hover:text-orange-300" /></ButtonLoader></button>
+                  ))}
+                  {memberDocAcceptances.filter((r) => r.archive_file_name).map((row) => (
+                    <button key={row.id} type="button" onClick={() => void downloadMemberAcceptance(row)} className="group flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-3 text-left transition hover:border-orange-400/25 hover:bg-white/[0.065]" aria-busy={memberArchiveLoading === `member:${row.id}` || undefined}><ButtonLoader loading={Boolean(memberArchiveLoading === `member:${row.id}`)}><div className="min-w-0"><div className="truncate text-sm font-semibold text-white">Vereinsunterlagen bestätigt</div><div className="text-xs font-semibold text-muted-foreground">{formatDate(row.created_at)}</div></div><Download className="h-4 w-4 text-muted-foreground transition group-hover:text-orange-300" /></ButtonLoader></button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {memberDocsMessage ? <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm font-semibold text-muted-foreground">{memberDocsMessage}</div> : null}
+          </div>
+        </section></div>
+<div><section className="mt-4">
+          <div className="group relative overflow-hidden rounded-2xl border border-orange-300/[0.14] bg-card p-4 shadow-sm  sm:p-5">
+
+
+
+            <div className="relative">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-orange-300/20 bg-orange-500/10 text-orange-200 shadow-sm">
+                    <MessageCircle className="h-7 w-7" />
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#090b10] bg-primary px-1 text-xs font-semibold text-primary-foreground">EMD</span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/70">EMD Messenger</div>
+                    <h2 className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">Messenger verbinden</h2>
+                    <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-muted-foreground">
+                      Messenger installieren und anschließend einmalig mit einem 6-stelligen Code mit deinem EMD Konto verbinden.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={openMessengerInstall}
+                  className="h-12 shrink-0 rounded-2xl border border-orange-300/25 bg-primary px-5 font-semibold text-primary-foreground shadow-sm transition hover:bg-orange-400 active:scale-[0.985]"
+                >
+                  <Download className="mr-2 h-4 w-4" /> Messenger installieren
+                </Button>
+              </div>
+
+              <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_.95fr]">
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Aktivierung</div>
+                      <div className="mt-1 text-base font-semibold text-white">
+                        {messengerActivationCode ? "Dein einmaliger Code" : "Messenger auf neuem Gerät verbinden"}
+                      </div>
+                    </div>
+                    <KeyRound className="h-5 w-5 shrink-0 text-orange-300" />
+                  </div>
+
+                  {messengerActivationCode ? (
+                    <div className="mt-4">
+                      <div className="rounded-2xl border border-orange-300/20 bg-orange-500/10 px-4 py-4 text-center">
+                        <div className="select-all text-3xl font-semibold tracking-[0.32em] text-orange-100">
+                          {messengerActivationCode}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs font-semibold text-muted-foreground">
+                        {messengerActivationMessage || "10 Minuten gültig · einmal verwendbar"}
+                        {messengerActivationExpiresAt ? ` · bis ${new Date(messengerActivationExpiresAt).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm font-semibold leading-5 text-muted-foreground">
+                      Öffne danach den EMD Messenger und gib diesen Code dort ein. Dein Passwort wird im Messenger nicht benötigt.
+                    </p>
+                  )}
+
+                  <Button
+                    type="button"
+                    onClick={() => void createMessengerActivationCode()}
+                    disabled={messengerActivationLoading}
+                    className="mt-4 h-11 w-full rounded-2xl border border-white/[0.08] bg-white/[0.055] font-semibold text-white hover:bg-white/[0.09]"
+                   loading={Boolean(messengerActivationLoading)} loadingLabel="Code wird erstellt…"><KeyRound className="mr-2 h-4 w-4 text-orange-300" />{messengerActivationCode
+                        ? "Neuen Code erstellen"
+                        : "Aktivierungscode erstellen"}</Button>
+
+                  {!messengerActivationCode && messengerActivationMessage ? (
+                    <div className="mt-3 text-xs font-semibold text-red-200">{messengerActivationMessage}</div>
+                  ) : null}
+                </div>
+
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Verbundene Geräte</div>
+                      <div className="mt-1 text-base font-semibold text-white">
+                        {messengerDevices.length > 0
+                          ? `${messengerDevices.length} ${messengerDevices.length === 1 ? "Gerät" : "Geräte"} aktiviert`
+                          : "Noch kein Gerät aktiviert"}
+                      </div>
+                    </div>
+                    <ShieldCheck className={`h-5 w-5 shrink-0 ${messengerDevices.length > 0 ? "text-emerald-300" : "text-muted-foreground"}`} />
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    {messengerDevices.length > 0 ? messengerDevices.slice(0, 3).map((device) => (
+                      <div key={device.id} className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-black/15 px-3 py-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-white">{device.device_name || "EMD Messenger Gerät"}</div>
+                          <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                            Aktiviert am {new Date(device.activated_at).toLocaleDateString("de-AT")}
+                            {device.app_version ? ` · App ${device.app_version}` : ""}
+                          </div>
+                        </div>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-300">
+                          <CheckCircle className="h-4 w-4" />
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="rounded-2xl border border-dashed border-white/[0.08] px-3 py-4 text-sm font-semibold leading-5 text-muted-foreground">
+                        Nach der ersten erfolgreichen Code-Eingabe erscheint dein Messenger-Gerät hier automatisch.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+{hasClubRole ? (
+          <button
+            type="button"
+            onClick={() => router.push('/admin')}
+            className="group relative mt-4 flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-card px-4 py-4 text-left text-white shadow-sm transition-colors duration-150 motion-reduce:transition-none hover:border-orange-400/25 sm:px-5"
+          >
+
+            <div className="relative min-w-0">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Vereinsbereich</div>
+              <div className="mt-1 text-lg font-semibold">Admin & Verwaltung</div>
+              <div className="mt-0.5 text-sm text-muted-foreground">Beiträge, Teams und Organisation</div>
+            </div>
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.05] transition group-hover:bg-orange-500">
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+            </div>
+          </button>
+        ) : null}
+<div className="mt-8 space-y-8">
           {navigationGroups.map((group) => {
             const visibleItems = group.items.filter((item: any) => !item.requiresLeadership || isLeadershipRole())
             if (visibleItems.length === 0) return null
@@ -2586,7 +2563,7 @@ if (error || !profile) {
             return (
               <section key={group.title}>
                 <div className="mb-3 px-1">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-300">Mein EMD</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-orange-300">Mein EMD</div>
                   <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-white">{group.title}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{group.description}</p>
                 </div>
@@ -2610,7 +2587,7 @@ if (error || !profile) {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <div className="truncate text-sm font-semibold text-white/90">{item.title}</div>
-                            <ArrowRight className="h-4 w-4 shrink-0 text-white/18 transition-colors duration-150 motion-reduce:transition-none group-hover:translate-x-1 group-hover:text-orange-300" />
+                            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors duration-150 motion-reduce:transition-none group-hover:translate-x-1 group-hover:text-orange-300" />
                           </div>
                           <div className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">{item.description}</div>
                         </div>
@@ -2622,27 +2599,9 @@ if (error || !profile) {
             )
           })}
         </div>
-
-        {hasMultipleTeams ? (
-          <section className="mt-8 rounded-2xl border border-white/[0.08] bg-card p-4  sm:p-5">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/28">Deine Teams</div>
-            <div className="mt-1 text-lg font-semibold text-white">{teamMemberships.length} aktive Teams</div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {teamMemberships.map((membership: any) => (
-                <div key={membership.id} className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm">
-                  {getRoleIcon(membership.role)}
-                  <span className="font-semibold text-white/75">{membership.teams?.name || 'Team'}</span>
-                  <span className="text-white/20">·</span>
-                  <span className="text-muted-foreground">{getRoleLabel(membership.role)}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        <section className="mt-8 flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-card p-4  sm:flex-row sm:items-center sm:justify-between sm:p-5">
+<section className="mt-8 flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-card p-4  sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/28">Konto</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Konto</div>
             <div className="mt-1 text-base font-semibold text-white">Kontoeinstellungen</div>
             <div className="mt-0.5 text-sm text-muted-foreground">Profil verwalten oder eine Löschanfrage stellen.</div>
           </div>
@@ -2655,17 +2614,19 @@ if (error || !profile) {
             </Button>
           </div>
         </section>
-
-        <button
+<button
           type="button"
           onClick={handleLogout}
           className="mx-auto mt-7 flex min-h-11 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-white/[0.04] hover:text-red-300"
         >
           <LogOut className="h-4 w-4" />Abmelden
-        </button>
-      </main>
+        </button></div></MemberWorkspace></main>
 
 
+      <ProfilePhotoDialog open={isPhotoDialogOpen} onOpenChange={(open) => {
+        setIsPhotoDialogOpen(open)
+        if (!open) { setPhotoFile(null); setPhotoPreview(null); setPhotoMessage("") }
+      }} onFileChange={handlePhotoFileChange} preview={photoPreview} message={photoMessage} busy={photoUploading} canSubmit={!!photoFile} onSubmit={() => void handlePhotoUpload()} />
       {isTerminalPinDialogOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/85 p-3 " role="dialog" aria-modal="true" aria-label="Terminal-Anmeldung einrichten" onClick={() => !terminalPinSaving && setIsTerminalPinDialogOpen(false)}>
           <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-3xl border border-orange-400/25 bg-card p-5 text-white shadow-sm sm:p-7" onClick={(event) => event.stopPropagation()}>
@@ -2686,7 +2647,7 @@ if (error || !profile) {
               <div className="mt-5 space-y-4"><div><p className="mb-2 text-sm font-semibold">Neues Muster zeichnen</p><PatternPad value={terminalPattern} onChange={setTerminalPattern}/></div><div><p className="mb-2 text-sm font-semibold">Muster wiederholen</p><PatternPad value={terminalPatternConfirm} onChange={setTerminalPatternConfirm}/></div></div>
             )}
             {terminalPinMessage && <p role="status" className="mt-4 rounded-xl bg-white/10 p-3 text-sm text-orange-200">{terminalPinMessage}</p>}
-            <div className="mt-6 flex gap-3"><button type="button" disabled={terminalPinSaving} onClick={() => setIsTerminalPinDialogOpen(false)} className="flex-1 rounded-xl border border-white/15 px-4 py-3 font-semibold disabled:opacity-40">Abbrechen</button><button type="button" disabled={terminalPinSaving} onClick={() => void saveTerminalAuth()} className="flex-1 rounded-xl bg-orange-600 px-4 py-3 font-semibold disabled:opacity-40">{terminalPinSaving ? "Speichern …" : "Speichern"}</button></div>
+            <div className="mt-6 flex gap-3"><button type="button" disabled={terminalPinSaving} onClick={() => setIsTerminalPinDialogOpen(false)} className="flex-1 rounded-xl border border-white/15 px-4 py-3 font-semibold disabled:opacity-40">Abbrechen</button><button type="button" disabled={terminalPinSaving} onClick={() => void saveTerminalAuth()} className="flex-1 rounded-xl bg-primary px-4 py-3 font-semibold disabled:opacity-40" aria-busy={Boolean(terminalPinSaving) || undefined}><ButtonLoader loading={Boolean(terminalPinSaving)} label="Speichern …">{"Speichern"}</ButtonLoader></button></div>
           </div>
         </div>
       )}

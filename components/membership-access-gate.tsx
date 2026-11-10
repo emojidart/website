@@ -1,8 +1,10 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { FileCheck2, Loader2, LockKeyhole } from "lucide-react"
+import { FileCheck2, LockKeyhole } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
@@ -105,16 +107,7 @@ export function MembershipAccessGate({
 
   if (loading || documentsLoading) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center bg-transparent px-4">
-        <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-card px-5 py-4 shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
-          <div className="pointer-events-none absolute -left-8 -top-10 h-24 w-24 rounded-full bg-orange-500/15 blur-[34px]" />
-          <div className="pointer-events-none absolute -bottom-10 -right-8 h-24 w-24 rounded-full bg-sky-500/10 blur-[34px]" />
-          <div className="relative flex items-center gap-3 text-sm font-semibold text-white/60">
-            <Loader2 className="h-5 w-5 animate-spin text-orange-400" />
-            Zugriff wird geprüft...
-          </div>
-        </div>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
 

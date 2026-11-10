@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { supabase } from "@/lib/supabase"
@@ -67,7 +69,7 @@ interface Tournament {
   tournament_name: string
   tournament_type: string
   tournament_date: string
-  rankings?: TournamentEntry[]
+  rankings?: Pick<TournamentEntry, "player_name" | "placement" | "legs_won" | "legs_lost" | "placement_points" | "bonus_points" | "form">[]
 }
 
 interface MatchResult {
@@ -216,9 +218,9 @@ function MobilePlayerCard({
           <div className="text-xs text-blue-600 font-medium">Punkte</div>
           <div className="text-sm font-bold text-blue-800">{player.placement_points}</div>
         </div>
-        <div className="bg-purple-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-purple-600 font-medium">Bonus</div>
-          <div className="text-sm font-bold text-purple-800">{player.bonus_points}</div>
+        <div className="bg-orange-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-orange-600 font-medium">Bonus</div>
+          <div className="text-sm font-bold text-orange-800">{player.bonus_points}</div>
         </div>
         <div className="bg-green-50 rounded-lg p-2 text-center">
           <div className="text-xs text-green-600 font-medium">Legs W</div>
@@ -307,9 +309,9 @@ function MobileTournamentRankingCard({ ranking, index }: { ranking: any; index: 
           <div className="text-xs text-yellow-600 font-medium">Punkte</div>
           <div className="text-base font-bold text-yellow-700">{ranking.placement_points}</div>
         </div>
-        <div className="bg-purple-50 rounded-lg p-2 text-center">
-          <div className="text-xs text-purple-600 font-medium">Bonus</div>
-          <div className="text-base font-bold text-purple-700">{ranking.bonus_points}</div>
+        <div className="bg-orange-50 rounded-lg p-2 text-center">
+          <div className="text-xs text-orange-600 font-medium">Bonus</div>
+          <div className="text-base font-bold text-orange-700">{ranking.bonus_points}</div>
         </div>
         <div className="bg-green-50 rounded-lg p-2 text-center">
           <div className="text-xs text-green-600 font-medium">Legs W</div>
@@ -807,22 +809,9 @@ export default function BuffaloSteelCupPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans">
         <Header />
-        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl">
-          <div className="bg-card rounded-xl shadow-lg border border-border overflow-hidden">
-            <div className="text-foreground bg-card   p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                <h2 className="text-lg sm:text-2xl font-bold text-white">BUFFALO STEEL CUP</h2>
-              </div>
-            </div>
-            <div className="p-6 sm:p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-sm sm:text-base text-muted-foreground">Lade Tabelle...</p>
-            </div>
-          </div>
-        </main>
+        <main className="container mx-auto p-3 sm:p-4 md:p-8 max-w-7xl"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }
@@ -1084,7 +1073,7 @@ export default function BuffaloSteelCupPage() {
                                   <div className="text-center text-yellow-600 font-bold text-lg">
                                     {ranking.placement_points}
                                   </div>
-                                  <div className="text-center text-purple-600 font-bold text-lg">
+                                  <div className="text-center text-orange-600 font-bold text-lg">
                                     {ranking.bonus_points}
                                   </div>
                                   <div className="text-center text-green-600 font-bold text-lg">{ranking.legs_won}</div>

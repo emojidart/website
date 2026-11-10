@@ -33,7 +33,7 @@ export function PrizeMoneyModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[540px] rounded-[26px] shadow-2xl">
+      <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-[540px] rounded-[20px] shadow-2xl">
         <div className="bg-background px-6 py-6 text-white"><DialogHeader>
           <DialogTitle className="text-2xl font-semibold text-white">Preisgeld-Übersicht</DialogTitle>
         </DialogHeader></div>

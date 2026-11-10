@@ -1,5 +1,7 @@
 "use client"
 
+
+
 import { useEffect, useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
@@ -12,20 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Euro,
-  Loader2,
-  RefreshCw,
-  Save,
-  Search,
-  ShieldCheck,
-  WalletCards,
-  XCircle,
-  Gift,
-  CalendarDays,
-} from "lucide-react"
+import { AlertTriangle, CheckCircle2, Euro, RefreshCw, Save, Search, ShieldCheck, WalletCards, XCircle, Gift, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MembershipAccountingPanel } from "./abrechnung"
 import { vv } from "../vereinsverwaltung-styles"
@@ -1326,13 +1315,9 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
             onClick={() => void loadData()}
             disabled={loading}
             className={vv.buttonSecondary}
-          >
-            {loading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
+           loading={Boolean(loading)}>{(
               <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            Neu laden
+            )}Neu laden
           </Button>
         </div>
       </section>
@@ -1777,13 +1762,9 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                               request.payment_status !== "paid")
                           }
                           className="rounded-xl border-rose-300/15 text-rose-200 hover:bg-rose-500/10 hover:text-rose-100"
-                        >
-                          {isReviewing ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
+                         loading={Boolean(isReviewing)}>{(
                             <XCircle className="mr-2 h-4 w-4" />
-                          )}
-                          Ablehnen
+                          )}Ablehnen
                         </Button>
 
                         <Button
@@ -1800,19 +1781,14 @@ export function AdminMembershipManagement({ user }: AdminMembershipManagementPro
                               request.payment_status !== "paid")
                           }
                           className={vv.buttonPrimary}
-                        >
-                          {isReviewing ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
+                         loading={Boolean(isReviewing)}>{(
                             <CheckCircle2 className="mr-2 h-4 w-4" />
-                          )}
-                          {request.request_type === "cancel"
+                          )}{request.request_type === "cancel"
                             ? "Kündigung bestätigen"
                             : request.payment_method === "stripe" &&
                                 request.payment_status !== "paid"
                               ? "Wartet auf Stripe"
-                              : "Bestätigen"}
-                        </Button>
+                              : "Bestätigen"}</Button>
                       </div>
                     </div>
                   </div>

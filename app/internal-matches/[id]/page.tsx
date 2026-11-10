@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Header } from "@/components/header"
@@ -10,24 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
-import {
-  AlertTriangle,
-  Check,
-  CheckCircle2,
-  Clock3,
-  Eye,
-  Loader2,
-  Play,
-  Radio,
-  Save,
-  ShieldCheck,
-  Swords,
-  Users,
-  UserRound,
-  Crown,
-  Shield,
-  XCircle,
-} from "lucide-react"
+import { AlertTriangle, Check, CheckCircle2, Clock3, Eye, Play, Radio, Save, ShieldCheck, Swords, Users, UserRound, Crown, Shield, XCircle } from "lucide-react"
 
 type Team = { id:string; name:string; logo_url?:string|null }
 type Report = {
@@ -627,7 +612,7 @@ export default function InternalMatchDetailPage() {
     setSaving("")
   }
 
-  if(loading)return <div className="flex min-h-screen items-center justify-center bg-muted"><Loader2 className="h-8 w-8 animate-spin text-orange-600"/></div>
+  if(loading)return <SectionSkeleton kind="cards" />
   if(!report)return <div className="p-8">{message||"Spiel nicht gefunden."}</div>
 
   const viewerOnly=!mySide
@@ -860,9 +845,7 @@ export default function InternalMatchDetailPage() {
                         ):null}
 
                         <div className="mt-4 flex flex-wrap gap-2">
-                          <Button type="button" variant="outline" className="font-semibold" disabled={lineupSaving||!lineupDirty} onClick={()=>void saveTeamLineup(false)}>
-                            {lineupSaving?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Save className="mr-2 h-4 w-4"/>}
-                            Aufstellung speichern
+                          <Button type="button" variant="outline" className="font-semibold" disabled={lineupSaving||!lineupDirty} onClick={()=>void saveTeamLineup(false)} loading={Boolean(lineupSaving)}><Save className="mr-2 h-4 w-4"/>Aufstellung speichern
                           </Button>
                           <Button type="button" className="bg-primary font-semibold hover:bg-primary/90 text-primary-foreground" disabled={lineupSaving||starters.length<1} onClick={()=>void saveTeamLineup(true)}>
                             <CheckCircle2 className="mr-2 h-4 w-4"/> Speichern & bestätigen
@@ -986,9 +969,7 @@ export default function InternalMatchDetailPage() {
                   onClick={()=>void startMatch()}
                   disabled={startingMatch}
                   className="h-11 shrink-0 rounded-xl bg-primary px-5 font-semibold hover:bg-primary/90 text-primary-foreground"
-                >
-                  {startingMatch ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Radio className="mr-2 h-4 w-4" />}
-                  Spiel starten
+                 loading={Boolean(startingMatch)}><Radio className="mr-2 h-4 w-4" />Spiel starten
                 </Button>
               </div>
             ) : (
@@ -1118,9 +1099,7 @@ export default function InternalMatchDetailPage() {
                                   onClick={()=>void startIndividualGame(game)}
                                   disabled={gameStarting===game.id}
                                   className="h-11 shrink-0 rounded-xl bg-primary px-5 font-semibold hover:bg-primary/90 text-primary-foreground"
-                                >
-                                  {gameStarting===game.id?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Play className="mr-2 h-4 w-4"/>}
-                                  Spiel starten
+                                 loading={Boolean(gameStarting===game.id)}><Play className="mr-2 h-4 w-4"/>Spiel starten
                                 </Button>
                               ):(
                                 <span className="rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground">
@@ -1204,10 +1183,7 @@ export default function InternalMatchDetailPage() {
                               className="mt-3 h-11 w-full rounded-xl bg-background font-semibold hover:bg-background text-foreground"
                               onClick={()=>void submitResult(game)}
                               disabled={saving===game.id}
-                            >
-                              {saving===game.id?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Save className="mr-2 h-4 w-4"/>}
-                              {game.status==="disputed"?"Korrigiertes Ergebnis speichern":"Ergebnis speichern"}
-                            </Button>
+                             loading={Boolean(saving===game.id)}><Save className="mr-2 h-4 w-4"/>{game.status==="disputed"?"Korrigiertes Ergebnis speichern":"Ergebnis speichern"}</Button>
                           ):null}
 
                           {justSaved?(
@@ -1286,9 +1262,7 @@ export default function InternalMatchDetailPage() {
             </div>
 
             {isLeader&&allConfirmed&&((mySide==="home"&&!report.home_confirmed_at)||(mySide==="away"&&!report.away_confirmed_at))?(
-              <Button className="mt-4 h-11 rounded-xl bg-primary font-semibold hover:bg-primary/90 text-primary-foreground" onClick={()=>void finalConfirm()} disabled={saving==="final"}>
-                {saving==="final"?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<ShieldCheck className="mr-2 h-4 w-4"/>}
-                Spielbericht für mein Team bestätigen
+              <Button className="mt-4 h-11 rounded-xl bg-primary font-semibold hover:bg-primary/90 text-primary-foreground" onClick={()=>void finalConfirm()} disabled={saving==="final"} loading={Boolean(saving==="final")}><ShieldCheck className="mr-2 h-4 w-4"/>Spielbericht für mein Team bestätigen
               </Button>
             ):null}
 

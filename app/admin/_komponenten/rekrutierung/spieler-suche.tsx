@@ -1,5 +1,7 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
@@ -216,19 +218,12 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
               type="submit"
               disabled={loading}
               className="h-10 w-full rounded-xl bg-gray-950 text-sm font-black text-white hover:bg-gray-800"
-            >
-              {loading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Speichern...</span>
-                </div>
-              ) : (
+             loading={Boolean(loading)} loadingLabel="Speichern...">{(
                 <div className="flex items-center space-x-2">
                   <Save className="h-4 w-4" />
                   <span>Spielergesuche speichern</span>
                 </div>
-              )}
-            </Button>
+              )}</Button>
 
             {/* Status Message for form submission */}
             {formMessage && (
@@ -247,7 +242,7 @@ export function PlayerRecruitmentForm({ user, onDataSaved }: PlayerRecruitmentFo
                   ) : formMessageType === "success" ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                    <LoadingIndicator className="w-4 h-4" />
                   )}
                   <span>{formMessage}</span>
                 </div>

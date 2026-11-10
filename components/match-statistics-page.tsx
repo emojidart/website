@@ -53,8 +53,8 @@ interface Match {
   dart_type?: string
   home_opponent_team_id?: string
   away_opponent_team_id?: string
-  home_team_type?: "club_team" | "opponent_team"
-  away_team_type?: "club_team" | "opponent_team"
+  home_team_type?: string
+  away_team_type?: string
 }
 
 interface LegStatistic {
@@ -1203,9 +1203,7 @@ export function MatchStatisticsPage({ match, myTeamId, myTeam, showHeader = true
             <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
               Abbrechen
             </Button>
-            <Button variant="destructive" onClick={deletePlayerStats}>
-              {loading ? "Lösche..." : "Löschen"}
-            </Button>
+            <Button variant="destructive" onClick={deletePlayerStats} loading={Boolean(loading)} loadingLabel="Lösche...">{"Löschen"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 
@@ -13,30 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Trophy,
-  Users,
-  Plus,
-  Edit,
-  Trash2,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  AlertTriangle,
-  Target,
-  Settings,
-  ClipboardList,
-  BellRing,
-  ShieldAlert,
-  Inbox,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
-  Loader2,
-} from "lucide-react"
+import { Calendar, Clock, MapPin, Trophy, Users, Plus, Edit, Trash2, Check, ChevronDown, ChevronRight, AlertTriangle, Target, Settings, ClipboardList, BellRing, ShieldAlert, Inbox, CheckCircle2, XCircle, HelpCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LeagueSyncReviews } from "@/components/league-sync-reviews"
 import { vv } from "@/app/admin/_komponenten/vereinsverwaltung/vereinsverwaltung-styles"
@@ -1820,7 +1799,7 @@ const createMatch = useCallback(async () => {
 
   // ✅ "App-Layout": Sticky Tabs + mobile friendly spacing
   if (loading) {
-    return <div className="flex items-center justify-center p-8">Lade Ligadaten...</div>
+    return <SectionSkeleton kind="table" />
   }
 
   return (
@@ -1904,7 +1883,7 @@ const createMatch = useCallback(async () => {
                         </p>
                       </div>
                       {onOpenMailbox ? (
-                        <Button type="button" variant="outline" className={vv.buttonSecondary} onClick={onOpenMailbox}>
+                        <Button type="button" variant="outline" className={vv.buttonSecondary} onClick={() => onOpenMailbox()}>
                           <Inbox className="mr-2 h-4 w-4" />
                           Ligapostfach
                         </Button>
@@ -2109,7 +2088,7 @@ const createMatch = useCallback(async () => {
                               <div className={vv.modalBody}>
                                 <div className="space-y-4">
                                   <div className={cn(vv.inset, "p-4 text-sm font-semibold text-white/55")}>Ziel: <span className="font-black text-white">{currentSeason ? seasonLabel(currentSeason) : "ausgewählte Saison"}</span>. Bestehende Spiele werden beim Import nicht überschrieben.</div>
-                                  <Button type="button" className={vv.buttonPrimary} onClick={() => void loadSportdartsImportPreview()} disabled={sportdartsImportLoading || sportdartsImporting}>{sportdartsImportLoading ? "Spielplan wird geladen…" : "Vorschau laden"}</Button>
+                                  <Button type="button" className={vv.buttonPrimary} onClick={() => void loadSportdartsImportPreview()} disabled={sportdartsImportLoading || sportdartsImporting} loading={Boolean(sportdartsImportLoading)} loadingLabel="Spielplan wird geladen…">{"Vorschau laden"}</Button>
                                   {sportdartsImportMessage ? <div className={cn(vv.inset, "p-3 text-sm font-semibold text-white/60")}>{sportdartsImportMessage}</div> : null}
                                   {sportdartsImportPreview.length > 0 ? (
                                     <div className="space-y-3">
@@ -2264,11 +2243,11 @@ const createMatch = useCallback(async () => {
                   <div className="border-b border-white/[0.07] px-4 py-4 sm:px-5">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div><div className={vv.label}>Ligaplanung</div><h2 className="mt-1 text-xl font-black text-white">Aufstellungen & Zusagen</h2><p className="mt-1 text-sm font-semibold text-white/38">Pro Spiel aufklappen: Zusagen, offene Antworten und bestätigte Aufstellung auf einen Blick.</p></div>
-                      <Button variant="outline" className={vv.buttonSecondary} onClick={() => void fetchPlanningData()} disabled={planningLoading}>{planningLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Aktualisieren</Button>
+                      <Button variant="outline" className={vv.buttonSecondary} onClick={() => void fetchPlanningData()} disabled={planningLoading} loading={Boolean(planningLoading)}>{null}Aktualisieren</Button>
                     </div>
                   </div>
                   <div className="space-y-3 p-3 sm:p-5">
-                    {planningLoading ? <div className={cn(vv.inset,"p-10 text-center text-sm font-bold text-white/35")}>Aufstellungen werden geladen …</div> : upcomingPlanningMatches.length === 0 ? <div className={cn(vv.inset,"p-10 text-center text-sm font-bold text-white/35")}>Keine kommenden Ligaspiele.</div> : upcomingPlanningMatches.flatMap((match) => getOwnTeamContexts(match).map(({teamId,teamName}) => {
+                    {planningLoading ? <SectionSkeleton kind="table" /> : upcomingPlanningMatches.length === 0 ? <div className={cn(vv.inset,"p-10 text-center text-sm font-bold text-white/35")}>Keine kommenden Ligaspiele.</div> : upcomingPlanningMatches.flatMap((match) => getOwnTeamContexts(match).map(({teamId,teamName}) => {
                       const summary = getPlanningSummary(match, teamId)
                       const label = summary.confirmed ? "Bestätigt" : summary.stale ? "Bestätigung veraltet" : summary.lineup.length > 0 ? "Entwurf" : "Keine Aufstellung"
                       return (
@@ -3093,19 +3072,12 @@ const createMatch = useCallback(async () => {
                           ? "border-red-200/35 bg-red-600 text-white shadow-[0_0_28px_rgba(239,68,68,.28)] hover:bg-red-500"
                           : "border-white/10 bg-white/[0.04] text-white/25",
                       )}
-                    >
-                      {lineupAlertSending ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          EMD Alert wird gesendet …
-                        </>
-                      ) : (
+                     loading={Boolean(lineupAlertSending)} loadingLabel="EMD Alert wird gesendet …">{(
                         <>
                           <BellRing className="mr-2 h-5 w-5" />
                           EMD Alert senden
                         </>
-                      )}
-                    </Button>
+                      )}</Button>
 
                     {lineupAlertError ? (
                       <div className="rounded-xl border border-red-300/15 bg-red-500/10 px-3 py-2.5 text-sm font-bold text-red-100">
@@ -3130,15 +3102,11 @@ const createMatch = useCallback(async () => {
                           disabled={lineupAlertLogsLoading}
                           onClick={() => void loadLineupAlertLogs(lineupAlertDialog.matchId, lineupAlertDialog.teamId)}
                           className="h-8 rounded-xl border-white/10 bg-white/[0.03] px-3 text-xs text-white/55"
-                        >
-                          {lineupAlertLogsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Neu laden"}
-                        </Button>
+                         loading={Boolean(lineupAlertLogsLoading)}>{"Neu laden"}</Button>
                       </div>
 
                       {lineupAlertLogsLoading && lineupAlertLogs.length === 0 ? (
-                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs font-semibold text-white/30">
-                          Versandlog wird geladen …
-                        </div>
+                        <SectionSkeleton kind="table" />
                       ) : lineupAlertLogs.length === 0 ? (
                         <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-xs font-semibold text-white/30">
                           Für dieses Spiel wurde noch kein EMD Alert protokolliert.

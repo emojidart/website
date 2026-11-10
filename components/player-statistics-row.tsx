@@ -79,7 +79,8 @@ export function PlayerStatisticsRow({ player, index, allStats }: PlayerStatistic
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = "none"
-                      e.currentTarget.nextElementSibling.style.display = "flex"
+                      const fallback = e.currentTarget.nextElementSibling
+                      if (fallback instanceof HTMLElement) fallback.style.display = "flex"
                     }}
                   />
                 ) : null}

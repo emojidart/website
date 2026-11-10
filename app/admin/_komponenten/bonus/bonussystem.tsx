@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
@@ -21,20 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Search,
-  Trophy,
-  Loader2,
-  Plus,
-  Pencil,
-  Save,
-  X,
-  RefreshCw,
-  Trash2,
-  AlertTriangle,
-  FolderPlus,
-  FolderEdit,
-} from "lucide-react"
+import { Search, Trophy, Plus, Pencil, Save, X, RefreshCw, Trash2, AlertTriangle, FolderPlus, FolderEdit } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type BonusCategory = {
@@ -515,9 +504,7 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
               Kategorien und Bonusregeln direkt auf der Seite anlegen, bearbeiten und verwalten.
             </p>
           </div>
-          <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading}>
-            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            Neu laden
+          <Button type="button" variant="outline" onClick={() => void loadData()} disabled={loading} loading={Boolean(loading)}><RefreshCw className="w-4 h-4 mr-2" />Neu laden
           </Button>
         </div>
       </div>
@@ -603,16 +590,11 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              <Button type="button" onClick={handleSaveCategory} disabled={savingCategory} className="rounded-xl">
-                {savingCategory ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : isEditingCategory ? (
+              <Button type="button" onClick={handleSaveCategory} disabled={savingCategory} className="rounded-xl" loading={Boolean(savingCategory)}>{isEditingCategory ? (
                   <FolderEdit className="w-4 h-4 mr-2" />
                 ) : (
                   <FolderPlus className="w-4 h-4 mr-2" />
-                )}
-                {isEditingCategory ? "Kategorie speichern" : "Kategorie anlegen"}
-              </Button>
+                )}{isEditingCategory ? "Kategorie speichern" : "Kategorie anlegen"}</Button>
 
               <Button type="button" variant="outline" onClick={resetCategoryForm} className="rounded-xl">
                 <X className="w-4 h-4 mr-2" />
@@ -636,10 +618,7 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
               <ScrollArea className="h-[320px]">
                 <div className="p-4 space-y-3">
                   {loading ? (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Kategorien werden geladen...
-                    </div>
+                    <SectionSkeleton kind="cards" />
                   ) : categories.length === 0 ? (
                     <div className="text-sm text-gray-500">Noch keine Kategorien vorhanden.</div>
                   ) : (
@@ -686,13 +665,9 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
                               onClick={() => openDeleteCategoryModal(category)}
                               disabled={deletingCategoryId === category.id}
                               className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-                            >
-                              {deletingCategoryId === category.id ? (
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              ) : (
+                             loading={Boolean(deletingCategoryId === category.id)}>{(
                                 <Trash2 className="w-4 h-4 mr-2" />
-                              )}
-                              Löschen
+                              )}Löschen
                             </Button>
                           </div>
                         </div>
@@ -788,16 +763,11 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
               </div>
 
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button type="button" onClick={handleSaveRule} disabled={savingRule} className="rounded-xl">
-                  {savingRule ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : isEditingRule ? (
+                <Button type="button" onClick={handleSaveRule} disabled={savingRule} className="rounded-xl" loading={Boolean(savingRule)}>{isEditingRule ? (
                     <Save className="w-4 h-4 mr-2" />
                   ) : (
                     <Plus className="w-4 h-4 mr-2" />
-                  )}
-                  {isEditingRule ? "Änderungen speichern" : "Regel anlegen"}
-                </Button>
+                  )}{isEditingRule ? "Änderungen speichern" : "Regel anlegen"}</Button>
 
                 <Button type="button" variant="outline" onClick={resetRuleForm} className="rounded-xl">
                   <X className="w-4 h-4 mr-2" />
@@ -890,10 +860,7 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
                 <ScrollArea className="h-[720px]">
                   <div className="p-4 space-y-6">
                     {loading ? (
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Bonusregeln werden geladen...
-                      </div>
+                      <SectionSkeleton kind="cards" />
                     ) : filteredRules.length === 0 ? (
                       <div className="text-sm text-gray-500">Keine Bonusregeln gefunden.</div>
                     ) : (
@@ -952,13 +919,9 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
                                       onClick={() => openDeleteRuleModal(rule)}
                                       disabled={deletingRuleId === rule.id}
                                       className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-                                    >
-                                      {deletingRuleId === rule.id ? (
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                      ) : (
+                                     loading={Boolean(deletingRuleId === rule.id)}>{(
                                         <Trash2 className="w-4 h-4 mr-2" />
-                                      )}
-                                      Löschen
+                                      )}Löschen
                                     </Button>
                                   </div>
                                 </div>
@@ -1024,9 +987,7 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
               onClick={handleDeleteRule}
               disabled={!!deletingRuleId}
               className="rounded-xl bg-red-600 hover:bg-red-700 text-white"
-            >
-              {deletingRuleId ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-              Endgültig löschen
+             loading={Boolean(deletingRuleId)}><Trash2 className="w-4 h-4 mr-2" />Endgültig löschen
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1085,13 +1046,9 @@ export function AdminBonusManagement({ user }: AdminBonusManagementProps) {
               onClick={handleDeleteCategory}
               disabled={!!deletingCategoryId}
               className="rounded-xl bg-red-600 hover:bg-red-700 text-white"
-            >
-              {deletingCategoryId ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
+             loading={Boolean(deletingCategoryId)}>{(
                 <Trash2 className="w-4 h-4 mr-2" />
-              )}
-              Endgültig löschen
+              )}Endgültig löschen
             </Button>
           </DialogFooter>
         </DialogContent>

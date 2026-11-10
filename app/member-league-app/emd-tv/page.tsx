@@ -1,20 +1,12 @@
 "use client"
 
+import { TvLauncherSkeleton } from "@/components/emd-tv/tv-launcher-skeleton"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
-import {
-  CalendarDays,
-  CheckCircle2,
-  ChevronRight,
-  Clock3,
-  Loader2,
-  Play,
-  Tv2,
-  Users,
-  Sparkles,
-} from "lucide-react"
+import { CalendarDays, CheckCircle2, ChevronRight, Clock3, Play, Tv2, Users, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 
@@ -303,14 +295,9 @@ export default function EmdTvOverviewPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#050608] text-white">
+      <div className="emd-loading-surface min-h-screen bg-[#050608] text-white">
         <Header variant="app" title="EMD TV" subtitle="Ligazentrale" backHref="/member-league-app" />
-        <main className="flex min-h-screen items-center justify-center px-4">
-          <div className="rounded-[28px] border border-white/[0.08] bg-black/35 p-8 text-center backdrop-blur-xl">
-            <Loader2 className="mx-auto h-9 w-9 animate-spin text-orange-300" />
-            <div className="mt-4 font-black">Match Previews werden geladen</div>
-          </div>
-        </main>
+        <TvLauncherSkeleton />
         <MobileBottomNav />
       </div>
     )

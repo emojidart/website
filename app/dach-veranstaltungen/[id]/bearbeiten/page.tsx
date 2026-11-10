@@ -1,21 +1,12 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import {
-  CalendarDays,
-  CheckCircle2,
-  FileImage,
-  Info,
-  Loader2,
-  MapPin,
-  Save,
-  ShieldAlert,
-  Trophy,
-  UserRound,
-} from "lucide-react";
+import { CalendarDays, CheckCircle2, FileImage, Info, MapPin, Save, ShieldAlert, Trophy, UserRound } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -279,18 +270,9 @@ export default function BearbeitenPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="emd-loading-surface min-h-screen bg-background">
         <Header variant="app" title="Veranstaltung bearbeiten" subtitle="DACH Turniere" backHref="/dach-veranstaltungen/meine" />
-        <main className="flex min-h-[70vh] items-center justify-center px-4 pt-20">
-          <div className="flex flex-col items-center gap-3 text-muted-foreground">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-orange-300/[0.14] bg-card shadow-none">
-              <Loader2 className="h-7 w-7 animate-spin text-orange-200" />
-            </div>
-            <p className="text-sm font-semibold">
-              Veranstaltung wird geladen …
-            </p>
-          </div>
-        </main>
+        <main className="flex min-h-[70vh] items-center justify-center px-4 pt-20"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     );
@@ -652,16 +634,11 @@ export default function BearbeitenPage() {
               <Button
                 disabled={saving}
                 className="h-12 w-full rounded-2xl bg-orange-500 px-7 text-base font-semibold text-primary-foreground shadow-[0_18px_46px_-26px_rgba(249,115,22,.5)] transition hover:bg-orange-400 sm:w-auto"
-              >
-                {saving ? (
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
+               loading={Boolean(saving)}>{(
                   <Save className="mr-2 h-5 w-5" />
-                )}
-                {saving
+                )}{saving
                   ? "Änderungen werden gespeichert …"
-                  : "Änderungen einreichen"}
-              </Button>
+                  : "Änderungen einreichen"}</Button>
             </div>
           </div>
         </form>

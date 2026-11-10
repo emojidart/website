@@ -1,19 +1,10 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import {
-  ArrowLeft,
-  Crown,
-  Gift,
-  Loader2,
-  Medal,
-  PackageCheck,
-  RefreshCw,
-  Shield,
-  Star,
-  Trophy,
-} from "lucide-react"
+import { ArrowLeft, Crown, Gift, Medal, PackageCheck, RefreshCw, Shield, Star, Trophy } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -283,10 +274,7 @@ export default function PraemienRanglistePage() {
         </section>
 
         {loading ? (
-          <section className="mt-5 rounded-[24px] border border-border bg-card p-8 text-center shadow-[0_18px_60px_-48px_rgba(15,23,42,0.45)]">
-            <Loader2 className="mx-auto h-10 w-10 animate-spin text-orange-600" />
-            <p className="mt-4 text-sm font-semibold text-foreground">Rangliste wird geladen...</p>
-          </section>
+          <SectionSkeleton kind="cards" />
         ) : error ? (
           <section className="mt-5 rounded-[24px] border border-orange-200 bg-orange-50 p-5 text-center shadow-[0_18px_60px_-48px_rgba(15,23,42,0.45)]">
             <p className="text-sm font-semibold text-orange-700">{error}</p>

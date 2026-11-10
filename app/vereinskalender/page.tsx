@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -361,18 +363,9 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-card">
+      <div className="emd-loading-surface min-h-screen bg-card">
         <Header />
-        <main className="flex-grow pt-8 pb-20">
-          <div className="container mx-auto px-4 max-w-6xl bg-card">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Lade Spieldaten...</p>
-              </div>
-            </div>
-          </div>
-        </main>
+        <main className="flex-grow pt-8 pb-20"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }
@@ -590,7 +583,7 @@ export default function CalendarPage() {
                                 {(() => {
                                   const eventTypes = itemsForDay.reduce(
                                     (acc, item) => {
-                                      const type = item.type || "event"
+                                      const type = "type" in item && typeof item.type === "string" ? item.type : "event"
                                       acc[type] = (acc[type] || 0) + 1
                                       return acc
                                     },

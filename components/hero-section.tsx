@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -115,12 +117,7 @@ export function HeroSection({ currentPot }: HeroSectionProps) {
 
   if (loading) {
     return (
-      <section className="relative flex min-h-[60vh] sm:min-h-[70vh] lg:h-[calc(100vh-80px)] items-center justify-center bg-brutal-bg text-brutal-text px-4">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm sm:text-base">Lade Event-Daten...</p>
-        </div>
-      </section>
+      <SectionSkeleton kind="cards" />
     )
   }
 

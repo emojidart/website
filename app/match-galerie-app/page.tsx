@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -470,12 +472,7 @@ useEffect(() => {
 
   if (authLoading || initialLoading) {
     return (
-      <PageShell>
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-        <p className="text-center text-muted-foreground -mt-10">Lade Match-Galerie...</p>
-      </PageShell>
+      <SectionSkeleton kind="cards" />
     )
   }
 
@@ -821,7 +818,7 @@ useEffect(() => {
 
                       <div className="max-h-[220px] sm:max-h-[280px] overflow-auto rounded-xl border bg-muted p-3">
                         {commentsLoading ? (
-                          <div className="text-sm text-muted-foreground">Lade Kommentare…</div>
+                          <SectionSkeleton kind="cards" />
                         ) : comments.length === 0 ? (
                           <div className="text-sm text-muted-foreground">Noch keine Kommentare. Sei der Erste 🙂</div>
                         ) : (

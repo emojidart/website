@@ -1,29 +1,14 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Archive,
-  CheckCircle2,
-  Clock3,
-  Inbox,
-  Loader2,
-  Mail,
-  AlertTriangle,
-  ClipboardList,
-  BellRing,
-  MessageSquareReply,
-  RefreshCcw,
-  Search,
-  Send,
-  ShieldCheck,
-  Users,
-  XCircle,
-} from "lucide-react"
+import { Archive, CheckCircle2, Clock3, Inbox, Mail, AlertTriangle, ClipboardList, BellRing, MessageSquareReply, RefreshCcw, Search, Send, ShieldCheck, Users, XCircle } from "lucide-react"
 
 type ThreadRow = {
   id: string
@@ -429,7 +414,7 @@ export function AdminLeagueMailbox({
               onClick={() => void reloadMailbox()}
               disabled={loading || busy}
             >
-              <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              {loading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? "" : ""}`} />}
               Neu laden
             </Button>
 
@@ -576,9 +561,7 @@ export function AdminLeagueMailbox({
             </div>
 
             <div className="lg:col-span-2 flex justify-end">
-              <Button onClick={() => void createCases()} disabled={busy} className="emd-admin-button-primary min-w-[150px]">
-                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                Nachricht senden
+              <Button onClick={() => void createCases()} disabled={busy} className="emd-admin-button-primary min-w-[150px]" loading={Boolean(busy)}><Send className="mr-2 h-4 w-4" />Nachricht senden
               </Button>
             </div>
           </div>
@@ -636,10 +619,7 @@ export function AdminLeagueMailbox({
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center gap-2 py-16 text-sm font-bold text-white/35">
-                <Loader2 className="h-5 w-5 animate-spin text-orange-300" />
-                Laden …
-              </div>
+              <SectionSkeleton kind="table" />
             ) : filtered.length === 0 ? (
               <div className="px-6 py-16 text-center">
                 <Inbox className="mx-auto h-9 w-9 text-white/12" />
@@ -795,10 +775,7 @@ export function AdminLeagueMailbox({
                 <div className="flex min-h-[550px] flex-col">
                   <div className="flex-1 space-y-3 overflow-y-auto p-5 sm:p-6">
                     {detailLoading ? (
-                      <div className="flex items-center justify-center gap-2 py-12 text-sm font-bold text-white/35">
-                        <Loader2 className="h-5 w-5 animate-spin text-orange-300" />
-                        Nachrichten laden …
-                      </div>
+                      <SectionSkeleton kind="table" />
                     ) : messages.length === 0 ? (
                       <div className="py-12 text-center text-sm font-bold text-white/30">Noch keine Nachrichten.</div>
                     ) : (
@@ -847,9 +824,7 @@ export function AdminLeagueMailbox({
                           disabled={busy || !reply.trim()}
                           onClick={() => void sendReply()}
                           className="emd-admin-button-primary self-end px-5"
-                        >
-                          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        </Button>
+                         loading={Boolean(busy)}><Send className="h-4 w-4" /></Button>
                       </div>
                     )}
                   </div>

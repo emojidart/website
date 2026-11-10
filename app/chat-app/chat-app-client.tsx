@@ -1,5 +1,7 @@
 "use client";
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +49,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import ChatLineupPanel from "./chat-lineup-panel";
 import ChatUpdatesPanel from "./chat-updates-panel";
 import ChatMatchCard, { MATCH_CARD_PREFIX, parseChatMatchCardMessage } from "./chat-match-card";
@@ -256,7 +259,13 @@ function initials(name: string) {
   return (a + b).toUpperCase();
 }
 
-export default function TeamChatPage() {
+type TeamChatContextProps = {
+  backHref?: string
+  backLabel?: string
+  contextLabel?: string
+}
+
+export default function TeamChatPage({ backHref, backLabel = "Zurück", contextLabel = "Chats" }: TeamChatContextProps = {}) {
   const { session, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -1870,7 +1879,7 @@ export default function TeamChatPage() {
               role: "Vorstand",
             } as TeamRoom;
           })
-          .filter(Boolean) || [];
+          .filter((room): room is TeamRoom => room !== null);
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
@@ -1924,7 +1933,7 @@ export default function TeamChatPage() {
       const rooms: TeamRoom[] =
         (memberships || [])
           .map((m: any) => {
-            const t = m.teams;
+            const t = Array.isArray(m.teams) ? m.teams[0] : m.teams;
             if (!t?.id || !t?.chat_room_id) return null;
             return {
               id: t.chat_room_id, // ✅ chat_rooms.id
@@ -1937,7 +1946,7 @@ export default function TeamChatPage() {
               membership_visible_from: m.joined_at ?? m.created_at ?? null,
             } as TeamRoom;
           })
-          .filter(Boolean) || [];
+          .filter((room): room is TeamRoom => room !== null);
 
       rooms.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
@@ -3617,9 +3626,7 @@ export default function TeamChatPage() {
                     onClick={activateMessenger}
                     disabled={activationLoading || activationCode.length !== 6}
                     className="mt-4 h-12 w-full rounded-2xl bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-500/90 disabled:bg-white/10 disabled:text-white/25"
-                  >
-                    {activationLoading ? "Wird aktiviert…" : "Messenger aktivieren"}
-                  </Button>
+                   loading={Boolean(activationLoading)} loadingLabel="Wird aktiviert…">{"Messenger aktivieren"}</Button>
                 </div>
 
                 <p className="mt-5 text-xs leading-5 text-muted-foreground">
@@ -3707,9 +3714,15 @@ export default function TeamChatPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="text-[20px] font-semibold tracking-tight text-white">EMD Chat</div>
-                            <div className="mt-0.5 text-xs font-medium text-white/38">Chats</div>
+                            <div className="mt-0.5 text-xs font-medium text-white/38">{contextLabel}</div>
                           </div>
                         </div>
+                        {backHref ? (
+                          <Link href={backHref} className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border border-white/10 px-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-400" aria-label={backLabel}>
+                            <ArrowLeft className="h-4 w-4" />
+                            <span className="hidden sm:inline">{backLabel}</span>
+                          </Link>
+                        ) : null}
                       </div>
 
                       <div className="relative mt-3">
@@ -3743,9 +3756,7 @@ export default function TeamChatPage() {
                     <ScrollArea className="flex-1 min-h-0">
                       <div className="pb-[max(12px,env(safe-area-inset-bottom))]">
                         {roomsLoading ? (
-                          <div className="px-4 py-5 text-center text-xs text-muted-foreground">
-                            Chats werden geladen…
-                          </div>
+                          <SectionSkeleton kind="cards" />
                         ) : visibleChatListItems.length > 0 ? (
                           visibleChatListItems.map((item) =>
                             renderChatRow({
@@ -4585,13 +4596,9 @@ export default function TeamChatPage() {
                                       className={`${WA.sendBtn} bg-[#25303a] text-orange-200 hover:bg-[#2d3944]`}
                                       aria-label="Sprachnachricht aufnehmen"
                                       title="Sprachnachricht"
-                                    >
-                                      {voiceSending ? (
-                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-b-white" />
-                                      ) : (
+                                     loading={Boolean(voiceSending)}>{(
                                         <Mic className="h-[19px] w-[19px]" />
-                                      )}
-                                    </Button>
+                                      )}</Button>
                                   ) : null}
 
                                 <Button
@@ -4611,13 +4618,9 @@ export default function TeamChatPage() {
                                       ? "hidden"
                                       : ""
                                   }`}
-                                >
-                                  {sending ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                                  ) : (
+                                 loading={Boolean(sending)}>{(
                                     <Send className="h-[18px] w-[18px]" />
-                                  )}
-                                </Button>
+                                  )}</Button>
                               </div>
                             </div>
                           </div>
@@ -4834,9 +4837,7 @@ export default function TeamChatPage() {
               onClick={sendPoll}
               disabled={pollSending}
               className="w-full bg-orange-500 font-semibold text-primary-foreground hover:bg-orange-500/90"
-            >
-              {pollSending ? "Erstelle..." : "Abstimmung senden"}
-            </Button>
+             loading={Boolean(pollSending)} loadingLabel="Erstelle...">{"Abstimmung senden"}</Button>
           </div>
         </DialogContent>
       </Dialog>

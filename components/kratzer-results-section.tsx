@@ -1,10 +1,12 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Loader2, Trophy, Calendar, Users, Info } from "lucide-react"
+import { Trophy, Calendar, Users, Info } from "lucide-react"
 import { getPastTournaments, type PublicTournamentData } from "@/actions/public-tournaments"
 
 export default function KratzerResultsSection() {
@@ -53,7 +55,7 @@ export default function KratzerResultsSection() {
     <div>
       {loading && (
         <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="h-16 w-16 animate-spin text-orange-500" />
+          <LoadingIndicator className="h-16 w-16" />
           <p className="mt-4 text-muted-foreground text-lg font-semibold">Kratzer Turniere werden geladen...</p>
         </div>
       )}

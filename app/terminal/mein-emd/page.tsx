@@ -1,37 +1,11 @@
 "use client"
 
+import { LoadingIndicator, SectionSkeleton, ButtonLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { BrowserQRCodeReader } from "@zxing/browser"
-import {
-  ArrowLeft,
-  ArrowRight,
-  BellRing,
-  Camera,
-  CheckCircle2,
-  Delete,
-  Gamepad2,
-  KeyRound,
-  QrCode,
-  ScanLine,
-  ShieldCheck,
-  Target,
-  Trophy,
-  UserRound,
-  UsersRound,
-  Wifi,
-  X,
-  Wallet,
-  History,
-  LogOut,
-  CreditCard,
-  UserCheck,
-  Calendar,
-  Clock,
-  XCircle,
-  Loader2,
-  RefreshCw,
-} from "lucide-react"
+import { ArrowLeft, ArrowRight, BellRing, Camera, CheckCircle2, Delete, Gamepad2, KeyRound, QrCode, ScanLine, ShieldCheck, Target, Trophy, UserRound, UsersRound, Wifi, X, Wallet, History, LogOut, CreditCard, UserCheck, Calendar, Clock, XCircle, RefreshCw } from "lucide-react"
 import TerminalLink from "../_components/TerminalLink"
 import TerminalIdentityAuth, { type VerifiedTerminalIdentity } from "../_components/TerminalIdentityAuth"
 import TerminalLoader from "../_components/TerminalLoader"
@@ -135,7 +109,7 @@ export default function TerminalPersonalPage() {
   // Full navigation destroys all in-memory player/credit state; face descriptors stay in IndexedDB.
   useEffect(() => {
     if (!activeMember) return
-    let timer: ReturnType<typeof setTimeout>
+    let timer: number
     const leave = () => window.location.replace("/terminal")
     const reset = () => { window.clearTimeout(timer); timer = window.setTimeout(leave, 60_000) }
     const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "wheel"]
@@ -876,7 +850,7 @@ export default function TerminalPersonalPage() {
               disabled={cupLoading}
               className="flex h-12 items-center gap-2 rounded-2xl border border-white/10 bg-black/35 px-4 text-sm font-black text-white/60 backdrop-blur-xl transition hover:bg-white/[0.08] disabled:opacity-40"
             >
-              <RefreshCw className={`h-4 w-4 ${cupLoading ? "animate-spin" : ""}`} />
+              {cupLoading ? <LoadingIndicator className="h-4 w-4" /> : <RefreshCw className={`h-4 w-4 ${cupLoading ? "" : ""}`} />}
               Aktualisieren
             </button>
           </header>
@@ -904,12 +878,7 @@ export default function TerminalPersonalPage() {
             ) : null}
 
             {cupLoading && cupCards.length === 0 ? (
-              <div className="mt-5 flex min-h-52 items-center justify-center rounded-[34px] border border-white/10 bg-black/30 backdrop-blur-2xl">
-                <div className="text-center">
-                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-orange-300" />
-                  <div className="mt-3 text-sm font-black text-white/45">Anmeldungen werden geladen …</div>
-                </div>
-              </div>
+              <SectionSkeleton kind="profile" />
             ) : (
               <div className="mt-5 grid gap-5 xl:grid-cols-2">
                 {cupCards.map((card) => {
@@ -994,14 +963,11 @@ export default function TerminalPersonalPage() {
                                   disabled={!card.registrationOpen || busy}
                                   onClick={() => void registerSeriesOnSite(card)}
                                   className="flex h-15 w-full items-center justify-center gap-3 rounded-2xl bg-orange-500 px-4 text-base font-black text-white transition enabled:hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-30"
-                                >
-                                  {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserCheck className="h-5 w-5" />}
-                                  {busy
+                                 aria-busy={busy || undefined}><ButtonLoader loading={Boolean(busy)}><UserCheck className="h-5 w-5" />{busy
                                     ? "Anmeldung läuft …"
                                     : card.entryFee > 0
                                       ? `Vor Ort · ${formatEuro(card.entryFee)}`
-                                      : "Jetzt anmelden"}
-                                </button>
+                                      : "Jetzt anmelden"}</ButtonLoader></button>
 
                                 {card.entryFee > 0 ? (
                                   <button
@@ -1023,10 +989,7 @@ export default function TerminalPersonalPage() {
                                 disabled={!card.unregisterOpen || busy}
                                 onClick={() => void unregisterCup(card)}
                                 className="mt-5 flex h-15 w-full items-center justify-center gap-3 rounded-2xl border border-red-300/20 bg-red-500/[0.08] text-base font-black text-red-100 transition enabled:hover:bg-red-500/[0.14] disabled:cursor-not-allowed disabled:opacity-30"
-                              >
-                                {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <XCircle className="h-5 w-5" />}
-                                {busy ? "Abmeldung läuft …" : "Abmelden"}
-                              </button>
+                               aria-busy={busy || undefined}><ButtonLoader loading={Boolean(busy)}><XCircle className="h-5 w-5" />{busy ? "Abmeldung läuft …" : "Abmelden"}</ButtonLoader></button>
                             )}
                           </>
                         ) : (
@@ -1185,9 +1148,7 @@ export default function TerminalPersonalPage() {
                 {faceProtected ? (
                   <button type="button" onClick={() => setUnlockOpen(true)} className="w-full rounded-2xl border border-orange-400/30 bg-orange-500/10 p-5 text-left text-sm font-bold text-orange-100">Mit PIN oder Muster öffnen</button>
                 ) : personalLoading ? (
-                  <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 text-sm font-semibold text-white/40">
-                    Daten werden geladen …
-                  </div>
+                  <SectionSkeleton kind="profile" />
                 ) : creditTransactions.length === 0 ? (
                   <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5 text-sm font-semibold text-white/40">
                     Noch keine Guthaben-Buchungen vorhanden.

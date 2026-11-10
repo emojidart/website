@@ -72,7 +72,6 @@ interface LegStatistic {
   throws_180: number
   throws_171: number
   throws_high_tonne: number
-  throws_high_tonne: number
   throws_tonne: number
   throws_shanghai: number
   throws_95_plus: number
@@ -525,7 +524,7 @@ export function MatchStatistics({ match, onClose, myTeamId, myTeam }: MatchStati
                       players={players}
                       lineup={getTeamLineup(myTeamId)}
                       onSave={(playerIds) => saveLineup(myTeamId, playerIds)}
-                      loading={loading}
+                      loading={Boolean(loading)}
                     />
                   </CardContent>
                 </Card>

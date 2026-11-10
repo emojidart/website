@@ -1,16 +1,22 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { StatisticsSection } from "@/components/statistics-section"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { MembershipAccessGate } from "@/components/member/membership/membership-access-gate"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+
+function firstRelated<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}
 
 interface UserProfile {
   id: string
@@ -148,7 +154,7 @@ export default function MemberStatisticsPage() {
         .single()
 
       if (profileError) throw profileError
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       if (profileData?.player_id) {
         const { data: teamData, error: teamError } = await supabase
@@ -159,8 +165,12 @@ export default function MemberStatisticsPage() {
 
         if (teamError) throw teamError
 
-        const allowedTeamData = ((teamData || []) as any[]).filter((membership: any) => {
-          const dartType = String(membership?.teams?.dart_type || "").toLowerCase()
+        const normalizedTeamData = (teamData || []).map((membership) => ({
+          ...membership,
+          teams: firstRelated(membership.teams),
+        }))
+        const allowedTeamData = normalizedTeamData.filter((membership) => {
+          const dartType = String(membership.teams?.dart_type || "").toLowerCase()
 
           if (dartType === "edart") return canSeeEDart
           if (dartType === "steeldart") return canSeeSteeldart
@@ -168,7 +178,7 @@ export default function MemberStatisticsPage() {
           return false
         })
 
-        setTeamMemberships(allowedTeamData as any)
+        setTeamMemberships(allowedTeamData)
 
         if (allowedTeamData.length > 0) {
           const teamIds = allowedTeamData.map((t: any) => t.team_id)
@@ -196,7 +206,7 @@ export default function MemberStatisticsPage() {
             .order("role", { ascending: false })
 
           if (membersError) throw membersError
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((member) => ({ ...member, club_players: firstRelated(member.club_players) })))
         } else {
           setTeamMembers([])
         }
@@ -329,26 +339,33 @@ export default function MemberStatisticsPage() {
   const headerSubtitle = "Team Statistiken"
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f6f8] text-foreground font-sans flex flex-col pb-20">
+    <div className="min-h-screen overflow-x-hidden bg-card text-foreground font-sans flex flex-col pb-20">
       {/* ✅ NUR HEADER geändert: jetzt dein richtiger Header-Component */}
       <Header variant="app" title="Statistiken" subtitle={headerSubtitle} backHref="/member-profile-app" />
 
       {/* LOADING */}
       {authLoading || membershipLoading ? (
-        <div className="flex-1 flex items-center justify-center px-4 pt-24">
-          <div className="animate-in fade-in zoom-in-95 duration-300 w-full max-w-sm">
-            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-border bg-card px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
+        <main className="w-full pt-14 sm:pt-16" role="status" aria-busy="true" aria-label="Teamstatistiken werden geladen">
+          <div className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-4 sm:px-5 sm:pt-6 lg:px-7 xl:px-8">
+            <section className="rounded-[24px] border border-white/10 bg-background p-5 sm:p-7">
+              <div className="mb-5 h-6 w-36 animate-pulse rounded-full bg-white/10" />
+              <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+              <div className="mt-3 h-10 w-full max-w-sm animate-pulse rounded bg-white/10" />
+              <div className="mt-4 h-4 w-full max-w-lg animate-pulse rounded bg-white/10" />
+            </section>
+            <section className="rounded-[24px] border border-white/10 bg-card p-4 sm:p-5">
+              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {Array.from({ length: 3 }, (_, index) => (
+                  <div key={index} className="space-y-3 rounded-xl border border-white/10 p-4">
+                    <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+                    <div className="h-8 w-16 animate-pulse rounded bg-white/10" />
+                  </div>
+                ))}
               </div>
-              <div className="text-center">
-                <p className="text-lg font-extrabold text-foreground">Statistiken werden geladen</p>
-                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-              </div>
-            </div>
+              <SectionSkeleton kind="table" label="Statistiken werden geladen…" />
+            </section>
           </div>
-        </div>
+        </main>
       ) : (
         // MAIN (unchanged)
        <main className="w-full pt-14 sm:pt-16">
@@ -358,16 +375,16 @@ export default function MemberStatisticsPage() {
            title="Liga-Statistiken nicht freigeschaltet"
            description="Für die Liga-Statistiken brauchst du das E-Dart- oder Steeldart-Ligapaket bzw. eine aktive Testfreischaltung."
          >
-  <div className="w-full max-w-none px-2 py-3 pb-24 sm:px-4 sm:py-5 sm:pb-10 lg:px-5 xl:px-6 2xl:px-8">
-          <section className="relative overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:rounded-[28px] xl:rounded-[30px]">
+  <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 py-4 pb-24 sm:px-5 sm:py-5 sm:pb-10 lg:px-7 xl:px-8">
+          <section className="relative overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-sm sm:rounded-[20px] xl:rounded-[20px]">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
             <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-white/5 blur-3xl" />
 
             <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
                 <div className="min-w-0">
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/60">
-                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     Statistiken
                   </div>
 
@@ -392,7 +409,7 @@ export default function MemberStatisticsPage() {
             </div>
           </section>
 
-          <section className="mt-4 overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_16px_50px_-38px_rgba(15,23,42,0.45)] sm:mt-5 sm:rounded-[26px]">
+          <section className="mt-4 overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_16px_50px_-38px_rgba(15,23,42,0.45)] sm:mt-5 sm:rounded-[20px]">
             <div className="grid gap-3 p-3.5 sm:p-4 lg:grid-cols-[minmax(0,320px)_1fr] lg:items-center">
               <select
                 value={selectedSeasonId}

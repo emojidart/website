@@ -1,16 +1,10 @@
 "use client"
 
+import { SectionSkeleton, ButtonLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import {
-  Check,
-  ChevronDown,
-  Loader2,
-  LockKeyhole,
-  Search,
-  ShieldCheck,
-  UserRoundCog,
-} from "lucide-react"
+import { Check, ChevronDown, LockKeyhole, Search, ShieldCheck, UserRoundCog } from "lucide-react"
 
 import {
   ADMIN_CATEGORY_LABELS,
@@ -190,7 +184,7 @@ export function RolePermissionsManager() {
   const setAll = (value: boolean) => {
     const next: Partial<Record<PageKey, boolean>> = {}
     ADMIN_PERMISSION_PAGES.forEach((page) => {
-      next[page.key] = value
+      if (page.key !== "dashboard") next[page.key as PageKey] = value
     })
     setAllowedMap(next)
   }
@@ -282,10 +276,7 @@ export function RolePermissionsManager() {
               onClick={() => void save()}
               disabled={disabled}
               className="inline-flex h-11 items-center gap-2 rounded-2xl border border-orange-300/18 bg-orange-500 px-4 text-sm font-black text-white shadow-[0_14px_40px_-24px_rgba(249,115,22,.9)] hover:bg-orange-400 disabled:opacity-40"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {saving ? "Speichern..." : "Rechte speichern"}
-            </button>
+             aria-busy={saving || undefined}><ButtonLoader loading={Boolean(saving)}><Check className="h-4 w-4" />{saving ? "Speichern..." : "Rechte speichern"}</ButtonLoader></button>
           </div>
         </div>
       </section>
@@ -355,17 +346,12 @@ export function RolePermissionsManager() {
           </div>
 
           {loadingRights ? (
-            <div className="flex min-h-[220px] items-center justify-center rounded-[24px] border border-white/8 bg-[#090d13]/78">
-              <div className="flex items-center gap-2 text-sm font-bold text-white/44">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Rechte werden geladen...
-              </div>
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : (
             <div className="space-y-4">
               {groupedPages.map((group) => {
                 const groupKeys = group.pages.map((page) => page.key)
-                const allOn = groupKeys.every((key) => Boolean(allowedMap[key]))
+                const allOn = groupKeys.every((key) => Boolean(allowedMap[key as PageKey]))
 
                 return (
                   <section

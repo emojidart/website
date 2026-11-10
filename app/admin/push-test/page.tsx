@@ -1,5 +1,7 @@
 "use client"
 
+import { ButtonLoader } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { Bell, Send, CheckCircle, XCircle } from "lucide-react"
 
@@ -140,10 +142,7 @@ export default function PushTestPage() {
               onClick={handleSendTest}
               disabled={status === "sending" || subscriptionCount === 0}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send className="w-5 h-5" />
-              {status === "sending" ? "Wird gesendet..." : "Test-Benachrichtigung senden"}
-            </button>
+             aria-busy={Boolean(status === "sending") || undefined}><ButtonLoader loading={Boolean(status === "sending")} label="Wird gesendet..."><Send className="w-5 h-5" />{"Test-Benachrichtigung senden"}</ButtonLoader></button>
           </div>
 
           {/* Instructions */}

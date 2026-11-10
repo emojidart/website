@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { useEffect, useState } from "react"
@@ -407,11 +409,9 @@ export default function PlayerProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted">
-        <Header showBackButton title="Spieler Profil" />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">Lade Spielerdaten...</div>
-        </div>
+      <div className="emd-loading-surface min-h-screen bg-muted">
+        <Header variant="app" title="Spielerprofil" backHref="/liga-statistiken" />
+        <SectionSkeleton kind="table" />
       </div>
     )
   }
@@ -419,7 +419,7 @@ export default function PlayerProfilePage() {
   if (!player) {
     return (
       <div className="min-h-screen bg-muted">
-        <Header showBackButton title="Spieler Profil" />
+        <Header variant="app" title="Spielerprofil" backHref="/liga-statistiken" />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">Spieler nicht gefunden</div>
         </div>
@@ -429,7 +429,7 @@ export default function PlayerProfilePage() {
 
   return (
     <div className="min-h-screen bg-muted">
-      <Header showBackButton title="Spieler Profil" />
+      <Header variant="app" title="Spielerprofil" backHref="/liga-statistiken" />
 
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
@@ -450,7 +450,8 @@ export default function PlayerProfilePage() {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = "none"
-                      e.currentTarget.nextElementSibling.style.display = "flex"
+                      const fallback = e.currentTarget.nextElementSibling
+                      if (fallback instanceof HTMLElement) fallback.style.display = "flex"
                     }}
                   />
                 ) : null}

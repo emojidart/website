@@ -1,3 +1,5 @@
+import { LoadingBlock } from "@/components/loading/loading"
+
 import { cn } from "@/lib/utils"
 
 function Skeleton({
@@ -5,8 +7,8 @@ function Skeleton({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      className={cn("animate-pulse rounded-xl bg-muted motion-reduce:animate-none", className)}
+    <LoadingBlock
+      className={cn("rounded-xl", className)}
       {...props}
     />
   )

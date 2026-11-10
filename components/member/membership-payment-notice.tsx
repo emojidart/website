@@ -36,10 +36,10 @@ export function MembershipPaymentNotice() {
             <span className="inline-flex items-center gap-1.5"><CreditCard className="h-4 w-4" /> Offen: {eur(status.amountCents)} ({status.unpaidCount} Rechnung{status.unpaidCount === 1 ? "" : "en"})</span>
             <span className="inline-flex items-center gap-1.5"><CalendarClock className="h-4 w-4" /> Zahlungsfrist: {deadline}</span>
           </div>
-          <p className="mt-2 text-xs leading-5 text-white/60">Der reguläre Abrechnungsrhythmus läuft unverändert weiter. Offene Monatsbeträge werden nicht erlassen; eine neue Rechnung kann auch während der Zahlungsfrist entstehen.</p>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">Der reguläre Abrechnungsrhythmus läuft unverändert weiter. Offene Monatsbeträge werden nicht erlassen; eine neue Rechnung kann auch während der Zahlungsfrist entstehen.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {status.invoices.filter(invoice => !!invoice.url).map((invoice) => (
-              <a key={invoice.id} href={invoice.url!} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-xl bg-orange-500 px-3 py-2 text-sm font-bold text-white hover:bg-orange-600">{eur(invoice.amountCents)} nachzahlen</a>
+              <a key={invoice.id} href={invoice.url!} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-xl bg-primary px-3 py-2 text-sm font-bold text-primary-foreground hover:bg-orange-600">{eur(invoice.amountCents)} nachzahlen</a>
             ))}
           </div>
         </div>

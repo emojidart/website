@@ -1,21 +1,11 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { DKOSelfRegistrationModal } from "@/components/dko-self-registration-modal"
-import {
-  AlertTriangle,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Loader2,
-  RefreshCw,
-  Sparkles,
-  Trophy,
-  UserPlus,
-  Users,
-  XCircle,
-} from "lucide-react"
+import { AlertTriangle, Calendar, CheckCircle2, Clock, RefreshCw, Sparkles, Trophy, UserPlus, Users, XCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -723,12 +713,7 @@ export default function SummerSpecialRegistrationPage() {
           </motion.div>
 
           {loading ? (
-            <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-orange-600" />
-              <div className="mt-2 text-sm font-semibold text-muted-foreground">
-                Summer Special wird geladen...
-              </div>
-            </div>
+            <SectionSkeleton kind="cards" />
           ) : (
             <>
               {error ? (
@@ -810,10 +795,7 @@ export default function SummerSpecialRegistrationPage() {
                       )}
 
                       {accountLoading ? (
-                        <div className="rounded-2xl border border-border bg-muted p-4 text-sm font-bold text-muted-foreground flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-orange-600" />
-                          Anmeldung wird vorbereitet...
-                        </div>
+                        <SectionSkeleton kind="cards" />
                       ) : null}
 
                       {!accountLoading && accountType === "member" ? (
@@ -858,19 +840,12 @@ export default function SummerSpecialRegistrationPage() {
                               onClick={handleUnregister}
                               variant="outline"
                               className="mt-4 w-full rounded-xl border-red-200 text-red-700 hover:bg-red-50"
-                            >
-                              {removing ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Abmeldung wird gespeichert...
-                                </>
-                              ) : (
+                             loading={Boolean(removing)} loadingLabel="Abmeldung wird gespeichert...">{(
                                 <>
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Abmelden
                                 </>
-                              )}
-                            </Button>
+                              )}</Button>
                           )}
 
                           {memberAlreadyRegistered && !canUnregister ? (
@@ -937,19 +912,12 @@ export default function SummerSpecialRegistrationPage() {
                                   ? "default"
                                   : "outline"
                               }
-                            >
-                              {savingGuest ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Anmeldung wird gespeichert...
-                                </>
-                              ) : (
+                             loading={Boolean(savingGuest)} loadingLabel="Anmeldung wird gespeichert...">{(
                                 <>
                                   <UserPlus className="h-4 w-4 mr-2" />
                                   Jetzt anmelden
                                 </>
-                              )}
-                            </Button>
+                              )}</Button>
                           ) : (
                             <Button
                               type="button"
@@ -957,19 +925,12 @@ export default function SummerSpecialRegistrationPage() {
                               onClick={handleUnregister}
                               variant="outline"
                               className="mt-4 w-full rounded-xl border-red-200 text-red-700 hover:bg-red-50"
-                            >
-                              {removing ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Abmeldung wird gespeichert...
-                                </>
-                              ) : (
+                             loading={Boolean(removing)} loadingLabel="Abmeldung wird gespeichert...">{(
                                 <>
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Abmelden
                                 </>
-                              )}
-                            </Button>
+                              )}</Button>
                           )}
 
                           {guestAlreadyRegistered && !canUnregister ? (

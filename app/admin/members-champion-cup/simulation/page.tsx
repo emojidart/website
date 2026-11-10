@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -123,7 +125,7 @@ export default function MembersCupSimulation() {
         <p className="mt-3 text-sm leading-relaxed text-white/65"><ShieldCheck className="mr-2 inline-block h-4 w-4 text-emerald-300"/>Echte Namen und Einstufungen aus Supabase. Alle Testanmeldungen, Anwesenheiten, Paarungen und Ergebnisse existieren nur im Browser. Kein Schreibzugriff auf Tabellen, Ranglisten oder Spieltage.</p>
       </div>
       {error && <div role="alert" className="rounded-xl border border-red-400/30 bg-red-950/50 p-4 text-sm text-red-200">{error}</div>}
-      {loading ? <div className={card}>Spieler und Einstufungen werden geladen …</div> : <div className="grid gap-3 sm:grid-cols-4">
+      {loading ? <SectionSkeleton kind="cards" /> : <div className="grid gap-3 sm:grid-cols-4">
         {([["Eingestuft",people.length],["Tabelle 1",people.filter(p=>p.level===1).length],["Tabelle 2",people.filter(p=>p.level===2).length],["Tabelle 3",people.filter(p=>p.level===3).length]] as const).map(([k,v])=><div key={k} className={card}><div className="text-xs font-semibold text-white/50">{k}</div><div className="mt-1 text-2xl font-black">{v}</div></div>)}
       </div>}
       <section className={card}><div className="mb-4 flex items-center gap-2 font-black"><Users className="text-orange-400" size={18}/> 1. Testteilnehmer & Anwesenheit</div>

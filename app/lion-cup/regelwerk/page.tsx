@@ -58,7 +58,7 @@ function SectionCard({
   return (
     <motion.section
       variants={itemVariants}
-      className="rounded-[26px] border border-white/[0.08] bg-card shadow-none "
+      className="rounded-[20px] border border-white/[0.08] bg-card shadow-none "
     >
       <div className="p-4 sm:p-6">
         <div className="flex items-start gap-3">
@@ -84,7 +84,7 @@ function SubCard({
 }) {
   const toneCls =
     tone === "info"
-      ? "bg-sky-500/[0.08] border-sky-300/[0.14]"
+      ? "bg-orange-500/[0.08] border-orange-300/[0.14]"
       : tone === "warn"
         ? "bg-amber-500/[0.08] border-amber-300/[0.16]"
         : tone === "success"
@@ -93,7 +93,7 @@ function SubCard({
 
   const titleCls =
     tone === "info"
-      ? "text-sky-100"
+      ? "text-orange-100"
       : tone === "warn"
         ? "text-amber-100"
         : tone === "success"
@@ -124,7 +124,7 @@ export default function RegelwerkAppPage() {
           animate="visible"
         >
           <motion.div variants={itemVariants} className="mb-4 sm:mb-5">
-            <section className="relative overflow-hidden rounded-[30px] border border-amber-300/[0.12] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
+            <section className="relative overflow-hidden rounded-[20px] border border-amber-300/[0.12] bg-card shadow-sm ">
               <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber-500/20 blur-3xl" />
               <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
                 <div className="flex items-start gap-4">

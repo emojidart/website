@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { useParams } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
@@ -16,6 +18,7 @@ import {
   Trophy,
 } from "lucide-react"
 
+import { SeriesNavigation } from "@/components/tournaments/series-navigation"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
@@ -291,13 +294,14 @@ export default function DynamicSeriesTablePage() {
       <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
+        <SeriesNavigation />
         {loading ? (
-          <div className="min-h-[420px] animate-pulse rounded-[30px] border border-white/10 bg-white/[0.04]" />
+          <SectionSkeleton kind="tournament" />
         ) : !series ? (
-          <div className="rounded-[28px] border border-white/10 bg-card p-8 text-center font-bold text-white/60">Turnierserie nicht gefunden.</div>
+          <div className="rounded-[20px] border border-white/10 bg-card p-8 text-center font-bold text-muted-foreground">Turnierserie nicht gefunden.</div>
         ) : (
           <div className="space-y-5 sm:space-y-6">
-            <section className="relative overflow-hidden rounded-[30px] border border-orange-300/[0.13] bg-card p-5 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-7">
+            <section className="relative overflow-hidden rounded-[20px] border border-orange-300/[0.13] bg-card p-5 shadow-sm  sm:p-7">
               <div className="pointer-events-none absolute -right-14 -top-14 h-48 w-48 rounded-full bg-orange-500/[0.11] blur-[70px]" />
               <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
                 <div>
@@ -334,7 +338,7 @@ export default function DynamicSeriesTablePage() {
                           </div>
                           <div className="min-w-0">
                             <div className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">Platz {index + 1}</div>
-                            <div className="truncate text-lg font-semibold text-white">{player.player_name}</div>
+                            <div className="break-words text-lg font-semibold text-white">{player.player_name}</div>
                           </div>
                         </div>
                         <div className="text-right">
@@ -351,7 +355,7 @@ export default function DynamicSeriesTablePage() {
                   ))}
                 </section>
 
-                <section className="rounded-[30px] border border-white/[0.09] bg-card p-4 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-6">
+                <section className="rounded-[20px] border border-white/[0.09] bg-card p-4 shadow-sm  sm:p-6">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -376,7 +380,7 @@ export default function DynamicSeriesTablePage() {
                           <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.10] bg-card">{rankIcon(index)}</div>
                             <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm font-semibold text-white">{player.player_name}</div>
+                              <div className="break-words text-sm font-semibold text-white">{player.player_name}</div>
                               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-muted-foreground">
                                 <span>{player.tournaments} Antritte</span>
                                 {series.qualification_requirement ? (
@@ -388,7 +392,7 @@ export default function DynamicSeriesTablePage() {
                             </div>
                             <div className="text-right">
                               <div className="text-xl font-semibold text-amber-100">{player.points}</div>
-                              <div className="text-xs font-semibold uppercase tracking-wider text-white/25">Pkt.</div>
+                              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pkt.</div>
                             </div>
                           </div>
 
@@ -437,15 +441,15 @@ export default function DynamicSeriesTablePage() {
                             return (
                               <tr key={player.player_name} className="border-t border-white/[0.065] transition hover:bg-white/[0.025]">
                                 <td className="px-4 py-3.5 text-center"><div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025]">{rankIcon(index)}</div></td>
-                                <td className="px-4 py-3.5"><div className="font-semibold text-white">{player.player_name}</div><div className="mt-0.5 text-xs font-semibold text-white/28">Beste Platzierung: {player.best_placement === 999 ? "–" : player.best_placement}</div></td>
+                                <td className="px-4 py-3.5"><div className="font-semibold text-white">{player.player_name}</div><div className="mt-0.5 text-xs font-semibold text-muted-foreground">Beste Platzierung: {player.best_placement === 999 ? "–" : player.best_placement}</div></td>
                                 <td className="px-3 py-3.5 text-right text-base font-semibold text-amber-100">{player.points}</td>
-                                <td className="px-3 py-3.5 text-right font-bold text-white/58">{player.placement_points}</td>
-                                <td className="px-3 py-3.5 text-right font-bold text-white/58">{series.series_type === "members_cup" ? "–" : player.leg_points}</td>
-                                <td className="px-3 py-3.5 text-right font-bold text-white/58">{player.bonus_points}</td>
-                                <td className="px-3 py-3.5 text-right font-bold text-white/58">{player.tournaments}</td>
-                                <td className="px-3 py-3.5 text-right font-bold text-white/58">{series.series_type === "members_cup" ? "–" : `${player.matches_won}:${player.matches_lost}`}</td>
-                                <td className="px-3 py-3.5 text-right font-bold text-white/58">{series.series_type === "members_cup" || winRate === null ? "–" : `${winRate}%`}</td>
-                                <td className="px-3 py-3.5 text-right font-bold text-white/58">{series.series_type === "members_cup" ? "–" : `${player.legs_won}:${player.legs_lost}`}</td>
+                                <td className="px-3 py-3.5 text-right font-bold text-muted-foreground">{player.placement_points}</td>
+                                <td className="px-3 py-3.5 text-right font-bold text-muted-foreground">{series.series_type === "members_cup" ? "–" : player.leg_points}</td>
+                                <td className="px-3 py-3.5 text-right font-bold text-muted-foreground">{player.bonus_points}</td>
+                                <td className="px-3 py-3.5 text-right font-bold text-muted-foreground">{player.tournaments}</td>
+                                <td className="px-3 py-3.5 text-right font-bold text-muted-foreground">{series.series_type === "members_cup" ? "–" : `${player.matches_won}:${player.matches_lost}`}</td>
+                                <td className="px-3 py-3.5 text-right font-bold text-muted-foreground">{series.series_type === "members_cup" || winRate === null ? "–" : `${winRate}%`}</td>
+                                <td className="px-3 py-3.5 text-right font-bold text-muted-foreground">{series.series_type === "members_cup" ? "–" : `${player.legs_won}:${player.legs_lost}`}</td>
                                 <td className="px-3 py-3.5 text-right font-semibold text-white/65">{series.series_type === "members_cup" ? "–" : signed(player.legs_won - player.legs_lost)}</td>
                                 <td className="px-4 py-3.5 text-right">
                                   {series.qualification_requirement ? (
@@ -453,7 +457,7 @@ export default function DynamicSeriesTablePage() {
                                       {qualified ? <CheckCircle2 className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
                                       {qualified ? "Gewertet" : `${series.qualification_requirement - player.tournaments} fehlen`}
                                     </span>
-                                  ) : <span className="text-white/25">–</span>}
+                                  ) : <span className="text-muted-foreground">–</span>}
                                 </td>
                               </tr>
                             )
@@ -465,14 +469,14 @@ export default function DynamicSeriesTablePage() {
                 </section>
               </>
             ) : (
-              <section className="rounded-[30px] border border-white/[0.09] bg-card p-8 text-center ">
-                <Trophy className="mx-auto h-8 w-8 text-white/20" />
+              <section className="rounded-[20px] border border-white/[0.09] bg-card p-8 text-center ">
+                <Trophy className="mx-auto h-8 w-8 text-muted-foreground" />
                 <h2 className="mt-3 text-lg font-semibold">Noch keine Wertung</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Nach dem ersten abgeschlossenen Turniertag erscheint hier die Rangliste.</p>
               </section>
             )}
 
-            <section className="rounded-[30px] border border-white/[0.09] bg-card p-4 shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  sm:p-6">
+            <section className="rounded-[20px] border border-white/[0.09] bg-card p-4 shadow-sm  sm:p-6">
               <div className="flex items-center gap-2">
                 <Medal className="h-5 w-5 text-orange-200" />
                 <div>
@@ -492,21 +496,21 @@ export default function DynamicSeriesTablePage() {
                             <CalendarDays className="h-5 w-5 text-orange-200" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="truncate font-semibold text-white">{tournament.name}</div>
+                            <div className="break-words font-semibold text-white">{tournament.name}</div>
                             <div className="mt-1 text-xs font-semibold text-muted-foreground">{formatDate(tournament.date)} · {sorted.length} Wertungen</div>
                           </div>
                           <div className="hidden text-right sm:block">
-                            <div className="text-xs font-semibold uppercase tracking-wider text-white/25">Sieger</div>
-                            <div className="mt-0.5 max-w-[180px] truncate text-sm font-semibold text-amber-100">{sorted[0]?.player_name || "–"}</div>
+                            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sieger</div>
+                            <div className="mt-0.5 max-w-[180px] break-words text-sm font-semibold text-amber-100">{sorted[0]?.player_name || "–"}</div>
                           </div>
-                          <ChevronRight className="h-5 w-5 shrink-0 text-white/25 transition group-open:rotate-90 group-open:text-orange-200" />
+                          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition group-open:rotate-90 group-open:text-orange-200" />
                         </summary>
                         <div className="border-t border-white/[0.07] p-3 sm:p-4">
                           <div className="space-y-1.5">
                             {sorted.map((row, index) => (
                               <div key={row.id} className="flex items-center gap-3 rounded-xl border border-white/[0.055] bg-black/20 px-3 py-2.5">
                                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.035]">{rankIcon(index)}</div>
-                                <div className="min-w-0 flex-1 truncate text-sm font-bold text-white/78">{row.player_name}</div>
+                                <div className="min-w-0 flex-1 break-words text-sm font-bold text-white/78">{row.player_name}</div>
                                 <div className="text-sm font-semibold text-muted-foreground">{displayRowScore(row)} Pkt.</div>
                               </div>
                             ))}
@@ -538,15 +542,15 @@ function HeroStat({ label, value, icon, compact = false }: { label: string; valu
   return (
     <div className="min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3">
       <div className="flex items-center gap-1.5 text-muted-foreground">{icon}<span className="text-xs font-semibold uppercase tracking-[0.13em]">{label}</span></div>
-      <div className={`mt-1.5 font-semibold text-white/90 ${compact ? "truncate text-sm" : "text-xl"}`}>{value}</div>
+      <div className={`mt-1.5 font-semibold text-white/90 ${compact ? "break-words text-sm" : "text-xl"}`}>{value}</div>
     </div>
   )
 }
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {
-  return <div className="rounded-xl border border-white/[0.07] bg-black/20 px-2 py-2"><div className="text-sm font-semibold text-white/80">{value}</div><div className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-white/25">{label}</div></div>
+  return <div className="rounded-xl border border-white/[0.07] bg-black/20 px-2 py-2"><div className="text-sm font-semibold text-white/80">{value}</div><div className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div></div>
 }
 
 function MobileStat({ label, value }: { label: string; value: string | number }) {
-  return <div className="rounded-xl border border-white/[0.06] bg-black/20 px-2 py-2 text-center"><div className="text-xs font-semibold text-white/75">{value}</div><div className="mt-0.5 text-[8px] font-semibold uppercase tracking-wider text-white/22">{label}</div></div>
+  return <div className="rounded-xl border border-white/[0.06] bg-black/20 px-2 py-2 text-center"><div className="text-xs font-semibold text-white/75">{value}</div><div className="mt-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div></div>
 }

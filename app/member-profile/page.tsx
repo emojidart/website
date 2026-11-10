@@ -1,4 +1,7 @@
 "use client"
+
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import type React from "react"
@@ -203,7 +206,7 @@ export default function MemberProfilePage() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: profileData.club_players?.[0] ?? null })
 
       if (profileData?.player_id) {
         await fetchNotifications(profileData.player_id)
@@ -217,7 +220,10 @@ export default function MemberProfilePage() {
           throw teamError
         }
 
-        setTeamMemberships(teamData || [])
+        setTeamMemberships((teamData || []).map((membership) => ({
+          ...membership,
+          teams: membership.teams?.[0] ?? null,
+        })))
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((t) => t.team_id)
@@ -445,14 +451,14 @@ export default function MemberProfilePage() {
       description: "Spiele gegen andere Spieler",
       icon: Target,
       href: "/lobby",
-      color: "from-pink-500 to-pink-600",
+      color: "from-orange-500 to-orange-600",
     },
     {
       title: "Match Galerie",
       description: "Match-Galerie und Spielfotos",
       icon: Camera,
       href: "/match-galerie",
-      color: "from-purple-500 to-purple-600",
+      color: "from-orange-500 to-orange-600",
     },
     {
       title: "Bonusgeld",
@@ -487,7 +493,7 @@ export default function MemberProfilePage() {
       description: "Kommunikation mit dem Team",
       icon: MessageCircle,
       href: "/chat",
-      color: "from-purple-500 to-purple-600",
+      color: "from-orange-500 to-orange-600",
     },
     {
       title: "Support",
@@ -532,11 +538,9 @@ export default function MemberProfilePage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="profile" /></main>
       </div>
     )
   }
@@ -950,19 +954,12 @@ export default function MemberProfilePage() {
                   onClick={handlePhotoUpload}
                   disabled={!photoFile || photoUploading}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  {photoUploading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Hochladen...
-                    </>
-                  ) : (
+                 loading={Boolean(photoUploading)} loadingLabel="Hochladen...">{(
                     <>
                       <Upload className="h-4 w-4 mr-2" />
                       Hochladen
                     </>
-                  )}
-                </Button>
+                  )}</Button>
               </div>
             </div>
           </div>

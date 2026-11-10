@@ -1,11 +1,13 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useState} from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import Image from "@/components/image"
-import { Loader2 } from "lucide-react"
+
 import {
   Trophy,
   Users,
@@ -108,7 +110,7 @@ interface Tournament {
   tournament_name: string
   tournament_type: string
   tournament_date: string
-  rankings?: TournamentEntry[]
+  rankings?: Pick<TournamentEntry, "player_name" | "placement" | "legs_won" | "legs_lost" | "placement_points" | "bonus_points" | "form">[]
 }
 
 interface MatchResult {
@@ -1512,27 +1514,13 @@ if (selectedPlayer) {
   // ✅ LOADING VIEW
   if (loading) {
   return (
-    <main className="min-h-screen flex flex-col bg-white/[0.035] text-white pb-24 overflow-x-hidden">
+    <main className="emd-loading-surface min-h-screen flex flex-col bg-white/[0.035] text-white pb-24 overflow-x-hidden">
       <Header variant="app" title="Lion Cup Tabelle" subtitle="Lion Cup · Mitgliederbereich" backHref="/member-tournament-app/lion-cup" />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
+      <SectionSkeleton kind="tournament" />
 
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
-        <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col items-center gap-6 rounded-3xl bg-card shadow-2xl px-10 py-10 border border-white/[0.08]">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-orange-500/30 blur-2xl animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-200" />
-            </div>
-
-            <div className="text-center">
-              <p className="text-lg font-bold text-white">Lion Cup wird geladen</p>
-              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       <MobileBottomNav />
     </main>
@@ -2173,7 +2161,7 @@ return (
 
                   <div className="lg:hidden space-y-3">
                     {tournament.rankings.map((ranking: any, rankIndex: number) => (
-                      <MobileTournamentRankingCard key={rankIndex} ranking={ranking} index={rankIndex} />
+                      <MobileTournamentRankingCard key={rankIndex} ranking={ranking} />
                     ))}
                   </div>
                 </div>

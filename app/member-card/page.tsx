@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
@@ -39,7 +41,7 @@ function Chip({
     tone === "orange"
       ? "bg-orange-500/[0.09] text-orange-100 border-orange-300/[0.16]"
       : tone === "blue"
-        ? "bg-sky-500/[0.09] text-sky-100 border-sky-300/[0.16]"
+        ? "bg-orange-500/[0.09] text-orange-100 border-orange-300/[0.16]"
         : tone === "emerald"
           ? "bg-emerald-500/[0.09] text-emerald-100 border-emerald-300/[0.16]"
           : tone === "green"
@@ -50,7 +52,7 @@ function Chip({
                 ? "bg-amber-500/[0.09] text-amber-100 border-amber-300/[0.16]"
                 : tone === "slate"
                   ? "bg-white/[0.045] text-white/70 border-white/[0.09]"
-                  : "bg-white/[0.035] text-white/60 border-white/[0.08]"
+                  : "bg-white/[0.035] text-muted-foreground border-white/[0.08]"
 
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
@@ -135,7 +137,9 @@ export default function MemberCardPage() {
 
       if (profileError) throw profileError
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: profileData.club_players?.[0]
+        ? { ...profileData.club_players[0], spieldatenbank: profileData.club_players[0].spieldatenbank?.[0] ?? null }
+        : null })
 
       if (profileData?.player_id) {
         const { data: creditData, error: creditErr } = await supabase
@@ -264,15 +268,13 @@ export default function MemberCardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
+      <div className="emd-loading-surface relative min-h-screen overflow-x-hidden bg-background text-white">
         <Header variant="app" title="Meine Mitgliedskarte" subtitle="Mein EMD" backHref="/member-profile-app" />
 
         <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
 
-        <main className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[var(--emd-content-max)] items-center justify-center px-4 py-10">
-          <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-        </main>
+        <main className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[var(--emd-content-max)] items-center justify-center px-4 py-10"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     )
@@ -287,7 +289,7 @@ export default function MemberCardPage() {
 
 
        <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-4 py-10">
-          <div className="rounded-3xl border border-white/[0.08] bg-card shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)]  p-6 text-center">
+          <div className="rounded-3xl border border-white/[0.08] bg-card shadow-sm  p-6 text-center">
             <div className="mx-auto w-14 h-14 rounded-2xl bg-orange-500/[0.08] border border-orange-300/[0.14] flex items-center justify-center mb-4">
               <CreditCard className="w-6 h-6 text-orange-300" />
             </div>
@@ -313,15 +315,15 @@ export default function MemberCardPage() {
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-7 lg:pb-14 xl:px-8">
         {/* top hero */}
-        <section className="relative overflow-hidden rounded-[30px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
+        <section className="relative overflow-hidden rounded-[20px] border border-white/[0.08] bg-card shadow-sm ">
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/[0.14] blur-3xl" />
-          <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-sky-500/[0.06] blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-orange-500/[0.06] blur-3xl" />
 
           <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/60">
-                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                   Mitgliederbereich
                 </div>
 
@@ -346,7 +348,7 @@ export default function MemberCardPage() {
                   onClick={() => setActiveTab("card")}
                   variant="outline"
                   className={`h-10 rounded-xl border-white/10 text-white hover:text-white ${
-                    activeTab === "card" ? "border-orange-300/30 bg-orange-500 hover:bg-orange-400 text-primary-foreground" : "bg-white/[0.04] hover:bg-white/[0.08]"
+                    activeTab === "card" ? "border-orange-300/30 bg-primary hover:bg-orange-400 text-primary-foreground" : "bg-white/[0.04] hover:bg-white/[0.08]"
                   }`}
                 >
                   <CreditCard className="mr-2 h-4 w-4" />
@@ -357,7 +359,7 @@ export default function MemberCardPage() {
                   onClick={() => setActiveTab("history")}
                   variant="outline"
                   className={`h-10 rounded-xl border-white/10 text-white hover:text-white ${
-                    activeTab === "history" ? "border-orange-300/30 bg-orange-500 hover:bg-orange-400 text-primary-foreground" : "bg-white/[0.04] hover:bg-white/[0.08]"
+                    activeTab === "history" ? "border-orange-300/30 bg-primary hover:bg-orange-400 text-primary-foreground" : "bg-white/[0.04] hover:bg-white/[0.08]"
                   }`}
                 >
                   <History className="mr-2 h-4 w-4" />
@@ -402,10 +404,10 @@ export default function MemberCardPage() {
               {/* card preview (download target) */}
               <Card
                 ref={cardRef}
-                className="text-foreground relative overflow-hidden rounded-[30px] border border-orange-300/[0.13] bg-card shadow-[0_0_42px_rgba(249,115,22,.07),0_28px_80px_-48px_rgba(0,0,0,.98)]"
+                className="text-foreground relative overflow-hidden rounded-[20px] border border-orange-300/[0.13] bg-card shadow-[0_0_42px_rgba(249,115,22,.07),0_28px_80px_-48px_rgba(0,0,0,.98)]"
               >
                 <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/[0.14] blur-3xl" />
-                <div className="absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-sky-500/[0.06] blur-3xl" />
+                <div className="absolute bottom-0 left-1/3 h-40 w-72 rounded-full bg-orange-500/[0.06] blur-3xl" />
 
                 <CardContent className="p-6 sm:p-8 relative z-10">
                   <div className="flex items-center justify-between mb-6">
@@ -465,7 +467,7 @@ export default function MemberCardPage() {
               </Card>
 
               {/* QR block */}
-              <div className="mt-4 rounded-[26px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  overflow-hidden sm:rounded-[30px]">
+              <div className="mt-4 rounded-[20px] border border-white/[0.08] bg-card shadow-sm  overflow-hidden sm:rounded-[20px]">
                 <div className="p-4 sm:p-6 border-b border-white/[0.07] flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">QR-Code</p>
@@ -499,7 +501,7 @@ export default function MemberCardPage() {
                     </div>
 
                     <div className="mx-auto sm:mx-0">
-                      <div className="inline-block rounded-2xl border border-white/15 bg-card p-4 shadow-[0_18px_45px_-24px_rgba(0,0,0,.8)]">
+                      <div className="inline-block rounded-2xl border border-white/15 bg-card p-4 shadow-sm">
                         {playerCode !== "Noch kein Turniercode" ? (
                           <QRCodeSVG value={playerCode} size={160} level="H" includeMargin />
                         ) : (
@@ -514,7 +516,7 @@ export default function MemberCardPage() {
               </div>
 
               {/* benefits */}
-              <div className="mt-4 rounded-[26px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  overflow-hidden sm:rounded-[30px]">
+              <div className="mt-4 rounded-[20px] border border-white/[0.08] bg-card shadow-sm  overflow-hidden sm:rounded-[20px]">
                 <div className="p-4 sm:p-6 border-b border-orange-300/[0.10]">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">So nutzt du’s</p>
                   <p className="text-lg font-semibold text-white">Schnell • Bargeldlos • Flexibel</p>
@@ -548,7 +550,7 @@ export default function MemberCardPage() {
               </div>
 
               {/* info blocks */}
-              <div className="mt-4 rounded-[26px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  overflow-hidden sm:rounded-[30px]">
+              <div className="mt-4 rounded-[20px] border border-white/[0.08] bg-card shadow-sm  overflow-hidden sm:rounded-[20px]">
                 <div className="p-4 sm:p-6 border-b border-white/[0.07]">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Profil</p>
                   <p className="text-lg font-semibold text-white">Mitgliedsinformationen</p>
@@ -597,10 +599,7 @@ export default function MemberCardPage() {
                       onClick={downloadCard}
                       disabled={downloading}
                       className="rounded-2xl bg-primary shadow-[0_0_26px_rgba(249,115,22,.14)] hover:bg-primary/90 active:scale-[0.99] text-primary-foreground"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      {downloading ? "Wird heruntergeladen…" : "Karte herunterladen"}
-                    </Button>
+                     loading={Boolean(downloading)} loadingLabel="Wird heruntergeladen…"><Download className="w-4 h-4 mr-2" />{"Karte herunterladen"}</Button>
 
                     <Button variant="outline" className="rounded-2xl" onClick={() => router.push("/member-profile-app")}>
                       Zum Profil
@@ -659,7 +658,7 @@ export default function MemberCardPage() {
             </>
           ) : (
             /* HISTORY */
-            <div className="rounded-[26px] border border-white/[0.08] bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)]  overflow-hidden sm:rounded-[30px]">
+            <div className="rounded-[20px] border border-white/[0.08] bg-card shadow-sm  overflow-hidden sm:rounded-[20px]">
               <div className="p-4 sm:p-6 border-b border-white/[0.07] flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Guthaben</p>
@@ -680,9 +679,7 @@ export default function MemberCardPage() {
 
               <div className="p-4 sm:p-6 bg-white/[0.025]">
                 {loadingTransactions ? (
-                  <div className="flex justify-center py-12">
-                    <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
-                  </div>
+                  <SectionSkeleton kind="cards" />
                 ) : transactions.length === 0 ? (
                   <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center">
                     <History className="h-12 w-12 text-muted-foreground mx-auto mb-3" />

@@ -1,22 +1,11 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
-import {
-  CalendarClock,
-  AlertTriangle,
-  ArrowLeft,
-  CheckCircle2,
-  Loader2,
-  ShieldAlert,
-  Home,
-  Bus,
-  ListChecks,
-  PartyPopper,
-  Palmtree,
-  Trophy,
-} from "lucide-react"
+import { CalendarClock, AlertTriangle, ArrowLeft, CheckCircle2, ShieldAlert, Home, Bus, ListChecks, PartyPopper, Palmtree, Trophy } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -492,7 +481,7 @@ export default function MatchPostponePage() {
     : match?.match_date
       ? formatMatchDate(match.match_date)
       : ""
-  const oldTime = hhmm(match?.match_time)
+  const oldTime = hhmm(match?.match_time ?? null)
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-transparent pb-24 text-white">
@@ -576,10 +565,7 @@ export default function MatchPostponePage() {
 
               <AlertDescription className="text-white/65">
                 {dayLoading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Lade Spiele/Events am Tag…
-                  </span>
+                  <SectionSkeleton kind="cards" />
                 ) : dayError ? (
                   <span className="text-orange-300">{dayError}</span>
                 ) : (
@@ -866,9 +852,7 @@ export default function MatchPostponePage() {
                       "bg-orange-500 text-primary-foreground shadow-[0_0_24px_rgba(249,115,22,.12)] hover:bg-orange-500/90 hover:text-white",
                       "disabled:opacity-45 disabled:hover:bg-orange-500",
                     )}
-                  >
-                    {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                    Verschieben speichern
+                   loading={Boolean(submitting)}>{null}Verschieben speichern
                   </Button>
 
                   <Button

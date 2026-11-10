@@ -1,5 +1,7 @@
 "use client"
 
+import { ButtonLoader } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
@@ -150,14 +152,14 @@ export function MultiDkoZuordnung({ eventKey, centralEventId, players }: Props) 
     finally { setPreparing(null) }
   }
 
-  if (!ready && !error) return <div className="rounded-xl border border-white/10 p-4 text-xs text-white/60">DKO-Einteilung wird geladen …</div>
+  if (!ready && !error) return <div className="rounded-xl border border-white/10 p-4 text-xs text-muted-foreground">DKO-Einteilung wird geladen …</div>
 
-  return <section className="rounded-[24px] border border-white/10 bg-[#0b0f15]/95 p-4 text-white sm:p-5">
+  return <section className="rounded-[24px] border border-white/10 bg-card p-4 text-white sm:p-5">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <p className="text-[10px] font-black uppercase tracking-[.18em] text-orange-300/70">DKO · Vorbereitung</p>
+        <p className="text-xs font-black uppercase tracking-[.18em] text-orange-300/70">DKO · Vorbereitung</p>
         <h3 className="mt-1 text-lg font-black">Herren- und Damen-Einteilung</h3>
-        <p className="mt-1 text-xs text-white/50">Zusätzlich zur bisherigen Anmeldung. Zahlungen und Turnierstart unverändert.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Zusätzlich zur bisherigen Anmeldung. Zahlungen und Turnierstart unverändert.</p>
       </div>
       <button type="button" aria-pressed={enabled} onClick={() => setEnabled(!enabled)} className={`rounded-xl border px-4 py-2 text-sm font-bold ${enabled ? "border-orange-400/40 bg-orange-500/20 text-orange-200" : "border-white/15 bg-white/5 text-white/70"}`}>
         {enabled ? "Einteilung ausblenden" : "Einteilung anzeigen"}
@@ -166,18 +168,18 @@ export function MultiDkoZuordnung({ eventKey, centralEventId, players }: Props) 
     {error && <p role="alert" className="mt-3 rounded-lg border border-red-500/40 p-3 text-xs text-red-200">{error} {remote && "Keine Änderung an den Anmeldungen."}</p>}
     {enabled && <div className="mt-4 space-y-3">
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="DKO-Einteilung">
-        {(["alle", ...divisions] as const).map(value => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => setTab(value)} className={`rounded-xl px-3 py-2 text-xs font-bold ${tab === value ? "bg-orange-500 text-black" : "border border-white/10 bg-white/5 text-white/75"}`}>{value === "alle" ? "Alle" : labels[value]} ({value === "alle" ? rows.length : counts[value]})</button>)}
+        {(["alle", ...divisions] as const).map(value => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => setTab(value)} className={`rounded-xl px-3 py-2 text-xs font-bold ${tab === value ? "bg-primary text-black" : "border border-white/10 bg-white/5 text-white/75"}`}>{value === "alle" ? "Alle" : labels[value]} ({value === "alle" ? rows.length : counts[value]})</button>)}
       </div>
       <div className="max-h-72 divide-y divide-white/10 overflow-y-auto rounded-xl border border-white/10">
         {rows.filter(row => tab === "alle" || (assignments[row.id] ?? "offen") === tab).map(row => <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-          <div><div className="text-sm font-semibold">{row.name}{row.suffix}</div><div className="text-[11px] text-white/40">{row.paid ? "Bezahlt" : "Zahlung offen"}</div></div>
-          <select aria-label={`${row.name} zuordnen`} disabled={Boolean(saving) || (remote && Boolean(error))} value={assignments[row.id] ?? "offen"} onChange={e => void change(row.id, e.target.value as Division)} className="rounded-lg border border-white/15 bg-[#151a22] px-2 py-2 text-xs font-semibold text-white">{divisions.map(value => <option key={value} value={value}>{labels[value]}</option>)}</select>
+          <div><div className="text-sm font-semibold">{row.name}{row.suffix}</div><div className="text-[11px] text-muted-foreground">{row.paid ? "Bezahlt" : "Zahlung offen"}</div></div>
+          <select aria-label={`${row.name} zuordnen`} disabled={Boolean(saving) || (remote && Boolean(error))} value={assignments[row.id] ?? "offen"} onChange={e => void change(row.id, e.target.value as Division)} className="rounded-lg border border-white/15 bg-card px-2 py-2 text-xs font-semibold text-white">{divisions.map(value => <option key={value} value={value}>{labels[value]}</option>)}</select>
         </div>)}
-        {!rows.length && <p className="p-3 text-xs text-white/50">Noch keine Voranmeldungen in dieser Veranstaltung.</p>}
+        {!rows.length && <p className="p-3 text-xs text-muted-foreground">Noch keine Voranmeldungen in dieser Veranstaltung.</p>}
       </div>
       {remote && <div className="rounded-xl border border-orange-400/20 bg-orange-500/5 p-3 space-y-2">
         <p className="text-sm font-bold text-orange-200">Getrennte DKO-Listen vorbereiten</p>
-        <p className="text-xs text-white/60">Erstellt eine feste Teilnehmerliste je Gruppe. Noch kein Turnierstart. Ein vorbereiteter Lauf wird nicht überschrieben.</p>
+        <p className="text-xs text-muted-foreground">Erstellt eine feste Teilnehmerliste je Gruppe. Noch kein Turnierstart. Ein vorbereiteter Lauf wird nicht überschrieben.</p>
         <div className="flex flex-wrap gap-2">
           {(["herren", "damen"] as const).map(division => <button key={division} type="button"
             disabled={Boolean(preparing) || Boolean(saving) || busy || Boolean(prepared[division])}
@@ -187,7 +189,7 @@ export function MultiDkoZuordnung({ eventKey, centralEventId, players }: Props) 
           </button>)}
         </div>
       </div>}
-      {remote && <button type="button" disabled={busy || Boolean(saving)} onClick={() => { setBusy(true); void reload().catch(e => setError(String(e))).finally(() => setBusy(false)) }} className="text-xs font-bold text-orange-300">{busy ? "Lädt …" : "Einteilung aktualisieren"}</button>}
+      {remote && <button type="button" disabled={busy || Boolean(saving)} onClick={() => { setBusy(true); void reload().catch(e => setError(String(e))).finally(() => setBusy(false)) }} className="text-xs font-bold text-orange-300" aria-busy={Boolean(busy) || undefined}><ButtonLoader loading={Boolean(busy)} label="Lädt …">{"Einteilung aktualisieren"}</ButtonLoader></button>}
       <p className="rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-xs leading-5 text-amber-100/80">{remote ? "Die Zuordnung wird in Supabase gespeichert und kann am anderen Admin-Gerät geladen werden. Sie beeinflusst noch nicht den Turnierstart." : "Keine zentrale Veranstaltung erkannt: Diese Zuordnung ist nur ein lokaler Entwurf. Noch keine Synchronisierung."}</p>
     </div>}
   </section>

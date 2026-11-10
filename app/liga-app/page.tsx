@@ -1,11 +1,14 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useState, useEffect, useMemo } from "react"
+import type { LeagueTeam, LeagueMatch, LeaguePlayer, LeagueLegStat, LeagueStanding } from "@/lib/league-display-types"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, Calendar, Users, Loader2 } from "lucide-react"
+import { Trophy, Target, Calendar, Users } from "lucide-react"
 import { Header } from "@/components/header"
 import { createBrowserClient } from "@supabase/ssr"
 import { Button } from "@/components/ui/button"
@@ -111,11 +114,11 @@ const isMissingResult = (match: any) => {
 }
 
 export default function DartLeaguePage() {
-  const [matches, setMatches] = useState([])
-  const [teams, setTeams] = useState([])
-  const [opponentTeams, setOpponentTeams] = useState([])
-  const [players, setPlayers] = useState([])
-  const [legStatistics, setLegStatistics] = useState([])
+  const [matches, setMatches] = useState<LeagueMatch[]>([])
+  const [teams, setTeams] = useState<LeagueTeam[]>([])
+  const [opponentTeams, setOpponentTeams] = useState<LeagueTeam[]>([])
+  const [players, setPlayers] = useState<LeaguePlayer[]>([])
+  const [legStatistics, setLegStatistics] = useState<LeagueLegStat[]>([])
   const [loading, setLoading] = useState(true)
   const [dartTypeFilter, setDartTypeFilter] = useState<"gesamt" | "edart" | "steeldart">("gesamt")
   const [playersPerPage, setPlayersPerPage] = useState(10)
@@ -226,6 +229,9 @@ if (!selectedSeasonId && resolvedSeasonId) {
 
               return {
                 ...match,
+                // Supabase can infer joined relations as arrays; normalize to the team object.
+                home_team: Array.isArray(match.home_team) ? match.home_team[0] ?? null : match.home_team,
+                away_team: Array.isArray(match.away_team) ? match.away_team[0] ?? null : match.away_team,
                 home_opponent_team: homeOpponentTeam,
                 away_opponent_team: awayOpponentTeam,
               }
@@ -311,7 +317,7 @@ if (playersError) {
   }, [seasons, selectedSeasonId])
 
   const calculateStandings = () => {
-    const standings = {}
+    const standings: Record<string, LeagueStanding> = {}
 
     teams.forEach((team) => {
       standings[team.id] = {
@@ -464,7 +470,7 @@ if (playersError) {
       .map((player) => {
         const detailedStats = legStatistics
           .filter((stat) => stat.player_id === player.player_id)
-          .reduce((acc, stat) => {
+          .reduce<Record<"throws_15" | "throws_16" | "throws_17" | "throws_18" | "throws_19", number>>((acc, stat) => {
             return {
               throws_15: (acc.throws_15 || 0) + (stat.throws_15 || 0),
               throws_16: (acc.throws_16 || 0) + (stat.throws_16 || 0),
@@ -472,7 +478,7 @@ if (playersError) {
               throws_18: (acc.throws_18 || 0) + (stat.throws_18 || 0),
               throws_19: (acc.throws_19 || 0) + (stat.throws_19 || 0),
             }
-          }, {})
+          }, { throws_15: 0, throws_16: 0, throws_17: 0, throws_18: 0, throws_19: 0 })
 
         const totalPoints = calculatePlayerPoints(player, detailedStats)
 
@@ -498,7 +504,7 @@ if (playersError) {
       })
   }, [legStatistics])
 
-  const getMatchResultColor = (match, teamId) => {
+  const getMatchResultColor = (match: LeagueMatch, teamId: string) => {
     const isHomeTeam = match.home_team?.id === teamId
     const homeScore = match.home_score || 0
     const awayScore = match.away_score || 0
@@ -506,7 +512,7 @@ if (playersError) {
     if (homeScore === awayScore) return "bg-amber-500/10 border-amber-400/20"
 
     const teamWon = isHomeTeam ? homeScore > awayScore : awayScore > homeScore
-    return teamWon ? "bg-emerald-500/10 border-emerald-400/20" : "bg-red-500/100/10 border-red-400/20"
+    return teamWon ? "bg-emerald-500/10 border-emerald-400/20" : "bg-red-500/10 border-red-400/20"
   }
 
  // ✅ "Ergebnisse"
@@ -545,8 +551,8 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
     setCurrentPage(1)
   }
 
-  const groupMatchesByTeam = (matchList) => {
-    const grouped = {}
+  const groupMatchesByTeam = (matchList: LeagueMatch[]) => {
+    const grouped: Record<string, LeagueMatch[]> = {}
 
     matchList.forEach((match) => {
       const homeTeamName = match.home_team?.name || match.home_opponent_team?.name || "Unbekanntes Team"
@@ -568,26 +574,37 @@ const postponedMatches = matches.filter((match) => match.status === "postponed")
   // ✅ LOADING VIEW
   if (loading) {
   return (
-    <main className="relative min-h-screen flex flex-col overflow-x-hidden bg-background pb-24 text-white">
+    <main className="emd-loading-surface relative min-h-screen flex flex-col overflow-x-hidden bg-background pb-24 text-white">
       <Header variant="app" title="Liga & Statistiken" subtitle="Tabelle · Ergebnisse · Termine · Teams · Stats" backHref="/" />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
-
-      <div className="relative z-10 flex-1 flex items-center justify-center px-4 pb-20 pt-12 sm:pt-14">
-        <div>
-          <div className="flex flex-col items-center gap-6 rounded-[28px] border border-white/10 bg-card px-10 py-10 shadow-[0_28px_80px_-52px_rgba(0,0,0,.95)] ">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-orange-500/100/30 blur-2xl animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-orange-300" />
-            </div>
-
-            <div className="text-center">
-              <p className="text-lg font-bold text-white">Statistiken werden geladen</p>
-              <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
+      <div className="mx-auto w-full max-w-[var(--emd-content-max)] space-y-5 px-3 pb-28 pt-20 sm:px-5 sm:pt-24 lg:px-8 xl:px-10" role="status" aria-busy="true" aria-label="Liga wird geladen">
+        <section className="rounded-[28px] border border-white/10 bg-card p-5 sm:p-7">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 shrink-0 animate-pulse rounded-2xl bg-white/10" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+              <div className="h-9 w-full max-w-sm animate-pulse rounded bg-white/10" />
             </div>
           </div>
-        </div>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
+                <div className="mt-4 h-8 w-16 animate-pulse rounded bg-white/10" />
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="rounded-[24px] border border-white/10 bg-card p-4 sm:p-6">
+          <div className="mb-4 h-6 w-40 animate-pulse rounded bg-white/10" />
+          <div className="grid grid-cols-3 gap-2">
+            {Array.from({ length: 3 }, (_, index) => <div key={index} className="h-11 animate-pulse rounded-xl bg-white/10" />)}
+          </div>
+          <div className="mt-5"><SectionSkeleton kind="table" label="Liga wird geladen…" /></div>
+        </section>
       </div>
+
+      
 
       <MobileBottomNav />
     </main>

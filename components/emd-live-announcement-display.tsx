@@ -18,7 +18,10 @@ export default function EmdLiveAnnouncementDisplay({ tv = false }: { tv?: boolea
         .order("ends_at", { ascending: true }).limit(100)
       if (!active) return
       if (error) { console.error("EMD Live-Regie konnte nicht geladen werden:", error); return }
-      setAnnouncements((data || []) as Announcement[])
+      setAnnouncements((data || []).map((item) => ({
+        ...item,
+        central_tournament_events: item.central_tournament_events?.[0] ?? null,
+      })) as Announcement[])
     }
     void refresh()
     const poll = window.setInterval(() => { if (!document.hidden) void refresh() }, 12000)

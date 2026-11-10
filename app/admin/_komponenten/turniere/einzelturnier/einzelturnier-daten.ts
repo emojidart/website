@@ -68,19 +68,16 @@ export async function fetchFrequentPlayersData(): Promise<PlayerWithFrequency[]>
 
   if (playersError) throw playersError
 
-  return frequentPlayersData
-    .map((row) => {
-      const player = allPlayers?.find((item) => item.name === row.player_name)
-      if (!player) return null
-
-      return {
-        id: player.id,
-        name: row.player_name,
-        playCount: row.tournaments_played,
-        lastPlayed: null,
-      }
-    })
-    .filter((player): player is PlayerWithFrequency => player !== null)
+  return frequentPlayersData.flatMap((row): PlayerWithFrequency[] => {
+    const player = allPlayers?.find((item) => item.name === row.player_name)
+    if (!player) return []
+    return [{
+      id: Number(player.id),
+      name: String(row.player_name),
+      playCount: Number(row.tournaments_played ?? 0),
+      lastPlayed: null,
+    }]
+  })
 }
 
 export async function fetchSeriesPrefillData(seriesId: string): Promise<{

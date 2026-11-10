@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import type React from "react"
 
 import { Header } from "@/components/header"
@@ -9,20 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/hooks/use-auth"
 import { useState, useEffect, useRef } from "react"
-import {
-  Heart,
-  MessageCircle,
-  Send,
-  Users,
-  Lock,
-  TrendingUp,
-  ImageIcon,
-  Loader2,
-  X,
-  Trash2,
-  ArrowLeft,
-  Pencil,
-} from "lucide-react"
+import { Heart, MessageCircle, Send, Users, Lock, TrendingUp, ImageIcon, X, Trash2, ArrowLeft, Pencil } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { AuthModal } from "@/components/auth-modal"
 import { DeleteModal } from "@/components/delete-modal"
@@ -205,7 +194,10 @@ export default function CommunityPage() {
       const profilesMap = new Map()
       if (profilesData) {
         profilesData.forEach((profile) => {
-          profilesMap.set(profile.user_id, profile)
+          profilesMap.set(profile.user_id, {
+            ...profile,
+            club_players: Array.isArray(profile.club_players) ? profile.club_players[0] ?? null : profile.club_players,
+          })
         })
       }
 
@@ -250,7 +242,7 @@ export default function CommunityPage() {
       if (profileError) {
         console.error("Error fetching profile:", profileError)
       } else {
-        setProfile(profileData)
+        setProfile({ ...profileData, club_players: Array.isArray(profileData.club_players) ? profileData.club_players[0] ?? null : profileData.club_players })
       }
     } catch (err) {
       console.error("Error fetching profile:", err)
@@ -581,14 +573,9 @@ export default function CommunityPage() {
 
   if (authLoading || (loading && !posts.length)) {
     return (
-      <div className="min-h-screen bg-muted text-foreground font-sans flex flex-col">
+      <div className="emd-loading-surface min-h-screen bg-muted text-foreground font-sans flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 text-orange-600 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Lädt...</p>
-          </div>
-        </main>
+        <main className="flex-grow flex items-center justify-center"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }
@@ -712,28 +699,18 @@ export default function CommunityPage() {
                 onClick={handleCreatePost}
                 disabled={!session || !newPost.trim() || isPosting || isUploading}
                 className="bg-card     text-white font-bold shadow-lg text-xs sm:text-sm"
-              >
-                {isPosting || isUploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {isUploading ? "Lädt Bild hoch..." : "Wird gepostet..."}
-                  </>
-                ) : (
+               loading={Boolean(isPosting || isUploading)}>{(
                   <>
                     <Send className="h-4 w-4 mr-2" />
                     Posten
                   </>
-                )}
-              </Button>
+                )}</Button>
             </div>
           </CardContent>
         </Card>
 
         {loading ? (
-          <div className="text-center py-12">
-            <Loader2 className="h-12 w-12 text-orange-600 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Lade Beiträge...</p>
-          </div>
+          <SectionSkeleton kind="cards" />
         ) : posts.length === 0 ? (
           <Card className="border-0 shadow-xl bg-card ">
             <CardContent className="p-8 text-center">

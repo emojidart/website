@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -2043,17 +2045,9 @@ const resultSaveReady =
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-white">
+      <div className="emd-loading-surface min-h-screen bg-background text-white">
         <Header />
-        <div className="flex min-h-[70vh] items-center justify-center px-4">
-          <div className="w-full max-w-xl rounded-[28px] border border-orange-500/25 bg-[#10161e] px-7 py-12 text-center shadow-2xl">
-            <RefreshCcw className="mx-auto mb-6 h-12 w-12 animate-spin text-orange-500" />
-            <p className="text-xs font-bold uppercase tracking-[.22em] text-orange-400">EMD Members Champion Cup</p>
-            <h2 className="mt-4 text-2xl font-semibold">Turnierplan wird geladen</h2>
-            <p className="mt-3 text-sm text-muted-foreground">Gruppen, Automaten und Begegnungen werden vorbereitet.</p>
-            <div className="mt-7 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-1/2 animate-pulse rounded-full bg-orange-500" /></div>
-          </div>
-        </div>
+        <SectionSkeleton kind="tournament" />
       </div>
     )
   }
@@ -2130,13 +2124,13 @@ const resultSaveReady =
             </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-end">
-  <div className="rounded-xl border border-[#334155] bg-[#111820] px-3 py-2">
+  <div className="rounded-xl border border-[#334155] bg-card px-3 py-2">
     <SpeechAnnouncerSettings enabled={speechEnabled} onToggle={setSpeechEnabled} />
   </div>
 
   <Button
     variant="outline"
-    className="border-[#334155] text-white bg-[#151d28] hover:bg-[#243041]"
+    className="border-[#334155] text-white bg-card hover:bg-card"
     onClick={() => router.push("/admin/turnier_spieltage_starten")}
   >
     <ArrowLeft className="w-4 h-4 mr-2" />
@@ -2155,7 +2149,7 @@ const resultSaveReady =
       <main className="mx-auto w-full max-w-[1480px] px-4 sm:px-6 lg:px-8 py-5 space-y-4">
 
 
-        <nav aria-label="Turnierbereiche" className="sticky top-[64px] z-20 rounded-2xl border border-[#293441] bg-[#0b121b]/95 p-2 shadow-lg ">
+        <nav aria-label="Turnierbereiche" className="sticky top-[64px] z-20 rounded-2xl border border-[#293441] bg-card p-2 shadow-lg ">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {([
               ["center", "Match Center"],
@@ -2165,7 +2159,7 @@ const resultSaveReady =
             ] as const).map(([key, label]) => (
               <button key={key} type="button" onClick={() => setViewTab(key)}
                 aria-current={viewTab === key ? "page" : undefined}
-                className={cn("min-h-11 rounded-xl px-3 py-2 text-sm font-semibold transition-colors", viewTab === key ? "bg-orange-600 text-white shadow-sm" : "text-muted-foreground hover:bg-white/[0.07] hover:text-white")}>{label}</button>
+                className={cn("min-h-11 rounded-xl px-3 py-2 text-sm font-semibold transition-colors", viewTab === key ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-white/[0.07] hover:text-white")}>{label}</button>
             ))}
           </div>
           {(viewTab === "schedule" || viewTab === "standings") && groups.length > 1 && (
@@ -2173,7 +2167,7 @@ const resultSaveReady =
               <span className="mr-1 text-xs text-muted-foreground">Gruppe:</span>
               {groups.map(g => (
                 <button type="button" key={g.id} onClick={() => setActiveGroupId(g.id)}
-                  className={cn("rounded-lg px-3 py-1.5 text-xs font-semibold", activeGroupId === g.id ? "bg-orange-600 text-white" : "border border-[#344254] text-muted-foreground hover:bg-white/[0.06]")}>{g.name}</button>
+                  className={cn("rounded-lg px-3 py-1.5 text-xs font-semibold", activeGroupId === g.id ? "bg-primary text-primary-foreground" : "border border-[#344254] text-muted-foreground hover:bg-white/[0.06]")}>{g.name}</button>
               ))}
             </div>
           )}
@@ -2195,7 +2189,7 @@ const resultSaveReady =
                   className={cn(
                     "px-4 py-2 rounded-xl font-semibold border-2 transition-all shadow-sm",
                     activeGroupId === g.id
-                      ? "bg-orange-500 text-primary-foreground border-orange-500"
+                      ? "bg-primary text-primary-foreground border-orange-500"
                       : "bg-card text-muted-foreground border-white hover:border-orange-300",
                   )}
                 >
@@ -2224,7 +2218,7 @@ const resultSaveReady =
 
               <div className="mt-3 h-3 rounded-full bg-card border-2 border-orange-100 overflow-hidden">
                 <div
-                  className="h-full bg-orange-500"
+                  className="h-full bg-primary"
                   style={{ width: `${pct(progressForActiveGroup.done, progressForActiveGroup.total)}%` }}
                 />
               </div>
@@ -2355,7 +2349,7 @@ const resultSaveReady =
 
 
 
-        <section className="mt-4 rounded-2xl border border-[#293441] bg-[#111820] p-4 sm:p-5">
+        <section className="mt-4 rounded-2xl border border-[#293441] bg-card p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div><h2 className="text-lg font-semibold text-white">Match Center</h2><p className="text-sm text-muted-foreground">Laufende Matches verwalten und Ergebnisse direkt eintragen.</p></div>
             <span className="rounded-full border border-[#344254] px-3 py-1 text-xs text-muted-foreground">{matchesForActiveGroup.filter(m => Boolean(m.state.machineNumber) && !m.state.winner).length} laufen</span>
@@ -2471,7 +2465,7 @@ const resultSaveReady =
                         )}
                       >
                         <div className="col-span-5 font-semibold text-foreground truncate flex items-center gap-2">
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white text-xs font-semibold">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
                             {idx + 1}
                           </span>
                           <span className="truncate" title={r.name}>{shortTeamName(r.name)}</span>
@@ -2536,7 +2530,7 @@ const resultSaveReady =
                     className={cn(
                       "rounded-xl border-2 p-3 text-left transition-all",
                       finalMode === "single_ko"
-                        ? "bg-orange-600 border-orange-600 text-white shadow-md"
+                        ? "bg-primary border-orange-600 text-primary-foreground shadow-md"
                         : "bg-card border-border text-foreground hover:border-orange-300"
                     )}
                   >
@@ -2550,7 +2544,7 @@ const resultSaveReady =
                     className={cn(
                       "rounded-xl border-2 p-3 text-left transition-all",
                       finalMode === "double_ko"
-                        ? "bg-orange-600 border-orange-600 text-white shadow-md"
+                        ? "bg-primary border-orange-600 text-primary-foreground shadow-md"
                         : "bg-card border-border text-foreground hover:border-orange-300"
                     )}
                   >
@@ -2578,7 +2572,7 @@ const resultSaveReady =
                       className={cn(
                         "rounded-xl border-2 px-3 py-3 font-semibold transition-all",
                         playoffSize === size
-                          ? "bg-orange-600 border-orange-600 text-white shadow-md"
+                          ? "bg-primary border-orange-600 text-primary-foreground shadow-md"
                           : "bg-card border-border text-foreground hover:border-orange-300"
                       )}
                     >
@@ -2615,7 +2609,7 @@ const resultSaveReady =
                 className={cn(
                   "w-full h-12 rounded-xl font-semibold",
                   groupPhaseFinished && qualifiedFinalists.length >= playoffSize && !(finalMode === "double_ko" && playoffSize === 2)
-                    ? "bg-orange-600 hover:bg-orange-700"
+                    ? "bg-primary hover:bg-orange-700"
                     : "bg-secondary text-muted-foreground"
                 )}
                 disabled={!groupPhaseFinished || qualifiedFinalists.length < playoffSize || (finalMode === "double_ko" && playoffSize === 2)}
@@ -2654,7 +2648,7 @@ const resultSaveReady =
                       className="flex items-center justify-between gap-3 rounded-xl border-2 border-white bg-card px-3 py-2 shadow-sm"
                     >
                       <div className="min-w-0 flex items-center gap-2">
-                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-500 text-white text-xs font-semibold shrink-0">
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold shrink-0">
                           {idx + 1}
                         </span>
                         <span className="font-semibold text-foreground truncate" title={q.name}>{shortTeamName(q.name)}</span>
@@ -2777,7 +2771,7 @@ const resultSaveReady =
                 )}
               >
                 {savingResults || finishingTournament ? (
-                  <RefreshCcw className="w-4 h-4 mr-2 animate-spin" />
+                  <LoadingIndicator className="w-4 h-4 mr-2" />
                 ) : (
                   <Check className="w-4 h-4 mr-2" />
                 )}
@@ -2886,7 +2880,7 @@ const resultSaveReady =
               disabled={finishingTournament}
               className="bg-green-700 hover:bg-green-700 text-white"
             >
-              {finishingTournament ? <RefreshCcw className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+              {finishingTournament ? <LoadingIndicator className="w-4 h-4 mr-2" /> : <Check className="w-4 h-4 mr-2" />}
               Ja, speichern & abschließen
             </Button>
           </div>

@@ -1,22 +1,12 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
-import {
-  ArrowLeft,
-  AlertTriangle,
-  CheckCircle2,
-  Crown,
-  Loader2,
-  RefreshCw,
-  Shuffle,
-  Trophy,
-  Users,
-  XCircle,
-  Lock,
-} from "lucide-react"
+import { ArrowLeft, AlertTriangle, CheckCircle2, Crown, RefreshCw, Shuffle, Trophy, Users, XCircle, Lock } from "lucide-react"
 
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -789,14 +779,9 @@ return
 
   if (authLoading || adminLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 pb-24 md:pb-0">
+      <div className="emd-loading-surface min-h-screen bg-gray-50 text-gray-900 pb-24 md:pb-0">
         <Header />
-        <main className="pt-20 px-4">
-          <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white shadow-sm p-6 flex items-center gap-3">
-            <Loader2 className="w-5 h-5 animate-spin text-orange-600" />
-            <p className="text-white/70 font-medium">Lade Adminbereich...</p>
-          </div>
-        </main>
+        <main className="pt-20 px-4"><SectionSkeleton kind="cards" /></main>
         <MobileBottomNav />
       </div>
     )
@@ -875,9 +860,7 @@ return
                       className="border-white/15 bg-[#11171e] text-white hover:bg-white/10 hover:text-white"
                       onClick={() => void loadData()}
                       disabled={loading || actionLoading || showRunning || groupsLocked || teamsLocked}
-                    >
-                      {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                      Neu laden
+                     loading={Boolean(loading)}><RefreshCw className="w-4 h-4 mr-2" />Neu laden
                     </Button>
 
                     <Button
@@ -905,7 +888,7 @@ return
 
           {showRunning && (
             <div className="mb-5 rounded-2xl border border-orange-500/40 bg-orange-500/10 p-5" role="status" aria-live="polite">
-              <div className="flex items-center gap-3 font-bold text-orange-200"><Loader2 className="h-5 w-5 animate-spin" /> Auslosung läuft auf Beamer / EMD TV</div>
+              <div className="flex items-center gap-3 font-bold text-orange-200"><LoadingIndicator className="h-5 w-5" /> Auslosung läuft auf Beamer / EMD TV</div>
               <p className="mt-2 text-sm text-white/75">Bitte warten, bis alle Gruppen und Partner gezeigt wurden. Round Robin wird danach freigeschaltet.</p>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-orange-500 transition-all duration-300" style={{ width: `${Math.min(100, Math.max(0, (1 - (showEndsAt - showNow) / (3000 * (players.length + players.length / 2 + 2))) * 100))}%` }} /></div>
             </div>
@@ -939,10 +922,7 @@ return
           ) : null}
 
           {loading ? (
-            <motion.div variants={itemVariants} className="rounded-2xl border border-white/10 bg-[#10151b] p-6 text-center shadow-sm">
-              <Loader2 className="mx-auto h-7 w-7 animate-spin text-orange-600" />
-              <div className="mt-2 text-sm font-semibold text-white/60">Auslosungsdaten werden geladen...</div>
-            </motion.div>
+            <SectionSkeleton kind="cards" />
           ) : (
             <>
               <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
@@ -1087,14 +1067,9 @@ return
                       onClick={handleCreateRoundRobin}
                       disabled={teams.length < rrGroupCount * 2 || actionLoading || showRunning}
                       className="mt-5 w-full rounded-xl bg-orange-600 hover:bg-orange-700"
-                    >
-                      {actionLoading ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
+                     loading={Boolean(actionLoading)}>{(
                         <Trophy className="w-4 h-4 mr-2" />
-                      )}
-                      {showRunning ? "Bitte warten – Auslosung läuft" : "Teams in Round Robin übernehmen"}
-                    </Button>
+                      )}{showRunning ? "Bitte warten – Auslosung läuft" : "Teams in Round Robin übernehmen"}</Button>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -1106,7 +1081,7 @@ return
       {roundRobinStarting && (
         <div role="status" aria-live="polite" className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#05080e]/95 px-4 backdrop-blur-xl">
           <div className="w-full max-w-xl rounded-[28px] border border-orange-500/30 bg-[#10161e] p-8 text-center shadow-[0_30px_100px_rgba(0,0,0,.65)] sm:p-12">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-400"><Loader2 className="h-9 w-9 animate-spin" /></div>
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-400"><LoadingIndicator className="h-9 w-9" /></div>
             <p className="text-xs font-black uppercase tracking-[.22em] text-orange-400">EMD Members Champion Cup</p>
             <h2 className="mt-4 text-2xl font-black text-white sm:text-3xl">Round Robin wird vorbereitet</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-300">Teams, Spielplan und Begegnungen werden erstellt. Bitte warten und nicht erneut klicken.</p>
@@ -1141,7 +1116,7 @@ return
               />
             </div>
             <div className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-orange-200">
-              <Loader2 className="h-4 w-4 animate-spin" /> Bitte warten – die Show läuft
+              <LoadingIndicator className="h-4 w-4" /> Bitte warten – die Show läuft
             </div>
             <p className="mt-6 text-center text-xs text-white/40">Bitte diese Seite geöffnet lassen. Die Auslosung wird automatisch freigegeben.</p>
           </div>

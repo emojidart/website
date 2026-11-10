@@ -28,6 +28,7 @@ import {
   ClipboardList,
   ChevronRight,
   ChevronsUpDown,
+  ChevronDown,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase"
@@ -92,11 +93,15 @@ export function Header({
   const pathname = usePathname()
 
   const [drawerOpen, setDrawerOpen] = React.useState(false)
+  const [expandedGroups, setExpandedGroups] = React.useState<string[]>(["Hauptmenü"])
+  const toggleGroup = (title: string) => setExpandedGroups((groups) => groups.includes(title) ? groups.filter((g) => g !== title) : [...groups, title])
   const [chatUnreadCount, setChatUnreadCount] = React.useState(0)
   const [isGuest, setIsGuest] = React.useState(false)
   const [profileChecked, setProfileChecked] = React.useState(false)
   const [areaSwitcherOpen, setAreaSwitcherOpen] = React.useState(false)
   const areaSwitcherRef = React.useRef<HTMLDivElement | null>(null)
+  const drawerRef = React.useRef<HTMLElement | null>(null)
+  const drawerTriggerRef = React.useRef<HTMLButtonElement | null>(null)
   const [portalReady, setPortalReady] = React.useState(false)
 
   const closeDrawer = () => setDrawerOpen(false)
@@ -161,15 +166,42 @@ export function Header({
   }, [user?.id])
 
   React.useEffect(() => {
-    if (!drawerOpen) return
+    if (!drawerOpen || !portalReady) return
+    const drawer = drawerRef.current
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeDrawer()
+    const focusable = () => Array.from(drawer?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    ) ?? []).filter(element => element.getClientRects().length > 0)
+    focusable()[0]?.focus()
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        closeDrawer()
+      } else if (event.key === "Tab") {
+        const items = focusable()
+        if (!items.length) return
+        const first = items[0]
+        const last = items[items.length - 1]
+        if (event.shiftKey && (document.activeElement === first || !drawer?.contains(document.activeElement))) {
+          event.preventDefault()
+          last.focus()
+        } else if (!event.shiftKey && (document.activeElement === last || !drawer?.contains(document.activeElement))) {
+          event.preventDefault()
+          first.focus()
+        }
+      }
     }
 
     window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [drawerOpen])
+    return () => {
+      window.removeEventListener("keydown", onKeyDown)
+      document.body.style.overflow = originalOverflow
+      drawerTriggerRef.current?.focus()
+    }
+  }, [drawerOpen, portalReady])
 
   React.useEffect(() => {
     if (!drawerOpen) return
@@ -203,35 +235,42 @@ export function Header({
     }
   }, [areaSwitcherOpen])
 
+  const navigateTo = (href: string) => {
+    if (href.split("?")[0] !== pathname && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("emd:route-start", { detail: { href } }))
+    }
+    router.push(href)
+  }
+
   const handleAuthClick = () => {
     if (user && isGuest) {
-      router.push("/guest-profile-app")
+      navigateTo("/guest-profile-app")
       return
     }
 
     if (user) {
-      router.push("/member-profile-app")
+      navigateTo("/member-profile-app")
       return
     }
 
-    router.push("/login")
+    navigateTo("/login")
   }
 
   const handleJoinClick = () => {
-    router.push("/verein-beitreten")
+    navigateTo("/verein-beitreten")
   }
 
   const handleAdminClick = () => {
-    router.push("/admin")
+    navigateTo("/admin")
   }
 
   const handleChatClick = () => {
-    router.push(isGuest ? "/chat-app?scope=community" : "/chat-app")
+    navigateTo(isGuest ? "/chat-app?scope=community" : "/chat-app")
   }
 
   const openArea = (href: string) => {
     setAreaSwitcherOpen(false)
-    router.push(href)
+    navigateTo(href)
   }
 
   const isActive = (href: string) => {
@@ -378,7 +417,7 @@ export function Header({
         { href: "/tournament-history", label: "Verlauf", icon: History },
         { href: user && isGuest ? "/chat-app?scope=community" : "/chat-app", label: "Chat", icon: MessageCircle, requiresLogin: true },
         { href: "/vereinskalender-app", label: "Vereinskalender", icon: CalendarDays, requiresLogin: true, memberOnly: true },
-        { href: "/member-availability", label: "Aufstellung", icon: ClipboardList, requiresLogin: true, memberOnly: true },
+        { href: "/member-availability", label: "Line-up", icon: ClipboardList, requiresLogin: true, memberOnly: true },
       ],
     },
     {
@@ -428,12 +467,12 @@ export function Header({
         <div className="fixed inset-0 z-[9999]">
           <button
             aria-label="Schließen"
-            className="absolute inset-0 bg-black/80"
+            className="emd-nav-backdrop absolute inset-0"
             onClick={closeDrawer}
           />
 
-          <aside aria-label="Hauptmenü" className="absolute bottom-0 right-0 top-0 flex flex-col w-[min(90vw,380px)] overflow-hidden border-l border-white/10 bg-[#101722] text-white shadow-sm">
-            <div className="relative overflow-hidden border-b border-white/10 bg-[#151e2b] p-4 pt-[max(env(safe-area-inset-top),16px)]">
+          <aside ref={drawerRef} className="emd-nav-drawer absolute bottom-0 right-0 top-0 flex flex-col w-[min(92vw,410px)] overflow-hidden border-l border-white/10 bg-[#172235] text-white" role="dialog" aria-modal="true" aria-label="EMD Navigation">
+            <div className="emd-nav-head relative overflow-hidden border-b border-white/10 bg-[#233248] p-5 pt-[max(env(safe-area-inset-top),20px)]">
 
               <div className="relative flex items-center justify-between gap-3">
                 <div className="min-w-0 flex items-center gap-3">
@@ -470,7 +509,7 @@ export function Header({
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#101722] p-3 pb-[calc(env(safe-area-inset-bottom)+84px)] text-white">
+            <div className="emd-nav-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#172235] p-4 pb-[calc(env(safe-area-inset-bottom)+48px)] text-white">
               {!user ? (
                 <Button
                   onClick={() => {
@@ -484,54 +523,38 @@ export function Header({
                 </Button>
               ) : null}
 
-              <div className="space-y-5 pb-20">
+              <div className="space-y-2 pb-8">
                 {drawerSections.map((sec) => {
                   const visibleItems = sec.items.filter(canShow)
 
                   if (visibleItems.length === 0) return null
 
                   return (
-                    <section key={sec.title}>
-                      <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
-                        {sec.title}
-                      </div>
-
-                      <div className="space-y-1">
-                        {visibleItems.map((it) => {
-                          const Icon = it.icon
-                          const active = isActive(it.href)
-                          const isChatItem = it.href === "/chat-app" || it.href.startsWith("/chat-app?")
-                          const chatBadge = isChatItem ? renderChatBadge() : null
-
-                          return (
-                            <Link
-                              key={it.href + it.label}
-                              href={it.href}
-                              aria-current={active ? "page" : undefined}
-                              className={cn(
-                                "group flex items-center gap-3 min-h-12 rounded-xl border px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59b50]",
-                                active
-                                  ? "border-orange-300/20 bg-orange-500/10 text-white"
-                                  : "border-transparent text-white/70 hover:border-white/10 hover:bg-white/5 hover:text-white",
-                              )}
-                              onClick={closeDrawer}
-                            >
-                              <span
-                                className={cn(
-                                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
-                                  active
-                                    ? "border-orange-300/20 bg-orange-500/10 text-[#f59b50]"
-                                    : "border-white/10 bg-white/5 text-white/65 group-hover:text-white/70",
-                                )}
-                              >
-                                <Icon className="h-4 w-4" />
-                              </span>
-                              <span className="min-w-0 flex-1 truncate text-sm font-semibold">{it.label}</span>
-                              {chatBadge || <ChevronRight className="h-4 w-4 shrink-0 text-white/18" />}
-                            </Link>
-                          )
-                        })}
-                      </div>
+                    <section key={sec.title} className="emd-nav-section">
+                      <button type="button" className="emd-nav-accordion" aria-expanded={expandedGroups.includes(sec.title)} onClick={() => toggleGroup(sec.title)}>
+                        <span className="emd-nav-accord-icon">{sec.title === "Hauptmenü" ? <BarChart3 className="h-5 w-5" /> : sec.title === "Schnellzugriff" ? <Trophy className="h-5 w-5" /> : sec.title === "Konto" ? <UserCircle className="h-5 w-5" /> : <HelpCircle className="h-5 w-5" />}</span>
+                        <span className="flex-1">{sec.title}</span>
+                        <span className="text-xs font-medium text-[#aebed0]">{visibleItems.length}</span>
+                        <ChevronDown className="emd-nav-chevron h-5 w-5" />
+                      </button>
+                      {expandedGroups.includes(sec.title) && (
+                        <div className="emd-nav-items">
+                          {visibleItems.map((it) => {
+                            const Icon = it.icon
+                            const active = isActive(it.href)
+                            const isChatItem = it.href === "/chat-app" || it.href.startsWith("/chat-app?")
+                            return (
+                              <Link key={it.href + it.label} href={it.href} aria-current={active ? "page" : undefined}
+                                className="group flex items-center gap-3 min-h-12 rounded-xl border px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff985c]"
+                                onClick={closeDrawer}>
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border"><Icon className="h-[18px] w-[18px]" /></span>
+                                <span className="min-w-0 flex-1 truncate font-semibold">{it.label}</span>
+                                {isChatItem && chatUnreadCount > 0 ? renderChatBadge() : <ChevronRight className="h-4 w-4 shrink-0 text-[#8091aa]" />}
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      )}
                     </section>
                   )
                 })}
@@ -573,7 +596,7 @@ export function Header({
   if (variant === "app") {
     const handleBack = () => {
       if (onBackClick) return onBackClick()
-      if (backHref) return router.push(backHref)
+      if (backHref) return navigateTo(backHref)
       router.back()
     }
 
@@ -620,6 +643,7 @@ export function Header({
               <div className="ml-auto" />
 
               <button
+                ref={drawerTriggerRef}
                 onClick={toggleDrawer}
                 className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/65 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59b50] hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
                 aria-label="Menü öffnen"
@@ -793,8 +817,9 @@ export function Header({
             </div>
 
             <button
-              onClick={toggleDrawer}
-              className="ml-auto xl:ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/65 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59b50] hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
+              ref={drawerTriggerRef}
+                onClick={toggleDrawer}
+              className="emd-nav-trigger ml-auto xl:ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/65 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59b50] hover:border-orange-300/20 hover:bg-orange-500/10 hover:text-white"
               aria-label="Menü öffnen"
                 aria-expanded={drawerOpen}
               title="Menü"

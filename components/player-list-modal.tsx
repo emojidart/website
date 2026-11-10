@@ -1,5 +1,7 @@
 "use client"
 
+import { InlineLoader } from "@/components/loading/loading"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -107,8 +109,8 @@ export function PlayerListModal({ isOpen, onClose, onSelectPlayer }: PlayerListM
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
-                  <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Spieler werden geladen...</p>
+                  
+                  <InlineLoader label="Spieler werden geladen..." />
                 </div>
               </div>
             ) : filteredPlayers.length === 0 ? (

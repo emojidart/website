@@ -1,5 +1,7 @@
 "use client"
 
+import { PageLoader } from "@/components/loading/loading"
+
 import type React from "react"
 import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
@@ -93,27 +95,7 @@ function isTvDisplayPath(pathname: string) {
 }
 
 function LoadingScreen() {
-  return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 text-white">
-      <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-[66%_50%] bg-no-repeat opacity-[0.22]"
-        style={{ backgroundImage: "url('/terminal/hero-startscreen.png')" }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.80),rgba(3,5,9,.96))]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(249,115,22,.16),transparent_28%),radial-gradient(circle_at_82%_72%,rgba(14,165,233,.10),transparent_30%)]" />
-
-      <div className="relative flex flex-col items-center gap-4 rounded-[24px] border border-white/[0.08] bg-card px-6 py-5 text-center shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
-        <div className="relative flex h-12 w-12 items-center justify-center">
-          <div className="absolute inset-0 rounded-full bg-orange-500/15 blur-xl" />
-          <div className="relative h-9 w-9 animate-spin rounded-full border-[3px] border-white/10 border-t-orange-400 border-r-orange-300/60" />
-        </div>
-        <div>
-          <div className="text-sm font-semibold text-white/85">Zugriff wird geprüft...</div>
-          <div className="mt-1 text-xs font-semibold text-muted-foreground">Einen Moment bitte</div>
-        </div>
-      </div>
-    </div>
-  )
+  return <PageLoader label="Zugriff wird geprüft…" fullPage />
 }
 
 export function AppRouteGuard({ children }: { children: React.ReactNode }) {

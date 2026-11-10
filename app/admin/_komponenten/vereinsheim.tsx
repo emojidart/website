@@ -1,12 +1,14 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
-import { Check, DoorOpen, ExternalLink, Loader2, Search, ShieldCheck, UserPlus, X } from "lucide-react"
+import { Check, DoorOpen, ExternalLink, Search, ShieldCheck, UserPlus, X } from "lucide-react"
 
 type Player = {
   id: string
@@ -105,7 +107,7 @@ export function AdminClubhouseManagement() {
           <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Spieler suchen…" className="h-11 pl-9" /></div>
           {message ? <div className="rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700">{message}</div> : null}
 
-          {loading ? <div className="flex items-center justify-center py-10 text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Wird geladen…</div> : (
+          {loading ? <SectionSkeleton kind="cards" /> : (
             <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200">
               {filtered.map((player) => {
                 const enabled = enabledPlayerIds.has(player.id)
@@ -115,9 +117,7 @@ export function AdminClubhouseManagement() {
                       {enabled ? <Check className="h-5 w-5 text-emerald-700" /> : <X className="h-5 w-5 text-slate-400" />}
                     </div>
                     <div className="min-w-0 flex-1"><div className="truncate font-black text-slate-950">{player.name}</div><div className="truncate text-xs font-semibold text-slate-500">{player.email || "Keine E-Mail hinterlegt"}</div></div>
-                    <Button type="button" disabled={savingId === player.id} onClick={() => void toggle(player)} variant={enabled ? "outline" : "default"} className={enabled ? "border-red-200 font-black text-red-700 hover:bg-red-50" : "bg-slate-950 font-black hover:bg-slate-800"}>
-                      {savingId === player.id ? <Loader2 className="h-4 w-4 animate-spin" /> : enabled ? "Entfernen" : "Freigeben"}
-                    </Button>
+                    <Button type="button" disabled={savingId === player.id} onClick={() => void toggle(player)} variant={enabled ? "outline" : "default"} className={enabled ? "border-red-200 font-black text-red-700 hover:bg-red-50" : "bg-slate-950 font-black hover:bg-slate-800"} loading={Boolean(savingId === player.id)}>{enabled ? "Entfernen" : "Freigeben"}</Button>
                   </div>
                 )
               })}

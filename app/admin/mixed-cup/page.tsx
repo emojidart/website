@@ -1,35 +1,14 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
-import {
-  ArrowLeft,
-  Check,
-  Crown,
-  Dices,
-  Calendar,
-  Clock,
-  Shuffle,
-  Maximize2,
-  Minimize2,
-  Play,
-  SkipForward,
-  Volume2,
-  Loader2,
-  LockKeyhole,
-  RefreshCw,
-  RotateCcw,
-  ShieldCheck,
-  Sparkles,
-  Trophy,
-  UserRoundCheck,
-  Users,
-  XCircle,
-} from "lucide-react"
+import { ArrowLeft, Check, Crown, Dices, Calendar, Clock, Shuffle, Maximize2, Minimize2, Play, SkipForward, Volume2, LockKeyhole, RefreshCw, RotateCcw, ShieldCheck, Sparkles, Trophy, UserRoundCheck, Users, XCircle } from "lucide-react"
 
 type Player = {
   id: string
@@ -716,14 +695,9 @@ export default function AdminMixedCupPage() {
 
   if (authLoading || adminLoading) {
     return (
-      <div className="min-h-screen bg-[#f5f6f8]">
+      <div className="emd-loading-surface min-h-screen bg-[#f5f6f8]">
         <Header />
-        <main className="flex min-h-[70vh] items-center justify-center px-4 pt-20">
-          <div className="rounded-3xl border border-slate-200 bg-white px-8 py-7 text-center shadow-sm">
-            <Loader2 className="mx-auto h-7 w-7 animate-spin text-orange-600" />
-            <p className="mt-3 text-sm font-bold text-slate-600">Admin-Berechtigung wird geprüft …</p>
-          </div>
-        </main>
+        <main className="flex min-h-[70vh] items-center justify-center px-4 pt-20"><SectionSkeleton kind="cards" /></main>
       </div>
     )
   }
@@ -860,10 +834,7 @@ export default function AdminMixedCupPage() {
             )}
 
             {loading ? (
-              <div className="rounded-[28px] border border-slate-200 bg-white p-10 text-center shadow-sm">
-                <Loader2 className="mx-auto h-7 w-7 animate-spin text-orange-600" />
-                <p className="mt-3 text-sm font-bold text-slate-600">Teams und Spieler werden geladen …</p>
-              </div>
+              <SectionSkeleton kind="cards" />
             ) : (
               <div className="grid gap-4 2xl:grid-cols-5 xl:grid-cols-3 md:grid-cols-2">
                 {teams.map((team) => {
@@ -1605,12 +1576,7 @@ export default function AdminMixedCupPage() {
                       onClick={runLiveReveal}
                       disabled={livePhase === "spinning"}
                       className="h-14 w-full rounded-2xl bg-orange-500 text-base font-black text-white shadow-lg shadow-orange-950/30 hover:bg-orange-600 disabled:opacity-50"
-                    >
-                      {livePhase === "spinning" ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Namen werden gemischt …
-                        </>
-                      ) : livePhase === "revealed" ? (
+                     loading={Boolean(livePhase === "spinning")} loadingLabel="Namen werden gemischt …">{livePhase === "revealed" ? (
                         <>
                           <SkipForward className="mr-2 h-5 w-5" /> Nächster Spieler
                         </>
@@ -1618,8 +1584,7 @@ export default function AdminMixedCupPage() {
                         <>
                           <Dices className="mr-2 h-5 w-5" /> Ziehung starten
                         </>
-                      )}
-                    </Button>
+                      )}</Button>
                   ) : (
                     <Button
                       onClick={() => setLiveOpen(false)}

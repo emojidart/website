@@ -1,11 +1,13 @@
 "use client"
 
+import { LoadingIndicator } from "@/components/loading/loading"
+
 import type React from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { AlertCircle, CheckCircle, Loader2, ImageIcon as ImageIconLucide, XCircle, UserRound, MapPin, Phone, CreditCard, Shirt, CalendarDays, Hash, Mail } from "lucide-react"
+import { AlertCircle, CheckCircle, ImageIcon as ImageIconLucide, XCircle, UserRound, MapPin, Phone, CreditCard, Shirt, CalendarDays, Hash, Mail } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { vv } from "../vereinsverwaltung-styles"
 
@@ -249,7 +251,7 @@ export function AddPlayerTab(props: Props) {
                       ? "border-emerald-300/20 bg-emerald-500/[0.08] text-emerald-100"
                       : "border-white/[0.08] bg-white/[0.035] text-white/60",
                 )}>
-                  {playerMessageType === "error" ? <AlertCircle className="mt-0.5 h-4 w-4 flex-none" /> : playerMessageType === "success" ? <CheckCircle className="mt-0.5 h-4 w-4 flex-none" /> : <Loader2 className="mt-0.5 h-4 w-4 flex-none animate-spin" />}
+                  {playerMessageType === "error" ? <AlertCircle className="mt-0.5 h-4 w-4 flex-none" /> : playerMessageType === "success" ? <CheckCircle className="mt-0.5 h-4 w-4 flex-none" /> : <LoadingIndicator className="mt-0.5 h-4 w-4 flex-none" />}
                   <span>{playerMessage}</span>
                 </div>
               ) : null}
@@ -263,13 +265,9 @@ export function AddPlayerTab(props: Props) {
               Abbrechen
             </Button>
           ) : null}
-          <Button type="submit" disabled={playerLoading} className={cn(vv.buttonPrimary, "w-full sm:w-auto sm:min-w-48")}>
-            {playerLoading ? (
-              <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{editingPlayerId ? "Wird gespeichert…" : "Wird angelegt…"}</span>
-            ) : (
+          <Button type="submit" disabled={playerLoading} className={cn(vv.buttonPrimary, "w-full sm:w-auto sm:min-w-48")} loading={Boolean(playerLoading)}>{(
               <span className="flex items-center justify-center gap-2"><CheckCircle className="h-4 w-4" />{editingPlayerId ? "Änderungen speichern" : "Spieler anlegen"}</span>
-            )}
-          </Button>
+            )}</Button>
         </div>
       </form>
     </div>

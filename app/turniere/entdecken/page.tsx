@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react"
 
+import { TournamentPageTitle } from "@/components/tournaments/tournament-ui"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent } from "@/components/ui/card"
@@ -182,10 +183,10 @@ function Chip({
     tone === "orange"
       ? "border-orange-300/20 bg-orange-500/10 text-orange-200"
       : tone === "blue"
-        ? "border-sky-300/20 bg-sky-500/10 text-sky-200"
+        ? "border-orange-300/20 bg-orange-500/10 text-orange-200"
         : tone === "green"
           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-white/10 bg-[#080c12]/95 text-muted-foreground"
+          : "border-white/10 bg-card text-muted-foreground"
 
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${style}`}>
@@ -340,70 +341,30 @@ export default function VeranstaltungenPage() {
       <div className="pointer-events-none fixed inset-0 z-0 bg-background" aria-hidden="true" />
 
       <main className="relative z-10 mx-auto w-full max-w-[var(--emd-content-max)] px-3 pb-10 pt-20 sm:px-5 sm:pt-24 lg:px-7 xl:px-8">
-        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-card shadow-[0_28px_80px_-48px_rgba(0,0,0,.95)] ">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.28),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_35%)]" />
-          <div className="relative px-5 py-7 sm:px-7 sm:py-9 lg:px-8">
-            <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-300/[0.14] bg-orange-500/10 px-3 py-1.5 text-xs font-bold text-orange-100 ">
-                  <Trophy className="h-3.5 w-3.5" />
-                  Die Turnierübersicht für den DACH-Raum
-                </div>
-                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-                  Finde dein nächstes
-                  <span className="block text-orange-400">Dart-Turnier.</span>
-                </h1>
-                <p className="mt-4 max-w-xl text-sm leading-6 text-white/48 sm:text-base">
-                  Durchsuche Veranstaltungen in Österreich, Deutschland und der Schweiz nach Ort, Verein, Datum oder Dartart.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2 sm:flex-row">
-                {isLoggedIn ? (
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-12 rounded-2xl border-white/[0.10] bg-white/5 px-5 font-bold text-white shadow-none  transition hover:border-sky-300/[0.20] hover:bg-sky-500/10 hover:text-white"
-                  >
-                    <Link href="/turniere/meine">
-                      <List className="mr-2 h-4 w-4" />
-                      Meine Turniere
-                    </Link>
-                  </Button>
-                ) : null}
-
-                <Button
-                  asChild
-                  className="h-12 rounded-2xl bg-orange-500 px-5 font-bold text-primary-foreground shadow-[0_18px_46px_-26px_rgba(249,115,22,.55)] transition hover:bg-orange-400"
-                >
-                  <Link href="/turniere/neu">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Turnier einreichen
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
+        <TournamentPageTitle title="Finde dein nächstes Turnier." description="Österreich, Deutschland und die Schweiz: Suche nach Turnier, Ort oder Verein und finde das passende Spielformat." actions={<>
+          {isLoggedIn && <Link href="/turniere/meine" className="et-button"><List size={17}/>Meine Turniere</Link>}
+          <Link href="/turniere/neu" className="et-button et-button-primary"><Plus size={17}/>Turnier einreichen</Link>
+        </>} />
 
         <div className="relative z-20 mt-4 w-full">
-          <Card className="overflow-hidden rounded-[28px] border border-white/10 bg-card shadow-[0_24px_70px_-48px_rgba(0,0,0,.95)] ">
+          <Card className="overflow-hidden rounded-[20px] border border-white/10 bg-card shadow-sm ">
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                 <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/25" />
+                  <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Turnier, Ort, PLZ, Bundesland oder Verein suchen"
-                    className="h-14 rounded-2xl border-white/[0.09] bg-[#080c12]/95 pl-12 pr-12 text-base text-white placeholder:text-white/25 shadow-none focus-visible:border-orange-300/30 focus-visible:ring-1 focus-visible:ring-orange-400/30"
+                    aria-label="Turniere suchen"
+                    placeholder="Turnier, Ort oder Verein suchen"
+                    className="h-14 rounded-2xl border-white/[0.09] bg-card pl-12 pr-12 text-base text-white placeholder:text-muted-foreground shadow-none focus-visible:border-orange-300/30 focus-visible:ring-1 focus-visible:ring-orange-400/30"
                   />
                   {query ? (
                     <button
                       type="button"
                       onClick={() => setQuery("")}
                       aria-label="Suche löschen"
-                      className="absolute right-4 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/[0.06] text-muted-foreground transition hover:bg-white/[0.10] hover:text-white"
+                      className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/[0.06] text-muted-foreground transition hover:bg-white/[0.10] hover:text-white"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -414,19 +375,21 @@ export default function VeranstaltungenPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setShowFilters((current) => !current)}
-                  className="h-14 rounded-2xl border-white/[0.09] bg-[#080c12]/95 px-5 font-bold text-white shadow-none transition hover:border-sky-300/[0.20] hover:bg-sky-500/10 hover:text-white lg:min-w-40"
+                  aria-expanded={showFilters}
+                  aria-controls="tournament-discovery-filters"
+                  className="h-14 rounded-2xl border-white/[0.09] bg-card px-5 font-bold text-white shadow-none transition hover:border-orange-300/[0.20] hover:bg-orange-500/10 hover:text-white lg:min-w-40"
                 >
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Filter
                   {activeFilterCount > 0 ? (
-                    <span className="ml-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs text-white">
+                    <span className="ml-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
                       {activeFilterCount}
                     </span>
                   ) : null}
                 </Button>
               </div>
 
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 {[
                   { value: "all", label: "Alle" },
                   { value: "today", label: "Heute" },
@@ -437,9 +400,10 @@ export default function VeranstaltungenPage() {
                     key={option.value}
                     type="button"
                     onClick={() => setQuickFilter(option.value as QuickFilter)}
+                    aria-pressed={quickFilter === option.value}
                     className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${
                       quickFilter === option.value
-                        ? "border border-orange-300/20 bg-orange-500 text-primary-foreground shadow-[0_10px_28px_-20px_rgba(249,115,22,.7)]"
+                        ? "border border-orange-300/20 bg-primary text-primary-foreground shadow-[0_10px_28px_-20px_rgba(249,115,22,.7)]"
                         : "border border-white/10 bg-white/5 text-muted-foreground hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white/75"
                     }`}
                   >
@@ -448,15 +412,16 @@ export default function VeranstaltungenPage() {
                 ))}
               </div>
 
-              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="mt-3 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
                 {timeOptions.map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => setTimeFilter(option.value)}
+                    aria-pressed={timeFilter === option.value}
                     className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
                       timeFilter === option.value
-                        ? "border border-sky-300/[0.18] bg-sky-500/[0.10] text-sky-100"
+                        ? "border border-orange-300/[0.18] bg-orange-500/[0.10] text-orange-100"
                         : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/[0.06] hover:text-white/70"
                     }`}
                   >
@@ -466,7 +431,7 @@ export default function VeranstaltungenPage() {
               </div>
 
               {showFilters ? (
-                <div className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div id="tournament-discovery-filters" className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2 lg:grid-cols-4">
                   <Select
                     value={countryFilter}
                     onValueChange={(value) => {
@@ -474,7 +439,7 @@ export default function VeranstaltungenPage() {
                       setRegionFilter("all")
                     }}
                   >
-                    <SelectTrigger className="h-12 rounded-xl border-white/[0.09] bg-[#080c12]/95 text-white shadow-none">
+                    <SelectTrigger className="h-12 rounded-xl border-white/[0.09] bg-card text-white shadow-none">
                       <SelectValue placeholder="Land auswählen" />
                     </SelectTrigger>
                     <SelectContent>
@@ -490,7 +455,7 @@ export default function VeranstaltungenPage() {
                     onValueChange={setRegionFilter}
                     disabled={availableRegions.length === 0}
                   >
-                    <SelectTrigger className="h-12 rounded-xl border-white/[0.09] bg-[#080c12]/95 text-white shadow-none">
+                    <SelectTrigger className="h-12 rounded-xl border-white/[0.09] bg-card text-white shadow-none">
                       <SelectValue placeholder="Bundesland / Kanton" />
                     </SelectTrigger>
                     <SelectContent>
@@ -504,7 +469,7 @@ export default function VeranstaltungenPage() {
                   </Select>
 
                   <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
-                    <SelectTrigger className="h-12 rounded-xl border-white/[0.09] bg-[#080c12]/95 text-white shadow-none">
+                    <SelectTrigger className="h-12 rounded-xl border-white/[0.09] bg-card text-white shadow-none">
                       <SelectValue placeholder="Dartart auswählen" />
                     </SelectTrigger>
                     <SelectContent>
@@ -515,12 +480,12 @@ export default function VeranstaltungenPage() {
                   </Select>
 
                   <div className="relative">
-                    <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/25" />
+                    <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       type="date"
                       value={dateFilter}
                       onChange={(event) => setDateFilter(event.target.value)}
-                      className="h-12 rounded-xl border-white/[0.09] bg-[#080c12]/95 pl-10 text-white shadow-none"
+                      className="h-12 rounded-xl border-white/[0.09] bg-card pl-10 text-white shadow-none"
                     />
                   </div>
                 </div>
@@ -553,24 +518,29 @@ export default function VeranstaltungenPage() {
           ) : null}
 
           {loading ? (
-            <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-3">
-              {[0, 1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex gap-4 rounded-[24px] border border-white/10 bg-card p-4">
-                  <div className="h-24 w-20 animate-pulse rounded-2xl bg-white/[0.07]" />
-                  <div className="flex-1 space-y-3 py-1">
-                    <div className="h-5 w-2/3 animate-pulse rounded bg-white/[0.07]" />
-                    <div className="h-4 w-1/2 animate-pulse rounded bg-white/[0.045]" />
-                    <div className="h-4 w-3/4 animate-pulse rounded bg-white/[0.045]" />
+            <div className="grid gap-4 xl:grid-cols-2" role="status" aria-busy="true" aria-label="Turniere werden geladen">
+              {Array.from({ length: 4 }, (_, index) => (
+                <div key={index} aria-hidden="true" className="overflow-hidden rounded-[24px] border border-white/10 bg-card p-5 sm:p-6">
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <div className="h-6 w-28 animate-pulse rounded-full bg-white/10" />
+                    <div className="h-9 w-9 animate-pulse rounded-xl bg-white/10" />
                   </div>
+                  <div className="h-7 w-4/5 animate-pulse rounded bg-white/10" />
+                  <div className="mt-3 h-4 w-2/3 animate-pulse rounded bg-white/10" />
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <div className="h-16 animate-pulse rounded-xl border border-white/10 bg-white/[0.04]" />
+                    <div className="h-16 animate-pulse rounded-xl border border-white/10 bg-white/[0.04]" />
+                  </div>
+                  <div className="mt-4 h-12 animate-pulse rounded-xl bg-white/10" />
                 </div>
               ))}
             </div>
           ) : error ? (
-            <Card className="rounded-[28px] border-red-300/[0.16] bg-red-500/10">
+            <Card className="rounded-[20px] border-red-300/[0.16] bg-red-500/10">
               <CardContent className="py-14 text-center text-red-200">{error}</CardContent>
             </Card>
           ) : filtered.length === 0 ? (
-            <Card className="rounded-[28px] border-0 bg-card shadow-none">
+            <Card className="rounded-[20px] border-0 bg-card shadow-none">
               <CardContent className="py-16 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.045]">
                   <Filter className="h-6 w-6 text-muted-foreground" />
@@ -585,7 +555,7 @@ export default function VeranstaltungenPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-4 xl:grid-cols-2">
               {filtered.map((event) => {
                 const discipline = event.discipline || event.mode
                 const country = event.country_code ? countryNames[event.country_code] : null

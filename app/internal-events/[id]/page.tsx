@@ -1,21 +1,11 @@
 "use client"
 
+import { SectionSkeleton } from "@/components/loading/loading"
+
 import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import {
-  ArrowLeft,
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Dices,
-  Loader2,
-  MapPin,
-  ShieldCheck,
-  Sparkles,
-  Trophy,
-  Users,
-} from "lucide-react"
+import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, Dices, MapPin, ShieldCheck, Sparkles, Trophy, Users } from "lucide-react"
 
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
@@ -86,7 +76,8 @@ function internalEventImageUrl(path:string|null|undefined,legacyUrl?:string|null
 function dateLabel(date:string){
   return new Date(`${date}T12:00:00`).toLocaleDateString("de-AT",{weekday:"long",day:"2-digit",month:"long",year:"numeric"})
 }
-function dateRangeLabel(start:string,end:string|null){
+function dateRangeLabel(start:string|null,end:string|null,dateOpen:boolean){
+  if(dateOpen || !start) return "Termin offen"
   const effectiveEnd=end||start
   if(start===effectiveEnd)return dateLabel(start)
   const a=new Date(`${start}T12:00:00`).toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"})
@@ -190,12 +181,7 @@ function EventContent(){
 
   if(loading){
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-background text-white">
-        <InternalEventsBackground />
-        <div className="relative z-10 flex min-h-[420px] items-center justify-center gap-2 text-white/65">
-          <Loader2 className="h-5 w-5 animate-spin text-orange-300"/> Wird geladen…
-        </div>
-      </div>
+      <SectionSkeleton kind="cards" />
     )
   }
   if(!event){
@@ -302,14 +288,10 @@ function EventContent(){
                 </div>
 
                 {active?(
-                  <Button onClick={()=>void unregister()} disabled={busy} variant="outline" className="mt-4 h-11 w-full rounded-xl border-white/15 bg-white/5 font-semibold text-white hover:bg-white/10 hover:text-white">
-                    {busy?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:null} Anmeldung zurückziehen
+                  <Button onClick={()=>void unregister()} disabled={busy} variant="outline" className="mt-4 h-11 w-full rounded-xl border-white/15 bg-white/5 font-semibold text-white hover:bg-white/10 hover:text-white" loading={Boolean(busy)}>{null}Anmeldung zurückziehen
                   </Button>
                 ):(
-                  <Button onClick={()=>void register()} disabled={busy||!open} className="mt-4 h-11 w-full rounded-xl bg-primary font-semibold hover:bg-primary/90 text-primary-foreground">
-                    {busy?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:null}
-                    {open?"Jetzt anmelden":"Anmeldung geschlossen"}
-                  </Button>
+                  <Button onClick={()=>void register()} disabled={busy||!open} className="mt-4 h-11 w-full rounded-xl bg-primary font-semibold hover:bg-primary/90 text-primary-foreground" loading={Boolean(busy)}>{null}{open?"Jetzt anmelden":"Anmeldung geschlossen"}</Button>
                 )}
 
                 {event.registration_deadline?<div className="mt-3 text-center text-xs font-semibold text-muted-foreground">Anmeldeschluss: {new Date(event.registration_deadline).toLocaleString("de-AT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</div>:null}

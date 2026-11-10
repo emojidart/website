@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionSkeleton, LoadingIndicator } from "@/components/loading/loading"
+
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +13,7 @@ import { useMembershipAccess } from "@/hooks/use-membership-access"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Crown, ShieldCheck, Users, Target, Trash2, Loader2 } from "lucide-react"
+import { Crown, ShieldCheck, Users, Target, Trash2 } from "lucide-react"
 import { CaptainPlayerManagement } from "@/components/captain-player-management"
 
 import {
@@ -24,6 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+
+function firstRelated<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}
 
 interface UserProfile {
   id: string
@@ -126,7 +132,7 @@ export default function MeineTeamsAppPage() {
         .single()
 
       if (profileError) throw profileError
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: firstRelated(profileData.club_players) })
 
       if (profileData?.player_id) {
         let membershipQuery = supabase
@@ -141,7 +147,10 @@ export default function MeineTeamsAppPage() {
         const { data: teamData, error: teamError } = await membershipQuery
         if (teamError) throw teamError
 
-        const visibleTeamData = (teamData || []).filter((membership: any) => {
+        const visibleTeamData = (teamData || []).map((membership) => ({
+          ...membership,
+          teams: firstRelated(membership.teams),
+        })).filter((membership) => {
           const dartType = membership.teams?.dart_type
 
           if (dartType === "edart") return canSeeEDart
@@ -169,7 +178,7 @@ export default function MeineTeamsAppPage() {
 
           const { data: membersData, error: membersError } = await membersQuery
           if (membersError) throw membersError
-          setTeamMembers(membersData || [])
+          setTeamMembers((membersData || []).map((entry) => ({ ...entry, club_players: firstRelated(entry.club_players) })))
         } else {
           setTeamMembers([])
         }
@@ -298,23 +307,10 @@ export default function MeineTeamsAppPage() {
 
   if (authLoading || membershipLoading || loading) {
     return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-foreground">
+      <main className="emd-loading-surface min-h-screen flex flex-col overflow-x-hidden bg-card text-foreground">
         <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
 
-        <div className="flex-1 flex items-center justify-center px-4 pb-20">
-          <div className="animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center gap-5 rounded-[28px] border border-border bg-card px-8 py-9 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.55)] sm:px-10">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-2xl animate-pulse" />
-                <Loader2 className="relative h-10 w-10 animate-spin text-orange-500" />
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">Teams werden geladen</p>
-                <p className="text-sm text-muted-foreground mt-1">Bitte kurz warten…</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SectionSkeleton kind="cards" />
 
         <MobileBottomNav />
       </main>
@@ -323,7 +319,7 @@ export default function MeineTeamsAppPage() {
 
   if (error || !profile) {
     return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-foreground">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-card text-foreground">
         <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
 
         <div className="flex-1 flex items-center justify-center px-4 pb-20">
@@ -346,7 +342,7 @@ export default function MeineTeamsAppPage() {
 
   if (!canSeeEDart && !canSeeSteeldart) {
     return (
-      <main className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-foreground">
+      <main className="min-h-screen flex flex-col overflow-x-hidden bg-card text-foreground">
         <Header
           variant="app"
           title="Meine Teams"
@@ -372,7 +368,7 @@ export default function MeineTeamsAppPage() {
               <Button
                 type="button"
                 onClick={() => router.push("/member-membership")}
-                className="mt-5 rounded-xl bg-orange-600 font-semibold text-white hover:bg-orange-700"
+                className="mt-5 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-orange-700"
               >
                 Paket buchen
               </Button>
@@ -386,7 +382,7 @@ export default function MeineTeamsAppPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden bg-[#f5f6f8] text-foreground">
+    <div className="min-h-screen flex flex-col overflow-x-hidden bg-card text-foreground">
       <Header variant="app" title="Meine Teams" subtitle="Übersicht & Mitglieder" backHref="/member-profile-app" />
 
       {/*  */}
@@ -396,13 +392,13 @@ export default function MeineTeamsAppPage() {
         {/* */}
 
           {/* Page Header */}
-          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-[0_24px_80px_-42px_rgba(15,23,42,0.62)] sm:mb-5 sm:rounded-[28px] xl:rounded-[30px]">
+          <section className="relative mb-4 overflow-hidden rounded-[24px] border border-border/10 bg-background shadow-sm sm:mb-5 sm:rounded-[20px] xl:rounded-[20px]">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
             <div className="relative p-4 sm:p-6 lg:p-8 xl:p-9">
               <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
                 <div className="min-w-0">
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/60">
-                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     Mannschaften
                   </div>
                   <div className="flex items-center gap-4">
@@ -443,7 +439,7 @@ export default function MeineTeamsAppPage() {
             </div>
           </section>
 
-          <section className="mb-4 overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_14px_44px_-34px_rgba(15,23,42,0.5)] sm:mb-5 sm:rounded-[26px]">
+          <section className="mb-4 overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_14px_44px_-34px_rgba(15,23,42,0.5)] sm:mb-5 sm:rounded-[20px]">
             <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Liga-Zugriff</div>
@@ -492,13 +488,13 @@ export default function MeineTeamsAppPage() {
 
           {/* Captain Player Management */}
           {profile?.player_id && (
-            <div className="mb-4 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_18px_60px_-42px_rgba(15,23,42,0.5)] sm:mb-5 sm:rounded-[28px]">
+            <div className="mb-4 overflow-hidden rounded-[24px] border border-border bg-card shadow-sm sm:mb-5 sm:rounded-[20px]">
               <CaptainPlayerManagement onPlayerAdded={fetchTeamData} />
             </div>
           )}
 
           {/* Team Memberships */}
-          <section className="mb-4 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:mb-5 sm:rounded-[30px]">
+          <section className="mb-4 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:mb-5 sm:rounded-[20px]">
             <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-5 sm:px-6 sm:py-6">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
@@ -594,7 +590,7 @@ export default function MeineTeamsAppPage() {
           </section>
 
           {/* Team Members */}
-          <section className="overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[30px]">
+          <section className="overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_20px_70px_-46px_rgba(15,23,42,0.55)] sm:rounded-[20px]">
             <div className="border-b border-border px-4 py-5 sm:px-6 sm:py-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="flex items-center gap-3">
@@ -765,7 +761,7 @@ export default function MeineTeamsAppPage() {
               if (!open) setRemoveTarget(null)
             }}
           >
-            <AlertDialogContent className="w-[94vw] max-w-md overflow-hidden rounded-[24px] border border-border bg-card p-0 shadow-[0_30px_90px_-38px_rgba(15,23,42,0.55)] sm:max-w-[450px]">
+            <AlertDialogContent className="w-[94vw] max-w-md overflow-hidden rounded-[24px] border border-border bg-card p-0 shadow-sm sm:max-w-[450px]">
               <AlertDialogHeader className="border-b border-border px-5 py-5">
                 <AlertDialogTitle>Spieler wirklich aus der Mannschaft entfernen?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -793,7 +789,7 @@ export default function MeineTeamsAppPage() {
                 >
                   {removingMemberId ? (
                     <span className="inline-flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/80 border-t-transparent rounded-full animate-spin" />
+                      <LoadingIndicator className="w-4 h-4" />
                       Entferne...
                     </span>
                   ) : (
