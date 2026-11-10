@@ -331,7 +331,10 @@ async function loadParticipants(eventId: string) {
     return
   }
 
-  const rows = (data as EventParticipantRow[]) || []
+  const rows: EventParticipantRow[] = (data || []).map((participant) => ({
+    ...participant,
+    club_players: participant.club_players?.[0] ?? null,
+  }))
   setParticipants(rows)
 
   const guestUserIds = rows
