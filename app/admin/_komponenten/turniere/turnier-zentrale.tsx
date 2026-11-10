@@ -444,7 +444,7 @@ export function AdminTournamentCenter({ onOpen, canOpen }: AdminTournamentCenter
                     <button
                       key={item.title}
                       type="button"
-                      onClick={() => onOpen(item.view)}
+                      onClick={() => { if (typeof item.view === "string") onOpen(item.view) }}
                       className={commonClass}
                     >
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-300/15 bg-orange-500/[0.07] text-orange-200">
