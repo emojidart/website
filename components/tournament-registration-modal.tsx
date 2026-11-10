@@ -16,6 +16,7 @@ interface TournamentRegistrationModalProps {
   onClose: () => void
   tournamentDate: string // "02. Feb. 2026" oder "02. Februar 2026"
   tournamentTime: string // "19:30"
+  tournamentType: "edart" | "steeldart" | "lioncup"
 }
 
 function parseGermanDateToISO(dateStr: string): string | null {
@@ -68,6 +69,7 @@ export function TournamentRegistrationModal({
   onClose,
   tournamentDate,
   tournamentTime,
+  tournamentType,
 }: TournamentRegistrationModalProps) {
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
@@ -135,7 +137,7 @@ export function TournamentRegistrationModal({
         const { data, error } = await supabase
           .from("anmeldungen")
           .select("id")
-          .eq("turnier_typ", "edart")
+          .eq("turnier_typ", tournamentType)
           .eq("turnier_datum", formattedDate)
           .eq("turnier_zeit", tournamentTime)
           .eq("email", session.user.email)
@@ -151,7 +153,7 @@ export function TournamentRegistrationModal({
     }
 
     check()
-  }, [isOpen, session, formattedDate, tournamentTime])
+  }, [isOpen, session, formattedDate, tournamentTime, tournamentType])
 
   const handleRegister = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -184,7 +186,7 @@ export function TournamentRegistrationModal({
       const { data: exists, error: existsErr } = await supabase
         .from("anmeldungen")
         .select("id")
-        .eq("turnier_typ", "edart")
+        .eq("turnier_typ", tournamentType)
         .eq("turnier_datum", formattedDate)
         .eq("turnier_zeit", tournamentTime)
         .eq("email", email.trim())
@@ -200,7 +202,7 @@ export function TournamentRegistrationModal({
       const { error } = await supabase.from("anmeldungen").insert([
         {
           spieler_name: playerName.trim(),
-          turnier_typ: "edart",
+          turnier_typ: tournamentType,
           turnier_datum: formattedDate,
           turnier_zeit: tournamentTime,
           email: email.trim(),
@@ -247,7 +249,7 @@ export function TournamentRegistrationModal({
       const { error } = await supabase
         .from("anmeldungen")
         .delete()
-        .eq("turnier_typ", "edart")
+        .eq("turnier_typ", tournamentType)
         .eq("turnier_datum", formattedDate)
         .eq("turnier_zeit", tournamentTime)
         .eq("email", userEmail)
