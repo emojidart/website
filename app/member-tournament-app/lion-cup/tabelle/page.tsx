@@ -2161,7 +2161,7 @@ return (
 
                   <div className="lg:hidden space-y-3">
                     {tournament.rankings.map((ranking: any, rankIndex: number) => (
-                      <MobileTournamentRankingCard key={rankIndex} ranking={ranking} index={rankIndex} />
+                      <MobileTournamentRankingCard key={rankIndex} ranking={ranking} />
                     ))}
                   </div>
                 </div>
