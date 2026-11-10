@@ -481,7 +481,7 @@ export default function MatchPostponePage() {
     : match?.match_date
       ? formatMatchDate(match.match_date)
       : ""
-  const oldTime = hhmm(match?.match_time)
+  const oldTime = hhmm(match?.match_time ?? null)
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-transparent pb-24 text-white">
