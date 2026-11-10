@@ -76,7 +76,8 @@ function internalEventImageUrl(path:string|null|undefined,legacyUrl?:string|null
 function dateLabel(date:string){
   return new Date(`${date}T12:00:00`).toLocaleDateString("de-AT",{weekday:"long",day:"2-digit",month:"long",year:"numeric"})
 }
-function dateRangeLabel(start:string,end:string|null){
+function dateRangeLabel(start:string|null,end:string|null,dateOpen:boolean){
+  if(dateOpen || !start) return "Termin offen"
   const effectiveEnd=end||start
   if(start===effectiveEnd)return dateLabel(start)
   const a=new Date(`${start}T12:00:00`).toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"})
