@@ -69,7 +69,10 @@ export default function TeamPrintSheetPage() {
         .eq("player_id", myPlayerId)
         .is("left_at", null)
 
-      const allMemberships = (mData || []) as TeamMembership[]
+      const allMemberships: TeamMembership[] = (mData || []).map((row) => ({
+        ...row,
+        teams: row.teams?.[0] ?? null,
+      }))
       setMemberships(allMemberships)
 
       const firstManageable = allMemberships.find((x) => x.role === "Captain" || x.role === "Co-Captain")
@@ -82,7 +85,10 @@ export default function TeamPrintSheetPage() {
         .in("team_id", teamIds)
         .is("left_at", null)
 
-      setMembers((memData || []) as TeamMember[])
+      setMembers((memData || []).map((row) => ({
+        ...row,
+        club_players: row.club_players?.[0] ?? null,
+      })))
     } finally {
       setLoading(false)
     }
