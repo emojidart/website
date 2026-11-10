@@ -575,7 +575,9 @@ export default function TeamScanSheetTestPage() {
           .eq("player_id", myPlayerId)
           .is("left_at", null)
 
-        const manageable = ((mData || []) as TeamMembership[]).filter((m) => m.role === "Captain" || m.role === "Co-Captain")
+        const manageable: TeamMembership[] = (mData || [])
+          .map((m) => ({ ...m, teams: m.teams?.[0] ?? null }))
+          .filter((m) => m.role === "Captain" || m.role === "Co-Captain")
         setMemberships(manageable)
         const first = manageable[0]?.team_id || ""
         setSelectedTeamId(first)
