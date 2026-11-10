@@ -583,7 +583,7 @@ export default function CalendarPage() {
                                 {(() => {
                                   const eventTypes = itemsForDay.reduce(
                                     (acc, item) => {
-                                      const type = item.type || "event"
+                                      const type = "type" in item && typeof item.type === "string" ? item.type : "event"
                                       acc[type] = (acc[type] || 0) + 1
                                       return acc
                                     },
