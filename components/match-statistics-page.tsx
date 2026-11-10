@@ -53,8 +53,8 @@ interface Match {
   dart_type?: string
   home_opponent_team_id?: string
   away_opponent_team_id?: string
-  home_team_type?: "club_team" | "opponent_team"
-  away_team_type?: "club_team" | "opponent_team"
+  home_team_type?: string
+  away_team_type?: string
 }
 
 interface LegStatistic {
