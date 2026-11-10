@@ -137,7 +137,9 @@ export default function MemberCardPage() {
 
       if (profileError) throw profileError
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: profileData.club_players?.[0]
+        ? { ...profileData.club_players[0], spieldatenbank: profileData.club_players[0].spieldatenbank?.[0] ?? null }
+        : null })
 
       if (profileData?.player_id) {
         const { data: creditData, error: creditErr } = await supabase
