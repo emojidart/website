@@ -1480,9 +1480,9 @@ if (existingRow) {
                                 <li key={member.id} className="flex items-center justify-between text-sm text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     {member.player_name}
-                                    {member.role === "Captain" && <Crown className="h-3 w-3 text-yellow-600" title="Kapitän" />}
+                                    {member.role === "Captain" && <Crown className="h-3 w-3 text-yellow-600" aria-label="Kapitän" />}
                                     {member.role === "Co-Captain" && (
-                                      <ShieldCheck className="h-3 w-3 text-blue-600" title="Co-Kapitän" />
+                                      <ShieldCheck className="h-3 w-3 text-blue-600" aria-label="Co-Kapitän" />
                                     )}
                                     {member.role && member.role !== "Player" && <span className="text-xs text-muted-foreground">({member.role})</span>}
                                   </span>
