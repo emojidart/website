@@ -52,7 +52,7 @@ export function RouteProgress() {
       const target = event.target
       if (!(target instanceof Element)) return
       const anchor = target.closest("a[href]")
-      if (!anchor || anchor.hasAttribute("download") || anchor.target === "_blank" || anchor.getAttribute("rel")?.includes("external")) return
+      if (!(anchor instanceof HTMLAnchorElement) || anchor.hasAttribute("download") || anchor.target === "_blank" || anchor.getAttribute("rel")?.includes("external")) return
       let url: URL
       try {
         url = new URL(anchor.href, window.location.href)
