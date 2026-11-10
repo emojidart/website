@@ -442,6 +442,7 @@ export function JoinRequestsTab({ user, onPendingCountChange, onDataChanged }: P
         .eq("user_id", row.user_id)
       if (profileError) throw profileError
 
+      if (!clubPlayerId) throw new Error("Mitgliedsprofil konnte nicht angelegt werden.")
       const trialResult = await grantRequestedTrial(clubPlayerId, row)
 
       const { error: requestError } = await supabase
