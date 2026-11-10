@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/header"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
@@ -48,7 +48,7 @@ const LETTER_SLOT_COUNT = FINAL_WORD.length
 
 
 
-const HINTS: Record<number, { label: string; text: string; link?: string; linkLabel?: string }> = {
+const HINTS: Record<number, { label: string; text: ReactNode; link?: string; linkLabel?: string }> = {
   1: {
   label: "Erster Hinweis",
   text: (
