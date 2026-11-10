@@ -125,7 +125,7 @@ export function QuizDialog({ day, onClose, onQuizSubmitted, completedQuizzes, pa
 
           {/* Answers */}
           <div className="space-y-3 md:space-y-4">
-            {["A", "B"].map((option) => (
+            {(["A", "B"] as const).map((option) => (
               <button
                 key={option}
                 onClick={() => !isAnswered && setSelectedAnswer(option)}
