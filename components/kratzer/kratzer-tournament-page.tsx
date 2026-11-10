@@ -143,7 +143,7 @@ export function KratzerTournamentPage() {
 
   const showToast = useCallback(
     (variant: "success" | "error" | "info" | "warning", description: string) => {
-      toast({ variant, description })
+      toast({ variant: variant === "error" ? "destructive" : "default", description })
     },
     [toast],
   )
