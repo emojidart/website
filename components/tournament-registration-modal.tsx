@@ -109,7 +109,7 @@ export function TournamentRegistrationModal({
 
         if (error) throw error
 
-        setPlayerName(data?.club_players?.name ?? "")
+        setPlayerName(data?.club_players?.[0]?.name ?? "")
         setEmail(session.user.email ?? "")
       } catch (err: any) {
         console.error("Error loading profile:", err)
