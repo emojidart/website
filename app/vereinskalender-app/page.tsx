@@ -98,6 +98,12 @@ interface Event {
 
 type CalendarItem = Match | Event
 
+interface ClubTeam {
+  id: string
+  name: string
+  logo_url: string | null
+}
+
 interface BirthdayPlayer {
   id: string
   name: string
