@@ -387,7 +387,6 @@ export default function TerminalResultsPage() {
         home_team: match.home_team?.[0] ?? null,
         away_team: match.away_team?.[0] ?? null,
         season: match.season?.[0] ?? null,
-        ...match,
         home_opponent_team: match.home_opponent_team_id ? opponents.find((t) => t.id === match.home_opponent_team_id) || null : null,
         away_opponent_team: match.away_opponent_team_id ? opponents.find((t) => t.id === match.away_opponent_team_id) || null : null,
       }))
