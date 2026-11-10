@@ -206,7 +206,7 @@ export default function MemberProfilePage() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile({ ...profileData, club_players: profileData.club_players?.[0] ?? null })
 
       if (profileData?.player_id) {
         await fetchNotifications(profileData.player_id)
@@ -220,7 +220,10 @@ export default function MemberProfilePage() {
           throw teamError
         }
 
-        setTeamMemberships(teamData || [])
+        setTeamMemberships((teamData || []).map((membership) => ({
+          ...membership,
+          teams: membership.teams?.[0] ?? null,
+        })))
 
         if (teamData && teamData.length > 0) {
           const teamIds = teamData.map((t) => t.team_id)
