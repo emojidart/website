@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -17,7 +17,7 @@ function getBaseUrl(request: Request) {
 
 
 async function endActiveTrialsForPlayer(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   playerId: string,
 ) {
   const { error } = await supabase
@@ -33,7 +33,7 @@ async function endActiveTrialsForPlayer(
 }
 
 async function applyPaidRequest(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   args: {
     requestId: string
     membershipId: string
