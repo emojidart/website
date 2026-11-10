@@ -11,11 +11,9 @@ import SupabaseSessionGuard from "@/components/SupabaseSessionGuard"
 import { AppRouteGuard } from "@/components/auth/app-route-guard"
 import AppThemeShell from "@/components/AppThemeShell"
 import EmdLineupAlert from "@/components/emd-lineup-alert"
-import { RouteProgress } from "@/components/navigation/route-progress"
 import "./globals.css"
 import "./premium.css"
 import "./specialty-premium.css"
-import "./emd-navigation-2026.css"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -42,21 +40,25 @@ export const viewport: Viewport = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+
   return (
     <html lang="de">
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
         {/* killt alte PWA Service Worker */}
         <KillServiceWorker />
+
         {/* setzt .is-native auf <html> wenn App */}
         <AppPlatformClass />
-        {/* Supabase Session Guard */}
+
+        {/* 🔐 Supabase Session Guard */}
         <SupabaseSessionGuard />
+
         <div className="app-root safe-pt safe-pb">
           <PresenceTracker />
           <PushSubscriptionRepair />
           <PushInit />
           <EmdLineupAlert />
-          <RouteProgress />
+
           <AppRouteGuard><AppThemeShell>{children}</AppThemeShell></AppRouteGuard>
         </div>
       </body>
