@@ -69,7 +69,7 @@ function TeamLogo({ team, compact = false }: { team: Team | Standing; compact?: 
     <div className={`${size} flex shrink-0 items-center justify-center overflow-hidden border border-white/10 bg-black/40`}>
       {team.logo_url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={team.logo_url} alt={team.team || team.name || "Team"} className="h-full w-full object-contain [transform:scale(1.16)]" />
+        <img src={team.logo_url} alt={"team" in team ? team.team || "Team" : team.name || "Team"} className="h-full w-full object-contain [transform:scale(1.16)]" />
       ) : (
         <Shield className="h-6 w-6 text-orange-300/80" />
       )}
