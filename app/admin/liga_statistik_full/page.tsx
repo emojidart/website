@@ -446,7 +446,11 @@ export default function AdminTeamPlayerStatisticsSeasonCorrectPage() {
         .in("team_id", teamIds)
 
       if (membersError) throw membersError
-      const memberRows = (membersData || []) as TeamMemberRow[]
+      const memberRows: TeamMemberRow[] = (membersData || []).map((row) => ({
+        ...row,
+        teams: row.teams?.[0] ?? null,
+        club_players: row.club_players?.[0] ?? null,
+      }))
       setTeamMembersHistory(memberRows)
 
       // 3) Matches (ALL teams), filter by dart-type if set
@@ -477,7 +481,15 @@ export default function AdminTeamPlayerStatisticsSeasonCorrectPage() {
       const { data: matchData, error: matchError } = await matchQuery
       if (matchError) throw matchError
 
-      const matchRows = (matchData || []) as MatchRow[]
+      const matchRows: MatchRow[] = (matchData || []).map((row) => ({
+        ...row,
+        dart_type: row.dart_type === "edart" || row.dart_type === "steeldart" ? row.dart_type : null,
+        home_team: row.home_team?.[0] ?? null,
+        away_team: row.away_team?.[0] ?? null,
+        home_opponent_team: row.home_opponent_team?.[0] ?? null,
+        away_opponent_team: row.away_opponent_team?.[0] ?? null,
+        season: row.season?.[0] ?? null,
+      }))
       setMatches(matchRows)
 
       const matchIdSet = new Set(matchRows.map((m) => m.id))
