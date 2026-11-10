@@ -146,8 +146,8 @@ const [doublePlayer2Id, setDoublePlayer2Id] = useState("")
 
   const [showCreditConfirmModal, setShowCreditConfirmModal] = useState<{
     open: boolean
-    players?: Array<{ id: number; name: string; currentBalance: number; newBalance: number; clubPlayerId: string }>
-    playersWithoutCredit?: number[]
+    players?: Array<{ id: number | string; name: string; currentBalance: number; newBalance: number; clubPlayerId: string }>
+    playersWithoutCredit?: Array<number | string>
     entryFee?: number
   }>({ open: false })
 
