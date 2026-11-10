@@ -413,7 +413,7 @@ export default function EmdTvScreenPage() {
     }
 
     if (!tournamentRes.error) {
-      setTournaments(((tournamentRes.data || []) as TournamentRow[]).filter((item) => Number.isFinite(tournamentStart(item))))
+      setTournaments((tournamentRes.data || []).map((item) => ({ ...item, photo_url: null })).filter((item) => Number.isFinite(tournamentStart(item))))
     }
 
     if (!dachEventsRes.error) {
@@ -476,7 +476,10 @@ export default function EmdTvScreenPage() {
       const matchMap = new Map(matches.map((m) => [m.id, m]))
       const teamRows = (teamsRes.data || []) as TeamRow[]
       const teams = new Map(teamRows.map((t) => [t.id, t]))
-      const lineupRows = (lineupRes.data || []) as LineupRow[]
+      const lineupRows: LineupRow[] = (lineupRes.data || []).map((row) => ({
+        ...row,
+        club_players: row.club_players?.[0] ?? null,
+      }))
       setLineupPhotoUrls(Array.from(new Set(lineupRows.map((row) => row.club_players?.photo_url).filter((value): value is string => Boolean(value)))))
       const opponents = new Map(((opponentsRes.data || []) as Array<{ id: string; name: string }>).map((o) => [o.id, o.name]))
       const nowMs = Date.now()
