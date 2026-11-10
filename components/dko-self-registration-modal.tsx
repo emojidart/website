@@ -227,7 +227,7 @@ export function DKOSelfRegistrationModal(props: {
         }
 
         // Guthaben (nur wenn clubId da ist)
-        if (sId) {
+        if (clubId) {
           const bal = await getCreditBalance(clubId)
           setCreditBalance(bal)
         } else {
