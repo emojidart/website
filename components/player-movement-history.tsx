@@ -13,12 +13,8 @@ import { Badge } from "@/components/ui/badge" // Importiere Badge Komponente
 
 interface PlayerMovement {
   id: string
-  player_id: string
-  team_id: string // This is the to_team_id
-  from_team_id: string | null // New: The team the player came from
   movement_type: "new_addition" | "transfer"
   movement_date: string // ISO string from Supabase
-  user_id: string
   club_players: { name: string } | null
   teams: { id: string; name: string } | null // Updated: Include id
   from_teams: { id: string; name: string } | null // Updated: Include id
@@ -52,7 +48,14 @@ export function PlayerMovementHistory() {
       console.error("Error fetching player movements:", error)
       setError("Fehler beim Laden der Spielerbewegungen.")
     } else {
-      setMovements(data as PlayerMovement[])
+      setMovements((data || []).map((movement) => ({
+        id: movement.id,
+        movement_type: movement.movement_type as PlayerMovement["movement_type"],
+        movement_date: movement.movement_date,
+        club_players: movement.club_players?.[0] ?? null,
+        teams: movement.teams?.[0] ?? null,
+        from_teams: movement.from_teams?.[0] ?? null,
+      })))
     }
     setLoading(false)
   }
