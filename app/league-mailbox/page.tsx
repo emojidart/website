@@ -236,7 +236,7 @@ export default function LeagueMailboxPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "league_mail_threads" }, () => void loadThreads())
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "league_mail_messages" }, (payload: any) => {
         void loadThreads()
-        if (payload?.new?.thread_id && payload.new.thread_id === selectedId) {
+        if (selectedId && payload?.new?.thread_id && payload.new.thread_id === selectedId) {
           void openThread(selectedId)
         }
       })
