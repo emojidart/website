@@ -245,7 +245,7 @@ export default function LiveStatisticsPage() {
         </Card>
 
         {/*  */}
-        <DartStatsClassicPage initialPlayers={initialPlayers} loadingPlayers={false} teamId={teamId} />
+        <DartStatsClassicPage initialPlayers={initialPlayers} loadingPlayers={false} />
       </main>
     </div>
   )
