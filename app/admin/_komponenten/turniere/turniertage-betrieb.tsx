@@ -168,7 +168,10 @@ export function TournamentDaysManagement({ onBack }: { onBack?: () => void }) {
         .order("start_at", { ascending: true })
 
       if (eErr) throw eErr
-      setEvents(((eData || []) as DkoSeriesEvent[]).filter((ev) => ev.dko_series?.is_active !== false))
+      setEvents((eData || []).map((ev) => ({
+        ...ev,
+        dko_series: ev.dko_series?.[0] ?? null,
+      } as DkoSeriesEvent)).filter((ev) => ev.dko_series?.is_active !== false))
 
       const { data: activeData, error: activeErr } = await supabase
         .from("tournaments_status")
