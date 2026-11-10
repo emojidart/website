@@ -13,13 +13,13 @@ type InsufficientBalance = {
 type CreditConfirm = {
   open: boolean
   players?: Array<{
-    id: number
+    id: number | string
     name: string
     currentBalance: number
     newBalance: number
     clubPlayerId: string
   }>
-  playersWithoutCredit?: number[]
+  playersWithoutCredit?: Array<number | string>
   entryFee?: number
 }
 
