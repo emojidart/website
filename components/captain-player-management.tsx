@@ -242,7 +242,10 @@ export function CaptainPlayerManagement({ onPlayerAdded }: CaptainPlayerManageme
 
       if (teamError) throw teamError
 
-      const visibleManagedTeams = ((teamData || []) as TeamMembership[]).filter((membership) => {
+      const visibleManagedTeams: TeamMembership[] = (teamData || []).map((membership) => ({
+        ...membership,
+        teams: membership.teams?.[0] ?? null,
+      })).filter((membership) => {
         if (membership.teams?.dart_type === "edart") return canManageEDart
         if (membership.teams?.dart_type === "steeldart") return canManageSteeldart
         return false
