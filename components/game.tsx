@@ -195,8 +195,10 @@ export function Game({ challengeId }: { challengeId: string }) {
 
 
 
-      const challengerName = challengerProfile?.club_players?.name || "Spieler 1"
-      const opponentName = opponentProfile?.club_players?.name || "Spieler 2"
+      const challengerPlayer = challengerProfile?.club_players
+      const opponentPlayer = opponentProfile?.club_players
+      const challengerName = (Array.isArray(challengerPlayer) ? challengerPlayer[0]?.name : challengerPlayer?.name) || "Spieler 1"
+      const opponentName = (Array.isArray(opponentPlayer) ? opponentPlayer[0]?.name : opponentPlayer?.name) || "Spieler 2"
 
       const challengerData = {
         user_id: challengeData.challenger_id,
