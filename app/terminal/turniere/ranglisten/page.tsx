@@ -73,7 +73,7 @@ export default function TerminalTournamentRankingsPage() {
 
       setSeriesList(visible)
 
-      const requested = requestedSeriesId && visible.find((s) => s.id === requestedSeriesId)
+      const requested = requestedSeriesId ? visible.find((s) => s.id === requestedSeriesId) : undefined
       setSelectedSeriesId(requested?.id || visible[0]?.id || "")
     }
 
