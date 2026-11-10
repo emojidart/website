@@ -158,7 +158,6 @@ export function ChatLayout() {
       <div className="flex-1">
         <ChatRoomComponent
           roomId={selectedRoom}
-          user={user}
           roomName={availableRooms.find((r) => r.id === selectedRoom)?.name || ""}
         />
       </div>
