@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -15,7 +15,7 @@ function todayISO() {
 }
 
 async function endActiveTrialsForPlayer(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   playerId: string,
 ) {
   const { error } = await supabase
@@ -83,7 +83,7 @@ async function getStripeFeeAndNet(stripe: Stripe, invoice: any) {
 
 async function recordStripeInvoicePayment(
   stripe: Stripe,
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   invoice: any,
   eventId: string | null,
 ) {
@@ -157,7 +157,7 @@ async function recordStripeInvoicePayment(
 
 
 async function rewriteRequestToActuallyChargedDelta(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   requestId: string,
   chargedAmountCents: number,
 ) {
@@ -232,7 +232,7 @@ async function rewriteRequestToActuallyChargedDelta(
 }
 
 async function activateMemberProfileIfBaseIncluded(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   playerId: string,
   moduleIds: string[],
 ) {
@@ -263,7 +263,7 @@ async function activateMemberProfileIfBaseIncluded(
 
 
 async function applyPendingStripeChangeFromSubscription(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   subscription: Stripe.Subscription,
 ) {
   // Solange Stripe eine pending_update hat, ist die neue Paketänderung
@@ -367,7 +367,7 @@ async function applyPendingStripeChangeFromSubscription(
 
 async function applyCreditTopupFromCheckout(
   stripe: Stripe,
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   session: Stripe.Checkout.Session,
   eventId: string,
 ) {
