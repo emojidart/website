@@ -16,7 +16,8 @@ function internalEventImageUrl(path:string|null|undefined,legacyUrl?:string|null
   return legacyUrl||""
 }
 
-function formatEventDateRange(start:string,end:string|null){
+function formatEventDateRange(start:string|null,end:string|null,dateOpen:boolean){
+  if(dateOpen || !start) return "Termin offen"
   const effectiveEnd=end||start
   const fmt=(v:string)=>new Date(`${v}T12:00:00`).toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"})
   return start===effectiveEnd?fmt(start):`${fmt(start)} – ${fmt(effectiveEnd)}`
