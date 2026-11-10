@@ -53,7 +53,7 @@ export function useTeamMembers(user: User | null, onDataSaved: () => void) {
           id: member.id,
           team_id: member.team_id,
           player_id: member.player_id,
-          player_name: member.club_players?.name ?? "",
+          player_name: Array.isArray(member.club_players) ? member.club_players[0]?.name ?? "" : member.club_players?.name ?? "",
           role: member.role,
         })) ?? []
       setTeamMembers(membersWithPlayerNames)
