@@ -19,7 +19,26 @@ import {
   Trophy,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import type { GroupedTournamentHistory, HistoricalPlayerResult } from "@/hooks/use-dart-data"
+/** Presentation types for historic tournaments; independent of the removed data hook. */
+type HistoricalPlayerResult = {
+  player_name: string
+  profile_picture_url: string | null
+  combinedScore: number
+  points: number
+  legs: number
+}
+type HistoricalTournament = {
+  date: string
+  totalParticipants: number
+  totalPoints: number
+  totalLegs: number
+  rankedPlayers: HistoricalPlayerResult[]
+}
+type GroupedTournamentHistory = {
+  edart: HistoricalTournament[]
+  steeldart: HistoricalTournament[]
+}
+
 import Image from "next/image"
 
 interface TournamentHistorySectionProps {
