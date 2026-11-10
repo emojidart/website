@@ -319,7 +319,7 @@ async function generateCertificateOnTemplate(args: {
   }
 
   const out = await pdfDoc.save()
-  return new Blob([out], { type: "application/pdf" })
+  return new Blob([new Uint8Array(out)], { type: "application/pdf" })
 }
 
 function SliderRow(props: {
