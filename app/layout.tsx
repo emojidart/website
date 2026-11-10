@@ -11,7 +11,6 @@ import SupabaseSessionGuard from "@/components/SupabaseSessionGuard"
 import { AppRouteGuard } from "@/components/auth/app-route-guard"
 import AppThemeShell from "@/components/AppThemeShell"
 import EmdLineupAlert from "@/components/emd-lineup-alert"
-import EmdSystemNotice from "./EmdSystemNotice"
 import "./globals.css"
 import "./premium.css"
 import "./specialty-premium.css"
@@ -59,7 +58,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PushSubscriptionRepair />
           <PushInit />
           <EmdLineupAlert />
-          <EmdSystemNotice />
 
           <AppRouteGuard><AppThemeShell>{children}</AppThemeShell></AppRouteGuard>
         </div>
