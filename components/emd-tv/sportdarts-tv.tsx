@@ -1020,7 +1020,7 @@ export function SportdartsLiveTv({ game, lastUpdated, testMode = false }: { game
 
     const handleVisibility = () => {
       if (timer) window.clearTimeout(timer)
-      timer = null
+      timer = undefined
       if (!document.hidden && !testMode && isLivePollingWindow(new Date())) {
         void load().then(scheduleDetailRefresh)
       }
