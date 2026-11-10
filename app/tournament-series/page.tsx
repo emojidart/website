@@ -68,7 +68,7 @@ interface Tournament {
   tournament_name: string
   tournament_type: string
   tournament_date: string
-  rankings?: TournamentEntry[]
+  rankings?: Pick<TournamentEntry, "player_name" | "placement" | "legs_won" | "legs_lost" | "placement_points" | "bonus_points" | "form">[]
 }
 
 const QUALIFICATION_REQUIREMENT = 20
