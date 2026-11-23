@@ -2,51 +2,42 @@
 
 import { createClient } from "@supabase/supabase-js"
 
-export async function deleteUserAccount(playerId: string) {
-  console.log("[v0] Server action: deleteUserAccount called for player:", playerId)
-
+// Destructive account deletion requires a verified user session and superadmin rights.
+// No service-role action is exposed to an unverified caller.
+export async function deleteUserAccount(playerId: string, accessToken: string) {
   try {
-    // Create admin client with service role key
-    const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+    if (!playerId || !accessToken) return { success: false, error: "Nicht autorisiert" }
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !anonKey || !serviceKey) return { success: false, error: "Serverkonfiguration fehlt" }
+
+    const verifier = createClient(url, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
     })
+    const { data: { user }, error: userError } = await verifier.auth.getUser(accessToken)
+    if (userError || !user) return { success: false, error: "Nicht autorisiert" }
 
-    console.log("[v0] Finding user_profile for player_id:", playerId)
+    const admin = createClient(url, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+    const { data: ownerRow, error: ownerError } = await admin
+      .from("admin_superusers").select("user_id").eq("user_id", user.id).maybeSingle()
+    if (ownerError || !ownerRow) return { success: false, error: "Nur Superadmins dürfen Accounts löschen" }
 
-    // First, get the user_id from user_profiles
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("user_profiles")
-      .select("user_id")
-      .eq("player_id", playerId)
-      .single()
+    const { data: profile, error: profileError } = await admin
+      .from("user_profiles").select("user_id").eq("player_id", playerId).single()
+    if (profileError || !profile?.user_id) return { success: false, error: "Benutzerprofil nicht gefunden" }
 
-    if (profileError) {
-      console.log("[v0] Error finding profile:", profileError)
-      throw new Error(`Profil nicht gefunden: ${profileError.message}`)
-    }
+    const { data: protectedRow, error: protectedError } = await admin
+      .from("admin_superusers").select("user_id").eq("user_id", profile.user_id).maybeSingle()
+    if (protectedError || protectedRow) return { success: false, error: "Geschütztes Eigentümerkonto kann nicht gelöscht werden" }
 
-    if (!profile) {
-      throw new Error("Kein Benutzerprofil gefunden")
-    }
-
-    console.log("[v0] Found user_id:", profile.user_id)
-
-    // Delete the auth user (this will cascade delete user_profiles due to foreign key)
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(profile.user_id)
-
-    if (deleteError) {
-      console.log("[v0] Error deleting auth user:", deleteError)
-      throw new Error(`Fehler beim Löschen des Auth-Users: ${deleteError.message}`)
-    }
-
-    console.log("[v0] Successfully deleted auth user and profile")
-
+    const { error: deleteError } = await admin.auth.admin.deleteUser(profile.user_id)
+    if (deleteError) throw deleteError
     return { success: true }
-  } catch (error: any) {
-    console.log("[v0] Server action error:", error)
-    return { success: false, error: error.message }
+  } catch (error) {
+    console.error("Account deletion failed", error)
+    return { success: false, error: "Account konnte nicht gelöscht werden" }
   }
 }
