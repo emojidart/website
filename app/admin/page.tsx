@@ -69,6 +69,7 @@ import { AdminNavigation } from "./_komponenten/navigation"
 import { AdminDashboard } from "./_komponenten/dashboard"
 import { AdminProfileChangeRequests } from "./_komponenten/profil-aenderungen"
 import { AdminLeagueMailbox } from "./_komponenten/ligapostfach"
+import { ProtectedAccountVerification } from "./_komponenten/protected-account-verification"
 import { ADMIN_CATEGORY_LABELS, ADMIN_PAGES } from "./_konfiguration/admin-seiten"
 
 export default function AdminPage() {
@@ -939,6 +940,13 @@ useEffect(() => {
         <main className="w-full min-w-0 max-w-full overflow-x-hidden p-4 md:p-8"><SectionSkeleton kind="cards" /></main>
       </div>
     )
+  }
+
+  // Dedicated, non-privileged verification view for this one club account.
+  // Do not grant is_admin or page-level admin permissions: the real admin UI
+  // and its mutations are never mounted for this session.
+  if (session && user?.id === "354976cd-1790-4923-8b79-d763cc1a25a7") {
+    return <><Header /><ProtectedAccountVerification /></>
   }
 
   // ✅ Zugriff jetzt über user_page_permissions (allowedViews), nicht mehr über clubRoles
