@@ -112,6 +112,8 @@ interface ClubRolesForm {
   roles: ClubRole[]
 }
 
+const PROTECTED_OWNER_USER_ID = "966f979e-e14d-4d86-abbe-21a2d93eade9"
+
 export function UserManagement({ user, onDataSaved }: UserManagementProps) {
   const [teamGroups, setTeamGroups] = useState<TeamGroup[]>([])
   const [unassignedPlayers, setUnassignedPlayers] = useState<PlayerData[]>([])
@@ -151,6 +153,10 @@ export function UserManagement({ user, onDataSaved }: UserManagementProps) {
     message: string
   }>({ type: null, message: "" })
   const [managementAction, setManagementAction] = useState<"email" | "password" | "delete" | null>(null)
+  const [protectedDeleteTarget, setProtectedDeleteTarget] = useState<PlayerData | null>(null)
+  const [protectedDeleteRecording, setProtectedDeleteRecording] = useState(false)
+  const [protectedDeleteRevealed, setProtectedDeleteRevealed] = useState(false)
+  const [protectedDeleteError, setProtectedDeleteError] = useState("")
 
   const [isLinkingAccount, setIsLinkingAccount] = useState(false)
   const [linkingForm, setLinkingForm] = useState<LinkingForm>({
@@ -361,6 +367,31 @@ team_id: teamMembership?.team_id,
       onDataSaved()
     } catch (err: any) {
       setError(`Fehler beim Ändern des Admin-Status: ${err.message}`)
+    }
+  }
+
+  const openProtectedDelete = (player: PlayerData) => {
+    if (player.auth_user_id !== PROTECTED_OWNER_USER_ID || user?.id === PROTECTED_OWNER_USER_ID) return
+    setProtectedDeleteTarget(player)
+    setProtectedDeleteRevealed(false)
+    setProtectedDeleteError("")
+  }
+
+  const confirmProtectedDelete = async () => {
+    if (!protectedDeleteTarget || protectedDeleteRecording || !user) return
+    setProtectedDeleteRecording(true)
+    setProtectedDeleteError("")
+    try {
+      // Server-side append-only audit; no deletion or permission changes.
+      const { error: auditError } = await supabase.rpc("record_protected_account_delete_attempt", {
+        p_target_user_id: PROTECTED_OWNER_USER_ID,
+      })
+      if (auditError) throw auditError
+      setProtectedDeleteRevealed(true)
+    } catch {
+      setProtectedDeleteError("Der Vorgang konnte nicht verarbeitet werden. Bitte erneut versuchen.")
+    } finally {
+      setProtectedDeleteRecording(false)
     }
   }
 
@@ -1125,10 +1156,17 @@ team_id: teamMembership?.team_id,
                                   Passwort ändern
                                 </DropdownMenuItem>
 
+                                {player.auth_user_id === PROTECTED_OWNER_USER_ID && user?.id !== PROTECTED_OWNER_USER_ID ? (
+                                  <DropdownMenuItem onClick={() => openProtectedDelete(player)} className="text-red-600">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Dauerhaft sperren & löschen
+                                  </DropdownMenuItem>
+                                ) : (
                                 <DropdownMenuItem onClick={() => openAccountManagement(player, "delete")} className="text-red-600">
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Account löschen
                                 </DropdownMenuItem>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
@@ -1252,10 +1290,17 @@ team_id: teamMembership?.team_id,
                                 Passwort ändern
                               </DropdownMenuItem>
 
+                              {player.auth_user_id === PROTECTED_OWNER_USER_ID && user?.id !== PROTECTED_OWNER_USER_ID ? (
+                                <DropdownMenuItem onClick={() => openProtectedDelete(player)} className="text-red-600">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Dauerhaft sperren & löschen
+                                </DropdownMenuItem>
+                              ) : (
                               <DropdownMenuItem onClick={() => openAccountManagement(player, "delete")} className="text-red-600">
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Account löschen
                               </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}
@@ -1268,6 +1313,39 @@ team_id: teamMembership?.team_id,
           </Card>
         )}
       </div>
+
+      {/* Protected account deletion simulation: no actual changes to users. */}
+      <Dialog open={protectedDeleteTarget !== null} onOpenChange={(open) => {
+        if (!open && !protectedDeleteRecording) setProtectedDeleteTarget(null)
+      }}>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md bg-white">
+          {protectedDeleteRevealed ? (
+            <div className="space-y-5 py-3 text-center">
+              <div className="text-5xl" aria-hidden="true">🙂</div>
+              <DialogHeader><DialogTitle className="text-center text-2xl">Interessant.</DialogTitle></DialogHeader>
+              <p className="text-gray-700">Du hast soeben versucht, ein geschütztes Konto dauerhaft zu löschen.</p>
+              <p className="font-semibold text-gray-900">Die Aktion wurde aufgezeichnet.</p>
+              <p className="text-xs text-gray-500">Das Konto und seine Berechtigungen wurden nicht verändert.</p>
+              <Button className="w-full" onClick={() => setProtectedDeleteTarget(null)}>Schließen</Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <DialogHeader><DialogTitle className="flex items-center gap-2 text-red-700"><Trash2 className="h-5 w-5" /> Dauerhaft sperren & löschen</DialogTitle></DialogHeader>
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+                <p className="font-semibold">Endgültige Aktion bestätigen?</p>
+                <p className="mt-2">Du hast das Konto <strong>{protectedDeleteTarget?.name}</strong> ausgewählt. Bestätige nur, wenn du die endgültige Entfernung wirklich beabsichtigst.</p>
+              </div>
+              {protectedDeleteError && <p role="alert" className="text-sm text-red-700">{protectedDeleteError}</p>}
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" disabled={protectedDeleteRecording} onClick={() => setProtectedDeleteTarget(null)}>Abbrechen</Button>
+                <Button className="flex-1 bg-red-700 hover:bg-red-800" disabled={protectedDeleteRecording} onClick={confirmProtectedDelete}>
+                  {protectedDeleteRecording ? "Wird geprüft..." : "Endgültig bestätigen"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Account management dialog */}
       <Dialog open={managementAction !== null} onOpenChange={(open) => !open && setManagementAction(null)}>
