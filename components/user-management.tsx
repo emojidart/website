@@ -492,7 +492,9 @@ team_id: teamMembership?.team_id,
     setManagementStatus({ type: null, message: "" })
 
     try {
-      const result = await deleteUserAccount(managementForm.playerId)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error("Bitte erneut anmelden")
+      const result = await deleteUserAccount(managementForm.playerId, session.access_token)
       if (!result.success) throw new Error(result.error || "Unbekannter Fehler beim Löschen")
 
       setManagementStatus({ type: "success", message: "Account erfolgreich gelöscht! Der Benutzer wurde aus Supabase entfernt." })
