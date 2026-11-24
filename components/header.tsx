@@ -91,8 +91,6 @@ export function Header({
   const { user, isAdmin } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const isHomePage = pathname === "/"
-  const visibleTitle = isHomePage && title === "EMD Vereinsapp" ? "Pfeil O.K" : title
 
   const [drawerOpen, setDrawerOpen] = React.useState(false)
   const [expandedGroups, setExpandedGroups] = React.useState<string[]>(["Hauptmenü"])
@@ -425,7 +423,7 @@ export function Header({
     {
       title: "Info",
       items: [
-        { href: "/emd-campus", label: isHomePage ? "Pfeil O.K Campus" : "EMD Campus", icon: Building2 },
+        { href: "/emd-campus", label: "EMD Campus", icon: Building2 },
         { href: "/faq", label: "FAQ", icon: HelpCircle },
         { href: "/uber-uns", label: "Über uns", icon: MessageCircle },
         { href: "/kontakt", label: "Kontakt", icon: MessageCircle },
@@ -473,13 +471,13 @@ export function Header({
             onClick={closeDrawer}
           />
 
-          <aside ref={drawerRef} className="emd-nav-drawer absolute bottom-0 right-0 top-0 flex flex-col w-[min(92vw,410px)] overflow-hidden border-l border-white/10 bg-[#172235] text-white" role="dialog" aria-modal="true" aria-label={isHomePage ? "Pfeil O.K Navigation" : "EMD Navigation"}>
+          <aside ref={drawerRef} className="emd-nav-drawer absolute bottom-0 right-0 top-0 flex flex-col w-[min(92vw,410px)] overflow-hidden border-l border-white/10 bg-[#172235] text-white" role="dialog" aria-modal="true" aria-label="EMD Navigation">
             <div className="emd-nav-head relative overflow-hidden border-b border-white/10 bg-[#233248] p-5 pt-[max(env(safe-area-inset-top),20px)]">
 
               <div className="relative flex items-center justify-between gap-3">
                 <div className="min-w-0 flex items-center gap-3">
                   <span className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-orange-300/15 bg-orange-500/10 shadow-sm">
-                    {isHomePage ? <span className="text-xs font-black tracking-tight text-orange-300">O.K</span> : (<Image
+                    <Image
                       src="/images/brutal-darts-bg---.png"
                       alt="EMD Logo"
                       width={28}
@@ -487,16 +485,16 @@ export function Header({
                       className="h-auto object-contain"
                       style={{ width: "auto", height: "28px" }}
                       priority
-                    />)}
+                    />
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold tracking-tight text-white">{visibleTitle}</div>
+                    <div className="truncate text-sm font-semibold tracking-tight text-white">{title}</div>
                     {user ? (
                       <div className="truncate text-xs text-slate-400">
                         {isGuest ? "Gastzugang" : user.email}
                       </div>
                     ) : (
-                      <div className="text-xs text-slate-400">Willkommen bei {isHomePage ? "Pfeil O.K" : "EMD"}</div>
+                      <div className="text-xs text-slate-400">Willkommen bei EMD</div>
                     )}
                   </div>
                 </div>
@@ -631,7 +629,7 @@ export function Header({
 
                   <div className="min-w-0">
                     <div className="truncate text-base font-semibold tracking-[-0.02em] text-white sm:text-lg">
-                      {visibleTitle}
+                      {title}
                     </div>
                     {subtitle ? (
                       <div className="truncate text-xs font-semibold text-white/65 sm:text-sm">
@@ -671,19 +669,19 @@ export function Header({
       <header className="emd-main-header fixed left-0 right-0 top-0 z-50 w-full border-b border-white/10 bg-[#101722] shadow-sm pt-[env(safe-area-inset-top)]">
         <div className="mx-auto w-full max-w-[var(--emd-content-max)] px-3 sm:px-5 lg:px-7 xl:px-8">
           <div className="flex h-14 items-center gap-3">
-            <Link href="/" aria-label={isHomePage ? "Pfeil O.K Startseite" : "EMD Startseite"} className="flex min-h-11 min-w-0 items-center gap-2.5">
+            <Link href="/" aria-label="EMD Startseite" className="flex min-h-11 min-w-0 items-center gap-2.5">
                 <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-orange-300/15 bg-orange-500/10 shadow-sm">
-                  {isHomePage ? <span className="text-xs font-black tracking-tight text-orange-300">O.K</span> : (<Image
+                  <Image
                     src="/images/brutal-darts-bg---.png"
                     alt="EMD Logo"
                     width={26}
                     height={26}
                     className="object-contain"
                     priority
-                  />)}
+                  />
                 </span>
                 <span className="truncate text-sm font-semibold tracking-tight text-white sm:text-base">
-                  {visibleTitle}
+                  {title}
                 </span>
               </Link>
 
